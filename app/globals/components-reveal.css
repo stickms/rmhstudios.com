@@ -579,7 +579,7 @@ body {
   border: 1px solid color-mix(in srgb, var(--site-text) 40%, transparent);
   border-radius: var(--site-control-radius);
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 600;
   transition:
     background-color 180ms ease,
     color 180ms ease;
@@ -729,7 +729,7 @@ body {
    negative tracking, and balanced wrapping, straight off the token contract. */
 .display-hero {
   font-family: var(--site-font-display);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.03;
   text-wrap: balance;

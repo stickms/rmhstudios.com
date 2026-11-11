@@ -233,7 +233,7 @@
   margin-top: 0.55rem;
   font-family: var(--site-font-display);
   font-size: clamp(2rem, 8.5vw, 3.1rem);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.02;
   letter-spacing: -0.038em;
   text-wrap: balance;
@@ -554,7 +554,7 @@
 .spatial-whats-new__changes article > span {
   color: var(--site-accent);
   font-size: 0.6875rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .spatial-whats-new__changes h3 {

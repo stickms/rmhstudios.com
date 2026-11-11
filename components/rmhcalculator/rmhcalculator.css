@@ -92,7 +92,7 @@
   line-height: 1.1;
 }
 .rmhcalc__brand-name {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 1.05rem;
   letter-spacing: -0.02em;
 }
@@ -164,7 +164,7 @@
 }
 .rmhcalc-angle__btn {
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   padding: 0.25rem 0.5rem;
   border-radius: 999px;
@@ -235,7 +235,7 @@
 }
 .rmhcalc-display__value {
   font-size: clamp(1.5rem, 4vw, 2.25rem);
-  font-weight: 700;
+  font-weight: 600;
   color: var(--site-accent);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -319,7 +319,7 @@
 }
 .rmhcalc-key--op {
   color: var(--site-accent);
-  font-weight: 700;
+  font-weight: 600;
 }
 .rmhcalc-key--muted {
   background: var(--site-bg);
@@ -353,9 +353,8 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8125rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-weight: 600;
+  letter-spacing: 0;
   color: var(--site-text-muted);
   margin-bottom: 0.5rem;
 }

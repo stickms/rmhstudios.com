@@ -65,8 +65,7 @@
 }
 .lib-blog__tag {
   font-size: 0.625rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   padding: 2px 7px;
   border-radius: 999px;
   corner-shape: round;
@@ -75,7 +74,7 @@
 }
 .lib-blog__title {
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
   color: var(--site-text);
   margin: 0;
@@ -108,8 +107,7 @@
   padding: 0 clamp(16px, 4vw, 44px);
   font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--site-text-muted);
 }
 
@@ -175,7 +173,7 @@
   border-radius: 50%;
   corner-shape: round;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--site-accent-fg);
   background: var(--site-accent);
   z-index: 3;
@@ -236,8 +234,7 @@
   padding: 6px 10px 4px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--site-text-muted);
 }
 .lib-ctx__sep {
@@ -672,8 +669,7 @@
   color: var(--site-text-muted, #565656);
   font-size: 0.6875rem;
   font-weight: 650;
-  letter-spacing: 0.065em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 .lib-book__facts span {
   display: inline-flex;
@@ -749,9 +745,8 @@
 .lib-reader__eyebrow {
   color: var(--site-text-muted);
   font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 .lib-reader__identity .lib-reader__title {
   display: block;
@@ -918,9 +913,8 @@
   margin: 0 0 8px;
   color: var(--site-text-muted);
   font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 .lib-reader__details h2 {
   margin: 0;
@@ -956,8 +950,7 @@
 .lib-reader__details-meta dt {
   color: var(--site-text-muted);
   font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 .lib-reader__details-meta dd {
   margin: 5px 0 0;
@@ -974,8 +967,7 @@
   margin: 0 0 8px;
   color: var(--site-text-muted);
   font-size: 0.6875rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 .lib-reader__details-toc button {
   display: flex;

@@ -93,7 +93,7 @@
 
 .store-art__mark {
   font-size: clamp(1.8rem, 6vw, 3rem);
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: rgba(255, 255, 255, 0.92);
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.4);
@@ -235,15 +235,14 @@
   display: inline-flex;
   align-items: center;
   font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
   color: var(--site-accent);
 }
 
 .store-hero__title {
   font-size: clamp(1.7rem, 4.5vw, 2.6rem);
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.04;
   letter-spacing: -0.02em;
   color: #fff;
@@ -271,7 +270,7 @@
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 600;
   transition:
     transform var(--site-transition-speed) var(--ease-out),
     background var(--site-transition-speed) var(--ease-out);
@@ -393,7 +392,7 @@
 
 .store-spot__title {
   font-size: 0.92rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--site-text);
   white-space: nowrap;
   overflow: hidden;
@@ -543,7 +542,7 @@
 
 .store-card__title {
   font-size: 0.86rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--site-text);
   line-height: 1.3;
   display: -webkit-box;

@@ -105,9 +105,8 @@
   color: var(--site-accent-fg);
   padding: 0.6rem 1.1rem;
   font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
   transition: transform 0.2s var(--ease-glass, var(--ease-smooth));
 }
 .radial-skip:focus {
@@ -124,8 +123,8 @@
   /* Transparent on purpose: the page ground is the document's own flat --site-bg. The rings below are this layer's only
      content, and Steel R1 allows no gradient ground, so the layer is not drawn at all (phase 3 deletes it with the
      radial shell). */
-  display: none;
   background: transparent;
+  display: none;
 }
 .radial-backdrop__rings {
   position: absolute;
@@ -378,7 +377,7 @@ body:has(.radial-shell) .call-banner {
   margin: -0.5rem;
 }
 .radial-topbar__mark {
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.04em;
   font-size: 1.25rem;
 }
@@ -470,7 +469,7 @@ body:has(.radial-shell) .call-banner {
   min-height: var(--site-touch-target);
   padding: 0.5rem 1.125rem;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--site-text);
   transition:
     transform 0.18s ease,
@@ -689,7 +688,7 @@ body:has(.radial-shell) .call-banner {
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: 600;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
@@ -1058,7 +1057,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   margin-bottom: var(--rad-3);
   font-family: var(--site-font-display, inherit);
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--site-text);
 }
 .rad-live__card h2 svg {

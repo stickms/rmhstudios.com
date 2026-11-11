@@ -243,7 +243,7 @@
      treatment made these cards feel disconnected from the library UI. */
   font-family: var(--site-font-display);
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.025em;
   /* The cover art is a dark navy slab on EVERY theme, so its printed title must
@@ -260,7 +260,7 @@
 .lib-book__mark {
   margin-top: auto;
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.16em;
   /* On the always-dark cover, keep the imprint light on every theme. */
   color: rgba(245, 245, 247, 0.72);
@@ -486,9 +486,8 @@
   margin: 0;
   padding: 2px 6px;
   font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
   color: var(--site-text-muted);
 }
 .lib-marks__empty {
@@ -832,8 +831,7 @@
 .lib-collections__subhead {
   font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--site-text-muted);
   margin: 0 0 10px;
 }

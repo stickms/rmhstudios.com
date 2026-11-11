@@ -1,0 +1,69 @@
+/* Steel type (docs/plans/2026-11-11-steel-design-implementation.md section 3, Y1 to Y3).
+
+   One family, Geist (`--site-font-body`), with Geist Mono (`--site-font-mono`) for timestamps, counts and small data.
+   There is no display face: `--site-font-display` is the body stack. Seven classes carry every size, weight and
+   tracking value, so a page never re-types a clamp or a letter-spacing:
+
+     t-title    28 / 1.1   600  -0.025em   the page's name, one per page
+     t-heading  17 / 1.3   600  -0.01em    a section inside a page
+     t-body     14 / 1.45  400  0          default text and controls
+     t-post     15 / 1.5   400  0          post text
+     t-prose    16 / 1.6   400  0          long reading: articles, patch notes
+     t-label    13 / 1.3   600  0, muted   spine station, sidebar group heading
+     t-meta     12 / 1.3   400  0, muted   mono: time, kind, handle metadata
+
+   Y1: weights are 400, 500 (controls) and 600, never 700 or above. Y2: no letterspaced capitals; labels are sentence
+   case. Y3: links inside running text are underlined, navigation words are not. They are utilities (`@utility`), so a
+   variant such as `lg:t-title` works. Sizes are px: Steel's numbers are exact and are not rem-scaled. */
+@utility t-title {
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+@utility t-heading {
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility t-body {
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility t-post {
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility t-prose {
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility t-label {
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--site-text-muted);
+}
+@utility t-meta {
+  font-family: var(--site-font-mono);
+  font-size: 12px;
+  line-height: 1.3;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--site-text-muted);
+}
+
+/* Y3: a link inside running text is underlined. Prose, post text and body copy only; navigation words (the sidebar,
+   tabs, buttons, the globe's pins) are not inside these. */
+:is(.t-prose, .t-post, .t-body, .prose) :is(p, li, dd, blockquote, span) > a:not([data-slot], [role], .no-underline) {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}

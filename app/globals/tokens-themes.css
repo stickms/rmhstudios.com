@@ -216,7 +216,7 @@
   --site-heading-transform: none;
   --site-glow: none;
   --site-text-shadow: none;
-  --site-letter-spacing: -0.022em;
+  --site-letter-spacing: 0;
 
   /* ── The display scale (audit SPA-006) ──────────────────────────────────
      `--site-font-display` was tokenised but its SIZE never was, so 44 files each

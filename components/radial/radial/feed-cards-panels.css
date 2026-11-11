@@ -49,7 +49,7 @@
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
   box-shadow: none;
 }
 /* The pill is the body, not its two buttons: pressing either squashes the whole pill (the soft body's own press rule
@@ -129,7 +129,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -189,7 +189,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   box-shadow: none;
 }
 .radial-core__mark {
-  font-weight: 800;
+  font-weight: 600;
   font-size: clamp(1rem, 4vw, 1.3rem);
   letter-spacing: 0.1em;
 }
@@ -255,7 +255,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   display: inline-flex;
   align-items: center;
   gap: var(--rad-1);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.9375rem;
   color: var(--site-text);
   white-space: nowrap;
@@ -354,7 +354,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   background: color-mix(in srgb, var(--site-bg) 62%, transparent);
   color: var(--site-text);
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 /* Author-flagged sensitive media: mounted (so the card is the height it will be
@@ -413,7 +413,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
 }
 .rmhark__title {
   font-size: 1.375rem;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--site-text);
@@ -608,7 +608,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.5rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.04em;
 }
 .rad-deck__row-main {
@@ -620,7 +620,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
 }
 .rad-deck__row-main strong {
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -712,7 +712,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   color: var(--site-text);
   font-family: var(--site-font-display, inherit);
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 .rad-panel__head svg {
@@ -820,7 +820,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
 }
 .rad-panel__row-main strong {
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -878,7 +878,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   background: var(--site-surface);
   color: var(--site-text);
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
   transition:
     background-color 0.18s ease,

@@ -802,7 +802,7 @@ html:root .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='eve
    of the sphere. */
 .radial-globe__pin-name {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.15;
   letter-spacing: 0.01em;
   color: var(--site-text);
@@ -1004,7 +1004,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 .radial-globe__wordmark {
   margin: 0;
   font-size: clamp(1.35rem, 6vw, 1.85rem);
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.025em;
   color: var(--site-text);
@@ -1392,7 +1392,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   border-radius: 999px;
   corner-shape: round;
   color: inherit;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.82rem;
   text-decoration: none;
   transition: background-color 0.18s var(--ease-smooth);
