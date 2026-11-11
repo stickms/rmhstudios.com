@@ -1,0 +1,61 @@
+/**
+ * Chrome reflections (Steel 4.3). Loaded at idle after hydration (V4); components never
+ * import this. An element opts in with `data-chrome="ball"` or `data-chrome="pill"` and
+ * must be able to hold a child (the renderer appends one small canvas to it).
+ *
+ * The page is complete without this module: the CSS gradients in app/styles/steel-chrome.css
+ * are the first paint and the fallback (V11).
+ */
+import { ChromeRenderer, type Host } from './renderer';
+
+let renderer: ChromeRenderer | null = null;
+
+function browserHost(): Host {
+  return {
+    window,
+    document,
+    requestFrame: (fn) => window.requestAnimationFrame(fn),
+    cancelFrame: (id) => window.cancelAnimationFrame(id),
+    requestIdle: (fn) => {
+      const idle = (window as { requestIdleCallback?: Window['requestIdleCallback'] })
+        .requestIdleCallback;
+      if (idle) idle.call(window, fn, { timeout: 500 });
+      else setTimeout(fn, 60);
+    },
+    createGlCanvas: () => document.createElement('canvas'),
+    createEnvCanvas: () => document.createElement('canvas'),
+  };
+}
+
+/** Start the one renderer. Safe to call more than once; false when WebGL is unavailable. */
+export function startChrome(): boolean {
+  if (typeof window === 'undefined') return false;
+  renderer ??= new ChromeRenderer(browserHost());
+  return renderer.start();
+}
+
+/** V8: tell the renderer the page's content changed (route change, a feed page appended). */
+export function refreshChrome(): void {
+  renderer?.invalidate();
+}
+
+/** V9: a transition of `ms` is running on a chrome element (the globe opening or closing). */
+export function animateChrome(ms: number): void {
+  renderer?.animate(ms);
+}
+
+/** V13 measurements of the running renderer, or null before it starts. */
+export function chromeTimings(): {
+  draw: number;
+  environment: number;
+  longestSlice: number;
+} | null {
+  return renderer ? renderer.timings : null;
+}
+
+export function stopChrome(): void {
+  renderer?.stop();
+  renderer = null;
+}
+
+export { ChromeRenderer } from './renderer';
