@@ -173,8 +173,9 @@ export async function verifyProfileLink(
 /**
  * Re-check links whose verification has gone stale (J1 §5).
  *
- * Written to be driven by a worker tick, not by the web tier — there is no cron
- * in the SSR process (`lib/CLAUDE.md`). Only links that are currently *verified*
+ * Driven by the jobs worker's hourly `profile-links.reverify` cron
+ * (lib/profile-links/jobs.server.ts), not by the web tier — there is no cron in
+ * the SSR process (`lib/CLAUDE.md`). Only links that are currently *verified*
  * are swept: an unverified link has nothing to lose, and re-fetching every
  * unverified URL on the site on a schedule would turn this into a crawler.
  *
