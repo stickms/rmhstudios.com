@@ -5,6 +5,7 @@ import { useSession } from '@/components/Providers';
 import { globeKeyAction } from './globe-nav-state';
 import { SECTIONS, WRITE_HREF, currentSection, viewerPathFor, type SectionId } from './sections';
 import { usePathname } from './shell-router-state';
+import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
 import './globe-nav.css';
 
@@ -34,6 +35,7 @@ export function GlobeNav() {
   const viewerPath = viewerPathFor(session?.user as { id: string; handle?: string | null } | undefined);
   const inbox = useInboxCount(Boolean(session));
   const current = currentSection(pathname);
+  const labels = useSectionLabels();
   // Nothing of the five is current on, say, /library: Front takes the centre without claiming `aria-current`.
   const centre: SectionId = current ?? 'front';
 
@@ -165,7 +167,7 @@ export function GlobeNav() {
                 aria-current={current === section.id ? 'page' : undefined}
                 onClick={() => setOpenAnd(false)}
               >
-                {t(section.tKey, { defaultValue: section.label })}
+                {labels[section.id]}
                 {count > 0 && (
                   <span className="globe-nav__count">
                     <span aria-hidden>{count > 99 ? '99+' : count}</span>

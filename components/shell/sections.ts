@@ -9,9 +9,6 @@ export type SectionId = 'front' | 'explore' | 'games' | 'inbox' | 'you';
 
 export interface Section {
   id: SectionId;
-  /** i18n key (namespace `feed`) and the English words. */
-  tKey: string;
-  label: string;
   /** Where the section lands. `viewerPath` is `/u/<handle>` for a signed-in viewer, otherwise null. */
   href: (viewerPath: string | null) => string;
   /** Paths (and their descendants) that make this section the current one. `/` matches only itself. */
@@ -19,32 +16,24 @@ export interface Section {
 }
 
 export const SECTIONS: readonly Section[] = [
-  { id: 'front', tKey: 'shell-section-front', label: 'Front', href: () => '/', match: ['/'] },
+  { id: 'front', href: () => '/', match: ['/'] },
   {
     id: 'explore',
-    tKey: 'shell-section-explore',
-    label: 'Explore',
     href: () => '/explore',
     match: ['/explore', '/search', '/tag'],
   },
   {
     id: 'games',
-    tKey: 'shell-section-games',
-    label: 'Games',
     href: () => '/games',
     match: ['/games', '/apps'],
   },
   {
     id: 'inbox',
-    tKey: 'shell-section-inbox',
-    label: 'Inbox',
     href: () => '/messages',
     match: ['/messages', '/notifications'],
   },
   {
     id: 'you',
-    tKey: 'shell-section-you',
-    label: 'You',
     href: (viewerPath) => viewerPath ?? '/login',
     match: ['/u', '/settings', '/profile', '/login'],
   },

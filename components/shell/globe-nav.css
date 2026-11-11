@@ -23,7 +23,8 @@
   --globe-open-d: 288px;
   --globe-bottom: calc(18px + env(safe-area-inset-bottom, 0px) + var(--vv-follow, 0px));
   --globe-travel: calc(50dvh - 50px - env(safe-area-inset-bottom, 0px));
-  --globe-ease: cubic-bezier(0.2, 0, 0, 1);
+  /* M4: 360 ms on cubic-bezier(.2,0,0,1), the one curve token (steel-chrome.css). */
+  --globe-ease: var(--m4-curve);
 }
 
 /* Desktop navigates with the sidebar (G9). */
@@ -113,7 +114,7 @@ html.ios-webkit .globe-nav__fade {
   border-radius: 50%;
   corner-shape: round;
   pointer-events: none;
-  background: radial-gradient(circle, #fff 0 1.6px, rgba(0, 0, 0, 0.55) 2px 3px, transparent 3.5px) 0 0 / 13px
+  background: radial-gradient(circle, rgb(255 255 255) 0 1.6px, rgba(0, 0, 0, 0.55) 2px 3px, transparent 3.5px) 0 0 / 13px
     13px;
   transition: opacity 0.2s ease;
 }

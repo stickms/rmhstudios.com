@@ -83,13 +83,13 @@ describe('SiteShell renders complete without client hooks (B1, L1, L2)', () => {
     const out = html();
     expect(out).toContain('site-sidebar__brand">RMH Studios');
     expect(out).toMatch(/site-sidebar__globe chrome-globe[^>]*data-chrome="ball"|data-chrome="ball"[^>]*site-sidebar__globe/);
-    expect(out).toMatch(/<form role="search" action="\/explore" method="get"/);
+    expect(out).toMatch(/<form role="search" class="site-margin__search" action="\/explore" method="get"/);
   });
 });
 
 describe('the sidebar lists exactly the five sections (L4)', () => {
   it('Front, Explore, Games, Inbox, You, as words, in that order', () => {
-    expect(SECTIONS.map((s) => s.label)).toEqual(['Front', 'Explore', 'Games', 'Inbox', 'You']);
+    expect(SECTIONS.map((s) => s.id)).toEqual(['front', 'explore', 'games', 'inbox', 'you']);
     const out = html();
     const nav = /<nav aria-label="Sections">([\s\S]*?)<\/nav>/.exec(out)![1]!;
     const labels = [...nav.matchAll(/<a [^>]*>([^<]+)</g)].map((m) => m[1]);
@@ -156,7 +156,7 @@ describe('the phone globe (G1 to G8)', () => {
   it('shows unread as a dot with a text equivalent when docked and a number on the Inbox pin (G8)', () => {
     const out = html('/', 3);
     expect(out).toMatch(/globe-nav__dot"><span class="sr-only">3 unread/);
-    expect(out).toMatch(/globe-nav__count"><span aria-hidden="">3<\/span><span class="sr-only">3 unread/);
+    expect(out).toMatch(/globe-nav__count"><span aria-hidden="true">3<\/span><span class="sr-only">3 unread/);
     expect(html('/', 0)).not.toContain('globe-nav__dot');
   });
 
@@ -190,16 +190,17 @@ describe('the globe animates transform and opacity only, in 360 ms (G2, G6)', ()
 
   it('opens by transform to scale(4.5) in 0.36s on cubic-bezier(0.2, 0, 0, 1), under a flat 96% veil', () => {
     expect(css).toMatch(/transition: transform 0\.36s var\(--globe-ease\)/);
-    expect(css).toContain('--globe-ease: cubic-bezier(0.2, 0, 0, 1)');
+    expect(css).toContain('--globe-ease: var(--m4-curve)');
+    expect(read('app/styles/steel-chrome.css')).toContain('--m4-curve: cubic-bezier(0.2, 0, 0, 1)');
     expect(css).toMatch(/scale\(4\.5\)/);
     expect(css).toMatch(/\.globe-nav\[data-open\] \.globe-nav__veil \{[^}]*opacity: 0\.96/);
     expect(css).not.toMatch(/backdrop-filter|[^-]filter:|blur\(/);
   });
 
   it('never transitions a layout property', () => {
-    const props = [...css.matchAll(/transition:\s*([^;]+);/g)].flatMap((m) =>
-      m[1]!.split(',').map((part) => part.trim().split(/\s+/)[0]),
-    );
+    const props = [...css.matchAll(/transition:\s*([^;]+);/g)]
+      .filter((m) => m[1]!.trim() !== 'none')
+      .flatMap((m) => m[1]!.split(',').map((part) => part.trim().split(/\s+/)[0]));
     expect(new Set(props)).toEqual(new Set(['transform', 'opacity', 'visibility']));
   });
 

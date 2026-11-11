@@ -1,46 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { exploreApi } from '@/lib/discovery/explore.contract';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
-interface ExplorePeek {
-  trendingTags: { tag: string; count: number }[];
-  suggestedUsers: { id: string; name: string | null; handle: string | null }[];
-}
-
-/** Shared across mounts so a client navigation re-uses the last payload instead of asking again. */
-let peek: ExplorePeek | null = null;
-let peekAt = 0;
 const TTL = 5 * 60_000;
-
-function useExplorePeek(active: boolean): ExplorePeek | null {
-  const [data, setData] = useState<ExplorePeek | null>(peek);
-  useEffect(() => {
-    if (!active) return;
-    if (peek && Date.now() - peekAt < TTL) {
-      setData(peek);
-      return;
-    }
-    const controller = new AbortController();
-    void (async () => {
-      try {
-        const body = await api(exploreApi, { signal: controller.signal });
-        peek = {
-          trendingTags: body.trendingTags ?? [],
-          suggestedUsers: body.suggestedUsers ?? [],
-        };
-        peekAt = Date.now();
-        setData(peek);
-      } catch {
-        // Supplementary: a failure leaves the lists out.
-      }
-    })();
-    return () => controller.abort();
-  }, [active]);
-  return data;
-}
 
 /**
  * The margin's two short lists (Steel L6): what is trending and who to follow, each under a `t-label` heading, rows on
@@ -50,9 +15,16 @@ function useExplorePeek(active: boolean): ExplorePeek | null {
 export default function MarginLists() {
   const { t } = useTranslation('feed');
   const idle = useIdleReady();
-  const data = useExplorePeek(idle);
-  const tags = data?.trendingTags.slice(0, 5) ?? [];
-  const people = data?.suggestedUsers.slice(0, 3) ?? [];
+  // Supplementary: a failure leaves the lists out. The cache is shared across pages, so a client navigation re-uses it.
+  const { data } = useQuery({
+    queryKey: ['shell-margin-explore'],
+    queryFn: ({ signal }) => api(exploreApi, { signal }),
+    enabled: idle,
+    staleTime: TTL,
+    retry: false,
+  });
+  const tags = data?.trendingTags?.slice(0, 5) ?? [];
+  const people = data?.suggestedUsers?.slice(0, 3) ?? [];
 
   return (
     <>

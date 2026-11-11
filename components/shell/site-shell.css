@@ -72,15 +72,20 @@
     min-block-size: 100dvh;
   }
 
-  /* L4: 22px top and 24px side padding; the globe is pushed to the bottom. */
+  /* L4: 22px top and 24px side padding; the globe is pushed to the bottom. The sidebar is the grid cell; the inner
+     box is what stays in view. It sticks 16px off the top edge, not at it (iOS edge contract), and its own top
+     padding makes up the rest of L4's 22px. */
   .site-sidebar {
+    display: block;
+  }
+  .site-sidebar__inner {
     display: flex;
     flex-direction: column;
-    gap: 0;
     position: sticky;
-    inset-block-start: 0;
-    block-size: 100dvh;
-    padding: 22px 24px;
+    inset-block-start: 16px;
+    margin-block-start: 16px;
+    block-size: calc(100dvh - 32px);
+    padding: 6px 24px 16px;
     overflow-y: auto;
   }
 

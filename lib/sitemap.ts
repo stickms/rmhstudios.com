@@ -280,6 +280,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/saves': 'personal',
   '/feeds': 'personal', // the viewer's own custom feeds and subscriptions (P03 A4)
   '/series': 'personal', // the viewer's own series and the ones they follow
+  '/sections': 'noindex', // the no-script list of the navigator's destinations; a shell page, not content
   '/share': 'personal',
   '/wallet': 'personal',
   '/trash': 'personal',

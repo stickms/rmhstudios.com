@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { NoMargin } from '@/components/shell/NoMargin';
 import { SECTIONS, viewerPathFor } from '@/components/shell/sections';
+import { useSectionLabels } from '@/components/shell/use-section-labels';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
 
@@ -41,6 +42,7 @@ function signOut() {
 function SectionsPage() {
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
+  const labels = useSectionLabels();
   const isAdmin = Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
   const viewerPath = viewerPathFor(session?.user as { id: string; handle?: string | null } | undefined);
   const more = MORE.filter(
@@ -57,7 +59,7 @@ function SectionsPage() {
           {SECTIONS.map((section) => (
             <li key={section.id}>
               <Link to={section.href(viewerPath)} className="sections-list__row t-heading">
-                {t(section.tKey, { defaultValue: section.label })}
+                {labels[section.id]}
               </Link>
             </li>
           ))}

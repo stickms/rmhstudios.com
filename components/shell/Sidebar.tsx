@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SECTIONS, WRITE_HREF, currentSection, viewerPathFor } from './sections';
 import { usePathname } from './shell-router-state';
+import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
 
 /** The handle's menu is a lazy chunk: nothing in it is needed until it is opened. */
@@ -28,6 +29,7 @@ export function Sidebar() {
     | undefined;
   const viewerPath = viewerPathFor(user);
   const current = currentSection(pathname);
+  const labels = useSectionLabels();
   const inbox = useInboxCount(Boolean(session));
 
   const menuAnchor = useRef<HTMLButtonElement | null>(null);
@@ -43,12 +45,13 @@ export function Sidebar() {
 
   return (
     <aside className="site-sidebar">
+      <div className="site-sidebar__inner">
       <p className="site-sidebar__brand">{t('shell-brand', { defaultValue: 'RMH Studios' })}</p>
 
       <nav aria-label={t('shell-sections-label', { defaultValue: 'Sections' })}>
         <ul className="site-sidebar__list">
           {SECTIONS.map((section) => {
-            const label = t(section.tKey, { defaultValue: section.label });
+            const label = labels[section.id];
             const active = current === section.id;
             const count = section.id === 'inbox' ? inbox : 0;
             return (
@@ -135,6 +138,7 @@ export function Sidebar() {
         data-chrome="ball"
         aria-label={t('shell-home-aria', { defaultValue: 'RMH Studios front page' })}
       />
+      </div>
     </aside>
   );
 }
