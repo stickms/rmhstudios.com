@@ -182,7 +182,7 @@
   white-space: nowrap;
 }
 /* G10: the 72px globe, pushed to the bottom, with its contact shadow. It links to the front page. */
-.site-sidebar__globe {
+.site-sidebar .site-sidebar__globe {
   position: relative;
   display: block;
   flex: none;
@@ -251,4 +251,12 @@
 }
 .sections-list__group {
   margin: 26px 0 0;
+}
+
+/* The cookie notice and mini-player ride above the docked globe (comfort-suite.css, data-floating='hub'). The globe is
+   not displayed from 1024px, so the lift would only leave a gap there. Unlayered, so it outranks that rule. */
+@media (min-width: 1024px) {
+  .site-shell:has([data-floating='hub']) {
+    --float-lift-hub: 0px;
+  }
 }

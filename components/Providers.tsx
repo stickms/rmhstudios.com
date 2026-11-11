@@ -224,8 +224,9 @@ export function Providers({
   // instead and the material's rules are scoped off it. Stamped pre-paint by __root.tsx on a hard load; this keeps it
   // in step on client navigation and clears it on the way out.
   useEffect(() => syncNativeMaterialClass(document.documentElement, pathname), [pathname]);
-  // Remember whether this browser draws in software (the globe's CSS fallback, the games' glow); the material ignores it.
-  useSoftRenderSettle();
+  // Remember whether this browser draws in software (the games' canvas glow reads it). Not on a site-shell page: that
+  // page's one WebGL context is the chrome renderer's (Steel B3).
+  useSoftRenderSettle(pathname);
 
   // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
   // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.

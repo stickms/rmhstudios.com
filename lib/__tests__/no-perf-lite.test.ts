@@ -73,7 +73,7 @@ describe('perf-lite is gone', () => {
 
   it('the soft-render finding is settled by its own hook, mounted by Providers on every route', () => {
     expect(read('hooks/useSoftRenderSettle.ts')).toContain('settleSoftRender()');
-    expect(read('components/Providers.tsx')).toContain('useSoftRenderSettle();');
+    expect(read('components/Providers.tsx')).toContain('useSoftRenderSettle(pathname);');
   });
 
   it('the material never reads the low-end capability signal', () => {

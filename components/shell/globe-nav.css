@@ -87,7 +87,9 @@ html.ios-webkit .globe-nav__fade {
   z-index: var(--z-hub-orb-open);
 }
 
-.globe-nav__globe {
+/* A control, so the doubled class: the base layer's button rules and the unlayered `:is(button, [role=button]) { border-radius }`
+   in the site sheet come later in the cascade and would otherwise square the ball. */
+.globe-nav .globe-nav__globe {
   position: relative;
   display: block;
   inline-size: 100%;
@@ -107,7 +109,7 @@ html.ios-webkit .globe-nav__fade {
   transition: transform 0.36s var(--globe-ease);
 }
 /* G1: a grid of small dots (13px pitch) signals "sections". It fades out in 200 ms on open (G2). */
-.globe-nav__globe::after {
+.globe-nav .globe-nav__globe::after {
   content: '';
   position: absolute;
   inset: 13px;

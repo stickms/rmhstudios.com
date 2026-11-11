@@ -94,7 +94,7 @@ const log = (line) => {
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || undefined,
-  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+  args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
 });
 
 try {
@@ -133,6 +133,11 @@ try {
   const page = await phone.newPage();
   await page.goto(BASE + '/', { waitUntil: 'load' });
   await page.waitForTimeout(4000);
+  // First-run dialogs (language, welcome) cover the page for a new visitor; close them, as a visitor would.
+  for (let i = 0; i < 3; i += 1) {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(350);
+  }
 
   const globe = page.locator('button[data-globe-button]');
   assert.equal(await globe.count(), 1, 'one docked globe button');
