@@ -446,8 +446,12 @@ jobs:
           const needs = JSON.parse(process.env.RESULTS);
           if (needs.changes.result !== 'success') throw new Error('Change classification failed');
           if (needs.migrations.result !== 'success') throw new Error('migrations: ' + needs.migrations.result);
-          // `checks` = ci-checks.yml; its own verdict job enforces per-job expectations.
-          for (const name of ['checks', 'jelly-e2e', 'build']) {
+          // `checks` = ci-checks.yml. It is called on every PR (a reusable workflow has no
+          // job-level `if` here) and its own verdict job enforces the per-job expectations,
+          // skipping included, so it must succeed whatever changed. Expecting 'skipped' on a
+          // docs-only PR failed every such PR.
+          if (needs.checks.result !== 'success') throw new Error('checks: ' + needs.checks.result);
+          for (const name of ['jelly-e2e', 'build']) {
             const kind = name === 'build' ? 'frontend' : 'checks';
             const expected = needs.changes.outputs[kind] === 'true' ? 'success' : 'skipped';
             if (needs[name].result !== expected) throw new Error(name + ': ' + needs[name].result + ' (expected ' + expected + ')');
