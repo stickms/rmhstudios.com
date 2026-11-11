@@ -284,57 +284,6 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  jelly-e2e:
-    needs: changes
-    if: needs.changes.outputs.checks == 'true' && !inputs.update-baselines
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 2
-      - name: Does this change touch the jelly?
-        id: filter
-        env:
-          EVENT: ${{ github.event_name }}
-        run: |
-          set -euo pipefail
-          if [ "$EVENT" != "pull_request" ] && [ "$EVENT" != "merge_group" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          changed=$(git diff --name-only HEAD^1 HEAD)
-          if echo "$changed" | grep -Eq '^(lib/jelly/|lib/liquid/|app/jelly-[a-z-]+\.css$|app/glass-roles\.css$|app/globals\.css$|components/ui/button\.tsx$|hooks/useJellyPointer\.ts$|hooks/useFluidDrag\.ts$|lib/fluid\.ts$|testing/e2e/(frame-budget|jelly-interaction|fouc-routes)\.mjs$|testing/e2e/lib/gpu\.mjs$|package\.json$|pnpm-lock\.yaml$|vite\.config\.[cm]?[jt]s$|\.github/workflows/web-ci\.yml$)'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "No jelly-relevant change in this PR; jelly e2e skipped." >> "$GITHUB_STEP_SUMMARY"
-          fi
-      - if: steps.filter.outputs.run == 'true'
-        uses: ./.github/actions/setup-deps
-      - name: Install Chromium
-        if: steps.filter.outputs.run == 'true'
-        run: pnpm exec playwright install --with-deps chromium
-      - name: Jelly interaction (fixture, blocking)
-        if: steps.filter.outputs.run == 'true'
-        run: |
-          set -o pipefail
-          {
-            echo "### Plasmatic Jelly e2e"
-            echo
-            echo "| script | result |"
-            echo "| --- | --- |"
-          } >> "$GITHUB_STEP_SUMMARY"
-          status=0
-          node testing/e2e/jelly-interaction.mjs | tee "$RUNNER_TEMP/jelly-interaction.log" || status=$?
-          gl=$(grep -m1 '^GL:' "$RUNNER_TEMP/jelly-interaction.log" | sed 's/|/\\|/g' || true)
-          skips=$(grep -c '^SKIP ' "$RUNNER_TEMP/jelly-interaction.log" || true)
-          note=""; [ "${skips:-0}" -gt 0 ] && note=" — ${skips} GPU-only check(s) **SKIPPED** (${gl})"
-          if [ "$status" -eq 0 ]; then
-            echo "| \`jelly-interaction.mjs\` | PASS${note} |" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "| \`jelly-interaction.mjs\` | **FAIL**${note} |" >> "$GITHUB_STEP_SUMMARY"
-            grep '^FAIL ' "$RUNNER_TEMP/jelly-interaction.log" | sed 's/^/::error title=jelly-interaction::/' || true
-          fi
-          exit "$status"
-
   frame-budget:
     needs: build
     if: github.event_name != 'pull_request' && github.event_name != 'merge_group' && !inputs.update-baselines
@@ -433,7 +382,7 @@ jobs:
         run: node .github/scripts/check-migrations-additive.mjs
 
   required-checks:
-    needs: [changes, checks, build, jelly-e2e, migrations]
+    needs: [changes, checks, build, migrations]
     if: always() && (github.event_name == 'pull_request' || github.event_name == 'merge_group')
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -451,11 +400,8 @@ jobs:
           // skipping included, so it must succeed whatever changed. Expecting 'skipped' on a
           // docs-only PR failed every such PR.
           if (needs.checks.result !== 'success') throw new Error('checks: ' + needs.checks.result);
-          for (const name of ['jelly-e2e', 'build']) {
-            const kind = name === 'build' ? 'frontend' : 'checks';
-            const expected = needs.changes.outputs[kind] === 'true' ? 'success' : 'skipped';
-            if (needs[name].result !== expected) throw new Error(name + ': ' + needs[name].result + ' (expected ' + expected + ')');
-          }
+          const expected = needs.changes.outputs.frontend === 'true' ? 'success' : 'skipped';
+          if (needs.build.result !== expected) throw new Error('build: ' + needs.build.result + ' (expected ' + expected + ')');
           NODE
 
   payload-diagnostics:

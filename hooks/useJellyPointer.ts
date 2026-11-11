@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { installLazyClickArcs } from '@/lib/jelly/arc-lazy';
 import { installPointerVars } from '@/lib/jelly/pointer-vars';
 
 /**
@@ -28,14 +27,12 @@ export function useJellyPointer(enabled = true): void {
     // Some full-screen apps (the TF2 HUD Editor) carry their own material and install none of the jelly.
     if (!enabled) return;
     let cancelled = false;
-    let stopArcs: (() => void) | null = null;
     const stopPointerVars = installPointerVars(document);
 
     const start = () => {
       if (cancelled) return;
-      // The click arc: one `pointerdown` subscription on the shared hub and nothing else. The arcs chunk, the runtime
-      // and its canvas appear on the first press and are gone ten seconds after the last (lib/jelly/arc-lazy.ts).
-      stopArcs = installLazyClickArcs(document);
+      // Steel R1/R5: no click arcs on the site. The arc runtime (lib/jelly/arcs) is unmounted here and
+      // deleted with the rest of the old material in phase 6.
       // From here on, glass that mounts fades in (app/jelly-material.css §7); the first paint never did.
       document.documentElement.setAttribute('data-jelly-ready', '');
     };
@@ -63,7 +60,6 @@ export function useJellyPointer(enabled = true): void {
         else window.clearTimeout(handle);
       }
       stopPointerVars();
-      stopArcs?.();
       // The material is gone (a native-material route, or unmount): glass that mounts now must not fade in as if
       // the jelly were running.
       document.documentElement.removeAttribute('data-jelly-ready');
