@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -11,7 +12,8 @@ import { Hammer } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { enterJamApi, getJamApi, rateJamEntryApi } from '@/lib/competitive/jams.contract';
+import { enterJamApi, rateJamEntryApi } from '@/lib/competitive/jams.contract';
+import { jamQuery } from '@/lib/competitive/jams.queries';
 import { JAM_CATEGORIES, type JamCategory } from '@/lib/competitive/jam';
 import { PhaseBadge } from './JamsList';
 
@@ -72,7 +74,9 @@ function RateForm({
       toast.success(t('jam-rated', { defaultValue: 'Rating saved' }));
       onSaved();
     } catch (e) {
-      toast.error(serverError(e) ?? t('jam-rate-failed', { defaultValue: 'Could not save rating' }));
+      toast.error(
+        serverError(e) ?? t('jam-rate-failed', { defaultValue: 'Could not save rating' }),
+      );
     } finally {
       setBusy(false);
     }
@@ -106,21 +110,15 @@ export function JamDetail({ slug }: { slug: string }) {
   const { t } = useTranslation('f-competitive');
   const { data: session } = useSession();
   const signedIn = !!session?.user?.id;
-  const [jam, setJam] = useState<Jam | null | undefined>(undefined);
+  const queryClient = useQueryClient();
+  const query = jamQuery(slug);
+  const { data, isError } = useQuery(query);
+  // undefined while loading; null when the jam does not exist.
+  const jam: Jam | null | undefined = data?.jam ?? (isError ? null : undefined);
   const [buildId, setBuildId] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await api(getJamApi, { params: { slug }, retries: 0 });
-      setJam(data.jam);
-    } catch {
-      setJam(null);
-    }
-  }, [slug]);
-  useEffect(() => {
-    void load();
-  }, [load, signedIn]);
+  const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
   if (jam === undefined) return <Skeleton className="h-48 rounded-site" />;
   if (jam === null) {

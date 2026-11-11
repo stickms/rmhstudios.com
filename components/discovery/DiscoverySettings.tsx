@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { BellRing, X } from 'lucide-react';
@@ -12,33 +13,30 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import {
   addDiscoveryAlertApi,
-  getDiscoveryMemoriesApi,
-  listDiscoveryAlertsApi,
   removeDiscoveryAlertApi,
   setDiscoveryMemoriesApi,
+  type DiscoveryAlert as Alert,
 } from '@/lib/discovery/discovery.contract';
-
-interface Alert {
-  id: string;
-  query: string;
-}
+import { discoveryAlertsQuery, discoveryMemoriesQuery } from '@/lib/settings/prefs.queries';
 
 /** A6 keyword alerts and the A5 "On this day" opt-in, on the notification settings page. */
 export function DiscoverySettings() {
   const { t } = useTranslation('f-discovery');
-  const [alerts, setAlerts] = useState<Alert[] | null>(null);
-  const [memories, setMemories] = useState<boolean | null>(null);
+  const queryClient = useQueryClient();
+  const alertsKey = discoveryAlertsQuery();
+  const memoriesKey = discoveryMemoriesQuery();
+  const { data: alertsData } = useQuery(alertsKey);
+  const { data: memoriesData } = useQuery(memoriesKey);
+  const alerts: Alert[] | null = alertsData?.alerts ?? null;
+  const memories: boolean | null = memoriesData?.enabled ?? null;
+  const setAlerts = (update: (a: Alert[] | null) => Alert[] | null) =>
+    queryClient.setQueryData(alertsKey.queryKey, (old: { alerts: Alert[] } | undefined) => ({
+      alerts: update(old?.alerts ?? null) ?? [],
+    }));
+  const setMemories = (enabled: boolean) =>
+    queryClient.setQueryData(memoriesKey.queryKey, { enabled });
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    api(listDiscoveryAlertsApi, { retries: 0 })
-      .then((d) => setAlerts(d.alerts))
-      .catch(() => {});
-    api(getDiscoveryMemoriesApi, { retries: 0 })
-      .then((d) => setMemories(d.enabled))
-      .catch(() => {});
-  }, []);
 
   const add = async () => {
     setBusy(true);
@@ -47,7 +45,9 @@ export function DiscoverySettings() {
       try {
         added = (await api(addDiscoveryAlertApi, { body: { query: draft } })).alert;
       } catch (e) {
-        toast.error(serverError(e) ?? t('alerts-add-failed', { defaultValue: 'Could not add that alert' }));
+        toast.error(
+          serverError(e) ?? t('alerts-add-failed', { defaultValue: 'Could not add that alert' }),
+        );
         return;
       }
       setAlerts((a) => [...(a ?? []).filter((x) => x.id !== added.id), added]);
@@ -65,7 +65,7 @@ export function DiscoverySettings() {
       () => false,
     );
     if (!ok) {
-      setAlerts(prev);
+      setAlerts(() => prev);
       toast.error(t('alerts-remove-failed', { defaultValue: 'Could not remove that alert' }));
     }
   };

@@ -7,6 +7,8 @@
 import { useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { notificationTogglesQuery } from '@/lib/settings/prefs.queries';
 import type { TFunction } from 'i18next';
 import {
   Palette,
@@ -32,6 +34,7 @@ export const Route = createFileRoute('/_site/settings/')({
   head: () => ({
     meta: [{ title: 'Settings | RMH Studios' }],
   }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, notificationTogglesQuery()),
   component: SettingsPage,
 });
 

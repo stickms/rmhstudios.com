@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { discoveryAlertsQuery, discoveryMemoriesQuery } from '@/lib/settings/prefs.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { DiscoverySettings } from '@/components/discovery/DiscoverySettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
@@ -9,6 +11,13 @@ export const Route = createFileRoute('/_site/settings/notifications')({
   head: () => ({
     meta: [{ title: 'Notifications | RMH Studios' }, { name: 'robots', content: 'noindex' }],
   }),
+  loader: async ({ context }) => {
+    await Promise.all([
+      prefetchRouteQuery(context.queryClient, discoveryAlertsQuery()),
+      prefetchRouteQuery(context.queryClient, discoveryMemoriesQuery()),
+    ]);
+    return undefined;
+  },
   component: NotificationSettingsPage,
 });
 

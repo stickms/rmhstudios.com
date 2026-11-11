@@ -12,7 +12,8 @@
  * the same way.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { BadgeCheck, ExternalLink, Link2, Plus, RefreshCw, Trash2 } from 'lucide-react';
@@ -34,9 +35,9 @@ import { serverError } from '@/lib/http';
 import {
   addProfileLinkApi,
   deleteProfileLinkApi,
-  listProfileLinksApi,
   verifyProfileLinkApi,
 } from '@/lib/profile-links/profile-links.contract';
+import { profileLinksQuery } from '@/lib/profile-links/profile-links.queries';
 
 interface ProfileLinksPanelProps {
   /** The signed-in user's handle, used to show the exact back-link to copy. */
@@ -46,28 +47,17 @@ interface ProfileLinksPanelProps {
 export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
-  const [links, setLinks] = useState<ProfileLinkDTO[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const query = profileLinksQuery();
+  // Offline or signed out the list stays empty, which is the honest render.
+  const { data, isPending: loading } = useQuery(query);
+  const links = data?.links ?? [];
+  const setLinks = (update: (prev: ProfileLinkDTO[]) => ProfileLinkDTO[]) =>
+    queryClient.setQueryData(query.queryKey, (old) => ({ links: update(old?.links ?? []) }));
   const [url, setUrl] = useState('');
   const [label, setLabel] = useState('');
   const [adding, setAdding] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api(listProfileLinksApi);
-      setLinks(data.links);
-    } catch {
-      // Offline or signed out — an empty list is the honest render.
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const addLink = async (event: React.FormEvent) => {
     event.preventDefault();

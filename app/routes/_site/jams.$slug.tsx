@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { JamDetail } from '@/components/competitive/JamDetail';
 import { buildCanonical, buildMeta } from '@/lib/seo';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { jamQuery } from '@/lib/competitive/jams.queries';
 
 export const Route = createFileRoute('/_site/jams/$slug')({
   head: ({ params }) => ({
@@ -13,6 +15,7 @@ export const Route = createFileRoute('/_site/jams/$slug')({
     }),
     links: [buildCanonical(`/jams/${params.slug}`)],
   }),
+  loader: ({ context, params }) => prefetchRouteQuery(context.queryClient, jamQuery(params.slug)),
   component: JamPage,
 });
 

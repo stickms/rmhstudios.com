@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Accessibility } from 'lucide-react';
 import { toast } from 'sonner';
@@ -6,7 +7,8 @@ import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { api } from '@/lib/contract/client';
 import { MIN_SPEED_FLOOR, type AssistSettings } from '@/lib/game/assist';
-import { getAssistsApi, setAssistsApi, type AssistView } from '@/lib/game/assist.contract';
+import { setAssistsApi } from '@/lib/game/assist.contract';
+import { gameAssistsQuery } from '@/lib/settings/prefs.queries';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 
 /**
@@ -29,29 +31,24 @@ import { SettingsSection } from '@/components/settings/SettingsSection';
 
 export function GameAssistPanel() {
   const { t } = useTranslation('site');
-  const [state, setState] = useState<AssistView | null>(null);
+  const queryClient = useQueryClient();
+  const query = gameAssistsQuery();
+  // A failed read leaves `state` undefined: the panel simply does not render, and that is not a toast.
+  const { data: state } = useQuery(query);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    api(getAssistsApi, { retries: 0 })
-      .then((d) => setState(d))
-      .catch(() => {
-        /* The panel simply does not render; a failed read is not a toast. */
-      });
-  }, []);
 
   const save = useCallback(
     async (patch: Partial<AssistSettings>) => {
       setSaving(true);
       try {
-        setState(await api(setAssistsApi, { body: patch }));
+        queryClient.setQueryData(query.queryKey, await api(setAssistsApi, { body: patch }));
       } catch {
         toast.error(t('assists-error', { defaultValue: 'Could not save that.' }));
       } finally {
         setSaving(false);
       }
     },
-    [t],
+    [t, queryClient, query.queryKey],
   );
 
   if (!state) return null;

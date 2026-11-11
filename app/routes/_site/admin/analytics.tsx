@@ -1,39 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Users, FileText, Flag, Coins, BarChart3 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { StatTile } from '@/components/admin/StatTile';
 import { useTranslation } from 'react-i18next';
-import { api } from '@/lib/contract/client';
-import { getAdminAnalyticsApi } from '@/lib/admin/admin-ops.contract';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { adminAnalyticsQuery } from '@/lib/admin/admin-ops.queries';
 
 export const Route = createFileRoute('/_site/admin/analytics')({
   head: () => ({ meta: [{ title: 'Analytics | RMH Studios' }] }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminAnalyticsQuery()),
   component: AnalyticsPage,
 });
 
-interface Analytics {
-  users: { total: number; new7: number; new30: number; active7: number };
-  content: { posts: number; posts7: number; comments: number; builds: number };
-  moderation: { pendingReports: number };
-  economy: { coinsInCirculation: number };
-  postsPerDay: { day: string; count: number }[];
-}
-
 function AnalyticsPage() {
   const { t } = useTranslation('admin');
-  const [data, setData] = useState<Analytics | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api(getAdminAnalyticsApi, { retries: 0 })
-      .catch(() => null)
-      .then(setData)
-      .finally(() => setLoading(false));
-  }, []);
+  const { data = null, isPending: loading } = useQuery(adminAnalyticsQuery());
 
   const maxCount = data ? Math.max(1, ...data.postsPerDay.map((d) => d.count)) : 1;
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Phone } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,17 +12,8 @@ import {
   type CallPrivacy,
 } from '@/lib/call/state';
 import { api } from '@/lib/contract/client';
-import {
-  getCallPrivacyApi,
-  listCallMutesApi,
-  setCallPrivacyApi,
-  unmuteCallerApi,
-} from '@/lib/call/calls.contract';
-
-interface ActiveMute {
-  until: string;
-  user: { id: string; name: string | null; handle: string | null };
-}
+import { setCallPrivacyApi, unmuteCallerApi } from '@/lib/call/calls.contract';
+import { callMutesQuery, callPrivacyQuery } from '@/lib/settings/prefs.queries';
 
 /**
  * CallPrivacyControls — who may ring this account. Sits in Settings → Privacy
@@ -31,50 +22,39 @@ interface ActiveMute {
  */
 export function CallPrivacyControls() {
   const { t } = useTranslation('site');
-  const [value, setValue] = useState<CallPrivacy>(DEFAULT_CALL_PRIVACY);
-  const [loaded, setLoaded] = useState(false);
-  const [mutes, setMutes] = useState<ActiveMute[]>([]);
-
+  const queryClient = useQueryClient();
+  const privacy = callPrivacyQuery();
+  const mutesQuery = callMutesQuery();
+  const { data: privacyData, isPending } = useQuery(privacy);
   // People muted from the incoming-call banner. Listed here so a mute is never
   // something you can set and then not find again.
-  useEffect(() => {
-    api(listCallMutesApi, { retries: 0 })
-      .then((d) => {
-        if (d?.mutes) setMutes(d.mutes);
-      })
-      .catch(() => {});
-  }, []);
+  const { data: mutesData } = useQuery(mutesQuery);
+  const loaded = !isPending;
+  const value: CallPrivacy = isCallPrivacy(privacyData?.callPrivacy)
+    ? privacyData.callPrivacy
+    : DEFAULT_CALL_PRIVACY;
+  const mutes = mutesData?.mutes ?? [];
 
   function unmute(targetUserId: string) {
-    const previous = mutes;
-    setMutes((list) => list.filter((m) => m.user.id !== targetUserId));
-    api(unmuteCallerApi, { body: { targetUserId } })
-      .catch(() => {
-        setMutes(previous);
-        toast.error(t('call-privacy-save-error', { defaultValue: 'Could not save' }));
-      });
+    const previous = mutesData;
+    queryClient.setQueryData(mutesQuery.queryKey, {
+      mutes: mutes.filter((m) => m.user.id !== targetUserId),
+    });
+    api(unmuteCallerApi, { body: { targetUserId } }).catch(() => {
+      queryClient.setQueryData(mutesQuery.queryKey, previous);
+      toast.error(t('call-privacy-save-error', { defaultValue: 'Could not save' }));
+    });
   }
 
-  useEffect(() => {
-    api(getCallPrivacyApi, { retries: 0 })
-      .catch(() => null)
-      .then((d: { callPrivacy?: unknown } | null) => {
-        if (d && isCallPrivacy(d.callPrivacy)) setValue(d.callPrivacy);
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
-  }, []);
-
   function choose(next: CallPrivacy) {
-    const previous = value;
-    setValue(next);
-    api(setCallPrivacyApi, { body: { callPrivacy: next } })
-      .catch(() => {
-        // Put the radio back: showing a setting that did not save is worse than
-        // showing the old one.
-        setValue(previous);
-        toast.error(t('call-privacy-save-error', { defaultValue: 'Could not save' }));
-      });
+    const previous = privacyData;
+    queryClient.setQueryData(privacy.queryKey, { callPrivacy: next });
+    api(setCallPrivacyApi, { body: { callPrivacy: next } }).catch(() => {
+      // Put the radio back: showing a setting that did not save is worse than
+      // showing the old one.
+      queryClient.setQueryData(privacy.queryKey, previous);
+      toast.error(t('call-privacy-save-error', { defaultValue: 'Could not save' }));
+    });
   }
 
   const LABEL: Record<CallPrivacy, { title: string; hint: string }> = {

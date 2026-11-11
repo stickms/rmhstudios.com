@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { gameAssistsQuery } from '@/lib/settings/prefs.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AppearancePanel } from '@/components/settings/AppearancePanel';
 import { AccessPrefsPanel } from '@/components/access/AccessPrefsPanel';
@@ -10,6 +12,7 @@ export const Route = createFileRoute('/_site/settings/appearance')({
   head: () => ({
     meta: [{ title: 'Appearance | RMH Studios' }, { name: 'robots', content: 'noindex' }],
   }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, gameAssistsQuery()),
   component: AppearanceSettingsPage,
 });
 

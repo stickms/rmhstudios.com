@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
+import { getNotificationMatrix } from '@/lib/settings/prefs.server';
 import { notifPrefsSchema } from '@/lib/notify/categories-schema';
 import { getNotificationMatrixApi } from '@/lib/preferences/preferences.contract';
 import { setNotificationMatrixApi } from '@/lib/preferences/preferences.contract';
@@ -14,19 +15,9 @@ import { setNotificationMatrixApi } from '@/lib/preferences/preferences.contract
 export const Route = createFileRoute('/api/preferences/notifications')({
   server: {
     handlers: {
-      GET: implement(getNotificationMatrixApi, {}, async ({ session }) => {
-        const row = await prisma.notificationPreference.findUnique({
-          where: { userId: session.user.id },
-          select: { matrix: true, quietStart: true, quietEnd: true, tz: true, emailDigest: true },
-        });
-        return Response.json({
-          matrix: row?.matrix ?? {},
-          quietStart: row?.quietStart ?? null,
-          quietEnd: row?.quietEnd ?? null,
-          tz: row?.tz ?? null,
-          emailDigest: row?.emailDigest ?? false,
-        });
-      }),
+      GET: implement(getNotificationMatrixApi, {}, async ({ session }) =>
+        Response.json(await getNotificationMatrix(session.user.id)),
+      ),
       PUT: implement(
         setNotificationMatrixApi,
         {

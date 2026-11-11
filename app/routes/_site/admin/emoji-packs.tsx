@@ -8,7 +8,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Smile, Check, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -23,10 +24,13 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
-import { listAdminEmojiPacksApi, moderateAdminEmojiPackApi } from '@/lib/admin/admin-ops.contract';
+import { moderateAdminEmojiPackApi } from '@/lib/admin/admin-ops.contract';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { adminEmojiPacksQuery } from '@/lib/admin/admin-ops.queries';
 
 export const Route = createFileRoute('/_site/admin/emoji-packs')({
   head: () => ({ meta: [{ title: 'Emoji Pack Review | RMH Studios' }] }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminEmojiPacksQuery()),
   component: AdminEmojiPacksPage,
 });
 
@@ -48,28 +52,17 @@ type Action = 'approve' | 'remove';
 
 function AdminEmojiPacksPage() {
   const { t, i18n } = useTranslation('admin');
-  const [rows, setRows] = useState<PendingPackRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const query = adminEmojiPacksQuery();
+  // A failed read shows an empty queue.
+  const { data, isPending: loading } = useQuery(query);
+  const rows: PendingPackRow[] = data?.packs ?? [];
   // One decision at a time: while any request is in flight every action is
   // disabled, so a double click cannot fire approve and remove back to back.
   const [busy, setBusy] = useState<{ id: string; action: Action } | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api(listAdminEmojiPacksApi, { retries: 0 });
-      setRows(data.packs ?? []);
-    } catch {
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
   const decide = async (pack: PendingPackRow, action: Action) => {
     if (busy) return;
@@ -99,7 +92,9 @@ function AdminEmojiPacksPage() {
           ? t('emoji-pack-approved', { defaultValue: 'Pack approved.' })
           : t('emoji-pack-removed', { defaultValue: 'Pack removed.' }),
       );
-      setRows((prev) => prev.filter((r) => r.id !== pack.id));
+      queryClient.setQueryData(query.queryKey, (old) =>
+        old ? { packs: old.packs.filter((r) => r.id !== pack.id) } : old,
+      );
     } catch {
       toast.error(t('emoji-pack-action-failed', { defaultValue: 'Could not update that pack.' }));
     } finally {

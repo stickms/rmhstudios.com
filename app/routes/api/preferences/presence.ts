@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
-import { DEFAULT_PRESENCE_VISIBILITY } from '@/lib/presence-types';
+import { getPresencePrefs } from '@/lib/settings/prefs.server';
 import { presencePrivacySchema } from '@/lib/presence-types-schema';
 import { getPresencePrefsApi } from '@/lib/preferences/preferences.contract';
 import { setPresencePrefsApi } from '@/lib/preferences/preferences.contract';
@@ -17,16 +17,9 @@ import { setPresencePrefsApi } from '@/lib/preferences/preferences.contract';
 export const Route = createFileRoute('/api/preferences/presence')({
   server: {
     handlers: {
-      GET: implement(getPresencePrefsApi, {}, async ({ session }) => {
-        const row = await prisma.userProfile.findUnique({
-          where: { userId: session.user.id },
-          select: { presenceVisibility: true, presenceDetail: true },
-        });
-        return Response.json({
-          presenceVisibility: row?.presenceVisibility ?? DEFAULT_PRESENCE_VISIBILITY,
-          presenceDetail: row?.presenceDetail ?? true,
-        });
-      }),
+      GET: implement(getPresencePrefsApi, {}, async ({ session }) =>
+        Response.json(await getPresencePrefs(session.user.id)),
+      ),
       PUT: implement(
         setPresencePrefsApi,
         {

@@ -6,9 +6,14 @@ import { queryOptions } from '@tanstack/react-query';
 import { createServerFn } from '@tanstack/react-start';
 import { routeQueryFn } from '@/lib/route/route-query';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { listWagers, expireStaleWagers, type SerializedWager } from '@/lib/wager/wager.server';
+import {
+  getWager,
+  listWagers,
+  expireStaleWagers,
+  type SerializedWager,
+} from '@/lib/wager/wager.server';
 import { api } from '@/lib/contract/client';
-import { listWagersApi } from '@/lib/wager/wager.contract';
+import { getWagerApi, listWagersApi } from '@/lib/wager/wager.contract';
 
 export type WagerFilter = 'open' | 'mine';
 
@@ -35,6 +40,26 @@ export const wagersQuery = (filter: WagerFilter) =>
           return [];
         }
       },
+    ),
+    staleTime: 5_000,
+  });
+
+// Same body as GET /api/wager/:id; an unknown match fails the fetch, which the page shows as "no longer exists".
+const getWagerOnServer = createServerFn({ method: 'GET' })
+  .validator((id: string) => id)
+  .handler(async ({ data: id }) => {
+    const session = await getRequestSession();
+    const wager = await getWager(id, session?.user?.id ?? null);
+    if (!wager) throw new Error('Not found');
+    return { wager };
+  });
+
+export const wagerQuery = (id: string) =>
+  queryOptions({
+    queryKey: ['wager', 'detail', id],
+    queryFn: routeQueryFn(
+      () => getWagerOnServer({ data: id }),
+      () => api(getWagerApi, { params: { id } }),
     ),
     staleTime: 5_000,
   });

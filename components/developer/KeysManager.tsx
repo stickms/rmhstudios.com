@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -28,10 +29,10 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import {
   createDeveloperKeyApi,
-  listDeveloperKeysApi,
   revokeDeveloperKeyApi,
   updateDeveloperKeyApi,
 } from '@/lib/devplatform/keys.contract';
+import { developerKeysQuery } from '@/lib/devplatform/developer.queries';
 
 interface ApiKey {
   id: string;
@@ -54,9 +55,12 @@ const EXPIRY_OPTIONS = [
 export function KeysManager() {
   const { t } = useTranslation('f-devplatform');
   const confirm = useConfirm();
-  const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [hasAccess, setHasAccess] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const query = developerKeysQuery();
+  // A failed read leaves the previous list in place (or an empty one).
+  const { data, isPending: loading } = useQuery(query);
+  const keys: ApiKey[] = data?.keys ?? [];
+  const hasAccess = !!data?.hasApiAccess;
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [scopes, setScopes] = useState<string[]>([...DEFAULT_SCOPES]);
@@ -65,29 +69,7 @@ export function KeysManager() {
   const [expiryDays, setExpiryDays] = useState(0);
   const [newKey, setNewKey] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await api(listDeveloperKeysApi);
-      setKeys(data.keys ?? []);
-      setHasAccess(!!data.hasApiAccess);
-    } catch {
-      // A failed read leaves the previous list in place.
-    }
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        await load();
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [load]);
+  const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
   function toggleScope(id: string) {
     setScopes((cur) => (cur.includes(id) ? cur.filter((s) => s !== id) : [...cur, id]));
@@ -104,7 +86,9 @@ export function KeysManager() {
       setName('');
       await load();
     } catch (e) {
-      toast.error(serverError(e) || t('keys-create-failed', { defaultValue: 'Could not create key' }));
+      toast.error(
+        serverError(e) || t('keys-create-failed', { defaultValue: 'Could not create key' }),
+      );
     } finally {
       setCreating(false);
     }
@@ -142,7 +126,11 @@ export function KeysManager() {
       () => true,
       () => false,
     );
-    if (revoked) setKeys((k) => k.filter((x) => x.id !== id));
+    if (revoked) {
+      queryClient.setQueryData(query.queryKey, (old) =>
+        old ? { ...old, keys: old.keys.filter((x) => x.id !== id) } : old,
+      );
+    }
   }
 
   if (loading)

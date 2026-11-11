@@ -49,6 +49,8 @@ import { VERIFY_COOP_QUEUE } from '@features/altair/engine/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
+import { WEBHOOK_RETRY_QUEUE, registerWebhookRetryCron } from '@/lib/webhooks/jobs.server';
+import { PROFILE_LINK_REVERIFY_QUEUE, registerProfileLinkReverifyCron } from '@/lib/profile-links/jobs.server';
 import { STREAK_REMINDER_QUEUE, registerStreakReminderCron } from '@/lib/streak-reminders.server';
 import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
 import { registerDoctrineJobs } from '@features/doctrine/engine/jobs.server';
@@ -177,6 +179,10 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: 'discovery', register: registerDiscoveryJobs },
   // P16 D5: "when X then Y" recipes: polled triggers + personal-best events.
   { queue: 'devplatform.recipes', register: registerRecipeJobs },
+  // Developer webhooks: retry failed deliveries on their backoff (the first attempt is inline at emit).
+  { queue: WEBHOOK_RETRY_QUEUE, register: registerWebhookRetryCron },
+  // J1 §5: re-check verified profile links that have gone stale; a page that stopped linking back loses its mark.
+  { queue: PROFILE_LINK_REVERIFY_QUEUE, register: registerProfileLinkReverifyCron },
 ];
 
 async function main() {
