@@ -493,8 +493,8 @@ Ledger (fill in as phases merge):
 
 | Phase | PR | Site CSS (gzip) | Site JS on `/` (gzip) | Notes |
 | --- | --- | --- | --- | --- |
-| before | — | | | measure on `main` before phase 1 |
-| 1 | | | | |
+| before | — | 51,222 B | 320,349 B (brotli) | `main` at f0126ec7c. CSS: the built `site-tier-*.css`, 351,951 B raw, `gzip -9`; 39,834 B brotli (the budget script's number). JS: `check-bundle-budget.ts --json` reports the static closure of the client entry in raw and brotli only, no gzip: 1,128,360 B raw, 320,349 B brotli, 79 chunks. |
+| 1 | | 43,144 B | 319,872 B (brotli) | CSS 268,976 B raw (-23.6%), `gzip -9` -15.8%, brotli 34,536 B. JS 1,126,288 B raw, 319,872 B brotli (-477 B; phase 1 adds no script). Budgets pass unchanged. Same metrics as the row above. |
 | 2 | | | | |
 | 3 | | | | |
 | 4 | | | | |
