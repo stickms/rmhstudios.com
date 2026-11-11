@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 988 files across 198 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 986 files across 197 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -521,14 +521,6 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/creators/:id/join` | `POST` | `app/routes/api/creators/$id/join.ts` |
-
-## `/api/cron`
-
-1 route.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/cron/webhooks` | `POST` | `app/routes/api/cron/webhooks.ts` |
 
 ## `/api/csgo-game`
 
@@ -1466,14 +1458,13 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/profile-links`
 
-4 routes.
+3 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/profile-links` | `GET` `POST` | `app/routes/api/profile-links/index.ts` |
 | `/api/profile-links/:id` | `DELETE` `PATCH` | `app/routes/api/profile-links/$id/index.ts` |
 | `/api/profile-links/:id/verify` | `POST` | `app/routes/api/profile-links/$id/verify.ts` |
-| `/api/profile-links/reverify` | `POST` | `app/routes/api/profile-links/reverify.ts` |
 
 ## `/api/progress`
 
