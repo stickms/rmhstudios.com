@@ -497,6 +497,10 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
   canvas.setAttribute('aria-hidden', 'true');
   canvas.setAttribute('data-liquid-glass', 'off');
   canvas.setAttribute('data-jelly-arcs', 'off');
+  // The layer must not depend on a stylesheet to stay out of the page's way (it used to: app/jelly-arcs.css, deleted with the
+  // old material in Steel phase 1). Fixed, full viewport, click-through, contained; z-index is `--z-arcs` (45).
+  canvas.style.cssText =
+    'position:fixed;inset:0;width:100vw;height:100dvh;z-index:var(--z-arcs,45);pointer-events:none;user-select:none;contain:strict';
   canvas.width = 0;
   canvas.height = 0;
   // Probes: canvas fallback content is never rendered but does compute style, and inherits the theme's tokens.
@@ -569,6 +573,7 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
     const modal = arcs.some((a) => a.modal);
     if (modal) canvas.setAttribute('data-layer', 'modal');
     else canvas.removeAttribute('data-layer');
+    canvas.style.zIndex = modal ? 'var(--z-arcs-modal, 55)' : 'var(--z-arcs, 45)';
   };
 
   const cancel = () => {

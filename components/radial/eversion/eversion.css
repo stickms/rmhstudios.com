@@ -285,8 +285,8 @@ html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .ever
     color-mix(in oklab, var(--site-accent) 30%, var(--site-surface)) 82%,
     color-mix(in oklab, var(--site-accent) 48%, var(--site-surface)) 100%
   );
-  border: var(--site-border-width, 1px) solid var(--site-border-bright, var(--site-border));
-  box-shadow: var(--site-shadow-sm, none);
+  border: var(--site-border-width, 1px) solid var(--site-text, var(--site-border));
+  box-shadow: none;
   transform-origin: var(--popup-ox) var(--popup-oy);
   animation: evert-popup-in var(--evert-pop-in, 0.52s) var(--evert-ease-pop, ease-out) both;
   will-change: transform, opacity;

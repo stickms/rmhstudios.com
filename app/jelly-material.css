@@ -1,5 +1,0 @@
-/* Plasmatic Jelly material (docs/plasmatic-jelly-system.md). Entry sheet: the partials in jelly-material/ are imported
-   in source order and together are the one stylesheet this file used to be (redesign E4). */
-
-@import './jelly-material/material.css';
-@import './jelly-material/soft-body.css';

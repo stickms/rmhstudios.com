@@ -121,11 +121,10 @@
   z-index: var(--z-backdrop);
   pointer-events: none;
   overflow: hidden;
-  /* Transparent on purpose: the aurora canvas (--site-canvas) is painted by the
-     document's own fixed layers (.site-aurora::before / ::after in globals.css) so it
-     drifts and parallaxes, and so every backdrop-filter on the page samples the
-     SAME scene. Repeating the canvas here would paint a static copy on top of
-     the living one. The rings below are this layer's only content. */
+  /* Transparent on purpose: the page ground is the document's own flat --site-bg. The rings below are this layer's only
+     content, and Steel R1 allows no gradient ground, so the layer is not drawn at all (phase 3 deletes it with the
+     radial shell). */
+  display: none;
   background: transparent;
 }
 .radial-backdrop__rings {
@@ -360,7 +359,7 @@ body:has(.radial-shell) .call-banner {
        light themes, the theme's own graphite in the dark ones) and the status area reads as one with it instead of a
        translucent slab over whatever scrolls beneath. The shader's rim still draws over the fill and marks the lower
        edge; the degraded tiers already render this exact colour. Narrow screens only: the capsule above stays glass. */
-    background-color: var(--site-surface-opaque);
+    background-color: var(--site-surface);
     /* The role's hairline border would draw a box around the full-bleed bar; the shader's rim (or, before it
        arrives, the CSS twin) already marks its lower edge. */
     border-inline-width: 0;
@@ -460,7 +459,7 @@ body:has(.radial-shell) .call-banner {
 }
 .radial-topbar__avatar:hover,
 .radial-topbar__avatar[aria-expanded='true'] {
-  outline-color: var(--site-border-bright);
+  outline-color: var(--site-text);
 }
 .radial-topbar .radial-topbar__signin[data-slot='jelly-group-item'] {
   /* A flat member of the bar: no edge of its own (the bar's rim is the only line); the accent wash is its hover. */
@@ -976,7 +975,7 @@ html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after {
   border-radius: 999px;
   corner-shape: round;
   border: var(--site-border-width, 1px) solid var(--site-border);
-  background: var(--site-glass-tint, var(--site-surface));
+  background: var(--site-surface);
   font-size: 0.875rem;
   color: var(--site-text-muted);
 }

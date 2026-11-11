@@ -33,7 +33,7 @@ import { initWebVitals } from '@/lib/rum';
 import { registerServiceWorker } from '@/lib/sw-register';
 import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
 // The site-wide document defaults, shared with the island document (redesign B1).
-import { ROOT_HAZE_PRELOAD, ROOT_LINKS, ROOT_META } from '@/lib/root-head';
+import { ROOT_LINKS, ROOT_META } from '@/lib/root-head';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { prisma } from '@/lib/prisma.server';
 import { cachedNullable } from '@/lib/cached.server';
@@ -356,7 +356,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           href: geistLatinWoff2,
           crossOrigin: 'anonymous',
         },
-        ROOT_HAZE_PRELOAD,
         { rel: 'stylesheet', href: appCss },
       ],
       scripts: [
@@ -421,22 +420,6 @@ function RootDocument({ children }: { children: ReactNode }) {
           suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: PREPAINT_BODY_SCRIPT }}
         />
-        {/* The aurora canvas — the shared backdrop every glass surface samples.
-            The two layers are this element's ::before (near field) and ::after
-            (far field); see the §5.1 block in app/globals.css.
-
-            It is a real element rather than `body::before`/`body::after`, which
-            is what it used to be, for ONE reason: `hooks/useLiquidBackground`
-            steers its parallax through `--aurora-mx/--aurora-my`, and a custom
-            property written on `<html>` or `<body>` dirties the computed style of
-            every element in the document. On this site that measured ~70ms per
-            write at 4x CPU throttle (~30ms unthrottled) — paid on every animation
-            frame the pointer moved, which made it the largest single cost on the
-            whole site. Written on THIS element, whose only descendants are its
-            two pseudo-elements, the same update measures 0ms.
-
-            So it must stay a leaf: never render children into it. */}
-        <div className="site-aurora" aria-hidden />
         {children}
         {/* The tab capsule's #glass-goo host. Glass optics do not use SVG lenses. */}
         <GlassFilter />

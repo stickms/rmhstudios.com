@@ -56,18 +56,3 @@ export const ROOT_LINKS = [
     href: '/opensearch.xml',
   },
 ];
-
-// The jelly haze tile (--jelly-tile in jelly-material.css) is painted into
-// every glass slab's background stack. It is a CSS-referenced image, so
-// Chrome fetches it at Low priority — behind the ~160 low-priority module
-// preloads. On a throttled phone it landed at ~5 s, and because the
-// signed-out compose card is the first slab with real area, its first paint
-// became the page's LCP (0.96 s -> 5.3 s). 4 KB at high priority removes
-// that tail. Same-origin image: no crossOrigin.
-export const ROOT_HAZE_PRELOAD = {
-  rel: 'preload',
-  as: 'image',
-  type: 'image/webp',
-  href: '/jelly/haze-tile.webp',
-  fetchPriority: 'high',
-} as const;

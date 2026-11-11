@@ -211,10 +211,8 @@ body {
   --site-surface-hover: color-mix(in srgb, var(--site-inverse-text) 12%, var(--site-inverse-bg));
   --site-surface-active: color-mix(in srgb, var(--site-inverse-text) 18%, var(--site-inverse-bg));
   --site-border: var(--site-inverse-border);
-  --site-border-bright: var(--site-inverse-muted);
   --site-text: var(--site-inverse-text);
   --site-text-muted: var(--site-inverse-muted);
-  --site-text-dim: color-mix(in srgb, var(--site-inverse-muted) 72%, transparent);
   --site-accent: var(--site-inverse-text);
   --site-accent-fg: var(--site-inverse-bg);
   --site-accent-hover: var(--site-inverse-muted);
@@ -376,7 +374,7 @@ body {
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius);
   background: color-mix(in srgb, var(--site-surface) 94%, transparent);
-  box-shadow: var(--site-shadow-sm);
+  box-shadow: none;
 }
 
 .spatial-design-nav a {
@@ -414,7 +412,7 @@ body {
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius);
   background: var(--site-surface);
-  box-shadow: var(--site-shadow-sm);
+  box-shadow: none;
   isolation: isolate;
 }
 
@@ -534,7 +532,7 @@ body {
 .spatial-design-principles__grid article > div {
   display: flex;
   align-items: center;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 .spatial-design-principles__grid article svg {
@@ -603,7 +601,7 @@ body {
   padding: 2rem clamp(1rem, 5vw, 5rem);
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 [data-animate] [data-spatial-reveal] {
