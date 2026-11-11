@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { Coins, Gift, Package, Banknote } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
@@ -11,12 +12,14 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { listAdminRedemptionsApi } from '@/lib/admin/admin-ops.contract';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { adminRedemptionsQuery } from '@/lib/admin/admin-ops.queries';
 
 import { serverError } from '@/lib/http';
 import { reviewRedemptionApi } from '@/lib/admin/admin-tools.contract';
 export const Route = createFileRoute('/_site/admin/redemptions')({
   head: () => ({ meta: [{ title: 'Redemption Queue | RMH Studios' }] }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminRedemptionsQuery()),
   component: AdminRedemptionsPage,
 });
 
@@ -35,25 +38,12 @@ const KIND_ICON = { SUB_CREDIT: Gift, MERCH: Package, PAYOUT: Banknote } as cons
 
 function AdminRedemptionsPage() {
   const { t } = useTranslation('admin');
-  const [rows, setRows] = useState<RedemptionRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const query = adminRedemptionsQuery();
+  // A failed read shows an empty queue.
+  const { data, isPending: loading } = useQuery(query);
+  const rows: RedemptionRow[] = data?.requests ?? [];
   const [busyId, setBusyId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api(listAdminRedemptionsApi, { retries: 0 });
-      setRows(data.requests ?? []);
-    } catch {
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const act = async (id: string, action: 'approve' | 'reject' | 'fulfill') => {
     setBusyId(id);
@@ -71,7 +61,9 @@ function AdminRedemptionsPage() {
           ? t('rejected', { defaultValue: 'Declined and refunded' })
           : t('done', { defaultValue: 'Done' }),
       );
-      setRows((prev) => prev.filter((r) => r.id !== id));
+      queryClient.setQueryData(query.queryKey, (old) =>
+        old ? { requests: old.requests.filter((r) => r.id !== id) } : old,
+      );
     } finally {
       setBusyId(null);
     }

@@ -1,11 +1,10 @@
 import { api } from '@/lib/contract/client';
-import {
-  deleteAdminFlagApi,
-  listAdminFlagsApi,
-  upsertAdminFlagApi,
-} from '@/lib/admin/admin-ops.contract';
+import { deleteAdminFlagApi, upsertAdminFlagApi } from '@/lib/admin/admin-ops.contract';
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { adminFlagsQuery } from '@/lib/admin/admin-ops.queries';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +20,7 @@ import { clampRollout, isValidFlagKey } from '@/lib/flags/key';
 
 export const Route = createFileRoute('/_site/admin/flags')({
   head: () => ({ meta: [{ title: 'Feature Flags | RMH Studios' }] }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminFlagsQuery()),
   component: FlagsPage,
 });
 
@@ -50,25 +50,24 @@ async function saveFlag(flag: Flag): Promise<Flag | null> {
 function FlagsPage() {
   const { t } = useTranslation('admin');
   const confirm = useConfirm();
-  const [flags, setFlags] = useState<Flag[] | null>(null);
+  const queryClient = useQueryClient();
+  const query = adminFlagsQuery();
+  const { data, isError } = useQuery(query);
+  // A failed read shows an empty list rather than the spinner.
+  const flags: Flag[] | null = data?.flags ?? (isError ? [] : null);
+  const setFlags = (update: (cur: Flag[] | null) => Flag[]) =>
+    queryClient.setQueryData(query.queryKey, (old) => ({
+      ...old,
+      flags: update(old?.flags ?? null),
+    }));
   const [newKey, setNewKey] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await api(listAdminFlagsApi, { retries: 0 });
-      setFlags(data.flags);
-    } catch {
-      setFlags([]);
-    }
-  }, []);
+  const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const failed = () => toast.error(t('flags-save-failed', { defaultValue: 'Could not save the flag.' }));
+  const failed = () =>
+    toast.error(t('flags-save-failed', { defaultValue: 'Could not save the flag.' }));
 
   async function update(next: Flag) {
     setBusy(true);
@@ -167,7 +166,13 @@ function FlagsPage() {
         ) : (
           <ul className="glass-fill divide-y divide-site-border overflow-hidden rounded-site">
             {flags.map((f) => (
-              <FlagRow key={f.key} flag={f} busy={busy} onChange={update} onDelete={() => remove(f)} />
+              <FlagRow
+                key={f.key}
+                flag={f}
+                busy={busy}
+                onChange={update}
+                onDelete={() => remove(f)}
+              />
             ))}
           </ul>
         )}

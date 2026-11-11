@@ -9,7 +9,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Coins, TrendingUp, TrendingDown, Users, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -19,11 +20,13 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { StatTile } from '@/components/admin/StatTile';
-import { api } from '@/lib/contract/client';
-import { getAdminEconomyApi } from '@/lib/admin/admin-ops.contract';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { adminEconomyQuery } from '@/lib/admin/admin-ops.queries';
 
 export const Route = createFileRoute('/_site/admin/economy')({
   head: () => ({ meta: [{ title: 'Coin Economy | RMH Studios' }] }),
+  // The default window; another tab fetches its own on the client.
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminEconomyQuery('30')),
   component: AdminEconomyPage,
 });
 
@@ -56,25 +59,9 @@ const nf = new Intl.NumberFormat('en-US');
 function AdminEconomyPage() {
   const { t } = useTranslation('admin');
   const [days, setDays] = useState<string>('30');
-  const [data, setData] = useState<Snapshot | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async (d: string) => {
-    setLoading(true);
-    try {
-      // The response is `{ snapshot, flows, shape }`; the page reads the snapshot.
-      const res = await api(getAdminEconomyApi, { query: { days: d }, retries: 0 });
-      setData(res.snapshot);
-    } catch {
-      // A failed load leaves the previous snapshot in place.
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load(days);
-  }, [days, load]);
+  // The response is `{ snapshot, flows, shape }`; the page reads the snapshot.
+  const { data: res, isPending: loading } = useQuery(adminEconomyQuery(days));
+  const data: Snapshot | null = res?.snapshot ?? null;
 
   const tabs: TabItem[] = WINDOWS.map((w) => ({
     id: w,
