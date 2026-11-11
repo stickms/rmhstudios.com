@@ -33,7 +33,7 @@ item has `evidence`, `target`, `steps`, a `stub` where code helps, and a
 - [Part DT: data](#part-dt--data)
 - [Part OP: operations, CI, deploy](#part-op--operations-ci-deploy)
 - [Part QA: quality](#part-qa--quality)
-- [Part DS: design, a second opinion on Broadsheet](#part-ds--design-a-second-opinion-on-broadsheet)
+- [Part DS: design: Steel](#part-ds--design-steel)
 - [Order of work](#order-of-work)
 - [Ledger](#ledger)
 
@@ -50,11 +50,11 @@ item has `evidence`, `target`, `steps`, a `stub` where code helps, and a
 | 5 | [AR3](#ar3--api-routes-from-a-registry) | 987 API route files become a registry behind one dispatcher; the 1.26 MB route tree shrinks to pages | structure | L | M |
 | 6 | [AR4](#ar4--the-source-engine-port-is-its-own-package) | The Source-engine port (about 190k lines, a third of `lib/`) leaves the site's compile and test path | structure | L | M |
 | 7 | [OP1](#op1--a-commit-gate-that-runs-here) | A commit gate that runs on a 15 GB machine. It was skipped on every commit of phases 28–32 | practice | L | S |
-| 8 | [OP2](#op2--perf-assertions-that-do-not-flake) | Perf assertions on shared CI runners that compare medians, not one sample | practice | M | S |
+| 8 | [OP2](#op2--perf-assertions-that-do-not-flake) | A wall-clock perf backstop that failed on a noisy runner with every work budget in bounds | practice | M | S |
 | 9 | [RT2](#rt2--an-edge-cache-that-is-measured) | The anonymous HTML cache and its Cloudflare rule exist; nothing checks the edge returns a HIT, and two of the busiest page types are not on the allowlist | perf | M | S |
 | 10 | [DT1](#dt1--a-census-before-any-schema-work) | A table and product census (rows, last write, 30-day actives) so pruning is decided by data | structure | M | S |
 | 11 | [OP3](#op3--one-realtime-process-that-can-restart) | One realtime process with state outside it and a drain | reliability | L | L |
-| 12 | [DS1](#ds1--delete-the-runtime-before-choosing-the-paint) | Delete the material runtime first, under the current look; change identity second | perf/appearance | L | M |
+| 12 | [DS1](#ds1--where-steel-and-this-audit-touch) | Steel is the identity; its shell phase and the entry diet are one piece of work | perf/appearance | L | M |
 
 **If only three things happen:** AR1, AR2 and RT1. The first makes every later
 change cheaper to check, the second removes the largest remaining source of
@@ -153,11 +153,13 @@ Broadsheet P1 deletes, and it survives any change of identity.
    the nonce is then the same for every visitor for up to 150 seconds and
    anyone can read it. A nonce that an attacker can fetch is not a nonce. This
    is harmless while the policy is report-only and becomes a real weakness the
-   day it is enforced (first audit F5, Broadsheet B4). See RT3.
+   day it is enforced (first audit F5, Broadsheet B4). `docs/csp.md` already
+   listed this as a known limitation with the decision left open. See RT3.
 2. **A perf assertion failed once and passed on re-run** with no code change
-   between (`perf_spec`: `frame_ratio 1.366 > 1.35`, pull request #1563). It
-   compares one multiplayer run with one single-player run on a shared
-   runner. See OP2.
+   between (`perf_spec`: `frame_ratio 1.366 > 1.35`, pull request #1563). The
+   work-based budgets (instructions, draw calls) were in bounds; only the
+   wall-clock backstop was over, in both of the two pairs the spec takes. See
+   OP2.
 
 ---
 
@@ -186,7 +188,8 @@ Broadsheet P1 deletes, and it survives any change of identity.
    playtime and history beats, and C3 dropped 18 tables on evidence. Nothing
    yet ranks the 30 products or the 493 tables by use, so "which of these
    earns its place in the build" is still answered by opinion.
-6. **The paint and the engine were bundled into one decision.** Broadsheet
+6. **The paint and the engine were bundled into one decision.** (Superseded:
+   see Part DS. Steel keeps the globe and replaces its engine.) Broadsheet
    ties deleting 68.5k lines of runtime to adopting a new identity. The
    deletion is a measurable win on its own and does not need the identity to
    be right first.
@@ -584,16 +587,18 @@ impact: M
 effort: S
 risk: low
 depends: []
-evidence: perf_spec frame_ratio 1.366 > 1.35 on pull request 1563, green on re-run with no change; the spec divides one MP sample by one SP sample
-target: the ratio is a median of interleaved runs; the job reports the spread
+evidence: perf_spec frame_ratio 1.366 > 1.35 on pull request 1563, green on re-run with no change; the spec already asserts work (instructions, draw calls) and takes a second SP/MP pair when only time is over, using the lower ratio; both pairs were over
+target: a time-only overage needs every pair to agree; the job reports each pair
 ```
 
-Run SP and MP alternately N times (5 is enough), compare medians, and print
-min/median/max so a real regression is distinguishable from a noisy runner.
-Keep the 1.35 line.
+The work ratios are the budget and cannot be moved by another process. The
+time ratios are a backstop for cost that is neither Lua nor draw calls. When
+only time is over, take up to three pairs in all and keep the lowest ratio:
+a real cost is over in every pair, a slow runner is not. Report every pair.
+Keep the 1.45 and 1.35 lines.
 
-**Done when:** 20 consecutive runs on main are green and the log shows the
-spread for each.
+**Done when:** 20 consecutive runs on main are green and the log shows each
+pair taken.
 
 ### OP3 — One realtime process that can restart
 
@@ -646,99 +651,82 @@ one of them.
 
 ---
 
-## Part DS — design, a second opinion on Broadsheet
+## Part DS — design: Steel
 
-The owner asked for a new, human-made identity and Broadsheet is the merged
-brief. This section does not propose a rival look. It records where an
-independent read agrees and where it would do the work differently.
+The identity is settled: **Steel**
+(`2026-11-11-steel-design-implementation.md`), which replaced Broadsheet's
+Part N on 2026-11-11. A flat neutral page in Geist, hairline rules, no cards;
+chrome in three places (the globe, the toggle thumb, the slider thumb), each a
+ray-traced reflection of the page; content on a 1px spine; on a phone the
+globe is the only navigator. This audit does not restate it. This part says
+how the two plans fit together.
 
-**Agreed.** The material runtime is the cost centre and should go. Role names
-(`surface-card`) in place of material names (`glass-fill`) are right. "State
-changes in 120 ms or does not animate" is right. Games and full-screen apps
-keep their own art direction.
+### DS1 — Where Steel and this audit touch
 
-**Cautions.**
+| Steel | This audit | How they combine |
+|---|---|---|
+| Phase 3, the shell (`SiteShell`, `Sidebar`, `GlobeNav`; B1: "renders complete with scripting off") | RT1 entry diet | The same work. When `RadialShell` and `Providers` are replaced, the auth client, toasts, motion, dialogs and the English i18n runtime leave the entry in that pull request, not in a later pass. RT1's forbidden-package list is added to `check-entry-composition` as each one leaves. |
+| Phase 6, deletion (`components/radial`, `lib/jelly`, `lib/liquid`, `lib/dough*`, wasm kernels) | AR1 workspace | Delete before packaging: about 68k lines never need a `tsconfig`. AR1 step 3 starts after phase 6. |
+| 4.3 chrome renderer: one WebGL context, loaded at idle, V13 budget (redraw < 2 ms, module < 6 kB gzip) | Section 1.2 budgets | The renderer is the one script Steel adds. It gets its own line in `check-bundle-budget.ts` and must stay out of the entry closure. |
+| R5/B3 "nothing at rest": no frame, worker or observer | QA1 gates | One browser test asserts it (zero pending frames, one WebGL context, zero workers) and replaces the material tests deleted with phase 6. |
+| Section 10 recipes: every page hangs its data on the spine | AR2 `contractQuery` | A recipe page is server-rendered: its read is a `contractQuery` seeded by the loader. Pages converted for Steel phases 4–5 use it from the start, so no page is restyled and then re-plumbed. |
+| X1 "home is the feed" for signed-out visitors too (D6 default) | RT2 edge cache | `/` stays on the anonymous cache allowlist only if the signed-out feed is the same bytes for everyone; re-audit it in phase 4. |
+| Phase 1 gates (lint rules, design-consistency test) | OP1 commit gate | Phase 1 rewrites what the fast gate checks; that is the moment to make it runnable in a 15 GB container. |
+| L8: games and apps keep their own look | AR4, first audit B1 islands | Unchanged. Islands and the engine package proceed independently of Steel. |
 
-1. **A token swap produces a re-skin.** Paper, ink and a Clarendon applied
-   through the existing contract will change 395 pages in a day, and most of
-   them will read as the old layouts in new colours. What makes a site look
-   made by a person is the decisions on individual pages: what is big, what
-   is left out, where the grid is broken on purpose. Budget design time for
-   the ten most-visited pages (Broadsheet N6 names two) and accept that the
-   rest are themed.
-2. **"Not generated" is not a style.** Warm paper with a serif headline is
-   itself a current convention. The site's own material is stronger than any
-   convention: a debt counter, a Pathfinder calendar, a laundry game, a
-   history textbook. Let section fronts take their look from their subject,
-   inside one type system.
-3. **Do not tie the deletion to the identity.** See DS1.
-
-### DS1 — Delete the runtime before choosing the paint
-
-```yaml
-id: DS1
-gain: perf
-impact: L
-effort: M
-risk: low
-depends: []
-evidence: Broadsheet 2.2 (globe chunk and worker on every page within 800 ms; DOM snapshot on every route change) and 2.4 (68.5k lines); none of that is needed to draw a static translucent card
-target: the current look, static; no worker, canvas, snapshot or pointer service on a site page
-```
-
-Ship Broadsheet P1 against today's tokens first: role classes keep their
-static CSS, the globe becomes a plain menu button, arcs and haze go. The page
-gets lighter immediately, the before/after is a clean performance
-measurement with no visual redesign mixed into it, and the identity work
-then starts from a codebase where a surface is only CSS. If the new identity
-needs a second attempt, nothing has to be undone.
-
-**Done when:** a site page at rest and after ten clicks has zero
-`requestAnimationFrame` callbacks, workers and canvases, with the current
-themes still passing their contrast tests.
+The earlier suggestion to delete the runtime before choosing the paint is
+withdrawn: Steel keeps one remarkable object (the globe) and replaces its
+engine rather than removing it, so deletion follows the new shell (phase 6),
+as Steel says.
 
 ---
 
 ## Order of work
 
-Each line is one pull request and leaves main shippable. Items that touch the
-shell or tokens are left to the Broadsheet sequence to avoid two sessions
-editing the same files.
+One sequence for both plans. Each line is a pull request and leaves main
+shippable. "S" is a Steel phase; the rest are items of this audit.
 
 | # | Pull request | Items |
 |---:|---|---|
-| 1 | This audit | — |
-| 2 | Perf assertion medians; gate diagnostics | OP2, OP1 |
-| 3 | No nonce on shared-cache responses | RT3 |
-| 4 | `defineQuery`, 23 queries files converted | AR2 |
-| 5 | Edge HIT asserted in synthetic-perf; allowlist widened | RT2 |
-| 6 | Census job and page | DT1 |
-| 7 | Entry diet, one cut per pull request | RT1 |
-| 8 | `packages/core`, then `packages/engine-source` | AR1 steps 1–2, AR4 |
-| 9 | API registry and dispatcher | AR3 |
-| 10+ | Features as packages; realtime; tiers | AR1 steps 3–5, OP3, DT2 |
+| 1 | Nonce guard; perf backstop | RT3 (first half), OP2 |
+| 2 | In-process loader reads; elections promotion window | AR2 (infrastructure + first conversions) |
+| 3 | **S1** tokens and type, gates, design docs | Steel 2, 3, 17; OP1 |
+| 4 | **S2** controls and the chrome renderer | Steel 4, 6; renderer budget line |
+| 5 | **S3** the shell, with the entry diet | Steel 8, 9; RT1 |
+| 6 | **S4** spine and home | Steel 7, 10 (home, thread); AR2 on those reads; RT2 re-audit of `/` |
+| 7 | **S5** remaining recipes | Steel 10; AR2 on each page converted |
+| 8 | **S6** deletion | Steel 15.3; "nothing at rest" browser test |
+| 9 | **S7** long tail | Steel X2; `audit:pages` clean |
+| 10 | Remaining `*.queries.ts` on `contractQuery` | AR2 complete |
+| 11 | Census job and page | DT1 |
+| 12 | `packages/core`, then `packages/engine-source` | AR1 steps 1–2, AR4 |
+| 13 | API registry and dispatcher | AR3 |
+| 14+ | Features as packages; realtime; tiers | AR1 steps 3–5, OP3, DT2 |
+
+S2 and S3 may run in parallel (Steel section 16). Lines 10–11 do not touch
+the UI and can be taken whenever a Steel phase is in review.
 
 ## Ledger
 
 ```
 AR1: open
-AR2: open
+AR2: in-progress (contractQuery + in-process GET dispatch; lib/admin/admin-ops.queries.ts converted, 22 queries files to go)
 AR3: open
 AR4: open
 AR5: open
 RT1: open
 RT2: open
-RT3: open
+RT3: in-progress (phase 33: the cache plugin refuses to share a response whose enforced policy names a nonce, so enforcement cannot ship a shared nonce; the hash-only policy that restores the edge cache after cutover is open)
 RT4: open
 DT1: open
 DT2: open
 DT3: open
 OP1: open
-OP2: open
+OP2: done (phase 33: up to three SP/MP pairs when only wall-clock time is over; each pair reported)
 OP3: open (first audit D2 in progress)
 OP4: open (owner call: box-local store or a vendor)
 OP5: see Broadsheet B1, B6
 QA1: see Broadsheet Q1
 QA2: open (first audit F2)
-DS1: open (sequencing proposal for Broadsheet P1)
+DS1: done (Steel adopted; combined order of work above)
 ```

@@ -14,6 +14,8 @@
  * `lib/sitemap.server.ts`.
  */
 
+import { currentCycle } from '@/lib/elections/calendar';
+import { isFeedWindow } from '@/lib/elections/feed';
 import { games, apps } from '@/lib/catalog';
 
 /** One `<url>` in a sitemap. */
@@ -51,6 +53,13 @@ const VERTICAL_ROUTES: SitemapEntry[] = VERTICALS.flatMap((v) =>
     priority: verticalPriority(page),
   })),
 );
+
+/** `/elections`, promoted only inside the window the feed card uses (lib/elections/feed.ts). */
+export function electionsSitemapEntry(now: Date = new Date()): SitemapEntry {
+  return isFeedWindow(currentCycle(now), now)
+    ? { loc: '/elections', changefreq: 'hourly', priority: 0.8 }
+    : { loc: '/elections', changefreq: 'weekly', priority: 0.4 };
+}
 
 export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/', changefreq: 'daily', priority: 1.0 },
@@ -155,8 +164,9 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // Campaigns and standalone statements.
   { loc: '/black-lives-matter', changefreq: 'yearly', priority: 0.3 },
   { loc: '/covid', changefreq: 'yearly', priority: 0.3 },
-  // The election hub: results change by the minute on election night, so it is crawled often.
-  { loc: '/elections', changefreq: 'hourly', priority: 0.8 },
+  // The election hub: results change by the minute around Election Day, so it is crawled
+  // often then, and like any other reference page the rest of the two years.
+  electionsSitemapEntry(),
 
   // Engineering/design write-ups. Real content, and the kind that earns links.
   { loc: '/design', changefreq: 'monthly', priority: 0.5 },
