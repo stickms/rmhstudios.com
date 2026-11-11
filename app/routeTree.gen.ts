@@ -460,7 +460,6 @@ import { Route as ApiCommunityPagesIndexRouteImport } from './routes/api/communi
 import { Route as ApiCommunityPagesIdRouteImport } from './routes/api/community-pages/$id'
 import { Route as ApiContextNotesIndexRouteImport } from './routes/api/context-notes/index'
 import { Route as ApiCreatorStudioOverviewRouteImport } from './routes/api/creator/studio-overview'
-import { Route as ApiCronWebhooksRouteImport } from './routes/api/cron/webhooks'
 import { Route as ApiDailyPuzzlesLeaderboardRouteImport } from './routes/api/daily-puzzles/leaderboard'
 import { Route as ApiDailyPuzzlesPuzzleRouteImport } from './routes/api/daily-puzzles/puzzle'
 import { Route as ApiDailyPuzzlesResultsRouteImport } from './routes/api/daily-puzzles/results'
@@ -625,7 +624,6 @@ import { Route as ApiPreferencesNotificationsRouteImport } from './routes/api/pr
 import { Route as ApiPreferencesPresenceRouteImport } from './routes/api/preferences/presence'
 import { Route as ApiPresenceOnlineCountRouteImport } from './routes/api/presence/online-count'
 import { Route as ApiProfileLinksIndexRouteImport } from './routes/api/profile-links/index'
-import { Route as ApiProfileLinksReverifyRouteImport } from './routes/api/profile-links/reverify'
 import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
 import { Route as ApiProfileAnalyticsRouteImport } from './routes/api/profile/analytics'
 import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avatar'
@@ -3660,11 +3658,6 @@ const ApiCreatorStudioOverviewRoute =
     path: '/api/creator/studio-overview',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiCronWebhooksRoute = ApiCronWebhooksRouteImport.update({
-  id: '/api/cron/webhooks',
-  path: '/api/cron/webhooks',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiDailyPuzzlesLeaderboardRoute =
   ApiDailyPuzzlesLeaderboardRouteImport.update({
     id: '/api/daily-puzzles/leaderboard',
@@ -4500,11 +4493,6 @@ const ApiPresenceOnlineCountRoute = ApiPresenceOnlineCountRouteImport.update({
 const ApiProfileLinksIndexRoute = ApiProfileLinksIndexRouteImport.update({
   id: '/api/profile-links/',
   path: '/api/profile-links/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiProfileLinksReverifyRoute = ApiProfileLinksReverifyRouteImport.update({
-  id: '/api/profile-links/reverify',
-  path: '/api/profile-links/reverify',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProfileIdRoute = ApiProfileIdRouteImport.update({
@@ -8952,7 +8940,6 @@ export interface FileRoutesByFullPath {
   '/api/coins/tip': typeof ApiCoinsTipRoute
   '/api/community-pages/$id': typeof ApiCommunityPagesIdRouteWithChildren
   '/api/creator/studio-overview': typeof ApiCreatorStudioOverviewRoute
-  '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
@@ -9087,7 +9074,6 @@ export interface FileRoutesByFullPath {
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
   '/api/preferences/presence': typeof ApiPreferencesPresenceRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
-  '/api/profile-links/reverify': typeof ApiProfileLinksReverifyRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/analytics': typeof ApiProfileAnalyticsRoute
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
@@ -10310,7 +10296,6 @@ export interface FileRoutesByTo {
   '/api/coins/tip': typeof ApiCoinsTipRoute
   '/api/community-pages/$id': typeof ApiCommunityPagesIdRouteWithChildren
   '/api/creator/studio-overview': typeof ApiCreatorStudioOverviewRoute
-  '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
@@ -10445,7 +10430,6 @@ export interface FileRoutesByTo {
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
   '/api/preferences/presence': typeof ApiPreferencesPresenceRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
-  '/api/profile-links/reverify': typeof ApiProfileLinksReverifyRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/analytics': typeof ApiProfileAnalyticsRoute
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
@@ -11695,7 +11679,6 @@ export interface FileRoutesById {
   '/api/coins/tip': typeof ApiCoinsTipRoute
   '/api/community-pages/$id': typeof ApiCommunityPagesIdRouteWithChildren
   '/api/creator/studio-overview': typeof ApiCreatorStudioOverviewRoute
-  '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
@@ -11830,7 +11813,6 @@ export interface FileRoutesById {
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
   '/api/preferences/presence': typeof ApiPreferencesPresenceRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
-  '/api/profile-links/reverify': typeof ApiProfileLinksReverifyRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/analytics': typeof ApiProfileAnalyticsRoute
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
@@ -13080,7 +13062,6 @@ export interface FileRouteTypes {
     | '/api/coins/tip'
     | '/api/community-pages/$id'
     | '/api/creator/studio-overview'
-    | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/puzzle'
     | '/api/daily-puzzles/results'
@@ -13215,7 +13196,6 @@ export interface FileRouteTypes {
     | '/api/preferences/notifications'
     | '/api/preferences/presence'
     | '/api/presence/online-count'
-    | '/api/profile-links/reverify'
     | '/api/profile/$id'
     | '/api/profile/analytics'
     | '/api/profile/avatar'
@@ -14438,7 +14418,6 @@ export interface FileRouteTypes {
     | '/api/coins/tip'
     | '/api/community-pages/$id'
     | '/api/creator/studio-overview'
-    | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/puzzle'
     | '/api/daily-puzzles/results'
@@ -14573,7 +14552,6 @@ export interface FileRouteTypes {
     | '/api/preferences/notifications'
     | '/api/preferences/presence'
     | '/api/presence/online-count'
-    | '/api/profile-links/reverify'
     | '/api/profile/$id'
     | '/api/profile/analytics'
     | '/api/profile/avatar'
@@ -15822,7 +15800,6 @@ export interface FileRouteTypes {
     | '/api/coins/tip'
     | '/api/community-pages/$id'
     | '/api/creator/studio-overview'
-    | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/puzzle'
     | '/api/daily-puzzles/results'
@@ -15957,7 +15934,6 @@ export interface FileRouteTypes {
     | '/api/preferences/notifications'
     | '/api/preferences/presence'
     | '/api/presence/online-count'
-    | '/api/profile-links/reverify'
     | '/api/profile/$id'
     | '/api/profile/analytics'
     | '/api/profile/avatar'
@@ -16989,7 +16965,6 @@ export interface RootRouteChildren {
   ApiCoinsTipRoute: typeof ApiCoinsTipRoute
   ApiCommunityPagesIdRoute: typeof ApiCommunityPagesIdRouteWithChildren
   ApiCreatorStudioOverviewRoute: typeof ApiCreatorStudioOverviewRoute
-  ApiCronWebhooksRoute: typeof ApiCronWebhooksRoute
   ApiDailyPuzzlesLeaderboardRoute: typeof ApiDailyPuzzlesLeaderboardRoute
   ApiDailyPuzzlesPuzzleRoute: typeof ApiDailyPuzzlesPuzzleRoute
   ApiDailyPuzzlesResultsRoute: typeof ApiDailyPuzzlesResultsRoute
@@ -17117,7 +17092,6 @@ export interface RootRouteChildren {
   ApiPreferencesNotificationsRoute: typeof ApiPreferencesNotificationsRoute
   ApiPreferencesPresenceRoute: typeof ApiPreferencesPresenceRoute
   ApiPresenceOnlineCountRoute: typeof ApiPresenceOnlineCountRoute
-  ApiProfileLinksReverifyRoute: typeof ApiProfileLinksReverifyRoute
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
   ApiPushActionRoute: typeof ApiPushActionRoute
   ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
@@ -20831,13 +20805,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCreatorStudioOverviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/cron/webhooks': {
-      id: '/api/cron/webhooks'
-      path: '/api/cron/webhooks'
-      fullPath: '/api/cron/webhooks'
-      preLoaderRoute: typeof ApiCronWebhooksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/daily-puzzles/leaderboard': {
       id: '/api/daily-puzzles/leaderboard'
       path: '/api/daily-puzzles/leaderboard'
@@ -21984,13 +21951,6 @@ declare module '@tanstack/react-router' {
       path: '/api/profile-links'
       fullPath: '/api/profile-links/'
       preLoaderRoute: typeof ApiProfileLinksIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/profile-links/reverify': {
-      id: '/api/profile-links/reverify'
-      path: '/api/profile-links/reverify'
-      fullPath: '/api/profile-links/reverify'
-      preLoaderRoute: typeof ApiProfileLinksReverifyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/profile/$id': {
@@ -29825,7 +29785,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCoinsTipRoute: ApiCoinsTipRoute,
   ApiCommunityPagesIdRoute: ApiCommunityPagesIdRouteWithChildren,
   ApiCreatorStudioOverviewRoute: ApiCreatorStudioOverviewRoute,
-  ApiCronWebhooksRoute: ApiCronWebhooksRoute,
   ApiDailyPuzzlesLeaderboardRoute: ApiDailyPuzzlesLeaderboardRoute,
   ApiDailyPuzzlesPuzzleRoute: ApiDailyPuzzlesPuzzleRoute,
   ApiDailyPuzzlesResultsRoute: ApiDailyPuzzlesResultsRoute,
@@ -29953,7 +29912,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPreferencesNotificationsRoute: ApiPreferencesNotificationsRoute,
   ApiPreferencesPresenceRoute: ApiPreferencesPresenceRoute,
   ApiPresenceOnlineCountRoute: ApiPresenceOnlineCountRoute,
-  ApiProfileLinksReverifyRoute: ApiProfileLinksReverifyRoute,
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
   ApiPushActionRoute: ApiPushActionRoute,
   ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
