@@ -1,5 +1,12 @@
 # Plasmatic jelly: implementation contract
 
+> **Historical, superseded by Steel (2026-11-11).** This document describes the old
+> design ("Plasmatic Jelly"), which Steel replaces. It is kept for the record and no longer
+> describes how the site looks or what to build. The current design is
+> [`design.md`](../design.md) and the single source
+> [`docs/plans/2026-11-11-steel-design-implementation.md`](./plans/2026-11-11-steel-design-implementation.md).
+> Where this file disagrees with the Steel plan, the plan wins.
+
 Current as of 2026-11-08 (CSS-first jelly, PR 5). This contract **supersedes**
 [`liquid-glass-system.md`](liquid-glass-system.md) as the implementation authority for the
 site's material, and supersedes `design-language.md` §5.1.1 ("cursor reactivity is

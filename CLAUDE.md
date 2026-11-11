@@ -101,9 +101,9 @@ classes are eslint `local/no-raw-palette-color`, `local/no-hardcoded-radius`,
 `local/no-transition-all`, `local/no-dead-animate-classes`, scoped by
 `eslint-local-rules/design-scope.js`) ·
 the executable gates in `lib/__tests__/` that are the **authority** for
-`docs/design-language.md` §13 · eslint on the changed files · `tsc --noEmit` ·
+`design.md` and the Steel plan §17 · eslint on the changed files · `tsc --noEmit` ·
 the generated-docs freshness checks. Then it prints the handful of things no
-script can check — both themes, the role-less switcher that is really a
+script can check — both editions, the role-less switcher that is really a
 tab strip — because a green gate means you did not regress an enforced rule,
 never that the change looks right.
 
@@ -158,48 +158,32 @@ _why_.
    the client with `api(contract, input)` from `@/lib/contract/client`. New code does not add raw
    `fetch('/api/…')` strings — `lib/__tests__/raw-api-fetch-ratchet.test.ts` only lets that count fall.
    Worked example: `lib/playtime/playtime.contract.ts`.
-4. **Design language:** every color/radius/shadow/font via `--site-*` token
-   utilities (`bg-site-surface`, `rounded-site`, …) so every theme works;
-   full-screen apps use the parallel `--app-*` contract in
-   `components/shared/app-theme.css`. Use `components/ui/` primitives,
-   `PageLayout`, `lib/motion.ts` tokens, lucide icons, sonner toasts. Surfaces
-   take a **glass elevation class by role** (`.glass-fill` repeated cards ·
-   `.glass-pane` singular panels · `.glass-chrome` sticky chrome ·
-   `.glass-overlay` floating UI · `.glass-inset` fields), not a hand-rolled
-   `bg-site-surface border rounded-site` box — the class is what carries the
-   material and what the degradation tiers switch off. The material is
-   **Plasmatic Jelly**: hazy translucent slabs with a soft molded rim, a haze
-   that drifts when woken, a soft body under hover/press, and an electric arc on
-   click. It is **static CSS plus effects that wake on an event** — at rest a
-   page runs no frame loop, canvas or worker for it. The role classes keep
-   their `glass-*` names ("glass" is the role, "jelly" the material). The rim,
-   the woken haze and the soft body are CSS (`app/jelly-material.css`), with one
-   delegated pointer variable (`lib/jelly/pointer-vars.ts`); the click arc is
-   `lib/jelly/arcs/`, imported on the first press; all under one policy,
-   `lib/jelly/tiers.ts`. **No `backdrop-filter` in any glass role.** Never add
-   per-component pointer loops, deformation, arc code, `infinite` keyframes or
-   animated root custom properties — components take jelly through role classes
-   and `data-jelly*` attributes only. **Layout never changes**: hosts squash
-   within 4px/3% and an arc nudges the struck hosts ≤1.5px. The globe stays a
-   dough simulation (`lib/dough.ts`).
-   **Corner shape:** every rounded corner is a continuous-curvature squircle where the browser supports `corner-shape`
-   (`app/globals.css` `@layer base`); circles and pills stay circular, so any `border-radius: 50%` / ≥ 99px / pill
-   token needs `corner-shape: round` beside it (Tailwind's `rounded-full` already has it) —
-   `lib/__tests__/corner-shape.test.ts` fails the build otherwise.
-   Its full rules are
-   [Design system: Plasmatic Jelly](#design-system-plasmatic-jelly) below; the
-   contract is `docs/plasmatic-jelly-system.md`. The statement of the language is
-   [`design.md`](design.md) at the root; **before any UI commit** read
-   [`docs/design-language.md`](docs/design-language.md) §0 (the definition of
-   done) and the checklist in
-   [`docs/page-consistency.md`](docs/page-consistency.md). Part of this is
-   CI-enforced — `lib/__tests__/design-consistency.test.ts` fails the build on
-   hand-rolled tab strips and floating UI below L4, and the eslint rules
-   `local/no-raw-palette-color`, `local/no-hardcoded-radius`,
-   `local/no-transition-all` and `local/no-dead-animate-classes` fail it on raw
-   palette colours, hardcoded radii, `transition-all` and `tailwindcss-animate`
-   classes (that plugin is not installed, so they compile to nothing) — and `pnpm check:consistency`
-   is how you find that out **before** you commit rather than in CI.
+4. **Design language:** **Steel** — [`design.md`](design.md) is the short statement;
+   the single source for every value and rule is
+   [`docs/plans/2026-11-11-steel-design-implementation.md`](docs/plans/2026-11-11-steel-design-implementation.md)
+   (cite its rule IDs: R1, T3, S6, K10…). Every color/radius/font via `--site-*`
+   token utilities (`bg-site-bg`, `border-site-border`, `text-site-text-muted`,
+   `rounded-site`, …) — only the section-2 tokens exist, and the `local/no-raw-palette-color`
+   and `local/no-hardcoded-radius` rules fail anything else; full-screen apps use the
+   parallel `--app-*` contract in `components/shared/app-theme.css`. **Flat first (R1):** no
+   gradient, blur, glow, shadow or translucency anywhere on the site tier except the three
+   chrome elements (the globe, the toggle thumb, the slider thumb; R2). **Rules before
+   boxes (R3):** separate things with a 1px rule or with space; a bordered box is a control
+   or a picture. One ink primary button per view (R4). Type is the seven `t-*` classes
+   (`t-title`, `t-heading`, `t-body`, `t-post`, `t-prose`, `t-label`, `t-meta`;
+   `app/styles/steel-type.css`), weights 400/500/600, no letterspaced capitals. Use
+   `components/ui/` primitives, `PageLayout`, lucide icons, sonner toasts. The role classes
+   `glass-fill`/`glass-pane`/`glass-chrome`/`glass-overlay`/`glass-inset`/`glass-interactive`
+   still exist as NAMES and are remapped to flat surfaces (`app/styles/steel-surfaces.css`,
+   S6); do not add new uses, and do not rebuild the material (the old Plasmatic Jelly
+   stylesheets and tokens are deleted). **Before any UI commit** read
+   [`design.md`](design.md) and the plan's section 0 to 5; the rest of the plan (controls,
+   spine, globe, shell, recipes) arrives phase by phase (its section 16). Part of this is
+   CI-enforced — `lib/__tests__/steel-tokens.test.ts`, `steel-flat.test.ts` and
+   `design-consistency.test.ts` (hand-rolled tab strips, floating UI below the overlay tier)
+   plus the eslint rules `local/no-transition-all` and `local/no-dead-animate-classes` — and
+   `pnpm check:consistency` is how you find that out **before** you commit rather than in CI.
+   `docs/design-language.md` and `docs/plasmatic-jelly-system.md` are historical.
 5. **i18n:** all user-facing strings through `t("key", { defaultValue })`;
    then `pnpm i18n:extract`. English is authoritative. Two silent failure modes
    to know: **(a)** `defaultValue` is only used when a key is MISSING, so
@@ -219,12 +203,12 @@ _why_.
    so don't hand-roll `og:*` tags in a route. Point at a dynamic card with
    `ogCardPath(kind, id)`; cards are rendered by `lib/og/` and documented in
    [`docs/open-graph.md`](docs/open-graph.md).
-7. **Accessibility:** Radix/native primitives, focus-visible rings are
-   global, skip link exists. Motion follows the shared token scheme; the retired
-   reduced-motion setting and OS overrides must not return. The jelly's ambient
-   motion and arcs have their own material switches (`jellyMotion`,
-   `electricArcs`; WCAG 2.2.2/2.3.1) read only by `lib/jelly/tiers.ts`. Test
-   `light` and `graphite` themes, and jelly motion `still`.
+7. **Accessibility:** Radix/native primitives, skip link exists, and the focus ring is
+   global and fixed (K10): `outline: 2px solid var(--site-text); outline-offset: 2px`. Motion
+   is a response to input and ends within 360 ms (R5, section 11); the retired
+   reduced-motion setting and OS overrides must not return (the plan's M7 is the one
+   reduced-motion rule). Every text pair holds 4.5:1 (A1). Test both editions — Day
+   (`style-default`) and Night (`style-graphite`) — at 390px and 1280px, and once in `ar`.
 8. **Security:** zod-validate all input; rate-limit writes/AI/uploads;
    user-supplied URL fetches through `lib/ssrf-guard.server`; CSP/security
    headers live in `deploy/apache/rmhstudios.conf` (the production front door;
@@ -243,180 +227,106 @@ _why_.
     `lib/__tests__/ts-escape-hatch-ratchet.test.ts`; the 26 `@ts-nocheck` files are
     `components/velum2099/game/` and must not grow.
 
-## Design system: Plasmatic Jelly
+## Design system: Steel
 
-Every UI change must comply with this. It is the owner's #989 spec (dormant
-plasma, an RGB-led edge, a lit press dot, electric charge) as shipped by the
-CSS-first migration (2026-11-07 / 08; design:
-`docs/superpowers/specs/2026-11-07-css-first-jelly-design.md`): the material moved
-from a WebGL engine, a JavaScript physics service and an ambient clock to **static
-CSS plus effects woken by an event**, so a page at rest does no work. The
-implementation contract is
-[`docs/plasmatic-jelly-system.md`](docs/plasmatic-jelly-system.md); constants live
-in `lib/jelly/tiers.ts` and `lib/jelly/soft-policy.ts` with CSS tokens in
-`app/globals.css` and `app/jelly-material.css` mirroring the ones CSS needs — never
-re-derive one in a component.
+Every UI change must comply with this. It is the owner's approved direction of 2026-11-11,
+specified exactly in
+[`docs/plans/2026-11-11-steel-design-implementation.md`](docs/plans/2026-11-11-steel-design-implementation.md)
+and summarised in [`design.md`](design.md). It replaces Plasmatic Jelly and the Broadsheet
+brief, whose documents are historical. **Values are exact: do not round, substitute or
+improve them. Section 18 of the plan lists decisions that are still open — do not resolve
+them by assumption; ask.**
 
-**Identity: silent, sleek, frontier AI.** Calm, never busy. Near-black void
-(`--site-bg`), graphite (`--site-surface-opaque`), white ink, and ONE electric
-accent (`--site-accent`), which is also the plasma colour (the haze's second plasma
-hue only ever appears inside the gel, never as UI colour). No gradients on the
-ground, no neon or glowing type, no sci-fi illustration (robots, brains, circuits,
-sparkles). Copy is short and literal ("Deploy model", "Latency 42 ms"); data is
-Geist Mono, everything else Geist. **No eyebrows** (owner decision, 2026-11-03): no
-letterspaced all-caps labels anywhere on the main site — a group's heading is
-`site-section-label`, the line over a page heading is `site-kicker` (both sentence
-case), and an announcement's category is a soft chip (`.rmhark__kicker`); the headline
-carries the weight. One ink-gel primary action (`<Button variant="signal">`) per view.
+**Identity: a professional tool that happens to have one remarkable object in it.** A
+flat, neutral page in one typeface (Geist; Geist Mono for timestamps, counts and small
+data), divided by hairline rules. Two editions, Day (`:root`, `.style-default`) and Night
+(`.style-graphite`), one set of `--site-*` names. No accent colour: the accent is the ink.
+Content hangs on the spine, a 1px vertical line (arrives in phase 4). Copy is short and
+literal; no exclamation marks, no emoji in site chrome, a verb or a verb and a noun on a
+button; every string through `t()`.
 
-**The material, in physical layers (all drawn by shared services):**
+**The five rules** (cite the ID): **R1** flat first, solid token colours, no gradient,
+blur, glow or translucency outside the chrome; **R2** chrome in exactly three places — the
+navigation globe, the toggle thumb, the slider thumb — and nothing else is chrome (not
+buttons, bars, cards, avatars or icons); **R3** rules before boxes; **R4** one ink primary
+per view; **R5** nothing moves at rest (no idle animation, frame loop, canvas, worker or
+observer for decoration; motion is a response to input and ends within 360 ms).
 
-1. **Gel:** hazy and translucent, darkening slightly toward its base
-   (`--gel-body` → `--gel-depth`); the primary action is ink gel (`--gel-ink`,
-   `--on-ink`).
-2. **Haze, woken by the hand:** a low-contrast flow inside every surface —
-   currents, faint plasma at the crests — calm behind text (≤12px/s, features
-   ≥120px). It is one transform-only layer on the host's own `::after` that has
-   **no box at rest** and drifts only while the host is hovered or holds keyboard
-   focus. A floor of grain (`public/jelly/haze-tile.webp`) stays under every role,
-   so a surface reads as jelly with no JavaScript. Never a canvas, never a node
-   injected into a host.
-3. **Plasma, inside and dormant:** a core and filaments clipped inside the gel,
-   invisible at rest. Hover wakes it to `--plasma-wake` (a radial gradient at the
-   pointer, `--px` / `--py`); press, focus and clicks brighten it. Plasma never
-   draws an outline.
-4. **Edge, soft and RGB-tinted:** a static CSS rim, `--gel-glow` — one soft inset
-   glow (`--gel-bevel` × `--gel-shoulder` wide) whose colour carries a red/blue
-   tint, under a lit top hairline. The rim is **molded**, not drawn: the slab
-   rises out of the ground over a widened shoulder, lit on the light side, with a
-   feathered silhouette (`--gel-feather`) — no hairline outline, no border. The
-   1px Fresnel edge (`--gel-fresnel`) returns only where the feather is off. There
-   is no shader rim and no live refraction of page content on site surfaces; the
-   liquid globe keeps its own shader and refracts the page snapshot
-   (`lib/liquid/glass/scene-feed.ts`).
-5. **No broad gloss band or glint across the face.** Shine lives at the edges
-   and in the press dot.
+**Tokens (plan section 2; `app/globals/tokens-themes.css`; pinned by
+`lib/__tests__/steel-tokens.test.ts`).** `--site-bg` (page), `--site-surface` (controls and
+overlays only), `--site-bg-subtle` (hover fill, picture placeholder; `--site-surface-hover`
+is the same value), `--site-border` (every rule and control border), `--site-text` (ink),
+`--site-text-muted`, `--site-accent` (= ink) and `--site-accent-fg`, `--site-danger`,
+`--site-success`, radii `--site-radius` 8px and `--site-radius-sm` 4px (`--site-control-radius`
+8px), and `--chrome-flat` / `--chrome-1`…`-6` for the chrome. **Deleted (T3, Appendix A):**
+every glass, jelly, arc and shadow token, `--site-surface-opaque` (use `--site-surface`),
+`--site-border-bright` (use `--site-text`), `--site-text-dim` (use `--site-text-muted`),
+`--site-accent-dim` (use `--site-bg-subtle`); there are no shadow tokens (T4: the only
+shadows are the globe's and an overlay's, `0 8px 24px rgba(0,0,0,.12)`, Night `.5`).
+`lib/__tests__/steel-flat.test.ts` fails on any reference. Do not introduce a lighter grey
+for text (T1).
 
-**Physics (the soft body is CSS springs, `app/jelly-material.css` §8; numbers in `lib/jelly/soft-policy.ts`):**
+**Type (section 3; `app/styles/steel-type.css`).** `t-title` 28/1.1 600 -0.025em ·
+`t-heading` 17/1.3 600 -0.01em · `t-body` 14/1.45 400 · `t-post` 15/1.5 400 · `t-prose`
+16/1.6 400 · `t-label` 13/1.3 600 muted · `t-meta` 12/1.3 mono 400 muted. Weights 400, 500
+(controls), 600, never 700 or above (Y1); no letterspaced capitals (Y2); links inside
+running text are underlined, navigation words are not (Y3).
 
-- **Soft under the hand.** Hover plumps a card and dents a control slightly
-  (fine pointers only); press squashes (`scale` only); release springs back with
-  a wobble and settles in ~1.1s. Every pose is capped by the host's size
-  (`--jelly-s`) so an edge never travels more than 4px and a scale never changes
-  more than 3%; hit areas never move; layout never changes. A card whose content
-  is a plain link squashes as the card; a `data-jelly-press-body` (`JellyGroup`,
-  the top bar, the selection bar) squashes as one body when any member is pressed.
-- **One spring source, no per-component curves.** Hover, press and release ride
-  the generated `--spring-*` curves (`linear(...)` sampled from the soft body's
-  own springs, `lib/jelly/spring-curves.ts`) through the `--jelly-spring-t` hook
-  — a host's transition list ends with it. A component never writes its own ease
-  or duration on `scale` / `translate` / `transform`.
-- **Press = a lit dot.** A press shows a specular **light dot** (`--gel-specular`)
-  and a plasma brightening under the pointer, radial gradients at `--px` / `--py`
-  (`lib/jelly/pointer-vars.ts`, the one delegated pointer variable). There is no
-  lens, no SVG filter on a body and no outline bulge; the old shader dent,
-  rubber-band stretch and lattice silhouette were deleted.
-- **Neighbours:** only a click arc nudges the struck hosts (≤1.5px, `translate`,
-  `lib/jelly/arcs/nudge.ts`). There is no Coulomb attraction and no neighbour nudge
-  on release.
-- **Electricity (`lib/jelly/arcs/`) is a click effect.** The arc service is
-  imported on the first press (`lib/jelly/arc-lazy.ts`), draws one burst on a
-  lazily created canvas, deposits charge on the clicked body that hops to a
-  neighbour in reach with half of it, and is removed 10s after the last click.
-  Each arc gets an impact, rim light and a refracted, RGB-split stub inside the
-  gel. One flash ledger caps every flash at ≤3 onsets/s site-wide and a
-  combined-coverage cap bounds the stack (WCAG 2.3.1); arcs never land on fields,
-  overlays or toasts. **Ambient arcs between nearby surfaces no longer exist.**
-- **Never fake a law:** no keyframe wobble, `@keyframes` glow, `transition:
-transform` with an ease of its own on a body, untriggered flicker, ripple, or a
-  second spring formula. The only sanctioned keyframes are the woken-haze drift
-  (`jelly-drift`). A new behaviour is a new rule in the material
-  or a new force in the arc service, with a constant for every number.
+**Surfaces (section 5).** Content sits directly on `--site-bg`; a list is rows on
+`border-bottom: 1px solid var(--site-border)`; columns are divided by a 1px vertical rule;
+pictures and placeholders are `--site-bg-subtle` with a 1px border and 8px radius. An
+overlay (menu, dialog, popover) is the only raised surface: `--site-surface`, 1px border,
+8px radius, the overlay shadow, **no backdrop blur**; the scrim behind a dialog is
+`--site-bg` at 80%. Controls (section 6) are 8px radius, 1px border, 500 weight, 14px
+text, 36px high (44px on touch). **No `backdrop-filter`, `filter`, gradient, `mix-blend-mode`
+or `mask` on any site-tier element (B2)** — `steel-flat.test.ts` enforces the first three, with a
+named, shrinking baseline of files that later phases rewrite. No `corner-shape` squircle on
+the site tier (plain 8px and 4px arcs); the games and apps keep theirs inside `html.app-route`.
 
-**What the migration gave up** (accepted, owner 2026-11-07): live refraction of
-page content at the rim and in the press dent, the outline bulging past a host
-(the lattice silhouette), ambient arcs, Coulomb attraction, neighbour nudges, haze
-that moves at rest, and (at rest) the red-toward-the-light / blue-away rim offset
-and the plasma subsurface tint. Don't restore them without a new design.
+**Focus (K10):** `outline: 2px solid var(--site-text); outline-offset: 2px` on every
+focusable element, text fields included. **Motion (section 11):** hover and press fills 90
+ms, tab underline and toggle slide 140 ms, chrome activation 280 ms, globe 360 ms, overlay
+160 ms opacity with no scale or slide; nothing else animates — no page entrances, list
+staggers, hover lifts, springs, parallax or shimmer. Route changes swap content with no
+transition.
 
-**Layout:** bodies sit at least `--space-4` (16px) apart. Leave `--jelly-margin`
-(16px) unclipped round every body; no `overflow: hidden` directly around one.
-Cards `--site-radius` (32px), controls `--site-radius-sm` (24px — a pill up to 48px tall;
-the scale is concentric in 8px steps). **A cluster of related controls is one body,
-not a row of pills:** `<JellyGroup>` (`components/ui/jelly-group.tsx`) is the parent
-and its members are flat (no edge or body of their own); the selected member is a
-quiet flat mark lying on it (a neutral capsule with a hairline ring in `Tabs` on the
-main site; a feathered glow in `JellyGroup`). A lone control may
-still be a pill. A dropdown is one rounded slab: its rows are plain
-text with no fill, edge or radius, and hover wakes a soft glow behind the text.
-Games and apps keep their own design scheme (e.g. the raised tab thumb). Game play-fields are
-`data-jelly-zone="playfield"` (excluded); ambient motion and arcs stop while a
-game is playing. **Nested bodies don't stack edges:** a button in a card or a
-capsule in its track takes its own soft `--gel-glow` inside its parent's padding;
-keep the 16px gap and margin so the squash and the focus ring are never cut off.
+**What phase 1 left in place, on purpose.** The old JS runtime (`lib/jelly`, `lib/liquid`,
+`components/radial`, the liquid globe, `hooks/useJellyPointer`, the page-motion entrances)
+is still wired and still runs, with its stylesheets gone: it is deleted in phases 3 and 6
+(plan 15.3). Do not extend it, and do not add a new consumer. `components/ui` primitives
+keep their old variants until phase 2; the `glass-*` class names stay until phases 3 to 5.
+The user-theme and accent-preset systems (`lib/themes`, `lib/appearance.ts`) still write
+`--site-*` overrides; whether they survive two fixed editions is an owner decision.
 
-**Motion is smooth at both ends and interruptible.** Tweens ride one curve,
-`--ease-smooth` / `EASE.smooth` (leaves at zero speed, lands softly) — never
-an ease-out that starts at full speed. The shared framer `transition` /
-`exitTransition` are zero-bounce springs, so a state flipped mid-flight carries
-its speed into the new target. Enters and exits are CSS **transitions** with
-`@starting-style` (plus a no-op presence animation so Radix keeps the node), not
-keyframe pairs: a menu, dialog or sheet closed while it is still opening turns
-around from the frame it is on.
-
-**Accessibility and degradation stay central** (`lib/jelly/tiers.ts`): print and
-the app tier's own high-contrast mode render opaque `--site-surface-opaque` with a
-solid edge (press feedback stays); components never branch on them. **There is no
-low-end material tier** (the `perf-lite` class was removed 2026-11-08): a
-software-rendering browser, Data Saver or a weak device gets the full material, and
-`jellyTier()` is `full | coarse | handheld | off`. What remains of "can this machine
-hold it" is a capability read, `lib/low-end.ts`, which is never stamped on `<html>` and
-never read by the material: games, the app tier, RUM and the eversion's mesh tier ask
-it, and the liquid globe keeps its CSS fallback for a remembered software renderer
-(`softRenderDetected()`). The site has no high-contrast theme and no
-forced-colors / reduced-transparency fallback: they were removed (2026-10-27). Users control the material with
-`jellyMotion` (Lively / Calm / Still — Still stops all ambient motion, WCAG
-2.2.2; configured in Appearance) and `electricArcs` (Full / Clicks / Off).
-Direct hover, press and scroll reactions remain active when ambient motion is Still.
-The retired reduced-motion setting and OS overrides do not return. Text holds
-4.5:1 on gel, over haze and over plasma in every theme; the focus ring is
-`--focus-ring`, solid 2px, never the plasma glow. Plasma, haze and arcs are
-`aria-hidden` decoration, never the only signal of state.
+**Layout (plan section 9, phase 3):** phone one column and the globe the only fixed
+element; desktop sidebar 220px · content · margin 320px, capped at 1240px. Until then the
+radial shell stands. Full-screen games and apps are outside the shell and keep their own
+look (L8): `components/shared/app-theme.css` carries the literal palette the app tier read
+from the old site tokens, so a change to a site token never moves an app.
 
 **iOS Safari bars (never bring the coloured bands back):** iOS 26 Safari fills the
 strips behind its status bar and floating tab bar from any `position: fixed` / sticky
 layer at a screen edge, as one flat band. So: no `theme-color` on iOS, no full-viewport
-fixed decoration (hide it on `html.ios-webkit`; the root carries the canvas), and
-nothing pinned flush to the top or bottom (float it off the edge like `.radial-topbar`).
-**One deliberate exception (owner, 2026-10-29):** below 640px the top bar is a full-bleed bar
-(`.radial-topbar.glass-chrome` in `radial.css`), square-cornered, carrying
-`env(safe-area-inset-top)` in its own height and in `--rad-topbar-h` — it IS the strip behind
-the status bar, in the page's own glass, not a stray flat band. Don't turn it back into a pill
-on phones, and don't take it as licence for any other flush layer. While the globe menu is open
-the **root** canvas carries the veil's tint (`html.ios-webkit:has(.radial-hub[data-phase='open'])`)
-so the strips behind the bars take the menu's colour with no fixed layer at the edge.
-`lib/__tests__/ios-edge-contract.test.ts` asserts the invariants and ratchets any new
-edge-pinned layer; `pnpm audit:pages` finds the rest in a real browser. Both are
-described in [`docs/page-consistency.md`](docs/page-consistency.md) §"How consistency
-is enforced".
+fixed decoration (hide it on `html.ios-webkit`; the root carries the flat `--site-bg`
+ground), and nothing pinned flush to the top or bottom (float it off the edge like
+`.radial-topbar`). **One deliberate exception (owner, 2026-10-29):** below 640px the top bar
+is a full-bleed bar (`.radial-topbar.glass-chrome` in `radial.css`), square-cornered,
+carrying `env(safe-area-inset-top)` in its own height and in `--rad-topbar-h`. Don't turn
+it back into a pill on phones, and don't take it as licence for any other flush layer
+(phase 3 replaces the bar with the globe). `lib/__tests__/ios-edge-contract.test.ts`
+asserts the invariants and ratchets any new edge-pinned layer; `pnpm audit:pages` finds the
+rest in a real browser. Both are described in
+[`docs/page-consistency.md`](docs/page-consistency.md) §"How consistency is enforced".
 
-**Performance:** a page at rest runs **zero** `requestAnimationFrame` callbacks,
-canvases, workers and snapshot captures for the site material. One frame driver
-(`lib/jelly/frame.ts` — the one `requestAnimationFrame`; services register
-through `drive(fn)`), one window pointer listener fan-out, one overlay canvas
-(arcs only, created on a click). Hover wakes the haze by attaching its animation
-to one host's `::after`; nothing is promoted to a compositor layer at rest. The
-only ambient clock left is the liquid globe's: it draws in a
-worker (`components/radial/globe-worker.ts`)
-at 60 Hz when you are engaged with the globe (a pointer at it, a press, keyboard focus,
-or the page scrolling under it and kicking its spin), a 15 Hz floor otherwise (30 / 7 on
-handhelds), and 0 when the tab is hidden or unfocused, the globe is off screen,
-the tier is degraded, or Jelly motion is Still (`JELLY_BUDGETS` in
-`lib/jelly/tiers.ts`). The page snapshot the globe refracts is taken only on load,
-a route change, a theme change and a resize (≥1.5s apart). Rects are read in
-scroll/resize/activation, never per frame or pointer event; nothing writes custom
-properties to `<html>` per frame; never a filter or `backdrop-filter` on a
-full-viewport layer.
+**Performance (plan section 13).** The shell renders complete with scripting off; the only
+script attached to it is the chrome renderer, loaded at idle. The site tier creates exactly
+one WebGL context (the chrome renderer) and no worker, `MutationObserver` or decorative
+`ResizeObserver`, and no `requestAnimationFrame` callback is pending at rest (B3). Fonts are
+Geist and Geist Mono only, self-hosted. **The site-tier CSS gets smaller in every phase (B5):**
+the ledger in section 17 of the plan records the built `site-tier-*.css` and the critical-path
+JavaScript for `/` before phase 1 and after each phase; `pnpm -s exec tsx
+scripts/check-bundle-budget.ts` must pass. Until phases 3 and 6 land, the old globe still
+draws in its worker; that is the one ambient clock left and it goes with `components/radial`.
 
 ## Runtime & deploy reality (summary — details in docs/architecture.md)
 
