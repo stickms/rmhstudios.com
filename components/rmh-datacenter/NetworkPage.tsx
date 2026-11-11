@@ -108,7 +108,7 @@ export default function NetworkPage() {
           </p>
           <div className="glass-fill mt-4 overflow-x-auto">
             <table className="w-full min-w-xl border-collapse text-sm">
-              <caption className="border-b border-site-border p-3 text-left text-xs text-site-text-dim">
+              <caption className="border-b border-site-border p-3 text-left text-xs text-site-text-muted">
                 {t('net-matrix-caption', {
                   defaultValue: 'Median round-trip time, milliseconds · 90-day sample',
                 })}
@@ -148,7 +148,7 @@ export default function NetworkPage() {
                           key={to}
                           className={
                             ms === null
-                              ? 'border-b border-site-border p-3 text-right text-site-text-dim'
+                              ? 'border-b border-site-border p-3 text-right text-site-text-muted'
                               : 'border-b border-site-border p-3 text-right tabular-nums text-site-text-muted'
                           }
                         >

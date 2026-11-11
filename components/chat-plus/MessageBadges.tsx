@@ -24,7 +24,7 @@ export function MessageBadges({
   return (
     <div
       className={cn(
-        'mb-0.5 flex items-center gap-2 px-1 text-caption text-site-text-dim',
+        'mb-0.5 flex items-center gap-2 px-1 text-caption text-site-text-muted',
         className,
       )}
     >
@@ -66,7 +66,7 @@ export function ThreadChip({
       type="button"
       onClick={() => openThread({ groupId, parentId: messageId })}
       className={cn(
-        'mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-site-accent hover:bg-site-accent-dim focus-visible:ring-2 focus-visible:ring-site-accent',
+        'mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-site-accent hover:bg-site-bg-subtle focus-visible:ring-2 focus-visible:ring-site-accent',
         className,
       )}
     >
@@ -80,7 +80,7 @@ export function ThreadChip({
 export function SeenIndicator({ className }: { className?: string }) {
   const { t } = useTranslation('f-messaging');
   return (
-    <p className={cn('mt-0.5 px-1 text-right text-micro text-site-text-dim', className)}>
+    <p className={cn('mt-0.5 px-1 text-right text-micro text-site-text-muted', className)}>
       {t('seen', { defaultValue: 'Seen' })}
     </p>
   );

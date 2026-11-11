@@ -99,7 +99,7 @@ export function FeedControlsSettings() {
         description={t('demoted-desc', { defaultValue: 'Accounts you asked to see less of.' })}
       >
         {signals.lessAuthors.length === 0 ? (
-          <p className="text-sm text-site-text-dim">{t('none', { defaultValue: 'None' })}</p>
+          <p className="text-sm text-site-text-muted">{t('none', { defaultValue: 'None' })}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {signals.lessAuthors.map((id) => (
@@ -158,7 +158,7 @@ function TagSection({
         </Button>
       </div>
       {tags.length === 0 ? (
-        <p className="text-sm text-site-text-dim">{t('none', { defaultValue: 'None' })}</p>
+        <p className="text-sm text-site-text-muted">{t('none', { defaultValue: 'None' })}</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => (

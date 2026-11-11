@@ -66,7 +66,7 @@ function CalibrationCard() {
       {!cal ? (
         <Spinner size={16} />
       ) : !cal.enough ? (
-        <p className="text-sm text-site-text-dim">
+        <p className="text-sm text-site-text-muted">
           {t('not-enough', {
             defaultValue: 'Not enough data yet: {{n}} of {{min}} resolved forecasts.',
             n: cal.n,
@@ -77,11 +77,11 @@ function CalibrationCard() {
         <div className="flex items-center gap-4 flex-wrap">
           <CalibrationCurve buckets={cal.buckets} />
           <dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 text-sm">
-            <dt className="text-site-text-dim">{t('forecasts', { defaultValue: 'Forecasts' })}</dt>
+            <dt className="text-site-text-muted">{t('forecasts', { defaultValue: 'Forecasts' })}</dt>
             <dd className="tabular-nums">{cal.n}</dd>
-            <dt className="text-site-text-dim">{t('brier', { defaultValue: 'Brier score' })}</dt>
+            <dt className="text-site-text-muted">{t('brier', { defaultValue: 'Brier score' })}</dt>
             <dd className="tabular-nums">{cal.brier.toFixed(3)}</dd>
-            <dt className="text-site-text-dim">{t('skill', { defaultValue: 'Skill vs 50%' })}</dt>
+            <dt className="text-site-text-muted">{t('skill', { defaultValue: 'Skill vs 50%' })}</dt>
             <dd className="tabular-nums">{Math.round(cal.skill * 100)}%</dd>
           </dl>
         </div>
@@ -109,12 +109,12 @@ function SeasonCard({ isAdmin }: { isAdmin: boolean }) {
       {!data ? (
         <Spinner size={16} />
       ) : !board ? (
-        <p className="text-sm text-site-text-dim">
+        <p className="text-sm text-site-text-muted">
           {t('no-season', { defaultValue: 'No season is running yet.' })}
         </p>
       ) : (
         <>
-          <p className="text-sm text-site-text-dim">
+          <p className="text-sm text-site-text-muted">
             {t('season-meta', {
               defaultValue:
                 '{{title}}: {{resolved}} of {{total}} markets resolved. Points only, no coins.',
@@ -124,18 +124,18 @@ function SeasonCard({ isAdmin }: { isAdmin: boolean }) {
             })}
           </p>
           {board.leaderboard.length === 0 ? (
-            <p className="text-sm text-site-text-dim">
+            <p className="text-sm text-site-text-muted">
               {t('no-scores', { defaultValue: 'Scores appear once a season market resolves.' })}
             </p>
           ) : (
             <ol className="flex flex-col gap-2">
               {board.leaderboard.map((r, i) => (
                 <li key={r.userId} className="flex items-center gap-3 text-sm">
-                  <span className="w-6 text-site-text-dim tabular-nums">{i + 1}</span>
+                  <span className="w-6 text-site-text-muted tabular-nums">{i + 1}</span>
                   <span className="flex-1 min-w-0 truncate">
                     {r.user?.name ?? r.user?.handle ?? ''}
                   </span>
-                  <span className="text-xs text-site-text-dim tabular-nums">
+                  <span className="text-xs text-site-text-muted tabular-nums">
                     {t('scored', { defaultValue: '{{n}} scored', n: r.scored })}
                   </span>
                   <span className="w-16 text-right font-semibold tabular-nums">{r.points}</span>

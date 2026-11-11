@@ -244,11 +244,11 @@ export function NotificationsPopover({
                               <span className="text-site-text-muted">{body}</span>
                             </span>
                             {n.preview && n.type !== 'SYSTEM' && (
-                              <span className="mt-0.5 block truncate text-xs text-site-text-dim">
+                              <span className="mt-0.5 block truncate text-xs text-site-text-muted">
                                 {n.preview}
                               </span>
                             )}
-                            <span className="mt-0.5 block text-caption text-site-text-dim">
+                            <span className="mt-0.5 block text-caption text-site-text-muted">
                               <RelativeTime date={n.createdAt} format={relativeTimeShort} />
                             </span>
                           </span>

@@ -119,7 +119,7 @@ function AdminPredictionsPage() {
                     <div className="min-w-0">
                       <h3 className="text-base font-semibold text-site-text">{m.title}</h3>
                       {m.description && <p className="mt-1 text-sm text-site-text-muted">{m.description}</p>}
-                      <p className="mt-2 text-xs text-site-text-dim">
+                      <p className="mt-2 text-xs text-site-text-muted">
                         {m.creator ? `@${m.creator.handle ?? m.creator.name ?? t('user-fallback', { defaultValue: 'user' })}` : t('system', { defaultValue: 'system' })}
                         {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: new Date(m.closesAt).toLocaleString() })}` : ''}
                       </p>
@@ -152,7 +152,7 @@ function AdminPredictionsPage() {
                         {m.title}
                         {m.isAiGenerated && <Sparkles className="size-4 shrink-0 text-site-accent" aria-label={t('ai-generated', { defaultValue: 'AI generated' })} role="img" />}
                       </h3>
-                      <p className="mt-1 text-xs text-site-text-dim">
+                      <p className="mt-1 text-xs text-site-text-muted">
                         {t('market-stats', { defaultValue: '{{percent}}% YES · {{volume}} vol', percent: m.yesPercent, volume: m.volume })}
                         {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: new Date(m.closesAt).toLocaleString() })}` : ''}
                       </p>

@@ -158,7 +158,7 @@ export function CarFamily() {
                   className="size-full p-6 text-site-text"
                 />
               </div>
-              <p className="px-1 text-xs text-site-text-dim">
+              <p className="px-1 text-xs text-site-text-muted">
                 {t('cars-loading', { defaultValue: 'Preparing the turntable…' })}
               </p>
             </div>
@@ -287,12 +287,12 @@ export function CarFamily() {
                     info.id === selected ? 'text-site-accent' : 'text-site-text-muted'
                   }`}
                 />
-                <span className="text-center text-xs text-site-text-dim">{info.name}</span>
+                <span className="text-center text-xs text-site-text-muted">{info.name}</span>
               </li>
             ))}
           </ul>
         </div>
-        <p className="max-w-prose text-xs text-site-text-dim">
+        <p className="max-w-prose text-xs text-site-text-muted">
           {t('cars-lineup-note', {
             defaultValue:
               'Drawn at one scale, in metres, from the same measurements the 3D bodies are lofted from.',
@@ -311,7 +311,7 @@ function fareIndex(multiplier: number): string {
 function Spec({ term, value, icon: Icon }: { term: string; value: string; icon?: LucideIcon }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-xs text-site-text-dim">{term}</dt>
+      <dt className="text-xs text-site-text-muted">{term}</dt>
       <dd className="flex items-center gap-2 text-sm font-semibold text-site-text">
         {Icon && <Icon className="size-3.5 text-site-text-muted" aria-hidden />}
         {value}

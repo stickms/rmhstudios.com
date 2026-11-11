@@ -40,7 +40,7 @@ export function ThemeMiniShell({
   return (
     <div
       aria-hidden
-      style={{ ...vars, background: 'var(--site-canvas)' } as React.CSSProperties}
+      style={{ ...vars, background: 'var(--site-bg)' } as React.CSSProperties}
       className={cn(
         // §17.3: `contain: layout paint` isolates each mini shell's recalc/repaint
         // so a grid of them (or a root theme-preview swap) can't cascade a
@@ -102,7 +102,7 @@ export function ThemeMiniShell({
             <div className="flex items-center gap-1.5">
               <span
                 className={cn(
-                  'rounded-full bg-site-accent-dim',
+                  'rounded-full bg-site-bg-subtle',
                   size === 'lg' ? 'h-5 w-5' : 'h-3 w-3',
                 )}
               />
@@ -123,7 +123,7 @@ export function ThemeMiniShell({
                   tSm,
                   size === 'lg' ? 'py-1' : 'py-0.5',
                   i === 0
-                    ? 'bg-site-accent-dim text-site-accent'
+                    ? 'bg-site-bg-subtle text-site-accent'
                     : 'text-site-text-muted',
                 )}
               >
@@ -159,7 +159,7 @@ export function ThemeMiniShell({
                 size === 'lg' ? 'px-2 py-1.5' : 'px-1.5 py-1',
               )}
             >
-              <span className="text-site-text-dim">Search…</span>
+              <span className="text-site-text-muted">Search…</span>
             </span>
           </div>
         </div>

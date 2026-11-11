@@ -109,7 +109,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
   if (loading) {
     return (
       <section className="glass-pane flex min-h-32 items-center justify-center p-5">
-        <Spinner size={20} className="text-site-text-dim" label={t('ladder.answersLoading', { defaultValue: 'Loading…' })} />
+        <Spinner size={20} className="text-site-text-muted" label={t('ladder.answersLoading', { defaultValue: 'Loading…' })} />
       </section>
     );
   }
@@ -120,7 +120,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
         <h2 id="ladder-answers-heading" className="site-section-label">
           {t('ladder.answersTitle', { defaultValue: 'Answer bank' })}
         </h2>
-        <span className="text-xs text-site-text-dim">
+        <span className="text-xs text-site-text-muted">
           {t('ladder.answersProgress', {
             defaultValue: '{{filled}} of {{total}} filled in',
             filled: completeness.filled,
@@ -139,7 +139,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
         </Button>
       </div>
 
-      <p className="mt-2 text-xs text-site-text-dim">
+      <p className="mt-2 text-xs text-site-text-muted">
         {t('ladder.answersIntro', {
           defaultValue:
             'Entered once, reused on every application. RMHLadder never submits anything for you — you copy these into the employer’s form and press the button yourself.',
@@ -195,7 +195,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
         })}
       </div>
 
-      <p className="mt-3 flex items-start gap-2 text-xs text-site-text-dim">
+      <p className="mt-3 flex items-start gap-2 text-xs text-site-text-muted">
         <ShieldAlert className="mt-px size-3 shrink-0 text-site-warning" aria-hidden />
         <span>
           {t('ladder.answersSensitiveNote', {
@@ -272,7 +272,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
             </div>
           ))}
           {bank.essays.length === 0 && (
-            <p className="text-sm text-site-text-dim">
+            <p className="text-sm text-site-text-muted">
               {t('ladder.answersNoEssays', {
                 defaultValue: 'No essays yet. Add the answers you keep retyping.',
               })}
@@ -299,7 +299,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
             {t('ladder.answersAddStory', { defaultValue: 'Add' })}
           </Button>
         </div>
-        <p className="mt-2 text-xs text-site-text-dim">
+        <p className="mt-2 text-xs text-site-text-muted">
           {t('ladder.answersStoriesHint', {
             defaultValue: 'These are what the interview prep sheet matches against a posting.',
           })}
@@ -358,7 +358,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
             </div>
           ))}
           {bank.stories.length === 0 && (
-            <p className="text-sm text-site-text-dim">
+            <p className="text-sm text-site-text-muted">
               {t('ladder.answersNoStories', {
                 defaultValue: 'No stories yet. Three or four good ones cover most interviews.',
               })}

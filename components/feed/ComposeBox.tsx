@@ -397,7 +397,7 @@ export function ComposeBox({
             // reserved ~6px of baseline descender space under it — a gap nobody
             // meant, and the last 6px of layout shift when this composer replaced
             // its placeholder (which has no wrapper) on the feed.
-            className="block w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
+            className="block w-full glass-inset text-site-text placeholder:text-site-text-muted text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 handleSubmit();

@@ -71,7 +71,7 @@ export function SidebarEditMode() {
             return (
               <div className="flex items-center gap-2">
                 <Icon
-                  className={`h-4 w-4 shrink-0 ${isHidden ? 'text-site-text-dim' : 'text-site-text-muted'}`}
+                  className={`h-4 w-4 shrink-0 ${isHidden ? 'text-site-text-muted' : 'text-site-text-muted'}`}
                   aria-hidden
                 />
                 <span

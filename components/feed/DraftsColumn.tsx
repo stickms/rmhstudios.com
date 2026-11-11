@@ -196,12 +196,12 @@ function Section({
  >
  <p className="whitespace-pre-wrap break-words text-sm text-site-text">
  {r.content || (
- <span className="text-site-text-dim">
+ <span className="text-site-text-muted">
  {t('no-text', { defaultValue:'(no text)'})}
  </span>
  )}
  </p>
- <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-site-text-dim">
+ <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-site-text-muted">
  {r.scheduledAt && (
  <span className="inline-flex items-center gap-1 text-site-accent">
  <CalendarClock className="h-3 w-3"/> {formatWhen(r.scheduledAt)}

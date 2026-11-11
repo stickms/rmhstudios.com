@@ -134,7 +134,7 @@ export default function MuseumPanel() {
       <ul className="space-y-3">
         {q.data?.eras.map((e) => (
           <li key={e.id} className="glass-fill flex items-center gap-3 rounded-site px-4 py-3">
-            <span className="w-24 shrink-0 text-xs text-site-text-dim">{e.eraDate}</span>
+            <span className="w-24 shrink-0 text-xs text-site-text-muted">{e.eraDate}</span>
             <span className="min-w-0 flex-1 truncate text-sm text-site-text">{e.title}</span>
             <IconButton
               icon={Pencil}

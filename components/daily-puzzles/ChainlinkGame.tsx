@@ -237,7 +237,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
 
     const endpoint = (n: number, word: string, label: string) => (
         <div className="flex items-center gap-3">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-xs font-bold text-site-accent">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-xs font-bold text-site-accent">
                 {n}
             </span>
             <div className="glass-fill flex flex-1 items-baseline gap-2 rounded-site-sm border border-site-accent/40 px-4 py-3">
@@ -403,7 +403,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                                             <span
                                                 className={`self-start rounded-site-sm border px-3 py-1 text-sm font-medium text-site-text ${
                                                     i === 0 || i === puzzle._exampleChain.length - 1
-                                                        ? 'border-site-accent/40 bg-site-accent-dim'
+                                                        ? 'border-site-accent/40 bg-site-bg-subtle'
                                                         : 'border-site-border bg-site-bg-subtle'
                                                 }`}
                                             >

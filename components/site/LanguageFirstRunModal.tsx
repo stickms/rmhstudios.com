@@ -54,7 +54,7 @@ export function LanguageFirstRunModal() {
     <Dialog open={open} onOpenChange={(o) => { if (!o) finish(); }}>
       <DialogContent className="max-w-md gap-0">
         <div className="mb-4 flex justify-center">
-          <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-4">
+          <div className="rounded-site border border-site-accent/30 bg-site-bg-subtle p-4">
             <Globe className="h-7 w-7 text-site-accent" aria-hidden />
           </div>
         </div>
@@ -93,7 +93,7 @@ export function LanguageFirstRunModal() {
                   'flex items-center justify-between gap-1 rounded-site-sm px-3 py-2 text-left text-sm transition-colors',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/40',
                   active
-                    ? 'bg-site-accent-dim text-site-text'
+                    ? 'bg-site-bg-subtle text-site-text'
                     : 'text-site-text-muted hover:bg-site-surface-hover hover:text-site-text',
                 )}
               >

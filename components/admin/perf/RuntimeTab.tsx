@@ -109,7 +109,7 @@ function HeapSection() {
         </p>
       ) : (
         <>
-          <p className="text-xs text-site-text-dim">
+          <p className="text-xs text-site-text-muted">
             {t('heap-scope', {
               defaultValue:
                 'Worker pid {{pid}} (the one that answered). Detached contexts: {{detached}}.',

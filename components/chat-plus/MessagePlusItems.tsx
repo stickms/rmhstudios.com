@@ -129,7 +129,7 @@ export function GroupMessageMenu({
         aria-expanded={open}
         aria-label={t('message-more', { defaultValue: 'More message actions' })}
         className={cn(
-          'flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-dim opacity-60 transition-opacity hover:bg-site-surface-hover hover:opacity-100 focus-visible:opacity-100',
+          'flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-muted opacity-60 transition-opacity hover:bg-site-surface-hover hover:opacity-100 focus-visible:opacity-100',
           className,
         )}
       >

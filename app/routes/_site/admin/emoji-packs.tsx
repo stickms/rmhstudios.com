@@ -150,7 +150,7 @@ function AdminEmojiPacksPage() {
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-site-text-dim">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-site-text-muted">
                   <span className="inline-flex items-center gap-1.5">
                     <UserAvatar
                       src={p.owner.image}
@@ -195,7 +195,7 @@ function AdminEmojiPacksPage() {
                   ))}
                 </ul>
                 {p.itemCount > p.items.length && (
-                  <p className="text-xs text-site-text-dim">
+                  <p className="text-xs text-site-text-muted">
                     {t('emoji-pack-more-items', {
                       defaultValue: 'Showing {{shown}} of {{count}} items.',
                       shown: p.items.length,

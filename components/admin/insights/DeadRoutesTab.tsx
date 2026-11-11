@@ -46,7 +46,7 @@ function RouteTable({ rows }: { rows: { route: string; views: number }[] }) {
   const { t } = useTranslation('f-ops');
   if (rows.length === 0)
     return (
-      <p className="text-sm text-site-text-dim">
+      <p className="text-sm text-site-text-muted">
         {t('dead-none', { defaultValue: 'Nothing here.' })}
       </p>
     );

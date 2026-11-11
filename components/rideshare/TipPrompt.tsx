@@ -80,11 +80,11 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
               className={`glass-fill glass-interactive min-h-11 rounded-site-sm px-2 py-2 text-center transition-colors ${
                 active
                   ? 'border-site-accent bg-site-accent/10 text-site-accent'
-                  : 'text-site-text hover:border-site-border-bright'
+                  : 'text-site-text hover:border-site-text'
               }`}
             >
               <div className="text-sm font-semibold">{pct === 0 ? t("no-tip", { defaultValue: "No tip" }) : `${Math.round(pct * 100)}%`}</div>
-              {pct > 0 && <div className="text-xs text-site-text-dim">{formatUsd(cents)}</div>}
+              {pct > 0 && <div className="text-xs text-site-text-muted">{formatUsd(cents)}</div>}
             </button>
           );
         })}
@@ -92,7 +92,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
 
       <div className="mt-3 flex items-center gap-2">
         <div className="relative flex-1">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-site-text-dim">$</span>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-site-text-muted">$</span>
           <Input
             type="number"
             min={0}

@@ -83,7 +83,7 @@ export function PickemPanel({
     <div>
       <h2 className="site-section-label mb-2">{t('pk-title', { defaultValue: 'Pick’em' })}</h2>
       <div className="glass-fill rounded-site p-5 space-y-3">
-        <p className="text-sm text-site-text-dim">
+        <p className="text-sm text-site-text-muted">
           {t('pk-blurb', {
             defaultValue:
               'Predict how this bracket ends before it starts. Champion 8 pts, finalist 4, each semifinalist 2. No coins at stake.',
@@ -96,7 +96,7 @@ export function PickemPanel({
             <div className="grid gap-2 sm:grid-cols-2">
               {SLOTS.map((s) => (
                 <label key={s.key} className="flex flex-col gap-2 text-sm">
-                  <span className="text-xs text-site-text-dim">
+                  <span className="text-xs text-site-text-muted">
                     {label(s.role, s.key)} · {PICK_ROLES[s.role].points}
                   </span>
                   <Select
@@ -122,7 +122,7 @@ export function PickemPanel({
             <ul className="text-sm space-y-2">
               {data.mine.map((p, i) => (
                 <li key={i}>
-                  <span className="text-site-text-dim">{label(p.role, String(i))}: </span>
+                  <span className="text-site-text-muted">{label(p.role, String(i))}: </span>
                   {nameOf(p.entrantId)}
                 </li>
               ))}

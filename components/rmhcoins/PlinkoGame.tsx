@@ -377,7 +377,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-center gap-4 sm:gap-6 px-3 sm:px-4 py-4 sm:py-6">
-      <div className="w-full max-w-[390px] mx-auto lg:mx-0 aspect-390/420 relative shrink-0 rounded-site border border-site-border overflow-hidden shadow-(--site-shadow)">
+      <div className="w-full max-w-[390px] mx-auto lg:mx-0 aspect-390/420 relative shrink-0 rounded-site border border-site-border overflow-hidden">
         <canvas
           ref={canvasRef}
           width={CANVAS_W}
@@ -397,7 +397,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
                  `-fg` token, which tracks each theme's green and red. This used
                  to say `text-black`, which was invisible on the themes whose
                  success colour is a dark forest green. */
-              className={`px-4 py-2.5 rounded-site font-bold text-sm sm:text-lg shadow-site ${
+              className={`px-4 py-2.5 rounded-site font-bold text-sm sm:text-lg ${
                 resultWon ? 'bg-site-success' : 'bg-site-danger'
               }`}
             >
@@ -409,7 +409,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
       <div className="w-full lg:max-w-md mx-auto lg:mx-0 flex flex-col gap-4">
       <div className="w-full">
-        <p className="text-sm text-site-text-dim mb-2">{t('select-a-bin', { defaultValue: 'Select a bin:' })}</p>
+        <p className="text-sm text-site-text-muted mb-2">{t('select-a-bin', { defaultValue: 'Select a bin:' })}</p>
         <div className="flex gap-1.5 sm:gap-2">
           {Array.from({ length: NUM_BINS }, (_, i) => (
             <button
@@ -419,7 +419,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               className={`flex-1 min-h-10 py-2 rounded-site text-sm font-bold transition active:scale-95 ${
                 selectedBin === i
                   ? 'ring-2 ring-site-accent text-casino-ink scale-105'
-                  : 'text-site-text-dim hover:text-site-text'
+                  : 'text-site-text-muted hover:text-site-text'
               } disabled:opacity-50`}
               style={{
                 backgroundColor:
@@ -433,7 +433,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
       </div>
 
       <div className="w-full">
-        <p className="text-sm text-site-text-dim mb-2">{t('bet-amount', { defaultValue: 'Bet amount:' })}</p>
+        <p className="text-sm text-site-text-muted mb-2">{t('bet-amount', { defaultValue: 'Bet amount:' })}</p>
         <div className="flex flex-col gap-2">
           <div className="relative">
             <input
@@ -455,7 +455,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
                 variant="secondary"
                 onClick={() => isIdle && setQuickBet(amt)}
                 disabled={!isIdle}
-                className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-dim hover:text-site-text"
+                className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-muted hover:text-site-text"
               >
                 {amt}
               </Button>
@@ -485,7 +485,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
       </Button>
 
       {coins === 0 && isIdle && (
-        <p className="text-sm text-site-text-dim text-center">
+        <p className="text-sm text-site-text-muted text-center">
           {t('out-of-coins', { defaultValue: "You're out of coins! Visit the" })}{' '}
           <span className="text-site-accent">{t('shop-tab', { defaultValue: 'Shop' })}</span> {t('out-of-coins-suffix', { defaultValue: 'tab to get more.' })}
         </p>

@@ -217,7 +217,7 @@ function AskAboutQuery({ query }: { query: string }) {
           onRetry={ask}
           footer={
             sourceCount > 0 ? (
-              <p className="mt-2 text-xs text-site-text-dim">
+              <p className="mt-2 text-xs text-site-text-muted">
                 {t('ai-based-on', {
                   count: sourceCount,
                   defaultValue: 'Based on {{count}} results below',

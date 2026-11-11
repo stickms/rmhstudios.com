@@ -28,7 +28,7 @@ export function ChatHeaderPlus({ chat, className }: { chat: ChatRef; className?:
     <div className={`flex items-center gap-1 ${className ?? ''}`}>
       {timer && (
         <span
-          className="inline-flex items-center gap-1 rounded-full bg-site-accent-dim px-2 py-1 text-caption font-medium text-site-accent"
+          className="inline-flex items-center gap-1 rounded-full bg-site-bg-subtle px-2 py-1 text-caption font-medium text-site-accent"
           title={t('timer-chip-title', {
             duration: timerLabel,
             defaultValue: 'Messages disappear after {{duration}}',
@@ -44,7 +44,7 @@ export function ChatHeaderPlus({ chat, className }: { chat: ChatRef; className?:
         aria-haspopup="dialog"
         aria-label={t('chat-options', { defaultValue: 'Chat options' })}
         title={t('chat-options', { defaultValue: 'Chat options' })}
-        className="flex size-11 items-center justify-center rounded-full text-site-text-dim hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
+        className="flex size-11 items-center justify-center rounded-full text-site-text-muted hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
       >
         <SlidersHorizontal className="size-5" />
       </button>

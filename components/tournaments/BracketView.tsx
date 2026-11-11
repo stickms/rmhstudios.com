@@ -49,7 +49,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
 
   if (!tournament.matches || tournament.matches.length === 0) {
     return (
-      <p className="text-site-text-dim text-sm py-6 text-center">
+      <p className="text-site-text-muted text-sm py-6 text-center">
         {t('bracket-pending', { defaultValue: 'The bracket appears here once the host starts.' })}
       </p>
     );
@@ -75,7 +75,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
               return (
                 <div key={m.id} className="glass-fill flex flex-col gap-2 rounded-site p-4">
                   {cancelled && (
-                    <span className="px-1 text-xs text-site-text-dim">
+                    <span className="px-1 text-xs text-site-text-muted">
                       {t('match-cancelled', { defaultValue: 'Cancelled' })}
                     </span>
                   )}
@@ -87,7 +87,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
                       key={i}
                       className={`flex items-center justify-between gap-2 rounded-site-sm px-3 py-2 text-sm ${
                         side.won
-                          ? 'bg-site-accent-dim text-site-accent font-semibold'
+                          ? 'bg-site-bg-subtle text-site-accent font-semibold'
                           : cancelled
                             ? 'text-site-text-muted'
                             : 'text-site-text'
@@ -95,7 +95,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
                     >
                       <span className="truncate">
                         {name(side.id) ?? (
-                          <span className="text-site-text-dim italic">
+                          <span className="text-site-text-muted italic">
                             {t('bye', { defaultValue: 'bye' })}
                           </span>
                         )}

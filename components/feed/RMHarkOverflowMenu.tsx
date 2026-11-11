@@ -260,7 +260,7 @@ export function RMHarkOverflowMenu({
  aria-haspopup="menu"
  aria-expanded={menuOpen}
  className={cn(
-'p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors',
+'p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors',
  buttonClassName,
  )}
  >

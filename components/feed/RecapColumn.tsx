@@ -110,7 +110,7 @@ export function RecapColumn({
  {recap.topPost && (
  <Reveal>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
- <p className="mb-2 text-xs font-semibold text-site-text-dim">{t('recap-top-post', { defaultValue:'Your top post'})}</p>
+ <p className="mb-2 text-xs font-semibold text-site-text-muted">{t('recap-top-post', { defaultValue:'Your top post'})}</p>
  <p className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
  <p className="mt-2 text-xs text-site-text-muted">
  <Heart className="mr-1 inline h-3.5 w-3.5 text-site-accent"/>

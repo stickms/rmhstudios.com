@@ -154,7 +154,7 @@ export function ImageCropModal({
  <div className="px-5 py-3 space-y-3 border-t border-site-border shrink-0">
  {/* Zoom slider */}
  <div className="flex items-center gap-3">
- <ZoomOut className="w-4 h-4 text-site-text-dim shrink-0"/>
+ <ZoomOut className="w-4 h-4 text-site-text-muted shrink-0"/>
  <input
  type="range"
  min={minZoom}
@@ -165,7 +165,7 @@ export function ImageCropModal({
  aria-label={t('crop-image', { defaultValue:'Crop Image'})}
  className="flex-1 accent-site-accent"
  />
- <ZoomIn className="w-4 h-4 text-site-text-dim shrink-0"/>
+ <ZoomIn className="w-4 h-4 text-site-text-muted shrink-0"/>
  </div>
 
  {/* Action buttons */}

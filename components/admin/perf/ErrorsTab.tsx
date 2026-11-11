@@ -27,7 +27,7 @@ export function ErrorsTab({ overview }: { overview: PerfOverview }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-site-text-dim">
+      <p className="text-xs text-site-text-muted">
         {t('errors-note', {
           defaultValue:
             'The 50 most recent 5xx errors held in each process’s memory. They reset when a process restarts.',
@@ -44,7 +44,7 @@ export function ErrorsTab({ overview }: { overview: PerfOverview }) {
                 {e.status}
               </Badge>
               <span className="font-mono text-xs break-all text-site-text">{e.route}</span>
-              <span className="ml-auto text-xs text-site-text-dim">
+              <span className="ml-auto text-xs text-site-text-muted">
                 {fmtClock(e.at)} · {e.service}:{e.pid}
               </span>
             </div>

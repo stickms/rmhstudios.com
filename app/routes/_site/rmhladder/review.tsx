@@ -228,7 +228,7 @@ function ReviewPage() {
                     <div className="flex min-w-0 flex-col gap-1">
                       <span className="font-semibold text-site-text">{taskTitle(task)}</span>
                       <span className="text-sm text-site-text-muted">{taskContext(task)}</span>
-                      <span className="rl-mono text-site-text-dim">
+                      <span className="rl-mono text-site-text-muted">
                         {t('ladder.review.opened', {
                           defaultValue: 'opened {{ago}}',
                           ago: timeAgo(task.createdAt as Date),

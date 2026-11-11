@@ -517,7 +517,7 @@ export function LightsOutGame() {
                                                 key={tier.label}
                                                 className={`flex items-center gap-3 rounded-site-sm px-3 py-1 text-xs ${
                                                     rating?.label === tier.label
-                                                        ? 'bg-site-accent-dim font-semibold text-site-text'
+                                                        ? 'bg-site-bg-subtle font-semibold text-site-text'
                                                         : 'text-site-text-muted'
                                                 }`}
                                             >
@@ -581,12 +581,12 @@ export function LightsOutGame() {
                                     <li
                                         key={p.dateKey}
                                         className={`flex items-center justify-between gap-3 rounded-site-sm px-3 py-2 ${
-                                            p.dateKey === selectedDateKey ? 'bg-site-accent-dim' : 'bg-site-bg-subtle'
+                                            p.dateKey === selectedDateKey ? 'bg-site-bg-subtle' : 'bg-site-bg-subtle'
                                         }`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <span className="font-mono text-sm text-site-text-muted">{p.dateKey}</span>
-                                            <span className="text-xs text-site-text-dim">{p.shapeLabel}</span>
+                                            <span className="text-xs text-site-text-muted">{p.shapeLabel}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             {p.save?.solved ? (

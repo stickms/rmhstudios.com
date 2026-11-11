@@ -45,9 +45,9 @@ export default function ProfileShelvesPanel({ ownerId }: { ownerId: string }) {
         return (
           <section key={shelf} className="glass-fill rounded-site p-5">
             <h3 className="font-display font-semibold text-site-text">
-              {labels[shelf]} <span className="text-site-text-dim">({items.length})</span>
+              {labels[shelf]} <span className="text-site-text-muted">({items.length})</span>
               {data?.isOwner && !pub ? (
-                <span className="ms-2 text-xs font-normal text-site-text-dim">
+                <span className="ms-2 text-xs font-normal text-site-text-muted">
                   {t('only-you', { defaultValue: 'Only you can see this shelf' })}
                 </span>
               ) : null}

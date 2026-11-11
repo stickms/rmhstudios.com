@@ -23,7 +23,7 @@ export function HoldemSessionStats() {
     <div className="glass-fill rounded-site-sm overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-site-text-dim hover:text-site-text transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-site-text-muted hover:text-site-text transition-colors"
       >
         <span>{t("session-ledger", { defaultValue: "Session Ledger" })}</span>
         {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -33,7 +33,7 @@ export function HoldemSessionStats() {
         <div className="px-3 pb-3">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-site-text-dim border-b border-site-border">
+              <tr className="text-site-text-muted border-b border-site-border">
                 <th className="text-left py-1 font-medium">{t("col-player", { defaultValue: "Player" })}</th>
                 <th className="text-right py-1 font-medium">{t("col-buy-in", { defaultValue: "Buy-in" })}</th>
                 <th className="text-right py-1 font-medium">{t("col-stack", { defaultValue: "Stack" })}</th>
@@ -66,7 +66,7 @@ export function HoldemSessionStats() {
                     <td className={`text-right py-1 font-bold ${net > 0 ? 'text-site-success' : net < 0 ? 'text-site-danger' : ''}`}>
                       {net > 0 ? '+' : ''}{net}
                     </td>
-                    <td className="text-right py-1 text-site-text-dim">
+                    <td className="text-right py-1 text-site-text-muted">
                       {p.sessionStats.handsWon}/{p.sessionStats.handsPlayed}
                     </td>
                   </tr>

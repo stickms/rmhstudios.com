@@ -113,7 +113,7 @@ function SettingsPanel({ chat }: { chat: ChatRef }) {
 
   if (!meta) {
     return (
-      <p className="py-8 text-center text-sm text-site-text-dim">
+      <p className="py-8 text-center text-sm text-site-text-muted">
         {t('loading', { defaultValue: 'Loading…' })}
       </p>
     );
@@ -161,7 +161,7 @@ function SettingsPanel({ chat }: { chat: ChatRef }) {
         <h3 id="opt-disappear" className="text-sm font-semibold text-site-text">
           {t('disappear-title', { defaultValue: 'Disappearing messages' })}
         </h3>
-        <p className="mb-2 text-xs text-site-text-dim">
+        <p className="mb-2 text-xs text-site-text-muted">
           {t('disappear-help', {
             defaultValue:
               'New messages are hidden and deleted after this long. Anyone in the chat can change it, and the chat is told when they do.',
@@ -183,7 +183,7 @@ function SettingsPanel({ chat }: { chat: ChatRef }) {
         <h3 id="opt-theme" className="text-sm font-semibold text-site-text">
           {t('theme-title', { defaultValue: 'Theme' })}
         </h3>
-        <p className="mb-2 text-xs text-site-text-dim">
+        <p className="mb-2 text-xs text-site-text-muted">
           {t('theme-help', {
             defaultValue: 'Everyone in this chat sees the same accent and wallpaper.',
           })}
@@ -206,7 +206,7 @@ function SettingsPanel({ chat }: { chat: ChatRef }) {
                 className={cn(
                   'flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm focus-visible:ring-2 focus-visible:ring-site-accent',
                   on
-                    ? 'border-site-accent bg-site-accent-dim text-site-text'
+                    ? 'border-site-accent bg-site-bg-subtle text-site-text'
                     : 'border-site-border text-site-text-muted hover:bg-site-surface-hover',
                 )}
               >
@@ -238,7 +238,7 @@ function SettingsPanel({ chat }: { chat: ChatRef }) {
                   'flex h-16 items-end rounded-site-sm border p-1.5 text-left text-xs focus-visible:ring-2 focus-visible:ring-site-accent',
                   on
                     ? 'border-site-accent text-site-text'
-                    : 'border-site-border text-site-text-muted hover:border-site-border-bright',
+                    : 'border-site-border text-site-text-muted hover:border-site-text',
                 )}
                 style={{
                   ...accentStyle(theme),
@@ -259,7 +259,7 @@ function SettingsPanel({ chat }: { chat: ChatRef }) {
           <h3 id="opt-privacy" className="text-sm font-semibold text-site-text">
             {t('privacy-title', { defaultValue: 'Receipts and typing' })}
           </h3>
-          <p className="mb-2 text-xs text-site-text-dim">
+          <p className="mb-2 text-xs text-site-text-muted">
             {t('privacy-help', {
               defaultValue:
                 'These work both ways: if you turn one off here, you also stop seeing it from the other person.',

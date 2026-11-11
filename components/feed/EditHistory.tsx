@@ -193,7 +193,7 @@ export function EditHistoryButton({ postId, className }: { postId: string; class
       <button
         type="button"
         className={cn(
-          'shrink-0 rounded-site-sm text-site-text-dim transition-colors hover:text-site-text',
+          'shrink-0 rounded-site-sm text-site-text-muted transition-colors hover:text-site-text',
           className,
         )}
         onClick={(e) => {

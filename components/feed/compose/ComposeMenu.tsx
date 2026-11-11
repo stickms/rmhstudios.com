@@ -116,7 +116,7 @@ export function ComposeMenu({
         aria-label={t('add-to-post-aria', { defaultValue: 'Add to post' })}
         aria-haspopup="menu"
         aria-expanded={menuOpen}
-        className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+        className="p-1.5 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors"
       >
         <Plus className="w-4.5 h-4.5" />
       </button>
@@ -139,11 +139,11 @@ export function ComposeMenu({
           }}
           className={ITEM}
         >
-          <CurrentAudienceIcon className="w-4 h-4 text-site-text-dim" />
+          <CurrentAudienceIcon className="w-4 h-4 text-site-text-muted" />
           <span className="flex-1 text-left">
             {t('menu-audience', { defaultValue: 'Visibility' })}
           </span>
-          <span className="text-xs text-site-text-dim">{currentAudience.label}</span>
+          <span className="text-xs text-site-text-muted">{currentAudience.label}</span>
         </button>
         {/* Who can reply — opens a picker modal */}
         <button
@@ -154,11 +154,11 @@ export function ComposeMenu({
           }}
           className={ITEM}
         >
-          <CurrentReplyIcon className="w-4 h-4 text-site-text-dim" />
+          <CurrentReplyIcon className="w-4 h-4 text-site-text-muted" />
           <span className="flex-1 text-left">
             {t('menu-reply-control', { defaultValue: 'Replies' })}
           </span>
-          <span className="text-xs text-site-text-dim">{currentReply.short}</span>
+          <span className="text-xs text-site-text-muted">{currentReply.short}</span>
         </button>
         {/* Content-warning toggle — flips in place so the check is
  visible; the active pill above mirrors the state. */}
@@ -169,7 +169,7 @@ export function ComposeMenu({
           className={ITEM}
         >
           <AlertTriangle
-            className={`w-4 h-4 ${isSensitive ? 'text-site-warning' : 'text-site-text-dim'}`}
+            className={`w-4 h-4 ${isSensitive ? 'text-site-warning' : 'text-site-text-muted'}`}
           />
           <span className="flex-1 text-left">
             {t('menu-content-warning', { defaultValue: 'Content warning' })}
@@ -194,7 +194,7 @@ export function ComposeMenu({
           }
           className={`${ITEM} disabled:opacity-40 disabled:cursor-not-allowed`}
         >
-          <ImagePlus className="w-4 h-4 text-site-text-dim" />
+          <ImagePlus className="w-4 h-4 text-site-text-muted" />
           {t('menu-add-image', { defaultValue: 'Add Image' })}
         </button>
         <button
@@ -207,7 +207,7 @@ export function ComposeMenu({
           aria-pressed={attachment === 'gif'}
           className={ITEM}
         >
-          <ImagePlay className="w-4 h-4 text-site-text-dim" />
+          <ImagePlay className="w-4 h-4 text-site-text-muted" />
           {t('menu-add-gif', { defaultValue: 'Add GIF' })}
         </button>
         <button
@@ -218,7 +218,7 @@ export function ComposeMenu({
           }}
           className={ITEM}
         >
-          <BarChart3 className="w-4 h-4 text-site-text-dim" />
+          <BarChart3 className="w-4 h-4 text-site-text-muted" />
           {t('menu-create-poll', { defaultValue: 'Create Poll' })}
         </button>
         <button
@@ -229,7 +229,7 @@ export function ComposeMenu({
           }}
           className={ITEM}
         >
-          <Coins className="w-4 h-4 text-site-text-dim" />
+          <Coins className="w-4 h-4 text-site-text-muted" />
           {t('menu-set-unlock-price', { defaultValue: 'Set unlock price' })}
         </button>
         <button
@@ -240,7 +240,7 @@ export function ComposeMenu({
           }}
           className={ITEM}
         >
-          <Type className="w-4 h-4 text-site-text-dim" />
+          <Type className="w-4 h-4 text-site-text-muted" />
           {t('menu-markdown-cheatsheet', { defaultValue: 'Formatting help' })}
         </button>
         <div className="my-1 border-t border-site-border" />
@@ -252,7 +252,7 @@ export function ComposeMenu({
           disabled={!canSubmit}
           className={`${ITEM} disabled:opacity-40 disabled:cursor-not-allowed`}
         >
-          <FileText className="w-4 h-4 text-site-text-dim" />
+          <FileText className="w-4 h-4 text-site-text-muted" />
           {t('menu-save-draft', { defaultValue: 'Save as draft' })}
         </button>
         <button
@@ -263,7 +263,7 @@ export function ComposeMenu({
           disabled={!canSubmit}
           className={`${ITEM} disabled:opacity-40 disabled:cursor-not-allowed`}
         >
-          <CalendarClock className="w-4 h-4 text-site-text-dim" />
+          <CalendarClock className="w-4 h-4 text-site-text-muted" />
           {t('menu-schedule', { defaultValue: 'Schedule…' })}
         </button>
         <Link
@@ -271,7 +271,7 @@ export function ComposeMenu({
           onClick={() => setMenuOpen(false)}
           className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text-muted hover:bg-site-surface-hover hover:text-site-text transition-colors"
         >
-          <FileText className="w-4 h-4 text-site-text-dim" />
+          <FileText className="w-4 h-4 text-site-text-muted" />
           {t('menu-view-drafts', { defaultValue: 'View drafts' })}
         </Link>
       </AnchoredMenu>

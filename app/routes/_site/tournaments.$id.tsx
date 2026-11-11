@@ -331,7 +331,7 @@ function TournamentDetailPage() {
               onReport={report}
             />
             {canReport && (
-              <p className="mt-3 text-xs text-site-text-dim">
+              <p className="mt-3 text-xs text-site-text-muted">
                 {t('report-hint', {
                   defaultValue: 'Tap the winner of each match to advance the bracket.',
                 })}
@@ -357,18 +357,18 @@ function TournamentDetailPage() {
             {(tourney.entrants ?? []).map((e) => (
               <div key={e.id} className="glass-fill flex items-center gap-2 rounded-site px-4 py-3">
                 {e.placement ? (
-                  <span className="w-5 text-center text-sm font-semibold text-site-text-dim">
+                  <span className="w-5 text-center text-sm font-semibold text-site-text-muted">
                     {e.placement === 1 ? (
                       <Trophy role="img" className="inline size-4 text-site-warning" aria-label={t('champion', { defaultValue: 'Champion' })} />
                     ) : e.placement <= 3 ? (
-                      <Medal className="inline size-4 text-site-text-dim" aria-hidden />
+                      <Medal className="inline size-4 text-site-text-muted" aria-hidden />
                     ) : (
                       `#${e.placement}`
                     )}
                   </span>
                 ) : (
                   e.seed != null && (
-                    <span className="w-5 text-center text-xs text-site-text-dim">{e.seed}</span>
+                    <span className="w-5 text-center text-xs text-site-text-muted">{e.seed}</span>
                   )
                 )}
                 <UserAvatar
@@ -379,7 +379,7 @@ function TournamentDetailPage() {
                 />
                 <span className="truncate text-sm">{e.user?.name}</span>
                 {(tourney.status === 'LIVE' || tourney.status === 'COMPLETE') && (
-                  <span className="ml-auto text-xs text-site-text-dim">
+                  <span className="ml-auto text-xs text-site-text-muted">
                     {e.wins}–{e.losses}
                   </span>
                 )}

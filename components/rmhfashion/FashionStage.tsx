@@ -271,7 +271,7 @@ export function FashionStage({ outfit, description }: FashionStageProps) {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1">
-        <p className="text-xs text-site-text-dim">{hint}</p>
+        <p className="text-xs text-site-text-muted">{hint}</p>
         {!failed && (
           <div className="flex items-center gap-1">
             {/* The near face of the figure follows the button, so a positive

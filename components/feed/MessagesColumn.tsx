@@ -279,7 +279,7 @@ export function MessagesColumn({
  if (!session) {
  return (
  <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
- <MessageCircle className="w-12 h-12 text-site-text-dim mb-4"/>
+ <MessageCircle className="w-12 h-12 text-site-text-muted mb-4"/>
  <p className="text-lg font-medium text-site-text mb-1">
  {t('sign-in-to-view-messages', { defaultValue:'Sign in to view messages'})}
  </p>
@@ -343,7 +343,7 @@ export function MessagesColumn({
  type="button"
  onClick={markAllAsRead}
  disabled={!hasUnread || markingAll}
- className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-site-accent transition-colors hover:bg-site-accent-dim disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+ className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-site-accent transition-colors hover:bg-site-bg-subtle disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
  title={t('mark-all-as-read-title', { defaultValue:'Mark all conversations as read'})}
  aria-label={t('mark-all-as-read', { defaultValue:'Mark all as read'})}
  >
@@ -368,7 +368,7 @@ export function MessagesColumn({
  </div>
  ) : searchResults.length === 0 ? (
  <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
- <Search className="w-10 h-10 text-site-text-dim mb-4"/>
+ <Search className="w-10 h-10 text-site-text-muted mb-4"/>
  <p className="text-sm text-site-text-muted">
  {t('no-search-results', { defaultValue:'No people or messages match your search.'})}
  </p>
@@ -432,7 +432,7 @@ export function MessagesColumn({
  )}
 
  {!hasMore && conversations.length > 0 && (
- <div className="py-8 text-center text-sm text-site-text-dim">
+ <div className="py-8 text-center text-sm text-site-text-muted">
  {t('no-more-conversations', { defaultValue:'No more conversations'})}
  </div>
  )}
@@ -505,7 +505,7 @@ function ConversationRow({
  )}
  </span>
  {conv.otherUser.username && conv.otherUser.id !== currentUserId && (
- <span className="text-xs text-site-text-dim truncate">
+ <span className="text-xs text-site-text-muted truncate">
  @{conv.otherUser.username}
  </span>
  )}
@@ -513,7 +513,7 @@ function ConversationRow({
  </div>
  <div className="flex items-center gap-2 shrink-0">
  {conv.lastMessage && (
- <span className="text-xs text-site-text-dim">
+ <span className="text-xs text-site-text-muted">
  {formatTime(conv.lastMessage.createdAt)}
  </span>
  )}
@@ -602,13 +602,13 @@ function NewChatDialog({
  <DialogTitle>{t('new-chat-title', { defaultValue:'Start a new chat'})}</DialogTitle>
  </DialogHeader>
  <div className="relative">
- <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim"/>
+ <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted"/>
  <input
  autoFocus
  value={q}
  onChange={(e) => setQ(e.target.value)}
  placeholder={t('search-people-placeholder', { defaultValue:'Search people…'})}
- className="glass-inset border w-full rounded-site-sm py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+ className="glass-inset border w-full rounded-site-sm py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
  />
  </div>
  <div className="max-h-[50vh] overflow-y-auto">
@@ -617,7 +617,7 @@ function NewChatDialog({
  <Spinner size={20} />
  </div>
  ) : users.length === 0 ? (
- <p className="py-8 text-center text-sm text-site-text-dim">
+ <p className="py-8 text-center text-sm text-site-text-muted">
  {q.trim()
  ? t('no-people-found', { defaultValue:'No people found.'})
  : t('type-to-search-people', { defaultValue:'Type a name to search.'})}
@@ -647,7 +647,7 @@ function NewChatDialog({
  : t('unknown-user', { defaultValue:'Unknown'}))}
  </p>
  {(u.username || u.handle) && (
- <p className="truncate text-xs text-site-text-dim">
+ <p className="truncate text-xs text-site-text-muted">
  @{u.username ?? u.handle}
  </p>
  )}

@@ -138,7 +138,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  className="flex-1"
  />
  </div>
- <p className="text-end text-xs text-site-text-dim">
+ <p className="text-end text-xs text-site-text-muted">
  {text.length}/{STATUS_MAX_TEXT}
  </p>
 

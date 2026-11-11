@@ -149,14 +149,14 @@ function AdminAlbumsPage() {
                         className="h-full w-full object-cover transition-transform duration-site-slow group-hover:scale-[1.03]"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-site-text-dim">
+                      <div className="flex h-full w-full items-center justify-center text-site-text-muted">
                         <Images className="size-8" aria-hidden="true" />
                       </div>
                     )}
                   </div>
                   <div className="flex flex-col gap-1 px-4 py-3">
                     <span className="truncate font-semibold text-site-text">{album.title}</span>
-                    <span className="truncate font-mono text-xs text-site-text-dim">
+                    <span className="truncate font-mono text-xs text-site-text-muted">
                       /library/albums/{album.slug}
                     </span>
                     <span className="flex items-center gap-3 text-xs text-site-text-muted">

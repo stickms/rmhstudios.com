@@ -192,7 +192,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           maxLength={100}
           required
         />
-        <p className="text-xs text-site-text-dim">{title.length}/100</p>
+        <p className="text-xs text-site-text-muted">{title.length}/100</p>
       </div>
 
       {/* Description */}
@@ -212,7 +212,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           maxLength={500}
           required
         />
-        <p className="text-xs text-site-text-dim">{description.length}/500</p>
+        <p className="text-xs text-site-text-muted">{description.length}/500</p>
       </div>
 
       {/* The title this build was made for (its Workshop) */}
@@ -230,7 +230,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
               </option>
             ))}
         </Select>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('made-for-hint', { defaultValue: 'Public builds appear in that game’s Workshop.' })}
         </p>
       </div>
@@ -356,7 +356,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
             ))}
           </div>
         )}
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('tags-count', { defaultValue: '{{count}}/10 tags', count: tags.length })}
         </p>
       </div>
@@ -440,7 +440,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           onChange={(e) => setPrice(e.target.value)}
           placeholder={t('placeholder-price', { defaultValue: '0 (free)' })}
         />
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('price-description', {
             defaultValue:
               'Charge coins to unlock the README, source, and demo. Leave 0 to keep it free. A 10% platform fee applies to sales.',

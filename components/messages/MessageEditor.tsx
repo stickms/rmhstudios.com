@@ -60,10 +60,10 @@ export function MessageEditor({
           }
         }}
         aria-label={t('message-edit-field', { defaultValue: 'Edit message' })}
-        className="glass-inset w-full resize-none rounded-site px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus-visible:border-site-accent focus-visible:outline-none"
+        className="glass-inset w-full resize-none rounded-site px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus-visible:border-site-accent focus-visible:outline-none"
       />
       <div className="flex items-center justify-end gap-2">
-        <span className="mr-auto text-caption text-site-text-dim">
+        <span className="mr-auto text-caption text-site-text-muted">
           {t('message-edit-hint', { defaultValue: 'Enter to save · Esc to cancel' })}
         </span>
         {value.length >= MESSAGE_MAX_LENGTH * 0.9 ? (

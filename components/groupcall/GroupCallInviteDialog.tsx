@@ -252,7 +252,7 @@ export function GroupCallInviteDialog({
                     fallbackName={person.name ?? undefined}
                   />
                   <span className="max-w-32 truncate">{displayName(person, unnamed)}</span>
-                  <X className="h-3 w-3 text-site-text-dim" aria-hidden />
+                  <X className="h-3 w-3 text-site-text-muted" aria-hidden />
                 </button>
               </li>
             ))}
@@ -325,7 +325,7 @@ export function GroupCallInviteDialog({
                           {displayName(person, unnamed)}
                         </span>
                         {person.handle && (
-                          <span className="block truncate text-xs text-site-text-dim">
+                          <span className="block truncate text-xs text-site-text-muted">
                             @{person.handle}
                           </span>
                         )}

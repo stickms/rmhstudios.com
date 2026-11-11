@@ -117,7 +117,7 @@ export function StorageHealthPanel({
 
       {health.bucket && (
         <div className="flex items-center gap-2 text-sm text-site-text-muted">
-          <HardDrive className="size-4 shrink-0 text-site-text-dim" aria-hidden />
+          <HardDrive className="size-4 shrink-0 text-site-text-muted" aria-hidden />
           <span>{t('bucket-label-inline', { defaultValue: 'Bucket' })}</span>
           <code className="glass-inset rounded-site-sm px-2 py-0.5 font-mono text-xs text-site-text">
             {health.bucket}

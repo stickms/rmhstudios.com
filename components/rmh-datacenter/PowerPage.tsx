@@ -147,7 +147,7 @@ export default function PowerPage() {
               />
             ))}
           </div>
-          <p className="mt-4 max-w-prose text-sm text-site-text-dim">
+          <p className="mt-4 max-w-prose text-sm text-site-text-muted">
             {t('pow-s2-note', {
               defaultValue:
                 'The bar is total facility power divided by IT load, measured at the utility intake and averaged over the trailing twelve months, plotted against a 1.40 floor. A fuller bar is a better ratio, and a campus above 1.20 is drawn in the warning tone rather than the accent.',

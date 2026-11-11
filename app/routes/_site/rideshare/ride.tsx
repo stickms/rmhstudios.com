@@ -563,7 +563,7 @@ function RequestRidePage() {
                       </span>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-3 text-xs text-site-text-dim">
+                  <div className="mt-3 flex items-center gap-3 text-xs text-site-text-muted">
                     {ride.distanceMeters != null && (
                       <span className="flex items-center gap-1">
                         <RouteIcon className="h-3 w-3" /> {formatDistance(ride.distanceMeters)}

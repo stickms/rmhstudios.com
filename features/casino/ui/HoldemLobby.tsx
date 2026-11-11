@@ -96,24 +96,24 @@ export function HoldemLobby({ coins }: Props) {
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">{t("max-players", { defaultValue: "Max players" })}</label>
+              <label className="text-xs text-site-text-muted">{t("max-players", { defaultValue: "Max players" })}</label>
               <Select value={maxPlayers} onChange={(e) => setMaxPlayers(Number(e.target.value))}>
                 {[2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">{t("small-blind", { defaultValue: "Small blind" })}</label>
+              <label className="text-xs text-site-text-muted">{t("small-blind", { defaultValue: "Small blind" })}</label>
               <Select value={smallBlind} onChange={(e) => setSmallBlind(Number(e.target.value))}>
                 {[1, 5, 10, 25, 50].map((n) => <option key={n} value={n}>{n}/{n * 2}</option>)}
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">{t("buy-in", { defaultValue: "Buy-in" })}</label>
+              <label className="text-xs text-site-text-muted">{t("buy-in", { defaultValue: "Buy-in" })}</label>
               <input type="number" min={smallBlind * 2} value={buyIn} onChange={(e) => setBuyIn(Number(e.target.value))}
                 className="glass-inset border px-2 py-1 text-site-text text-sm" />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">{t("privacy", { defaultValue: "Privacy" })}</label>
+              <label className="text-xs text-site-text-muted">{t("privacy", { defaultValue: "Privacy" })}</label>
               <Select value={privacy} onChange={(e) => setPrivacy(e.target.value as 'public' | 'unlisted')}>
                 <option value="public">{t("privacy-public", { defaultValue: "Public" })}</option>
                 <option value="unlisted">{t("privacy-unlisted", { defaultValue: "Unlisted" })}</option>
@@ -140,7 +140,7 @@ export function HoldemLobby({ coins }: Props) {
             <Plus className="w-4 h-4 mr-1" /> {t("create-table", { defaultValue: "Create Table" })}
           </Button>
           <Button variant="secondary" size="icon" onClick={handleRefresh}
-            className="text-site-text-dim hover:text-site-text">
+            className="text-site-text-muted hover:text-site-text">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
@@ -148,7 +148,7 @@ export function HoldemLobby({ coins }: Props) {
 
       {roomList.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-sm text-site-text-dim">{t("no-tables", { defaultValue: "No tables yet. Create one to start playing!" })}</p>
+          <p className="text-sm text-site-text-muted">{t("no-tables", { defaultValue: "No tables yet. Create one to start playing!" })}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -158,13 +158,13 @@ export function HoldemLobby({ coins }: Props) {
               className="glass-fill glass-interactive flex items-center justify-between p-3 rounded-site-sm transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>
-                <span className="text-xs text-site-text-dim">
+                <span className="text-xs text-site-text-muted">
                   {t("blinds", { defaultValue: "Blinds" })}: {room.smallBlind}/{room.bigBlind}
                   {room.inProgress && <span className="ml-1.5 text-site-accent">{t("in-progress", { defaultValue: "In progress" })}</span>}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-site-text-dim" />
+                <Users className="w-3.5 h-3.5 text-site-text-muted" />
                 <span className={`text-sm font-bold ${room.playerCount >= room.maxPlayers ? 'text-site-danger' : 'text-site-text'}`}>
                   {room.playerCount}/{room.maxPlayers}
                 </span>

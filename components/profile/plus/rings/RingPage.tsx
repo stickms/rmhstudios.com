@@ -86,7 +86,7 @@ export default function RingPage({ slug }: { slug: string }) {
             {ring.description}
           </p>
         ) : null}
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('ring-members', {
             count: ring.memberCount,
             defaultValue_one: '{{count}} member',
@@ -153,14 +153,14 @@ export default function RingPage({ slug }: { slug: string }) {
                   to={`/u/${m.handle ?? m.id}` as string}
                   className="glass-fill glass-interactive flex items-center gap-3 rounded-site px-4 py-3"
                 >
-                  <span className="w-6 text-sm tabular-nums text-site-text-dim">{i + 1}</span>
+                  <span className="w-6 text-sm tabular-nums text-site-text-muted">{i + 1}</span>
                   <UserAvatar src={m.image} alt="" size={32} fallbackName={m.name ?? undefined} />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-site-text">
                       {m.name ?? m.handle}
                     </span>
                     {m.handle ? (
-                      <span className="block truncate text-xs text-site-text-dim">@{m.handle}</span>
+                      <span className="block truncate text-xs text-site-text-muted">@{m.handle}</span>
                     ) : null}
                   </span>
                 </Link>

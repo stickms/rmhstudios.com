@@ -79,7 +79,7 @@ function PerformancePage() {
             <RefreshCw aria-hidden />
             {t('refresh', { defaultValue: 'Refresh' })}
           </Button>
-          <span className="text-xs text-site-text-dim">
+          <span className="text-xs text-site-text-muted">
             {t('updated-at', { defaultValue: 'Updated {{time}}', time: fmtClock(updatedAt) })}
           </span>
           {failed && (

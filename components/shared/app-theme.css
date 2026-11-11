@@ -143,7 +143,7 @@
 }
 
 /* ── Plasmatic Jelly palette (docs/plans/plasmatic-jelly/01-material.md §4.3) ──
-   The app tier's mirror of the site's `--site-jelly-*` tokens, derived from the
+   The app tier's own haze and plasma tokens, derived from the
    one accent an app declares. `.app-glass` (§7) maps these onto the host knobs
    the shader engine and the CSS carrier read (`--jelly-*`), so one material
    contract serves both tiers. Dark default here; `.app-light` and
@@ -158,9 +158,8 @@
   --app-jelly-plasma-b: color-mix(in oklch, var(--app-accent), #9b6bff 45%);
   --app-jelly-plasma: 0.8;
   --app-jelly-flow-speed: 1;
-  /* #989 gel colours, mirroring the site's `--gel-*` (app/globals.css :root explains each): a translucent body that
-     darkens toward its base, the ink-gel primary action, the RGB-led edge tints and the 1px Fresnel line. The px
-     geometry (`--gel-bevel`, `--gel-disperse-*`) is theme-independent and read from the site tokens. */
+  /* Gel colours: a translucent body that darkens toward its base, the ink-fill primary action, the RGB-led edge tints
+     and the 1px Fresnel line. */
   --app-gel-body: rgb(255 255 255 / 0.012);
   --app-gel-depth: rgb(0 0 0 / 0.16);
   --app-gel-ink: var(--app-accent);
@@ -171,18 +170,17 @@
   --app-gel-edge-g: rgb(80 220 150 / 0.1);
   --app-gel-edge-b: rgb(90 140 255 / 0.24);
   --app-focus-ring: var(--app-accent);
-  /* Point the site's gel contract at the app palette, so a shared primitive inside an app (the jelly roles,
-     `<Button variant="signal">`, the global focus ring) wears the app's gel, not the site theme's. */
-  --gel-body: var(--app-gel-body);
-  --gel-depth: var(--app-gel-depth);
+  /* Point the ink-fill action and the focus ring at the app palette, so a shared primitive inside an app
+     (`<Button variant="signal">`, the global focus ring) wears the app's accent, not the site's ink. */
   --gel-ink: var(--app-gel-ink);
   --on-ink: var(--app-on-ink);
-  --gel-fresnel: var(--app-gel-fresnel);
-  --gel-specular: var(--app-gel-specular);
-  --gel-edge-r: var(--app-gel-edge-r);
-  --gel-edge-g: var(--app-gel-edge-g);
-  --gel-edge-b: var(--app-gel-edge-b);
   --focus-ring: var(--app-focus-ring);
+  /* The gel geometry the `bg-app-surface` / `.app-glass` rim below reads. The site tokens that used to carry it were
+     deleted with the old material (Steel T3), so the app tier owns the literal values it resolved to. */
+  --gel-bevel: 4px;
+  --gel-disperse-r: -0.75px;
+  --gel-disperse-g: 0px;
+  --gel-disperse-b: 0.75px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -284,7 +282,6 @@
   --gel-disperse-r: 0px;
   --gel-disperse-g: 0px;
   --gel-disperse-b: 0px;
-  --plasma-wake: 0;
 }
 
 @supports (color: color-mix(in srgb, red 50%, blue)) {
@@ -299,49 +296,85 @@
   }
 }
 
-/* ── The AppShell tier reads the site contract (redesign E1, step 2) ─────────
-   `AppShell` stamps `data-tier="app"` on its root. On that root every `--app-*`
-   token that has a site counterpart is written in `--site-*` terms, so the
-   site's own token sets drive the apps instead of a parallel hex ramp:
+/* ── The AppShell tier owns its palette (Steel L8) ──────────────────────────
+   `AppShell` stamps `data-tier="app"` on its root. Until Steel this tier read the site's token sets (Midnight for the
+   dark shell, Daylight for the light one) through `--site-*`. Steel replaced those values and deleted the tokens it
+   read (the opaque surface, the glass and shadow tokens), and L8 says full-screen apps keep their own look, so the
+   tier now carries the LITERAL values it resolved to before, as `--app-tier-ground` and `--app-tier-ink` (the ramp's
+   two ends) plus the site tokens a shared primitive inside an app still reads. Nothing here follows the site edition.
 
-   - the DARK and high-contrast appearances scope Midnight onto the shell (the
-     `.style-graphite` token block in app/globals/tokens-themes.css carries this
-     shell as a second, zero-specificity selector, and `html.app-route` makes its
-     surfaces opaque there too);
-   - the LIGHT appearance inherits Daylight from `<html>` (an app route carries no
-     theme class, so `<html>` holds the `:root` Daylight tokens: lib/prepaint/theme.ts).
+   - the DARK and high-contrast appearances: Midnight as it was (OLED black ground, #1c1c1e surfaces, the #2997ff accent);
+   - the LIGHT appearance: Daylight as it was (white ground, ink #000, ink accent).
 
-   The neutral ramp is the tier modifier: `--site-surface-opaque` stepped toward
-   `--site-text` by a fixed share per step. The shares were fitted so the old hex
-   ramps above come back within a few levels: red and green within 3/255, blue
-   within 6/255 (Midnight) and 10/255 (Daylight), because the old ramps carried a
-   faint cool cast the site's neutral tokens do not. The table is
-   docs/design-language.md §12.2. Type, shape, depth and
-   motion are the site tokens of equal value.
-
-   What does NOT move: per-app palettes (`.rmhtube-theme`, `.rmhtype-theme`, …)
-   still override `--app-*` at this specificity and later in the cascade, so an app
-   that declares a ramp keeps it; high contrast (`.app-theme.app-high-contrast`,
-   0,2,0) keeps its literal opaque ramp and solid edge; the status hues
-   (`--app-success` … `--app-rare`) stay the tier's own, because the site's are
-   tuned for a different ground and the site has no info/rare; and a bare
-   `.app-theme` without `data-tier` (the games that wear this chrome without
-   AppShell) keeps the literal ramp above, untouched. Engines without
-   `color-mix()` keep the literal ramp too (the derived steps are inside @supports). */
+   The neutral ramp is the tier modifier: `--app-tier-ground` stepped toward `--app-tier-ink` by a fixed share per step
+   (the shares were fitted so the old hex ramps above come back within a few levels). What does NOT move: per-app
+   palettes (`.rmhtube-theme`, `.rmhtype-theme`, ...) still override `--app-*` at this specificity and later in the
+   cascade; high contrast (`.app-theme.app-high-contrast`, 0,2,0) keeps its literal opaque ramp and solid edge; the
+   status hues stay the tier's own; and a bare `.app-theme` without `data-tier` keeps the literal ramp above. Engines
+   without `color-mix()` keep the literal ramp too (the derived steps are inside @supports). */
+:where(.app-theme[data-tier='app']) {
+  /* Dark (Midnight) */
+  --app-tier-ground: #1c1c1e;
+  --app-tier-ink: #e7e9ef;
+  color-scheme: dark;
+  --site-bg: #000000;
+  --site-bg-subtle: rgba(255, 255, 255, 0.05);
+  --site-surface: #1c1c1e;
+  --site-surface-hover: color-mix(in srgb, #e7e9ef 6%, #1c1c1e);
+  --site-surface-active: color-mix(in srgb, #e7e9ef 12%, #1c1c1e);
+  --site-border: rgba(255, 255, 255, 0.12);
+  --site-text: #e7e9ef;
+  --site-text-muted: #b6bdca;
+  --site-accent: #2997ff;
+  --site-accent-fg: #001227;
+  --site-accent-hover: #47a5ff;
+  --site-success: #30d158;
+  --site-success-fg: #08120c;
+  --site-danger: #ff453a;
+  --site-danger-fg: #ffffff;
+  --site-warning: #ff9f0a;
+  --site-warning-fg: #100b00;
+  --site-radius: 32px;
+  --site-radius-sm: 24px;
+  --site-control-radius: 24px;
+}
+:where(.app-theme.app-light[data-tier='app']) {
+  /* Light (Daylight) */
+  --app-tier-ground: #ffffff;
+  --app-tier-ink: #000000;
+  color-scheme: light;
+  --site-bg: #ffffff;
+  --site-bg-subtle: rgba(0, 0, 0, 0.045);
+  --site-surface: #ffffff;
+  --site-surface-hover: color-mix(in srgb, #000000 6%, #ffffff);
+  --site-surface-active: color-mix(in srgb, #000000 12%, #ffffff);
+  --site-border: rgba(0, 0, 0, 0.16);
+  --site-text: #000000;
+  --site-text-muted: #565656;
+  --site-accent: #000000;
+  --site-accent-fg: #ffffff;
+  --site-accent-hover: #1a1a1a;
+  --site-success: #167d3a;
+  --site-success-fg: #ffffff;
+  --site-danger: #c40016;
+  --site-danger-fg: #ffffff;
+  --site-warning: #7a4a00;
+  --site-warning-fg: #ffffff;
+}
 .app-theme:where([data-tier='app']) {
-  --app-text: var(--site-text);
+  --app-text: var(--app-tier-ink);
   --app-accent: var(--site-accent);
   --app-accent-fg: var(--site-accent-fg);
   --app-accent-hover: var(--site-accent-hover);
   --app-font-display: var(--site-font-display);
   --app-font-body: var(--site-font-body);
   --app-font-mono: var(--site-font-mono);
-  /* The tier sits one step down the site's concentric scale: an app card is a site control's corner. */
-  --app-radius-lg: var(--site-radius);
-  --app-radius: var(--site-radius-sm);
-  --app-radius-sm: calc(var(--site-radius-sm) * 0.75);
-  --app-shadow: var(--site-shadow);
-  --app-shadow-sm: var(--site-shadow-sm);
+  /* The tier sits one step down the old concentric scale: an app card is 24px, a control 18px. */
+  --app-radius-lg: 32px;
+  --app-radius: 24px;
+  --app-radius-sm: 18px;
+  --app-shadow: 0 0 0 0 transparent;
+  --app-shadow-sm: 0 0 0 0 transparent;
   --app-duration-fast: calc(var(--site-transition-speed) * 0.75);
   --app-duration: var(--site-transition-speed);
   --app-duration-slow: calc(var(--site-transition-speed) * 1.375);
@@ -349,31 +382,31 @@
 }
 
 @supports (color: color-mix(in srgb, red 50%, blue)) {
-  /* Dark: the ground IS the site's opaque surface; each step above it takes more ink. */
+  /* Dark: the ground IS the tier's surface; each step above it takes more ink. */
   .app-theme:where([data-tier='app']) {
-    --app-bg: var(--site-surface-opaque);
-    --app-bg-subtle: color-mix(in srgb, var(--site-text) 2.5%, var(--site-surface-opaque));
-    --app-surface: color-mix(in srgb, var(--site-text) 6%, var(--site-surface-opaque));
-    --app-surface-hover: color-mix(in srgb, var(--site-text) 11%, var(--site-surface-opaque));
-    --app-surface-active: color-mix(in srgb, var(--site-text) 15%, var(--site-surface-opaque));
-    --app-border: color-mix(in srgb, var(--site-text) 15%, var(--site-surface-opaque));
-    --app-border-bright: color-mix(in srgb, var(--site-text) 23%, var(--site-surface-opaque));
-    --app-text-muted: color-mix(in srgb, var(--site-text) 62%, var(--site-surface-opaque));
-    --app-text-dim: color-mix(in srgb, var(--site-text) 38.5%, var(--site-surface-opaque));
+    --app-bg: var(--app-tier-ground);
+    --app-bg-subtle: color-mix(in srgb, var(--app-tier-ink) 2.5%, var(--app-tier-ground));
+    --app-surface: color-mix(in srgb, var(--app-tier-ink) 6%, var(--app-tier-ground));
+    --app-surface-hover: color-mix(in srgb, var(--app-tier-ink) 11%, var(--app-tier-ground));
+    --app-surface-active: color-mix(in srgb, var(--app-tier-ink) 15%, var(--app-tier-ground));
+    --app-border: color-mix(in srgb, var(--app-tier-ink) 15%, var(--app-tier-ground));
+    --app-border-bright: color-mix(in srgb, var(--app-tier-ink) 23%, var(--app-tier-ground));
+    --app-text-muted: color-mix(in srgb, var(--app-tier-ink) 62%, var(--app-tier-ground));
+    --app-text-dim: color-mix(in srgb, var(--app-tier-ink) 38.5%, var(--app-tier-ground));
   }
 
-  /* Light: the card IS the site's opaque surface; the ground and lines sit below it. */
+  /* Light: the card IS the tier's ground colour; the ground and lines sit below it. */
   .app-theme.app-light:where([data-tier='app']) {
-    --app-bg: color-mix(in srgb, var(--site-text) 4%, var(--site-surface-opaque));
-    --app-bg-subtle: color-mix(in srgb, var(--site-text) 7%, var(--site-surface-opaque));
-    --app-surface: var(--site-surface-opaque);
-    --app-surface-hover: color-mix(in srgb, var(--site-text) 6%, var(--site-surface-opaque));
-    --app-surface-active: color-mix(in srgb, var(--site-text) 10%, var(--site-surface-opaque));
-    --app-border: color-mix(in srgb, var(--site-text) 17%, var(--site-surface-opaque));
-    --app-border-bright: color-mix(in srgb, var(--site-text) 25%, var(--site-surface-opaque));
-    --app-text: color-mix(in srgb, var(--site-text) 83.5%, var(--site-surface-opaque));
-    --app-text-muted: color-mix(in srgb, var(--site-text) 58.5%, var(--site-surface-opaque));
-    --app-text-dim: color-mix(in srgb, var(--site-text) 39.5%, var(--site-surface-opaque));
+    --app-bg: color-mix(in srgb, var(--app-tier-ink) 4%, var(--app-tier-ground));
+    --app-bg-subtle: color-mix(in srgb, var(--app-tier-ink) 7%, var(--app-tier-ground));
+    --app-surface: var(--app-tier-ground);
+    --app-surface-hover: color-mix(in srgb, var(--app-tier-ink) 6%, var(--app-tier-ground));
+    --app-surface-active: color-mix(in srgb, var(--app-tier-ink) 10%, var(--app-tier-ground));
+    --app-border: color-mix(in srgb, var(--app-tier-ink) 17%, var(--app-tier-ground));
+    --app-border-bright: color-mix(in srgb, var(--app-tier-ink) 25%, var(--app-tier-ground));
+    --app-text: color-mix(in srgb, var(--app-tier-ink) 83.5%, var(--app-tier-ground));
+    --app-text-muted: color-mix(in srgb, var(--app-tier-ink) 58.5%, var(--app-tier-ground));
+    --app-text-dim: color-mix(in srgb, var(--app-tier-ink) 39.5%, var(--app-tier-ground));
   }
 }
 
@@ -645,7 +678,7 @@
    its own (`--app-glass-bg` is ~85% opaque). */
 .app-glass {
   /* Jelly host knobs (app/jelly-material.css §1): the pane role, in the app palette. The palette knobs redirect
-     every jelly consumer (woken haze, floor, CSS rim) from `--site-jelly-*` to `--app-jelly-*`. */
+     every jelly consumer (woken haze, floor, CSS rim) to the app palette. */
   --jelly-haze-a: var(--app-jelly-haze-pane);
   --jelly-plasma-k: 0.06;
   --jelly-flow-speed: 1;
@@ -743,17 +776,16 @@
   }
 }
 /* Site roles in the app palette. `.glass-fill` / `-pane` / `-chrome` / `-overlay` / `-inset` and the `Switch`
-   primitive are written against the `--site-*` contract (app/glass-roles.css, app/jelly-material.css,
-   app/jelly-coverage.css). An app route carries no site theme class, and `html.app-route` resolves the site glass
-   tint to the opaque Daylight surface (app/globals.css), so a bare `.glass-fill` in an app painted a WHITE card under
-   the app's ink, and a `Switch` took the site's accent. This points that contract at the app palette on the role host
-   itself (the way §1 points `--gel-*` at `--app-gel-*`), ink included, because the app tiers use `text-site-*`
-   inside their roles; every role rule then resolves to the app's colours with none restated.
+   primitive are written against the `--site-*` contract. On the site tier Steel remaps the role classes to flat
+   surfaces (app/styles/steel-surfaces.css: no background, no border). An app is a full-screen tier that keeps its own
+   look (L8) and its panels are those roles, so here they stay panels in the app palette: the tier's translucent
+   `--app-glass-bg`, a 1px `--app-border` edge and the tier's own radius, flat, with no haze, rim or press physics
+   (those belonged to the deleted material). First written for RMHbox (components/rmhbox/rmhbox.css, c5ca7bf);
+   shared here so every app tier gets it. The `ResizableHandle` primitive (hairline + grip) is a site-token control
+   like `Switch`, first needed by RMH Studio.
 
-   In `@layer components` on purpose: unlike the unlayered `.app-glass`, a state utility on the same element
-   (`bg-app-accent/5`, `border-app-success/60`) still wins, so selection and result highlights keep their
-   state. First written for RMHbox (components/rmhbox/rmhbox.css, c5ca7bf); shared here so every app tier gets it.
-   The `ResizableHandle` primitive (hairline + grip) is a site-token control like `Switch`, first needed by RMH Studio. */
+   In `@layer components` on purpose, so a state utility on the same element (`bg-app-accent/5`,
+   `border-app-success/60`) still wins and selection and result highlights keep their state. */
 @layer components {
   .app-theme
     :is(
@@ -767,41 +799,28 @@
     ) {
     --site-bg: var(--app-bg);
     --site-surface: var(--app-surface);
-    --site-surface-opaque: var(--app-surface);
     --site-surface-hover: var(--app-surface-hover);
     --site-surface-active: var(--app-surface-active);
-    --site-glass-tint: var(--app-glass-bg);
-    --site-glass-light: color-mix(in srgb, var(--app-text) 12%, transparent);
     --site-border: var(--app-border);
     --site-text: var(--app-text);
     --site-text-muted: var(--app-text-muted);
-    --site-text-dim: var(--app-text-dim);
     --site-accent: var(--app-accent);
     --site-accent-fg: var(--app-accent-fg);
-    /* The palette knobs, as `.app-glass` sets them: haze and plasma in the app's colours. */
-    --jelly-haze-color: var(--app-jelly-haze);
-    --jelly-plasma-a: var(--app-jelly-plasma-a);
-    --jelly-plasma-b: var(--app-jelly-plasma-b);
-    --jelly-plasma-gain: var(--app-jelly-plasma);
-    --jelly-flow-gain: var(--app-jelly-flow-speed);
   }
-  .app-theme.app-high-contrast
-    :is(
-      .glass-fill,
-      .glass-pane,
-      .glass-chrome,
-      .glass-overlay,
-      .glass-inset,
-      [data-slot='switch']
-    ) {
-    --site-glass-tint: var(--app-surface);
-    --site-glass-light: transparent;
-    --site-border: var(--app-border-bright);
+  .app-theme :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay) {
+    background-color: var(--app-glass-bg);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-lg);
+    box-shadow: none;
   }
-  @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
-    .app-theme :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset) {
-      --site-glass-tint: var(--app-surface);
-    }
+  .app-theme :is(.glass-inset, [data-slot='input'], [data-slot='textarea']) {
+    background-color: color-mix(in srgb, var(--app-text) 3%, transparent);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+  }
+  .app-theme .glass-chrome--aside {
+    background: color-mix(in srgb, var(--app-bg) 30%, transparent);
+    border-color: var(--app-border);
   }
 }
 .app-high-contrast .app-glass {

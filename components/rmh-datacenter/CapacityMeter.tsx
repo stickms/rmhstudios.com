@@ -51,7 +51,7 @@ export function CapacityMeter({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-xs font-medium text-site-text-dim">
+        <span className="text-xs font-medium text-site-text-muted">
           {label}
         </span>
         <span className="font-display text-sm font-semibold text-site-text">{value}</span>

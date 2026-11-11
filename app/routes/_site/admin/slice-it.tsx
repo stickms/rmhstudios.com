@@ -212,7 +212,7 @@ function ChartRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-base font-semibold text-site-text">{row.songTitle}</span>
-            <span className="text-sm text-site-text-dim">{row.songArtist}</span>
+            <span className="text-sm text-site-text-muted">{row.songArtist}</span>
             <StateBadge state={row.rankStatus} />
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-site-text-muted">
@@ -360,7 +360,7 @@ function Gate({
         >
           {value}
         </span>
-        <span className="text-xs text-site-text-dim">{target}</span>
+        <span className="text-xs text-site-text-muted">{target}</span>
         {passed ? (
           <Check className="size-3.5 shrink-0 text-site-success" aria-hidden="true" />
         ) : (

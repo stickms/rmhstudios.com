@@ -71,7 +71,7 @@ export function AIGenerateButton({
  className={`${pad} rounded-full transition-colors disabled:opacity-60 ${
  error
  ?'text-site-danger hover:bg-site-danger/10'
- :'text-site-text-dim hover:text-site-accent hover:bg-site-accent/10'
+ :'text-site-text-muted hover:text-site-accent hover:bg-site-accent/10'
  } ${className}`}
  >
  {loading ? (

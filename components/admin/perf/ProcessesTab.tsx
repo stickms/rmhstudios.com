@@ -49,7 +49,7 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
             {t('proc-worker', { defaultValue: 'worker {{id}}', id: String(p.clusterWorkerId) })}
           </Badge>
         )}
-        <span className="text-xs text-site-text-dim">{p.hostname}</span>
+        <span className="text-xs text-site-text-muted">{p.hostname}</span>
         <span className="ml-auto text-xs text-site-text-muted">
           {t('proc-uptime', { defaultValue: 'up {{uptime}}', uptime: fmtUptime(p.uptimeSec) })}
         </span>
@@ -126,7 +126,7 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
               <ul className="mt-1 space-y-0.5 text-xs">
                 {gauges.map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
-                    <span className="font-mono text-site-text-dim break-all">{k}</span>
+                    <span className="font-mono text-site-text-muted break-all">{k}</span>
                     <span className="tabular-nums text-site-text">{fmtInt(v)}</span>
                   </li>
                 ))}
@@ -141,7 +141,7 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
               <ul className="mt-1 space-y-0.5 text-xs">
                 {counters.map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
-                    <span className="font-mono text-site-text-dim break-all">{k}</span>
+                    <span className="font-mono text-site-text-muted break-all">{k}</span>
                     <span className="tabular-nums text-site-text">{fmtInt(v)}</span>
                   </li>
                 ))}
@@ -156,7 +156,7 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
               <ul className="mt-1 space-y-0.5 text-xs">
                 {handles.map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
-                    <span className="font-mono text-site-text-dim break-all">{k}</span>
+                    <span className="font-mono text-site-text-muted break-all">{k}</span>
                     <span className="tabular-nums text-site-text">{fmtInt(v)}</span>
                   </li>
                 ))}

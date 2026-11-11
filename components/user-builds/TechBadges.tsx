@@ -11,7 +11,7 @@ interface TechBadgesProps {
 // per-tech tint can't be made legible in both polarities — so every chip now uses
 // one design-system token pair (accent tint + accent ink) that is guaranteed to
 // contrast in every theme.
-const TECH_CHIP = 'bg-site-accent-dim text-site-accent border-site-border';
+const TECH_CHIP = 'bg-site-bg-subtle text-site-accent border-site-border';
 
 export function TechBadges({ technologies, size = 'md', limit }: TechBadgesProps) {
   let parsedTechs: string[] = [];
@@ -46,7 +46,7 @@ export function TechBadges({ technologies, size = 'md', limit }: TechBadgesProps
         </span>
       ))}
       {remaining > 0 && (
-        <span className={`${sizeClasses} glass-inset text-site-text-dim`}>+{remaining}</span>
+        <span className={`${sizeClasses} glass-inset text-site-text-muted`}>+{remaining}</span>
       )}
     </div>
   );

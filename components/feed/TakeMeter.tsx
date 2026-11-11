@@ -96,7 +96,7 @@ export default function TakeMeter({ postId }: { postId: string }) {
             <span className="font-semibold text-site-success">
               {t('take-agree-pct', { pct: split.agree, defaultValue: 'Agree {{pct}}%' })}
             </span>
-            <span className="text-site-text-dim">
+            <span className="text-site-text-muted">
               {t('take-total', {
                 count: split.total,
                 defaultValue_one: '{{count}} vote',

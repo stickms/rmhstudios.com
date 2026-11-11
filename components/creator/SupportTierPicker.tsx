@@ -94,7 +94,7 @@ export function SupportTierPicker({
         </DialogHeader>
 
         {tiers.length === 0 ? (
-          <p className="py-6 text-center text-sm text-site-text-dim">
+          <p className="py-6 text-center text-sm text-site-text-muted">
             {t('no-tiers-available', {
               defaultValue: 'This creator is not offering memberships yet.',
             })}
@@ -108,7 +108,7 @@ export function SupportTierPicker({
                   <span className="flex items-center gap-1 text-sm font-semibold text-site-text tabular-nums">
                     <Coins className="size-4 text-site-warning" aria-hidden />
                     {tier.priceCoins}
-                    <span className="text-site-text-dim font-normal">
+                    <span className="text-site-text-muted font-normal">
                       {t('per-30-days', { defaultValue: '/ 30d' })}
                     </span>
                   </span>

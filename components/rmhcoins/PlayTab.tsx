@@ -100,7 +100,7 @@ export function PlayTab({ coins, setCoins, signedIn }: Props) {
           idBase="rmhcoins-play"
           aria-label={t('play-games-aria', { defaultValue: 'Casino games' })}
         />
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {games.find((g) => g.value === selected)?.description}
         </p>
       </div>

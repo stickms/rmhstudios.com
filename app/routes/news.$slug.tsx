@@ -115,7 +115,7 @@ function NewsArticlePage() {
         <motion.div variants={staggerItem}>
         <Link
           to="/news"
-          className="inline-flex min-h-11 items-center gap-2 text-site-text-dim hover:text-site-text mb-6 transition-colors duration-site"
+          className="inline-flex min-h-11 items-center gap-2 text-site-text-muted hover:text-site-text mb-6 transition-colors duration-site"
         >
           <ArrowLeft className="size-4" aria-hidden /> {t('back-to-news', { defaultValue: 'Back to News' })}
         </Link>
@@ -173,7 +173,7 @@ function NewsArticlePage() {
             <p className="text-site-text font-bold text-lg mb-1 leading-snug">
               {article.sourceTitle || article.title}
             </p>
-            <p className="text-site-text-dim text-sm mb-3">
+            <p className="text-site-text-muted text-sm mb-3">
               {article.sourcePublisher}
               {article.sourceDate && ` \u00B7 ${article.sourceDate}`}
             </p>
@@ -201,7 +201,7 @@ function NewsArticlePage() {
         <AdSlot placement="article-end" className="mb-10" />
 
         <div className="text-center">
-          <p className="text-site-text-dim italic">
+          <p className="text-site-text-muted italic">
             {t('end-of-article', { defaultValue: 'End of Article' })}
           </p>
         </div>

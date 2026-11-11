@@ -57,7 +57,7 @@ function StatTile({
   // was re-blurred on every scroll frame (perf audit 2026-10-08, scroll).
   return (
     <Card className="p-4">
-      <div className="text-xs font-medium text-site-text-dim">{label}</div>
+      <div className="text-xs font-medium text-site-text-muted">{label}</div>
       <div className="flex items-center gap-2 text-2xl font-bold tabular-nums">
         {Icon ? <Icon className="size-5 text-site-warning" aria-hidden /> : null}
         {value.toLocaleString()}
@@ -123,7 +123,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
           <h2 className="site-section-label">
             {t('earnings-by-source', { defaultValue: 'Earnings by source' })}
           </h2>
-          <span className="text-xs font-medium text-site-text-dim">
+          <span className="text-xs font-medium text-site-text-muted">
             {t('last-6-months', { defaultValue: 'Last 6 months' })}
           </span>
         </div>
@@ -131,7 +131,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
         <div className="grid grid-cols-3 gap-3">
           {sources.map(({ key, label, bar }) => (
             <div key={key} className="glass-inset rounded-site px-3 py-3">
-              <div className="flex items-center gap-1.5 text-xs text-site-text-dim">
+              <div className="flex items-center gap-1.5 text-xs text-site-text-muted">
                 <span className={`inline-block size-2.5 rounded-full ${bar}`} aria-hidden />
                 {label}
               </div>
@@ -155,7 +155,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
               );
               return (
                 <div key={m.month} className="flex items-center gap-3">
-                  <span className="w-9 shrink-0 text-xs text-site-text-dim tabular-nums">
+                  <span className="w-9 shrink-0 text-xs text-site-text-muted tabular-nums">
                     {monthLabel}
                   </span>
                   <div className="flex h-3 flex-1 overflow-hidden rounded-full bg-site-surface">
@@ -182,7 +182,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
             })}
           </div>
         ) : (
-          <p className="text-sm text-site-text-dim">
+          <p className="text-sm text-site-text-muted">
             {t('no-earnings-window', { defaultValue: 'No earnings in this window yet.' })}
           </p>
         )}
@@ -192,7 +192,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
       <div className="space-y-3">
         <h2 className="site-section-label">{t('recent-tips', { defaultValue: 'Recent tips' })}</h2>
         {recentTips.length === 0 ? (
-          <p className="text-sm text-site-text-dim">
+          <p className="text-sm text-site-text-muted">
             {t('no-tips-yet', {
               defaultValue: 'No tips yet — supporters who tip will show up here.',
             })}
@@ -209,7 +209,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
                     {tip.sender?.name ?? t('someone', { defaultValue: 'Someone' })}
                   </span>
                   {tip.sender?.handle ? (
-                    <span className="text-xs font-medium text-site-text-dim"> @{tip.sender.handle}</span>
+                    <span className="text-xs font-medium text-site-text-muted"> @{tip.sender.handle}</span>
                   ) : null}
                   {tip.note ? (
                     <p className="truncate text-xs text-site-text-muted">{tip.note}</p>
@@ -220,7 +220,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
                     <Coins className="size-4 text-site-warning" aria-hidden />
                     {tip.amount.toLocaleString()}
                   </span>
-                  <span className="text-xs font-medium text-site-text-dim"><RelativeTime date={tip.createdAt} format={relativeTimeShort} /></span>
+                  <span className="text-xs font-medium text-site-text-muted"><RelativeTime date={tip.createdAt} format={relativeTimeShort} /></span>
                 </div>
               </div>
             ))}

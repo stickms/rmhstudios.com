@@ -336,8 +336,8 @@
 }
 
 .store-spot__link:hover {
-  border-color: var(--site-border-bright);
-  box-shadow: var(--site-shadow);
+  border-color: var(--site-text);
+  box-shadow: none;
   transform: translateY(-3px);
 }
 
@@ -415,7 +415,7 @@
   margin-top: auto;
   padding-top: 4px;
   font-size: 0.7rem;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 /* ── Catalog mosaic ─────────────────────────────────────────────────────────── */
@@ -473,8 +473,8 @@
 }
 
 .store-card__link:hover {
-  border-color: var(--site-border-bright);
-  box-shadow: var(--site-shadow);
+  border-color: var(--site-text);
+  box-shadow: none;
   transform: translateY(-3px);
 }
 
@@ -567,7 +567,7 @@
 .store-card__meta {
   margin-top: 2px;
   font-size: 0.7rem;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 /* ⓘ details button (curated builds) — top-right, appears on hover. */

@@ -129,7 +129,7 @@ export function RankedSummary() {
                     {nameFor(r.game)}
                   </span>
                   <span className="font-bold tabular-nums text-site-accent">{fmt(r.rating)}</span>
-                  <span className="tabular-nums text-site-text-dim">
+                  <span className="tabular-nums text-site-text-muted">
                     {t('ranked-summary-record', {
                       wins: r.wins,
                       losses: r.losses,

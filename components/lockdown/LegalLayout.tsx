@@ -60,7 +60,7 @@ export function LegalLayout({
           <ChevronLeft className="size-4" strokeWidth={2.2} aria-hidden="true" />
           RMHStudios
         </a>
-        <span className="text-site-text-dim" aria-hidden="true">
+        <span className="text-site-text-muted" aria-hidden="true">
           /
         </span>
         <span className="min-w-0 truncate font-medium text-site-text">{title}</span>
@@ -106,7 +106,7 @@ export function LegalLayout({
               {t(l.key, { defaultValue: l.defaultLabel })}
             </a>
           ))}
-          <span className="inline-flex min-h-11 items-center px-3 text-xs text-site-text-dim">
+          <span className="inline-flex min-h-11 items-center px-3 text-xs text-site-text-muted">
             &copy; {new Date().getFullYear()} RMHStudios
           </span>
         </nav>

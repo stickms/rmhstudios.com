@@ -231,7 +231,7 @@ export function StorefrontColumn({
  {creator.name ||'Creator'}
  </p>
  {creator.handle && (
- <p className="truncate text-xs text-site-text-dim">@{creator.handle}</p>
+ <p className="truncate text-xs text-site-text-muted">@{creator.handle}</p>
  )}
  </div>
  </div>
@@ -324,7 +324,7 @@ export function StorefrontColumn({
  {p.description && (
  <p className="mt-0.5 text-sm text-site-text-muted">{p.description}</p>
  )}
- <p className="mt-1 text-xs text-site-text-dim">
+ <p className="mt-1 text-xs text-site-text-muted">
  {t('sold-count', {
  count: p.salesCount,
  formattedCount: fmt(p.salesCount),

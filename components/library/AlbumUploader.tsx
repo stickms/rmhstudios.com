@@ -281,8 +281,8 @@ export function AlbumUploader({
         className={cn(
           'flex w-full cursor-pointer flex-col items-center gap-2 rounded-site border-2 border-dashed px-5 py-8 text-center text-site-text-muted transition-colors duration-site-fast',
           dragging
-            ? 'border-site-accent bg-site-accent-dim text-site-text'
-            : 'border-site-border-bright hover:border-site-accent hover:text-site-text',
+            ? 'border-site-accent bg-site-bg-subtle text-site-text'
+            : 'border-site-text hover:border-site-accent hover:text-site-text',
         )}
         role="button"
         tabIndex={0}

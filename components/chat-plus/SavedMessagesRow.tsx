@@ -60,7 +60,7 @@ export function SavedMessagesRow() {
       onClick={() => void open()}
       className="flex min-h-14 w-full items-center gap-3 border-b border-site-border px-4 py-3 text-left hover:bg-site-surface/50 focus-visible:ring-2 focus-visible:ring-site-accent"
     >
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
         <Bookmark className="size-5" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
@@ -78,14 +78,14 @@ export function SavedMessagesHeader() {
   const { t } = useTranslation('f-messaging');
   return (
     <div className="flex items-center gap-2">
-      <span className="flex size-8 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+      <span className="flex size-8 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
         <Bookmark className="size-4" aria-hidden />
       </span>
       <div>
         <p className="font-display text-sm font-bold text-site-text">
           {t('saved-messages', { defaultValue: 'Saved Messages' })}
         </p>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('saved-subtitle', { defaultValue: 'Only you can see this' })}
         </p>
       </div>

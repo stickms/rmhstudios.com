@@ -257,7 +257,7 @@ export function CommunityColumn({
 
  {/* Pinned announcements */}
  {(community.announcements.length > 0 || isMod) && (
- <Reveal delay={0.06} className="border-b border-site-border bg-site-accent-dim/30 p-4">
+ <Reveal delay={0.06} className="border-b border-site-border bg-site-bg-subtle/30 p-4">
  <div className="mb-2 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Megaphone className="h-4 w-4 text-site-accent"/>{''}
@@ -270,7 +270,7 @@ export function CommunityColumn({
  )}
  </div>
  {community.announcements.length === 0 ? (
- <p className="text-xs text-site-text-dim">
+ <p className="text-xs text-site-text-muted">
  {t('no-announcements', { defaultValue:'No announcements yet.'})}
  </p>
  ) : (
@@ -309,7 +309,7 @@ export function CommunityColumn({
  <button
  type="button"
  onClick={() => removeAnnouncement(a.id)}
- className="shrink-0 rounded-site-sm p-1 text-site-text-dim hover:bg-site-surface-hover hover:text-site-text"
+ className="shrink-0 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
  aria-label={t('delete', { defaultValue:'Delete'})}
  >
  <X className="h-4 w-4"/>
@@ -391,7 +391,7 @@ function AnnounceDialog({
  placeholder={t('announcement-placeholder', {
  defaultValue:'Share an update with the community…',
  })}
- className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+ className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
  />
  <div className="flex justify-end gap-2">
  <Button variant="ghost"onClick={onClose} disabled={submitting}>
@@ -521,7 +521,7 @@ function MembersDialog({
  {m.name ??
  (m.handle ? `@${m.handle}`: t('someone', { defaultValue:'Someone'}))}
  </p>
- <p className="text-xs text-site-text-dim">{roleLabel(m.role)}</p>
+ <p className="text-xs text-site-text-muted">{roleLabel(m.role)}</p>
  </div>
  {canAlterMod && (
  <button

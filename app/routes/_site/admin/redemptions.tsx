@@ -107,7 +107,7 @@ function AdminRedemptionsPage() {
                               ? t('merch', { defaultValue: 'Merch redemption' })
                               : t('payout', { defaultValue: 'Cash payout' })}
                         </div>
-                        <div className="text-sm text-site-text-dim">
+                        <div className="text-sm text-site-text-muted">
                           @{r.user.handle ?? r.user.name ?? r.user.id.slice(0, 6)}
                           {' · '}
                           {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}

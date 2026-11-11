@@ -55,7 +55,7 @@ export function DailyMutatorPage() {
                 </p>
                 <h2 className="mt-1 font-display text-xl font-bold text-site-text">{game.label}</h2>
                 <p className="text-sm text-site-text-muted">{data.mutator.modifier.label}</p>
-                <p className="mt-1 text-xs text-site-text-dim">
+                <p className="mt-1 text-xs text-site-text-muted">
                   {t('resets-in', { defaultValue: 'Resets in {{time}}', time: untilReset() })}
                 </p>
               </div>

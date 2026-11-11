@@ -19,7 +19,7 @@ export function StoryBanner({ story }: { story: StoryRef }) {
         </span>{' '}
         <span className="font-semibold">{story.title}</span>
       </span>
-      <span className="shrink-0 text-site-text-dim">
+      <span className="shrink-0 text-site-text-muted">
         {t('story-count', {
           count: story.count,
           defaultValue: '{{count}} article',

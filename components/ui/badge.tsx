@@ -31,7 +31,7 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: 'border-site-border bg-site-surface text-site-text-muted',
-        accent: 'border-site-accent/20 bg-site-accent-dim text-site-accent',
+        accent: 'border-site-accent/20 bg-site-bg-subtle text-site-accent',
         solid: 'border-site-accent bg-site-accent text-site-accent-fg',
         success: 'border-site-success/20 bg-site-success/10 text-site-success',
         warning: 'border-site-warning/20 bg-site-warning/10 text-site-warning',

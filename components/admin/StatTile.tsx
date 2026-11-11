@@ -31,7 +31,7 @@ export function StatTile({
       <p className={cn('mt-1 font-display text-2xl font-bold tabular-nums', toneClass)}>
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>
-      {hint ? <p className="mt-1 text-xs text-site-text-dim">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-xs text-site-text-muted">{hint}</p> : null}
     </div>
   );
 }

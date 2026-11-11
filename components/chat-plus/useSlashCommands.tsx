@@ -193,7 +193,7 @@ export function useSlashCommands({
                 /{c.name}
                 {c.usage ? ` ${c.usage}` : ''}
               </span>
-              <span className="block truncate text-xs text-site-text-dim">
+              <span className="block truncate text-xs text-site-text-muted">
                 {t(c.labelKey, { defaultValue: c.label })}
               </span>
             </span>

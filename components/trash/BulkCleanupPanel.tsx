@@ -415,7 +415,7 @@ export function BulkCleanupPanel() {
               {preview.sample.map((row) => (
                 <li key={row.id} className="glass-fill rounded-site-sm px-3 py-2">
                   <p className="truncate text-sm text-site-text">{row.label}</p>
-                  {row.detail ? <p className="text-xs text-site-text-dim">{row.detail}</p> : null}
+                  {row.detail ? <p className="text-xs text-site-text-muted">{row.detail}</p> : null}
                 </li>
               ))}
             </ul>
@@ -487,7 +487,7 @@ export function BulkCleanupPanel() {
               >
                 <span className="text-sm text-site-text">{kinds[op.kind].label}</span>
                 <span className="flex items-center gap-2">
-                  <span className="text-xs text-site-text-dim">
+                  <span className="text-xs text-site-text-muted">
                     {t('bulk-history-processed', {
                       count: op.processed,
                       defaultValue: '{{count}} processed',

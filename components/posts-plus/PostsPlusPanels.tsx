@@ -206,7 +206,7 @@ function SeriesDialog({ pp, onClose }: { pp: PostsPlusCompose; onClose: () => vo
                 className={optionClass(pp.series?.id === s.id)}
               >
                 <span className="min-w-0 flex-1 truncate text-left">{s.title}</span>
-                <span className="text-xs text-site-text-dim">
+                <span className="text-xs text-site-text-muted">
                   {t('series-parts', { defaultValue: '{{n}} parts', n: s.postCount })}
                 </span>
                 {pp.series?.id === s.id && <Check className="h-4 w-4" aria-hidden />}

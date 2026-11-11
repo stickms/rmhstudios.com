@@ -89,7 +89,7 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
 
   return (
     <section
-      className={`rounded-site border border-site-border bg-site-accent-dim/20 p-5 ${className ?? ''}`}
+      className={`rounded-site border border-site-border bg-site-bg-subtle/20 p-5 ${className ?? ''}`}
       aria-label={t('first-week-title', { defaultValue: 'Your first week' })}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
@@ -101,7 +101,7 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
           type="button"
           onClick={onDismiss}
           aria-label={t('first-week-dismiss', { defaultValue: 'Dismiss for now' })}
-          className="rounded-site-sm p-1 text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-text"
+          className="rounded-site-sm p-1 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
@@ -125,14 +125,14 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
                   aria-hidden
                 />
               ) : locked ? (
-                <Lock className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-text-dim" aria-hidden />
+                <Lock className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-text-muted" aria-hidden />
               ) : (
-                <Circle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-text-dim" aria-hidden />
+                <Circle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-text-muted" aria-hidden />
               )}
               <span className="min-w-0 flex-1">
                 <span
                   className={
-                    step.done ? 'text-site-text-dim line-through' : 'font-medium text-site-text'
+                    step.done ? 'text-site-text-muted line-through' : 'font-medium text-site-text'
                   }
                 >
                   {step.title}

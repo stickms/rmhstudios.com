@@ -249,7 +249,7 @@ function HomesBrowsePage() {
 
         {/* Results header */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm text-site-text-dim">
+          <div className="text-sm text-site-text-muted">
             {loading ? (
               t('homes-searching', { defaultValue: 'Searching…' })
             ) : (
@@ -357,7 +357,7 @@ function HomesBrowsePage() {
             >
               <ChevronLeft className="h-4 w-4" aria-hidden /> {t('homes-prev', { defaultValue: 'Prev' })}
             </Button>
-            <span className="text-sm text-site-text-dim">
+            <span className="text-sm text-site-text-muted">
               {t('homes-page-of', {
                 defaultValue: 'Page {{page}} of {{total}}',
                 page: filters.page,

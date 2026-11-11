@@ -97,7 +97,7 @@ export function SpeedrunBoard({ entries, metric, tier, version, viewerId }: Spee
 
                   <div className="ml-auto flex items-center gap-3">
                     <span className="flex items-center gap-2 font-mono text-sm tabular-nums text-site-text">
-                      <Clock className="size-3.5 text-site-text-dim" aria-hidden />
+                      <Clock className="size-3.5 text-site-text-muted" aria-hidden />
                       {formatRunTime(entry.timeMs)}
                     </span>
                     {metric === 'score' && entry.score !== null && (

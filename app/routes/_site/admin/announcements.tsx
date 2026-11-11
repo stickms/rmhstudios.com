@@ -213,7 +213,7 @@ function AdminAnnouncementsPage() {
   // MentionTextarea is the only raw field left; it takes the same inset material
   // as `Input`/`Textarea` through its className.
   const textareaCls =
-    'glass-inset w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim';
+    'glass-inset w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted';
 
   return (
     <PageLayout
@@ -266,7 +266,7 @@ function AdminAnnouncementsPage() {
               />
             </div>
           </div>
-          <p className="text-xs text-site-text-dim">
+          <p className="text-xs text-site-text-muted">
             {t('mention-tip-prefix', { defaultValue: 'Tip: type' })}{' '}
             <span className="font-mono">@</span>{' '}
             {t('mention-tip-middle', { defaultValue: 'to mention a user or' })}{' '}
@@ -353,12 +353,12 @@ function AdminAnnouncementsPage() {
                   onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
                   className="rounded border-site-border text-site-accent focus:ring-site-accent"
                 />
-                <span className="text-xs text-site-text-dim">
+                <span className="text-xs text-site-text-muted">
                   {t('allow-multiple-selections', { defaultValue: 'Allow multiple selections' })}
                 </span>
               </label>
               <label className="flex items-center gap-2">
-                <span className="text-xs text-site-text-dim">
+                <span className="text-xs text-site-text-muted">
                   {t('poll-length', { defaultValue: 'Poll length' })}
                 </span>
                 <Select

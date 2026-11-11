@@ -108,7 +108,7 @@ export default function IdentitySettings({ userId }: { userId: string }) {
           placeholder={t('pronouns-placeholder', { defaultValue: 'they/them' })}
           onChange={(e) => setPronouns(e.target.value)}
         />
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('pronouns-hint', { defaultValue: 'Optional. Shown in your profile header.' })}
         </p>
       </div>
@@ -122,7 +122,7 @@ export default function IdentitySettings({ userId }: { userId: string }) {
             invalidateProfilePlus(userId);
           }}
         />
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('pron-hint', {
             defaultValue: 'A 5-second clip. A play button appears in your profile header.',
           })}
@@ -157,7 +157,7 @@ export default function IdentitySettings({ userId }: { userId: string }) {
             {t('timezone-detect', { defaultValue: "Use this device's zone" })}
           </Button>
         </div>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {preview
             ? t('timezone-preview', {
                 time: preview.time,
@@ -183,7 +183,7 @@ export default function IdentitySettings({ userId }: { userId: string }) {
           })}
           onChange={(e) => setNowText(e.target.value)}
         />
-        <p className="flex justify-between text-xs text-site-text-dim">
+        <p className="flex justify-between text-xs text-site-text-muted">
           <span>
             {t('now-hint', {
               days: NOW_STALE_DAYS,
@@ -202,7 +202,7 @@ export default function IdentitySettings({ userId }: { userId: string }) {
             <Label htmlFor="plus-endorse">
               {t('endorse-switch', { defaultValue: 'Let members endorse my skills' })}
             </Label>
-            <p className="mt-1 text-xs text-site-text-dim">
+            <p className="mt-1 text-xs text-site-text-muted">
               {t('endorse-switch-hint', {
                 defaultValue: 'Adds a Skills block to your profile.',
               })}
@@ -215,7 +215,7 @@ export default function IdentitySettings({ userId }: { userId: string }) {
             <Label htmlFor="plus-counter">
               {t('counter-switch', { defaultValue: 'Show a visitor counter' })}
             </Label>
-            <p className="mt-1 text-xs text-site-text-dim">
+            <p className="mt-1 text-xs text-site-text-muted">
               {t('counter-switch-hint', {
                 defaultValue: 'A retro hit counter. Each visitor counts once a day.',
               })}

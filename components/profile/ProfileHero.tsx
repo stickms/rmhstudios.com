@@ -57,7 +57,7 @@ function ProfileAvatar({
   const [imgError, setImgError] = useState(false);
   const imgSrc = imgError ? DEFAULT_AVATAR : image;
   const avatar = (
-    <div className="flex size-24 items-center justify-center overflow-hidden rounded-full bg-site-surface-opaque text-3xl font-bold text-site-text shadow-site sm:size-28">
+    <div className="flex size-24 items-center justify-center overflow-hidden rounded-full bg-site-surface text-3xl font-bold text-site-text sm:size-28">
       {imgSrc ? (
         <img
           src={buildOptimizedUrl(imgSrc, 224, 112)}
@@ -78,19 +78,19 @@ function ProfileAvatar({
     <div className="relative shrink-0">
       {frame ? (
         <div
-          className="rounded-full p-[3px] shadow-site"
+          className="rounded-full p-[3px] "
           style={{ background: frame.gradient ?? frame.color }}
         >
           {avatar}
         </div>
       ) : (
-        <div className="rounded-full border-[3px] border-site-glass-rim bg-site-bg p-0.5 shadow-site">
+        <div className="rounded-full border-[3px] border-site-border bg-site-bg p-0.5 ">
           {avatar}
         </div>
       )}
       {online ? (
         <span
-          className="absolute bottom-1 right-1 size-5 rounded-full border-[3px] border-site-surface-opaque bg-site-success"
+          className="absolute bottom-1 right-1 size-5 rounded-full border-[3px] border-site-surface bg-site-success"
           title={t('online-now', { defaultValue: 'Online now' })}
           aria-label={t('online-now', { defaultValue: 'Online now' })}
         />
@@ -202,16 +202,16 @@ export function ProfileHero({
             <div className="absolute inset-0" style={{ background: headerBackdrop }} aria-hidden />
           ) : (
             <div
-              className="absolute inset-0 bg-linear-to-br from-site-accent-dim via-site-glass-tint to-site-bg-subtle"
+              className="absolute inset-0 bg-site-bg-subtle"
               aria-hidden
             />
           )}
           <div
-            className="absolute inset-0 bg-linear-to-t from-site-surface-opaque via-site-bg/20 to-transparent"
+            className="absolute inset-0 bg-linear-to-t from-site-surface via-site-bg/20 to-transparent"
             aria-hidden
           />
           {profile.profileSongSpotifyId && profile.profileSongAlbumArt ? (
-            <div className="glass-fill absolute right-3 top-3 rounded-site-sm p-2 shadow-site-sm">
+            <div className="glass-fill absolute right-3 top-3 rounded-site-sm p-2 ">
               <VinylRecord
                 albumArt={profile.profileSongAlbumArt}
                 title={profile.profileSongTitle ?? t('unknown', { defaultValue: 'Unknown' })}
@@ -550,7 +550,7 @@ export function ProfileHero({
               aria-labelledby="profile-membership-title"
             >
               <div className="flex items-start gap-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
                   <Star className="size-4" aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">

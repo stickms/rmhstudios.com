@@ -193,7 +193,7 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
   if (save.tombstone) {
     return (
       <Card className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
-        <FileX className="h-5 w-5 shrink-0 text-site-text-dim" aria-hidden />
+        <FileX className="h-5 w-5 shrink-0 text-site-text-muted" aria-hidden />
         <span className="flex-1 text-sm text-site-text-muted">
           {t('unavailable', { defaultValue: 'This item is no longer available' })}
         </span>
@@ -218,7 +218,7 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
           loading="lazy"
         />
       ) : (
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site-sm bg-site-surface text-xs uppercase text-site-text-dim">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site-sm bg-site-surface text-xs uppercase text-site-text-muted">
           {save.entityType.slice(0, 4)}
         </span>
       )}

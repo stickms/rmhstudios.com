@@ -224,7 +224,7 @@ function Progress({ goal, year }: { goal: GoalProgress; year: number }) {
           defaultValue_other: '{{count}} days left',
         })}
       </p>
-      <p className="text-sm text-site-text-dim">
+      <p className="text-sm text-site-text-muted">
         {t('challenge-totals', {
           books: goal.books,
           pages: goal.pages,

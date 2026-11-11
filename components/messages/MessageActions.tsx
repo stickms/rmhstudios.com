@@ -73,7 +73,7 @@ export function MessageActions({
         aria-expanded={open}
         aria-label={t('message-actions', { defaultValue: 'Message actions' })}
         className={cn(
-          'flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-dim opacity-60 transition-opacity hover:bg-site-surface-hover hover:opacity-100 focus-visible:opacity-100',
+          'flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-muted opacity-60 transition-opacity hover:bg-site-surface-hover hover:opacity-100 focus-visible:opacity-100',
           className,
         )}
       >
@@ -108,7 +108,7 @@ export function MessageActions({
         {isSender && !deleted && !editable && (
           // Shown, disabled, with the reason. Silently omitting it makes the
           // feature look broken to the one person it exists for.
-          <p className="px-3 py-2 text-xs text-site-text-dim">
+          <p className="px-3 py-2 text-xs text-site-text-muted">
             {t('message-edit-window-closed', {
               minutes: Math.round(MESSAGE_EDIT_WINDOW_MS / 60_000),
               defaultValue: 'Editing closes {{minutes}} minutes after sending',

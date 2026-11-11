@@ -94,7 +94,7 @@ export function BlackjackControls({ coins }: Props) {
   // Idle state
   if (tablePhase === 'idle') {
     return (
-      <div className="text-center text-site-text-dim py-4">
+      <div className="text-center text-site-text-muted py-4">
         <p className="text-sm">{t("waiting-next-round", { defaultValue: "Waiting for the next round to start..." })}</p>
       </div>
     );
@@ -111,7 +111,7 @@ export function BlackjackControls({ coins }: Props) {
             <p className="text-sm text-site-success font-bold">
               {t("bet-placed", { defaultValue: "Bet placed: {{coins}} coins", coins: myPlayer?.bet })}
             </p>
-            <p className="text-xs text-site-text-dim mt-1">{t("waiting-other-players", { defaultValue: "Waiting for other players..." })}</p>
+            <p className="text-xs text-site-text-muted mt-1">{t("waiting-other-players", { defaultValue: "Waiting for other players..." })}</p>
           </div>
         ) : (
           <>
@@ -134,7 +134,7 @@ export function BlackjackControls({ coins }: Props) {
                     key={amt}
                     variant="secondary"
                     onClick={() => setQuickBet(amt)}
-                    className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-dim hover:text-site-text"
+                    className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-muted hover:text-site-text"
                   >
                     {amt}
                   </Button>
@@ -169,7 +169,7 @@ export function BlackjackControls({ coins }: Props) {
 
     if (!isInRound || hasBJ) {
       return (
-        <div className="text-center text-site-text-dim py-4">
+        <div className="text-center text-site-text-muted py-4">
           <p className="text-sm">{t("dealer-ace-insurance-others", { defaultValue: "Dealer showing Ace — Insurance offered to other players..." })}</p>
           {insCountdown !== null && (
             <span className="text-xs text-site-accent">{insCountdown}s</span>
@@ -182,11 +182,11 @@ export function BlackjackControls({ coins }: Props) {
       <div className="flex flex-col gap-3">
         <div className="text-center">
           <p className="text-sm font-bold text-site-accent">{t("insurance-question", { defaultValue: "Insurance?" })}</p>
-          <p className="text-xs text-site-text-dim mt-1">
+          <p className="text-xs text-site-text-muted mt-1">
             {t("insurance-description", { defaultValue: "Dealer showing Ace. Insurance costs {{cost}} coins (half your bet). Pays 2:1 if dealer has blackjack.", cost: insuranceCost })}
           </p>
           {insCountdown !== null && (
-            <span className="text-xs text-site-text-dim mt-1 block">{t("seconds-remaining", { defaultValue: "{{count}}s remaining", count: insCountdown })}</span>
+            <span className="text-xs text-site-text-muted mt-1 block">{t("seconds-remaining", { defaultValue: "{{count}}s remaining", count: insCountdown })}</span>
           )}
         </div>
 
@@ -263,7 +263,7 @@ export function BlackjackControls({ coins }: Props) {
   if (tablePhase === 'player_turns') {
     const currentPlayer = players.find((p) => p.userId === currentTurnUserId);
     return (
-      <div className="text-center text-site-text-dim py-4">
+      <div className="text-center text-site-text-muted py-4">
         <p className="text-sm">
           {t("waiting-for-player-blackjack-controls", { defaultValue: "Waiting for {{name}}...", name: currentPlayer?.userName ?? 'player' })}
         </p>
@@ -274,7 +274,7 @@ export function BlackjackControls({ coins }: Props) {
   // Dealer turn
   if (tablePhase === 'dealer_turn') {
     return (
-      <div className="text-center text-site-text-dim py-4">
+      <div className="text-center text-site-text-muted py-4">
         <p className="text-sm animate-pulse">{t("dealer-drawing", { defaultValue: "Dealer is drawing..." })}</p>
       </div>
     );
@@ -285,7 +285,7 @@ export function BlackjackControls({ coins }: Props) {
     const myResult = players.find((p) => p.userId === myUserId);
     if (!myResult || myResult.result === null) {
       return (
-        <div className="text-center text-site-text-dim py-4">
+        <div className="text-center text-site-text-muted py-4">
           <p className="text-sm">{t("round-complete", { defaultValue: "Round complete. Next round starting soon..." })}</p>
         </div>
       );
@@ -304,23 +304,23 @@ export function BlackjackControls({ coins }: Props) {
       <div className="text-center py-4">
         <p className={`text-lg font-bold ${r.color}`}>{r.label}</p>
         {myResult.payout > 0 && (
-          <p className="text-sm text-site-text-dim mt-1">
+          <p className="text-sm text-site-text-muted mt-1">
             {t("payout-coins", { defaultValue: "+{{payout}} coins", payout: myResult.payout })}
           </p>
         )}
         {myResult.insuranceBet > 0 && myResult.insuranceResult && (
-          <p className={`text-xs mt-1 ${myResult.insuranceResult === 'won' ? 'text-casino-seat-1' : 'text-site-text-dim'}`}>
+          <p className={`text-xs mt-1 ${myResult.insuranceResult === 'won' ? 'text-casino-seat-1' : 'text-site-text-muted'}`}>
             {myResult.insuranceResult === 'won' ? t("insurance-paid-out", { defaultValue: "Insurance paid out!" }) : t("insurance-lost-blackjack-controls", { defaultValue: "Insurance lost" })}
           </p>
         )}
-        <p className="text-xs text-site-text-dim mt-2">{t("next-round-soon", { defaultValue: "Next round starting soon..." })}</p>
+        <p className="text-xs text-site-text-muted mt-2">{t("next-round-soon", { defaultValue: "Next round starting soon..." })}</p>
       </div>
     );
   }
 
   // Dealing / payout / other
   return (
-    <div className="text-center text-site-text-dim py-4">
+    <div className="text-center text-site-text-muted py-4">
       <p className="text-sm animate-pulse">{t("dealing", { defaultValue: "Dealing..." })}</p>
     </div>
   );

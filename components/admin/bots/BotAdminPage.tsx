@@ -301,7 +301,7 @@ export function BotAdminPage() {
                 <h2 className="site-section-label">
                   {t('bots-settings', { defaultValue: 'Worker settings' })}
                 </h2>
-                <p className="mt-1 text-xs text-site-text-dim">
+                <p className="mt-1 text-xs text-site-text-muted">
                   {settings.saved && settings.updatedAt ? (
                     <>
                       {t('bots-last-saved', { defaultValue: 'Last saved' })}{' '}
@@ -334,7 +334,7 @@ export function BotAdminPage() {
                         onChange={(e) => setDraft({ ...draft, [f]: e.target.value })}
                         aria-describedby={`${id}-hint`}
                       />
-                      <p id={`${id}-hint`} className="text-xs text-site-text-dim">
+                      <p id={`${id}-hint`} className="text-xs text-site-text-muted">
                         {fieldMeta[f].hint}{' '}
                         {t('bots-range', { defaultValue: '({{min}}–{{max}})', min, max })}
                       </p>
@@ -382,7 +382,7 @@ export function BotAdminPage() {
                       })}
                     </p>
                   ) : null}
-                  <p className="text-xs text-site-text-dim">
+                  <p className="text-xs text-site-text-muted">
                     {t('bots-preview-note', {
                       defaultValue:
                         'Upper-bound estimates: replies and the minimum gap between posts trim the real number a little. Every post and reply is a paid model call.',

@@ -106,7 +106,7 @@ export function ApplicationPacket({
   if (loading) {
     return (
       <section className="glass-pane flex min-h-32 items-center justify-center p-5">
-        <Spinner size={20} className="text-site-text-dim" label={t('ladder.packetLoading', { defaultValue: 'Loading…' })} />
+        <Spinner size={20} className="text-site-text-muted" label={t('ladder.packetLoading', { defaultValue: 'Loading…' })} />
       </section>
     );
   }
@@ -142,7 +142,7 @@ export function ApplicationPacket({
         </div>
       </div>
 
-      <p className="mt-2 text-xs text-site-text-dim">
+      <p className="mt-2 text-xs text-site-text-muted">
         {t('ladder.packetIntro', {
           defaultValue:
             'Ordered to match this employer’s form, top to bottom. Copy each field as you reach it.',
@@ -161,7 +161,7 @@ export function ApplicationPacket({
             <li key={field.id} className="glass-fill flex flex-wrap items-start gap-2 p-3">
               <span
                 aria-hidden
-                className="mt-0.5 w-6 shrink-0 font-mono text-xs text-site-text-dim"
+                className="mt-0.5 w-6 shrink-0 font-mono text-xs text-site-text-muted"
               >
                 {index + 1}
               </span>
@@ -176,7 +176,7 @@ export function ApplicationPacket({
                     {isHidden ? '••••••••' : field.value}
                   </p>
                 ) : (
-                  <p className="mt-1 text-sm text-site-text-dim">
+                  <p className="mt-1 text-sm text-site-text-muted">
                     {field.kind === 'file'
                       ? t('ladder.packetUpload', {
                           defaultValue: 'Upload your resume file on the employer’s form.',
@@ -223,7 +223,7 @@ export function ApplicationPacket({
         })}
       </ol>
 
-      <p className="mt-4 text-xs text-site-text-dim">
+      <p className="mt-4 text-xs text-site-text-muted">
         {t('ladder.packetNeverSubmits', {
           defaultValue:
             'RMHLadder never submits an application for you. Nothing is sent to the employer from here — you paste these answers and press submit yourself.',

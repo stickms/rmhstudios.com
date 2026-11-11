@@ -81,7 +81,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
               aria-pressed={amount === a}
               data-jelly
               className={`rounded-site-sm border px-1 py-2 text-sm font-semibold transition-colors ${
-                amount === a ? 'border-site-accent bg-site-accent-dim text-site-text' : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
+                amount === a ? 'border-site-accent bg-site-bg-subtle text-site-text' : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
               }`}
             >
               <CoinIcon className="inline h-3.5 w-3.5" /> {a}
@@ -99,7 +99,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
             onChange={(e) => setAmount(parseTipAmount(e.target.value))}
             className="mt-1 h-auto px-3 py-2"
           />
-          <span className="mt-1 block text-site-text-dim">
+          <span className="mt-1 block text-site-text-muted">
             {t("tip-max-hint", { defaultValue: "Maximum per tip: {{max}}", max: TIP_MAX.toLocaleString(i18n.language) })}
           </span>
         </label>

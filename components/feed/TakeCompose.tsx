@@ -16,7 +16,7 @@ export function TakeMenuItem({ active, onToggle }: { active: boolean; onToggle: 
       aria-pressed={active}
       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
     >
-      <Scale className={`w-4 h-4 ${active ? 'text-site-accent' : 'text-site-text-dim'}`} />
+      <Scale className={`w-4 h-4 ${active ? 'text-site-accent' : 'text-site-text-muted'}`} />
       <span className="flex-1 text-left">{t('take-menu', { defaultValue: 'Mark as a take' })}</span>
       {active && <Check className="w-4 h-4 text-site-accent" />}
     </button>

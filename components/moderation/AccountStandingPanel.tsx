@@ -165,7 +165,7 @@ export function AccountStandingPanel() {
             </dt>
             <dd className="text-lg font-bold text-site-text">
               {standing.activeStrikes}
-              <span className="text-sm font-normal text-site-text-dim">
+              <span className="text-sm font-normal text-site-text-muted">
                 {' / '}
                 {standing.autoBanThreshold}
               </span>
@@ -256,7 +256,7 @@ export function AccountStandingPanel() {
                         {t('appeal-upheld', { defaultValue: 'Appeal declined' })}
                       </Badge>
                     )}
-                    <span className="text-xs text-site-text-dim">
+                    <span className="text-xs text-site-text-muted">
                       {formatDistanceToNow(new Date(s.createdAt), { addSuffix: true })}
                     </span>
                     {href && (
@@ -345,7 +345,7 @@ export function AccountStandingPanel() {
                           >
                             {t('cancel', { defaultValue: 'Cancel' })}
                           </Button>
-                          <span className="text-xs text-site-text-dim">
+                          <span className="text-xs text-site-text-muted">
                             {t('appeal-counter', {
                               defaultValue: '{{count}} / {{max}}',
                               count: draft.trim().length,

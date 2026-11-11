@@ -266,12 +266,12 @@ export function ActiveRidePanel({
                   <div className="flex flex-col items-center gap-1">
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
-                        reached ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-surface-hover text-site-text-dim'
+                        reached ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-surface-hover text-site-text-muted'
                       }`}
                     >
                       <step.icon className="h-4 w-4" />
                     </div>
-                    <span className={`text-xs ${reached ? 'text-site-text' : 'text-site-text-dim'}`}>
+                    <span className={`text-xs ${reached ? 'text-site-text' : 'text-site-text-muted'}`}>
                       {step.key === 'REQUESTED' ? t("step-requested", { defaultValue: "Requested" })
                         : step.key === 'ACCEPTED' ? t("step-matched", { defaultValue: "Matched" })
                         : step.key === 'IN_PROGRESS' ? t("step-on-trip", { defaultValue: "On trip" })

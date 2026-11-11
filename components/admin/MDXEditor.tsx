@@ -108,7 +108,7 @@ export function MDXEditor({
           {isEdit
             ? t('post-updated-successfully', { defaultValue: 'Post updated successfully!' })
             : t('post-created-successfully', { defaultValue: 'Post created successfully!' })}
-          <p className="mt-1 text-sm text-site-text-dim">
+          <p className="mt-1 text-sm text-site-text-muted">
             {t('changes-now-live', { defaultValue: 'Your changes are now live.' })}
           </p>
         </div>,
@@ -148,7 +148,7 @@ export function MDXEditor({
             variant="ghost"
             size="sm"
             onClick={() => navigate({ to: '/admin/blog' })}
-            className="text-site-text-dim hover:text-site-text"
+            className="text-site-text-muted hover:text-site-text"
             aria-label={t('back-to-admin', { defaultValue: 'Back to admin' })}
           >
             <span className="hidden md:inline">
@@ -374,7 +374,7 @@ export function MDXEditor({
                   <ReactMarkdown components={markdownComponents}>{previewContent}</ReactMarkdown>
                 </>
               ) : (
-                <div className="text-center text-site-text-dim mt-16 flex flex-col items-center gap-3">
+                <div className="text-center text-site-text-muted mt-16 flex flex-col items-center gap-3">
                   <p>
                     {t('preview-hint', {
                       defaultValue: 'Start typing to see the preview or click Refresh.',

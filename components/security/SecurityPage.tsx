@@ -636,7 +636,7 @@ export function SecurityPage() {
         </div>
       </section>
 
-      <p className="text-xs leading-relaxed text-site-text-dim">
+      <p className="text-xs leading-relaxed text-site-text-muted">
         No method of transmission over the internet is ever 100% secure — but we hold ourselves to
         the highest bar we can, and keep raising it.
       </p>

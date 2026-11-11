@@ -72,7 +72,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
  {user.name || user.username ||'Unknown'}
  </p>
  {user.handle && (
- <p className="text-xs text-site-text-dim truncate">@{user.handle}</p>
+ <p className="text-xs text-site-text-muted truncate">@{user.handle}</p>
  )}
  </div>
  </Link>

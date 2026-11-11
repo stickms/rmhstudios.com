@@ -286,7 +286,7 @@ function AdminUsersPage() {
                             </Badge>
                           )}
                         </div>
-                        <div className="flex flex-col text-sm text-site-text-dim sm:flex-row sm:items-center sm:gap-2">
+                        <div className="flex flex-col text-sm text-site-text-muted sm:flex-row sm:items-center sm:gap-2">
                           {isEditingThis ? (
                             <div className="flex flex-wrap items-center gap-2">
                               <span>@</span>
@@ -346,7 +346,7 @@ function AdminUsersPage() {
                         label={user.isAdmin ? t("title-remove-admin", { defaultValue: "Remove Admin" }) : t("title-make-admin", { defaultValue: "Make Admin" })}
                       />
                     </div>
-                    <div className="flex w-24 shrink-0 flex-col items-end text-xs text-site-text-dim">
+                    <div className="flex w-24 shrink-0 flex-col items-end text-xs text-site-text-muted">
                       <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
                       <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
                       <span className="flex items-center gap-1 text-site-warning"><Coins className="size-3" aria-hidden />{(user.profile?.coins ?? 0).toLocaleString()}</span>
@@ -358,7 +358,7 @@ function AdminUsersPage() {
           )}
 
           {loadingMore && (
-            <div className="flex justify-center p-4 text-site-text-dim"><Spinner /></div>
+            <div className="flex justify-center p-4 text-site-text-muted"><Spinner /></div>
           )}
         </div>
       </AdminBody>

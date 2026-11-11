@@ -117,7 +117,7 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-site-text">{room.name}</p>
-                  <p className="truncate text-xs text-site-text-dim">
+                  <p className="truncate text-xs text-site-text-muted">
                     {room.ownerName}
                     {room.bigBlind
                       ? ` · ${t('table-blinds', {
@@ -128,7 +128,7 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
                       : ''}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2 text-xs text-site-text-dim">
+                <div className="flex shrink-0 items-center gap-2 text-xs text-site-text-muted">
                   {room.inProgress && (
                     <span className="text-site-warning">
                       {t('in-progress', { defaultValue: 'In progress' })}

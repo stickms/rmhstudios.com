@@ -35,7 +35,7 @@ export function FindATimeLink({
       search={search}
       aria-label={label}
       title={label}
-      className="flex size-11 items-center justify-center rounded-full text-site-text-dim hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
+      className="flex size-11 items-center justify-center rounded-full text-site-text-muted hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
     >
       <CalendarCheck className="size-5" aria-hidden />
     </Link>

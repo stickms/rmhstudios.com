@@ -20,7 +20,7 @@
   font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.04em;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 /* ─── Input dock (pill) ─────────────────────────────────────────────────────────
@@ -38,7 +38,7 @@
 
    It used to hand-roll the surface here: `background` + `backdrop-filter` +
    `border` + `box-shadow`, which is the box without the material (see
-   components/CLAUDE.md). The tell was `border-top-color: var(--site-border-bright)`
+   components/CLAUDE.md). The tell was `border-top-color: var(--site-text)`
    — an attempt at a rim glint by brightening ONE edge, which in Daylight drew a
    hard dark line across the top of the dock and nothing down the sides. L2's
    `::before` optics ring is the real version of that effect, on all four edges,
@@ -61,7 +61,7 @@
    theme defines both as a plain white ring — so animating between them would
    flicker a hairline rather than lift anything. */
 .vibe-dock:focus-within {
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
 }
 
 /* textarea variant — taller, lightly rounded, with a footer row (model toggle +
@@ -108,7 +108,7 @@
 }
 
 .vibe-dock__textarea::placeholder {
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 /* The one primary action on this surface, so it takes the ACCENT — the same
@@ -158,7 +158,7 @@
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
   border: 0.5px solid var(--site-border);
-  border-top-color: var(--site-border-bright);
+  border-top-color: var(--site-text);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   font-family:
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
@@ -220,7 +220,7 @@
   backdrop-filter: saturate(180%) blur(48px);
   -webkit-backdrop-filter: saturate(180%) blur(48px);
   border: 0.5px solid var(--site-border);
-  border-top-color: var(--site-border-bright);
+  border-top-color: var(--site-text);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.07) inset,
     0 24px 64px rgba(0, 0, 0, 0.6);
@@ -272,11 +272,11 @@
 }
 
 .vibe-panel__input::placeholder {
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 .vibe-panel__input:focus {
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
 }
 
 .vibe-panel__input:disabled {
@@ -316,7 +316,7 @@
 
 .vibe-panel__hint {
   font-size: 0.74rem;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 .vibe-panel__error {
@@ -345,7 +345,7 @@
   white-space: pre-wrap;
   word-break: break-word;
   scrollbar-width: thin;
-  scrollbar-color: var(--site-border-bright) transparent;
+  scrollbar-color: var(--site-text) transparent;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
   mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
 }
@@ -430,7 +430,7 @@
   max-height: min(220px, 32vh);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--site-border-bright) transparent;
+  scrollbar-color: var(--site-text) transparent;
 }
 
 .vibe-progress__files::-webkit-scrollbar {
@@ -474,7 +474,7 @@
 
 .vibe-progress__file-kind {
   flex: none;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 .vibe-progress__file-name {
@@ -487,7 +487,7 @@
   margin-left: auto;
   flex: none;
   font-size: 0.7rem;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 /* compact variant inside the customize panel */
@@ -602,7 +602,7 @@
 
 .vibe-backfill:hover:not(:disabled) {
   color: var(--site-text);
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
   background: var(--site-surface);
 }
 
@@ -667,7 +667,7 @@
 
 .vibe-model-select__button:focus-visible {
   outline: none;
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
 }
 
 .vibe-model-select__button:disabled {
@@ -717,7 +717,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 .vibe-model-select__option {
@@ -776,7 +776,7 @@
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
   border: 0.5px solid var(--site-border);
-  border-top-color: var(--site-border-bright);
+  border-top-color: var(--site-text);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   color: var(--site-text);
   font-family:
@@ -826,7 +826,7 @@
   backdrop-filter: saturate(180%) blur(48px);
   -webkit-backdrop-filter: saturate(180%) blur(48px);
   border: 0.5px solid var(--site-border);
-  border-top-color: var(--site-border-bright);
+  border-top-color: var(--site-text);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.07) inset,
     0 24px 64px rgba(0, 0, 0, 0.6);
@@ -847,7 +847,7 @@
   display: grid;
   place-items: center;
   padding: 32px 0;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   font-size: 0.82rem;
 }
 
@@ -877,7 +877,7 @@
 }
 
 .vibe-history__item--active {
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
   background: var(--site-surface-hover);
 }
 

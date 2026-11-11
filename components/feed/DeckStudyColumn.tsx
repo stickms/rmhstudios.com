@@ -228,12 +228,12 @@ export function DeckStudyColumn({
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <button
  onClick={exitReview}
- className="text-site-text-dim hover:text-site-text"
+ className="text-site-text-muted hover:text-site-text"
  >
  <ArrowLeft className="h-5 w-5"/>
  </button>
  <h1 className="text-sm font-bold text-site-text">{deck.title}</h1>
- <span className="ml-auto text-xs text-site-text-dim">
+ <span className="ml-auto text-xs text-site-text-muted">
  {idx + 1} / {queue.length}
  </span>
  </header>
@@ -274,19 +274,19 @@ export function DeckStudyColumn({
  return (
  <div>
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
- <Link to="/study"className="text-site-text-dim hover:text-site-text">
+ <Link to="/study"className="text-site-text-muted hover:text-site-text">
  <ArrowLeft className="h-5 w-5"/>
  </Link>
  <div className="min-w-0 flex-1">
  <h1 className="truncate text-lg font-bold text-site-text">{deck.title}</h1>
  {deck.description && (
- <p className="truncate text-xs text-site-text-dim">{deck.description}</p>
+ <p className="truncate text-xs text-site-text-muted">{deck.description}</p>
  )}
  </div>
  {deck.isOwner && (
  <button
  onClick={deleteDeck}
- className="text-site-text-dim hover:text-site-danger"
+ className="text-site-text-muted hover:text-site-danger"
  title={t('delete-deck', { defaultValue:'Delete deck'})}
  aria-label={t('delete-deck', { defaultValue:'Delete deck'})}
  >

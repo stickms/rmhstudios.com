@@ -274,7 +274,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  >
  {/* Optimistic post — awaiting the server round-trip. */}
  {item.pending && (
- <div className="absolute top-3 right-3 z-10 flex items-center gap-2 text-xs text-site-text-dim">
+ <div className="absolute top-3 right-3 z-10 flex items-center gap-2 text-xs text-site-text-muted">
  <Spinner size={12} />
  {t('posting', { defaultValue:'Posting…'})}
  </div>
@@ -301,7 +301,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
  {/* Pinned label */}
  {item.pinned && (
- <div className="flex items-center gap-2 text-xs text-site-text-dim mb-2 ml-13">
+ <div className="flex items-center gap-2 text-xs text-site-text-muted mb-2 ml-13">
  <Pin className="w-3.5 h-3.5 fill-site-accent text-site-accent"/>
  <span>{t('pinned', { defaultValue:'Pinned'})}</span>
  </div>
@@ -309,7 +309,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
  {/* reRMHark'd label */}
  {freshRepostedBy && (
- <div className="flex items-center gap-2 text-xs text-site-text-dim mb-2 ml-13">
+ <div className="flex items-center gap-2 text-xs text-site-text-muted mb-2 ml-13">
  <Repeat2 className="w-3.5 h-3.5"/>
  <Link to={userProfileHref(freshRepostedBy)} className="hover:underline">
  {freshRepostedBy.name ||
@@ -372,7 +372,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  </span>
  )}
  {item.user.handle && (
- <span className="text-site-text-dim truncate">@{item.user.handle}</span>
+ <span className="text-site-text-muted truncate">@{item.user.handle}</span>
  )}
  </Link>
  </ProfileHoverCard>
@@ -381,7 +381,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  {t('unknown-user', { defaultValue:'Unknown'})}
  </span>
  )}
- <span className="text-site-text-dim shrink-0">
+ <span className="text-site-text-muted shrink-0">
  ·{' '}
  <RelativeTime date={item.createdAt} format={relativeTimeShort} />
  </span>
@@ -423,7 +423,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-site-accent hover:underline"
  >
  {t('show-thread', { defaultValue:'Show this thread'})}
- <span className="text-site-text-dim">
+ <span className="text-site-text-muted">
  · {t('thread-more', { defaultValue:'{{n}} more', n: item.threadReplyCount })}
  </span>
  </Link>
@@ -523,7 +523,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  </span>
  )}
  {freshOriginalUser.handle && (
- <span className="text-site-text-dim truncate">
+ <span className="text-site-text-muted truncate">
  @{freshOriginalUser.handle}
  </span>
  )}

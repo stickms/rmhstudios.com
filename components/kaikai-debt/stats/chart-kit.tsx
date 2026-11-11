@@ -294,7 +294,7 @@ export function Readout({
   const flip = x > 0.6;
   return (
     <div
-      className="kd-readout glass-overlay rounded-site-sm px-2.5 py-2 text-xs shadow-site"
+      className="kd-readout glass-overlay rounded-site-sm px-2.5 py-2 text-xs "
       style={{
         left: `${x * 100}%`,
         top: `${y * 100}%`,

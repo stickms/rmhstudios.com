@@ -197,7 +197,7 @@ export function ProfileCosmetics() {
                   // the shop grid.
                   style={{
                     borderColor: `${RARITY_COLORS[item.rarity]}55`,
-                    boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55, var(--site-shadow-sm)`,
+                    boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55`,
                   }}
                 >
                   <Preview item={item} />

@@ -40,7 +40,7 @@ export function CohortsTab() {
               'Share of each weekly signup cohort that signed in or acted in each week after joining. Recomputed daily.',
           })}
           {data?.computedAt && (
-            <span className="ml-1 text-site-text-dim">
+            <span className="ml-1 text-site-text-muted">
               {t('cohorts-computed', {
                 defaultValue: 'Last computed {{date}}.',
                 date: new Date(data.computedAt).toLocaleString(),
@@ -64,7 +64,7 @@ export function CohortsTab() {
         <div className="glass-pane overflow-x-auto rounded-site p-4">
           <table className="w-full min-w-[40rem] border-separate border-spacing-1 text-center text-xs">
             <thead>
-              <tr className="text-site-text-dim">
+              <tr className="text-site-text-muted">
                 <th scope="col" className="px-2 text-left font-mono">
                   {t('cohorts-col-cohort', { defaultValue: 'Cohort' })}
                 </th>

@@ -100,7 +100,7 @@ export function AspectStage({ children, outerChildren, className }: Props) {
       <div className="ls-stage-inset flex items-center justify-center">
         <div
           data-slot="laundry-stage"
-          className="ls-stage-box relative overflow-hidden rounded-site bg-black shadow-site"
+          className="ls-stage-box relative overflow-hidden rounded-site bg-black "
           style={{ width: size.width || undefined, height: size.height || undefined }}
         >
           {size.width > 0 ? children : null}

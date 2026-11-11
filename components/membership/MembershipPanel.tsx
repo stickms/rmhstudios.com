@@ -323,7 +323,7 @@ export function MembershipPanel({
                             <span
                               className={cn(
                                 'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
-                                plan.featured ? 'bg-site-warning/20' : 'bg-site-accent-dim',
+                                plan.featured ? 'bg-site-warning/20' : 'bg-site-bg-subtle',
                               )}
                             >
                               <Check

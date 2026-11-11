@@ -26,7 +26,7 @@ export function ProfileIdentityBar({
               <ShieldCheck className="size-4 shrink-0 text-site-accent" aria-hidden />
             ) : null}
           </div>
-          <p className="text-xs text-site-text-dim">
+          <p className="text-xs text-site-text-muted">
             {t('rmhark-count', {
               count: profile.rmharkCount,
               defaultValue: '{{count}} RMHarks',

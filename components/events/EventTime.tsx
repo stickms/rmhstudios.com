@@ -86,11 +86,11 @@ export function EventTime({
         {/* Before mount the only honest thing to print is the raw date; the
             zone-correct string lands one frame later. */}
         {local ?? new Date(startsAt).toISOString().slice(0, 10)}
-        {localZone ? <span className="ms-1 text-xs text-site-text-dim">{localZone}</span> : null}
+        {localZone ? <span className="ms-1 text-xs text-site-text-muted">{localZone}</span> : null}
       </time>
 
       {organizerText && (
-        <span className="text-xs text-site-text-dim" suppressHydrationWarning>
+        <span className="text-xs text-site-text-muted" suppressHydrationWarning>
           {t('event-organizer-time', {
             time: organizerText,
             defaultValue: '({{time}} for the organiser)',
@@ -128,7 +128,7 @@ export function EventTime({
               onClick={() => setMenuOpen(false)}
               className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text transition-colors hover:bg-site-surface-hover"
             >
-              <ExternalLink className="size-4 text-site-text-dim" aria-hidden />
+              <ExternalLink className="size-4 text-site-text-muted" aria-hidden />
               {t('calendar-google', { defaultValue: 'Google Calendar' })}
             </a>
             <a
@@ -138,7 +138,7 @@ export function EventTime({
               onClick={() => setMenuOpen(false)}
               className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text transition-colors hover:bg-site-surface-hover"
             >
-              <ExternalLink className="size-4 text-site-text-dim" aria-hidden />
+              <ExternalLink className="size-4 text-site-text-muted" aria-hidden />
               {t('calendar-outlook', { defaultValue: 'Outlook' })}
             </a>
             <a
@@ -146,7 +146,7 @@ export function EventTime({
               onClick={() => setMenuOpen(false)}
               className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text transition-colors hover:bg-site-surface-hover"
             >
-              <Download className="size-4 text-site-text-dim" aria-hidden />
+              <Download className="size-4 text-site-text-muted" aria-hidden />
               {t('calendar-ics', { defaultValue: 'Download .ics' })}
             </a>
           </AnchoredMenu>

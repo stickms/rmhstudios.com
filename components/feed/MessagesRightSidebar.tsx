@@ -22,7 +22,7 @@ function UserRow({ user }: { user: SidebarUser }) {
  {user.name || t("unknown-user", { defaultValue:"Unknown"})}
  </p>
  {user.username && (
- <p className="text-xs text-site-text-dim truncate">@{user.username}</p>
+ <p className="text-xs text-site-text-muted truncate">@{user.username}</p>
  )}
  </div>
  </Link>
@@ -73,7 +73,7 @@ export function MessagesRightSidebar() {
  <UserPlus className="w-5 h-5 text-site-accent"/>
  {t("start-a-conversation", { defaultValue:"Start a Conversation"})}
  </h2>
- <p className="text-xs text-site-text-dim mb-3">{t("people-you-follow", { defaultValue:"People you follow"})}</p>
+ <p className="text-xs text-site-text-muted mb-3">{t("people-you-follow", { defaultValue:"People you follow"})}</p>
  <div className="space-y-1">
  {suggested.map((user) => (
  <UserRow key={user.id} user={user} />
@@ -92,7 +92,7 @@ export function MessagesRightSidebar() {
  )}
 
  {/* Footer */}
- <div className="text-xs text-site-text-dim space-y-2">
+ <div className="text-xs text-site-text-muted space-y-2">
  <p>RMH | The Everything Platform</p>
  <div className="flex flex-wrap gap-x-2 gap-y-0.5">
  <Link to="/library" className="hover:text-site-text transition-colors">{t("nav-blog", { defaultValue:"Blog"})}</Link>

@@ -14,7 +14,7 @@ export function NewsSourceBadge({ publisher, url, className }: NewsSourceBadgePr
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center gap-1.5 text-xs text-site-text-dim hover:text-site-accent transition-colors group/source ${className ?? ''}`}
+            className={`inline-flex items-center gap-1.5 text-xs text-site-text-muted hover:text-site-accent transition-colors group/source ${className ?? ''}`}
             aria-label={t("read-original-article-on", { defaultValue: "Read original article on {{publisher}}", publisher })}
         >
             <span className="truncate max-w-32">{t("via-publisher", { defaultValue: "via {{publisher}}", publisher })}</span>

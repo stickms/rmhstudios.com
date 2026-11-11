@@ -104,7 +104,7 @@ export const AnimatedImg = ({ className, alt, ...props }: El<'img'>) => (
   >
     <img className={cn('h-auto w-full', className)} alt={alt} loading="lazy" {...props} />
     {alt && (
-      <figcaption className="border-t border-site-border px-3 py-2 text-center font-mono text-xs text-site-text-dim">
+      <figcaption className="border-t border-site-border px-3 py-2 text-center font-mono text-xs text-site-text-muted">
         {alt}
       </figcaption>
     )}

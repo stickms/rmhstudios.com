@@ -72,7 +72,7 @@ export const GhostTextArea = forwardRef<HTMLTextAreaElement, GhostTextAreaProps>
  style={{ borderColor:'transparent'}}
  >
  {value}
- {suggestion && <span className="text-site-text-dim">{suggestion}</span>}
+ {suggestion && <span className="text-site-text-muted">{suggestion}</span>}
  </div>
  <textarea
  // We render our own inline ghost-text suggestion, so suppress the

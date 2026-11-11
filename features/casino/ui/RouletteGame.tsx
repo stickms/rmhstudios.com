@@ -64,7 +64,7 @@ export function RouletteGame({ coins, setCoins }: Props) {
     return (
       <div className="flex items-center justify-center py-12">
         <Spinner size={24} />
-        <span className="ml-2 text-sm text-site-text-dim">{t("connecting", { defaultValue: "Connecting..." })}</span>
+        <span className="ml-2 text-sm text-site-text-muted">{t("connecting", { defaultValue: "Connecting..." })}</span>
       </div>
     );
   }
@@ -109,7 +109,7 @@ export function RouletteGame({ coins, setCoins }: Props) {
         <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={handleLeave}
-            className="shrink-0 min-h-8 px-2 text-xs text-site-text-dim hover:text-site-text transition-colors"
+            className="shrink-0 min-h-8 px-2 text-xs text-site-text-muted hover:text-site-text transition-colors"
           >
             &larr; {t("leave", { defaultValue: "Leave" })}
           </button>
@@ -119,7 +119,7 @@ export function RouletteGame({ coins, setCoins }: Props) {
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {roomInfo.joinCode && <TableInvite game="roulette" joinCode={roomInfo.joinCode} />}
-          <span className="text-micro sm:text-xs text-site-text-dim">
+          <span className="text-micro sm:text-xs text-site-text-muted">
             {players.length}/{roomInfo.maxPlayers}
           </span>
           <Circle className={`h-3 w-3 fill-current shrink-0 ${statusColor}`} />

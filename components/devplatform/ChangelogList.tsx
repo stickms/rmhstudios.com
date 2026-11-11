@@ -40,7 +40,7 @@ export function ChangelogList() {
         <li key={n.id} className="glass-fill rounded-site px-4 py-3">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <h2 className="text-base font-semibold text-site-text">{n.title}</h2>
-            <span className="shrink-0 text-xs text-site-text-dim">
+            <span className="shrink-0 text-xs text-site-text-muted">
               {n.version}
               {n.publishedAt ? ` · ${new Date(n.publishedAt).toLocaleDateString()}` : ''}
             </span>

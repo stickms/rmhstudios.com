@@ -241,7 +241,7 @@ function DiagnosticsSection() {
       <SectionTitle>
         {t('diag-seq-hints', { defaultValue: 'Possible missing indexes' })}
       </SectionTitle>
-      <p className="text-xs text-site-text-dim">
+      <p className="text-xs text-site-text-muted">
         {t('diag-seq-hints-note', {
           defaultValue: 'Tables over 10,000 rows scanned sequentially more often than by index.',
         })}
@@ -265,7 +265,7 @@ function DiagnosticsSection() {
       />
 
       <SectionTitle>{t('diag-unused', { defaultValue: 'Unused indexes' })}</SectionTitle>
-      <p className="text-xs text-site-text-dim">
+      <p className="text-xs text-site-text-muted">
         {t('diag-unused-note', {
           defaultValue:
             'Never scanned since the last stats reset, over 1 MB, and not enforcing a unique or primary-key constraint.',
@@ -440,7 +440,7 @@ export function DatabaseTab({ overview }: { overview: PerfOverview }) {
 
       <section className="space-y-3">
         <SectionTitle>{t('db-slow-feed', { defaultValue: 'Slow queries' })}</SectionTitle>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('db-slow-feed-note', {
             defaultValue:
               'Newest first, last 50. Threshold is PERF_SLOW_QUERY_MS (default 250 ms).',

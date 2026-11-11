@@ -158,7 +158,7 @@ export function HuntPage() {
                       key={r.user.id}
                       className="glass-fill flex items-center gap-3 rounded-site px-4 py-3"
                     >
-                      <span className="w-6 text-sm text-site-text-dim">{i + 1}</span>
+                      <span className="w-6 text-sm text-site-text-muted">{i + 1}</span>
                       <UserAvatar
                         src={r.user.image}
                         alt=""

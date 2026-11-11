@@ -74,7 +74,7 @@ export function EarningsTab() {
         <h2 className="font-display text-lg font-medium text-site-text">
           {t('earnings', { defaultValue: 'Creator earnings' })}
         </h2>
-        <p className="text-sm text-site-text-dim">
+        <p className="text-sm text-site-text-muted">
           {t('earnings-desc', {
             defaultValue:
               'Coins you earned from tips, memberships and sales can be redeemed for subscription credit, merch, or a payout.',
@@ -85,7 +85,7 @@ export function EarningsTab() {
       {/* Stat tiles — L1 fills: repeated content takes no backdrop blur (design-language §5). */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <Card className="p-4">
-          <div className="text-xs font-medium text-site-text-dim">
+          <div className="text-xs font-medium text-site-text-muted">
             {t('redeemable', { defaultValue: 'Redeemable' })}
           </div>
           <div className="flex items-center gap-2 text-2xl font-bold tabular-nums">
@@ -94,7 +94,7 @@ export function EarningsTab() {
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-xs font-medium text-site-text-dim">
+          <div className="text-xs font-medium text-site-text-muted">
             {t('lifetime', { defaultValue: 'Lifetime earned' })}
           </div>
           <div className="text-2xl font-bold tabular-nums">
@@ -102,7 +102,7 @@ export function EarningsTab() {
           </div>
         </Card>
         <Card className="p-4 col-span-2 sm:col-span-1">
-          <div className="text-xs font-medium text-site-text-dim">
+          <div className="text-xs font-medium text-site-text-muted">
             {t('balance', { defaultValue: 'Coin balance' })}
           </div>
           <div className="text-2xl font-bold tabular-nums">
@@ -193,7 +193,7 @@ export function EarningsTab() {
                 />
               </div>
               {kind === 'PAYOUT' && (
-                <p className="text-xs font-medium text-site-text-dim">
+                <p className="text-xs font-medium text-site-text-muted">
                   {t('payout-note', {
                     defaultValue:
                       'Payouts require a verified creator account and admin review (min {{n}} coins).',
@@ -206,7 +206,7 @@ export function EarningsTab() {
         </div>
 
         <div className="flex items-center justify-between pt-1">
-          <div className="text-sm text-site-text-dim">
+          <div className="text-sm text-site-text-muted">
             {t('cost', { defaultValue: 'Cost' })}:{' '}
             <span
               className={`inline-flex items-center gap-1 font-semibold ${overMax ? 'text-site-danger' : 'text-site-text'}`}
@@ -251,7 +251,7 @@ export function EarningsTab() {
                       ? t('merch', { defaultValue: 'Merch' })
                       : t('payout', { defaultValue: 'Payout' })}
                   {' · '}
-                  <span className="inline-flex items-center gap-1 text-site-text-dim">
+                  <span className="inline-flex items-center gap-1 text-site-text-muted">
                     {r.amountCoins}
                     <Coins className="size-3.5 text-site-warning" aria-hidden />
                   </span>

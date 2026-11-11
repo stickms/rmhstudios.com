@@ -27,7 +27,7 @@ const HEX = /^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i;
 
 /**
  * Parse `rgb()`, `rgba()`, `color(srgb …)` and hex (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa` — what a custom property
- * holding a raw theme colour, such as `--site-jelly-haze`, computes to). Returns null for anything else.
+ * holding a raw theme colour, such as a hazy theme colour, computes to). Returns null for anything else.
  */
 export function parseColor(css: string): RGBA | null {
   const s = css.trim();

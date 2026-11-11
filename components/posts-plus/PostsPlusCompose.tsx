@@ -99,7 +99,7 @@ export function PostsPlusMenuItems({ pp, onPick }: { pp: PostsPlusCompose; onPic
   return (
     <>
       <button type="button" onClick={open('ttl')} aria-pressed={!!pp.ttl} className={rowClass}>
-        <Hourglass className={`w-4 h-4 ${pp.ttl ? 'text-site-accent' : 'text-site-text-dim'}`} />
+        <Hourglass className={`w-4 h-4 ${pp.ttl ? 'text-site-accent' : 'text-site-text-muted'}`} />
         <span className="flex-1 text-left">
           {t('menu-expiry', { defaultValue: 'Auto-delete after…' })}
         </span>
@@ -111,14 +111,14 @@ export function PostsPlusMenuItems({ pp, onPick }: { pp: PostsPlusCompose; onPic
         aria-pressed={!!pp.series}
         className={rowClass}
       >
-        <BookOpen className={`w-4 h-4 ${pp.series ? 'text-site-accent' : 'text-site-text-dim'}`} />
+        <BookOpen className={`w-4 h-4 ${pp.series ? 'text-site-accent' : 'text-site-text-muted'}`} />
         <span className="flex-1 text-left">
           {t('menu-series', { defaultValue: 'Add to a series…' })}
         </span>
         {pp.series && <Check className="w-4 h-4 text-site-accent" />}
       </button>
       <button type="button" onClick={open('capsule')} className={rowClass}>
-        <Package className="w-4 h-4 text-site-text-dim" />
+        <Package className="w-4 h-4 text-site-text-muted" />
         <span className="flex-1 text-left">
           {t('menu-capsule', { defaultValue: 'Seal as a time capsule…' })}
         </span>

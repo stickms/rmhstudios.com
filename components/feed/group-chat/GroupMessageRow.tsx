@@ -65,7 +65,7 @@ export function GroupMessageRow({
       <UserAvatar user={m.sender} />
       <div className="max-w-[78%]" {...reactionTriggerFor(m.id)}>
         {!mine && (
-          <p className="mb-0.5 px-1 text-xs text-site-text-dim">
+          <p className="mb-0.5 px-1 text-xs text-site-text-muted">
             {m.sender.name || m.sender.handle || t('member-fallback', { defaultValue: 'Member' })}
           </p>
         )}

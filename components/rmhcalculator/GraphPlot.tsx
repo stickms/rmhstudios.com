@@ -107,7 +107,7 @@ export function GraphPlot({ graph }: { graph: GraphResult }) {
               y={PAD_T + PLOT_H + 18}
               textAnchor="middle"
               fontSize={11}
-              fill="var(--site-text-dim)"
+              fill="var(--site-text-muted)"
             >
               {fmt(x)}
             </text>
@@ -128,7 +128,7 @@ export function GraphPlot({ graph }: { graph: GraphResult }) {
               y={sy(y) + 4}
               textAnchor="end"
               fontSize={11}
-              fill="var(--site-text-dim)"
+              fill="var(--site-text-muted)"
             >
               {fmt(y)}
             </text>

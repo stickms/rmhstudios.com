@@ -12,7 +12,7 @@ interface EmojiPickerButtonProps {
   direction?: 'up' | 'down';
   className?: string;
   /**
-   * Replaces the default `text-site-text-dim hover:text-site-accent` color classes on the
+   * Replaces the default `text-site-text-muted hover:text-site-accent` color classes on the
    * trigger button. Use this for panels themed with static Tailwind arbitrary-value classes
    * (e.g. `text-app-text-dim hover:text-app-accent`).
    */
@@ -48,7 +48,7 @@ export function EmojiPickerButton({
         onClick={() => setOpen((v) => !v)}
         aria-label={t('emoji-picker-open', { defaultValue: 'Add emoji' })}
         aria-expanded={open}
-        className={`p-1.5 transition-colors ${buttonClassName ?? 'text-site-text-dim hover:text-site-accent'}`}
+        className={`p-1.5 transition-colors ${buttonClassName ?? 'text-site-text-muted hover:text-site-accent'}`}
         style={buttonStyle}
       >
         <Smile className="w-5 h-5" />

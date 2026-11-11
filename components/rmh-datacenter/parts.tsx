@@ -44,7 +44,7 @@ export function Stat({
       >
         {value}
       </span>
-      <span className="text-sm text-site-text-dim">{note}</span>
+      <span className="text-sm text-site-text-muted">{note}</span>
     </Card>
   );
 }

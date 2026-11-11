@@ -75,7 +75,7 @@ export default function HuntPanel() {
         />
         {clues.map((c, i) => (
           <fieldset key={i} className="glass-inset space-y-2 rounded-site p-4">
-            <legend className="px-1 text-xs text-site-text-dim">
+            <legend className="px-1 text-xs text-site-text-muted">
               {t('hunt-admin-clue', { defaultValue: 'Clue {{n}}', n: i + 1 })}
             </legend>
             <Input
@@ -161,7 +161,7 @@ export default function HuntPanel() {
           >
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-site-text">{h.title}</p>
-              <p className="text-xs text-site-text-dim">
+              <p className="text-xs text-site-text-muted">
                 {t('hunt-admin-meta', {
                   defaultValue: '{{clues}} clues, {{done}} finishers',
                   clues: h.clues.length,

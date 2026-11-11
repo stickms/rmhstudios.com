@@ -168,7 +168,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  {user.name || user.username || t('unknown-user', { defaultValue:'Unknown'})}
  </p>
  {user.handle && (
- <p className="text-xs text-site-text-dim truncate">@{user.handle}</p>
+ <p className="text-xs text-site-text-muted truncate">@{user.handle}</p>
  )}
  </div>
  </Link>

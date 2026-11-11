@@ -22,7 +22,7 @@ export function GroupHeader({
         to="/messages"
         search={{ tab: 'groups' }}
         aria-label={t('back', { defaultValue: 'Back' })}
-        className="-ml-2 rounded-site-sm p-2 text-site-text-dim hover:bg-site-surface-hover hover:text-site-text"
+        className="-ml-2 rounded-site-sm p-2 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
       >
         <ArrowLeft className="h-5 w-5" aria-hidden />
       </Link>
@@ -31,7 +31,7 @@ export function GroupHeader({
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-site-text">{group.name}</p>
-        <p className="truncate text-xs text-site-text-dim">
+        <p className="truncate text-xs text-site-text-muted">
           {t('member-count', { count: group.members.length, defaultValue: '{{count}} members' })}
         </p>
       </div>
@@ -39,7 +39,7 @@ export function GroupHeader({
       <ChatHeaderPlus chat={chatRef} />
       <button
         onClick={onLeave}
-        className="text-site-text-dim hover:text-site-danger"
+        className="text-site-text-muted hover:text-site-danger"
         title={t('leave-group', { defaultValue: 'Leave group' })}
         aria-label={t('leave-group', { defaultValue: 'Leave group' })}
       >

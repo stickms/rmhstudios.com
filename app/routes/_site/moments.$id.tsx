@@ -79,7 +79,7 @@ function MomentPage() {
       <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 pt-4 pb-12">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="accent">{label}</Badge>
-          <span className="text-sm text-site-text-dim">{byline}</span>
+          <span className="text-sm text-site-text-muted">{byline}</span>
         </div>
 
         <div className="overflow-hidden rounded-site border border-site-border">

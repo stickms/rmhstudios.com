@@ -68,7 +68,7 @@ function AlarmCard({ alarm }: { alarm: AlarmView }) {
           {t('sev', { defaultValue: 'SEV{{sev}}', sev: alarm.sev })}
         </Badge>
         <Badge variant={PHASE_VARIANT[phase]}>{phaseLabel[phase]}</Badge>
-        <span className="font-mono text-xs text-site-text-dim">{alarm.key}</span>
+        <span className="font-mono text-xs text-site-text-muted">{alarm.key}</span>
       </div>
       <h3 className="mt-2 font-semibold text-site-text">{alarm.title}</h3>
       {alarm.detail && (
@@ -78,19 +78,19 @@ function AlarmCard({ alarm }: { alarm: AlarmView }) {
       )}
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-site-text-muted sm:grid-cols-4">
         <div>
-          <dt className="text-site-text-dim">{t('since', { defaultValue: 'Since' })}</dt>
+          <dt className="text-site-text-muted">{t('since', { defaultValue: 'Since' })}</dt>
           <dd>{formatRelativeTime(alarm.firedAt)}</dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">{t('source', { defaultValue: 'Source' })}</dt>
+          <dt className="text-site-text-muted">{t('source', { defaultValue: 'Source' })}</dt>
           <dd>{alarm.source}</dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">{t('pages', { defaultValue: 'Pages sent' })}</dt>
+          <dt className="text-site-text-muted">{t('pages', { defaultValue: 'Pages sent' })}</dt>
           <dd className="tabular-nums">{alarm.pageCount}</dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">
+          <dt className="text-site-text-muted">
             {alarm.state === 'resolved'
               ? t('resolved-at', { defaultValue: 'Resolved' })
               : t('acked-by', { defaultValue: 'Acknowledged by' })}

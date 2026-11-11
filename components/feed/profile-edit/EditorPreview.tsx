@@ -16,16 +16,16 @@ export function EditorPreview({
 }) {
   const { t } = useTranslation('feed');
   return (
-    <div className="glass-fill overflow-hidden rounded-site shadow-site-sm">
-      <div className="relative h-24 overflow-hidden bg-linear-to-br from-site-accent-dim via-site-surface to-site-bg-subtle">
+    <div className="glass-fill overflow-hidden rounded-site ">
+      <div className="relative h-24 overflow-hidden bg-linear-to-br from-site-bg-subtle via-site-surface to-site-bg-subtle">
         {banner ? <img src={banner} alt="" className="size-full object-cover" /> : null}
         <div
-          className="absolute inset-0 bg-linear-to-t from-site-surface-opaque to-transparent"
+          className="absolute inset-0 bg-linear-to-t from-site-surface to-transparent"
           aria-hidden
         />
       </div>
       <div className="relative px-4 pb-4">
-        <div className="-mt-9 flex size-18 items-center justify-center overflow-hidden rounded-full border-[3px] border-site-glass-rim bg-site-surface-opaque text-xl font-bold text-site-text shadow-site-sm">
+        <div className="-mt-9 flex size-18 items-center justify-center overflow-hidden rounded-full border-[3px] border-site-border bg-site-surface text-xl font-bold text-site-text ">
           {image ? (
             <img
               src={image}
@@ -39,13 +39,13 @@ export function EditorPreview({
         <p className="mt-3 truncate text-lg font-bold text-site-text">
           {name || t('display-name-placeholder', { defaultValue: 'Your display name' })}
         </p>
-        <p className="truncate text-xs text-site-text-dim">
+        <p className="truncate text-xs text-site-text-muted">
           @{handle || t('handle-placeholder', { defaultValue: '@handle' })}
         </p>
         <p
           className={cn(
             'mt-3 line-clamp-3 text-sm leading-relaxed',
-            bio ? 'text-site-text-muted' : 'text-site-text-dim',
+            bio ? 'text-site-text-muted' : 'text-site-text-muted',
           )}
         >
           {bio || t('bio-preview-placeholder', { defaultValue: 'Your bio will appear here.' })}

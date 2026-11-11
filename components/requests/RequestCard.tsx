@@ -88,7 +88,7 @@ export function RequestCard({
           </p>
 
           {request.mergedIntoTitle ? (
-            <p className="mt-2 flex items-center gap-2 text-xs text-site-text-dim">
+            <p className="mt-2 flex items-center gap-2 text-xs text-site-text-muted">
               <GitMerge className="size-3.5 shrink-0" aria-hidden />
               {t('request-merged-into', {
                 defaultValue: 'Merged into “{{title}}” — your vote moved with it.',
@@ -109,7 +109,7 @@ export function RequestCard({
             </div>
           ) : null}
 
-          <p className="mt-3 text-xs text-site-text-dim">
+          <p className="mt-3 text-xs text-site-text-muted">
             {t('request-by', {
               defaultValue: 'Requested by {{name}}',
               name: request.author?.handle

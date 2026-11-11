@@ -215,7 +215,7 @@ export function RecipesManager() {
                 <p className="text-xs text-site-text-muted">
                   {r.triggerLabel} → {r.actionLabel}
                 </p>
-                <p className="text-xs text-site-text-dim">
+                <p className="text-xs text-site-text-muted">
                   {t('recipes-fired', {
                     defaultValue: 'Fired {{count}} times',
                     count: r.fireCount,

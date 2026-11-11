@@ -173,7 +173,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
           <h2 className="site-section-label">
             {t('party-heading', { defaultValue: 'Party up' })}
           </h2>
-          <p className="basis-full text-xs text-site-text-dim sm:basis-auto">
+          <p className="basis-full text-xs text-site-text-muted sm:basis-auto">
             {t('party-subheading', {
               defaultValue: 'Start a party and pick a game to play with friends.',
             })}

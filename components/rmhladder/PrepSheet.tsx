@@ -112,7 +112,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
       )}
 
       {!sheet && !upgrade && !loading && (
-        <p className="mt-3 text-sm text-site-text-dim">
+        <p className="mt-3 text-sm text-site-text-muted">
           {t('ladder.prepEmpty', {
             defaultValue:
               'Build a prep sheet from this posting and your own STAR stories. Add stories to your answer bank first for the best match.',
@@ -121,7 +121,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
       )}
 
       {loading && !sheet && (
-        <p className="mt-3 flex items-center gap-2 text-sm text-site-text-dim">
+        <p className="mt-3 flex items-center gap-2 text-sm text-site-text-muted">
           <Loader2 className="size-4 animate-spin" aria-hidden />
           {t('ladder.prepWorking', { defaultValue: 'Reading the posting…' })}
         </p>
@@ -136,14 +136,14 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
                 defaultValue: '{{count}} days until your interview',
                 count: sheet.daysUntilInterview,
               })}
-              <span className="text-site-text-dim">
+              <span className="text-site-text-muted">
                 {new Date(sheet.nextInterviewAt).toLocaleDateString()}
               </span>
             </p>
           )}
 
           {sheet.fallback && (
-            <p className="text-xs text-site-text-dim">
+            <p className="text-xs text-site-text-muted">
               {t('ladder.prepFallback', {
                 defaultValue:
                   'Generated without the AI model — this is your own stories ranked against the posting.',
@@ -212,7 +212,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
                         {t('ladder.prepStoryFor', { defaultValue: 'For: {{q}}', q: m.question })}
                       </p>
                     )}
-                    {m.why && <p className="mt-1 text-xs text-site-text-dim">{m.why}</p>}
+                    {m.why && <p className="mt-1 text-xs text-site-text-muted">{m.why}</p>}
                   </li>
                 ))}
               </ul>

@@ -268,7 +268,7 @@ export function FeedList({
  <div className="site-sticky-secondary site-sticky-pinned mt-4 flex justify-center pointer-events-none">
  <button
  onClick={handleShowNew}
- className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full bg-site-accent text-site-accent-fg text-sm font-bold shadow-site hover:bg-site-accent-hover transition-[scale,background-color] duration-site-fast active:scale-95"
+ className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full bg-site-accent text-site-accent-fg text-sm font-bold hover:bg-site-accent-hover transition-[scale,background-color] duration-site-fast active:scale-95"
  >
  <ArrowUp className="w-4 h-4"/>
  {t('new-posts', {
@@ -394,7 +394,7 @@ export function FeedList({
 
  {/* No more items */}
  {!hasMore && !error && items.length > 0 && (
- <div className="py-8 text-center text-sm text-site-text-dim">
+ <div className="py-8 text-center text-sm text-site-text-muted">
  {t('reached-end', { defaultValue:"You've reached the end"})}
  </div>
  )}

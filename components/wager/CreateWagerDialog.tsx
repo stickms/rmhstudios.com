@@ -92,7 +92,7 @@ export function CreateWagerDialog({ open, onClose, onCreated, opponentId, oppone
                 </option>
               ))}
             </Select>
-            <p className="text-xs text-site-text-dim">
+            <p className="text-xs text-site-text-muted">
               {t('authoritative-hint', {
                 defaultValue:
                   '✓ games report a server-verified winner. Others settle when both players agree (or an admin decides).',

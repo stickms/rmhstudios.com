@@ -143,7 +143,7 @@ export function PullToRefresh({
  style={{ height: pull }}
  aria-hidden
  >
- <div className="glass-overlay mt-2 flex size-9 items-center justify-center rounded-full shadow-site">
+ <div className="glass-overlay mt-2 flex size-9 items-center justify-center rounded-full ">
  <RefreshCw
  className={`size-5 text-site-accent ${refreshing ?'animate-spin':''}`}
  style={

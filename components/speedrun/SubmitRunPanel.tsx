@@ -149,7 +149,7 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
                       {replay.version}
                     </Badge>
                     {!boardOpen && (
-                      <span className="text-xs text-site-text-dim">
+                      <span className="text-xs text-site-text-muted">
                         {t('speedrun-no-board-for-version', {
                           defaultValue: 'No board open for this version',
                         })}

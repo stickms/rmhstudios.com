@@ -96,7 +96,7 @@ export function BaccaratControls({ coins }: Props) {
   // Idle state
   if (tablePhase === 'idle') {
     return (
-      <div className="text-center text-site-text-dim py-4">
+      <div className="text-center text-site-text-muted py-4">
         <p className="text-sm">{t("waiting-next-round-baccarat-controls", { defaultValue: "Waiting for the next round..." })}</p>
       </div>
     );
@@ -123,7 +123,7 @@ export function BaccaratControls({ coins }: Props) {
           ))}
         </div>
 
-        <p className="text-micro text-center text-site-text-dim -mt-1">
+        <p className="text-micro text-center text-site-text-muted -mt-1">
           {t("no-commission-note", { defaultValue: "No commission \xB7 Banker win on 6 pays \xBD" })}
         </p>
 
@@ -138,14 +138,14 @@ export function BaccaratControls({ coins }: Props) {
               className="h-auto min-h-11 flex-col gap-0.5 p-2.5 has-[>svg]:px-2.5"
             >
               <span className="text-xs font-bold leading-tight">{opt.label}</span>
-              <span className="text-micro text-site-text-dim leading-tight">{opt.payout}</span>
+              <span className="text-micro text-site-text-muted leading-tight">{opt.payout}</span>
             </Button>
           ))}
         </div>
 
         {/* Chip amount selector — always horizontal, larger targets */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-site-text-dim shrink-0">{t("chip-label", { defaultValue: "Chip:" })}</span>
+          <span className="text-xs text-site-text-muted shrink-0">{t("chip-label", { defaultValue: "Chip:" })}</span>
           <div className="flex gap-1.5 flex-1">
             {[5, 25, 100, 500].map((amt) => (
               <Button
@@ -154,7 +154,7 @@ export function BaccaratControls({ coins }: Props) {
                 aria-pressed={chipAmount === amt}
                 onClick={() => setChipAmount(amt)}
                 className={`h-auto min-h-10 flex-1 px-0 text-xs font-bold ${
-                  chipAmount === amt ? '' : 'text-site-text-dim hover:text-site-text'
+                  chipAmount === amt ? '' : 'text-site-text-muted hover:text-site-text'
                 }`}
               >
                 {amt}
@@ -167,7 +167,7 @@ export function BaccaratControls({ coins }: Props) {
         {totalBet > 0 && (
           <div className="glass-fill flex flex-col gap-2 p-3 rounded-site-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-site-text-dim">{t("your-bets-this-round", { defaultValue: "Your bets this round:" })}</span>
+              <span className="text-xs text-site-text-muted">{t("your-bets-this-round", { defaultValue: "Your bets this round:" })}</span>
               <div className="flex items-center gap-1">
                 <CoinIcon className="w-3.5 h-3.5" />
                 <span className="text-sm font-bold text-site-warning">{totalBet}</span>
@@ -179,7 +179,7 @@ export function BaccaratControls({ coins }: Props) {
                 .map(([type, amount]) => (
                   <span
                     key={type}
-                    className="text-caption font-bold px-2 py-1 rounded-full bg-site-accent-dim text-site-accent"
+                    className="text-caption font-bold px-2 py-1 rounded-full bg-site-bg-subtle text-site-accent"
                   >
                     {type}: {amount}
                   </span>
@@ -204,7 +204,7 @@ export function BaccaratControls({ coins }: Props) {
   // Dealing / Drawing phase
   if (tablePhase === 'dealing' || tablePhase === 'drawing') {
     return (
-      <div className="text-center text-site-text-dim py-4">
+      <div className="text-center text-site-text-muted py-4">
         <p className="text-sm animate-pulse">{t("dealing-cards", { defaultValue: "Dealing cards..." })}</p>
       </div>
     );
@@ -229,23 +229,23 @@ export function BaccaratControls({ coins }: Props) {
           <p className="text-xs text-site-accent mt-0.5">{t("natural-baccarat-controls", { defaultValue: "Natural!" })}</p>
         )}
         {payout > 0 && (
-          <p className="text-sm text-site-text-dim mt-1 animate-bounce">
+          <p className="text-sm text-site-text-muted mt-1 animate-bounce">
             {t("payout-positive", { defaultValue: "+{{payout}} coins", payout })}
           </p>
         )}
         {totalBet > 0 && payout === 0 && (
-          <p className="text-sm text-site-text-dim mt-1">
+          <p className="text-sm text-site-text-muted mt-1">
             {t("payout-negative", { defaultValue: "-{{totalBet}} coins", totalBet })}
           </p>
         )}
-        <p className="text-xs text-site-text-dim mt-2">{t("next-round-soon", { defaultValue: "Next round starting soon..." })}</p>
+        <p className="text-xs text-site-text-muted mt-2">{t("next-round-soon", { defaultValue: "Next round starting soon..." })}</p>
       </div>
     );
   }
 
   // Fallback
   return (
-    <div className="text-center text-site-text-dim py-4">
+    <div className="text-center text-site-text-muted py-4">
       <p className="text-sm animate-pulse">{t("dealing", { defaultValue: "Dealing..." })}</p>
     </div>
   );

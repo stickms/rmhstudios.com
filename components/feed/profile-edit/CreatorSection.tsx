@@ -96,7 +96,7 @@ export function CreatorSection({
 
       <section className="glass-fill rounded-site p-5">
         <div className="mb-4 flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
             <Music2 className="size-4" aria-hidden />
           </span>
           <div>
@@ -115,7 +115,7 @@ export function CreatorSection({
 
       <section className="glass-fill rounded-site p-5">
         <div className="flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
             <Palette className="size-4" aria-hidden />
           </span>
           <div className="min-w-0 flex-1">

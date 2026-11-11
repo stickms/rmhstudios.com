@@ -133,7 +133,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
               ))}
             </div>
           )}
-          <span className="inline-flex items-center gap-1 text-xs text-site-text-dim">
+          <span className="inline-flex items-center gap-1 text-xs text-site-text-muted">
             <Users className="h-3.5 w-3.5" aria-hidden />
             {t('event-going-count', {
               count: going,

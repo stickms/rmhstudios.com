@@ -94,7 +94,7 @@ export function PastPuzzlesSection({
                                     <li
                                         key={p.dateKey}
                                         className={`flex items-center justify-between gap-3 rounded-site-sm px-3 py-2 ${
-                                            isSelected ? 'bg-site-accent-dim' : 'bg-site-bg-subtle'
+                                            isSelected ? 'bg-site-bg-subtle' : 'bg-site-bg-subtle'
                                         }`}
                                     >
                                         <div className="flex items-center gap-3">

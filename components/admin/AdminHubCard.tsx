@@ -34,7 +34,7 @@ export function AdminHubCard({
         <span className="mt-1 block text-sm text-site-text-muted">{description}</span>
       </span>
       <ArrowRight
-        className="mt-1 size-4 shrink-0 text-site-text-dim transition-transform duration-site-fast group-hover:translate-x-0.5 rtl:-scale-x-100"
+        className="mt-1 size-4 shrink-0 text-site-text-muted transition-transform duration-site-fast group-hover:translate-x-0.5 rtl:-scale-x-100"
         aria-hidden
       />
     </Link>

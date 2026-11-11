@@ -524,11 +524,11 @@ html.ios-webkit .kd-atmos {
    Chart chrome
    ==========================================================================
    A NOTE ON INK. Everything small on this page — the 11–12px axis labels, tile
-   captions and chart hints — is `--site-text-muted`, not `--site-text-dim`.
+   captions and chart hints — is `--site-text-muted`, not `--site-text-muted`.
 
    Measured, not assumed: with the page rendered and every glyph made
    transparent, the pixels actually behind each text node were sampled and the
-   WCAG ratio computed against its own computed colour. `--site-text-dim` lands
+   WCAG ratio computed against its own computed colour. `--site-text-muted` lands
    at 4.39:1 on this page's glass in Daylight and 4.49:1 in Midnight — a hair
    under the 4.5 small-text threshold, in every theme and everywhere on the
    site, not just here. `--site-text-muted` measures 7.2:1 on the same surface.
@@ -608,7 +608,7 @@ html.ios-webkit .kd-atmos {
    whatever it overlaps — the mark spec's spacer, not a glow. */
 .kd-chart__marker {
   fill: currentColor;
-  stroke: var(--site-surface-opaque, var(--site-bg));
+  stroke: var(--site-surface, var(--site-bg));
   stroke-width: 2;
   pointer-events: none;
 }

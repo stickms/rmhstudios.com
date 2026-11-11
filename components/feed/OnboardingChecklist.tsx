@@ -162,7 +162,7 @@ export function OnboardingChecklist() {
  <AsyncReveal
  show
  as="section"
- className="border-b border-site-border bg-site-accent-dim/20 px-4 py-4"
+ className="border-b border-site-border bg-site-bg-subtle/20 px-4 py-4"
  >
  <div className="mb-2 flex items-start justify-between gap-2">
  <h2 className="flex items-center gap-2 font-bold text-site-text">
@@ -172,7 +172,7 @@ export function OnboardingChecklist() {
  <button
  onClick={dismiss}
  aria-label={t('onboarding-dismiss', { defaultValue:'Dismiss checklist'})}
- className="rounded-site-sm p-2 text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-text"
+ className="rounded-site-sm p-2 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
  >
  <X className="h-4 w-4"aria-hidden />
  </button>
@@ -192,10 +192,10 @@ export function OnboardingChecklist() {
  {step.done ? (
  <CheckCircle2 className="h-4.5 w-4.5 shrink-0 text-site-success"aria-hidden />
  ) : (
- <Circle className="h-4.5 w-4.5 shrink-0 text-site-text-dim"aria-hidden />
+ <Circle className="h-4.5 w-4.5 shrink-0 text-site-text-muted"aria-hidden />
  )}
- <Icon className="h-4 w-4 shrink-0 text-site-text-dim"aria-hidden />
- <span className={step.done ?'text-site-text-dim line-through':'text-site-text'}>
+ <Icon className="h-4 w-4 shrink-0 text-site-text-muted"aria-hidden />
+ <span className={step.done ?'text-site-text-muted line-through':'text-site-text'}>
  {step.label}
  </span>
  </span>

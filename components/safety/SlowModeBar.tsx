@@ -32,7 +32,7 @@ export function SlowModeBar({
   scope,
   isHost,
   onSet,
-  className = 'text-site-text-dim',
+  className = 'text-site-text-muted',
   tier = 'site',
 }: {
   scope: SlowModeScope;

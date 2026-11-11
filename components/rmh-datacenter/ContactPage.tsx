@@ -227,7 +227,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
               <Button type="submit" variant="accent">
                 {t('con-submit', { defaultValue: 'Compose request' })}
               </Button>
-              <p className="text-sm text-site-text-dim">
+              <p className="text-sm text-site-text-muted">
                 {t('con-form-note', {
                   defaultValue:
                     'Opens your own mail client with the request written out. Nothing is submitted to a server from this page.',

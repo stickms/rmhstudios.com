@@ -182,7 +182,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
       </div>
 
       {!signedIn ? (
-        <p className="mt-3 text-center text-xs text-site-text-dim">
+        <p className="mt-3 text-center text-xs text-site-text-muted">
           {t('request-sign-in-hint', { defaultValue: 'Sign in to file a request or vote.' })}
         </p>
       ) : null}

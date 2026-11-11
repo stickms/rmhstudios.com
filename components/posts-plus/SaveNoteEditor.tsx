@@ -101,7 +101,7 @@ export function SaveNoteEditor({
           <X aria-hidden />
           {t('cancel', { defaultValue: 'Cancel' })}
         </Button>
-        <span className="ms-auto text-xs tabular-nums text-site-text-dim">
+        <span className="ms-auto text-xs tabular-nums text-site-text-muted">
           {draft.length}/{MAX_SAVE_NOTE}
         </span>
       </div>

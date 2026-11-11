@@ -42,7 +42,7 @@ export function RoutesTab({ routes }: { routes: RouteRow[] }) {
       sortValue: (r) => r.route,
       render: (r) => (
         <span className="flex items-center gap-2">
-          <span className="font-mono text-xs text-site-text-dim">{r.method}</span>
+          <span className="font-mono text-xs text-site-text-muted">{r.method}</span>
           <span className="font-mono text-xs break-all">{r.route}</span>
           {costly.has(`${r.method} ${r.route}`) && (
             <Badge variant="warning" size="sm">
@@ -131,7 +131,7 @@ export function RoutesTab({ routes }: { routes: RouteRow[] }) {
           aria-label={t('routes-filter-label', { defaultValue: 'Filter routes' })}
           containerClassName="w-full max-w-xs"
         />
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('routes-note', {
             defaultValue:
               'Paths are normalised (ids and handles collapse to :id, at most 4 segments); counts are since each worker started.',

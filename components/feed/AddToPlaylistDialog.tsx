@@ -137,7 +137,7 @@ export function AddToPlaylistDialog({
  <Spinner size={20} />
  </div>
  ) : playlists.length === 0 ? (
- <p className="py-6 text-center text-sm text-site-text-dim">
+ <p className="py-6 text-center text-sm text-site-text-muted">
  {t('playlist-none-yet', { defaultValue:'No playlists yet — create one above.'})}
  </p>
  ) : (
@@ -150,10 +150,10 @@ export function AddToPlaylistDialog({
  disabled={busyId === pl.id}
  className="flex w-full items-center gap-3 rounded-site-sm px-3 py-2 text-left hover:bg-site-surface-hover disabled:opacity-60"
  >
- <ListMusic className="h-4 w-4 shrink-0 text-site-text-dim"aria-hidden />
+ <ListMusic className="h-4 w-4 shrink-0 text-site-text-muted"aria-hidden />
  <span className="min-w-0 flex-1">
  <span className="block truncate text-sm text-site-text">{pl.name}</span>
- <span className="block text-xs text-site-text-dim">
+ <span className="block text-xs text-site-text-muted">
  {t('playlist-item-count', { defaultValue:'{{n}} items', n: pl.itemCount })}
  </span>
  </span>

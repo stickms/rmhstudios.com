@@ -33,8 +33,8 @@ import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 // already persisted in `rmh-style` and in `AppearancePreference.style` for
 // everyone who has Daylight — renaming it would silently move those people.
 export const SITE_STYLES = [
-  { id: 'graphite', label: 'Midnight', icon: '◐', group: 'RMH', bg: '#000000' },
-  { id: 'default', label: 'Daylight', icon: '☀', group: 'RMH', bg: '#ffffff' },
+  { id: 'graphite', label: 'Midnight', icon: '◐', group: 'RMH', bg: '#0b0d10' },
+  { id: 'default', label: 'Daylight', icon: '☀', group: 'RMH', bg: '#fafafa' },
 ] as const;
 
 /**

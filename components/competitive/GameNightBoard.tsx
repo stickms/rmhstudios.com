@@ -234,7 +234,7 @@ export function GameNightBoard() {
           <Card key={n.id} className="gap-3 px-4 py-4" pane>
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-semibold">{n.title}</h2>
-              <span className="text-xs text-site-text-dim">
+              <span className="text-xs text-site-text-muted">
                 {n.state === 'live'
                   ? t('gn-live-until', { defaultValue: 'Live until {{t}}', t: time(n.endsAt) })
                   : t('gn-next-at', {
@@ -266,7 +266,7 @@ export function GameNightBoard() {
               </div>
             )}
             {n.upNext && (
-              <p className="text-sm text-site-text-dim">
+              <p className="text-sm text-site-text-muted">
                 {t('gn-up-next', {
                   defaultValue: 'Up next: {{game}} at {{t}}',
                   game: n.upNext.title,
@@ -274,7 +274,7 @@ export function GameNightBoard() {
                 })}
               </p>
             )}
-            <p className="text-xs text-site-text-dim">
+            <p className="text-xs text-site-text-muted">
               {t('gn-rotation', {
                 defaultValue: 'Rotation, {{n}} min each: {{games}}',
                 n: n.minutesPerGame,

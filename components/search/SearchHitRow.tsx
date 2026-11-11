@@ -118,14 +118,14 @@ export function SearchHitRow({ hit, showKind = true }: { hit: SearchHit; showKin
       ) : (
         // Etched medallion, matching EmptyState's treatment of an icon.
         <div className="glass-fill flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
-          <Icon className="h-4 w-4 text-site-text-dim" aria-hidden />
+          <Icon className="h-4 w-4 text-site-text-muted" aria-hidden />
         </div>
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <p className="truncate text-sm font-semibold text-site-text">{hit.title}</p>
           {showKind && (
-            <span className="shrink-0 text-xs text-site-text-dim">
+            <span className="shrink-0 text-xs text-site-text-muted">
               {kindLabel(hit.kind)}
             </span>
           )}

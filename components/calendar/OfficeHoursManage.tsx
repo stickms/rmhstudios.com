@@ -198,7 +198,7 @@ export default function OfficeHoursManage() {
           <legend className="text-sm font-medium text-site-text">
             {t('oh-windows', { defaultValue: 'Weekly windows' })}
           </legend>
-          <p className="text-xs text-site-text-dim">
+          <p className="text-xs text-site-text-muted">
             {t('oh-windows-help', {
               defaultValue: 'Times are in your timezone ({{tz}}) and repeat every week.',
               tz: draft.tz,

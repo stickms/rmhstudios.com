@@ -20,7 +20,7 @@ export function PollView({ poll, onVote }: { poll: Poll; onVote: (idx: number) =
             >
               {voted && (
                 <span
-                  className="absolute inset-y-0 left-0 bg-site-accent-dim"
+                  className="absolute inset-y-0 left-0 bg-site-bg-subtle"
                   style={{ width: `${pct}%` }}
                   aria-hidden="true"
                 />
@@ -31,13 +31,13 @@ export function PollView({ poll, onVote }: { poll: Poll; onVote: (idx: number) =
                 >
                   {o.text}
                 </span>
-                {voted && <span className="shrink-0 text-xs text-site-text-dim">{pct}%</span>}
+                {voted && <span className="shrink-0 text-xs text-site-text-muted">{pct}%</span>}
               </span>
             </button>
           );
         })}
       </div>
-      <p className="mt-2 text-xs text-site-text-dim">
+      <p className="mt-2 text-xs text-site-text-muted">
         {t('poll-votes', { count: poll.totalVotes, defaultValue: '{{count}} votes' })}
       </p>
     </div>

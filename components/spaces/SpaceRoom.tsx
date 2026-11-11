@@ -399,19 +399,19 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
                 <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} />
               ))
             ) : (
-              <p className="py-12 text-center text-sm text-site-text-dim">
+              <p className="py-12 text-center text-sm text-site-text-muted">
                 {t('space-no-transcript', { defaultValue: 'No messages were recorded.' })}
               </p>
             )
           ) : (
-            <p className="py-12 text-center text-sm text-site-text-dim">
+            <p className="py-12 text-center text-sm text-site-text-muted">
               {t('space-chat-not-recorded', { defaultValue: "This Space's chat wasn't recorded." })}
             </p>
           )
         ) : messages.length > 0 ? (
           messages.map((m) => <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} />)
         ) : (
-          <p className="py-12 text-center text-sm text-site-text-dim">
+          <p className="py-12 text-center text-sm text-site-text-muted">
             {status === 'SCHEDULED'
               ? t('space-not-started', { defaultValue: 'This Space has not started yet.' })
               : t('space-say-hi', { defaultValue: 'Be the first to say something.' })}

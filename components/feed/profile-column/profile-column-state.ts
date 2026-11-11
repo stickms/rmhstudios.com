@@ -44,7 +44,7 @@ export function profileThemeStyle(profile: ProfileData): CSSProperties | undefin
     ...(theme.accent ? { '--site-accent': theme.accent } : {}),
     ...(theme.accentHover ? { '--site-accent-hover': theme.accentHover } : {}),
     ...(theme.accentFg ? { '--site-accent-fg': theme.accentFg } : {}),
-    ...(theme.accentDim ? { '--site-accent-dim': theme.accentDim } : {}),
+    ...(theme.accentDim ? { '--site-bg-subtle': theme.accentDim } : {}),
   } as CSSProperties;
 }
 

@@ -251,7 +251,7 @@ function PreferencesPanel() {
  ))}
  </div>
  )}
- <p className="mt-2 text-xs text-site-text-dim">
+ <p className="mt-2 text-xs text-site-text-muted">
  {t('notification-prefs-hint', {
  defaultValue:
 'Applies to in-app and push notifications. Moderation notices are always delivered.',
@@ -523,7 +523,7 @@ export function NotificationsColumn({
  onAction: snooze,
  }}
  >
- <div className={`flex items-start ${g.read ?'':'bg-site-accent-dim/40'}`}>
+ <div className={`flex items-start ${g.read ?'':'bg-site-bg-subtle/40'}`}>
  <button
  type="button"
  onClick={() => handleClick(n)}
@@ -596,7 +596,7 @@ export function NotificationsColumn({
  )}
  </>
  )}
- <p className="mt-1 text-xs text-site-text-dim">
+ <p className="mt-1 text-xs text-site-text-muted">
  {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
  </p>
  </div>
@@ -608,7 +608,7 @@ export function NotificationsColumn({
  icon={AlarmClock}
  variant="ghost"
  size="icon-sm"
- className="me-2 mt-3 shrink-0 text-site-text-dim"
+ className="me-2 mt-3 shrink-0 text-site-text-muted"
  onClick={snooze}
  label={t('remind-later', { defaultValue:'Remind me later'})}
  />

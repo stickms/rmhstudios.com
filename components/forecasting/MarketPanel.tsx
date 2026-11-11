@@ -111,7 +111,7 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
           {argument && (
             <div className="text-sm text-site-text">
               <p className="whitespace-pre-line">{argument.text}</p>
-              <p className="mt-2 text-xs text-site-text-dim">
+              <p className="mt-2 text-xs text-site-text-muted">
                 {t('advocate-note', {
                   defaultValue: 'AI-written, no sources checked. Verify before you trade on it.',
                 })}
@@ -147,14 +147,14 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
       {comments === null ? (
         <Spinner size={16} />
       ) : comments.length === 0 ? (
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('no-comments', { defaultValue: 'No comments yet.' })}
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
           {comments.map((c) => (
             <li key={c.id} className="text-sm">
-              <div className="flex flex-wrap items-center gap-2 text-xs text-site-text-dim">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-site-text-muted">
                 <span className="font-medium text-site-text">
                   {c.user.name ?? c.user.handle ?? ''}
                 </span>

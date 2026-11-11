@@ -83,7 +83,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
               />
             </div>
           ) : (
-            <div className="aspect-video w-full bg-gradient-to-br from-site-accent/20 to-site-accent-dim flex items-center justify-center">
+            <div className="aspect-video w-full bg-gradient-to-br from-site-accent/20 to-site-bg-subtle flex items-center justify-center">
               <div className="text-4xl font-bold text-site-accent/50">
                 {build.title[0]?.toUpperCase()}
               </div>
@@ -101,7 +101,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
           {/* Category */}
           {build.category && (
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-2 py-0.5 rounded-full text-xs bg-site-accent-dim text-site-accent">
+              <span className="px-2 py-0.5 rounded-full text-xs bg-site-bg-subtle text-site-accent">
                 {build.category.name}
               </span>
             </div>
@@ -131,13 +131,13 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
               <span className="text-sm text-site-text-muted truncate">
                 {build.user.name || t("anonymous", { defaultValue: "Anonymous" })}
               </span>
-              <span className="text-xs text-site-text-dim">
+              <span className="text-xs text-site-text-muted">
                 {timeAgo(build.publishedAt || build.createdAt, t)}
               </span>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-3 text-site-text-dim">
+            <div className="flex items-center gap-3 text-site-text-muted">
               {build.repoUrl && (
                 <a
                   href={safeHref(build.repoUrl)}
@@ -166,7 +166,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
           </div>
 
           {/* Engagement Stats */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-site-border text-xs text-site-text-dim">
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-site-border text-xs text-site-text-muted">
             <button
               onClick={handleLike}
               className={`flex items-center gap-1 transition-colors ${

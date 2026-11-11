@@ -31,7 +31,7 @@ export function DraftRestoreBanner({
       <button
         type="button"
         onClick={onDiscard}
-        className="shrink-0 text-xs text-site-text-dim hover:text-site-text"
+        className="shrink-0 text-xs text-site-text-muted hover:text-site-text"
       >
         {t('draft-discard', { defaultValue: 'Discard' })}
       </button>

@@ -117,7 +117,7 @@ export default function CalendarSettings() {
                 />
               </div>
             </label>
-            <p className="text-xs text-site-text-dim">
+            <p className="text-xs text-site-text-muted">
               {t('feed-private', {
                 defaultValue:
                   'Anyone with this link can see your schedule. Keep it private, and make a new one if it leaks.',

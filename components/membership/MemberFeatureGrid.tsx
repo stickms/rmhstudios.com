@@ -221,7 +221,7 @@ export function MemberFeatureGrid({ tier, highlight, signedOut }: Props) {
                     className={cn(
                       'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-site-sm',
                       unlocked
-                        ? 'bg-site-accent-dim text-site-accent'
+                        ? 'bg-site-bg-subtle text-site-accent'
                         : 'bg-site-surface-muted text-site-text-muted',
                     )}
                   >

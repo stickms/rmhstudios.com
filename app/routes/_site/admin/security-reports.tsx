@@ -201,14 +201,14 @@ function ReportCard({
           </div>
           <h3 className="text-base font-semibold text-site-text break-words">{report.title}</h3>
         </div>
-        <span className="text-xs text-site-text-dim whitespace-nowrap">
+        <span className="text-xs text-site-text-muted whitespace-nowrap">
           {formatDistanceToNow(new Date(report.createdAt), { addSuffix: true })}
         </span>
       </div>
 
       {report.affectedArea ? (
         <p className="text-xs text-site-text-muted break-words">
-          <span className="text-site-text-dim">{t('affected-label', { defaultValue: 'Affected:' })}</span> {report.affectedArea}
+          <span className="text-site-text-muted">{t('affected-label', { defaultValue: 'Affected:' })}</span> {report.affectedArea}
         </p>
       ) : null}
 
@@ -216,7 +216,7 @@ function ReportCard({
 
       {report.reporterName || report.reporterEmail || report.userId ? (
         <p className="text-xs text-site-text-muted">
-          <span className="text-site-text-dim">{t('reporter-label', { defaultValue: 'Reporter:' })}</span>{' '}
+          <span className="text-site-text-muted">{t('reporter-label', { defaultValue: 'Reporter:' })}</span>{' '}
           {report.reporterName || t('anonymous', { defaultValue: 'Anonymous' })}
           {report.reporterEmail ? (
             <>
@@ -226,7 +226,7 @@ function ReportCard({
               </a>
             </>
           ) : null}
-          {report.userId ? <span className="text-site-text-dim"> · {t('signed-in-user', { defaultValue: 'signed-in user' })}</span> : null}
+          {report.userId ? <span className="text-site-text-muted"> · {t('signed-in-user', { defaultValue: 'signed-in user' })}</span> : null}
         </p>
       ) : null}
 

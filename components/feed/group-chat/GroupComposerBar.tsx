@@ -68,7 +68,7 @@ export function GroupComposerBar({
             aria-label={t('add-to-message', { defaultValue: 'Add to message' })}
             aria-haspopup="menu"
             aria-expanded={attachOpen}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-site-text-dim hover:bg-site-accent/10 hover:text-site-accent disabled:opacity-40"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-site-text-muted hover:bg-site-accent/10 hover:text-site-accent disabled:opacity-40"
             disabled={uploading}
           >
             {uploading ? (

@@ -84,17 +84,17 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
  {stats.map((s) => (
  <div key={s.label} className="rounded-site glass-fill p-4">
- <s.icon className="h-4 w-4 text-site-text-dim"/>
+ <s.icon className="h-4 w-4 text-site-text-muted"/>
  <p className="mt-1 text-lg font-bold text-site-text">{fmt(s.value)}</p>
- <p className="text-xs text-site-text-dim">{s.label}</p>
+ <p className="text-xs text-site-text-muted">{s.label}</p>
  </div>
  ))}
  <div className="rounded-site glass-fill p-4">
- <TrendingUp className="h-4 w-4 text-site-text-dim"/>
+ <TrendingUp className="h-4 w-4 text-site-text-muted"/>
  <p className="mt-1 text-lg font-bold text-site-text">
  {(data.engagementRate * 100).toFixed(1)}%
  </p>
- <p className="text-xs text-site-text-dim">{t('engagement-rate', { defaultValue:'Engagement rate'})}</p>
+ <p className="text-xs text-site-text-muted">{t('engagement-rate', { defaultValue:'Engagement rate'})}</p>
  </div>
  </div>
 
@@ -104,7 +104,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <Unlock className="h-4 w-4 text-site-accent"/>
  <div>
  <p className="text-sm font-semibold text-site-text">{t('unlocks-count', { count: fmt(data.unlocks), defaultValue:'{{count}} unlocks'})}</p>
- <p className="text-xs text-site-text-dim">{t('unlock-price-each', { price: data.unlockPrice, defaultValue:'at {{price}} each'})}</p>
+ <p className="text-xs text-site-text-muted">{t('unlock-price-each', { price: data.unlockPrice, defaultValue:'at {{price}} each'})}</p>
  </div>
  </div>
  <span className="inline-flex items-center gap-1 text-sm font-bold text-site-text">
@@ -133,7 +133,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  title={t('bar-likes-count', { count: d.count, defaultValue:'{{count}} likes'})}
  />
  </div>
- <span className="text-tiny text-site-text-dim">
+ <span className="text-tiny text-site-text-muted">
  {new Date(d.date).toLocaleDateString(undefined, { weekday:'narrow'})}
  </span>
  </div>
@@ -141,7 +141,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  </div>
  </div>
 
- <p className="mt-4 text-center text-xs text-site-text-dim">
+ <p className="mt-4 text-center text-xs text-site-text-muted">
  {t('posted-date', { date: new Date(data.createdAt).toLocaleString(), defaultValue:'Posted {{date}}'})}
  </p>
  </>

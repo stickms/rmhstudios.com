@@ -1,99 +1,3 @@
-/* ─────────────────────────────────────────────────────────────────────────
-   Handheld tier — the THIRD device axis (§6.4/§10).
-
-   `html.ios-webkit` means "this compositor behaves differently". It does not
-   describe the fact this block is about, and that gap is why phones were paying
-   full price:
-
-     - There was never a "weak machine" class that a current phone reached: the
-       old low-end signals are Chromium-only except hardwareConcurrency, which
-       iOS reports as 4–6, and a mid-range Android clears the thresholds too.
-     - `ios-webkit` DID freeze the aurora, but only on iOS. Android Chrome ran
-       the full animated backdrop with no equivalent.
-
-   What is true of every handheld regardless of how fast its SoC is: it renders
-   at 2–3× device pixel ratio, it is thermally limited, and it is on battery.
-   A `position: fixed` full-viewport gradient running two infinite transform
-   animations underneath ~46 `backdrop-filter` surfaces means the compositor
-   re-derives every one of those blurs on every frame, over ~9× the physical
-   pixels a 1× desktop covers — for ambient decoration nobody is looking at
-   during a cold load.
-
-   So: keep the material (tint, glint, depth, blur — the identity), and stop
-   paying for MOTION underneath it. This is what iOS has had all along; Android
-   phones now match, which makes the two consistent rather than divergent.
-
-   Deliberately `(pointer: coarse)` AND a width bound, not width alone: a
-   desktop browser resized narrow is still a desktop and keeps the full effect,
-   and a coarse-pointer TV or kiosk above 1024px is not thermally limited in the
-   way this block assumes. CSS-only demotion — no component branches. */
-@media (pointer: coarse) and (max-width: 1024px) {
-  html {
-    /* Blur radius is the dominant term in backdrop-filter cost, and it is the
-       one this site can give up cheaply on a phone: the `max-width: 767.98px`
-       block above already raises every glass tier's tint opacity floor, so the
-       material there is substantially more opaque and reads far less of the
-       backdrop through it. Cutting the radius to 60% is close to invisible
-       against that floor (18px → 10.8px panes, 20px → 12px chrome, 30px → 18px
-       overlays) while removing a large, per-frame, full-screen GPU cost.
-       A cap, never a raise — this composes with the device budget. */
-    --glass-blur-cap-viewport: 0.6;
-  }
-
-  /* The ambient drift and the pointer/motion parallax, both aurora layers. This
-     is the change that actually matters: a STATIC backdrop lets the compositor
-     cache each backdrop-filter region instead of re-blurring it every frame.
-     The aurora itself stays — same gradient, same colours, same depth — it just
-     stops moving, exactly as it already does under html.ios-webkit. */
-  html:not(.app-route) .site-aurora::before,
-  html:not(.app-route) .site-aurora::after {
-    animation: none;
-    translate: none;
-    transition: none;
-    will-change: auto;
-  }
-}
-
-/* §5.47 true liquid morphing — the goo underlay. An absolutely-positioned,
-   capsule-only layer behind a control's active capsule that carries the
-   #glass-goo metaball filter so the moving capsule and its trailing droplet fuse
-   into a stretching teardrop.
-   Constraints (hard):
-     - `contain: layout paint` isolates the filter region and clips the droplet.
-     - It hosts ONLY plain accent-tint blobs — never a backdrop-filter element
-       (nesting a backdrop sampler in a filtered subtree re-rasterizes it) and
-       never labels/icons (alpha thresholding destroys glyph edges; those live in
-       the sibling layer above at z-index ≥ 1).
-   Degradations: high-contrast drops the whole underlay so only the
-   plain layoutId spring slide remains (the capsule above is untouched). Reduced
-   motion never mounts it in the first place (the components gate on
-   useReducedMotion), so no CSS rule is needed for that path. */
-.lg-goo {
-  filter: url(#glass-goo);
-  contain: layout paint;
-  pointer-events: none;
-}
-
-/* Success toast rim-flash (§5.5). Sonner portals its toasts to <body> and tags
-   them data-type; a success toast flashes a bright success-tinted rim that
-   settles into the standard L4 rim (--site-shadow, which the sonner toastOptions
-   set inline) over 0.8s. No `forwards` → after the flash the box-shadow reverts
-   to that resting inline value. The global reduced-motion reset collapses it. */
-@keyframes toast-success-flash {
-  from {
-    box-shadow:
-      inset 0 1px 0 var(--site-success),
-      inset 0 0 0 1px color-mix(in srgb, var(--site-success) 55%, transparent),
-      var(--site-glass-depth);
-  }
-  to {
-    box-shadow: var(--site-shadow);
-  }
-}
-[data-sonner-toast][data-type='success'] {
-  animation: toast-success-flash 0.8s ease-out;
-}
-
 /* Toast travel on the site's spring. Sonner moves a toast (in, out, restack,
    swipe-back) with `transition: transform 400ms, opacity 400ms, height 400ms`
    and no timing function — CSS `ease`, which creeps out of rest and is the
@@ -107,11 +11,6 @@ html [data-sonner-toast] {
   transition-timing-function:
     var(--spring-smooth), var(--spring-smooth), var(--spring-smooth), ease;
 }
-
-/* ── Global degradations ──────────────────────────────────────────────────── */
-/* All remaining optics dead (§4.35 simplified pseudo set): the aside blur carrier,
-   the refract lens band, and the far aurora. (The pointer hotspot used to be
-   switched off here too; it no longer exists on any tier.) */
 
 /* ── Evening service ────────────────────────────────────────────────────────
    Midnight's site chrome is blue-black; a dining room is not. This is the same
@@ -129,44 +28,20 @@ html [data-sonner-toast] {
   --rebar-line-strong: #f3efe6;
 }
 
-/* iOS/WebKit compositor safety tier. WebKit can wedge the page while compositing
-   an animated fixed gradient through SVG-displaced surfaces; when that happens
-   JS timers and recovery watchdogs cannot run either. Keep the visible CSS glass
-   material (tint, blur, glint and depth) plus ordinary component animations, but
-   make the full-screen backdrop static and remove the expensive displacement /
-   ambient-motion layers so navigation and interaction always retain a frame. */
-html.ios-webkit:not(.app-route) .site-aurora::before {
-  animation: none;
-  transition: none;
-  will-change: auto;
-  translate: none;
-  transform: scale(1.08);
-}
-html.ios-webkit .site-aurora::after,
-html.ios-webkit .glass-chrome--aside::before,
-html.ios-webkit .glass-refract::before,
-html.ios-webkit .lg-goo {
-  display: none;
-}
-html.ios-webkit .glass-liquid::after {
-  display: none;
-}
-
 /* iOS 26 Safari tints the strips behind its status bar and floating toolbar from
-   `position: fixed` / sticky layers at the screen edge, and a layer with a paint of its own (the aurora
-   canvas, here) is read as one flat colour and filled in as an opaque band that covers the content
+   `position: fixed` / sticky layers at the screen edge, and a layer with a paint of its own
+   is read as one flat colour and filled in as an opaque band that covers the content
    scrolling under it. Transparency, `pointer-events: none`, transforms and `backdrop-filter` do not
    reliably opt a layer out. Sites that show their page behind the bars (apple.com, reddit.com) have no
    fixed layer at the edges: their ground is the document's own background, and anything fixed sits well
    clear of an edge.
 
-   So on iOS WebKit the full-viewport fixed decoration is not rendered at all, on every page: the aurora
-   and the ring backdrop (the document background above already carries the canvas on site pages) and the
-   arc canvas. Page-level headers and banners that were pinned flush to the top edge (the call banners,
+   So on iOS WebKit the full-viewport fixed decoration is not rendered at all, on every page: the ring
+   backdrop and the arc canvas (Steel has no aurora: the page ground is the document's own background). Page-level headers and banners that were pinned flush to the top edge (the call banners,
    the Kaikai ledger bar, the Rebar masthead) are inset from it the same way the shell's top capsule is. The sticky top
    capsule and the orb and compose button already sit well off the edges (radial.css). Content then runs
    under both bars with Safari's own soft edge, not a flat band. */
-html.ios-webkit :is(.site-aurora, .radial-backdrop, .jelly-arc-layer) {
+html.ios-webkit :is(.radial-backdrop, .jelly-arc-layer) {
   display: none;
 }
 
@@ -238,15 +113,12 @@ html.readable-font body {
   --color-site-surface-hover: var(--site-surface-hover);
   --color-site-surface-active: var(--site-surface-active);
   --color-site-border: var(--site-border);
-  --color-site-border-bright: var(--site-border-bright);
   --color-site-text: var(--site-text);
   --color-site-text-muted: var(--site-text-muted);
-  --color-site-text-dim: var(--site-text-dim);
   --color-site-accent: var(--site-accent);
   --color-site-accent-fg: var(--site-accent-fg, #fff);
   --color-site-accent-hover: var(--site-accent-hover);
-  --color-site-accent-dim: var(--site-accent-dim);
-  /* The ink-gel primary action (#989) → bg-gel-ink / text-on-ink. */
+  /* The ink-fill primary action → bg-gel-ink / text-on-ink (K2 in phase 2 replaces both with bg-site-accent). */
   --color-gel-ink: var(--gel-ink);
   --color-on-ink: var(--on-ink);
   --color-focus-ring: var(--focus-ring);
@@ -312,20 +184,9 @@ html.readable-font body {
      near-black. Never hardcode ink on a warning fill. */
   --color-site-warning-fg: var(--site-warning-fg, #fff);
 
-  /* Glass material tokens → bg-site-glass-tint, ring-site-glass-rim-soft, … */
-  --color-site-glass-tint: var(--site-glass-tint);
-  --color-site-glass-tint-strong: var(--site-glass-tint-strong);
-  --color-site-glass-ink: var(--site-glass-ink);
-  --color-site-glass-rim: var(--site-glass-rim);
-  --color-site-glass-rim-soft: var(--site-glass-rim-soft);
-  --color-site-glass-light: var(--site-glass-light);
-
   /* Site radius scale → rounded-site / rounded-site-sm (theme-aware) */
   --radius-site: var(--site-radius);
   --radius-site-sm: var(--site-radius-sm);
-  /* Site elevation → shadow-site (prominent) / shadow-site-sm (resting) */
-  --shadow-site: var(--site-shadow);
-  --shadow-site-sm: var(--site-shadow-sm);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

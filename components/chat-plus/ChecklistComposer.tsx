@@ -77,7 +77,7 @@ export function ChecklistComposer({
         aria-haspopup="dialog"
         aria-label={t('checklist-new', { defaultValue: 'New checklist' })}
         title={t('checklist-new', { defaultValue: 'New checklist' })}
-        className="flex h-[42px] shrink-0 items-center rounded-site px-2.5 text-site-text-dim hover:bg-site-surface-hover hover:text-site-accent focus-visible:ring-2 focus-visible:ring-site-accent disabled:opacity-50"
+        className="flex h-[42px] shrink-0 items-center rounded-site px-2.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-accent focus-visible:ring-2 focus-visible:ring-site-accent disabled:opacity-50"
       >
         <ListChecks className="size-5" />
       </button>
@@ -140,7 +140,7 @@ export function ChecklistComposer({
                         index: i + 1,
                         defaultValue: 'Remove item {{index}}',
                       })}
-                      className="flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-dim hover:bg-site-surface-hover focus-visible:ring-2 focus-visible:ring-site-accent"
+                      className="flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-muted hover:bg-site-surface-hover focus-visible:ring-2 focus-visible:ring-site-accent"
                     >
                       <X className="size-4" />
                     </button>

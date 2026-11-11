@@ -1358,7 +1358,6 @@ a.neumorphic-sm:hover,
  */
 .slice-menu-panel.slice-menu-panel {
   --site-text: var(--slice-paper);
-  --site-text-dim: var(--slice-text-muted);
   --site-border: var(--slice-border);
   --site-accent: var(--slice-primary);
   background-color: var(--slice-label);

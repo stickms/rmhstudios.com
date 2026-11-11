@@ -158,8 +158,8 @@ export function JamsList() {
                 <h2 className="font-semibold truncate">{j.title}</h2>
                 <PhaseBadge phase={j.phase} />
               </div>
-              <p className="text-sm text-site-text-dim line-clamp-2">{j.description}</p>
-              <p className="text-xs text-site-text-dim">
+              <p className="text-sm text-site-text-muted line-clamp-2">{j.description}</p>
+              <p className="text-xs text-site-text-muted">
                 {new Date(j.startsAt).toLocaleString()} →{' '}
                 {new Date(j.submitEndsAt).toLocaleString()}
               </p>

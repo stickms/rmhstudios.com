@@ -332,12 +332,12 @@ export function PlaylistsColumn({
                       >
                         {open ? (
                           <ChevronDown
-                            className="h-4 w-4 shrink-0 text-site-text-dim"
+                            className="h-4 w-4 shrink-0 text-site-text-muted"
                             aria-hidden
                           />
                         ) : (
                           <ChevronRight
-                            className="h-4 w-4 shrink-0 text-site-text-dim"
+                            className="h-4 w-4 shrink-0 text-site-text-muted"
                             aria-hidden
                           />
                         )}
@@ -345,7 +345,7 @@ export function PlaylistsColumn({
                           <span className="block truncate text-sm font-semibold text-site-text">
                             {pl.name}
                           </span>
-                          <span className="block text-xs text-site-text-dim">
+                          <span className="block text-xs text-site-text-muted">
                             {t('playlist-item-count', {
                               defaultValue: '{{n}} items',
                               n: pl.itemCount,
@@ -362,7 +362,7 @@ export function PlaylistsColumn({
                             type="button"
                             onClick={() => rename(pl)}
                             aria-label={t('playlist-rename', { defaultValue: 'Rename' })}
-                            className="rounded-site-sm p-1.5 text-site-text-dim hover:bg-site-surface-hover hover:text-site-text"
+                            className="rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
                           >
                             <Pencil className="h-4 w-4" aria-hidden />
                           </button>
@@ -370,7 +370,7 @@ export function PlaylistsColumn({
                             type="button"
                             onClick={() => remove(pl)}
                             aria-label={t('playlist-delete', { defaultValue: 'Delete' })}
-                            className="rounded-site-sm p-1.5 text-site-text-dim hover:bg-site-surface-hover hover:text-site-danger"
+                            className="rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-danger"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden />
                           </button>
@@ -385,7 +385,7 @@ export function PlaylistsColumn({
                             {t('loading', { defaultValue: 'Loading…' })}
                           </p>
                         ) : (items[pl.id] ?? []).length === 0 ? (
-                          <p className="py-4 text-center text-sm text-site-text-dim">
+                          <p className="py-4 text-center text-sm text-site-text-muted">
                             {t('playlist-no-items', { defaultValue: 'Nothing here yet.' })}
                           </p>
                         ) : (
@@ -403,13 +403,13 @@ export function PlaylistsColumn({
                                   />
                                 ) : (
                                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-site-bg">
-                                    <Video className="h-4 w-4 text-site-text-dim" aria-hidden />
+                                    <Video className="h-4 w-4 text-site-text-muted" aria-hidden />
                                   </div>
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate text-sm text-site-text">{it.title}</p>
                                   {it.subtitle && (
-                                    <p className="truncate text-xs text-site-text-dim">
+                                    <p className="truncate text-xs text-site-text-muted">
                                       {it.subtitle}
                                     </p>
                                   )}
@@ -419,7 +419,7 @@ export function PlaylistsColumn({
                                     href={it.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="rounded-site-sm p-1.5 text-site-text-dim hover:text-site-accent"
+                                    className="rounded-site-sm p-1.5 text-site-text-muted hover:text-site-accent"
                                     aria-label={t('playlist-open-item', { defaultValue: 'Open' })}
                                   >
                                     <ExternalLink className="h-4 w-4" aria-hidden />
@@ -431,7 +431,7 @@ export function PlaylistsColumn({
                                   aria-label={t('playlist-remove-item', {
                                     defaultValue: 'Remove from playlist',
                                   })}
-                                  className="rounded-site-sm p-1.5 text-site-text-dim hover:text-site-danger"
+                                  className="rounded-site-sm p-1.5 text-site-text-muted hover:text-site-danger"
                                 >
                                   <Trash2 className="h-4 w-4" aria-hidden />
                                 </button>
@@ -458,7 +458,7 @@ export function PlaylistsColumn({
                                     aria-label={t('playlist-collab-remove', {
                                       defaultValue: 'Remove collaborator',
                                     })}
-                                    className="rounded-site-sm p-0.5 text-site-text-dim hover:text-site-danger"
+                                    className="rounded-site-sm p-0.5 text-site-text-muted hover:text-site-danger"
                                   >
                                     <X className="h-3.5 w-3.5" aria-hidden />
                                   </button>

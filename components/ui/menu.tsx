@@ -112,7 +112,7 @@ const TONE: Record<MenuItemTone, string> = {
 
 /** Icon ink follows the row's tone, so a destructive row's glyph is not dim grey. */
 const ICON_TONE: Record<MenuItemTone, string> = {
-  default: 'text-site-text-dim',
+  default: 'text-site-text-muted',
   danger: 'text-site-danger',
 };
 
@@ -152,7 +152,7 @@ export const MenuItem = React.forwardRef<HTMLElement, MenuItemProps>(function Me
           a username or a filename. Without this the row grows the panel instead. */}
       <span className="min-w-0 flex-1 truncate">{children}</span>
       {hint ? (
-        <span className="shrink-0 text-xs tabular-nums text-site-text-dim">{hint}</span>
+        <span className="shrink-0 text-xs tabular-nums text-site-text-muted">{hint}</span>
       ) : null}
       {checked ? <Check className="h-4 w-4 shrink-0 text-site-accent" aria-hidden /> : null}
     </>
@@ -237,7 +237,7 @@ export function MenuLabel({
   return (
     <div
       className={cn(
-        'px-4 pb-1 pt-2 text-xs font-semibold text-site-text-dim',
+        'px-4 pb-1 pt-2 text-xs font-semibold text-site-text-muted',
         className,
       )}
     >

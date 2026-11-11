@@ -87,7 +87,7 @@ export function ThreadComposer() {
  className="relative rounded-site glass-fill p-4"
  >
  <div className="flex items-start gap-2">
- <span className="mt-2 text-xs font-bold text-site-text-dim">{i + 1}</span>
+ <span className="mt-2 text-xs font-bold text-site-text-muted">{i + 1}</span>
  <Textarea
  value={seg}
  onChange={(e) => setSeg(i, e.target.value)}
@@ -106,7 +106,7 @@ export function ThreadComposer() {
  </div>
  <div className="mt-1 flex items-center justify-end gap-3 pl-6">
  <span
- className={`text-xs ${seg.length >= MAX_LEN ?'text-site-danger':'text-site-text-dim'}`}
+ className={`text-xs ${seg.length >= MAX_LEN ?'text-site-danger':'text-site-text-muted'}`}
  >
  {MAX_LEN - seg.length}
  </span>
@@ -118,7 +118,7 @@ export function ThreadComposer() {
  defaultValue:'Remove post {{n}}',
  n: i + 1,
  })}
- className="text-site-text-dim hover:text-site-danger"
+ className="text-site-text-muted hover:text-site-danger"
  >
  <X className="h-4 w-4"aria-hidden />
  </button>

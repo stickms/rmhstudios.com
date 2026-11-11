@@ -73,7 +73,7 @@ export function BioAssist({
       role="group"
       aria-label={t('bio-assist-label', { defaultValue: 'Write my bio with AI' })}
     >
-      <span className="flex items-center gap-1 text-xs text-site-text-dim">
+      <span className="flex items-center gap-1 text-xs text-site-text-muted">
         <Sparkles className="h-3.5 w-3.5 text-site-accent" aria-hidden />
         {t('bio-assist-title', { defaultValue: 'Write one for me' })}
       </span>
@@ -96,7 +96,7 @@ export function BioAssist({
             onChange(previous);
             setPrevious(null);
           }}
-          className="rounded-full px-3 py-1 text-xs text-site-text-dim underline transition-colors hover:text-site-text"
+          className="rounded-full px-3 py-1 text-xs text-site-text-muted underline transition-colors hover:text-site-text"
         >
           {t('bio-undo', { defaultValue: 'Undo' })}
         </button>

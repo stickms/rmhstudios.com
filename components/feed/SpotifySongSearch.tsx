@@ -69,18 +69,18 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  if (selected && !showSearch) {
  return (
  <div className="space-y-2">
- <label className="block text-xs font-medium text-site-text-dim">{t("profile-song", { defaultValue:"Profile Song"})}</label>
+ <label className="block text-xs font-medium text-site-text-muted">{t("profile-song", { defaultValue:"Profile Song"})}</label>
  <div className="glass-fill flex items-center gap-3 p-3">
  {selected.albumArt ? (
  <img src={selected.albumArt} alt={selected.title} className="w-10 h-10 rounded object-cover shrink-0"/>
  ) : (
  <div className="w-10 h-10 rounded bg-site-border flex items-center justify-center shrink-0">
- <Music className="w-5 h-5 text-site-text-dim"/>
+ <Music className="w-5 h-5 text-site-text-muted"/>
  </div>
  )}
  <div className="flex-1 min-w-0">
  <p className="text-sm text-site-text font-medium truncate">{selected.title}</p>
- <p className="text-xs text-site-text-dim truncate">{selected.artist}</p>
+ <p className="text-xs text-site-text-muted truncate">{selected.artist}</p>
  </div>
  <div className="flex items-center gap-1 shrink-0">
  <button
@@ -96,7 +96,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  className="p-1 rounded hover:bg-site-border transition-colors"
  title={t("remove-song", { defaultValue:"Remove song"})}
  >
- <X className="w-3.5 h-3.5 text-site-text-dim"/>
+ <X className="w-3.5 h-3.5 text-site-text-muted"/>
  </button>
  </div>
  </div>
@@ -107,12 +107,12 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  return (
  <div className="space-y-2">
  <div className="flex items-center justify-between">
- <label className="block text-xs font-medium text-site-text-dim">{t("profile-song", { defaultValue:"Profile Song"})}</label>
+ <label className="block text-xs font-medium text-site-text-muted">{t("profile-song", { defaultValue:"Profile Song"})}</label>
  {showSearch && selected && (
  <button
  type="button"
  onClick={() => { setShowSearch(false); setQuery(''); setResults([]); }}
- className="text-xs text-site-text-dim hover:text-site-text"
+ className="text-xs text-site-text-muted hover:text-site-text"
  >
  {t("cancel", { defaultValue:"Cancel"})}
  </button>
@@ -124,7 +124,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  type="button"
  variant="secondary"
  onClick={() => setShowSearch(true)}
- className="h-auto w-full justify-start gap-2 p-3 font-normal text-site-text-dim hover:border-site-accent has-[>svg]:px-3"
+ className="h-auto w-full justify-start gap-2 p-3 font-normal text-site-text-muted hover:border-site-accent has-[>svg]:px-3"
  >
  <Music className="w-4 h-4"/>
  {t("add-profile-song", { defaultValue:"Add a profile song"})}
@@ -133,20 +133,20 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  <>
  {/* Search input */}
  <div className="relative">
- <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim"/>
+ <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-muted"/>
  <input
  type="text"
  value={query}
  onChange={(e) => handleQueryChange(e.target.value)}
  placeholder={t("search-for-a-song", { defaultValue:"Search for a song..."})}
  autoFocus
- className="glass-inset border w-full text-site-text placeholder:text-site-text-dim text-sm pl-9 pr-3 py-2.5 outline-none focus:border-site-accent transition-colors"
+ className="glass-inset border w-full text-site-text placeholder:text-site-text-muted text-sm pl-9 pr-3 py-2.5 outline-none focus:border-site-accent transition-colors"
  />
  </div>
 
  {/* Results */}
  {loading && (
- <div className="text-center py-3 text-xs text-site-text-dim">{t("searching", { defaultValue:"Searching..."})}</div>
+ <div className="text-center py-3 text-xs text-site-text-muted">{t("searching", { defaultValue:"Searching..."})}</div>
  )}
 
  {!loading && results.length > 0 && (
@@ -166,12 +166,12 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  <img src={track.albumArt} alt=""className="w-8 h-8 rounded shrink-0 object-cover"/>
  ) : (
  <div className="w-8 h-8 rounded bg-site-border flex items-center justify-center shrink-0">
- <Music className="w-4 h-4 text-site-text-dim"/>
+ <Music className="w-4 h-4 text-site-text-muted"/>
  </div>
  )}
  <div className="flex-1 min-w-0">
  <p className="text-xs text-site-text font-medium truncate">{track.title}</p>
- <p className="text-xs text-site-text-dim truncate">{track.artist}</p>
+ <p className="text-xs text-site-text-muted truncate">{track.artist}</p>
  </div>
  {isSelected && <Check className="w-3.5 h-3.5 text-site-accent shrink-0"/>}
  </button>
@@ -181,7 +181,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  )}
 
  {!loading && query.trim() && results.length === 0 && (
- <div className="text-center py-3 text-xs text-site-text-dim">
+ <div className="text-center py-3 text-xs text-site-text-muted">
  {t("no-songs-found", { defaultValue:"No songs found"})}
  </div>
  )}

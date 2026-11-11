@@ -53,7 +53,7 @@ export default function OutPage({ url }: { url: string }) {
                   })}
             </p>
             <div>
-              <p className="mb-2 text-xs font-semibold text-site-text-dim">
+              <p className="mb-2 text-xs font-semibold text-site-text-muted">
                 {t('out-destination', { defaultValue: 'Full destination' })}
               </p>
               <p className="glass-inset break-all rounded-site p-4 font-mono text-sm text-site-text">

@@ -31,7 +31,7 @@ export function StarRating({
         const filled = n <= shown;
         const star = (
           <Star
-            className={cn(filled ? 'fill-site-warning text-site-warning' : 'text-site-text-dim')}
+            className={cn(filled ? 'fill-site-warning text-site-warning' : 'text-site-text-muted')}
             style={{ width: size, height: size }}
             aria-hidden
           />

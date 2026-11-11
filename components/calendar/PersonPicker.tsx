@@ -86,7 +86,7 @@ export function PersonPicker({
               >
                 <UserAvatar src={u.image} alt="" size={24} />
                 <span className="truncate">{u.name ?? u.handle}</span>
-                {u.handle && <span className="text-xs text-site-text-dim">@{u.handle}</span>}
+                {u.handle && <span className="text-xs text-site-text-muted">@{u.handle}</span>}
               </button>
             </li>
           ))}

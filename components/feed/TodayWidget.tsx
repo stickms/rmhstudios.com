@@ -50,7 +50,7 @@ function TaskRow({
       <span className="rad-live__slot">
         <span
           className={`flex h-6 w-6 items-center justify-center rounded-full ${
-            done ? 'bg-site-success/15 text-site-success' : 'bg-site-surface-hover text-site-text-dim'
+            done ? 'bg-site-success/15 text-site-success' : 'bg-site-surface-hover text-site-text-muted'
           }`}
         >
           {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : icon}
@@ -61,7 +61,7 @@ function TaskRow({
       >
         {label}
       </span>
-      {hint && <span className="shrink-0 text-xs text-site-text-dim">{hint}</span>}
+      {hint && <span className="shrink-0 text-xs text-site-text-muted">{hint}</span>}
     </Link>
   );
 }
@@ -132,7 +132,7 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
           {t('today-title', { defaultValue: 'Today' })}
         </h2>
         {data.streak.current > 0 && (
-          <span className="rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-semibold text-site-accent">
+          <span className="rounded-full bg-site-bg-subtle px-2 py-0.5 text-xs font-semibold text-site-accent">
             {t('today-streak', { defaultValue: '{{count}}🔥', count: data.streak.current })}
           </span>
         )}

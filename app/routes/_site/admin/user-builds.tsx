@@ -140,7 +140,7 @@ function AdminUserBuildsPage() {
                           <Badge variant="warning" icon={<Award aria-hidden />}>{t("curated-badge", { defaultValue: "Curated" })}</Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 truncate text-sm text-site-text-dim">
+                      <div className="flex items-center gap-2 truncate text-sm text-site-text-muted">
                         <Link to={`/u/${build.user.handle || build.user.username}` as string} className="transition-colors hover:text-site-text">@{build.user.handle || build.user.username}</Link>
                         <span aria-hidden>&bull;</span>
                         <span>{build.category?.name || t("uncategorized", { defaultValue: "Uncategorized" })}</span>
@@ -169,7 +169,7 @@ function AdminUserBuildsPage() {
           )}
 
           {loadingMore && (
-            <div className="flex justify-center p-4 text-site-text-dim"><Spinner /></div>
+            <div className="flex justify-center p-4 text-site-text-muted"><Spinner /></div>
           )}
         </div>
       </AdminBody>

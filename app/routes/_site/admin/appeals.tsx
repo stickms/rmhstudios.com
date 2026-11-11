@@ -173,14 +173,14 @@ function AdminAppealsPage() {
                       {a.entityType}
                     </Badge>
                   )}
-                  <span className="text-xs text-site-text-dim">
+                  <span className="text-xs text-site-text-muted">
                     {t('issued-ago', {
                       defaultValue: 'issued {{when}}',
                       when: formatDistanceToNow(new Date(a.createdAt), { addSuffix: true }),
                     })}
                   </span>
                   {a.appealedAt && (
-                    <span className="text-xs text-site-text-dim">
+                    <span className="text-xs text-site-text-muted">
                       ·{' '}
                       {t('appealed-ago', {
                         defaultValue: 'appealed {{when}}',

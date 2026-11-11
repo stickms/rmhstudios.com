@@ -140,7 +140,7 @@ export function ProfileHoverCard({
  {profile.isVerified && <BadgeCheck className="h-4 w-4 shrink-0 text-site-success"aria-hidden />}
  {profile.isAdmin && <ShieldCheck className="h-4 w-4 shrink-0 text-site-accent"aria-hidden />}
  </p>
- {profile.handle && <p className="text-sm text-site-text-dim">@{profile.handle}</p>}
+ {profile.handle && <p className="text-sm text-site-text-muted">@{profile.handle}</p>}
  </Link>
  {profile.bio && (
  <p className="mt-2 line-clamp-3 text-sm text-site-text-muted">{profile.bio}</p>
@@ -148,11 +148,11 @@ export function ProfileHoverCard({
  <div className="mt-2 flex gap-4 text-sm">
  <span>
  <AnimatedCount value={profile.followingCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text"/>{' '}
- <span className="text-site-text-dim">{t('following-label', { defaultValue:'Following'})}</span>
+ <span className="text-site-text-muted">{t('following-label', { defaultValue:'Following'})}</span>
  </span>
  <span>
  <AnimatedCount value={profile.followerCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text"/>{' '}
- <span className="text-site-text-dim">{t('followers-label', { defaultValue:'Followers'})}</span>
+ <span className="text-site-text-muted">{t('followers-label', { defaultValue:'Followers'})}</span>
  </span>
  </div>
  </>

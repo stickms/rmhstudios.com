@@ -77,7 +77,7 @@ export function TagSuggest({
       aria-label={t('tag-suggest-label', { defaultValue: 'Suggested tags' })}
       aria-busy={loading}
     >
-      <span className="flex items-center gap-1 text-xs text-site-text-dim">
+      <span className="flex items-center gap-1 text-xs text-site-text-muted">
         {loading ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
         ) : (

@@ -83,7 +83,7 @@ export function ListsManager({ initial }: { initial: ListView[] }) {
                     <span className="flex items-center gap-2">
                       <span className="truncate text-sm font-medium text-site-text">{l.name}</span>
                       {l.pinned ? (
-                        <Pin className="h-3 w-3 shrink-0 text-site-text-dim" aria-hidden />
+                        <Pin className="h-3 w-3 shrink-0 text-site-text-muted" aria-hidden />
                       ) : null}
                     </span>
                     <span className="block text-xs text-site-text-muted">

@@ -146,11 +146,11 @@ function WinningNumberDisplay({ number: num }: { number: number }) {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <span className="text-xs text-site-text-dim uppercase tracking-wider font-bold">
+      <span className="text-xs text-site-text-muted uppercase tracking-wider font-bold">
         {t('winning-number', { defaultValue: 'Winning Number' })}
       </span>
       <div
-        className="flex items-center justify-center rounded-full text-casino-ink font-black text-2xl sm:text-3xl shadow-site"
+        className="flex items-center justify-center rounded-full text-casino-ink font-black text-2xl sm:text-3xl "
         style={{
           width: 70,
           height: 70,
@@ -189,7 +189,7 @@ function ChipOverlay({
   const amount = getChipAmount(type, numbers);
   if (amount <= 0) return null;
   return (
-    <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-site-accent text-site-accent-fg text-nano font-bold rounded-full px-1 py-0.5 shadow-site border border-site-accent/60">
+    <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-site-accent text-site-accent-fg text-nano font-bold rounded-full px-1 py-0.5 border border-site-accent/60">
       <CoinIcon className="w-2 h-2" />
       {amount}
     </div>
@@ -212,7 +212,7 @@ function EdgeChip({
   if (amount <= 0) return null;
   return (
     <div
-      className="absolute z-30 flex items-center justify-center bg-site-accent text-site-accent-fg text-pico font-bold rounded-full shadow-site border border-site-accent/60"
+      className="absolute z-30 flex items-center justify-center bg-site-accent text-site-accent-fg text-pico font-bold rounded-full border border-site-accent/60"
       style={{ width: 18, height: 18, ...style }}
     >
       {amount}
@@ -544,7 +544,7 @@ export function RouletteTable({ coins }: Props) {
       {/* History */}
       {history.length > 0 && (
         <div className="flex flex-col items-center gap-1 w-full">
-          <span className="text-micro text-site-text-dim uppercase tracking-wider font-bold">
+          <span className="text-micro text-site-text-muted uppercase tracking-wider font-bold">
             {t('history', { defaultValue: 'History' })}
           </span>
           <div className="flex gap-1 flex-wrap justify-center">

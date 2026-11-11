@@ -171,19 +171,16 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
           // Tailwind's own 2xl radius, a fixed 18px that ignored every theme's
           // radius scale (high-contrast squares its corners to 8px; the tooltip
           // stayed round).
-          'glass-overlay shadow-site rounded-site-sm',
+          'glass-overlay rounded-site-sm',
           className,
         )}
       >
         {content}
         {/* Arrow: a border triangle in the BORDER colour with a second, 1px-inset
  triangle in the bubble's own fill over it, so it reads as the bubble's
- hairline-outlined tail. The fill is `--site-glass-overlay-fill`, the
- same expression `.glass-overlay` paints with — it used to be the OPAQUE
- `--site-bg`, which showed as a solid notch hanging off a translucent
- bubble, and which ignored the Glass clarity slider the bubble follows.
- A border colour cannot be a background, which is why the tier's fill
- had to be given a name to be reachable here at all. */}
+ hairline-outlined tail. The fill is `--site-surface`, the same colour
+ `.glass-overlay` paints with (Steel S5: an overlay is the one raised
+ surface, opaque). */}
         <span
           aria-hidden
           className={cn(
@@ -200,7 +197,7 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
           )}
           style={{
             left: `calc(50% + ${arrowDx}px)`,
-            [below ? 'borderBottomColor' : 'borderTopColor']: 'var(--site-glass-overlay-fill)',
+            [below ? 'borderBottomColor' : 'borderTopColor']: 'var(--site-surface)',
           }}
         />
       </div>

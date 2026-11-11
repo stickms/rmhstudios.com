@@ -76,7 +76,7 @@ export default function NowModule({
             )}
           </p>
           {updated ? (
-            <p className="mt-2 text-xs text-site-text-dim">
+            <p className="mt-2 text-xs text-site-text-muted">
               {stale
                 ? t('now-stale', {
                     date: updated,

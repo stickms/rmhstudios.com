@@ -512,7 +512,7 @@ function SettingsPage() {
                 className={`inline-flex items-center gap-2 rounded-site-sm border py-1 pr-1 pl-3 text-sm ${
                   k.type === 'block'
                     ? 'border-site-danger/30 bg-site-danger/10'
-                    : 'border-site-accent/30 bg-site-accent-dim'
+                    : 'border-site-accent/30 bg-site-bg-subtle'
                 }`}
               >
                 {k.keyword as string}
@@ -586,7 +586,7 @@ function SettingsPage() {
               return (
                 <span
                   key={companyId}
-                  className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-accent-dim py-1 pr-1 pl-3 text-sm"
+                  className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-bg-subtle py-1 pr-1 pl-3 text-sm"
                 >
                   {name}
                   <button
