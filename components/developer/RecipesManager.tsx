@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Pause, Play, Trash2, Workflow } from 'lucide-react';
@@ -17,9 +18,9 @@ import { serverError } from '@/lib/http';
 import {
   createRecipeApi,
   deleteRecipeApi,
-  listRecipesApi,
   setRecipeEnabledApi,
 } from '@/lib/devplatform/recipes.contract';
+import { recipesQuery } from '@/lib/devplatform/developer.queries';
 
 interface Options {
   games: { id: string; title: string }[];
@@ -29,8 +30,12 @@ interface Options {
 /** D5 — "when X then Y" recipes, on the /developer page. */
 export function RecipesManager() {
   const { t } = useTranslation('f-devplatform');
-  const [recipes, setRecipes] = useState<RecipeView[] | null>(null);
-  const [options, setOptions] = useState<Options>({ games: [], items: [] });
+  const queryClient = useQueryClient();
+  const query = recipesQuery();
+  const { data, isError } = useQuery(query);
+  // A failed read shows an empty list rather than the spinner.
+  const recipes: RecipeView[] | null = data?.recipes ?? (isError ? [] : null);
+  const options: Options = data?.options ?? { games: [], items: [] };
   const [name, setName] = useState('');
   const [trigger, setTrigger] = useState<RecipeTrigger>('new_follower');
   const [gameId, setGameId] = useState('');
@@ -40,18 +45,7 @@ export function RecipesManager() {
   const [discordUrl, setDiscordUrl] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await api(listRecipesApi);
-      setRecipes(data.recipes);
-      setOptions(data.options);
-    } catch {
-      setRecipes([]);
-    }
-  }, []);
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
   async function create() {
     setBusy(true);

@@ -5,6 +5,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createDeveloperKeyApi, listDeveloperKeysApi } from '@/lib/devplatform/keys.contract';
 import { createKeyBody } from '@/lib/devplatform/keys-schema';
 import { getUserTier, hasApiAccess } from '@/lib/entitlements';
+import { listDeveloperKeysView } from '@/lib/devplatform/keys-list.server';
 import { generateApiKey } from '@/lib/api/developer-auth.server';
 import { normalizeScopes, DEFAULT_SCOPES, ALL_SCOPES } from '@/lib/api/scopes';
 
@@ -18,33 +19,9 @@ const MAX_KEYS = 10;
 export const Route = createFileRoute('/api/developer/keys/')({
   server: {
     handlers: {
-      GET: implement(listDeveloperKeysApi, {}, async ({ session }) => {
-        // Independent reads — the tier lookup doesn't gate the key list.
-        const [tier, keys] = await Promise.all([
-          getUserTier(session.user.id),
-          prisma.developerApiKey.findMany({
-            where: { userId: session.user.id, revokedAt: null },
-            orderBy: { createdAt: 'desc' },
-            select: {
-              id: true,
-              name: true,
-              prefix: true,
-              lastFour: true,
-              scopes: true,
-              testMode: true,
-              expiresAt: true,
-              lastUsedAt: true,
-              createdAt: true,
-            },
-          }),
-        ]);
-        return Response.json({
-          keys,
-          hasApiAccess: hasApiAccess(tier),
-          tier,
-          availableScopes: ALL_SCOPES,
-        });
-      }),
+      GET: implement(listDeveloperKeysApi, {}, async ({ session }) =>
+        Response.json(await listDeveloperKeysView(session.user.id)),
+      ),
 
       POST: implement(
         createDeveloperKeyApi,

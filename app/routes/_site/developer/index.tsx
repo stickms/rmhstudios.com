@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { buildCanonical, buildMeta } from '@/lib/seo';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { developerKeysQuery, recipesQuery } from '@/lib/devplatform/developer.queries';
 import { Terminal, BookOpen, ExternalLink } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,13 @@ export const Route = createFileRoute('/_site/developer/')({
     }),
     links: [buildCanonical('/developer')],
   }),
+  loader: async ({ context }) => {
+    await Promise.all([
+      prefetchRouteQuery(context.queryClient, developerKeysQuery()),
+      prefetchRouteQuery(context.queryClient, recipesQuery()),
+    ]);
+    return undefined;
+  },
   component: DeveloperHome,
 });
 

@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { creatorAnalyticsQuery } from '@/lib/profile/analytics.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AnalyticsDashboard } from '@/components/creator-studio/AnalyticsDashboard';
 import { useSession } from '@/components/Providers';
@@ -8,6 +10,7 @@ import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 export const Route = createFileRoute('/_site/analytics')({
   head: () => ({ meta: [{ title: 'Creator Analytics | RMH Studios' }] }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, creatorAnalyticsQuery()),
   component: AnalyticsPage,
 });
 
@@ -25,7 +28,9 @@ function AnalyticsPage() {
         ) : !session ? (
           <SignedOutPrompt
             callbackURL="/analytics"
-            title={t('sign-in-to-view-analytics', { defaultValue: 'Sign in to view your analytics' })}
+            title={t('sign-in-to-view-analytics', {
+              defaultValue: 'Sign in to view your analytics',
+            })}
           />
         ) : (
           <AnalyticsDashboard />
