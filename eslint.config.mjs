@@ -7,6 +7,7 @@ import {
   ALL_TIER_FILES,
   CLASS_RULE_IGNORES,
   FULLSCREEN_IGNORES,
+  STEEL_BASELINE_IGNORES,
   RAW_COLOR_ALLOW,
 } from './eslint-local-rules/design-scope.js';
 
@@ -317,10 +318,18 @@ export default tseslint.config(
     ignores: [...CLASS_RULE_IGNORES, ...FULLSCREEN_IGNORES],
     plugins: { local },
     rules: {
-      'local/no-hardcoded-radius': 'error',
-      'local/no-raw-palette-color': 'error',
       'local/no-arbitrary-type-size': 'error',
       'local/no-inline-motion': 'error',
+    },
+  },
+  // The two Steel palette rules (only the section-2 tokens: §17), minus the named, shrinking baseline in design-scope.js.
+  {
+    files: ALL_TIER_FILES,
+    ignores: [...CLASS_RULE_IGNORES, ...FULLSCREEN_IGNORES, ...STEEL_BASELINE_IGNORES],
+    plugins: { local },
+    rules: {
+      'local/no-hardcoded-radius': 'error',
+      'local/no-raw-palette-color': 'error',
     },
   },
   // /login renders third-party sign-in buttons in their brand colours.

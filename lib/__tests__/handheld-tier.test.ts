@@ -47,24 +47,16 @@ const read = (path: string) => readCss(join(ROOT, path));
  */
 const HANDHELD_QUERY = '(pointer: coarse) and (max-width: 1024px)';
 
-const GLOBALS = read('app/globals.css');
 const RADIAL = read('components/radial/radial.css');
 const HOOK = read('hooks/useLiquidBackground.ts');
 /** Plasmatic Jelly's shared policy: its `handheld` tier is this same device class, so it carries this same query. */
 const JELLY_TIERS = read('lib/jelly/tiers.ts');
-/**
- * The jelly stylesheets: the material's one-span-per-carrier handheld rule lives in jelly-material.css, and the
- * coverage adapters may add more. Any width-bounded coarse query in them must be THIS query, not a near-miss.
- */
-const JELLY_SHEETS = ['app/jelly-material.css', 'app/jelly-arcs.css', 'app/jelly-coverage.css'].map(read);
-
 describe('the handheld query is identical everywhere it appears', () => {
   // radial.css used to carry it too, for a block that stopped the ring/blob
   // animations on tablets. Those animations no longer exist on any tier (see
   // static-backdrop.test.ts), so neither does the block. The near-miss check
   // below still scans radial.css, so a reintroduced variant is still caught.
   it.each([
-    ['app/globals.css', GLOBALS],
     ['hooks/useLiquidBackground.ts', HOOK],
     ['lib/jelly/tiers.ts', JELLY_TIERS],
   ])('%s carries the exact query', (_file, source) => {
@@ -78,7 +70,7 @@ describe('the handheld query is identical everywhere it appears', () => {
     // Scoped to real `@media` preludes (`@media … {`) rather than scanning the
     // raw text: both stylesheets discuss `(pointer: coarse)` in prose, and a
     // comment is not a rule.
-    for (const source of [GLOBALS, RADIAL, ...JELLY_SHEETS]) {
+    for (const source of [RADIAL]) {
       for (const [, prelude] of source.matchAll(/@media([^{]+)\{/g)) {
         // A prelude can be a comma-separated LIST (`(max-width: 640px),
         // (hover: none) and (pointer: coarse)` — a real rule in globals.css).
@@ -110,51 +102,10 @@ describe('the handheld query is identical everywhere it appears', () => {
   });
 });
 
-describe('the CSS half actually stops the motion', () => {
-  /** The handheld block in globals.css, from its query to the matching brace. */
-  function handheldBlock(source: string): string {
-    const start = source.indexOf(`@media ${HANDHELD_QUERY}`);
-    expect(start).toBeGreaterThan(-1);
-    let depth = 0;
-    for (let i = source.indexOf('{', start); i < source.length; i++) {
-      if (source[i] === '{') depth++;
-      else if (source[i] === '}' && --depth === 0) return source.slice(start, i + 1);
-    }
-    throw new Error('unterminated @media block');
-  }
-
-  it('kills the drift animation and the parallax translate on both aurora layers', () => {
-    const block = handheldBlock(GLOBALS);
-    expect(block).toContain('.site-aurora::before');
-    expect(block).toContain('.site-aurora::after');
-    // `animation: none` alone is not enough — the pointer/tilt offset rides
-    // `translate`, which is a separate channel from the keyframes' `transform`.
-    expect(block).toMatch(/animation:\s*none/);
-    expect(block).toMatch(/translate:\s*none/);
-    // A layer left promoted holds compositor memory for a layer that no longer
-    // moves, which on a phone is the cost this tier is trying to give back.
-    expect(block).toMatch(/will-change:\s*auto/);
-  });
-
-  it('caps blur through the viewport cap, not by overwriting the factor', () => {
-    const block = handheldBlock(GLOBALS);
-    // Writing --glass-blur-factor here would overwrite the device budget's cap.
-    // The caps are disjoint properties combined by min() at :root precisely so
-    // they compose.
-    expect(block).toContain('--glass-blur-cap-viewport');
-    expect(block).not.toContain('--glass-blur-factor');
-  });
-
-  it(':root caps blur at the default and both device budgets so no tier can raise cost', () => {
-    const root = GLOBALS.slice(0, GLOBALS.indexOf('@layer components'));
-    const factor = root.match(/--glass-blur-factor:\s*min\(([^;]+)\);/s);
-    expect(factor).not.toBeNull();
-    const inputs = factor![1];
-    expect(inputs).toMatch(/^\s*1,/);
-    expect(inputs).toContain('--glass-blur-cap-tier');
-    expect(inputs).toContain('--glass-blur-cap-viewport');
-  });
-
+describe('the CSS half: nothing is left to stop (Steel phase 1)', () => {
+  // The CSS half of this contract (the aurora's drift and parallax `translate`, the blur cap) went with the aurora and
+  // the glass blur: Steel has neither (R1, B2), and `static-backdrop.test.ts` plus `steel-flat.test.ts` keep it that
+  // way. What is left of the tier is the JS half below, until the hook goes with the rest of the material.
   it('the radial rings and blob field need no handheld override — they never move', () => {
     // This used to assert a handheld block in radial.css that switched off six
     // breathing rings and four drifting blobs on coarse-pointer tablets. Those

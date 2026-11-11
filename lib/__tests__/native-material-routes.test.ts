@@ -85,8 +85,4 @@ describe('wiring', () => {
     }
     expect(runPrepaint({ path: '/' }).classes.has(NATIVE_MATERIAL_CLASS)).toBe(false);
   });
-
-  it('the woken haze is scoped off it', () => {
-    expect(read('app/jelly-material.css')).toContain(`html:not(.${NATIVE_MATERIAL_CLASS})`);
-  });
 });

@@ -224,7 +224,7 @@ fi
   pass "no generated or secret files in the change"
 
 # ── 2. Design language (added lines) ─────────────────────────────────────────
-step "2. Design language — added lines (docs/design-language.md §13)"
+step "2. Design language — added lines (design.md; docs/plans/2026-11-11-steel-design-implementation.md)"
 BEFORE=$FAILED
 
 # Raw palette colours (§13 rule 5), hardcoded radii (rule 6), `transition-all` (rule 8) and dead
@@ -233,7 +233,7 @@ BEFORE=$FAILED
 # eslint step below gates them, scoped by eslint-local-rules/design-scope.js.
 
 # The one exemption mirrors TABLIST_ALLOW in design-consistency.test.ts: the TF2 HUD Editor is
-# deliberately outside the jelly material and ships its own flat TfTabs.
+# deliberately outside the site design and ships its own flat TfTabs.
 TABLISTS=$(scan '\.tsx$' 'role=("|.)tablist' | grep -v 'components/tf2-hud/TfTabs.tsx' || true)
 if [ -n "$TABLISTS" ]; then
   fail "Hand-rolled tab strip (§13 rule 1)"
@@ -261,14 +261,20 @@ review_site "Hex colour literal" \
   '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]([^0-9a-fA-F]|$)' \
   'Site UI reads colour from --site-* tokens; a fixed-palette domain gets its own scoped variable group.'
 
-# Site tier: decorative effects belong to the jelly services; games and gesture
-# hooks retain their own input semantics.
-review_site "Pointer-position effect — verify jelly service ownership" \
+# Steel R5: nothing moves at rest, and the only pointer listener a decoration may have is the chrome renderer's one
+# passive `pointermove` (docs/plans/2026-11-11-steel-design-implementation.md V10). Games and gesture hooks retain their
+# own input semantics.
+review_site "Pointer-position effect (Steel R5, V10)" \
   "(pointermove|mousemove)" \
-  'Decorative light, haze, squash, wobble and arcs belong to the jelly service (lib/jelly, app/jelly-material.css; docs/plasmatic-jelly-system.md). No per-card listeners, animated gradient centres or inherited root writes. Gesture/gameplay input remains local.'
+  'Decoration does not follow the pointer except the chrome renderer (lib/chrome, one passive listener). No per-card listeners, animated gradient centres or inherited root writes. Gesture/gameplay input remains local.'
 
-# Plasmatic Jelly (lib/__tests__/jelly-ownership.test.ts N2, site-infinite-animation N3,
-# design-consistency N11). Previews of the vitest gates, scoped to added lines.
+# Steel R1/R2/B2: the site tier is flat. Added lines only; steel-flat.test.ts is the authority for CSS.
+review_site "Gradient, blur, glow or mask in a class (Steel R1, B2)" \
+  'class.*(^|[^A-Za-z0-9:_-])(backdrop-blur|blur-|bg-gradient-|bg-linear-|bg-radial-|bg-conic-|mix-blend-|drop-shadow|shadow-(sm|md|lg|xl|2xl|inner))' \
+  'Steel has no gradient, blur, glow, blend or shadow on content: surfaces are solid colours from the section-2 tokens, an overlay is the one raised surface (docs/plans/2026-11-11-steel-design-implementation.md S5). Chrome lives in steel-chrome.css and globe-nav.css only (phases 2 and 3).'
+
+# Previews of the vitest gates that still run (lib/__tests__/jelly-ownership.test.ts N2, site-infinite-animation N3,
+# design-consistency N11), scoped to added lines. The old material's own rules are gone with the material.
 # The /jelly lab (app/routes/jelly.tsx) is the one sanctioned importer — it demonstrates strike() on
 # demand — matching jelly-ownership.test.ts N2(a). POSIX ERE has no lookahead, so it is filtered out after the scan.
 n2_hits=$(scan '^(components|app/routes)/.*\.tsx?$' "from ['\"]@/lib/jelly/(physics|compose|bridge|arcs)" |
@@ -276,33 +282,21 @@ n2_hits=$(scan '^(components|app/routes)/.*\.tsx?$' "from ['\"]@/lib/jelly/(phys
 if [ -n "$n2_hits" ]; then
   fail "Component imports the jelly physics/arc service (N2)"
   printf '%s\n' "$n2_hits"
-  printf '%s    → %s%s\n' "$dim" 'Components take jelly through role classes and data-jelly* attributes: the soft body is CSS (app/jelly-material.css §8) and the services mount once from hooks/useJellyPointer.ts (docs/plasmatic-jelly-system.md).' "$off"
+  printf '%s    → %s%s\n' "$dim" 'The jelly services are the old material (historical since Steel; phase 6 deletes them) and mount once from hooks/useJellyPointer.ts. Do not import them from a component.' "$off"
 fi
 
-# The two sanctioned haze keyframes (jelly-drift / jelly-current) in app/jelly-material.css (and its partials under
-# app/jelly-material/, E4 split) are filtered out: the
-# vitest gate (site-infinite-animation N3) pins the exact selectors they may run on (the woken-haze layer, paused until
-# hover or focus) and stays the authority for those lines.
-n3_hits=$(scan '^(app/([^/]*|globals/[^/]*|jelly-material/[^/]*)|components/(ui|radial|feed|site)/.*)\.css$' \
-  '(animation[^:;]*:[^;]*infinite|animation-iteration-count:[[:space:]]*infinite)' |
-  grep -Ev '^  app/jelly-material(\.css|/[^:]+\.css):[0-9]+[[:space:]].*jelly-(drift|current)' || true)
+# The vitest gate (site-infinite-animation N3) pins the frozen list of loops that may remain and stays the authority.
+n3_hits=$(scan '^(app/([^/]*|globals/[^/]*)|components/(ui|radial|feed|site)/.*)\.css$' \
+  '(animation[^:;]*:[^;]*infinite|animation-iteration-count:[[:space:]]*infinite)' || true)
 if [ -n "$n3_hits" ]; then
   fail "Perpetual CSS animation (N3)"
   printf '%s\n' "$n3_hits"
-  printf '%s    → %s%s\n' "$dim" 'A free-standing infinite keyframe never stops (hidden tab, offscreen, jellyMotion=still, degraded tiers). Ambient motion goes through the jelly services — lib/__tests__/site-infinite-animation.test.ts.' "$off"
+  printf '%s    → %s%s\n' "$dim" 'A free-standing infinite keyframe never stops (hidden tab, offscreen, degraded tiers); Steel R5 says nothing moves at rest — lib/__tests__/site-infinite-animation.test.ts.' "$off"
 fi
 
 review_site "Framer gesture transform on a site surface (N11)" \
   'while(Hover|Tap)[[:space:]]*=[[:space:]]*\{[^}]*(scale|[^a-z]x|[^a-z]y)[[:space:]]*:' \
-  'A second writer on scale/translate fights the jelly soft body (CSS springs, app/jelly-material.css §8). The role class or data-jelly="card|control" gives hover/press/release already.'
-
-# jelly-coverage ratchet preview: bg + border + rounded with no role class.
-HANDROLLED=$(scan_site 'class.*(bg-site-(surface|surface-opaque|bg|elevated).*(border.*rounded|rounded.*border)|border.*(bg-site-(surface|surface-opaque|bg|elevated).*rounded|rounded.*bg-site-(surface|surface-opaque|bg|elevated))|rounded.*(bg-site-(surface|surface-opaque|bg|elevated).*border|border.*bg-site-(surface|surface-opaque|bg|elevated)))' | grep -vE 'glass-|app-glass|data-liquid' || true)
-if [ -n "$HANDROLLED" ]; then
-  warn "Hand-rolled surface — no jelly role (jelly-coverage ratchet)"
-  printf '%s\n' "$HANDROLLED"
-  printf '%s    → A bg-site-surface + border + rounded box gets no jelly at all. Use the role: glass-fill (repeated), glass-pane (singular), glass-overlay (floating), glass-inset (fields) — scripts/codemods/jelly-roles.mjs; gate: lib/__tests__/jelly-coverage.test.ts.%s\n' "$dim" "$off"
-fi
+  'Steel M6: no hover lifts, springs or press squash (docs/plans/2026-11-11-steel-design-implementation.md section 11).'
 
 # N9 (review until the data-liquid-* codemod lands, then blocking): the
 # Liquid Glass vocabulary stops growing. New code speaks jelly.
@@ -425,14 +419,12 @@ else
     lib/__tests__/handheld-tier.test.ts
     lib/__tests__/jelly-contract.test.ts
     lib/__tests__/jelly-ownership.test.ts
-    lib/__tests__/jelly-coverage.test.ts
-    lib/__tests__/jelly-legibility.test.ts
+    lib/__tests__/steel-flat.test.ts
+    lib/__tests__/steel-tokens.test.ts
     lib/__tests__/site-infinite-animation.test.ts
     lib/__tests__/doc-pointers.test.ts
     lib/__tests__/appearance-jelly-motion.test.ts
     lib/__tests__/appearance-electric-arcs.test.ts
-    # #989: every CSS token that mirrors a lib/jelly/tiers.ts constant equals it.
-    lib/__tests__/jelly-tokens.test.ts
     # The arc renderer (the arcs' only rAF owner) and runtime are named on
     # their own as well as through lib/jelly/, so moving the directory can
     # never silently drop the flash-ledger / live-arc-only contract.
@@ -568,23 +560,21 @@ fi
 step "5. Look at it (nothing below is automatable)"
 if has '\.(tsx|css)$'; then
   cat <<'EOF'
-  ● Both shipped themes × two widths: default (Daylight) and .style-graphite
-    (Midnight) — at a phone width and a desktop width.
-    (design-language.md §0.9)
-  ● Jelly motion three ways (Settings → Appearance, html[data-jelly-motion]):
-    lively — haze drifts, hover plumps, press squashes and wobbles back, arcs
-    fire; calm — slower haze, no ambient arcs, no neighbour nudge; still —
-    nothing moves on its own; hover, press and scroll stay reactive.  (docs/plasmatic-jelly-system.md)
-  ● Did anything change LAYOUT, or move further than the bounded squash
-    (≤ 4px edge travel) or the ≤ 1.5px neighbour nudge? Text, hit areas and
-    document flow never move.
+  ● Both editions × two widths: Day (default, .style-default) and Night (.style-graphite),
+    at 390px and at 1280px; once in `ar` for the mirrored layout.
+    (docs/plans/2026-11-11-steel-design-implementation.md §12 A6)
+  ● Flat? Solid token colours only: no gradient, blur, glow, shadow (an overlay's
+    one shadow aside), no translucent surface, no card. Rules and space, not boxes
+    (R1, R3). One ink primary per view (R4).
+  ● Does anything move at rest? Nothing may. Hover and press fills 90 ms, the rest
+    per section 11, and none after the response ends (R5).
   ● A role-less switcher that marks its active slot some other way (an accent
     pill, a segmented control, a flex-1 button row with an active tint) is
     still a tab strip and still belongs on <Tabs>. The gate cannot see
     those; you can.
   ● Reused a primitive rather than a second copy of one? (§0.3)
-  ● Keyboard path + focus ring visible on the surface it lands on, in
-    both themes. (§0.8)
+  ● Keyboard path + focus ring (2px ink, K10) visible on the surface it lands on, in
+    both editions. (§0.8)
 EOF
   REVIEWED=1
 else

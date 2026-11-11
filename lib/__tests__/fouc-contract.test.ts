@@ -92,15 +92,16 @@ describe('default theme before first paint', () => {
     expect(DEFAULT_STYLE).toBe('graphite');
     expect(SITE_STYLES[0].id).toBe(DEFAULT_STYLE);
     expect(SITE_STYLES.some((s) => s.id === 'default')).toBe(true);
-    expect(THEME_BG[DEFAULT_STYLE]).toBe('#000000');
+    // Steel section 2: the Night page is #0b0d10, the Day page #fafafa (app/globals/tokens-themes.css).
+    expect(THEME_BG[DEFAULT_STYLE]).toBe('#0b0d10');
   });
 
   it('a new visitor paints the dark ground, class, colour scheme and theme-color pre-paint', () => {
     const { classes, html, meta, stored, setItemCalls } = runThemeScript({});
     expect(classes.has('style-graphite')).toBe(true);
-    expect(html.style.backgroundColor).toBe('#000000');
+    expect(html.style.backgroundColor).toBe('#0b0d10');
     expect(html.style.colorScheme).toBe('dark');
-    expect(meta.content).toBe('#000000');
+    expect(meta.content).toBe('#0b0d10');
     // Nothing is persisted for a visitor who never chose.
     expect(stored.has('rmh-style')).toBe(false);
     expect(setItemCalls).toHaveLength(0);
@@ -109,9 +110,9 @@ describe('default theme before first paint', () => {
   it('a stored `default` keeps Daylight (an explicit choice is never flipped)', () => {
     const { classes, html, meta, stored } = runThemeScript({ 'rmh-style': 'default' });
     expect([...classes].some((c) => c.startsWith('style-'))).toBe(false);
-    expect(html.style.backgroundColor).toBe('#ffffff');
+    expect(html.style.backgroundColor).toBe('#fafafa');
     expect(html.style.colorScheme).toBe('light');
-    expect(meta.content).toBe('#ffffff');
+    expect(meta.content).toBe('#fafafa');
     expect(stored.get('rmh-style')).toBe('default');
   });
 

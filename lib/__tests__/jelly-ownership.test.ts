@@ -247,9 +247,8 @@ describe('N2 — the jelly services have one owner each', () => {
     ).sort();
     expect(
       found.filter((f) => !POINTER_TRANSFORM_BASELINE.has(f)),
-      'Hover plump, press squash and the release spring come from the CSS soft body (app/jelly-material.css §8), ' +
-        'which yields to every other transform writer. Mark the element (`data-jelly="card|control"`) instead ' +
-        'of writing style.transform/scale/translate from a pointer handler. Gesture input that IS the content ' +
+      'Steel M6: nothing animates but the responses in section 11 (docs/plans/2026-11-11-steel-design-implementation.md). ' +
+        'Do not write style.transform/scale/translate from a pointer handler. Gesture input that IS the content ' +
         '(a swipe, a 3D turn) belongs to a game/app tier or needs a reviewed entry here.',
     ).toEqual([]);
     expect(

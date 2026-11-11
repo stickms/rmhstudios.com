@@ -92,25 +92,31 @@ describe('v1 → v2 upcast (§14.1)', () => {
 });
 
 describe('themeCssVars (v2 derivation)', () => {
-  it('derives the full glass contract from the closed token map', () => {
+  it('derives exactly the Steel section-2 contract from the closed token map', () => {
     const vars = themeCssVars(DEFAULT_THEME_TOKENS);
-    // A representative slice of the derived contract exists and is non-empty.
-    for (const key of [
-      '--site-canvas',
-      '--site-glass-tint',
-      '--site-glass-rim',
-      '--site-glass-glint',
-      '--glass-glint-opacity',
-      '--site-surface-opaque',
-      '--site-aurora-far-1',
-      '--site-glass-depth',
-    ]) {
-      expect(typeof vars[key]).toBe('string');
-      expect(vars[key].length).toBeGreaterThan(0);
-    }
-    // The system geometry (blur/saturate/fonts) is intentionally NOT set.
-    expect(vars['--site-glass-blur-pane']).toBeUndefined();
-    expect(vars['--site-glass-saturate']).toBeUndefined();
+    expect(Object.keys(vars).sort()).toEqual(
+      [
+        '--site-accent',
+        '--site-accent-fg',
+        '--site-accent-hover',
+        '--site-bg',
+        '--site-bg-subtle',
+        '--site-border',
+        '--site-radius',
+        '--site-radius-sm',
+        '--site-surface',
+        '--site-surface-active',
+        '--site-surface-hover',
+        '--site-text',
+        '--site-text-muted',
+      ].sort(),
+    );
+    for (const value of Object.values(vars)) expect(value.length).toBeGreaterThan(0);
+  });
+
+  it('writes no token Steel deleted (T3, Appendix A): no glass, canvas, aurora, shadow, dim or bright', () => {
+    const names = Object.keys(themeCssVars(DEFAULT_THEME_TOKENS));
+    expect(names.filter((n) => /glass|canvas|aurora|shadow|opaque|dim|bright/.test(n))).toEqual([]);
   });
 });
 

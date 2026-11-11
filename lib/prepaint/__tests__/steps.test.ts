@@ -55,7 +55,7 @@ describe('pre-paint steps', () => {
       config: buildPrepaintConfig({ seed: { 'rmh-style': 'graphite', 'rmh-density': null } }),
     });
     expect(run.classes.has('style-graphite')).toBe(true);
-    expect(run.html.style.backgroundColor).toBe('#000000');
+    expect(run.html.style.backgroundColor).toBe('#0b0d10');
     expect(run.attrs.has('data-density')).toBe(false);
   });
 

@@ -6,8 +6,8 @@
  *
  *  - **print** (`loader-print-access.css`): the print sheet must beat inline styles, `style=` positions and every
  *    component rule, whatever their specificity;
- *  - **accessibility / degradation contracts** (`jelly-coverage.css`, `jelly-material/*`, `jelly-arcs.css`,
- *    `eversion.css`): "these outrank theme, material and utility layers" is the point, and WCAG 2.2.2 / 2.3.1 depend
+ *  - **accessibility / degradation contracts** (`eversion.css`; the jelly sheets that carried most of
+ *    them were deleted in Steel phase 1): "these outrank theme, material and utility layers" is the point, and WCAG 2.2.2 / 2.3.1 depend
  *    on it;
  *  - **beating an inline style** that script writes (`balatro` canvas size, `rmhcalculator` field-sizing fallback),
  *    a third-party stylesheet (`tf2-hud` CodeMirror) or a competing rule at higher specificity that a layer move
@@ -30,10 +30,6 @@ const BASELINE: Record<string, number> = {
   'app/globals/components-reveal.css': 1,
   'app/globals/loader-print-access.css': 21,
   'app/globals/page-motion.css': 3,
-  'app/jelly-arcs.css': 2,
-  'app/jelly-coverage.css': 12,
-  'app/jelly-material/material.css': 6,
-  'app/jelly-material/soft-body.css': 2,
   'features/balatro/ui/balatro.css': 2,
   'components/radial/eversion/eversion.css': 4,
   'components/radial/radial/feed-cards-panels.css': 3,

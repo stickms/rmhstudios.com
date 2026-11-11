@@ -14,11 +14,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { RouterManagedTag } from '@tanstack/react-router';
 import { deprioritizeModulePreloads } from '@/components/SiteHeadContent';
-import { readCss } from './css-source';
 
 describe('deprioritizeModulePreloads', () => {
   it('lowers modulepreload links and leaves every other tag untouched', () => {
@@ -48,20 +47,13 @@ describe('deprioritizeModulePreloads', () => {
   });
 });
 
-describe('the jelly haze tile is preloaded at high priority', () => {
-  // Without it the tile queues behind the module preloads and its first paint
-  // (inside the first glass slab) becomes a ~5 s LCP on slow phones.
-  it('the root head preloads the tile the stylesheet references', () => {
-    // The preload lives in lib/root-head.ts, shared by __root.tsx and the island document (B1).
-    const root = readFileSync(resolve(__dirname, '../../lib/root-head.ts'), 'utf8');
-    expect(readFileSync(resolve(__dirname, '../../app/routes/__root.tsx'), 'utf8')).toContain(
-      'ROOT_HAZE_PRELOAD',
-    );
-    const css = readCss(resolve(__dirname, '../../app/jelly-material.css'));
-    const url = css.match(/--jelly-tile:\s*url\('([^']+)'\)/)?.[1];
-    expect(url).toBe('/jelly/haze-tile.webp');
-    expect(root).toContain(`href: '${url}'`);
-    expect(root).toMatch(/as: 'image',[\s\S]{0,120}fetchPriority: 'high'/);
+describe('Steel: the jelly haze tile is gone (T3, R1)', () => {
+  // The tile was the static haze floor of every glass slab, preloaded at high priority so it did not become the LCP.
+  // Steel's surfaces are flat, nothing references it, and a preload for an image no page paints is a wasted request.
+  it('the root head preloads no jelly asset and the asset is deleted', () => {
+    expect(readFileSync(resolve(__dirname, '../../lib/root-head.ts'), 'utf8')).not.toContain('jelly');
+    expect(readFileSync(resolve(__dirname, '../../app/routes/__root.tsx'), 'utf8')).not.toContain('HAZE');
+    expect(existsSync(resolve(__dirname, '../../public/jelly/haze-tile.webp'))).toBe(false);
   });
 });
 

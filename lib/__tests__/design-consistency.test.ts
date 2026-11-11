@@ -427,9 +427,11 @@ function isThemeableRadius(value: string): boolean {
  * a palette override (the E3 table). In an app-tier stylesheet ({@link APP_TIER_DIRS}: `app-theme.css`, which is
  * the `--app-*` contract itself, and an app's own `.studio-theme { --app-bg: … }` block) a hex that is the value of
  * an `--app-*` declaration IS that override: a token definition, like the scoped groups in app/globals.css, not a
- * colour painted on an element. Everywhere else, and for every other property, a hex still counts.
+ * colour painted on an element. Steel phase 1 added the tier's literal `--site-*` values (the Midnight and Daylight it
+ * read before Steel replaced them, L8) to that list: in an app-tier sheet a `--site-*` declaration is the same kind
+ * of definition. Everywhere else, and for every other property, a hex still counts.
  */
-const APP_PALETTE_DECL = /--app-[\w-]+\s*:[^;{}]*;/g;
+const APP_PALETTE_DECL = /--(?:app|site)-[\w-]+\s*:[^;{}]*;/g;
 
 function cssViolations(src: string, file = ''): { hex: number; radius: number } {
   // A comment is not a colour: `(#989)` is the owner's issue number, not a hex.
@@ -793,10 +795,10 @@ describe('design consistency — no debossed surfaces (audit 2026-10-09)', () =>
 /**
  * ────────────── one writer on `scale` / `translate` (Plasmatic Jelly N11) ──────────────
  *
- * Every jelly host is a soft body: the CSS soft body (app/jelly-material.css §8, CSS-first jelly PR 3) sets the
- * individual `scale` property on hover and press and springs it back on release. A
- * framer-motion `whileHover` / `whileTap` that animates `scale`, `x` or `y` on the same element is a second writer
- * on the same property: the two fight, and the element snaps between them. It is the same reasoning as
+ * Steel M6 says nothing animates but the responses in section 11: no hover lifts, no springs, no press squash. (Until
+ * Steel phase 1 the CSS soft body, app/jelly-material.css, owned `scale` on hover and press, and a framer-motion
+ * `whileHover` / `whileTap` that animated `scale`, `x` or `y` was a second writer on the same property.) The debt below
+ * still only goes down, now toward zero rather than toward one owner. It is the same reasoning as
  * `lib/liquid/hover-css.ts`, which strips hand-written CSS hover lifts.
  *
  * Site tier only (games and the `--app-*` apps own their own motion). The per-file counts below are frozen on
@@ -837,9 +839,8 @@ describe('design consistency — no framer gesture transform on a jelly surface 
       .map(([file, n]) => `${file} — ${n} (frozen: ${FRAMER_GESTURE_DEBT[file] ?? 0})`);
     expect(
       offenders,
-      'framer-motion `whileHover`/`whileTap` animating scale / x / y is a second writer on the property the jelly ' +
-        'soft body owns (app/jelly-material.css §8). Drop the gesture prop: the role class (or ' +
-        '`data-jelly="card|control"`) already gives the surface hover plump, press squash and release wobble. ' +
+      'framer-motion `whileHover`/`whileTap` animating scale / x / y: Steel M6 allows no hover lifts or springs ' +
+        '(docs/plans/2026-11-11-steel-design-implementation.md section 11). Drop the gesture prop. ' +
         'Opacity/colour gestures are fine.',
     ).toEqual([]);
   });

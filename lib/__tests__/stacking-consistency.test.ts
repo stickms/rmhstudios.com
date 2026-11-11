@@ -307,12 +307,7 @@ describe('§4 — nothing `fixed` inside a deformable jelly host (R3, N4)', () =
    * `none` — in the role sheet, the jelly material, or the app tier's adapter. (This is also what keeps L1 safe to
    * build repeated content from, which the previous version of this test asserted for `.glass-fill` alone.)
    */
-  it.each([
-    'app/glass-roles.css',
-    'app/jelly-material.css',
-    'app/jelly-coverage.css',
-    'components/shared/app-theme.css',
-  ])('no role has blur: %s', (sheet) => {
+  it.each(['app/styles/steel-surfaces.css', 'components/shared/app-theme.css'])('no role has blur: %s', (sheet) => {
     const css = readCss(join(ROOT, sheet)).replace(/\/\*[\s\S]*?\*\//g, '');
     const ROLE = /\.glass-[\w-]+|\[data-jelly[\]=\w-]*|\.app-glass\b/;
     const blurred = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
@@ -321,16 +316,16 @@ describe('§4 — nothing `fixed` inside a deformable jelly host (R3, N4)', () =
       .map((m) => m[1].trim());
     expect(
       blurred,
-      'A role gained a backdrop-filter. Jelly haze is shader-drawn (lib/liquid/glass) with a static CSS floor ' +
-        '(app/jelly-material.css); a blur costs a backdrop sample per surface per frame and makes every card a ' +
-        'containing block for fixed descendants (docs/plasmatic-jelly-system.md).',
+      'A role gained a backdrop-filter. Steel B2: no backdrop-filter, filter, mix-blend-mode or mask on any site-tier ' +
+        'element; a blur costs a backdrop sample per surface per frame and makes every card a containing block for ' +
+        'fixed descendants (docs/plans/2026-11-11-steel-design-implementation.md).',
     ).toEqual([]);
   });
 
   it('the role sheets exist and define the roles (the scan above is not vacuous)', () => {
-    const css = readFileSync(join(ROOT, 'app', 'glass-roles.css'), 'utf8');
+    const css = readFileSync(join(ROOT, 'app', 'styles', 'steel-surfaces.css'), 'utf8');
     expect(css).toMatch(/\.glass-fill/);
-    expect(readCss(join(ROOT, 'app', 'jelly-material.css'))).toMatch(/\.glass-pane/);
+    expect(css).toMatch(/\.glass-overlay/);
   });
 });
 

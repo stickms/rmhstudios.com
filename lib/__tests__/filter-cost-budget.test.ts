@@ -46,13 +46,8 @@ const SHEETS = [
   join('app', 'globals.css'),
   join('components', 'feed', 'feed.css'),
   join('components', 'shared', 'app-theme.css'),
-  // Plasmatic Jelly: the material, its carriers and the arc layer must stay
-  // filter-free too — "hazy" is the most likely road back to an SVG turbulence
-  // or a blur (docs/plans/plasmatic-jelly/01-material.md §3.1).
-  join('app', 'glass-roles.css'),
-  join('app', 'jelly-material.css'),
-  join('app', 'jelly-arcs.css'),
-  join('app', 'jelly-coverage.css'),
+  // Steel: the flat surface roles (the old material's sheets are deleted) stay filter-free too.
+  join('app', 'styles', 'steel-surfaces.css'),
 ];
 
 const read = (rel: string) => readCss(join(ROOT, rel));

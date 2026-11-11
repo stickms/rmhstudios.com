@@ -1,7 +1,7 @@
 /**
  * Read a stylesheet the way the build sees it when it has been split (redesign E4).
  *
- * `app/globals.css`, `app/jelly-material.css`, `components/radial/radial.css` and
+ * `app/globals.css`, `components/radial/radial.css` and
  * `components/library/library.css` are entry sheets: a short prelude plus ordered `@import './<stem>/<part>.css'`
  * lines. The source-reading gates were written against one big file; `readCss` returns the entry with each
  * partial import replaced, in place, by that partial's text — i.e. the text the single file used to have.
