@@ -16,12 +16,6 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createCustomFeedApi } from '@/lib/discovery/discovery.contract';
 
-interface Lists {
-  mine: FeedSummary[];
-  subscribed: FeedSummary[];
-  popular: FeedSummary[];
-}
-
 function FeedRow({ f }: { f: FeedSummary }) {
   const { t } = useTranslation('f-discovery');
   const bits = [...f.tags.map((x) => `#${x}`), ...f.keywords];
@@ -75,7 +69,7 @@ export function FeedsPage() {
   const [busy, setBusy] = useState(false);
 
   // Seeded by the /feeds loader; fetched here only when the loader had no session to use.
-  const list = useQuery({ ...feedsQuery<Lists>(), enabled: !!session, retry: false });
+  const list = useQuery({ ...feedsQuery(), enabled: !!session, retry: false });
   const lists = list.data ?? null;
   const loadFailed = list.isError;
   useEffect(() => {

@@ -11,6 +11,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trophy, X } from 'lucide-react';
 import type { LeaderboardEntry } from '@/lib/rmhbox/types';
+import { api } from '@/lib/contract/client';
+import { getRmhboxLeaderboardApi } from '@/lib/rmhbox/rmhbox-reads.contract';
 
 interface MinigameLeaderboardModalProps {
   minigameId: string;
@@ -37,14 +39,11 @@ export default function MinigameLeaderboardModal({
     async (period: Period) => {
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/rmhbox/leaderboard?minigame=${encodeURIComponent(minigameId)}&period=${period}&limit=20`,
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setEntries(data.entries ?? []);
-          setUserRank(data.userRank ?? null);
-        }
+        const data = await api(getRmhboxLeaderboardApi, {
+          query: { minigame: minigameId, period, limit: 20 },
+        });
+        setEntries(data.entries ?? []);
+        setUserRank(data.userRank ?? null);
       } catch {
         // Silently fail — empty leaderboard shown
       } finally {

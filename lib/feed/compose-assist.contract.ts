@@ -91,8 +91,8 @@ export const editPostApi = endpoint<{
   res: { success: true; content: string; gifUrl?: string; editedAt: string | null };
 }>()({ method: 'PATCH', path: '/api/rmharks/$id' });
 
-/** Universal search; `assist: '1'` permits the model-assisted retry. */
+/** Universal search; `tab` defaults to `top` on the route; `assist: '1'` permits the model-assisted retry. */
 export const universalSearchApi = endpoint<{
-  query: { q: string; tab: SearchTab; assist?: '1' | undefined };
+  query: { q: string; tab?: SearchTab | undefined; assist?: '1' | undefined };
   res: SearchResponse;
 }>()({ method: 'GET', path: '/api/search' });

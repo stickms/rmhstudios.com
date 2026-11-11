@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { removeProfileAvatarApi } from '@/lib/profile.contract';
 import {
   MAX_AVATAR_MB,
   MAX_BANNER_MB,
@@ -114,12 +117,7 @@ export function useProfileAssets(
     setResettingAvatar(true);
     setError(null);
     try {
-      const res = await fetch('/api/profile/avatar', { method: 'DELETE' });
-      const data = (await res.json().catch(() => ({}))) as {
-        image?: string | null;
-        error?: string;
-      };
-      if (!res.ok) throw new Error(data.error);
+      const data = await api(removeProfileAvatarApi);
       setAvatarFile(null);
       revokeBlob(avatarPreview);
       setAvatarPreview(data.image ?? null);
@@ -130,9 +128,8 @@ export function useProfileAssets(
       });
     } catch (resetError) {
       setError(
-        resetError instanceof Error && resetError.message
-          ? resetError.message
-          : t('failed-reset-avatar', { defaultValue: 'Failed to reset avatar' }),
+        serverError(resetError) ||
+          t('failed-reset-avatar', { defaultValue: 'Failed to reset avatar' }),
       );
     } finally {
       setResettingAvatar(false);

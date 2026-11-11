@@ -7,26 +7,17 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { submitGameScoreApi } from '@/lib/game/score.contract';
+import { gameScoreBody } from '@/lib/game/score-schema';
 import { submitGameScore } from '@/lib/game/submit.server';
-
-const schema = z.object({
-  score: z.number().finite(),
-  /** Secondary metric: wave, floor, distance, combo — game-dependent. */
-  progress: z.number().finite().optional(),
-  /** Run duration in ms; enables the score-rate plausibility check. */
-  durationMs: z.number().finite().nonnegative().optional(),
-  username: z.string().max(64).optional(),
-  /** Game-specific numeric extras; unknown keys are ignored by the adapter. */
-  meta: z.record(z.string(), z.number().finite()).optional(),
-});
 
 export const Route = createFileRoute('/api/games/$id/score')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { body: schema, allowEmptyBody: true },
+      POST: implement(
+        submitGameScoreApi,
+        { body: gameScoreBody, allowEmptyBody: true },
         async ({ params, session, body }) => {
           const result = await submitGameScore({
             gameId: params.id,

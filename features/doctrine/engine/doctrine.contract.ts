@@ -1,6 +1,7 @@
 /**
- * Contracts for the /api/doctrine/** reads (redesign audit C1, batch 6):
- * reputation, the Sahur window, incidents and the daily / replay puzzles.
+ * Contracts for the /api/doctrine/** reads (redesign audit C1, batches 6 and 10):
+ * reputation, the Sahur window, incidents, the daily / replay puzzles and the Safehouse
+ * feed and disclosures.
  * Client-safe: every type is `import type`. Response types are derived from the
  * server helpers and passed through {@link Json}, because dates cross the wire as
  * ISO strings. The query slots are strings because the routes read them with
@@ -9,7 +10,7 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { getRecentIncidents } from '@features/doctrine/engine/incidents';
 import type { getReputation, getReputationLeaderboard } from '@features/doctrine/engine/reputation';
-import type { SahurModeConfig, SahurStatus } from '@features/doctrine/engine/types';
+import type { ReactionCount, SahurModeConfig, SahurStatus } from '@features/doctrine/engine/types';
 
 /** What a value looks like after `JSON.stringify` → `JSON.parse`. */
 export type Json<T> = T extends Date
@@ -103,3 +104,41 @@ export const createRecruitmentApi = endpoint<{
   body: { personalMessage: string; targetSkills: string[]; maxUses: number };
   res: { success: true; code: string; expiresAt: string; maxUses: number };
 }>()({ method: 'POST', path: '/api/doctrine/recruitment/create' });
+
+export interface SafehouseItem {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  minTier: string;
+  mediaUrls: string[];
+  publishedAt: string | null;
+  reactions: ReactionCount;
+  divisiveness: number;
+}
+
+/** The Safehouse feed at the caller's clearance (`cursor` / `limit` page it). */
+export const getSafehouseContentApi = endpoint<{
+  query: { cursor?: string | undefined; limit?: number | undefined };
+  res: { items: SafehouseItem[]; nextCursor: string | null | undefined };
+}>()({ method: 'GET', path: '/api/doctrine/safehouse/content' });
+
+export interface SafehouseDisclosure {
+  id: string;
+  codename: string;
+  publicTitle: string;
+  content: string | null;
+  narrative: string | null;
+  status: string;
+  teasedAt: string | null;
+  disclosedAt: string | null;
+  mediaUrls: string[];
+  reactions: ReactionCount;
+  divisiveness: number;
+}
+
+/** Controlled disclosures at the caller's clearance: classified ones come back redacted. */
+export const getSafehouseDisclosuresApi = endpoint<{ res: SafehouseDisclosure[] }>()({
+  method: 'GET',
+  path: '/api/doctrine/safehouse/disclosures',
+});

@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Skull, Lock, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/contract/client';
+import { getGameLeaderboardApi } from '@/lib/game/leaderboard.contract';
+import { submitGameScoreApi } from '@/lib/game/score.contract';
 import { BOSS_RUSH_GAME_ID, isBossRushUnlocked } from '@features/void-breaker/engine/bossRush';
 import type { RunStats } from '@features/void-breaker/engine/types';
 
@@ -9,9 +12,10 @@ type Row = { rank: number; username: string; score: number; progress: number | n
 
 async function fetchBoard(): Promise<Row[]> {
   try {
-    const res = await fetch(`/api/games/${BOSS_RUSH_GAME_ID}/leaderboard?limit=5`);
-    if (!res.ok) return [];
-    const data = (await res.json()) as { entries?: Row[] };
+    const data = await api(getGameLeaderboardApi, {
+      params: { id: BOSS_RUSH_GAME_ID },
+      query: { limit: 5 },
+    });
     return data.entries ?? [];
   } catch {
     return [];
@@ -82,16 +86,15 @@ export function BossRushResult({ runStats, signedIn }: { runStats: RunStats; sig
     (async () => {
       if (signedIn) {
         try {
-          const res = await fetch(`/api/games/${BOSS_RUSH_GAME_ID}/score`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          await api(submitGameScoreApi, {
+            params: { id: BOSS_RUSH_GAME_ID },
+            body: {
               score: runStats.score,
               progress: runStats.bossesKilled,
               durationMs: runStats.timeSurvivedMs,
-            }),
+            },
           });
-          if (!cancelled) setStatus(res.ok ? 'sent' : 'failed');
+          if (!cancelled) setStatus('sent');
         } catch {
           if (!cancelled) setStatus('failed');
         }

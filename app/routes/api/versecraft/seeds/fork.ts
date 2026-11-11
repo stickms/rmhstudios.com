@@ -1,13 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
+import { forkVersecraftSeedApi } from '@/lib/versecraft/versecraft.contract';
 import { forkSeedSchema } from '@/lib/versecraft/seed-gallery';
 
 /** POST /api/versecraft/seeds/fork — count a "continue this story" and return the seed to start from. */
 export const Route = createFileRoute('/api/versecraft/seeds/fork')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        forkVersecraftSeedApi,
         { auth: 'optional', rateLimit: 'write', body: forkSeedSchema },
         async ({ body }) => {
           const row = await prisma.versecraftSeedListing

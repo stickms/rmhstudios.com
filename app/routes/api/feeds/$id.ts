@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getCustomFeedApi } from '@/lib/discovery/discovery.contract';
 import { customFeedSchema, feedViewQuery } from '@/lib/discovery/schema';
 import { deleteFeed, getFeedView, updateFeed } from '@/lib/discovery/feeds.server';
 
@@ -11,7 +13,8 @@ import { deleteFeed, getFeedView, updateFeed } from '@/lib/discovery/feeds.serve
 export const Route = createFileRoute('/api/feeds/$id')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getCustomFeedApi,
         { auth: 'optional', rateLimit: 'read', query: feedViewQuery },
         async ({ userId, params, query }) => {
           const view = await getFeedView(params.id, userId, query.cursor);

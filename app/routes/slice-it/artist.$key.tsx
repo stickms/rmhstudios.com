@@ -4,9 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Disc3, Loader2, Music, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SliceThemeWrapper } from '@features/slice-it/ui/SliceThemeWrapper';
-import { formatSongDuration, type LibrarySong } from '@features/slice-it/engine/library-filters';
-import { packLibraryPath, type PackSummary } from '@features/slice-it/engine/packs';
+import { formatSongDuration } from '@features/slice-it/engine/library-filters';
+import { packLibraryPath } from '@features/slice-it/engine/packs';
 import { buildCanonical, buildMeta } from '@/lib/seo';
+import { api } from '@/lib/contract/client';
+import {
+  getSliceArtistApi,
+  type ArtistPageResponse,
+} from '@features/slice-it/engine/slice-it.contract';
 
 /**
  * L15 — the artist page.
@@ -28,20 +33,6 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
  * client and the server cannot disagree about what a key is.
  */
 
-interface ArtistResponse {
-  artist: {
-    key: string;
-    display: string;
-    songCount: number;
-    totalPlays: number;
-    avgBpm: number | null;
-    topRating: number | null;
-  };
-  songs: LibrarySong[];
-  albums: PackSummary[];
-  hasMore: boolean;
-}
-
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="neumorphic-inset min-w-24 px-4 py-3">
@@ -54,7 +45,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 function ArtistPage() {
   const { t } = useTranslation('r-slice-it');
   const { key } = Route.useParams();
-  const [data, setData] = useState<ArtistResponse | null>(null);
+  const [data, setData] = useState<ArtistPageResponse | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
 
   useEffect(() => {
@@ -62,13 +53,9 @@ function ArtistPage() {
     setState('loading');
     void (async () => {
       try {
-        const res = await fetch(`/api/slice-it/songs/artist/${encodeURIComponent(key)}`);
+        const body = await api(getSliceArtistApi, { params: { key } });
         if (cancelled) return;
-        if (!res.ok) {
-          setState('missing');
-          return;
-        }
-        setData((await res.json()) as ArtistResponse);
+        setData(body);
         setState('ready');
       } catch {
         if (!cancelled) setState('missing');

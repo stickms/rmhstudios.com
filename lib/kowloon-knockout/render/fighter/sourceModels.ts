@@ -10,6 +10,8 @@ import type { AnimationClip } from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { MODEL_BUILDER_VERSION } from '@/lib/tf2-loadout/model-sync';
+import { api } from '@/lib/contract/client';
+import { getTf2AnimIndexApi, type Tf2AnimIndex } from '@/lib/tf2-loadout/models.contract';
 import { gameAssetApi } from '@/lib/tf2-game/assets/urls';
 import { modelSources, type FighterModelDef, type MdlGame, type SourceGame } from './models';
 
@@ -66,12 +68,9 @@ export function clearSourceModel(id: string): void {
 
 // ---- TF2 native animations (the game's own sequences) ----------------------
 
-interface AnimIndex { clips: Record<string, string[]> }
-let animIndex: Promise<AnimIndex | null> | null = null;
-const loadAnimIndex = (): Promise<AnimIndex | null> =>
-    (animIndex ??= fetch(`/api/tf2-loadout/models/anims.json?v=${MODEL_BUILDER_VERSION}`)
-        .then((r) => (r.ok ? (r.json() as Promise<AnimIndex>) : null))
-        .catch(() => null));
+let animIndex: Promise<Tf2AnimIndex | null> | null = null;
+const loadAnimIndex = (): Promise<Tf2AnimIndex | null> =>
+    (animIndex ??= api(getTf2AnimIndexApi, { query: { v: MODEL_BUILDER_VERSION } }).catch(() => null));
 
 /** First of `prefer` the class has. Pure, tested. */
 export function pickNativeClip(available: readonly string[] | undefined, prefer: readonly string[]): string | null {

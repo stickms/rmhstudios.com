@@ -17,40 +17,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Activity, AlertTriangle } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
-
-interface UsageDay {
-  date: string;
-  requests: number;
-  units: number;
-  clientErrors: number;
-  serverErrors: number;
-}
-
-interface UsageResponse {
-  days: number;
-  usage: UsageDay[];
-  totals: { requests: number; units: number; clientErrors: number; serverErrors: number };
-}
+import { api } from '@/lib/contract/client';
+import { getDeveloperKeyUsageApi, type DeveloperKeyUsage } from '@/lib/devplatform/keys.contract';
 
 const nf = new Intl.NumberFormat('en-US');
 
 export function KeyUsage({ keyId }: { keyId: string }) {
   const { t } = useTranslation('f-devplatform');
-  const [data, setData] = useState<UsageResponse | null>(null);
+  const [data, setData] = useState<DeveloperKeyUsage | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/developer/keys/${keyId}/usage?days=30`, {
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        setFailed(true);
-        return;
-      }
-      setData(await res.json());
+      setData(await api(getDeveloperKeyUsageApi, { params: { id: keyId }, query: { days: 30 } }));
     } catch {
       setFailed(true);
     } finally {

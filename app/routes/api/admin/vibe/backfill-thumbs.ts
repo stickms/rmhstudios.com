@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { backfillVibeThumbsApi } from '@/lib/rmhvibe/vibe-admin.contract';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 
@@ -14,19 +15,10 @@ import { logAdminAction } from '@/lib/admin-audit.server';
  * safe to re-run; it never clears an existing thumbnail, only marks it for a fresh
  * render. See scripts/backfill-vibe-thumbs.ts for the manual inline equivalent.
  */
-async function requireAdmin(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) return null;
-  return session;
-}
-
 export const Route = createFileRoute('/api/admin/vibe/backfill-thumbs')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
-
+      POST: implement(backfillVibeThumbsApi, { auth: 'admin' }, async ({ userId }) => {
         // Only "ready" pages have real HTML to screenshot — never the empty
         // "generating" placeholders or failed rows.
         const { count } = await prisma.vibePage.updateMany({
@@ -34,13 +26,13 @@ export const Route = createFileRoute('/api/admin/vibe/backfill-thumbs')({
           data: { thumbnailStale: true },
         });
 
-        await logAdminAction(session.user.id, 'vibe.backfill-thumbs', {
+        await logAdminAction(userId, 'vibe.backfill-thumbs', {
           targetType: 'VibePage',
           detail: `flagged ${count} page(s) for thumbnail re-render`,
         });
 
-        return Response.json({ ok: true, count });
-      },
+        return { ok: true as const, count };
+      }),
     },
   },
 });

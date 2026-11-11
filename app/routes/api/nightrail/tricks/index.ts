@@ -1,7 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { weekKey, type TricksPayload } from '@/lib/trick-week/trick-week';
+import {
+  getNightrailTricksApi,
+  submitNightrailTrickApi,
+} from '@/lib/trick-week/nightrail-tricks.contract';
 import { submitTrickSchema } from '@features/nightrail/engine/trick-schema';
 import { authorInclude, toTrickView } from '@/lib/trick-week/trick-week.server';
 
@@ -15,30 +19,35 @@ import { authorInclude, toTrickView } from '@/lib/trick-week/trick-week.server';
 export const Route = createFileRoute('/api/nightrail/tricks/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId }) => {
-        const week = weekKey();
-        const [rows, mine] = await Promise.all([
-          prisma.nightrailTrick.findMany({
-            where: { week },
-            orderBy: [{ votes: 'desc' }, { score: 'desc' }],
-            take: 20,
-            include: authorInclude,
-          }),
-          userId
-            ? prisma.nightrailTrickVote.findUnique({
-                where: { week_userId: { week, userId } },
-                select: { trickId: true },
-              })
-            : null,
-        ]);
-        const payload: TricksPayload = {
-          week,
-          tricks: rows.map((r) => toTrickView(r, userId)),
-          myVoteTrickId: mine?.trickId ?? null,
-        };
-        return Response.json(payload, { headers: { 'Cache-Control': 'private, no-store' } });
-      }),
-      POST: defineHandler(
+      GET: implement(
+        getNightrailTricksApi,
+        { auth: 'optional', rateLimit: 'read' },
+        async ({ userId }) => {
+          const week = weekKey();
+          const [rows, mine] = await Promise.all([
+            prisma.nightrailTrick.findMany({
+              where: { week },
+              orderBy: [{ votes: 'desc' }, { score: 'desc' }],
+              take: 20,
+              include: authorInclude,
+            }),
+            userId
+              ? prisma.nightrailTrickVote.findUnique({
+                  where: { week_userId: { week, userId } },
+                  select: { trickId: true },
+                })
+              : null,
+          ]);
+          const payload: TricksPayload = {
+            week,
+            tricks: rows.map((r) => toTrickView(r, userId)),
+            myVoteTrickId: mine?.trickId ?? null,
+          };
+          return Response.json(payload, { headers: { 'Cache-Control': 'private, no-store' } });
+        },
+      ),
+      POST: implement(
+        submitNightrailTrickApi,
         { rateLimit: 'write', body: submitTrickSchema },
         async ({ userId, body }) => {
           const player = await prisma.nightrailPlayer.findUnique({

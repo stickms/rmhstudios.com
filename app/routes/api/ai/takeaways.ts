@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getArticleTakeawaysApi } from '@/lib/ai/ai.contract';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
 import { articleTakeaways, isAITextConfigured } from '@/lib/ai/text.server';
@@ -28,31 +29,35 @@ const MIN_CONTENT_CHARS = 1200;
 export const Route = createFileRoute('/api/ai/takeaways')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none', rateLimit: 'ai', query }, async ({ query }) => {
-        const post = await prisma.blogPost.findUnique({
-          where: { slug: query.slug },
-          select: { title: true, content: true, updatedAt: true },
-        });
-        if (!post) return Response.json({ error: 'Not found' }, { status: 404 });
+      GET: implement(
+        getArticleTakeawaysApi,
+        { auth: 'none', rateLimit: 'ai', query },
+        async ({ query }) => {
+          const post = await prisma.blogPost.findUnique({
+            where: { slug: query.slug },
+            select: { title: true, content: true, updatedAt: true },
+          });
+          if (!post) return Response.json({ error: 'Not found' }, { status: 404 });
 
-        if (post.content.length < MIN_CONTENT_CHARS) return Response.json({ takeaways: [] });
+          if (post.content.length < MIN_CONTENT_CHARS) return Response.json({ takeaways: [] });
 
-        const key = `ai:takeaways:${query.slug}:${post.updatedAt.getTime()}`;
-        // Only a real result is cached. Caching `[]` would pin a transient
-        // upstream failure to this post for the next twelve hours. A hit is served
-        // even when the model is not configured (the loader is then not reached).
-        const takeaways = await cached(
-          key,
-          TTL_MS,
-          async () =>
-            isAITextConfigured()
-              ? articleTakeaways({ title: post.title, content: post.content })
-              : [],
-          { shouldCache: (v) => Array.isArray(v) && v.length > 0 },
-        );
+          const key = `ai:takeaways:${query.slug}:${post.updatedAt.getTime()}`;
+          // Only a real result is cached. Caching `[]` would pin a transient
+          // upstream failure to this post for the next twelve hours. A hit is served
+          // even when the model is not configured (the loader is then not reached).
+          const takeaways = await cached(
+            key,
+            TTL_MS,
+            async () =>
+              isAITextConfigured()
+                ? articleTakeaways({ title: post.title, content: post.content })
+                : [],
+            { shouldCache: (v) => Array.isArray(v) && v.length > 0 },
+          );
 
-        return Response.json({ takeaways });
-      }),
+          return Response.json({ takeaways });
+        },
+      ),
     },
   },
 });

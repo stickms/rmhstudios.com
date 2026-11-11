@@ -1,18 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getSliceArtistApi, type ArtistPageResponse } from '@features/slice-it/engine/slice-it.contract';
 import { prisma } from '@/lib/prisma.server';
 import { ARTIST_KEY_MAX } from '@features/slice-it/engine/artist';
-import type { LibrarySong } from '@features/slice-it/engine/library-filters';
 import {
   libraryFieldsOf,
   songSelect,
   toSliceSong,
   viewerSongJoins,
 } from '@features/slice-it/engine/songs.server';
-import { artistAggregate, type ArtistSummary } from '@features/slice-it/engine/library-query.server';
+import { artistAggregate } from '@features/slice-it/engine/library-query.server';
 import { listPacks } from '@features/slice-it/engine/packs.server';
-import type { PackSummary } from '@features/slice-it/engine/packs';
 
 /**
  * L15 — one artist: aggregate stats, their tracks, and their albums.
@@ -34,18 +33,10 @@ const ParamsZ = z.object({ key: z.string().min(1).max(ARTIST_KEY_MAX) });
 /** Tracks per artist page. An artist with more than this is paged by the library. */
 const ARTIST_SONG_LIMIT = 60;
 
-export interface ArtistPageResponse {
-  artist: ArtistSummary;
-  songs: LibrarySong[];
-  albums: PackSummary[];
-  /** True when the artist has more tracks than this response carries. */
-  hasMore: boolean;
-}
-
 export const Route = createFileRoute('/api/slice-it/songs/artist/$key')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId, params }) => {
+      GET: implement(getSliceArtistApi, { auth: 'optional', rateLimit: 'read' }, async ({ userId, params }) => {
         const parsed = ParamsZ.safeParse(params);
         if (!parsed.success) {
           return Response.json({ error: 'Unknown artist.' }, { status: 404 });

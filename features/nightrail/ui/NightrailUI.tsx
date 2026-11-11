@@ -40,6 +40,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { TrickSubmit } from './TrickSubmit';
 import { useSession } from '@/components/session/session-context';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { getGameLeaderboardApi } from '@/lib/game/leaderboard.contract';
+import { submitGameScoreApi } from '@/lib/game/score.contract';
 import { TRICK_LIST } from '@features/nightrail/engine/constants';
 import { LEVELS, LEVEL_ORDER } from '@features/nightrail/engine/levels';
 import type { LevelId, RunStats, TrickDirection } from '@features/nightrail/engine/types';
@@ -60,13 +64,8 @@ interface LeaderboardEntry {
   rank: number;
   username: string;
   score: number;
-  progress: number;
-  userId: string;
-}
-
-/** The shared leaderboard envelope. `game` is metadata we do not need here. */
-interface LeaderboardResponse {
-  entries?: LeaderboardEntry[];
+  progress: number | null;
+  userId: string | null;
 }
 
 const GAME_ID = 'nightrail';
@@ -142,9 +141,10 @@ export function NightrailUI({
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const res = await fetch(`/api/games/${GAME_ID}/leaderboard?limit=10`);
-      if (!res.ok) return;
-      const data: LeaderboardResponse = await res.json();
+      const data = await api(getGameLeaderboardApi, {
+        params: { id: GAME_ID },
+        query: { limit: 10 },
+      });
       setLeaderboard(Array.isArray(data.entries) ? data.entries : []);
     } catch {
       /* a missing leaderboard is not worth interrupting the player over */
@@ -170,18 +170,21 @@ export function NightrailUI({
 
     void (async () => {
       try {
-        const res = await fetch(`/api/games/${GAME_ID}/score`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        // A refused submit (any non-2xx) used to read as "no moment"; keep that.
+        const body: unknown = await api(submitGameScoreApi, {
+          params: { id: GAME_ID },
+          body: {
             score: Math.round(runStats.score),
             progress: Math.round(runStats.distance),
             durationMs: Math.round(runStats.timeMs),
             username,
             meta: { level: runStats.level },
-          }),
+          },
+        }).catch((e: unknown) => {
+          if (e instanceof HttpError) return null;
+          throw e;
         });
-        void takeScoreMoment(res);
+        void takeScoreMoment(body);
         void fetchLeaderboard();
       } catch {
         /* ignore — the run is over either way */

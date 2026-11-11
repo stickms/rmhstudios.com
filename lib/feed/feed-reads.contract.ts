@@ -1,10 +1,11 @@
 /**
- * Contracts for the feed's small reads (redesign audit C1, batch 8): `@mention`
- * autocomplete, a profile's posts and likes pages, the handle availability
- * check and the deck marketplace. Client-safe: types only, by `import type`.
+ * Contracts for the feed's small reads (redesign audit C1, batches 8 and 10): `@mention`
+ * autocomplete, the main timeline page, a profile's posts and likes pages, the handle
+ * availability check and the deck marketplace. Client-safe: types only, by `import type`.
  */
 import { endpoint } from '@/lib/contract/endpoint';
-import type { FeedItem } from '@/lib/feed-types';
+import type { FeedFilter, FeedItem } from '@/lib/feed-types';
+import type { TimelineResult } from '@/lib/feed/timeline';
 import type { searchMentionUsers } from '@/lib/feed/mention-search.server';
 import type { MarketplaceList } from '@/lib/study.server';
 
@@ -42,3 +43,18 @@ export const checkHandleApi = endpoint<{
   query: { handle: string };
   res: { available: boolean; reason?: string };
 }>()({ method: 'GET', path: '/api/handle/check' });
+
+/**
+ * One keyset page of the main feed. `feed=following` is the Following surface (the legacy
+ * `filter=friends` means the same); `search` needs a session (401) and is rate limited (429).
+ */
+export const getTimelineApi = endpoint<{
+  query: {
+    limit?: number | undefined;
+    cursor?: string | undefined;
+    filter?: FeedFilter | undefined;
+    feed?: 'following' | 'foryou' | undefined;
+    search?: string | undefined;
+  };
+  res: TimelineResult;
+}>()({ method: 'GET', path: '/api/rmharks' });

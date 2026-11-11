@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { submitVegaScoreApi } from '@features/vega/engine/vega.contract';
+import { getVegaLeaderboardApi } from '@/lib/game/leaderboard.contract';
 import { VegaGame } from '@features/vega/engine/VegaGame';
 import { asset } from '@/lib/storage/asset';
 import { useGameStore, TOWER_COSTS } from '@features/vega/engine/GameState';
@@ -448,9 +449,8 @@ function GameOverScreen() {
         .then(() => {
             setStatus('success');
             // Fetch Leaderboard
-            return fetch('/api/vega/leaderboard');
+            return api(getVegaLeaderboardApi);
         })
-        .then(res => res.json())
         .then(data => setLeaderboard(data))
         .catch(() => setStatus('error'));
     }, []);

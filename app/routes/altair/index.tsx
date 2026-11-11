@@ -16,6 +16,8 @@ import { finalCoinsFor, loadoutFromUpgrades } from '@features/altair/engine/solo
 import { clearSoloSession, getActiveRun, getSoloSession, setSoloSession } from '@features/altair/engine/solo/session'
 import { startServerRun, submitSoloRun, waitForVerdict } from '@features/altair/engine/solo/client'
 import { setFallbackRun } from '@features/altair/engine/stores/meta-store'
+import { api } from '@/lib/contract/client'
+import { submitAltairScoreApi } from '@features/altair/engine/altair.contract'
 import { useSignInGate } from '@/components/shared/SignInRequiredDialog'
 import AltairHeader from '@features/altair/ui/AltairHeader'
 import MenuScreen from '@features/altair/ui/screens/MenuScreen'
@@ -78,12 +80,7 @@ function AltairPage() {
       if (navigator.sendBeacon('/api/altair/score', blob)) return
     }
 
-    void fetch('/api/altair/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      keepalive,
-    }).catch(() => { /* silently ignore leaderboard submission failures */ })
+    void api(submitAltairScoreApi, { body: payload, keepalive }).catch(() => { /* silently ignore leaderboard submission failures */ })
   }, [computeFinalCoins])
 
   const startingRef = useRef(false)
@@ -182,11 +179,7 @@ function AltairPage() {
         setFallbackRun(runId)
         const bonus = payFirstClear()
         useAltairMetaStore.getState().addCoins(finalCoins + bonus)
-        void fetch('/api/altair/score', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(legacyScore),
-        }).catch(() => { /* silently ignore leaderboard submission failures */ })
+        void api(submitAltairScoreApi, { body: legacyScore }).catch(() => { /* silently ignore leaderboard submission failures */ })
         useAltairMetaStore.getState().saveToServerNow(false)
       })()
       return

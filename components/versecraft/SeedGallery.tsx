@@ -19,7 +19,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { StarRating } from '@/components/games/StarRating';
+import { api } from '@/lib/contract/client';
 import { fetchWithTimeout } from '@/lib/versecraft/gen/client';
+import { forkVersecraftSeedApi } from '@/lib/versecraft/versecraft.contract';
 import { useGameStore } from '@/lib/versecraft/store';
 import type { SeedListingView } from '@/lib/versecraft/seed-gallery';
 
@@ -77,11 +79,7 @@ export function SeedGalleryButton() {
 
   const fork = (row: SeedListingView) => {
     // Counted fire-and-forget: continuing the story must never wait on the tally.
-    void fetch('/api/versecraft/seeds/fork', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ listingId: row.id }),
-    }).catch(() => undefined);
+    void api(forkVersecraftSeedApi, { body: { listingId: row.id } }).catch(() => undefined);
     setOpen(false);
     void startGeneratedGame({ seed: row.seed });
   };

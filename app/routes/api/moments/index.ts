@@ -1,20 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { implement } from '@/lib/api/implement.server';
+import { createMomentSchema } from '@/lib/moments-schema';
+import { createMomentApi } from '@/lib/moments.contract';
 import { SITE_URL } from '@/lib/seo';
 import { createMoment } from '@/lib/moments.server';
-
-const schema = z.object({
-  kind: z.string().min(1).max(24),
-  payload: z
-    .object({
-      value: z.string().min(1).max(60),
-      title: z.string().max(80).optional(),
-      subtitle: z.string().max(120).optional(),
-    })
-    .passthrough(),
-});
 
 /**
  * POST /api/moments — create a shared moment (Shareable stat cards, §13).
@@ -24,45 +13,31 @@ const schema = z.object({
 export const Route = createFileRoute('/api/moments/')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const { allowed, retryAfter } = rateLimit(getClientIp(request), {
-            limit: 20,
-            windowMs: 60_000,
-            prefix: 'moments-create',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many requests' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-            );
+      POST: implement(
+        createMomentApi,
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'moments-create' },
+          body: createMomentSchema,
+        },
+        async ({ userId, body }) => {
+          try {
+            const { id } = await createMoment({
+              userId,
+              kind: body.kind,
+              payload: body.payload,
+            });
+            return { id, url: `${SITE_URL}/moments/${id}` };
+          } catch (error) {
+            if (
+              error instanceof Error &&
+              (error.message === 'INVALID_KIND' || error.message === 'INVALID_PAYLOAD')
+            ) {
+              return Response.json({ error: 'Invalid input' }, { status: 400 });
+            }
+            throw error;
           }
-
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          const { id } = await createMoment({
-            userId: session.user.id,
-            kind: parsed.data.kind,
-            payload: parsed.data.payload,
-          });
-
-          return Response.json({ id, url: `${SITE_URL}/moments/${id}` });
-        } catch (error) {
-          if (
-            error instanceof Error &&
-            (error.message === 'INVALID_KIND' || error.message === 'INVALID_PAYLOAD')
-          ) {
-            return Response.json({ error: 'Invalid input' }, { status: 400 });
-          }
-          console.error('Create moment error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

@@ -7,6 +7,8 @@ import { useDoctrineStore } from '@features/doctrine/ui/doctrineStore';
 import { ContentCard } from '@features/doctrine/ui/safehouse/content-card';
 import { AccessGate } from '@features/doctrine/ui/safehouse/access-gate';
 import { Shield } from 'lucide-react';
+import { api } from '@/lib/contract/client';
+import { getSafehouseContentApi } from '@features/doctrine/engine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/safehouse/')({
   head: () => noindexHead('Safehouse'),
@@ -25,9 +27,7 @@ function SafehouseFeed() {
   const { data, isLoading } = useQuery({
     queryKey: ['doctrine', 'safehouse', 'content'],
     queryFn: async () => {
-      const res = await fetch('/api/doctrine/safehouse/content');
-      if (!res.ok) throw new Error('Failed to load');
-      return res.json();
+      return api(getSafehouseContentApi);
     },
     staleTime: 60_000,
   });
@@ -61,7 +61,7 @@ function SafehouseFeed() {
       )}
 
       <div className="space-y-3">
-        {data?.items?.map((item: { id: string; type: string; title: string; body: string; minTier: string; publishedAt: string | null; reactions: { fire: number; based: number; mid: number; cringe: number; trash: number; tung: number } }) => (
+        {data?.items?.map((item) => (
           <ContentCard key={item.id} {...item} />
         ))}
       </div>

@@ -129,7 +129,6 @@ const callsGetSession = (src: string): boolean => /auth\.api\.getSession/.test(s
 
 /** Rule 1 backlog: route files that reference no wrapper at all. */
 const KNOWN_UNWRAPPED: readonly string[] = [
-  'app/routes/api/admin/vibe/backfill-thumbs.ts',
   'app/routes/api/ai/message-suggest.ts',
   'app/routes/api/albums/asset/$.ts',
   // Permanent: the Better Auth catch-all. It forwards the raw Request to the
@@ -137,7 +136,6 @@ const KNOWN_UNWRAPPED: readonly string[] = [
   'app/routes/api/auth/$.ts',
   'app/routes/api/builds/cover/$file.ts',
   'app/routes/api/client-error.ts',
-  'app/routes/api/coins/gift.ts',
   'app/routes/api/cron/webhooks.ts',
   'app/routes/api/discord/activity-image.ts',
   'app/routes/api/email/unsubscribe.ts',
@@ -152,17 +150,14 @@ const KNOWN_UNWRAPPED: readonly string[] = [
   'app/routes/api/internal/predictions-tick.ts',
   'app/routes/api/internal/streak-push.ts',
   'app/routes/api/library/file/$id.ts',
-  'app/routes/api/moments/index.ts',
   'app/routes/api/news/approve.ts',
   'app/routes/api/news/reject.ts',
   'app/routes/api/personas/avatar/$filename.ts',
-  'app/routes/api/predictions/$id/trade.ts',
   'app/routes/api/profile-links/reverify.ts',
   'app/routes/api/profile/avatar/$filename.ts',
   'app/routes/api/profile/banner/$filename.ts',
   'app/routes/api/pulse.ts',
   'app/routes/api/ready.ts',
-  'app/routes/api/replays/index.ts',
   'app/routes/api/rmharks/$id/similar.ts',
   'app/routes/api/rmharks/$id/unlock.ts',
   'app/routes/api/rmharks/$id/view.ts',

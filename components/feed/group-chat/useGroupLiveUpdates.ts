@@ -1,6 +1,8 @@
 import { useEffect, type MutableRefObject } from 'react';
 import type { ReactionRow } from '@/lib/social/reactions';
 import { emitChatUpdate } from '@/lib/chat-plus/client-bus';
+import { api } from '@/lib/contract/client';
+import { pollGroupMessagesApi } from '@/lib/group-chat/group-chat.contract';
 import type { ChatUpdate } from '@/lib/chat-plus/types';
 import type { Msg } from '@/lib/group-chat/types';
 
@@ -34,14 +36,12 @@ export function useGroupLiveUpdates({
     const poll = async () => {
       if (!lastAtRef.current) return;
       try {
-        const res = await fetch(
-          `/api/group-chats/${encodeURIComponent(id)}/messages?after=${encodeURIComponent(lastAtRef.current)}`,
-          { credentials: 'include' },
-        );
-        if (res.ok) {
-          const data = await res.json();
-          appendMessages(data.messages ?? []);
-        }
+        const data = await api(pollGroupMessagesApi, {
+          params: { id },
+          query: { after: lastAtRef.current },
+          retries: 0,
+        });
+        appendMessages(data.messages ?? []);
       } catch {
         /* ignore transient poll errors */
       }

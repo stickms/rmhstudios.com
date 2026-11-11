@@ -8,6 +8,6 @@ export const Route = createFileRoute('/_site/feeds/')({
     meta: [{ title: 'Custom feeds | RMH Studios' }, { name: 'robots', content: 'noindex, follow' }],
   }),
   // Signed out the fetch fails quietly and the page shows its sign-in prompt.
-  loader: ({ context }) => prefetchRouteQuery(context.queryClient, feedsQuery<unknown>()),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, feedsQuery()),
   component: FeedsPage,
 });

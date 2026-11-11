@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { listFeedsApi } from '@/lib/discovery/discovery.contract';
 import { customFeedSchema } from '@/lib/discovery/schema';
 import { createFeed, listFeeds } from '@/lib/discovery/feeds.server';
 
@@ -10,7 +12,7 @@ import { createFeed, listFeeds } from '@/lib/discovery/feeds.server';
 export const Route = createFileRoute('/api/feeds/')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
+      GET: implement(listFeedsApi, { rateLimit: 'read' }, async ({ userId }) =>
         Response.json(await listFeeds(userId), {
           headers: { 'Cache-Control': 'private, no-store' },
         }),

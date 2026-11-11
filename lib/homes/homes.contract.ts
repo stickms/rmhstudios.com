@@ -1,14 +1,12 @@
 /**
  * Contracts for the bodyless /api/homes/** calls (redesign audit C1, batch 6):
- * the watch list, listing read / delete and the favorite toggle. The writes that
- * hand-parse their bodies (listing create / edit, watch create / patch), the
- * filtered search and the geocoder stay raw fetches. Client-safe. Batch 8 adds the
-listing status change and the AI listing-image calls.
+ * the watch list, listing read / delete and the favorite toggle. Client-safe. Batch 8 adds
+ * the listing status change and the AI listing-image calls; batch 10 the filtered browse.
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { GeocodeResult } from '@/lib/homes/geo.server';
-import type { Listing, ListingStatus, Watch } from '@/lib/homes/types';
+import type { Listing, ListingStatus, SearchResponse, Watch } from '@/lib/homes/types';
 import type { createWatchBody, deleteWatchQuery, patchWatchBody } from './watch-schema';
 
 export const listHomeWatchesApi = endpoint<{ res: { watches: Watch[] } }>()({
@@ -84,3 +82,12 @@ export const generateHomeAiImageApi = endpoint<{
   body: { prompt: string };
   res: { url: string };
 }>()({ method: 'POST', path: '/api/homes/ai-image' });
+
+/**
+ * The filtered browse: `serializeFilters(filters)` as a record (see `lib/homes/query.ts`),
+ * every value a string. 429 `Too many searches` when rate limited; 502 when search is down.
+ */
+export const browseHomeListingsApi = endpoint<{
+  query: Record<string, string>;
+  res: SearchResponse;
+}>()({ method: 'GET', path: '/api/homes/listings' });

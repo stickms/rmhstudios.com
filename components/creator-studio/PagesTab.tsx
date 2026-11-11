@@ -18,6 +18,8 @@ import { useSession } from '@/components/Providers';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import type { VibeCard } from '@/lib/rmhvibe/vibe.server';
+import { api } from '@/lib/contract/client';
+import { backfillVibeThumbsApi } from '@/lib/rmhvibe/vibe-admin.contract';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 import '@/components/builds/builds.css';
 import '@/components/creator-studio/storefront.css';
@@ -73,9 +75,7 @@ export function PagesTab({
     if (backfilling) return;
     setBackfilling(true);
     try {
-      const res = await fetch('/api/admin/vibe/backfill-thumbs', { method: 'POST' });
-      const data = (await res.json().catch(() => ({}))) as { count?: number; error?: string };
-      if (!res.ok) throw new Error(data.error || 'Request failed');
+      const data = await api(backfillVibeThumbsApi);
       toast.success(
         t('backfill-thumbs-done', {
           defaultValue:

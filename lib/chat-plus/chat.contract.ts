@@ -7,6 +7,7 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { checklistSchema } from '@/lib/chat-plus/checklist.server';
 import type { commandSchema } from '@/lib/chat-plus/commands.server';
 import type { pollVoteSchema } from '@/lib/chat-plus/polls.server';
+import type { LinkItem, MediaItem, MediaPage } from '@/lib/chat-plus/media.server';
 import type { PostedMessage } from '@/lib/chat-plus/post.server';
 import type { ChatMeta } from '@/lib/chat-plus/settings.client';
 import type { ChecklistItem, PollView } from '@/lib/chat-plus/types';
@@ -56,3 +57,17 @@ export const voteChatPollApi = endpoint<{
   body: z.infer<typeof pollVoteSchema>;
   res: { poll: PollView };
 }>()({ method: 'POST', path: '/api/chats/$kind/$id/vote' });
+
+/** One keyset page of the images, GIFs and voice notes in a chat, newest first. */
+export const getChatSharedMediaApi = endpoint<{
+  params: ChatParams;
+  query: { tab: 'media'; cursor?: string | undefined };
+  res: MediaPage<MediaItem>;
+}>()({ method: 'GET', path: '/api/chats/$kind/$id/media' });
+
+/** One keyset page of the links in a chat, newest first. */
+export const getChatSharedLinksApi = endpoint<{
+  params: ChatParams;
+  query: { tab: 'links'; cursor?: string | undefined };
+  res: MediaPage<LinkItem>;
+}>()({ method: 'GET', path: '/api/chats/$kind/$id/media' });

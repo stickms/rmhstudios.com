@@ -13,6 +13,8 @@ import { useNavigate } from '@tanstack/react-router';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
 import { useSurpriseCommand } from '@/components/discovery/useSurprise';
+import { api } from '@/lib/contract/client';
+import { universalSearchApi } from '@/lib/feed/compose-assist.contract';
 import { normalizeQuery } from '@/lib/search/normalize';
 import { MATCH_FLOOR, scoreRecord } from '@/lib/search/score';
 import {
@@ -180,19 +182,6 @@ const SECTION_ORDER: Section[] = ['actions', 'pages', 'people', 'posts', 'games'
 
 const EMPTY_REMOTE: { people: Command[]; posts: Command[] } = { people: [], posts: [] };
 
-interface SearchPerson {
-  id: string;
-  name: string | null;
-  handle: string | null;
-  image: string | null;
-}
-
-interface SearchPost {
-  id: string;
-  content: string;
-  user: { name: string | null; handle: string | null } | null;
-}
-
 export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean } = {}) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
@@ -253,12 +242,10 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
     const ctrl = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
-          credentials: 'include',
+        const data = await api(universalSearchApi, {
+          query: { q },
           signal: ctrl.signal,
         });
-        if (!res.ok) return;
-        const data: { people?: SearchPerson[]; posts?: SearchPost[] } = await res.json();
         setRemote({
           people: (data.people ?? []).slice(0, 5).map((u) => ({
             id: `person-${u.id}`,

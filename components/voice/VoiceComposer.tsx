@@ -13,6 +13,9 @@ import { formatDuration, VOICE_PEAK_BUCKETS } from '@/lib/voice/peaks';
 import { canRecordVoice, VoiceRecorder, VoiceRecorderError } from '@/lib/voice/recorder';
 import { VoiceWaveform } from '@/components/voice/VoiceWaveform';
 import { VoicePlayer } from '@/components/voice/VoicePlayer';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { sendVoiceMessageApi, type SentVoiceMessage } from '@/lib/messages/voice.contract';
 
 /**
  * Record → review → send, for a DM voice note.
@@ -36,17 +39,6 @@ import { VoicePlayer } from '@/components/voice/VoicePlayer';
  * The panel replaces the text composer while it is open (the parent hides it via
  * `onActiveChange`), which is what keeps this usable at 360px.
  */
-
-export interface SentVoiceMessage {
-  id: string;
-  content: string;
-  senderId: string;
-  read: boolean;
-  createdAt: string;
-  audioUrl: string | null;
-  audioDurationMs: number | null;
-  audioPeaks: number[];
-}
 
 export function VoiceComposer({
   conversationId,
@@ -231,25 +223,16 @@ export function VoiceComposer({
       form.append('peaks', JSON.stringify(clip.peaks));
       form.append('note', note.trim());
 
-      const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}/voice`, {
-        method: 'POST',
-        credentials: 'include',
-        body: form,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        // The server names the caller's own ceiling ("60 seconds on your plan"),
-        // so its message is more useful than anything generic here.
-        toast.error(
-          data.error || t('voice-send-failed', { defaultValue: 'Could not send that recording.' }),
-        );
-        setPhase('review');
-        return;
-      }
-      onSent(data.message as SentVoiceMessage);
+      const data = await api(sendVoiceMessageApi, { params: { conversationId }, body: form });
+      onSent(data.message);
       reset();
-    } catch {
-      toast.error(t('voice-send-failed', { defaultValue: 'Could not send that recording.' }));
+    } catch (e) {
+      // The server names the caller's own ceiling ("60 seconds on your plan"),
+      // so its message is more useful than anything generic here.
+      toast.error(
+        serverError(e) ||
+          t('voice-send-failed', { defaultValue: 'Could not send that recording.' }),
+      );
       setPhase('review');
     }
   }, [clip, conversationId, note, onSent, reset, t]);

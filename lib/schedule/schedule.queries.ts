@@ -3,20 +3,17 @@ import { queryOptions } from '@tanstack/react-query';
 import { createServerFn } from '@tanstack/react-start';
 import { routeQueryFn } from '@/lib/route/route-query';
 import { getGrid } from '@/lib/schedule/grid.server';
+import { api } from '@/lib/contract/client';
+import { getScheduleApi } from '@/lib/schedule/schedule.contract';
 
 const getGridOnServer = createServerFn({ method: 'GET' }).handler(() => getGrid(new Date(), 7));
 
-/** `T` is the wire shape the page declares for `/api/schedule`. */
-export const scheduleQuery = <T>() =>
+export const scheduleQuery = () =>
   queryOptions({
     queryKey: ['schedule', 7],
-    queryFn: routeQueryFn<T>(
+    queryFn: routeQueryFn(
       () => getGridOnServer(),
-      async () => {
-        const r = await fetch('/api/schedule?days=7');
-        if (!r.ok) throw new Error(String(r.status));
-        return (await r.json()) as T;
-      },
+      () => api(getScheduleApi, { query: { days: 7 } }),
     ),
     // The buckets are floored to midnight UTC server-side; a minute is plenty.
     staleTime: 60_000,

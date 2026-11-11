@@ -10,7 +10,7 @@ import { serverError } from '@/lib/http';
 import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { sendToConversationApi } from '@/lib/messages/message-actions.contract';
 import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
-import type { SentVoiceMessage } from '@/components/voice/VoiceComposer';
+import type { SentVoiceMessage } from '@/lib/messages/voice.contract';
 import {
   MAX_DM_IMAGES,
   fromVoiceMessage,

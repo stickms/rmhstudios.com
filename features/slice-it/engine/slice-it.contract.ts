@@ -11,6 +11,8 @@ import type { ChartSummary } from '@features/slice-it/engine/charts.server';
 import type { DailyBoardRow, DailyState } from '@features/slice-it/engine/daily.server';
 import type { SliceSong } from '@features/slice-it/engine/types';
 import type { ArtistSummary } from '@features/slice-it/engine/library-query.server';
+import type { LibrarySong } from '@features/slice-it/engine/library-filters';
+import type { PackSummary } from '@features/slice-it/engine/packs';
 import type { SliceItShowcaseStats } from '@features/slice-it/engine/showcase.server';
 
 /** The top artists across the public library (a facet, not a page). */
@@ -86,4 +88,19 @@ export const updateSongApi = endpoint<{
 export const deleteSongApi = endpoint<{ res: { success: true } }>()({
   method: 'DELETE',
   path: '/api/slice-it/songs/$id',
+});
+
+/** One artist: aggregate stats, their tracks and their albums, in a single read. */
+export interface ArtistPageResponse {
+  artist: ArtistSummary;
+  songs: LibrarySong[];
+  albums: PackSummary[];
+  /** True when the artist has more tracks than this response carries. */
+  hasMore: boolean;
+}
+
+/** `$key` is a normalised artist key, never a display name. 404 when the artist is unknown. */
+export const getSliceArtistApi = endpoint<{ res: ArtistPageResponse }>()({
+  method: 'GET',
+  path: '/api/slice-it/songs/artist/$key',
 });

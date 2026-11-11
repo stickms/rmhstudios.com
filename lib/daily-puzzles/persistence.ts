@@ -5,7 +5,13 @@
 
 import { readJson, writeJson } from '@/lib/core/persist';
 import { api } from '@/lib/contract/client';
-import { getDailyPuzzleResultApi, getDailyPuzzleResultsApi } from './daily-puzzles.contract';
+import { HttpError } from '@/lib/http';
+import {
+    getDailyPuzzleResultApi,
+    getDailyPuzzleResultsApi,
+    submitDailyPuzzleScoreApi,
+    type DailyPuzzleScoreBody,
+} from './daily-puzzles.contract';
 
 const STORAGE_KEY = 'rmh-daily-puzzles';
 
@@ -124,7 +130,7 @@ export function saveResultWithSync(
     // If signed in, also persist to server (fire-and-forget)
     if (isSignedIn) {
         const isLightsOut = gameMode === 'lights-out';
-        const body: any = {
+        const body: DailyPuzzleScoreBody = {
             gameMode,
             dateKey: puzzleDate,
             resultJson: result.resultJson,
@@ -141,14 +147,14 @@ export function saveResultWithSync(
 
         // One retry: a flaky mobile connection otherwise silently drops the score/streak.
         const send = () =>
-            fetch('/api/daily-puzzles/score', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-                keepalive: true,
-            }).then((r) => {
-                if (!r.ok && r.status >= 500) throw new Error(String(r.status));
-            });
+            api(submitDailyPuzzleScoreApi, { body, keepalive: true }).then(
+                () => undefined,
+                (e: unknown) => {
+                    // Only a server failure is worth another try; a 4xx refusal is final.
+                    if (e instanceof HttpError && e.status < 500) return;
+                    throw e;
+                },
+            );
         send().catch(() => {
             setTimeout(() => { send().catch(() => { /* give up; local copy is kept */ }); }, 4000);
         });
