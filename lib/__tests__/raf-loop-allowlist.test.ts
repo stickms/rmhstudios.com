@@ -197,6 +197,11 @@ const ALLOW = new Set<string>([
   // no rAF themselves. No frame is requested while no driver is awake; `stop()`
   // cancels. Settle proven in lib/jelly/__tests__/frame.test.ts.
   'lib/jelly/frame.ts',
+  // The chrome renderer's frame source (Steel 4.3, V9). Not a loop: input requests ONE
+  // coalesced frame; a frame asks for the next only while a thumb's `--c` is mid-fade
+  // or a declared transition (the globe opening) is running. Settle proven in
+  // lib/chrome/__tests__/chrome.test.ts ("leaves no frame pending once input stops").
+  'lib/chrome/index.ts',
   // The TF2 HUD editor's preview canvas. Not a loop: it requests ONE frame per
   // change (scene, zoom, selection) to coalesce redraws, and the effect's cleanup
   // cancels any pending frame on re-run and on unmount. Nothing is scheduled at rest.
