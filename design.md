@@ -21,7 +21,10 @@ The plan is executed one phase at a time (its section 16). Phase 1, tokens and t
 is in: the values and type classes below are real, the old material's stylesheets
 are gone, and the existing role classes (`glass-fill`, `glass-pane`, `glass-chrome`,
 `glass-overlay`, `glass-inset`) still work as names but render flat surfaces
-(`app/styles/steel-surfaces.css`). Pages look unfinished until phases 2 to 5.
+(`app/styles/steel-surfaces.css`). Phase 3, the shell, is in: every `_site` page sits in
+`components/shell/SiteShell.tsx` (a sidebar of the five sections on desktop, the docked
+globe on a phone, an optional margin; `/sections` is the no-script list). Pages keep their
+old content inside it and look unfinished until phases 4 and 5.
 
 ## 1. The five rules
 

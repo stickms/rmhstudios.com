@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 364 routes. 197 render inside the standard site shell (sidebar, nav, context rail); 167 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 365 routes. 198 render inside the standard site shell (sidebar, nav, context rail); 167 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -165,6 +165,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/saves` | Saved | public | `app/routes/_site/saves/index.tsx` |
 | `/schedule` | Schedule | public | `app/routes/_site/schedule.tsx` |
 | `/search` | redirects to `/explore` | public | `app/routes/_site/search.tsx` |
+| `/sections` | Sections | public | `app/routes/_site/sections.tsx` |
 | `/series` | Series | public | `app/routes/_site/series.index.tsx` |
 | `/series/:id` | Series | public | `app/routes/_site/series.$id.tsx` |
 | `/services` | redirects to `/services/cars` | public | `app/routes/_site/services/index.tsx` |
