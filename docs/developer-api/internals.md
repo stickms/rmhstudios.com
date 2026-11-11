@@ -39,7 +39,7 @@ Step 4 is checked in CI (`pnpm docs:api --check`), so a registry change without 
 
 ## Webhook retry drain
 
-The retry queue is drained by `POST /api/cron/webhooks`, guarded by `INTERNAL_API_SECRET`. Persistent failures auto-disable the endpoint after the backoff schedule is exhausted (6 attempts).
+The retry queue is drained once a minute by the jobs worker's `webhooks.retry` cron (`lib/webhooks/jobs.server.ts`), 50 due deliveries per tick, oldest first. The backoff is 1 min, 5 min, 30 min, 2 h, then 6 h; a delivery that fails its sixth attempt is marked FAILED, and an endpoint with 20 consecutive failures is auto-disabled.
 
 ## Where the docs live
 

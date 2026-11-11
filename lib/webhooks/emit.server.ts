@@ -4,8 +4,8 @@
  * `emitWebhookEvent` fans an event out to the owner's matching, enabled
  * endpoints: it records a PENDING `WebhookDelivery` per endpoint and attempts an
  * immediate signed POST. Failed attempts stay PENDING with an exponential
- * backoff `nextAttemptAt`; `deliverDuePending` (called from a cron route) drains
- * them. An endpoint that accrues too many consecutive failures is auto-disabled.
+ * backoff `nextAttemptAt`; `deliverDuePending` (the jobs worker's `webhooks.retry`
+ * cron, lib/webhooks/jobs.server.ts) drains them. An endpoint that accrues too many consecutive failures is auto-disabled.
  *
  * Each delivery is signed so receivers can verify authenticity:
  *   X-RMH-Signature: t=<unix-seconds>,v1=<hex hmac-sha256 of `t.body`>
@@ -183,8 +183,8 @@ export async function emitWebhookEvent(userId: string, event: string, data: unkn
 const ENDPOINT_DELIVERY_CONCURRENCY = 6;
 
 /**
- * Drain due PENDING deliveries (retries). Intended to be called periodically by
- * an authenticated cron route. Returns the number of deliveries attempted.
+ * Drain due PENDING deliveries (retries). Called once a minute by the jobs worker
+ * (lib/webhooks/jobs.server.ts). Returns the number of deliveries attempted.
  */
 export async function deliverDuePending(max = 50): Promise<number> {
   const due = await prisma.webhookDelivery.findMany({
