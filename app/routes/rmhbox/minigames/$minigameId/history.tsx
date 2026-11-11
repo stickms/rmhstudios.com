@@ -18,26 +18,10 @@ import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import { MINIGAME_REGISTRY } from '@/lib/rmhbox/minigame-registry';
 // From `history-display`, not the bare registry: it loads the registrations
 // too, and keeps them with this route's component chunk (see that module).
-import { getHistoryDisplay, type GameLog } from '@/lib/rmhbox/history-display';
+import { getHistoryDisplay } from '@/lib/rmhbox/history-display';
+import { api } from '@/lib/contract/client';
+import { listRmhboxMatchesApi, type RmhboxMatchSummary } from '@/lib/rmhbox/rmhbox-reads.contract';
 
-interface MatchEntry {
-  id: string;
-  minigameId: string;
-  lobbyId: string;
-  startedAt: string;
-  endedAt: string | null;
-  durationMs: number;
-  winnerUserId: string | null;
-  playerCount: number;
-  players: Array<{
-    userId: string;
-    userName: string;
-    rank: number;
-    score: number;
-    wasWinner?: boolean;
-  }>;
-  gameLog?: GameLog;
-}
 
 type SortKey = 'date' | 'score' | 'rank' | 'duration';
 type SortDir = 'asc' | 'desc';
@@ -73,7 +57,7 @@ function MinigameHistoryPage() {
   const game = MINIGAME_REGISTRY[minigameId];
   const historyConfig = getHistoryDisplay(minigameId);
 
-  const [matches, setMatches] = useState<MatchEntry[]>([]);
+  const [matches, setMatches] = useState<RmhboxMatchSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,14 +71,9 @@ function MinigameHistoryPage() {
   const fetchMatches = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/rmhbox/history?minigame=${encodeURIComponent(minigameId)}&limit=${limit}&offset=${offset}`,
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setMatches(data.matches ?? []);
-        setTotal(data.total ?? 0);
-      }
+      const data = await api(listRmhboxMatchesApi, { query: { minigame: minigameId, limit, offset } });
+      setMatches(data.matches ?? []);
+      setTotal(data.total ?? 0);
     } catch {
       // Silently fail
     } finally {

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { sendVoiceMessageApi } from '@/lib/messages/voice.contract';
 import { VOICE_ABSOLUTE_MAX_BYTES, VOICE_ABSOLUTE_MAX_DURATION_MS } from '@/lib/media/voice-policy';
 import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
 import { sendVoiceMessage } from '@/lib/messages/voice.server';
@@ -36,7 +37,8 @@ import { sendVoiceMessage } from '@/lib/messages/voice.server';
 export const Route = createFileRoute('/api/messages/$conversationId/voice')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        sendVoiceMessageApi,
         {
           rateLimit: {
             policy: 'upload',

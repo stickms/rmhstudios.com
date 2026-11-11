@@ -3,13 +3,15 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { listTf2LoadoutModelsApi } from '@/lib/tf2-loadout/models.contract';
 import { listModelIds } from '@/lib/tf2-loadout/models.server';
 
 export const Route = createFileRoute('/api/tf2-loadout/models/')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        listTf2LoadoutModelsApi,
         {
           auth: 'none',
           rateLimit: 'read',

@@ -1,20 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { pf2ecalAskSchema } from '@/lib/pf2ecal/ask-schema';
+import { askPf2ecalApi } from '@/lib/pf2ecal/pf2ecal.contract';
 import { answerCalendarQuestion, isAITextConfigured } from '@/lib/pf2ecal/assistant.server';
-
-const askSchema = z.object({
-  question: z.string().trim().min(1).max(500),
-  history: z
-    .array(
-      z.object({
-        role: z.enum(['user', 'assistant']),
-        content: z.string().max(2000),
-      }),
-    )
-    .max(12)
-    .default([]),
-});
 
 /**
  * POST /api/pf2ecal/ask — ask the assistant about the schedule.
@@ -39,8 +27,9 @@ const askSchema = z.object({
 export const Route = createFileRoute('/api/pf2ecal/ask')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { auth: 'optional', rateLimit: 'ai', body: askSchema },
+      POST: implement(
+        askPf2ecalApi,
+        { auth: 'optional', rateLimit: 'ai', body: pf2ecalAskSchema },
         async ({ user, body }) => {
           if (!isAITextConfigured()) {
             return Response.json(

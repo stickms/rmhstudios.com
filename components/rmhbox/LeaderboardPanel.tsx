@@ -13,6 +13,8 @@ import { Trophy } from 'lucide-react';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { C2S, S2C } from '@/lib/rmhbox/events';
 import type { LeaderboardEntry } from '@/lib/rmhbox/types';
+import { api } from '@/lib/contract/client';
+import { getRmhboxLeaderboardApi } from '@/lib/rmhbox/rmhbox-reads.contract';
 
 export default function LeaderboardPanel() {
   const { t } = useTranslation("c-rmhbox");
@@ -23,11 +25,10 @@ export default function LeaderboardPanel() {
   useEffect(() => {
     async function fetchLeaderboard() {
       try {
-        const response = await fetch('/api/rmhbox/leaderboard?period=all-time&metric=score&limit=10');
-        if (response.ok) {
-          const data = await response.json();
-          setEntries(data.entries || []);
-        }
+        const data = await api(getRmhboxLeaderboardApi, {
+          query: { period: 'all-time', metric: 'score', limit: 10 },
+        });
+        setEntries(data.entries || []);
       } catch (err) {
         console.error('[LeaderboardPanel] Failed to fetch leaderboard:', err);
       } finally {

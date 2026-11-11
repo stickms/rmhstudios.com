@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { listBlockedUsersApi, toggleBlockApi } from '@/lib/moderation/moderation.contract';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateHiddenAuthors } from '@/lib/moderation.server';
 import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
@@ -15,7 +16,7 @@ const blockSchema = z.object({ targetUserId: z.string().min(1).max(64) });
 export const Route = createFileRoute('/api/moderation/block')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(listBlockedUsersApi, {}, async ({ session }) => {
         const blocks = await prisma.userBlock.findMany({
           where: { blockerId: session.user.id },
           select: { blockedId: true, createdAt: true },
@@ -23,7 +24,8 @@ export const Route = createFileRoute('/api/moderation/block')({
         });
         return Response.json({ blocked: blocks.map((b) => b.blockedId) });
       }),
-      POST: defineHandler(
+      POST: implement(
+        toggleBlockApi,
         {
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'moderation-block' },
           body: blockSchema,

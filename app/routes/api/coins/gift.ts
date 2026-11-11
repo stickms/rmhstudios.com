@@ -1,23 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { coinGiftBody } from '@/lib/gifting/coin-gift-schema';
+import { coinGiftApi } from '@/lib/gifting/gift.contract';
 import { assertNoRecoveryHold } from '@/lib/recovery/hold.server';
-import {
-  sendCoinGift,
-  CoinGiftError,
-  GIFT_MIN,
-  GIFT_MAX,
-  GIFT_NOTE_MAX,
-} from '@/lib/gifting/coin-gift.server';
-
-const schema = z.object({
-  recipient: z.string().min(1).max(64), // user id or handle
-  amount: z.number().int().min(GIFT_MIN).max(GIFT_MAX),
-  note: z.string().max(GIFT_NOTE_MAX).optional(),
-  public: z.boolean().optional(),
-});
+import { sendCoinGift, CoinGiftError } from '@/lib/gifting/coin-gift.server';
 
 /** Map each typed gift error to an HTTP status + message. */
 const ERROR_MAP: Record<string, [string, number]> = {
@@ -36,57 +23,41 @@ const ERROR_MAP: Record<string, [string, number]> = {
 export const Route = createFileRoute('/api/coins/gift')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      POST: implement(
+        coinGiftApi,
+        {
+          rateLimit: { limit: 15, windowMs: 60_000, prefix: 'coin-gift' },
+          body: coinGiftBody,
+        },
+        async ({ userId, body }) => {
+          try {
+            const held = await assertNoRecoveryHold(userId);
+            if (held) return held;
 
-          const { allowed, retryAfter } = rateLimit(getClientIp(request), {
-            limit: 15,
-            windowMs: 60_000,
-            prefix: 'coin-gift',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many requests' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-            );
+            const recipient = await prisma.user.findFirst({
+              where: { OR: [{ id: body.recipient }, { handle: body.recipient }] },
+              select: { id: true },
+            });
+            if (!recipient) return Response.json({ error: 'Recipient not found' }, { status: 404 });
+
+            await sendCoinGift({
+              gifterId: userId,
+              recipientId: recipient.id,
+              amount: body.amount,
+              note: body.note,
+              public: body.public,
+            });
+
+            return { ok: true as const };
+          } catch (error) {
+            if (error instanceof CoinGiftError) {
+              const [msg, status] = ERROR_MAP[error.code] ?? ['Gift failed', 400];
+              return Response.json({ error: msg, code: error.code }, { status });
+            }
+            throw error;
           }
-
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          // A recovered account is held for 72h before it can move value. Without
-          // this the hold is reported and not enforced, and account recovery
-          // becomes the cheapest route into the economy.
-          const held = await assertNoRecoveryHold(session.user.id);
-          if (held) return held;
-
-          const recipient = await prisma.user.findFirst({
-            where: { OR: [{ id: parsed.data.recipient }, { handle: parsed.data.recipient }] },
-            select: { id: true },
-          });
-          if (!recipient) return Response.json({ error: 'Recipient not found' }, { status: 404 });
-
-          await sendCoinGift({
-            gifterId: session.user.id,
-            recipientId: recipient.id,
-            amount: parsed.data.amount,
-            note: parsed.data.note,
-            public: parsed.data.public,
-          });
-
-          return Response.json({ ok: true });
-        } catch (error) {
-          if (error instanceof CoinGiftError) {
-            const [msg, status] = ERROR_MAP[error.code] ?? ['Gift failed', 400];
-            return Response.json({ error: msg, code: error.code }, { status });
-          }
-          console.error('Coin gift error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

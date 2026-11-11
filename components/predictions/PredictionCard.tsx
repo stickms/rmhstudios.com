@@ -9,6 +9,9 @@ import type { Market } from './types';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { MarketExtras } from '@/components/forecasting/MarketExtras';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { tradePredictionApi } from '@/lib/predictions/predictions.contract';
 
 interface Props {
   market: Market;
@@ -52,16 +55,15 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
     }
     setPending(side);
     try {
-      const res = await fetch(`/api/predictions/${market.id}/trade`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ side, amount }),
+      const data = await api(tradePredictionApi, {
+        params: { id: market.id },
+        body: { side, amount },
+      }).catch((e: unknown) => {
+        if (!(e instanceof HttpError)) throw e;
+        toast.error(serverError(e) ?? t('trade-failed', { defaultValue: 'Trade failed' }));
+        return null;
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || t('trade-failed', { defaultValue: 'Trade failed' }));
-        return;
-      }
+      if (!data) return;
       setCoins(data.newBalance);
       onUpdated(data.market as Market);
       toast.success(

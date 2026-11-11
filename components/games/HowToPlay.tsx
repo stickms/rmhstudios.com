@@ -5,6 +5,9 @@ import { HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { howToPlayApi } from '@/lib/devplatform/how-to-play.contract';
 
 /** I1 — "How do I play?" Q&A panel, collapsed until opened (no work on first paint). */
 export function HowToPlay({ gameId }: { gameId: string }) {
@@ -18,18 +21,15 @@ export function HowToPlay({ gameId }: { gameId: string }) {
     setBusy(true);
     setAnswer(null);
     try {
-      const res = await fetch('/api/games/how-to-play', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, question: q }),
+      const data = await api(howToPlayApi, {
+        body: { gameId, question: q },
+        timeoutMs: AI_TIMEOUT_MS,
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) setAnswer(data.answer);
-      else
-        toast.error(
-          data.error || t('howToPlay-error', { defaultValue: 'Could not get an answer' }),
-        );
+      setAnswer(data.answer);
+    } catch (e) {
+      toast.error(
+        serverError(e) || t('howToPlay-error', { defaultValue: 'Could not get an answer' }),
+      );
     } finally {
       setBusy(false);
     }

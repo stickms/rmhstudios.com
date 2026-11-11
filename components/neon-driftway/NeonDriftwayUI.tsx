@@ -16,6 +16,7 @@ import type { ViewMode } from './NeonDriftwayGame';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { submitNeonDriftwayScoreApi } from '@/lib/game/score.contract';
+import { saveGhostApi } from '@/lib/game/replay.contract';
 
 type LeaderboardEntry = {
   username: string;
@@ -110,16 +111,14 @@ export function NeonDriftwayUI({
         // so a player stores one trace per level however often they play.
         const trace = parseScoreMoment(body) ? getGhostTrace() : null;
         if (trace) {
-          void fetch('/api/replays/ghost', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          void api(saveGhostApi, {
+            body: {
               game: 'neon-driftway',
               level: trace.level,
-              data: trace,
+              data: trace as unknown as Record<string, unknown>,
               score: Math.round(runStats.score),
               durationMs: Math.round(runStats.timeSurvivedMs),
-            }),
+            },
           }).catch(() => {});
         }
         fetchLeaderboard();

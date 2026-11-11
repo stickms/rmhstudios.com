@@ -21,6 +21,8 @@ import { slugify } from '@/lib/tf2-hud/zip/export';
 import Preview from './Preview';
 import PreviewToolbar from './PreviewToolbar';
 import { SceneProvider } from './scene-context';
+import { api as contractApi } from '@/lib/contract/client';
+import { countTf2HudDownloadApi } from '@/lib/tf2-hud/hud.contract';
 import { Btn, Pill } from './ui';
 
 export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: string }) {
@@ -102,7 +104,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
       if (!token)
-        void fetch(`/api/tf2-hud/huds/${detail.id}/download`, { method: 'POST' }).catch(
+        void contractApi(countTf2HudDownloadApi, { params: { id: detail.id } }).catch(
           () => undefined,
         );
     } catch {

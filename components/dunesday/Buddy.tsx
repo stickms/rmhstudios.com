@@ -14,6 +14,9 @@
 import { MessageCircle, Send, ShieldCheck, ShieldOff, Smile } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { askDunesdayApi } from '@/lib/dunesday/ask.contract';
 import type { DunesdayAsk } from '@/lib/dunesday/ask-schema';
 import { allTitles, isIncluded } from '@/lib/dunesday/state';
 import { useDunesday } from './DunesdayProvider';
@@ -120,30 +123,29 @@ export function BuddyChat({ initialQuestion }: { initialQuestion?: string }) {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const res = await fetch('/api/dunesday/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload(q.slice(0, 500), history)),
+      const data = await api(askDunesdayApi, {
+        body: payload(q.slice(0, 500), history),
         signal: controller.signal,
+        timeoutMs: AI_TIMEOUT_MS,
       });
-      const data = (await res.json().catch(() => ({}))) as { answer?: string; error?: string };
-      if (res.status === 429) {
-        setError(
-          t('ask-slow-down', {
-            defaultValue: 'Whoa, lots of questions! Give it a minute and try again.',
-          }),
-        );
-        return;
-      }
-      if (!res.ok || !data.answer) {
-        setError(
-          data.error ?? t('ask-failed', { defaultValue: 'That didn’t go through. Try again.' }),
-        );
+      if (!data.answer) {
+        setError(t('ask-failed', { defaultValue: 'That didn’t go through. Try again.' }));
         return;
       }
       sfx.bloop();
-      setTurns((cur) => [...cur, { role: 'assistant', content: data.answer as string }]);
+      setTurns((cur) => [...cur, { role: 'assistant', content: data.answer }]);
     } catch (cause) {
+      if (cause instanceof HttpError) {
+        setError(
+          cause.status === 429
+            ? t('ask-slow-down', {
+                defaultValue: 'Whoa, lots of questions! Give it a minute and try again.',
+              })
+            : (serverError(cause) ??
+                t('ask-failed', { defaultValue: 'That didn’t go through. Try again.' })),
+        );
+        return;
+      }
       if ((cause as Error)?.name !== 'AbortError') {
         setError(
           t('ask-offline', { defaultValue: 'Couldn’t reach Buddy. Check your connection.' }),

@@ -19,6 +19,8 @@
  */
 
 import pack from '../game-pack.json';
+import { api } from '@/lib/contract/client';
+import { listBlockedUsersApi } from '@/lib/moderation/moderation.contract';
 import { MP_PROTOCOL_VERSION, BALATRO_LIMITS } from '../net/limits';
 import type { P2pTestHooks } from '../../../../lib/shared/p2p/webrtc';
 import type { MpSession, StartMultiplayerOptions } from './pack-loader';
@@ -79,10 +81,12 @@ function randomId(): string {
 
 /** The site block list (GET /api/moderation/block → {blocked: string[]}); [] on any failure. */
 async function blockedIds(): Promise<string[]> {
-  const res = await fetch('/api/moderation/block', { credentials: 'same-origin' });
-  if (!res.ok) return [];
-  const body = (await res.json()) as { blocked?: unknown };
-  return Array.isArray(body.blocked) ? body.blocked.filter((x): x is string => typeof x === 'string') : [];
+  try {
+    const body = await api(listBlockedUsersApi);
+    return Array.isArray(body.blocked) ? body.blocked.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
 }
 
 export function startMultiplayer(opts: StartMultiplayerOptions): MpSession {

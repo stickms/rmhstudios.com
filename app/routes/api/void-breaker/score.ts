@@ -7,36 +7,41 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { submitVoidBreakerScoreApi } from '@/lib/game/score.contract';
+import { voidBreakerScoreBody } from '@/lib/game/score-schema';
 import { submitGameScore } from '@/lib/game/submit.server';
 
 export const Route = createFileRoute('/api/void-breaker/score')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, session }) => {
-        const body = await request.json().catch(() => ({}));
-        const { username, score, wave, timeMs } = body ?? {};
-        if (typeof score !== 'number') {
-          return Response.json({ error: 'Invalid score' }, { status: 400 });
-        }
+      POST: implement(
+        submitVoidBreakerScoreApi,
+        {
+          body: voidBreakerScoreBody,
+          invalid: () => Response.json({ error: 'Invalid score' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          const { username, score, wave, timeMs } = body;
 
-        const result = await submitGameScore({
-          gameId: 'void-breaker',
-          userId: session.user.id,
-          score,
-          progress: typeof wave === 'number' ? wave : 0,
-          durationMs: typeof timeMs === 'number' ? timeMs : undefined,
-          username,
-        });
+          const result = await submitGameScore({
+            gameId: 'void-breaker',
+            userId: session.user.id,
+            score,
+            progress: typeof wave === 'number' ? wave : 0,
+            durationMs: typeof timeMs === 'number' ? timeMs : undefined,
+            username: username as string | undefined,
+          });
 
-        if (!result.ok) {
-          return Response.json(
-            { error: result.error, reason: result.reason },
-            { status: result.status },
-          );
-        }
-        return Response.json({ success: true, linked: true, moment: result.moment ?? null });
-      }),
+          if (!result.ok) {
+            return Response.json(
+              { error: result.error, reason: result.reason },
+              { status: result.status },
+            );
+          }
+          return Response.json({ success: true, linked: true, moment: result.moment ?? null });
+        },
+      ),
     },
   },
 });

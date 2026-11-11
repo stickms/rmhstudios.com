@@ -24,25 +24,17 @@ import { LogIn, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { getCasinoRoomsApi, type CasinoLobbyRoom } from '@/lib/coins.contract';
 
 export type CasinoGame = 'blackjack' | 'holdem' | 'baccarat' | 'roulette';
 /** Plinko is single-player — it has no lobby, so it gets the prompt alone. */
 export type PreviewGame = CasinoGame | 'plinko';
 
-interface LobbyRoom {
-  roomId: string;
-  name: string;
-  ownerName: string;
-  playerCount: number;
-  maxPlayers: number;
-  inProgress: boolean;
-  smallBlind?: number;
-  bigBlind?: number;
-}
-
 export function SignedOutLobby({ game }: { game: PreviewGame }) {
   const { t } = useTranslation('c-rmhcoins');
-  const [rooms, setRooms] = useState<LobbyRoom[] | null>(null);
+  const [rooms, setRooms] = useState<CasinoLobbyRoom[] | null>(null);
   const hasLobby = game !== 'plinko';
 
   useEffect(() => {
@@ -50,12 +42,11 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch('/api/casino/rooms');
-        if (!res.ok) return;
-        const data = (await res.json()) as Record<CasinoGame, LobbyRoom[]>;
+        const data = await api(getCasinoRoomsApi);
         if (!cancelled) setRooms(data[game] ?? []);
-      } catch {
-        if (!cancelled) setRooms([]);
+      } catch (e) {
+        // A refusal leaves the last list; a dropped connection empties it, as before.
+        if (!(e instanceof HttpError) && !cancelled) setRooms([]);
       }
     };
     void load();

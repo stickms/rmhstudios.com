@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS } from '@/lib/versecraft/characters';
 import { formatPlaytime } from '@/lib/versecraft/persistence';
+import { api } from '@/lib/contract/client';
+import { getVersecraftProgressApi } from '@/lib/versecraft/versecraft.contract';
 import {
   ALL_CHAPTERS, ALL_ROUTES, ALL_ENDINGS,
   getProgressPercentage, DEFAULT_PROGRESS,
@@ -27,8 +29,7 @@ export function ProgressScreen() {
   useEffect(() => {
     if (!isLoggedIn) return;
     setLoading(true);
-    fetch('/api/versecraft/progress', { signal: AbortSignal.timeout?.(10000) })
-      .then(r => r.ok ? r.json() : null)
+    api(getVersecraftProgressApi, { timeoutMs: 10_000, retries: 0 })
       .then(data => {
         if (data?.progress) setDbProgress(data.progress);
       })

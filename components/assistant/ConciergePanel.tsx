@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { cn } from '@/lib/utils';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { askConciergeApi } from '@/lib/assistant/assistant.contract';
 
 interface ConciergeLink {
   label: string;
@@ -38,13 +41,6 @@ function historyFor(messages: Message[]) {
     out.push(m);
   }
   return out.map((m) => ({ role: m.role, content: m.content }));
-}
-
-interface AssistantResponse {
-  answer?: string;
-  links?: ConciergeLink[];
-  error?: string;
-  quotaExceeded?: boolean;
 }
 
 // Keys are stable so translations can override; defaults are the shown chips.
@@ -89,17 +85,33 @@ export function ConciergePanel({ className }: { className?: string }) {
       scrollToEnd();
 
       try {
-        const res = await fetch('/api/assistant', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ question: q, history }),
+        const data = await api(askConciergeApi, {
+          body: { question: q, history },
+          timeoutMs: AI_TIMEOUT_MS,
         });
-        const data = (await res.json().catch(() => ({}))) as AssistantResponse;
-        if (!res.ok || !data.answer) {
-          const msg =
-            data.error ||
-            t('concierge-error', { defaultValue: "Couldn't reach the guide. Try again." });
-          if (res.status === 429) {
+        if (!data.answer) {
+          const msg = t('concierge-error', {
+            defaultValue: "Couldn't reach the guide. Try again.",
+          });
+          toast.error(msg);
+          setMessages((prev) => [
+            ...prev,
+            { id: nextId(), role: 'assistant', content: msg, error: true },
+          ]);
+          return;
+        }
+        setMessages((prev) => [
+          ...prev,
+          { id: nextId(), role: 'assistant', content: data.answer, links: data.links ?? [] },
+        ]);
+      } catch (e) {
+        const generic = t('concierge-error', {
+          defaultValue: "Couldn't reach the guide. Try again.",
+        });
+        if (e instanceof HttpError) {
+          // The server's own words, except for the rate limit, which has copy of its own.
+          const msg = serverError(e) || generic;
+          if (e.status === 429) {
             toast.error(t('concierge-slow', { defaultValue: 'Slow down a moment and try again.' }));
           } else {
             toast.error(msg);
@@ -109,23 +121,13 @@ export function ConciergePanel({ className }: { className?: string }) {
             ...prev,
             { id: nextId(), role: 'assistant', content: msg, error: true },
           ]);
-          return;
+        } else {
+          toast.error(generic);
+          setMessages((prev) => [
+            ...prev,
+            { id: nextId(), role: 'assistant', content: generic, error: true },
+          ]);
         }
-        setMessages((prev) => [
-          ...prev,
-          { id: nextId(), role: 'assistant', content: data.answer!, links: data.links ?? [] },
-        ]);
-      } catch {
-        toast.error(t('concierge-error', { defaultValue: "Couldn't reach the guide. Try again." }));
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: nextId(),
-            role: 'assistant',
-            content: t('concierge-error', { defaultValue: "Couldn't reach the guide. Try again." }),
-            error: true,
-          },
-        ]);
       } finally {
         setLoading(false);
         scrollToEnd();

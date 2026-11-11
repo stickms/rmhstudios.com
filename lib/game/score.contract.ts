@@ -5,7 +5,7 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type { neonDriftwayScoreBody } from './score-schema';
+import type { gameScoreBody, neonDriftwayScoreBody, voidBreakerScoreBody } from './score-schema';
 import type { synapseStormScoreBody } from '@features/synapse-storm/engine/score-schema';
 
 /** Opaque result-moment payload; parse it with `parseScoreMoment`. */
@@ -20,3 +20,14 @@ export const submitSynapseStormScoreApi = endpoint<{
   body: z.infer<typeof synapseStormScoreBody>;
   res: { success: true; moment: ScoreMoment };
 }>()({ method: 'POST', path: '/api/games/synapse-storm/score' });
+
+export const submitVoidBreakerScoreApi = endpoint<{
+  body: z.infer<typeof voidBreakerScoreBody>;
+  res: { success: true; linked: true; moment: ScoreMoment };
+}>()({ method: 'POST', path: '/api/void-breaker/score' });
+
+/** The shared score pipeline: one POST for every scored game that has no bespoke route. */
+export const submitGameScoreApi = endpoint<{
+  body: z.infer<typeof gameScoreBody>;
+  res: { success: true; moment: ScoreMoment };
+}>()({ method: 'POST', path: '/api/games/$id/score' });

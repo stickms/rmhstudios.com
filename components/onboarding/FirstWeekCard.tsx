@@ -15,6 +15,9 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { claimFirstWeekApi } from '@/lib/onboarding.contract';
 import { CheckCircle2, Circle, GraduationCap, Lock, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
@@ -61,12 +64,8 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
   const graduate = async () => {
     setClaiming(true);
     try {
-      const res = await fetch('/api/onboarding/first-week', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.graduated) {
+      const data = await api(claimFirstWeekApi);
+      if (data.graduated) {
         void celebrate({ kind: 'confetti' });
         toast.success(
           t('first-week-graduated', {
@@ -77,10 +76,12 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
         setGraduated(true);
         onDismiss?.();
       } else {
-        toast.error(
-          data.error || t('first-week-graduate-error', { defaultValue: 'Could not claim yet' }),
-        );
+        toast.error(t('first-week-graduate-error', { defaultValue: 'Could not claim yet' }));
       }
+    } catch (e) {
+      toast.error(
+        serverError(e) || t('first-week-graduate-error', { defaultValue: 'Could not claim yet' }),
+      );
     } finally {
       setClaiming(false);
     }

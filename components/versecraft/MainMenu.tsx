@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/versecraft/store';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import { loadGame } from '@/lib/versecraft/persistence';
+import { api } from '@/lib/contract/client';
+import { loadVersecraftSaveApi } from '@/lib/versecraft/versecraft.contract';
 import { spriteUrl } from '@/lib/versecraft/sprites/registry';
 import { ShareSeed } from './ShareSeed';
 import { PublishSeedButton } from './SeedGallery';
@@ -54,8 +56,8 @@ export function MainMenu() {
       if (loadGame(0)) { if (!cancelled) { setHasSave(true); setChecking(false); } return; }
       if (isLoggedIn) {
         try {
-          const res = await fetch('/api/versecraft/save', { signal: AbortSignal.timeout?.(10000) });
-          if (res.ok) { const d = await res.json(); if (!cancelled && d?.saveData) setHasSave(true); }
+          const d = await api(loadVersecraftSaveApi, { timeoutMs: 10_000, retries: 0 });
+          if (!cancelled && d?.saveData) setHasSave(true);
         } catch { /* ignore */ }
       }
       if (!cancelled) setChecking(false);

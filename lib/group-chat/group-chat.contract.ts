@@ -14,6 +14,12 @@ export const getGroupChatApi = endpoint<{ res: { group: Group } }>()({
   path: '/api/group-chats/$id',
 });
 
+/** New messages after a timestamp (the 5s fallback poll for when the live stream is down). 404 for a non-member. */
+export const pollGroupMessagesApi = endpoint<{
+  query: { after: string };
+  res: { messages: Msg[] };
+}>()({ method: 'GET', path: '/api/group-chats/$id/messages' });
+
 /** Send a message (text, a GIF, up to 4 images or an inline poll); answers 201. */
 export const sendGroupMessageApi = endpoint<{
   body: {

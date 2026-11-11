@@ -43,6 +43,8 @@ import {
 import type { InputState, LevelId, RunStats } from '@/lib/neon-driftway/types';
 import { isFullscreen, isLowPowerDevice, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
 import { useGameSession } from '@/hooks/useGameSession';
+import { api } from '@/lib/contract/client';
+import { getGhostApi } from '@/lib/game/replay.contract';
 
 // U14 — loaded only when a player opens photo mode.
 const PhotoMode = lazy(() => import('@/components/games/PhotoMode'));
@@ -183,19 +185,16 @@ export function NeonDriftwayGame() {
     (levelId: LevelId, mode: GhostMode) => {
       ghostPlayerRef.current = null;
       if (mode === 'off') return;
-      void fetch(`/api/replays/ghost?game=neon-driftway&level=${levelId}&vs=${mode}`, {
-        credentials: 'include',
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((body: { ghost: { data: GhostTrace; owner: { name: string | null; handle: string | null } } | null } | null) => {
-          const ghost = body?.ghost;
+      void api(getGhostApi, { query: { game: 'neon-driftway', level: levelId, vs: mode } })
+        .then((body) => {
+          const ghost = body.ghost;
           const game = gameRef.current;
-          if (!ghost || !game || game.isMultiplayer || ghost.data.level !== levelId) return;
+          if (!ghost || !game || game.isMultiplayer || (ghost.data as GhostTrace).level !== levelId) return;
           const name =
             mode === 'pb'
               ? t('ghost-pb-label', { defaultValue: 'Your best' })
               : ghost.owner.name || ghost.owner.handle || t('ghost-top-label', { defaultValue: 'World #1' });
-          ghostPlayerRef.current = new GhostPlayer(ghost.data, name);
+          ghostPlayerRef.current = new GhostPlayer(ghost.data as GhostTrace, name);
         })
         .catch(() => {});
     },

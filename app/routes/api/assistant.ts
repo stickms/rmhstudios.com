@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { assistantAskSchema } from '@/lib/assistant/assistant-schema';
+import { askConciergeApi } from '@/lib/assistant/assistant.contract';
 import { answerQuestion } from '@/lib/assistant/assistant.server';
 
 /**
@@ -11,18 +12,11 @@ import { answerQuestion } from '@/lib/assistant/assistant.server';
  * here is the coarse abuse guard on the (paid) model call.
  */
 
-const schema = z.object({
-  question: z.string().min(1).max(500),
-  history: z
-    .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().max(2000) }))
-    .max(20)
-    .optional(),
-});
-
 export const Route = createFileRoute('/api/assistant')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        askConciergeApi,
         {
           rateLimit: {
             limit: 20,
@@ -30,7 +24,7 @@ export const Route = createFileRoute('/api/assistant')({
             prefix: 'assistant',
             message: 'Slow down a moment',
           },
-          body: schema,
+          body: assistantAskSchema,
           allowEmptyBody: true,
         },
         async ({ session, body }) => {

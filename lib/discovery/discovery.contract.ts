@@ -1,10 +1,14 @@
 /**
  * Contracts for the per-account /api/discovery/** settings (redesign audit C1,
- * batch 7): keyword alerts, the "On this day" opt-in and watch levels.
+ * batch 7): keyword alerts, the "On this day" opt-in and watch levels; batch 10 adds the
+ * custom-feed reads and Surprise me.
  * Client-safe: every type is `import type`.
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
+import type { FeedItem } from '@/lib/feed-types';
+import type { FeedSummary } from '@/lib/discovery/feeds.server';
+import type { Surprise } from '@/lib/discovery/surprise.server';
 import type {
   alertCreateSchema,
   CustomFeedInput,
@@ -65,3 +69,29 @@ export const whyTrendingApi = endpoint<{
   params: { tag: string };
   res: TrendingWhy;
 }>()({ method: 'GET', path: '/api/discovery/trending/$tag' });
+
+/** The caller's feeds, the ones they subscribe to and popular public ones. */
+export const listFeedsApi = endpoint<{
+  res: { mine: FeedSummary[]; subscribed: FeedSummary[]; popular: FeedSummary[] };
+}>()({ method: 'GET', path: '/api/feeds' });
+
+/** One custom feed with a keyset page of its posts. 404 `Not found` when it is missing or private. */
+export interface CustomFeedView {
+  feed: FeedSummary & {
+    people: string[];
+    owner: { name: string | null; handle: string | null; id: string };
+  };
+  items: FeedItem[];
+  nextCursor: string | null;
+}
+
+export const getCustomFeedApi = endpoint<{
+  query: { cursor?: string | undefined };
+  res: CustomFeedView;
+}>()({ method: 'GET', path: '/api/feeds/$id' });
+
+/** One random destination, avoiding `not` (the one just shown). 404 when nothing qualifies. */
+export const getSurpriseApi = endpoint<{
+  query: { not?: string | undefined };
+  res: Surprise;
+}>()({ method: 'GET', path: '/api/discovery/surprise' });

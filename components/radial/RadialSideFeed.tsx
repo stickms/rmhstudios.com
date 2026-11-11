@@ -24,7 +24,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useSession } from '@/components/Providers';
-import type { FeedItem } from '@/lib/feed-types';
+import type { FeedFilter, FeedItem } from '@/lib/feed-types';
+import { api } from '@/lib/contract/client';
+import { getTimelineApi } from '@/lib/feed/feed-reads.contract';
 
 type SurfaceId = 'following' | 'news' | 'game';
 
@@ -32,8 +34,8 @@ interface Surface {
   id: SurfaceId;
   tKey: string;
   label: string;
-  /** Query string for /api/rmharks. */
-  query: string;
+  /** Query for /api/rmharks. */
+  query: { feed?: 'following'; filter: FeedFilter };
   requiresAuth?: boolean;
 }
 
@@ -42,11 +44,11 @@ const SURFACES: Surface[] = [
     id: 'following',
     tKey: 'feed-following',
     label: 'Following',
-    query: 'feed=following&filter=all',
+    query: { feed: 'following', filter: 'all' },
     requiresAuth: true,
   },
-  { id: 'news', tKey: 'feed-news', label: 'News', query: 'filter=news' },
-  { id: 'game', tKey: 'feed-games', label: 'Games', query: 'filter=game' },
+  { id: 'news', tKey: 'feed-news', label: 'News', query: { filter: 'news' } },
+  { id: 'game', tKey: 'feed-games', label: 'Games', query: { filter: 'game' } },
 ];
 
 const PAGE_SIZE = 8;
@@ -150,12 +152,10 @@ export function RadialSideFeed() {
     setItems(null);
     (async () => {
       try {
-        const res = await fetch(`/api/rmharks?limit=${PAGE_SIZE}&${surface.query}`, {
-          credentials: 'include',
+        const body = await api(getTimelineApi, {
+          query: { limit: PAGE_SIZE, ...surface.query },
           signal: controller.signal,
         });
-        if (!res.ok) throw new Error(String(res.status));
-        const body = (await res.json()) as { items: FeedItem[] };
         const next = body.items ?? [];
         cache.set(active, { items: next, at: Date.now() });
         setItems(next);

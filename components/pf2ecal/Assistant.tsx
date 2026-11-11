@@ -30,6 +30,9 @@ import { AnimatePresence, m as motion } from 'framer-motion';
 import { ArrowUp, Bot, Sparkles, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { askPf2ecalApi } from '@/lib/pf2ecal/pf2ecal.contract';
 import { StatusLine, useAssistantStatus } from './Loading';
 import { RichText } from './rich-text';
 import { EASE, SPRING_PANEL, SPRING_PRESS } from './motion';
@@ -112,21 +115,24 @@ export function Assistant() {
     abortRef.current = controller;
 
     try {
-      const response = await fetch('/api/pf2ecal/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: trimmed, history }),
+      const data = await api(askPf2ecalApi, {
+        body: { question: trimmed, history },
         signal: controller.signal,
+        timeoutMs: AI_TIMEOUT_MS,
       });
-      const data = (await response.json()) as { answer?: string; error?: string };
-      if (!response.ok || !data.answer) {
+      if (!data.answer) {
+        setError(t('ask-failed', { defaultValue: 'That did not go through. Try again.' }));
+        return;
+      }
+      setTurns((current) => [...current, { role: 'assistant', content: data.answer }]);
+    } catch (cause) {
+      if (cause instanceof HttpError) {
         setError(
-          data.error ?? t('ask-failed', { defaultValue: 'That did not go through. Try again.' }),
+          serverError(cause) ??
+            t('ask-failed', { defaultValue: 'That did not go through. Try again.' }),
         );
         return;
       }
-      setTurns((current) => [...current, { role: 'assistant', content: data.answer as string }]);
-    } catch (cause) {
       // An abort is the user closing the panel, not a failure to report.
       if ((cause as Error)?.name !== 'AbortError') {
         setError(

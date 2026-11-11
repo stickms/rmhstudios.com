@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { translatePostApi } from '@/lib/ai/ai.contract';
 import { useLocaleStore } from '@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
 
@@ -33,19 +35,17 @@ export function usePostTranslation(postId: string): PostTranslation {
     }
     setTranslating(true);
     try {
-      const res = await fetch(
-        `/api/rmharks/${postId}/translate?to=${encodeURIComponent(LOCALE_TO_LANGUAGE_NAME[locale])}`,
-        { credentials: 'include' },
-      );
-      if (!res.ok) {
-        toast.error(t('translate-error', { defaultValue: 'Could not translate this post.' }));
-        return;
-      }
-      const data = (await res.json()) as { text?: string };
+      const data = await api(translatePostApi, {
+        params: { id: postId },
+        query: { to: LOCALE_TO_LANGUAGE_NAME[locale] },
+        timeoutMs: AI_TIMEOUT_MS,
+      });
       if (data.text) {
         setTranslatedText(data.text);
         setShowTranslated(true);
       }
+    } catch {
+      toast.error(t('translate-error', { defaultValue: 'Could not translate this post.' }));
     } finally {
       setTranslating(false);
     }

@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { RelativeTime } from '@/components/ui/RelativeTime';
-import { api } from '@/lib/contract/client';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import {
   addPredictionCommentApi,
+  devilsAdvocateApi,
   listPredictionCommentsApi,
 } from '@/lib/predictions/predictions.contract';
 
@@ -76,13 +77,11 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
     if (arguing) return;
     setArguing(true);
     try {
-      const res = await fetch(`/api/predictions/${marketId}/devils-advocate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ side: target }),
+      const d = await api(devilsAdvocateApi, {
+        params: { id: marketId },
+        body: { side: target },
+        timeoutMs: AI_TIMEOUT_MS,
       });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error);
       setArgument({ side: d.side, text: d.argument });
     } catch {
       toast.error(

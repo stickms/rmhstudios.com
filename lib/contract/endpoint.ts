@@ -4,7 +4,7 @@
  *
  * ## The problem this solves
  *
- * The client called the site API through ~840 raw `fetch('/api/…')` strings.
+ * The client called the site API through ~840 raw string fetches of `/api/…` URLs.
  * Every call site re-declared the response shape by hand (or cast it), and the
  * server's zod schemas — which `defineHandler` already validates against — were
  * thrown away at the wire. A renamed field or a moved route compiled fine and

@@ -194,6 +194,30 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * headroom), handing back the ~9 KB this upgrade saved instead of letting it
  * become slack for the next regression to spend.
  *
+ * **2026-11-11 — entry raised 537,900 → 541,700 B; critical-path raw LOWERED
+ * 1,291,000 → 1,156,000 B and brotli LOWERED 359,500 → 328,000 B (OPT-01 line).**
+ * Same mechanism as 2026-10-08, and again no feature bought the bytes. Redesign
+ * phase 30 (#1562) put the typed API client on the static graph of three site-wide
+ * hooks (experiments, playtime heartbeat, history beat); rolldown then folded the
+ * shared chunks that carry TanStack Start's serializer (`seroval`, +25.0 KB),
+ * `@tanstack/query-core` (+14.7 KB) and `start-client-core` (+8.4 KB) into the
+ * entry instead of shipping them as separate critical-path files. Measured with
+ * `vite build --sourcemap`, bytes attributed per package from the entry's map:
+ *
+ *   | metric                | phase 29 (00a9d94) | phase 30 (f3c15ab) | phase 31 |
+ *   | --------------------- | -----------------: | -----------------: | -------: |
+ *   | entry, raw            |          477,414 B |          536,718 B | 537,952 B |
+ *   | critical path, raw    |        1,125,789 B |        1,116,281 B | 1,116,833 B |
+ *   | critical path, brotli |          322,243 B |          316,769 B | 316,849 B |
+ *   | chunks on the path    |                101 |                 76 |       76 |
+ *
+ * Every page downloads the whole critical path before it hydrates, so this is
+ * ~9 KB fewer raw bytes in 25 fewer requests; phase 31's own change (the rest of
+ * the C1 contract migration) is +1.2 KB of entry. The entry band is measured +
+ * 0.68%, as before; both critical-path bands are re-anchored to the measurement
+ * + 3.5% (the original 2026-08-05 headroom), so the requests and bytes this saved
+ * are handed back instead of becoming slack for the next regression.
+ *
  * Budgets that only ever move up are theatre. Per OPT-01: raising one requires
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
@@ -203,9 +227,9 @@ const BUDGETS = {
   // `assetsInlineLimit`); the 40 KB ceiling leaves ~0.6 KB of headroom.
   // Existing required JavaScript budgets are unchanged.
   siteCssBrotli: 40 * 1024,
-  entryRaw: 537_900,
-  criticalPathRaw: 1_291_000,
-  criticalPathBrotli: 359_500,
+  entryRaw: 541_700,
+  criticalPathRaw: 1_156_000,
+  criticalPathBrotli: 328_000,
 };
 
 /**

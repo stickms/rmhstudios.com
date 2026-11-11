@@ -1,11 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getVersecraftProgressApi } from '@/lib/versecraft/versecraft.contract';
 import { prisma } from '@/lib/prisma.server';
 
 export const Route = createFileRoute('/api/versecraft/progress')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getVersecraftProgressApi,
         { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'versecraft-progress' } },
         async ({ session }) => {
           const progress = await prisma.versecraftProgress.findUnique({

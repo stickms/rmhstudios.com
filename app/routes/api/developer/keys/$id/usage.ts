@@ -6,7 +6,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getDeveloperKeyUsageApi } from '@/lib/devplatform/keys.contract';
 import { prisma } from '@/lib/prisma.server';
 import { withRateLimit } from '@/lib/rate-limit';
 import { getKeyUsage } from '@/lib/api/usage.server';
@@ -14,7 +15,7 @@ import { getKeyUsage } from '@/lib/api/usage.server';
 export const Route = createFileRoute('/api/developer/keys/$id/usage')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ request, params, session }) => {
+      GET: implement(getDeveloperKeyUsageApi, {}, async ({ request, params, session }) => {
         const limited = withRateLimit(request, 'read', { scope: session.user.id });
         if (limited) return limited;
 

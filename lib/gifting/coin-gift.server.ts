@@ -16,10 +16,10 @@
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { createNotification } from '@/lib/notifications.server';
+import { GIFT_NOTE_MAX } from '@/lib/gifting/coin-gift-limits';
 
 export const GIFT_MIN = 10;
 export const GIFT_MAX = 10_000;
-export const GIFT_NOTE_MAX = 280;
 /** Max distinct coin gifts a single user may send per UTC day. */
 export const GIFT_DAILY_CAP = 10;
 

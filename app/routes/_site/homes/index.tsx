@@ -37,6 +37,9 @@ import {
   type SearchFilters,
 } from '@/lib/homes/types';
 import { parseFilters, serializeFilters } from '@/lib/homes/query';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { browseHomeListingsApi } from '@/lib/homes/homes.contract';
 
 export const Route = createFileRoute('/_site/homes/')({
   head: () => ({
@@ -84,21 +87,14 @@ function HomesBrowsePage() {
       if (typeof window !== 'undefined') {
         window.history.replaceState(null, '', `/homes?${qs.toString()}`);
       }
-      const res = await fetch(`/api/homes/listings?${qs.toString()}`);
+      const data = await api(browseHomeListingsApi, { query: Object.fromEntries(qs) });
       if (myReq !== reqIdRef.current) return;
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || t('homes-search-failed', { defaultValue: 'Search failed' }));
-      }
-      const data = await res.json();
       setListings(data.listings ?? []);
       setCenter(data.center ?? null);
       setTotal(data.total ?? 0);
     } catch (err) {
       if (myReq === reqIdRef.current) {
-        toast.error(
-          err instanceof Error ? err.message : t('homes-search-failed', { defaultValue: 'Search failed' }),
-        );
+        toast.error(serverError(err) ?? t('homes-search-failed', { defaultValue: 'Search failed' }));
         setListings([]);
       }
     } finally {

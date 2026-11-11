@@ -38,7 +38,8 @@ import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
 import { prefetchPostDetail } from '@/lib/feed/post-detail-prefetch';
 import { reactToPostApi, viewPostApi } from '@/lib/feed/rmhark-actions.contract';
-import { api } from '@/lib/contract/client';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { translatePostApi } from '@/lib/ai/ai.contract';
 
 interface RMHarkCardProps {
  item: FeedItem;
@@ -120,19 +121,17 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  }
  setTranslating(true);
  try {
- const res = await fetch(
- `/api/rmharks/${actualId}/translate?to=${encodeURIComponent(LOCALE_TO_LANGUAGE_NAME[locale])}`,
- { credentials:'include'},
- );
- if (!res.ok) {
- toast.error(t('translate-error', { defaultValue:'Could not translate this post.'}));
- return;
- }
- const data = await res.json();
+ const data = await api(translatePostApi, {
+ params: { id: actualId },
+ query: { to: LOCALE_TO_LANGUAGE_NAME[locale] },
+ timeoutMs: AI_TIMEOUT_MS,
+ });
  if (data.text) {
  setTranslatedText(data.text);
  setShowTranslated(true);
  }
+ } catch {
+ toast.error(t('translate-error', { defaultValue:'Could not translate this post.'}));
  } finally {
  setTranslating(false);
  }

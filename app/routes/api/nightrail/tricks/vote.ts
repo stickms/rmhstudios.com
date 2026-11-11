@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { voteNightrailTrickApi } from '@/lib/trick-week/nightrail-tricks.contract';
 import { prisma } from '@/lib/prisma.server';
 import { voteTrickSchema, weekKey } from '@/lib/trick-week/trick-week';
 
@@ -10,7 +11,8 @@ import { voteTrickSchema, weekKey } from '@/lib/trick-week/trick-week';
 export const Route = createFileRoute('/api/nightrail/tricks/vote')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        voteNightrailTrickApi,
         { rateLimit: 'write', body: voteTrickSchema },
         async ({ userId, body }) => {
           const week = weekKey();

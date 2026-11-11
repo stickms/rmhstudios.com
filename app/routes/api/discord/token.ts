@@ -1,19 +1,22 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { discordTokenApi } from '@/lib/discord.contract';
 import { prisma } from '@/lib/prisma.server';
 
 export const Route = createFileRoute('/api/discord/token')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 10, windowMs: 60_000, prefix: 'discord-token' } },
-        async ({ request }) => {
+      POST: implement(
+        discordTokenApi,
+        {
+          auth: 'none',
+          rateLimit: { limit: 10, windowMs: 60_000, prefix: 'discord-token' },
+          body: z.object({ code: z.string().min(1) }),
+          invalid: () => Response.json({ error: 'Missing code' }, { status: 400 }),
+        },
+        async ({ body: { code } }) => {
           try {
-            const { code } = await request.json();
-            if (!code || typeof code !== 'string') {
-              return Response.json({ error: 'Missing code' }, { status: 400 });
-            }
-
             const clientId = process.env.DISCORD_ACTIVITY_CLIENT_ID;
             const clientSecret = process.env.DISCORD_ACTIVITY_CLIENT_SECRET;
 

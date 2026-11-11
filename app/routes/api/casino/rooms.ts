@@ -17,7 +17,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getCasinoRoomsApi } from '@/lib/coins.contract';
 
 /** Empty lobbies, used whenever the hub is unreachable. */
 const EMPTY = { blackjack: [], holdem: [], baccarat: [], roulette: [] };
@@ -32,7 +33,8 @@ function socketInternalUrl(): string {
 export const Route = createFileRoute('/api/casino/rooms')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getCasinoRoomsApi,
         { auth: 'none', rateLimit: 'read', label: 'casino-rooms' },
         async () => {
           // A hub that is restarting must not take the page down with it: the

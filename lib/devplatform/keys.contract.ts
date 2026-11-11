@@ -41,3 +41,24 @@ export const revokeDeveloperKeyApi = endpoint<{ res: { success: true } }>()({
   method: 'DELETE',
   path: '/api/developer/keys/$id',
 });
+
+export interface KeyUsageDay {
+  date: string;
+  requests: number;
+  units: number;
+  clientErrors: number;
+  serverErrors: number;
+}
+
+export interface DeveloperKeyUsage {
+  key: { id: string; name: string };
+  days: number;
+  usage: KeyUsageDay[];
+  totals: { requests: number; units: number; clientErrors: number; serverErrors: number };
+}
+
+/** A key's own usage history (owner only; `days` is clamped to 1..90, default 30). 404 when the key is not theirs. */
+export const getDeveloperKeyUsageApi = endpoint<{
+  query: { days?: number | undefined };
+  res: DeveloperKeyUsage;
+}>()({ method: 'GET', path: '/api/developer/keys/$id/usage' });

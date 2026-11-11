@@ -53,7 +53,8 @@ import {
   repostCommentApi,
   deleteCommentApi,
 } from '@/lib/feed/rmhark-actions.contract';
-import { api } from '@/lib/contract/client';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { translateCommentApi } from '@/lib/ai/ai.contract';
 
 import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
 export interface Comment {
@@ -182,17 +183,17 @@ export function CommentItem({
     const to = LOCALE_TO_LANGUAGE_NAME[locale];
     setTranslating(true);
     try {
-      const res = await fetch(
-        `/api/comments/${comment.id}/translate?to=${encodeURIComponent(to)}`,
-        { credentials: 'include' },
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data.text) {
-          setTranslatedText(data.text);
-          setShowTranslated(true);
-        }
+      const data = await api(translateCommentApi, {
+        params: { commentId: comment.id },
+        query: { to },
+        timeoutMs: AI_TIMEOUT_MS,
+      });
+      if (data.text) {
+        setTranslatedText(data.text);
+        setShowTranslated(true);
       }
+    } catch {
+      // A failed translation leaves the comment as it was; there is nothing to report.
     } finally {
       setTranslating(false);
     }

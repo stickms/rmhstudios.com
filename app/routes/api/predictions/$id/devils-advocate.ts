@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { devilsAdvocateApi } from '@/lib/predictions/predictions.contract';
 import { prisma } from '@/lib/prisma.server';
 import {
   advocateSchema,
@@ -12,7 +13,8 @@ import {
 export const Route = createFileRoute('/api/predictions/$id/devils-advocate')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        devilsAdvocateApi,
         { rateLimit: 'ai', body: advocateSchema },
         async ({ params, userId, body }) => {
           const market = await visibleMarket(params.id, userId);

@@ -4,7 +4,7 @@
 
 import { encodeRunLog } from '../verify/log-codec';
 import { api } from '@/lib/contract/client';
-import { getAltairRunStatusApi, startAltairRunApi } from '../altair.contract';
+import { finishAltairRunApi, getAltairRunStatusApi, startAltairRunApi } from '../altair.contract';
 import { loadoutFromUpgrades } from './loadout';
 import { setSoloSession, type ActiveRun } from './session';
 import type { SoloLoadout } from './solo-log';
@@ -62,11 +62,9 @@ export async function submitSoloRun(
       enc = await encodeRunLog(log);
     }
     if (!enc) return 'offline';
-    const res = await fetch('/api/altair/run/finish', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const body = await api(finishAltairRunApi, {
       keepalive,
-      body: JSON.stringify({
+      body: {
         runId,
         log: enc,
         claim: {
@@ -75,10 +73,8 @@ export async function submitSoloRun(
           level: r.level,
           finalCoins: r.finalCoins,
         },
-      }),
+      },
     });
-    if (!res.ok) return 'offline';
-    const body = (await res.json()) as { status?: string };
     if (
       body.status === 'queued' ||
       body.status === 'inline' ||

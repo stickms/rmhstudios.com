@@ -10,6 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { submitNightrailTrickApi } from '@/lib/trick-week/nightrail-tricks.contract';
 import type { RunStats } from '@features/nightrail/engine/types';
 
 export function TrickSubmit({ runStats }: { runStats: RunStats }) {
@@ -21,17 +24,22 @@ export function TrickSubmit({ runStats }: { runStats: RunStats }) {
   const submit = async () => {
     setState('busy');
     try {
-      const res = await fetch('/api/nightrail/tricks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const body = await api(submitNightrailTrickApi, {
+        body: {
           level: runStats.level,
           score: Math.round(runStats.bestCombo),
           multiplier: Math.round((runStats.bestComboMultiplier ?? 1) * 10) / 10,
           chain,
-        }),
+        },
       });
-      if (res.status === 422) {
+      toast.success(
+        body.kept
+          ? t('trick-kept', { defaultValue: 'You already entered a bigger trick this week.' })
+          : t('trick-entered', { defaultValue: 'Entered in this week’s trick vote.' }),
+      );
+      setState('done');
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 422) {
         toast.error(
           t('trick-not-recorded', {
             defaultValue: 'Your score has not been recorded yet. Try again in a moment.',
@@ -40,15 +48,6 @@ export function TrickSubmit({ runStats }: { runStats: RunStats }) {
         setState('idle');
         return;
       }
-      if (!res.ok) throw new Error(String(res.status));
-      const body = (await res.json()) as { kept?: boolean };
-      toast.success(
-        body.kept
-          ? t('trick-kept', { defaultValue: 'You already entered a bigger trick this week.' })
-          : t('trick-entered', { defaultValue: 'Entered in this week’s trick vote.' }),
-      );
-      setState('done');
-    } catch {
       toast.error(t('trick-error', { defaultValue: 'Could not enter the trick.' }));
       setState('idle');
     }
