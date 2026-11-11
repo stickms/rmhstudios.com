@@ -90,6 +90,31 @@ function cacheItemUsers(items: FeedItem[]) {
  *  (suspended mobile tab, dropped socket, proxy/CDN black hole). */
 const FEED_FETCH_TIMEOUT_MS = 20_000;
 
+/**
+ * One page of the timeline. Twitter-shaped surface naming: the "friends" tab is the
+ * Following feed. The store owns the timeout (`FEED_FETCH_TIMEOUT_MS`) and the supersede
+ * abort, so the client's own ceiling and its GET retry are off.
+ */
+function fetchTimeline(
+  filter: FeedFilter,
+  search: string | null,
+  cursor: string | null,
+  signal: AbortSignal,
+) {
+  return api(getTimelineApi, {
+    query: {
+      limit: 20,
+      filter,
+      ...(filter === 'friends' ? { feed: 'following' as const } : {}),
+      ...(cursor ? { cursor } : {}),
+      ...(search ? { search } : {}),
+    },
+    signal,
+    timeoutMs: 0,
+    retries: 0,
+  });
+}
+
 // Request coordination lives outside the store — it drives no UI, only guards
 // against stale/hung requests. `requestGeneration` is bumped whenever a fetch
 // starts or the surface changes; a response whose generation is no longer
@@ -173,19 +198,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     const { filter, search } = get();
     set({ loading: true, error: false });
     try {
-      // The store owns the timeout (`FEED_FETCH_TIMEOUT_MS`) and the supersede abort, so the
-      // client's own ceiling and its GET retry are off.
-      const data = await api(getTimelineApi, {
-        query: {
-          limit: 20,
-          filter,
-          ...(filter === 'friends' ? { feed: 'following' as const } : {}),
-          ...(search ? { search } : {}),
-        },
-        signal: controller.signal,
-        timeoutMs: 0,
-        retries: 0,
-      });
+      const data = await fetchTimeline(filter, search, null, controller.signal);
       if (generation !== requestGeneration) return;
 
       cacheItemUsers(data.items as FeedItem[]);
@@ -255,20 +268,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     set({ loading: true, error: false });
     try {
-      // Twitter-shaped surface naming: the "friends" tab is the Following feed. The store owns
-      // the timeout and the supersede abort, so the client's own ceiling and GET retry are off.
-      const data = await api(getTimelineApi, {
-        query: {
-          limit: 20,
-          filter,
-          ...(filter === 'friends' ? { feed: 'following' as const } : {}),
-          ...(cursor ? { cursor } : {}),
-          ...(search ? { search } : {}),
-        },
-        signal: controller.signal,
-        timeoutMs: 0,
-        retries: 0,
-      });
+      const data = await fetchTimeline(filter, search, cursor, controller.signal);
 
       // A newer fetch (or a surface switch) superseded this one — drop the
       // result so it can't clobber the current surface.

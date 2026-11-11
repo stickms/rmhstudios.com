@@ -243,7 +243,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
     const timer = setTimeout(async () => {
       try {
         const data = await api(universalSearchApi, {
-          query: { q, tab: 'top' },
+          query: { q },
           signal: ctrl.signal,
         });
         setRemote({
