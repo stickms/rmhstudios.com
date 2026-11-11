@@ -51,7 +51,7 @@ item has `evidence`, `target`, `steps`, a `stub` where code helps, and a
 | 6 | [AR4](#ar4--the-source-engine-port-is-its-own-package) | The Source-engine port (about 190k lines, a third of `lib/`) leaves the site's compile and test path | structure | L | M |
 | 7 | [OP1](#op1--a-commit-gate-that-runs-here) | A commit gate that runs on a 15 GB machine. It was skipped on every commit of phases 28–32 | practice | L | S |
 | 8 | [OP2](#op2--perf-assertions-that-do-not-flake) | Perf assertions on shared CI runners that compare medians, not one sample | practice | M | S |
-| 9 | [RT2](#rt2--edge-cache-that-is-in-the-repo) | The anonymous HTML cache exists; the Cloudflare rule that makes it work is not in the repo, and two of the busiest page types are not on the allowlist | perf | M | S |
+| 9 | [RT2](#rt2--an-edge-cache-that-is-measured) | The anonymous HTML cache and its Cloudflare rule exist; nothing checks the edge returns a HIT, and two of the busiest page types are not on the allowlist | perf | M | S |
 | 10 | [DT1](#dt1--a-census-before-any-schema-work) | A table and product census (rows, last write, 30-day actives) so pruning is decided by data | structure | M | S |
 | 11 | [OP3](#op3--one-realtime-process-that-can-restart) | One realtime process with state outside it and a drain | reliability | L | L |
 | 12 | [DS1](#ds1--delete-the-runtime-before-choosing-the-paint) | Delete the material runtime first, under the current look; change identity second | perf/appearance | L | M |
@@ -437,7 +437,7 @@ export function toast(...args: Args) {
 `@radix-ui/react-dialog` in the entry closure (add them to its forbidden list
 as each leaves), and `entryRaw` is at or under 350,000.
 
-### RT2 — Edge cache that is in the repo
+### RT2 — An edge cache that is measured
 
 ```yaml
 id: RT2
@@ -446,19 +446,19 @@ impact: M
 effort: S
 risk: low
 depends: [RT3]
-evidence: anon-html-cache marks 10 audited paths public; deploy/terraform contains only dns.tf; Cloudflare does not cache HTML without a rule; /explore and /games/<id> send no Cache-Control when signed out
-target: the cache rule is code; synthetic-perf asserts a HIT; the allowlist covers the busiest signed-out pages
+evidence: server/nitro/anon-html-cache.ts marks 10 audited paths public; deploy/apply-cloudflare-cache-rules.sh carries the matching Cloudflare rule and a test holds the two lists together; nothing checks that the edge actually returns a HIT; /explore and /games/<id> send no Cache-Control when signed out
+target: synthetic-perf asserts a HIT; the allowlist covers the busiest signed-out pages
 ```
 
-Steps: add `cloudflare_ruleset` for "cache eligible when origin says public"
-to `deploy/terraform` (if a dashboard rule exists, import it; if none exists,
-the allowlist has never had an effect); add a `cf-cache-status` assertion to
-`synthetic-perf.yml`; extend the allowlist to game and app landing pages and
-`/explore` after checking each for per-viewer content, with the same test
-that guards the current ten.
+Steps: add a `cf-cache-status` assertion to `synthetic-perf.yml` (two
+requests a second apart to `/games`, the second must be a HIT), so a rule
+that was never applied or has drifted on the dashboard is noticed; extend
+the allowlist and the rule together to game and app landing pages and
+`/explore` after reading each route for per-viewer content, under the same
+test that guards the current ten.
 
-**Done when:** two requests a second apart to `/games` from the synthetic
-check return `cf-cache-status: HIT` on the second.
+**Done when:** the synthetic check reports a HIT on `/games` and on one game
+landing page.
 
 ### RT3 — CSP nonces and the shared cache
 
@@ -711,7 +711,7 @@ editing the same files.
 | 2 | Perf assertion medians; gate diagnostics | OP2, OP1 |
 | 3 | No nonce on shared-cache responses | RT3 |
 | 4 | `defineQuery`, 23 queries files converted | AR2 |
-| 5 | Cloudflare cache rule in Terraform; allowlist widened | RT2 |
+| 5 | Edge HIT asserted in synthetic-perf; allowlist widened | RT2 |
 | 6 | Census job and page | DT1 |
 | 7 | Entry diet, one cut per pull request | RT1 |
 | 8 | `packages/core`, then `packages/engine-source` | AR1 steps 1–2, AR4 |
