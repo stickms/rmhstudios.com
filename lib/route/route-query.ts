@@ -22,7 +22,15 @@
  * Client-safe: the server half is a `createServerFn` stub that only the SSR
  * loader ever calls.
  */
-import type { QueryClient, QueryKey, UseQueryOptions } from '@tanstack/react-query';
+import {
+  queryOptions,
+  type QueryClient,
+  type QueryKey,
+  type UseQueryOptions,
+} from '@tanstack/react-query';
+import { createIsomorphicFn } from '@tanstack/react-start';
+import { api, apiUrl, type ApiInput } from '@/lib/contract/client';
+import type { Endpoint, ResOf } from '@/lib/contract/endpoint';
 
 const ON_SERVER = typeof window === 'undefined';
 
@@ -60,4 +68,65 @@ export async function prefetchRouteQuery<TData, TKey extends QueryKey>(
   // `undefined`, not void: a loader returning this keeps `loaderData: undefined`, which is what
   // `definePage`'s head context expects.
   return undefined;
+}
+
+// createIsomorphicFn, not a `typeof window` branch: Start's compiler drops the `.server()`
+// half, and with it the `.server` import, from the client graph (see app/router.tsx).
+const readOnServer = createIsomorphicFn()
+  .server(
+    async (
+      template: string,
+      params: Record<string, string> | undefined,
+      url: string,
+    ): Promise<unknown> =>
+      (await import('@/lib/api/internal-dispatch.server')).readInternal(template, params, url),
+  )
+  .client(async (): Promise<unknown> => {
+    throw new Error('readOnServer called in the browser');
+  });
+
+/**
+ * `queryOptions` for one GET contract, written once (third-pass audit AR2).
+ *
+ * In the browser the `queryFn` is the typed `api()` call. In a route loader on the
+ * server it runs the SAME route handler in-process with the page request's cookie, so
+ * the session check, validation and load exist in one place: the route. No
+ * `createServerFn` twin.
+ *
+ * ```ts
+ * export const adminFlagsQuery = () =>
+ *   contractQuery(['admin', 'flags'], listAdminFlagsApi, undefined, { staleTime: 15_000 });
+ * ```
+ */
+export function contractQuery<E extends Endpoint, const TKey extends QueryKey>(
+  queryKey: TKey,
+  contract: E,
+  input?: Pick<ApiInput<E>, 'params' | 'query'> & { retries?: number; timeoutMs?: number },
+  options?: { staleTime?: number; enabled?: boolean },
+) {
+  const { params, query, ...transport } = (input ?? {}) as {
+    params?: Record<string, string>;
+    query?: Record<string, unknown>;
+    retries?: number;
+    timeoutMs?: number;
+  };
+  return queryOptions({
+    queryKey,
+    queryFn: async ({ signal }): Promise<ResOf<E>> => {
+      if (ON_SERVER) {
+        const url = apiUrl(contract, {
+          ...(params ? { params } : {}),
+          ...(query ? { query } : {}),
+        });
+        return (await readOnServer(contract.path, params, url)) as ResOf<E>;
+      }
+      return (api as (e: Endpoint, i: unknown) => Promise<ResOf<E>>)(contract, {
+        ...(params ? { params } : {}),
+        ...(query ? { query } : {}),
+        ...transport,
+        signal,
+      });
+    },
+    ...options,
+  });
 }

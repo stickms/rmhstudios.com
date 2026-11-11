@@ -41,6 +41,7 @@
  * ```
  */
 
+import { isInternalRequest } from '@/lib/api/internal-request.server';
 import { createHash } from 'node:crypto';
 import type { z } from 'zod';
 import { auth } from '@/lib/auth';
@@ -643,7 +644,9 @@ export function defineHandler<
       }
 
       /* 2. Rate limit ---------------------------------------------------- */
-      if (options.rateLimit) {
+      // A loader's in-process read of this route (lib/api/internal-dispatch.server.ts) is
+      // part of a page view that was already admitted; it is not charged again.
+      if (options.rateLimit && !isInternalRequest(request)) {
         const limited = await resolveRateLimit(request, options.rateLimit, userId);
         if (limited) {
           recordCounter('ratelimit.rejected');

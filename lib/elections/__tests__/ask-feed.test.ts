@@ -63,7 +63,12 @@ describe('election feed card', () => {
   it('only appears in the window around Election Day', () => {
     expect(isFeedWindow(cycle, new Date('2026-09-01T12:00:00Z'))).toBe(false); // 63 days out
     expect(isFeedWindow(cycle, new Date('2026-10-01T12:00:00Z'))).toBe(true);
-    expect(isFeedWindow(cycle, new Date('2026-11-04T12:00:00Z'))).toBe(true);
+    expect(isFeedWindow(cycle, new Date('2026-11-03T12:00:00Z'))).toBe(true); // Election Day
+    expect(isFeedWindow(cycle, new Date('2026-11-04T12:00:00Z'))).toBe(true); // the night's results
+    expect(isFeedWindow(cycle, new Date('2026-11-05T23:00:00Z'))).toBe(true); // inside the two-day tail
+    // The count goes on for weeks at /elections; the feed stops leading with it.
+    expect(isFeedWindow(cycle, new Date('2026-11-06T12:00:00Z'))).toBe(false);
+    expect(isFeedWindow(cycle, new Date('2026-11-11T12:00:00Z'))).toBe(false);
     expect(isFeedWindow(cycle, new Date('2026-12-30T12:00:00Z'))).toBe(false);
   });
   it('is a calendar-only card when the source is down', () => {
