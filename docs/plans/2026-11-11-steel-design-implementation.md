@@ -26,7 +26,9 @@ Steel is a flat, neutral page set in one typeface and divided by hairline rules.
 There are no cards, gradients, blurs or shadows on content. Polished chrome is
 the only material, and it appears in exactly three places: the navigation globe,
 the toggle thumb and the slider thumb. The two thumbs are flat grey until the
-pointer comes near, then become chrome. Content hangs on a thin vertical line
+pointer comes near, then become chrome. Whenever an element is chrome, its
+surface is a ray-traced reflection of the page around it, pointer included.
+Content hangs on a thin vertical line
 called the spine. On a phone the globe is the only navigator. The result should
 read as a professional tool that happens to have one remarkable object in it.
 
@@ -38,7 +40,7 @@ read as a professional tool that happens to have one remarkable object in it.
 | R2 | **Chrome in three places.** The globe, the toggle thumb, the slider thumb. Nothing else is chrome: not buttons, bars, cards, avatars or icons. |
 | R3 | **Rules before boxes.** Separate things with a 1px rule or with space. A bordered box is for a control (button, field) or a picture, not for a group of content. |
 | R4 | **One ink primary per view.** One solid-ink button marks the main action. Everything else is a bordered or borderless button. |
-| R5 | **Nothing moves at rest.** No idle animation, frame loop, canvas, worker or observer runs for decoration. Motion is a response to input and ends within 360 ms. |
+| R5 | **Nothing moves at rest.** No idle animation, frame loop, canvas, worker or observer runs for decoration. Motion is a response to input and ends within 360 ms. The chrome renderer (4.3) obeys this: it draws a frame only when input changed something. |
 
 ## 2. Tokens
 
@@ -132,8 +134,10 @@ box-shadow: 0 0 0 1px rgba(0,0,0,calc(.45 * var(--c))), 0 1px 2px rgba(0,0,0,cal
 
 ### 4.2 The globe's chrome
 
-The globe is always chrome (it is one static CSS background, so it costs
-nothing at rest). It adds one specular highlight on top of C1:
+The globe is always chrome; it never starts flat (decided, see section 18).
+Its first paint is one static CSS background, shown before the renderer in 4.3
+has drawn and wherever WebGL is unavailable. It adds one specular highlight on
+top of C1:
 
 ```css
 /* Day */
@@ -145,6 +149,64 @@ box-shadow: inset 0 0 calc(var(--d) * .12) calc(var(--d) * .02) rgba(0,0,0,.5), 
 ```
 
 `--d` is the diameter. The inner shadow darkens the rim so the disc reads as a sphere.
+
+### 4.3 Ray-traced reflection (required for every chrome element)
+
+Every chrome element shows a real reflection of the page: the globes always,
+the toggle and slider thumbs whenever they are chrome (`--c > 0`). This is not
+an optional tier and there is no user setting for it. The CSS gradients in 4.1
+and 4.2 remain underneath as the first paint and the fallback.
+
+**Architecture**
+
+- V1. One module, `lib/chrome/`, owns one WebGL context for the whole site tier. No chrome element creates its own context.
+- V2. Each chrome element holds a small 2D `<canvas>` laid exactly over it. The renderer draws that element's reflection into the shared WebGL canvas and copies it across with `drawImage`. Backing size is the element's CSS size × `min(devicePixelRatio, 2)`; the phone globe's canvas is sized for its open state (288px) so it stays sharp when expanded.
+- V3. A thumb's canvas has `opacity: var(--c)`, so the flat-to-chrome change in 4.1 is still one animated number. A thumb whose `--c` is 0 is skipped entirely by the renderer.
+- V4. The module loads at idle after hydration, never in the critical path, and registers elements through a `data-chrome` attribute (`"ball"` or `"pill"`). Components do not import it.
+
+**The picture of the page (the environment)**
+
+- V5. The environment is a half-resolution 2D canvas painted from layout, not a screenshot: each visible element's background and borders from its rectangle and computed colours, each text node with `fillText` line by line using the line boxes from `Range.getClientRects()`, the spine line and dots, field values and placeholders. No `html2canvas`, no SVG `foreignObject`.
+- V6. Chrome elements, their overlays and anything with `opacity: 0` are left out. The open globe's veil and pins are included, so the open globe reflects its own menu.
+- V7. Paint the scrolling content once into a tall canvas (cap 8192 device pixels; beyond that, paint the window around the viewport and repaint when the viewport leaves it). Scrolling then only changes an offset uniform. Do **not** repaint the environment on every scroll frame; the mockups do, for brevity, and that is not acceptable in production.
+- V8. Repaint when content changes: after a feed page is appended, on route change, on edition change, on resize, after fonts load. Drive this from those events. Do not use a `MutationObserver`.
+
+**The shader**
+
+One fragment shader handles balls and pills. For a pixel at offset `p` from the
+element's centre, with half-size `hs` and corner radius `r = min(hs.x, hs.y)`:
+
+```glsl
+vec2 q = clamp(p, -(hs - r), hs - r);          // nearest point on the shape's axis (the centre, for a ball)
+vec2 d = (p - q) / r;  float r2 = dot(d, d);   // r2 > 1.0 is outside the shape: discard
+vec3 n = vec3(d, sqrt(1.0 - r2));              // surface normal, z toward the viewer
+vec3 R = vec3(2.0*n.z*n.x, 2.0*n.z*n.y, 2.0*n.z*n.z - 1.0);   // view ray (0,0,-1) reflected about n
+float dz = R.z - 0.55;                         // the element floats a little above the page
+// dz >= 0: the ray misses the page and shows the room: an even ceiling, lo -> hi by smoothstep(.3, 1., R.z),
+//          plus one soft window at dot(R, normalize(vec3(-.42,-.52,.74))) > .9
+// dz <  0: the ray lands on the page at
+float t = r * (1.4 + n.z) / (-dz);
+vec2 pos = centre + p + t * R.xy;              // sample the environment at pos / pageSize
+```
+
+Then, in order: draw the pointer as a small arrow at its page position; darken
+the hit by a contact shadow `mix(.55, 1., smoothstep(1., 2.2, length(pos - centre - q) / r))`;
+fade distant hits into the room with `smoothstep(32.*r, 7.*r, t)`; blend page
+and room across `smoothstep(0., -.25, dz)`; brighten the rim by
+`pow(1. - n.z, 4.) * .4`; add one glint at `dot(n, normalize(vec3(-.5,-.6,.62))) > .975`;
+multiply by `.9 + .1 * n.z`; antialias the edge with `smoothstep(1., .94, sqrt(r2))`.
+
+Room colours: Day `lo (.83,.88,.92)` `hi (.95,.97,.99)`; Night `lo (.07,.08,.10)` `hi (.20,.23,.27)`.
+Pointer arrow: dark with a light outline in Day, light with a dark outline in Night.
+There is no dark horizon band and no reflection of a viewer; both were tried and rejected.
+
+**When it draws**
+
+- V9. One `requestAnimationFrame` is requested per change and coalesced: scroll, pointer move, a control changing, focus moving, the globe opening or closing (redraw each frame for the 360 ms of M4, then stop). With no input, no frame is scheduled.
+- V10. One passive `pointermove` listener on the document feeds the pointer position. It is used for the reflected pointer only; proximity stays in CSS (C6).
+- V11. On `webglcontextlost`, hide the canvases (the CSS gradient shows) and rebuild on restore. If WebGL is unavailable, do nothing; the page is complete without it.
+- V12. `prefers-reduced-motion` does not disable reflections; a reflection that follows your own scrolling is not animation.
+- V13. Budget, to be measured in phase 2 on a mid-range phone and recorded in the ledger: a redraw of the docked globe under 2 ms; an environment repaint under 8 ms and never during a scroll frame (V7); the module under 6 kB gzip.
 
 ## 5. Surfaces
 
@@ -263,7 +325,7 @@ button and a `data-open` attribute, see G7):
 [data-open] .veil { opacity: .96; pointer-events: auto; }
 ```
 
-- G5. Docked, the globe is markup and CSS only: no canvas, no WebGL, no worker, no scroll listener. This replaces the current always-mounted `LiquidGlobe`.
+- G5. The globe is markup and CSS at first paint and with scripting off. Its reflection comes from the shared chrome renderer (4.3); it has no context, worker, simulation or frame loop of its own. This replaces the current always-mounted `LiquidGlobe`.
 - G6. Animate `transform` and `opacity` only. The globe is scaled, never resized, so nothing lays out during the move.
 - G7. Accessibility: the globe is a `<button aria-expanded aria-controls>` labelled "Open navigation". The pins are a `<nav>` of real links. Open traps focus inside the nav and restores it to the button on close. With scripting off, the button is a link to a plain `/sections` page listing the same destinations.
 - G8. Unread counts (Inbox) show as a small `--site-danger` number on the pin when open and a 8px danger dot at the globe's upper right when docked, with a visually hidden text equivalent.
@@ -273,14 +335,11 @@ button and a `data-open` attribute, see G7):
 - G9. Navigation is the word list in the left sidebar (section 9). The globe is not needed to navigate.
 - G10. A 72px chrome globe sits at the bottom of the left sidebar, with a soft contact shadow (`0 16px 16px -9px rgba(0,0,0,.35)`). It links to the front page. It is the brand mark; no other logo graphic appears in the sidebar, only the words "RMH Studios" at the top.
 
-### 8.3 Optional later tier: the mirrored reflection
+### 8.3 Reflection
 
-Not part of the first implementation. If added, it must meet all of these:
-
-- G11. The globe's fill is drawn by one WebGL fragment shader that reflects a half-resolution picture of the page, painted to a 2D canvas from layout rectangles and text (no screenshots, no `html2canvas`).
-- G12. For a point on the disc `v` (−1..1): normal `n = (v, sqrt(1 − |v|²))`, reflected ray `R = (2·n.z·n.x, 2·n.z·n.y, 2·n.z² − 1)`, page-plane hit at distance `t = rad·(1.4 + n.z) / −(R.z − 0.55)`, sampled at `ball + rad·n.xy + t·R.xy`. Rays that miss the page return an even pale ceiling.
-- G13. It draws one frame per scroll, pointer-move or resize event through a single `requestAnimationFrame`, and schedules nothing while the page is still.
-- G14. It loads after first interaction, only when the user's "Reflections" setting is on, and the CSS globe from 4.2 remains underneath as the fallback.
+Both globes are ray-traced at all times, per section 4.3. The phone globe keeps
+reflecting through the open animation and, once open, reflects the veil and its
+own pins.
 
 ## 9. Layout
 
@@ -342,9 +401,9 @@ Each recipe says what the spine means on that page and what the one primary is.
 
 ## 13. Performance budget
 
-- B1. The shell (sidebar, margin frame, spine, docked globe) ships no JavaScript of its own and renders complete with scripting off.
+- B1. The shell (sidebar, margin frame, spine, docked globe) renders complete with scripting off. The only script attached to it is the chrome renderer, loaded at idle (V4).
 - B2. No `backdrop-filter`, `filter`, `mix-blend-mode` or `mask` on any site-tier element.
-- B3. No `requestAnimationFrame` loop, canvas, WebGL context, worker, `MutationObserver` or `ResizeObserver` is created by the site tier at rest.
+- B3. The site tier creates exactly one WebGL context (the chrome renderer) and no worker, `MutationObserver` or decorative `ResizeObserver`. No `requestAnimationFrame` callback is pending while the page is at rest.
 - B4. Fonts: Geist and Geist Mono only, self-hosted as today. Remove any other face from the site tier.
 - B5. The site-tier CSS should get smaller in every phase. Record the built `globals` stylesheet size before phase 1 and after each phase in the ledger (section 17).
 - B6. Deleting the glass, jelly, arc and liquid-globe code is part of the work, not a follow-up (section 15.3).
@@ -368,6 +427,8 @@ against this document.
 | File | Contents |
 | --- | --- |
 | `app/styles/steel-chrome.css` | `@property --c`, the chrome stop tokens, the mixed gradient as a utility (`chrome-thumb`), the globe background (`chrome-globe`) |
+| `lib/chrome/renderer.ts`, `environment.ts`, `shader.ts`, `index.ts` | Section 4.3: the one WebGL context, the page painter, the shader, and registration by `data-chrome` |
+| `lib/chrome/__tests__/` | The painter skips chrome elements and `opacity: 0` subtrees; a thumb with `--c: 0` is not drawn; no frame is pending after input stops |
 | `components/ui/spine.tsx` + styles | Section 7 |
 | `components/shell/SiteShell.tsx` | The frame from section 9: sidebar, content slot, optional margin slot |
 | `components/shell/Sidebar.tsx` | L4, with the desktop globe (G10) |
@@ -410,8 +471,8 @@ Each phase is one pull request. Run `pnpm check:consistency --base main`,
 | Phase | Work | Done when |
 | --- | --- | --- |
 | 1. Tokens and type | Section 2 and 3 values; remove dead tokens; rewrite `design.md` and the design sections of `CLAUDE.md`; update the lint rules and gates in section 17 | Both editions render every existing page legibly (it will look unfinished); no reference to a removed token remains; gates pass |
-| 2. Controls | Section 6 on `components/ui/`; `steel-chrome.css`; overlays (S5) | Settings page shows flat thumbs that turn chrome on approach; one primary per view on the ten recipe pages; keyboard focus visible everywhere |
-| 3. Shell | `SiteShell`, `Sidebar`, `GlobeNav`, `/sections`; swap out `RadialShell` | Shell renders with scripting off; phone has only the globe fixed; globe opens, traps focus, closes on Escape; no canvas or worker exists on any `_site` page at rest (assert in a test) |
+| 2. Controls and chrome | Section 6 on `components/ui/`; `steel-chrome.css`; overlays (S5); the chrome renderer (4.3) | Settings page shows flat thumbs that turn into ray-traced chrome on approach and reflect the row and the pointer; the V13 budgets are measured and recorded; one primary per view on the ten recipe pages; keyboard focus visible everywhere |
+| 3. Shell | `SiteShell`, `Sidebar`, `GlobeNav`, `/sections`; swap out `RadialShell` | Shell renders with scripting off; phone has only the globe fixed; globe opens, traps focus, closes on Escape, and reflects the page in every state; exactly one WebGL context and no worker exist on any `_site` page, and no frame is pending at rest (assert in a test) |
 | 4. Spine and home | `Spine` primitives; home becomes the feed (X1); post, thread | Home, thread match section 10 at 390px and 1280px in both editions |
 | 5. Remaining recipes | Profile, catalogue, game, article, conversation, inbox, explore, settings | Each matches its row in section 10; `card` call sites on these pages are gone |
 | 6. Deletion | Section 15.3 | Build output no longer contains the deleted modules; site-tier CSS and JS sizes recorded in the ledger are lower than before phase 1 |
@@ -425,7 +486,7 @@ Update these in phase 1 so the rules above are enforced rather than remembered:
 
 - `eslint-local-rules/no-raw-palette-color.js`, `no-hardcoded-radius.js`: allow only the tokens in section 2.
 - Add a rule or a test in `lib/__tests__/design-consistency.test.ts` that fails on `backdrop-filter`, `filter:` and gradient backgrounds in site-tier CSS, with `steel-chrome.css` and `globe-nav.css` as the only allowed files (R1, R2, B2).
-- Add a test that the site tier creates no canvas, WebGL context or worker at rest (B3).
+- Add a test that the site tier creates at most one WebGL context and no worker, and that no animation frame is pending once input stops (B3, V9).
 - Keep the existing tab-strip, `transition-all` and dead-animate rules.
 
 Ledger (fill in as phases merge):
@@ -448,11 +509,14 @@ Do not resolve these by assumption.
 | ID | Question | Default until answered |
 | --- | --- | --- |
 | D1 | Should the open phone globe be the CSS globe in this document, or the existing WebGL globe re-skinned in chrome and loaded only on open? | CSS globe (G5). The WebGL one is deleted in phase 6. |
-| D2 | Should the globe start flat and turn chrome on approach, like the thumbs? | No. The globe is always chrome. |
 | D3 | Should the desktop sidebar globe open a menu or a command palette? | No. It links to the front page (G10). |
-| D4 | Is the mirrored reflection (8.3) wanted, and on which globe? | Not built. |
 | D5 | Does any state need a colour beyond danger and success (for example a "live" marker)? | No. "Live" is a text label. |
 | D6 | Signed-out home: the public feed, or a sign-in prompt above it? | The public feed with a one-line sign-in row where the composer would be. |
+
+Decided (2026-11-11), recorded so they are not reopened:
+
+- The globe is always chrome. Only the toggle and slider thumbs start flat (4.1, 4.2).
+- Every chrome element is ray-traced whenever it is chrome. It is required, not a later tier, and has no setting (4.3).
 
 ## Appendix A. Token map, current to Steel
 
@@ -479,4 +543,5 @@ Do not resolve these by assumption.
 | Hang content on the spine per section 10 | Add a second decorative line, timeline or connector |
 | Let the globe be the only fixed thing on a phone | Add a top bar, tab bar or floating action button |
 | Keep the thumb flat until approached | Run a pointer-move listener to detect proximity |
+| Reflect the page with the one shared renderer | Give a chrome element its own WebGL context, or fake the reflection with a moving gradient |
 | Delete the old material code in phase 6 | Leave it behind a flag |
