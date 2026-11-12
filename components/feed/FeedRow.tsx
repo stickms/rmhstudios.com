@@ -58,7 +58,8 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
     if (el) setClamped(el.scrollHeight - el.clientHeight > 1);
   }, [item.content]);
 
-  const displayName = item.user?.name || item.user?.handle || t('someone', { defaultValue: 'Someone' });
+  const displayName =
+    item.user?.name || item.user?.handle || t('someone', { defaultValue: 'Someone' });
 
   const body = isRmhark ? (
     <>
@@ -80,7 +81,7 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
             ) : null}
           </span>
           <span className="t-meta block truncate">
-            {item.user?.handle ? `@${item.user.handle}` : ''}
+            {item.user?.handle ? <bdi>{`@${item.user.handle}`}</bdi> : ''}
             {item.createdAt ? (
               <>
                 {item.user?.handle ? ' · ' : ''}

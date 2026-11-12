@@ -345,7 +345,8 @@ export function CommentItem({
             )}
           </Link>
           <span className="t-meta block truncate">
-            {freshCommentUser.handle ? `@${freshCommentUser.handle} · ` : ''}
+            {freshCommentUser.handle ? <bdi>{`@${freshCommentUser.handle}`}</bdi> : null}
+            {freshCommentUser.handle ? ' · ' : ''}
             <RelativeTime date={comment.createdAt} format={relativeTimeShort} />
           </span>
         </div>
