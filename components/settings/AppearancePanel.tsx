@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Check } from 'lucide-react';
@@ -7,9 +7,6 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Select } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { isEversionEnabled } from '@/lib/eversion/flags';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   FONT_SCALES,
@@ -19,15 +16,9 @@ import {
   COLOR_VISION_HINTS,
   type FontScale,
   type ColorVisionMode,
-  type NavTransition,
-  NAV_TRANSITIONS,
-  isNavTransition,
   JELLY_MOTION_LEVELS,
-  ELECTRIC_ARC_MODES,
   isJellyMotion,
-  isElectricArcs,
   type JellyMotion,
-  type ElectricArcs,
 } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
@@ -77,28 +68,14 @@ export function AppearancePanel() {
     store.setColorVision(value);
     void persist({ colorVision: value });
   }
-  function setNavTransition(value: NavTransition) {
-    store.setNavTransition(value);
-    void persist({ navTransition: value });
-  }
   function setJellyMotion(value: JellyMotion) {
     store.setJellyMotion(value);
     void persist({ jellyMotion: value });
   }
-  function setElectricArcs(value: ElectricArcs) {
-    store.setElectricArcs(value);
-    void persist({ electricArcs: value });
-  }
 
-  const jellyMotionLabels: Record<JellyMotion, string> = {
-    lively: t('jelly-motion-lively', { defaultValue: 'Lively' }),
-    calm: t('jelly-motion-calm', { defaultValue: 'Calm' }),
-    still: t('jelly-motion-still', { defaultValue: 'Still' }),
-  };
-  const electricArcLabels: Record<ElectricArcs, string> = {
-    full: t('electric-arcs-full', { defaultValue: 'Full' }),
-    clicks: t('electric-arcs-clicks', { defaultValue: 'Clicks only' }),
-    off: t('electric-arcs-off', { defaultValue: 'Off' }),
+  const globeMotionLabels: Record<JellyMotion, string> = {
+    lively: t('globe-motion-on', { defaultValue: 'On' }),
+    still: t('globe-motion-still', { defaultValue: 'Still' }),
   };
 
   function applyCustomAccent(hex: string) {
@@ -251,63 +228,26 @@ export function AppearancePanel() {
           checked={store.readableFont}
           onChange={setReadableFont}
         />
-        <NavTransitionRow value={store.navTransition} onChange={setNavTransition} />
-        <p className="settings-row__hint">
-          {t('globe-navigation-only-hint', {
-            defaultValue:
-              'The liquid globe flattens and turns inside out when you choose a destination. Other links open immediately.',
-          })}
-        </p>
         {/* Tilt effects (§5.5x C.3): only renders on platforms that gate device
             orientation behind a permission prompt (iOS). Self-contained consent. */}
         <TiltEffectsRow />
       </Section>
 
       <Section
-        title={t('jelly-motion', { defaultValue: 'Jelly motion' })}
-        description={t('jelly-motion-desc', {
+        title={t('globe-motion', { defaultValue: 'Globe motion' })}
+        description={t('globe-motion-desc', {
           defaultValue:
-            'How much the jelly surfaces move on their own. Still pauses all ambient motion and turns electric arcs off.',
+            'The globe drifts slowly when idle. Still stops the drift. Dragging it always works.',
         })}
       >
         <Tabs
-          aria-label={t('jelly-motion', { defaultValue: 'Jelly motion' })}
-          tabs={JELLY_MOTION_LEVELS.map((id) => ({ id, label: jellyMotionLabels[id] }))}
+          aria-label={t('globe-motion', { defaultValue: 'Globe motion' })}
+          tabs={JELLY_MOTION_LEVELS.map((id) => ({ id, label: globeMotionLabels[id] }))}
           value={store.jellyMotion}
           onChange={(id) => {
             if (isJellyMotion(id)) setJellyMotion(id);
           }}
         />
-        <p className="settings-row__hint" data-testid="jelly-motion-preview">
-          {t('jelly-motion-preview', {
-            defaultValue: 'Preview: hover or press this card to see how it moves.',
-          })}{' '}
-          <span className="t-meta">{jellyMotionLabels[store.jellyMotion]}</span>
-        </p>
-      </Section>
-
-      <Section
-        title={t('electric-arcs', { defaultValue: 'Electric arcs' })}
-        description={t('electric-arcs-desc', {
-          defaultValue:
-            'Small sparks between surfaces and where you click. Turn them off if flicker bothers you.',
-        })}
-      >
-        <Tabs
-          aria-label={t('electric-arcs', { defaultValue: 'Electric arcs' })}
-          tabs={ELECTRIC_ARC_MODES.map((id) => ({ id, label: electricArcLabels[id] }))}
-          value={store.electricArcs}
-          onChange={(id) => {
-            if (isElectricArcs(id)) setElectricArcs(id);
-          }}
-        />
-        {store.jellyMotion === 'still' && store.electricArcs !== 'off' ? (
-          <p className="text-xs text-site-text-muted">
-            {t('electric-arcs-still-note', {
-              defaultValue: 'Jelly motion is set to Still, so arcs stay off for now.',
-            })}
-          </p>
-        ) : null}
       </Section>
 
       {/* The theme gallery lives on the settings index, so the page named
@@ -369,109 +309,5 @@ export function ToggleRow({
       </span>
       <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
     </label>
-  );
-}
-
-/**
- * The event the Preview button dispatches on `window` (spec §9.3). The eversion
- * controller does not exist yet (T31/T32), and this panel must not import the
- * heavy effect graph just to start a preview, so the contract is an event: T32
- * listens for it in the hub and calls `EversionController.preview()`. Until a
- * listener exists, dispatching it is a harmless no-op.
- */
-const EVERSION_PREVIEW_EVENT = 'rmh:eversion-preview';
-
-/**
- * "Navigation transition" (spec §9.3): which projection the globe eversion uses
- * between pages, or `random`. Every account and device uses the shared motion
- * scheme, so this choice and its preview are always available during rollout.
- *
- * Descriptions sit under the select for the CURRENT choice instead of inside
- * the option rows: the closed control must stay one line on a phone, and the
- * description is what a user is deciding by.
- */
-function NavTransitionRow({
-  value,
-  onChange,
-}: {
-  value: NavTransition;
-  onChange: (v: NavTransition) => void;
-}) {
-  const { t } = useTranslation('settings-appearance');
-  // The flag reads `location`, which does not exist during SSR; resolve after
-  // mount so the server and first client render agree (no row, no Preview). While
-  // the rollout flag is off the whole row is hidden: a control that changes
-  // nothing the visitor can see is worse than no control.
-  const [enabled, setEnabled] = useState(false);
-  useEffect(() => setEnabled(isEversionEnabled()), []);
-
-  const names: Record<NavTransition, string> = {
-    random: t('nav-transition-random', { defaultValue: 'Random' }),
-    mercator: t('nav-transition-mercator', { defaultValue: 'Mercator' }),
-    peirce: t('nav-transition-peirce', { defaultValue: 'Peirce quincuncial' }),
-    stereographic: t('nav-transition-stereographic', { defaultValue: 'Stereographic' }),
-    lambert: t('nav-transition-lambert', { defaultValue: 'Lambert azimuthal' }),
-    equirect: t('nav-transition-equirect', { defaultValue: 'Equirectangular' }),
-  };
-  const descriptions: Record<NavTransition, string> = {
-    random: t('nav-transition-random-desc', {
-      defaultValue: 'A different map each time, never the same twice in a row.',
-    }),
-    mercator: t('nav-transition-mercator-desc', {
-      defaultValue: 'The familiar wall-map unrolling, stretched toward the poles.',
-    }),
-    peirce: t('nav-transition-peirce-desc', {
-      defaultValue: 'The globe folds out into a square that tiles.',
-    }),
-    stereographic: t('nav-transition-stereographic-desc', {
-      defaultValue: 'The globe flattens from one pole outward into a disc.',
-    }),
-    lambert: t('nav-transition-lambert-desc', {
-      defaultValue: 'An equal-area disc centred on the page you are leaving.',
-    }),
-    equirect: t('nav-transition-equirect-desc', {
-      defaultValue: 'A plain grid of latitude and longitude, the simplest unrolling.',
-    }),
-  };
-
-  if (!enabled) return null;
-
-  return (
-    <div className="settings-row chrome-row flex-wrap">
-      <div className="flex w-full items-center justify-between gap-4">
-        <Label htmlFor="nav-transition" className="settings-row__name min-w-0">
-          {t('nav-transition', { defaultValue: 'Navigation transition' })}
-        </Label>
-        <Select
-          id="nav-transition"
-          containerClassName="w-48 shrink-0"
-          value={value}
-          aria-describedby="nav-transition-hint"
-          onChange={(e) => {
-            if (isNavTransition(e.target.value)) onChange(e.target.value);
-          }}
-        >
-          {NAV_TRANSITIONS.map((id) => (
-            <option key={id} value={id}>
-              {names[id]}
-            </option>
-          ))}
-        </Select>
-      </div>
-      <p id="nav-transition-hint" className="settings-row__hint">
-        {descriptions[value]}
-      </p>
-      {enabled ? (
-        <Button
-          type="button"
-          variant="default"
-          size="sm"
-          className="mt-2"
-          onClick={() => window.dispatchEvent(new CustomEvent(EVERSION_PREVIEW_EVENT))}
-        >
-          {t('nav-transition-preview', { defaultValue: 'Preview' })}
-        </Button>
-      ) : null}
-    </div>
   );
 }

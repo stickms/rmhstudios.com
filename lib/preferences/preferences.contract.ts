@@ -22,11 +22,7 @@ export interface AppearancePrefs {
   readableFont: boolean;
   customAccent: string | null;
   colorVision: string | null;
-  navTransition: string | null;
-  alwaysEvertGlobe: boolean;
-  eversionLevel: string | null;
   jellyMotion: string | null;
-  electricArcs: string | null;
 }
 
 /** Partial upsert: a field left out is unchanged, an explicit null clears it. */

@@ -183,16 +183,13 @@ export function themeStep({ html, doc, win, path, cfg }: PrepaintCtx): void {
   const fs = ls.getItem('rmh-font-scale');
   if (fs && /^(875|1125|1250)$/.test(fs)) html.style.fontSize = parseInt(fs, 10) / 10 + '%';
   if (ls.getItem('rmh-density') === 'compact') html.setAttribute('data-density', 'compact');
-  if (ls.getItem('rmh-desktop-nav') === 'rail') html.setAttribute('data-desktop-nav', 'rail');
   if (ls.getItem('rmh-readable-font') === '1') html.classList.add('readable-font');
   ls.removeItem('rmh-reduce-motion');
   const cvm = ls.getItem('rmh-color-vision');
   if (cvm === 'deuteranopia' || cvm === 'protanopia' || cvm === 'tritanopia')
     html.setAttribute('data-color-vision', cvm);
   const jm = ls.getItem('rmh-jelly-motion');
-  if (jm === 'calm' || jm === 'still') html.setAttribute('data-jelly-motion', jm);
-  const ea = ls.getItem('rmh-electric-arcs');
-  if (ea === 'clicks' || ea === 'off') html.setAttribute('data-electric-arcs', ea);
+  if (jm === 'still') html.setAttribute('data-jelly-motion', jm);
   const ca = ls.getItem('rmh-custom-accent');
   if (ca && /^#[0-9a-fA-F]{6}$/.test(ca) && !app) {
     const cr = parseInt(ca.substr(1, 2), 16);

@@ -84,6 +84,8 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // Globe motion setting (Steel phase 6, 2026-11-12). English-only until the translate pipeline runs on build.
+  'settings-appearance': ['globe-motion', 'globe-motion-desc', 'globe-motion-on', 'globe-motion-still'],
   // Dream Rift menu redesign (2026-11-04). English-only until the translate pipeline
   // runs on build; remove with it.
   'c-dream-rift': [

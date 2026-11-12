@@ -42,16 +42,13 @@ import { ACCENT_STORAGE_KEY, isAccentId } from '@/lib/appearance';
 import {
   COLOR_VISION_KEY,
   CUSTOM_ACCENT_KEY,
-  DEFAULT_ELECTRIC_ARCS,
   DEFAULT_JELLY_MOTION,
   DENSITY_KEY,
-  ELECTRIC_ARCS_KEY,
   FONT_SCALE_KEY,
   HEX_RE,
   JELLY_MOTION_KEY,
   READABLE_FONT_KEY,
   isColorVisionMode,
-  isElectricArcs,
   isJellyMotion,
 } from '@/lib/appearance/prefs';
 import { SITE_STYLES } from '@/stores/themeStore';
@@ -69,7 +66,6 @@ export interface AccountAppearanceRow {
   customAccent?: string | null;
   colorVision?: string | null;
   jellyMotion?: string | null;
-  electricArcs?: string | null;
 }
 
 /**
@@ -133,12 +129,6 @@ export function accountAppearanceSeed(
   // account never chose, so the device's value stands.
   if (isJellyMotion(row.jellyMotion)) {
     seed[JELLY_MOTION_KEY] = row.jellyMotion === DEFAULT_JELLY_MOTION ? null : row.jellyMotion;
-  }
-
-  // `if (isElectricArcs(r.electricArcs)) setElectricArcs(...)` — `full` is the
-  // default, expressed by absence.
-  if (isElectricArcs(row.electricArcs)) {
-    seed[ELECTRIC_ARCS_KEY] = row.electricArcs === DEFAULT_ELECTRIC_ARCS ? null : row.electricArcs;
   }
 
   return seed;

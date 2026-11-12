@@ -54,11 +54,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
           readableFont: row?.readableFont ?? false,
           customAccent: row?.customAccent ?? null,
           colorVision: row?.colorVision ?? null,
-          navTransition: row?.navTransition ?? null,
-          alwaysEvertGlobe: row?.alwaysEvertGlobe ?? false,
-          eversionLevel: row?.eversionLevel ?? null,
           jellyMotion: row?.jellyMotion ?? null,
-          electricArcs: row?.electricArcs ?? null,
         });
       }),
 
@@ -66,19 +62,8 @@ export const Route = createFileRoute('/api/preferences/appearance')({
         setAppearancePrefsApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'appearance-prefs' }, body: schema },
         async ({ session, body }) => {
-          const {
-            style,
-            accent,
-            fontScale,
-            density,
-            readableFont,
-            colorVision,
-            navTransition,
-            alwaysEvertGlobe,
-            eversionLevel,
-            jellyMotion,
-            electricArcs,
-          } = body;
+          const { style, accent, fontScale, density, readableFont, colorVision, jellyMotion } =
+            body;
           // Custom accent is normalized/nudged through the contrast guard so the
           // stored value is guaranteed to carry a legible label (AA).
           let customAccent = body.customAccent;
@@ -89,11 +74,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             ...(density !== undefined ? { density } : {}),
             ...(readableFont !== undefined ? { readableFont } : {}),
             ...(customAccent !== undefined ? { customAccent } : {}),
-            ...(navTransition !== undefined ? { navTransition } : {}),
-            ...(alwaysEvertGlobe !== undefined ? { alwaysEvertGlobe } : {}),
-            ...(eversionLevel !== undefined ? { eversionLevel } : {}),
             ...(jellyMotion !== undefined ? { jellyMotion } : {}),
-            ...(electricArcs !== undefined ? { electricArcs } : {}),
             // 'none' is stored as null so the column means "no override".
             ...(colorVision !== undefined
               ? { colorVision: colorVision === 'none' ? null : colorVision }
@@ -120,11 +101,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             readableFont: row.readableFont ?? false,
             customAccent: row.customAccent ?? null,
             colorVision: row.colorVision ?? null,
-            navTransition: row.navTransition ?? null,
-            alwaysEvertGlobe: row.alwaysEvertGlobe ?? false,
-            eversionLevel: row.eversionLevel ?? null,
             jellyMotion: row.jellyMotion ?? null,
-            electricArcs: row.electricArcs ?? null,
           });
         },
       ),

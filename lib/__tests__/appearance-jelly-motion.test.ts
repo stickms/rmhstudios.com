@@ -1,7 +1,8 @@
 /**
- * "Jelly motion" preference (Plasmatic Jelly R8, plan 04 §4.2; WCAG 2.2.2).
+ * "Globe motion" preference (the idle drift of the chrome globe; Steel G5a; WCAG 2.2.2). The stored name and the
+ * `html[data-jelly-motion]` attribute are kept from the control it replaces.
  *
- * Modelled on `appearance-nav-transition.test.ts`: drives the real
+ * Drives the real
  * `PUT /api/preferences/appearance` handler (auth and Prisma mocked), then checks
  * that the value list, the zod schema, the account seed, the store, the DOM
  * applier and the pre-paint script in `app/routes/__root.tsx` all agree.
@@ -80,8 +81,8 @@ beforeEach(() => {
 });
 
 describe('PUT /api/preferences/appearance jellyMotion', () => {
-  it('has exactly the plan values, default first', () => {
-    expect([...JELLY_MOTION_LEVELS]).toEqual(['lively', 'calm', 'still']);
+  it('has exactly the two values, default first', () => {
+    expect([...JELLY_MOTION_LEVELS]).toEqual(['lively', 'still']);
     expect(DEFAULT_JELLY_MOTION).toBe('lively');
     expect(JELLY_MOTION_KEY).toBe('rmh-jelly-motion');
   });
@@ -144,6 +145,8 @@ describe('jellyMotion resolution, store, seed and applier', () => {
     expect(resolveJellyMotion(null)).toBe('lively');
     expect(resolveJellyMotion(undefined)).toBe('lively');
     expect(resolveJellyMotion('wobble')).toBe('lively');
+    // The retired middle level reads as the default.
+    expect(resolveJellyMotion('calm')).toBe('lively');
     expect(resolveJellyMotion('still')).toBe('still');
     expect(isJellyMotion('still')).toBe(true);
     expect(isJellyMotion('nope')).toBe(false);
