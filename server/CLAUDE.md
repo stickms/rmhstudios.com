@@ -157,6 +157,9 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   `/admin/deepseek` and prunes rows older than 400 days; it skips silently when
   `DEEPSEEK_API_KEY` is unset.
   `ops.data-cleanup` (daily 04:00 UTC session/verification/notification/comment-view purge, `exclusive`, no retries).
+  `ops.db-census` (third-pass audit DT1, `lib/admin/census.server.ts`: ticks daily at 03:40 UTC and stores the month's
+  table and product census in `db_census_snapshot` only when that month has no row, so a worker that was down on the 1st
+  catches up the next night; `exclusive`, no retries; read at `/admin/census`).
   **The Discord bot** (D3, `server/discord-bot/`: Alex `/chat` + the tamagotchi + the `/sohumtracker` tracker; the Go
   original, `cmd/supervisor` and `cmd/discord-bot` are deleted, this is the only copy) runs here whenever
   `DISCORD_BOT_TOKEN` or `DISCORD_ACTIVITY_BOT_TOKEN` is set (outside `NODE_ENV=production` it also needs

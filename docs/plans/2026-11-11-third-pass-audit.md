@@ -718,7 +718,7 @@ RT1: in-progress (2026-11-12: sonner on first toast, auth client out of the shel
 RT2: open
 RT3: in-progress (phase 33: the cache plugin refuses to share a response whose enforced policy names a nonce, so enforcement cannot ship a shared nonce; the hash-only policy that restores the edge cache after cutover is open)
 RT4: open
-DT1: open
+DT1: in-progress (2026-11-12: /admin/census lists every `public` table (estimated rows, writes and index reads since the statistics began, newest `updatedAt`/`createdAt` where cheap, last autoanalyze) and every catalogue product (30-day signed-in actives from playtime and history, zeroes included), live or from a stored month, with a quiet-for-90-days filter and "Take snapshot now". The jobs worker's `ops.db-census` stores one row per UTC month in `db_census_snapshot`. Postgres records no last-write time: the page and the file say what each column is, and a table is called quiet by counter difference only once a stored snapshot is 90 days old. Open: `docs/_generated/db-census.md` is a census of a development database and is marked so; the done-when needs `DATABASE_URL=<production url> pnpm db:census --origin production` run and committed. Found on the way: `useHistoryBeat` has no caller, so nothing writes `history_entry` today and product actives are playtime heartbeats alone)
 DT2: open
 DT3: open
 OP1: open
