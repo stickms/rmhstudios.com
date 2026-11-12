@@ -67,7 +67,7 @@ function PerformancePage() {
       />
       <AdminBody width="wide">
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-site-text-muted">
+          <label className="flex items-center gap-2 t-body text-site-text-muted">
             <Switch
               checked={auto}
               onCheckedChange={setAuto}
@@ -79,11 +79,11 @@ function PerformancePage() {
             <RefreshCw aria-hidden />
             {t('refresh', { defaultValue: 'Refresh' })}
           </Button>
-          <span className="text-xs text-site-text-muted">
+          <span className="t-meta">
             {t('updated-at', { defaultValue: 'Updated {{time}}', time: fmtClock(updatedAt) })}
           </span>
           {failed && (
-            <span role="alert" className="text-xs text-site-danger">
+            <span role="alert" className="t-meta text-site-danger">
               {t('refresh-failed', { defaultValue: 'Last refresh failed; showing older data.' })}
             </span>
           )}

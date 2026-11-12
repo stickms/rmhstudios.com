@@ -5,7 +5,8 @@ import { Users, FileText, Flag, Coins, BarChart3 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { AdminBody } from '@/components/admin/AdminBody';
-import { StatTile } from '@/components/admin/StatTile';
+import { StatGrid, StatTile } from '@/components/admin/StatTile';
+import { AdminSection } from '@/components/admin/AdminRows';
 import { useTranslation } from 'react-i18next';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { adminAnalyticsQuery } from '@/lib/admin/admin-ops.queries';
@@ -36,7 +37,7 @@ function AnalyticsPage() {
           />
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <StatGrid>
               <StatTile
                 icon={Users}
                 label={t('stat-users', { defaultValue: 'Users' })}
@@ -86,31 +87,33 @@ function AnalyticsPage() {
                 label={t('stat-coins-in-circulation', { defaultValue: 'Coins in circulation' })}
                 value={data.economy.coinsInCirculation}
               />
-            </div>
+            </StatGrid>
 
-            <div className="rounded-site p-5">
-              <h2 className="site-section-label mb-3">
-                {t('posts-per-day-14d', { defaultValue: 'Posts per day (14 days)' })}
-              </h2>
-              <div className="flex h-40 items-end gap-1">
+            <AdminSection
+              title={t('posts-per-day-14d', { defaultValue: 'Posts per day (14 days)' })}
+            >
+              <div className="flex h-40 items-end gap-1 border-b border-site-border">
                 {data.postsPerDay.map((d) => (
                   <div
                     key={d.day}
-                    className="flex flex-1 flex-col items-center gap-1"
+                    className="flex h-full flex-1 flex-col justify-end"
                     title={`${d.day}: ${d.count}`}
                   >
                     <div
-                      className="w-full rounded-t-site-sm bg-site-accent"
+                      className="w-full bg-site-accent"
                       style={{
                         height: `${(d.count / maxCount) * 100}%`,
                         minHeight: d.count > 0 ? 2 : 0,
                       }}
                     />
-                    <span className="text-micro text-site-text-muted">{d.day.slice(5)}</span>
                   </div>
                 ))}
               </div>
-            </div>
+              <div className="t-meta flex justify-between">
+                <span>{data.postsPerDay[0]?.day.slice(5)}</span>
+                <span>{data.postsPerDay[data.postsPerDay.length - 1]?.day.slice(5)}</span>
+              </div>
+            </AdminSection>
           </>
         )}
       </AdminBody>

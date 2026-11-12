@@ -13,7 +13,7 @@ const num = (v: unknown) => (typeof v === 'number' ? v : Number(v ?? 0));
 const str = (v: unknown) => (v === null || v === undefined ? '—' : String(v));
 
 function SectionTitle({ children }: { children: string }) {
-  return <h2 className="site-section-label">{children}</h2>;
+  return <h2 className="t-heading text-site-text">{children}</h2>;
 }
 
 /** Generic table over loosely-typed diagnostic rows. */
@@ -31,7 +31,7 @@ function RowsTable({
   const { t } = useTranslation('f-perf');
   if (rows === null || rows === undefined) {
     return (
-      <p className="rounded-site p-5 text-sm text-site-text-muted">
+      <p className="t-body text-site-text-muted">
         {t('diag-unavailable', { defaultValue: 'Unavailable (the query failed or timed out).' })}
       </p>
     );
@@ -76,7 +76,7 @@ function DiagnosticsSection() {
     return (
       <section className="space-y-3">
         {header}
-        <p className="rounded-site p-5 text-sm text-site-text-muted">
+        <p className="t-body text-site-text-muted">
           {t('diag-failed', { defaultValue: 'Could not load Postgres diagnostics.' })}
         </p>
       </section>
@@ -103,7 +103,7 @@ function DiagnosticsSection() {
     header,
     sortValue: (r) => str(r[key]),
     render: (r) => (
-      <span className={mono ? 'font-mono text-xs break-all' : undefined}>{str(r[key])}</span>
+      <span className={mono ? 't-meta text-site-text break-all' : undefined}>{str(r[key])}</span>
     ),
   });
 
@@ -111,7 +111,7 @@ function DiagnosticsSection() {
     <section className="space-y-4">
       {header}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4">
         <Kpi
           label={t('diag-connections', { defaultValue: 'Connections' })}
           value={conn ? `${fmtInt(num(conn.used))} / ${fmtInt(num(conn.max))}` : '—'}
@@ -211,7 +211,7 @@ function DiagnosticsSection() {
           ]}
         />
       ) : (
-        <p className="rounded-site p-5 text-sm text-site-text-muted">
+        <p className="t-body text-site-text-muted">
           {t('diag-no-pgss', {
             defaultValue: 'The pg_stat_statements extension is not installed on this database.',
           })}
@@ -241,7 +241,7 @@ function DiagnosticsSection() {
       <SectionTitle>
         {t('diag-seq-hints', { defaultValue: 'Possible missing indexes' })}
       </SectionTitle>
-      <p className="text-xs text-site-text-muted">
+      <p className="t-body text-site-text-muted">
         {t('diag-seq-hints-note', {
           defaultValue: 'Tables over 10,000 rows scanned sequentially more often than by index.',
         })}
@@ -265,7 +265,7 @@ function DiagnosticsSection() {
       />
 
       <SectionTitle>{t('diag-unused', { defaultValue: 'Unused indexes' })}</SectionTitle>
-      <p className="text-xs text-site-text-muted">
+      <p className="t-body text-site-text-muted">
         {t('diag-unused-note', {
           defaultValue:
             'Never scanned since the last stats reset, over 1 MB, and not enforcing a unique or primary-key constraint.',
@@ -294,7 +294,7 @@ export function DatabaseTab({ overview }: { overview: PerfOverview }) {
       id: 'op',
       header: t('col-op', { defaultValue: 'Operation' }),
       sortValue: (r) => r.op,
-      render: (r) => <span className="font-mono text-xs">{r.op}</span>,
+      render: (r) => <span className="t-meta text-site-text">{r.op}</span>,
     },
     {
       id: 'count',
@@ -358,12 +358,12 @@ export function DatabaseTab({ overview }: { overview: PerfOverview }) {
     {
       id: 'op',
       header: t('col-op', { defaultValue: 'Operation' }),
-      render: (r) => <span className="font-mono text-xs">{r.op}</span>,
+      render: (r) => <span className="t-meta text-site-text">{r.op}</span>,
     },
     {
       id: 'route',
       header: t('col-route', { defaultValue: 'Route' }),
-      render: (r) => <span className="font-mono text-xs break-all">{r.route || '—'}</span>,
+      render: (r) => <span className="t-meta text-site-text break-all">{r.route || '—'}</span>,
     },
     {
       id: 'proc',
@@ -381,7 +381,7 @@ export function DatabaseTab({ overview }: { overview: PerfOverview }) {
         <SectionTitle>
           {t('db-app-side', { defaultValue: 'Application side (web tier)' })}
         </SectionTitle>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4">
           <Kpi
             label={t('db-queries', { defaultValue: 'Queries' })}
             value={fmtInt(db.totals.count)}
@@ -440,7 +440,7 @@ export function DatabaseTab({ overview }: { overview: PerfOverview }) {
 
       <section className="space-y-3">
         <SectionTitle>{t('db-slow-feed', { defaultValue: 'Slow queries' })}</SectionTitle>
-        <p className="text-xs text-site-text-muted">
+        <p className="t-body text-site-text-muted">
           {t('db-slow-feed-note', {
             defaultValue:
               'Newest first, last 50. Threshold is PERF_SLOW_QUERY_MS (default 250 ms).',

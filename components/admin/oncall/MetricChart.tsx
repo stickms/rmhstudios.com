@@ -53,9 +53,9 @@ export function MetricChart({
 
   if (pts.length < 2) {
     return (
-      <div className="relative rounded-site p-5">
-        <h3 className="text-sm font-semibold text-site-text">{title}</h3>
-        <p className="my-6 text-center text-sm text-site-text-muted">
+      <div className="relative">
+        <h3 className="t-body font-semibold text-site-text">{title}</h3>
+        <p className="my-6 text-center t-body text-site-text-muted">
           {t('chart-empty-2', {
             defaultValue:
               'No data for this metric yet. It appears a few minutes after the metric first sees traffic.',
@@ -104,10 +104,10 @@ export function MetricChart({
   };
 
   return (
-    <div className="relative min-w-0 rounded-site p-5">
+    <div className="relative min-w-0">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h3 className="min-w-0 text-sm font-semibold text-site-text">{title}</h3>
-        <p className="text-xs tabular-nums text-site-text-muted" aria-live="polite">
+        <h3 className="min-w-0 t-body font-semibold text-site-text">{title}</h3>
+        <p className="t-meta tabular-nums" aria-live="polite">
           {cur ? (
             <>
               <span
@@ -145,7 +145,7 @@ export function MetricChart({
         </p>
       </div>
 
-      <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-site-text-muted">
+      <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 t-meta">
         {series.thresholds.map((th) => (
           <li key={th.label} className="flex items-center gap-1.5">
             <svg
@@ -184,10 +184,7 @@ export function MetricChart({
       </ul>
 
       <div className="mt-3 flex gap-2">
-        <div
-          className="relative h-40 w-12 shrink-0 text-right text-micro tabular-nums text-site-text-muted"
-          aria-hidden
-        >
+        <div className="relative h-40 w-12 shrink-0 text-end t-meta tabular-nums" aria-hidden>
           {ticks.map((v) => (
             <span key={v} className="absolute right-0 -translate-y-1/2" style={{ top: y(v) }}>
               {fmt(v)}
@@ -283,19 +280,19 @@ export function MetricChart({
               />
             )}
           </div>
-          <div className="mt-1 flex justify-between text-micro text-site-text-muted" aria-hidden>
+          <div className="mt-1 flex justify-between t-meta" aria-hidden>
             <span>{fmtTime(t0, withDate)}</span>
             <span>{fmtTime(t1, withDate)}</span>
           </div>
         </div>
       </div>
 
-      <details className="mt-2 text-xs text-site-text-muted">
+      <details className="mt-2 t-meta">
         <summary className="cursor-pointer select-none">
           {t('chart-table', { defaultValue: 'Show data' })}
         </summary>
         <div className="mt-2 max-h-48 overflow-auto">
-          <table className="w-full text-left tabular-nums">
+          <table className="w-full text-start tabular-nums">
             <thead>
               <tr>
                 <th className="py-1 pr-4 font-medium">

@@ -78,11 +78,11 @@ export function DeepseekPanel() {
   if (state?.error === 'not_configured') {
     return (
       <div className="space-y-[var(--site-section-gap)]">
-        <section className="rounded-site p-5">
-          <h2 className="site-section-label">
+        <section className="min-w-0">
+          <h2 className="t-heading text-site-text">
             {t('not-configured-title', { defaultValue: 'DeepSeek is not configured' })}
           </h2>
-          <p className="mt-2 text-sm text-site-text-muted">
+          <p className="mt-2 t-body text-site-text-muted">
             {t('not-configured-body', {
               defaultValue:
                 'Set the DEEPSEEK_API_KEY environment variable on the web and jobs services (optionally DEEPSEEK_BASE_URL) and redeploy. Balance is then sampled every hour.',
@@ -90,7 +90,7 @@ export function DeepseekPanel() {
           </p>
         </section>
         {state.latest.length > 0 && (
-          <p className="text-xs text-site-text-muted">
+          <p className="t-body text-site-text-muted">
             {t('stale-history', {
               defaultValue: 'Showing history recorded before the key was removed.',
             })}
@@ -137,7 +137,7 @@ export function DeepseekPanel() {
           <RefreshCw aria-hidden className={refreshing ? 'animate-spin' : undefined} />
           {t('refresh-now', { defaultValue: 'Refresh now' })}
         </Button>
-        <span className="text-xs text-site-text-muted">
+        <span className="t-meta">
           {t('updated-at', {
             defaultValue: 'Updated {{time}}',
             time: fmtDateTime(live?.fetchedAt ?? updatedAt),
@@ -146,7 +146,7 @@ export function DeepseekPanel() {
       </div>
 
       {state?.error && (
-        <p role="alert"className="rounded-site px-4 py-3 text-sm text-site-danger">
+        <p role="alert" className="py-3 t-body text-site-danger">
           {errorText(state.error)}{' '}
           {state.latest.length > 0 &&
             t('showing-saved', { defaultValue: 'Showing the last saved balance.' })}
@@ -155,16 +155,16 @@ export function DeepseekPanel() {
 
       <div className="grid gap-3 md:grid-cols-2">
         {cardsFor.map((b) => (
-          <section key={b.currency} className="rounded-site p-5">
-            <h2 className="text-xs text-site-text-muted">
+          <section key={b.currency} className="min-w-0">
+            <h2 className="t-meta">
               {t('balance-heading', { defaultValue: '{{currency}} balance', currency: b.currency })}
             </h2>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-site-text">
+            <p className="mt-1 t-heading tabular-nums text-site-text">
               {fmtMoney(b.totalBalance, b.currency)}
             </p>
-            <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+            <dl className="mt-3 grid grid-cols-2 gap-3 t-body">
               <div>
-                <dt className="text-xs text-site-text-muted">
+                <dt className="t-meta">
                   {t('granted', { defaultValue: 'Granted' })}
                 </dt>
                 <dd className="tabular-nums text-site-text">
@@ -172,7 +172,7 @@ export function DeepseekPanel() {
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-site-text-muted">
+                <dt className="t-meta">
                   {t('topped-up', { defaultValue: 'Topped up' })}
                 </dt>
                 <dd className="tabular-nums text-site-text">
@@ -199,7 +199,7 @@ export function DeepseekPanel() {
       {history.loading && !history.series ? (
         <Spinner />
       ) : history.failed && !history.series ? (
-        <p className="rounded-site px-4 py-6 text-center text-sm text-site-text-muted">
+        <p className="py-4 t-body text-site-text-muted">
           {t('history-failed', { defaultValue: 'Could not load balance history.' })}
         </p>
       ) : (

@@ -70,7 +70,7 @@ export function ExperimentsTab() {
 
   return (
     <section className="space-y-[var(--site-section-gap)]">
-      <p className="text-sm text-site-text-muted">
+      <p className="t-body text-site-text-muted">
         {t('exp-intro', {
           defaultValue:
             'Signed-in members are split by a sticky hash of their id. Code reads useExperiment(key) and calls convertExperiment(key) on the goal; exposures and conversions are counted once per member.',
@@ -78,7 +78,7 @@ export function ExperimentsTab() {
       </p>
       <form
         onSubmit={create}
-        className="relative grid gap-3 rounded-site p-5 sm:grid-cols-[1fr_1fr_6rem_auto] sm:items-end"
+        className="relative grid gap-3 sm:grid-cols-[1fr_1fr_6rem_auto] sm:items-end"
       >
         <div className="space-y-1">
           <Label htmlFor="exp-key">{t('exp-key', { defaultValue: 'Key' })}</Label>
@@ -117,13 +117,13 @@ export function ExperimentsTab() {
       {loading ? (
         <Spinner />
       ) : (
-        <ul className="space-y-3">
+        <ul className="divide-y divide-site-border border-t border-site-border">
           {(data?.experiments ?? []).map((x) => (
-            <li key={x.id} className="relative space-y-2 rounded-site px-4 py-3">
+            <li key={x.id} className="relative space-y-2 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-site-text">{x.name}</span>
-                  <span className="font-mono text-xs text-site-text-muted">{x.key}</span>
+                  <span className="font-mono t-meta">{x.key}</span>
                   <Badge variant={x.status === 'RUNNING' ? 'success' : 'default'}>{x.status}</Badge>
                 </div>
                 {x.status === 'RUNNING' ? (
@@ -136,10 +136,10 @@ export function ExperimentsTab() {
                   </Button>
                 )}
               </div>
-              <dl className="grid grid-cols-2 gap-3 text-sm">
+              <dl className="grid grid-cols-2 gap-3 t-body">
                 {(['control', 'test'] as const).map((arm) => (
                   <div key={arm}>
-                    <dt className="text-xs text-site-text-muted">
+                    <dt className="t-meta">
                       {arm === 'control'
                         ? t('exp-control', { defaultValue: 'Control' })
                         : t('exp-test', { defaultValue: 'Test ({{pct}}%)', pct: x.testPct })}
@@ -155,7 +155,7 @@ export function ExperimentsTab() {
                   </div>
                 ))}
               </dl>
-              <p className="text-xs text-site-text-muted">
+              <p className="t-body text-site-text-muted">
                 {x.result &&
                   t('exp-lift', {
                     defaultValue: 'Lift {{lift}} points. ',

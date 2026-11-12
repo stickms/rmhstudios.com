@@ -87,16 +87,16 @@ function AdminRedemptionsPage() {
             title={t('redemptions-empty', { defaultValue: 'No pending redemption requests.' })}
           />
         ) : (
-          <div className="space-y-3">
+          <div className="divide-y divide-site-border">
             {rows.map((r) => {
               const Icon = KIND_ICON[r.kind];
               return (
-                <div key={r.id} className="space-y-3 rounded-site p-5">
+                <div key={r.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <Icon className="size-5 shrink-0 text-site-accent" aria-hidden />
                       <div className="min-w-0">
-                        <div className="truncate text-base font-medium text-site-text">
+                        <div className="truncate t-heading text-site-text">
                           {r.kind === 'SUB_CREDIT'
                             ? t('sub-summary', {
                                 defaultValue: '{{months}} months of {{tier}}',
@@ -107,7 +107,7 @@ function AdminRedemptionsPage() {
                               ? t('merch', { defaultValue: 'Merch redemption' })
                               : t('payout', { defaultValue: 'Cash payout' })}
                         </div>
-                        <div className="text-sm text-site-text-muted">
+                        <div className="t-body text-site-text-muted">
                           @{r.user.handle ?? r.user.name ?? r.user.id.slice(0, 6)}
                           {' · '}
                           {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
@@ -122,7 +122,7 @@ function AdminRedemptionsPage() {
                     </Badge>
                   </div>
                   {r.note && (
-                    <p className="border-l-2 border-site-border pl-3 text-sm text-site-text-muted">
+                    <p className="border-l-2 border-site-border pl-3 t-body text-site-text-muted">
                       {r.note}
                     </p>
                   )}

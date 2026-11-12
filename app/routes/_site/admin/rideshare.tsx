@@ -243,31 +243,29 @@ function AdminRidesharePage() {
             title={t('no-applications', { status: appStatusLabel(status, t).toLowerCase(), defaultValue: 'No {{status}} applications.' })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className="divide-y divide-site-border">
             {items.map((app) => (
-              <li key={app.id} className="rounded-site p-5">
+              <li key={app.id} className="py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={app.user.image} alt={app.user.name ?? t('user-alt', { defaultValue: 'User' })} size={40} />
                     <div>
-                      <p className="font-semibold text-site-text">{app.user.name ?? t('unknown', { defaultValue: 'Unknown' })}</p>
-                      <p className="text-xs text-site-text-muted">
+                      <p className="t-body font-semibold text-site-text">{app.user.name ?? t('unknown', { defaultValue: 'Unknown' })}</p>
+                      <p className="t-body text-site-text-muted">
                         {app.user.handle ? `@${app.user.handle}` : app.user.email ?? app.user.id}
                       </p>
                     </div>
                   </div>
-                  <span className="text-xs text-site-text-muted">
+                  <span className="t-meta">
                     {formatDistanceToNow(new Date(app.createdAt), { addSuffix: true })}
                   </span>
                 </div>
 
-                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="mt-3 grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
                   {/* Vehicle */}
-                  <div className="surface-field rounded-site-sm p-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
-                      <Car className="size-4 text-site-accent" aria-hidden /> {t('vehicle-section', { defaultValue: 'Vehicle' })}
-                    </div>
-                    <dl className="mt-2 space-y-2 text-sm">
+                  <div>
+                    <div className="t-label">{t('vehicle-section', { defaultValue: 'Vehicle' })}</div>
+                    <dl className="t-body mt-1 divide-y divide-site-border">
                       <Row label={t('vehicle-label', { defaultValue: 'Vehicle' })} value={`${app.vehicleColor} ${app.vehicleMake} ${app.vehicleModel}`} />
                       <Row label={t('year-label', { defaultValue: 'Year' })} value={String(app.vehicleYear)} />
                       <Row label={t('plate-label', { defaultValue: 'Plate' })} value={app.licensePlate} />
@@ -277,16 +275,16 @@ function AdminRidesharePage() {
                   </div>
 
                   {/* License */}
-                  <div className="surface-field rounded-site-sm p-4">
-                    <div className="text-sm font-semibold text-site-text">{t('drivers-license-section', { defaultValue: "Driver's license" })}</div>
-                    <dl className="mt-2 space-y-2 text-sm">
+                  <div>
+                    <div className="t-label">{t('drivers-license-section', { defaultValue: "Driver's license" })}</div>
+                    <dl className="t-body mt-1 divide-y divide-site-border">
                       <Row label={t('license-number-label', { defaultValue: 'License #' })} value={app.licenseNumber || '—'} />
                     </dl>
                   </div>
                 </div>
 
                 {app.status === 'REJECTED' && app.rejectionReason && (
-                  <p className="mt-3 rounded-site-sm bg-site-danger/10 px-3 py-2 text-sm text-site-danger">
+                  <p className="t-body mt-3 border-s-2 border-site-danger ps-3 text-site-danger">
                     {t('rejection-reason', { reason: app.rejectionReason, defaultValue: 'Reason: {{reason}}' })}
                   </p>
                 )}
@@ -331,7 +329,7 @@ function AdminRidesharePage() {
                           variant="default"
                           onClick={() => setRejecting(app.id)}
                           disabled={busy === app.id}
-                          className="text-site-danger hover:bg-site-danger/10"
+                          className="text-site-danger"
                         >
                           <X aria-hidden /> {t('reject', { defaultValue: 'Reject' })}
                         </Button>
@@ -390,29 +388,29 @@ function RideHistory({
       ) : rides.length === 0 ? (
         <EmptyState icon={MapPin} title={t('no-rides-found', { defaultValue: 'No rides found.' })} />
       ) : (
-        <ul className="space-y-3">
+        <ul className="divide-y divide-site-border">
           {rides.map((ride) => {
                         return (
-              <li key={ride.id} className="rounded-site p-5">
+              <li key={ride.id} className="py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={ride.rider?.image ?? null} alt={ride.rider?.name ?? t('rider-alt', { defaultValue: 'Rider' })} size={36} />
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-site-text">{ride.rider?.name ?? t('unknown-rider', { defaultValue: 'Unknown rider' })}</p>
-                      <p className="text-xs text-site-text-muted">
+                      <p className="t-body font-semibold text-site-text">{ride.rider?.name ?? t('unknown-rider', { defaultValue: 'Unknown rider' })}</p>
+                      <p className="t-body text-site-text-muted">
                         {ride.rider?.handle ? `@${ride.rider.handle}` : ride.rider?.email ?? '—'}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-site-text-muted">{rideClassName(ride.rideClass)}</span>
+                    <span className="t-meta">{rideClassName(ride.rideClass)}</span>
                     <Badge variant={RIDE_STATUS_VARIANT[ride.status]} icon={false}>
                       {rideStatusLabel(ride.status, t)}
                     </Badge>
                   </div>
                 </div>
 
-                <div className="mt-3 space-y-2 text-xs text-site-text-muted">
+                <div className="t-body mt-3 space-y-2 text-site-text-muted">
                   <div className="flex items-center gap-2">
                     <span className="size-2 shrink-0 rounded-full bg-site-success" aria-hidden />
                     <span className="truncate" title={ride.pickupLabel}>{ride.pickupLabel}</span>
@@ -423,7 +421,7 @@ function RideHistory({
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-site-border pt-3 text-xs text-site-text-muted">
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-site-border pt-3 t-meta">
                   {ride.distanceMeters != null && (
                     <span className="flex items-center gap-1">
                       <RouteIcon className="size-3" aria-hidden /> {formatDistance(ride.distanceMeters)}
@@ -435,7 +433,7 @@ function RideHistory({
                   <span>
                     {ride.driver ? t('driver-name', { name: ride.driver.name ?? t('unknown', { defaultValue: 'Unknown' }), defaultValue: 'Driver: {{name}}' }) : t('no-driver-matched', { defaultValue: 'No driver matched' })}
                   </span>
-                  <span className="ml-auto">
+                  <span className="ms-auto">
                     {formatDistanceToNow(new Date(ride.scheduledFor ?? ride.requestedAt), { addSuffix: true })}
                   </span>
                 </div>
@@ -450,9 +448,9 @@ function RideHistory({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-3">
-      <dt className="text-site-text-muted">{label}</dt>
-      <dd className="truncate text-right font-medium text-site-text" title={value}>{value}</dd>
+    <div className="flex justify-between gap-3 py-2">
+      <dt className="shrink-0 text-site-text-muted">{label}</dt>
+      <dd className="min-w-0 break-words text-end text-site-text">{value}</dd>
     </div>
   );
 }

@@ -38,10 +38,10 @@ export function MetricsSection() {
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="site-section-label">
+          <h2 className="t-heading text-site-text">
             {t('metrics-title', { defaultValue: 'Metrics' })}
           </h2>
-          <p className="mt-1 text-sm text-site-text-muted">
+          <p className="mt-1 t-body text-site-text-muted">
             {t('metrics-body', {
               defaultValue:
                 'Response times, page loads and LLM calls, with each alarm’s threshold as a dashed line.',
@@ -60,7 +60,7 @@ export function MetricsSection() {
         />
       </div>
       {failed ? (
-        <p className="mt-3 rounded-site p-5 text-sm text-site-text-muted">
+        <p className="mt-3 t-body text-site-text-muted">
           {t('metrics-failed', {
             defaultValue: 'Could not load the metrics. Refresh to try again.',
           })}

@@ -73,7 +73,10 @@ export function NoticesTab() {
 
   return (
     <section className="space-y-[var(--site-section-gap)]">
-      <form onSubmit={publish} className="space-y-3 rounded-site p-5">
+      <form
+        onSubmit={publish}
+        className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
+      >
         <div className="space-y-1">
           <Label htmlFor="notice-title">{t('notices-title', { defaultValue: 'Title' })}</Label>
           <Input
@@ -176,16 +179,13 @@ export function NoticesTab() {
       {loading ? (
         <Spinner />
       ) : (
-        <ul className="space-y-3">
+        <ul className="divide-y divide-site-border border-t border-site-border">
           {(data?.notices ?? []).map((n) => (
-            <li
-              key={n.id}
-              className="flex flex-wrap items-start justify-between gap-3 rounded-site px-4 py-3"
-            >
+            <li key={n.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
               <div className="min-w-0 space-y-1">
-                <p className="text-sm font-semibold text-site-text">{n.title}</p>
-                <p className="break-words text-sm text-site-text-muted">{n.body}</p>
-                <p className="text-xs text-site-text-muted">
+                <p className="t-body font-semibold text-site-text">{n.title}</p>
+                <p className="break-words t-body text-site-text-muted">{n.body}</p>
+                <p className="t-body text-site-text-muted">
                   {segLabel(n)} {' - '}
                   {t('notices-dismissed', {
                     defaultValue: '{{count}} dismissed',

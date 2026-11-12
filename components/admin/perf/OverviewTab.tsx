@@ -17,10 +17,10 @@ function SparkCard({ label, values, format, inkClass }: SparkCardProps) {
   const { t } = useTranslation('f-perf');
   const latest = values.length ? values[values.length - 1] : null;
   return (
-    <div className="rounded-site p-5">
+    <div className="min-w-0 border-t border-site-border py-3">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs text-site-text-muted">{label}</p>
-        <p className="text-sm font-semibold tabular-nums text-site-text">
+        <p className="t-label">{label}</p>
+        <p className="t-body font-semibold tabular-nums text-site-text">
           {latest === null ? '—' : format(latest)}
         </p>
       </div>
@@ -49,7 +49,7 @@ export function OverviewTab({ overview }: { overview: PerfOverview }) {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-site-text-muted">
+      <p className="t-body text-site-text-muted">
         {t('overview-scope', {
           defaultValue:
             'Web tier: {{count}} worker(s) merged. Percentiles are recomputed from merged histograms, not averaged.',
@@ -58,8 +58,10 @@ export function OverviewTab({ overview }: { overview: PerfOverview }) {
       </p>
 
       <section className="space-y-3">
-        <h2 className="site-section-label">{t('section-traffic', { defaultValue: 'Traffic' })}</h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <h2 className="t-heading text-site-text">
+          {t('section-traffic', { defaultValue: 'Traffic' })}
+        </h2>
+        <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4">
           <Kpi
             label={t('kpi-req-min', { defaultValue: 'Requests / min' })}
             value={fmtInt(k.reqPerMin.value)}
@@ -106,8 +108,10 @@ export function OverviewTab({ overview }: { overview: PerfOverview }) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="site-section-label">{t('section-runtime', { defaultValue: 'Runtime' })}</h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <h2 className="t-heading text-site-text">
+          {t('section-runtime', { defaultValue: 'Runtime' })}
+        </h2>
+        <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4">
           <Kpi
             label={t('kpi-el-p99', { defaultValue: 'Event-loop delay p99' })}
             value={fmtMs(k.eventLoopP99.value)}
@@ -164,10 +168,10 @@ export function OverviewTab({ overview }: { overview: PerfOverview }) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="site-section-label">
+        <h2 className="t-heading text-site-text">
           {t('section-database', { defaultValue: 'Database' })}
         </h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4">
           <Kpi
             label={t('kpi-pool', { defaultValue: 'Pool in use' })}
             value={
@@ -195,10 +199,10 @@ export function OverviewTab({ overview }: { overview: PerfOverview }) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="site-section-label">
+        <h2 className="t-heading text-site-text">
           {t('section-trends', { defaultValue: 'Last 60 minutes' })}
         </h2>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-x-6 md:grid-cols-2 lg:grid-cols-3">
           <SparkCard
             label={t('spark-requests', { defaultValue: 'Requests / min' })}
             values={series.map((b) => b.requests)}

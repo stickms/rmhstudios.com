@@ -58,13 +58,13 @@ export function LinkRulesAdmin() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-site-text-muted">
+      <p className="t-body text-site-text-muted">
         {t('rules-intro', {
           defaultValue:
             'Links to blocked domains, and to domains that only just started appearing, open a warning page first. Allowed domains skip the new-domain warning.',
         })}
       </p>
-      <div className="flex flex-wrap items-end gap-2 rounded-site p-5">
+      <div className="flex flex-wrap items-end gap-2">
         <Input
           className="min-w-48 flex-1"
           value={domain}
@@ -99,26 +99,26 @@ export function LinkRulesAdmin() {
           <Spinner />
         </div>
       ) : rules.length === 0 ? (
-        <p className="text-sm text-site-text-muted">
+        <p className="t-body text-site-text-muted">
           {t('rules-empty', { defaultValue: 'No rules yet.' })}
         </p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="divide-y divide-site-border border-t border-site-border">
           {rules.map((r) => (
             <li
               key={r.domain}
-              className="flex items-center gap-3 rounded-site px-4 py-3"
+              className="flex items-center gap-3 py-3"
             >
               <Badge variant="default">
                 {r.kind === 'DENY'
                   ? t('rules-deny', { defaultValue: 'Block' })
                   : t('rules-allow', { defaultValue: 'Allow' })}
               </Badge>
-              <span className="min-w-0 flex-1 break-all font-mono text-sm text-site-text">
+              <span className="min-w-0 flex-1 break-all font-mono t-body text-site-text">
                 {r.domain}
               </span>
               {r.note && (
-                <span className="hidden text-xs text-site-text-muted sm:inline">{r.note}</span>
+                <span className="hidden t-meta sm:inline">{r.note}</span>
               )}
               <Button
                 size="icon-sm"

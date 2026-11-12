@@ -109,7 +109,7 @@ export function MDXEditor({
           {isEdit
             ? t('post-updated-successfully', { defaultValue: 'Post updated successfully!' })
             : t('post-created-successfully', { defaultValue: 'Post created successfully!' })}
-          <p className="mt-1 text-sm text-site-text-muted">
+          <p className="mt-1 t-body text-site-text-muted">
             {t('changes-now-live', { defaultValue: 'Your changes are now live.' })}
           </p>
         </div>,
@@ -158,7 +158,7 @@ export function MDXEditor({
             <ArrowLeft className="size-5 md:hidden" aria-hidden />
           </Button>
           <div className="hidden h-4 w-px bg-site-border md:block" aria-hidden />
-          <span className="truncate text-sm font-semibold text-site-text max-w-48 md:max-w-xs">
+          <span className="t-body hidden max-w-48 truncate font-semibold text-site-text sm:inline md:max-w-xs">
             {isEdit
               ? t('editing-title', {
                   defaultValue: 'Editing: {{title}}',
@@ -199,7 +199,13 @@ export function MDXEditor({
       </div>
 
       <div className="flex-1 w-full relative">
-        <ResizablePanelGroup orientation="horizontal">
+        {/* Below `lg` only one pane shows. The library sizes the pane's OUTER element (50% each) and puts
+            `className` on an inner one, so hiding the inner pane left its outer half of the row empty and the form at
+            half width on a phone. The outer of the hidden pane is removed and the other takes the row. */}
+        <ResizablePanelGroup
+          orientation="horizontal"
+          className="max-lg:[&>[data-panel]:has(>.hidden)]:hidden!"
+        >
           <ResizablePanel
             defaultSize="50%"
             minSize="25%"
@@ -207,7 +213,7 @@ export function MDXEditor({
           >
             <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-4 min-h-0">
               <div className="flex items-center justify-between">
-                <h2 className="site-section-label">
+                <h2 className="t-heading text-site-text">
                   {t('metadata', { defaultValue: 'Metadata' })}
                 </h2>
               </div>
@@ -350,10 +356,10 @@ export function MDXEditor({
           <ResizablePanel
             defaultSize="50%"
             minSize="25%"
-            className={`h-full ${!isPreviewMode ? 'hidden lg:block' : 'block'} bg-site-bg overflow-y-auto relative border-l border-site-border lg:border-none min-h-0`}
+            className={`h-full ${!isPreviewMode ? 'hidden lg:block' : 'block'} bg-site-bg overflow-y-auto relative min-h-0`}
           >
             <div className="surface-chrome site-sticky-contained flex h-16 w-full items-center justify-between gap-3 px-4 py-3">
-              <h2 className="site-section-label">
+              <h2 className="t-heading text-site-text">
                 {t('live-preview', { defaultValue: 'Live Preview' })}
               </h2>
               <Button type="button" variant="ghost" size="sm" onClick={generatePreview}>

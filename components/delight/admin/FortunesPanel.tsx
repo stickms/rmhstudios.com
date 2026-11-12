@@ -33,10 +33,10 @@ export default function FortunesPanel() {
     );
   }
   return (
-    <ul className="space-y-3">
+    <ul className="divide-y divide-site-border border-t border-site-border">
       {q.data?.pending.map((f) => (
-        <li key={f.id} className="flex items-center gap-3 rounded-site px-4 py-3">
-          <span className="min-w-0 flex-1 text-sm text-site-text">{f.text}</span>
+        <li key={f.id} className="flex items-center gap-3 py-3">
+          <span className="min-w-0 flex-1 t-body text-site-text">{f.text}</span>
           <IconButton
             icon={Check}
             variant="ghost"

@@ -42,9 +42,9 @@ export function ErrorsTab() {
       <EmptyState description={t('errors-empty', { defaultValue: 'No client errors recorded yet.' })} />
     );
   return (
-    <ul className="space-y-3">
+    <ul className="divide-y divide-site-border border-t border-site-border">
       {groups.map((g) => (
-        <li key={g.id} className="space-y-2 rounded-site px-4 py-3">
+        <li key={g.id} className="space-y-2 py-3">
           <div className="flex flex-wrap items-center gap-2">
             {g.regressed && (
               <Badge variant="danger">{t('errors-regressed', { defaultValue: 'Regressed' })}</Badge>
@@ -52,15 +52,15 @@ export function ErrorsTab() {
             {g.resolved && (
               <Badge variant="success">{t('errors-resolved', { defaultValue: 'Resolved' })}</Badge>
             )}
-            <span className="font-mono text-xs text-site-text-muted">
+            <span className="font-mono t-meta">
               {t('errors-count', { defaultValue: '{{count}} events', count: g.count })}
             </span>
           </div>
-          <p className="break-words text-sm font-semibold text-site-text">{g.message}</p>
+          <p className="break-words t-body font-semibold text-site-text">{g.message}</p>
           {g.topFrame && (
-            <p className="break-all font-mono text-xs text-site-text-muted">{g.topFrame}</p>
+            <p className="break-all font-mono t-meta">{g.topFrame}</p>
           )}
-          <p className="text-xs text-site-text-muted">
+          <p className="t-body text-site-text-muted">
             {t('errors-seen', {
               defaultValue:
                 'First seen {{first}} in {{firstRelease}} - last seen {{last}} in {{lastRelease}}',

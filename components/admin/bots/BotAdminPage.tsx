@@ -205,7 +205,7 @@ export function BotAdminPage() {
           />
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 md:grid-cols-4">
               <StatTile
                 icon={Users}
                 label={t('bots-stat-bots', { defaultValue: 'Bots' })}
@@ -274,13 +274,16 @@ export function BotAdminPage() {
               />
             </div>
 
-            <section className="rounded-site p-5">
-              <h2 className="site-section-label mb-3">
+            <section className="min-w-0">
+              <h2 className="t-heading text-site-text mb-3">
                 {t('bots-habit-mix', { defaultValue: 'Pool by posting habit' })}
               </h2>
-              <ul className="grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
+              <ul className="t-body grid grid-cols-2 gap-x-6 md:grid-cols-4">
                 {HABITS.map((h) => (
-                  <li key={h} className="flex items-baseline justify-between gap-2">
+                  <li
+                    key={h}
+                    className="flex items-baseline justify-between gap-2 border-t border-site-border py-2"
+                  >
                     <span className="text-site-text-muted">{habitLabel[h]}</span>
                     <span className="font-semibold tabular-nums text-site-text">
                       {stats.habitMix[h] ?? 0}
@@ -291,17 +294,17 @@ export function BotAdminPage() {
             </section>
 
             <form
-              className="space-y-4 rounded-site p-5"
+              className="space-y-4 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
               onSubmit={(e) => {
                 e.preventDefault();
                 void save();
               }}
             >
               <div>
-                <h2 className="site-section-label">
+                <h2 className="t-heading text-site-text">
                   {t('bots-settings', { defaultValue: 'Worker settings' })}
                 </h2>
-                <p className="mt-1 text-xs text-site-text-muted">
+                <p className="mt-1 t-body text-site-text-muted">
                   {settings.saved && settings.updatedAt ? (
                     <>
                       {t('bots-last-saved', { defaultValue: 'Last saved' })}{' '}
@@ -334,7 +337,7 @@ export function BotAdminPage() {
                         onChange={(e) => setDraft({ ...draft, [f]: e.target.value })}
                         aria-describedby={`${id}-hint`}
                       />
-                      <p id={`${id}-hint`} className="text-xs text-site-text-muted">
+                      <p id={`${id}-hint`} className="t-body text-site-text-muted">
                         {fieldMeta[f].hint}{' '}
                         {t('bots-range', { defaultValue: '({{min}}–{{max}})', min, max })}
                       </p>
@@ -344,7 +347,7 @@ export function BotAdminPage() {
               </div>
 
               {preview ? (
-                <div className="surface-field space-y-2 rounded-site px-4 py-3 text-sm text-site-text-muted">
+                <div className="t-body space-y-2 border-s-2 border-site-border ps-3 text-site-text-muted">
                   <p>
                     {t('bots-preview-now', {
                       defaultValue: 'With the current {{bots}} bots: ≈ {{posts}} posts/day.',
@@ -382,7 +385,7 @@ export function BotAdminPage() {
                       })}
                     </p>
                   ) : null}
-                  <p className="text-xs text-site-text-muted">
+                  <p className="t-body text-site-text-muted">
                     {t('bots-preview-note', {
                       defaultValue:
                         'Upper-bound estimates: replies and the minimum gap between posts trim the real number a little. Every post and reply is a paid model call.',
@@ -390,7 +393,7 @@ export function BotAdminPage() {
                   </p>
                 </div>
               ) : (
-                <p className="text-sm text-site-danger">
+                <p className="t-body text-site-danger">
                   {t('bots-invalid', {
                     defaultValue:
                       'Every field needs a value in its range (whole numbers, except the multiplier).',

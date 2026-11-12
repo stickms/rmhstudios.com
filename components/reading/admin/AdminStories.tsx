@@ -66,15 +66,15 @@ export default function AdminStories() {
   return (
     <div className="space-y-6">
       <form
-        className="space-y-3 rounded-site p-5"
+        className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
         onSubmit={(e) => {
           e.preventDefault();
           create.mutate();
         }}
       >
-        <h2 className="site-section-label">{t('story-new', { defaultValue: 'New story' })}</h2>
+        <h2 className="t-heading text-site-text">{t('story-new', { defaultValue: 'New story' })}</h2>
         <div className="space-y-2">
-          <label htmlFor="st-title" className="text-sm text-site-text-muted">
+          <label htmlFor="st-title" className="t-body text-site-text-muted">
             {t('story-title-label', { defaultValue: 'Title' })}
           </label>
           <Input
@@ -87,7 +87,7 @@ export default function AdminStories() {
           />
         </div>
         <div className="space-y-2">
-          <label htmlFor="st-summary" className="text-sm text-site-text-muted">
+          <label htmlFor="st-summary" className="t-body text-site-text-muted">
             {t('story-summary-label', { defaultValue: 'Summary (optional)' })}
           </label>
           <Input
@@ -178,15 +178,15 @@ function StoryCard({
   const linked = new Set(story.articles.map((a) => a.slug));
 
   return (
-    <section className="space-y-3 rounded-site p-5"aria-label={story.title}>
+    <section className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"aria-label={story.title}>
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-site-text">{story.title}</h3>
-          {story.summary ? <p className="text-sm text-site-text-muted">{story.summary}</p> : null}
+          <h3 className="t-heading text-site-text">{story.title}</h3>
+          {story.summary ? <p className="t-body text-site-text-muted">{story.summary}</p> : null}
           <Link
             to="/news/stories/$slug"
             params={{ slug: story.slug }}
-            className="text-sm text-site-accent underline-offset-4 hover:underline"
+            className="t-body text-site-accent underline-offset-4 hover:underline"
           >
             {t('story-view', { defaultValue: 'View timeline' })}
           </Link>
@@ -203,14 +203,14 @@ function StoryCard({
       </div>
 
       {story.articles.length === 0 ? (
-        <p className="text-sm text-site-text-muted">
+        <p className="t-body text-site-text-muted">
           {t('story-no-articles', { defaultValue: 'No articles linked yet.' })}
         </p>
       ) : (
-        <ol className="space-y-2 text-sm">
+        <ol className="space-y-2 t-body">
           {story.articles.map((a) => (
             <li key={a.slug} className="flex items-center gap-2">
-              <time dateTime={a.date} className="font-mono text-xs text-site-accent">
+              <time dateTime={a.date} className="t-meta text-site-text text-site-accent">
                 {a.date}
               </time>
               <span className="min-w-0 flex-1 truncate text-site-text">{a.title}</span>
@@ -232,7 +232,7 @@ function StoryCard({
       )}
 
       <div className="space-y-2">
-        <label htmlFor={`st-q-${story.id}`} className="text-sm text-site-text-muted">
+        <label htmlFor={`st-q-${story.id}`} className="t-body text-site-text-muted">
           {t('story-find', { defaultValue: 'Find an article to add' })}
         </label>
         <Input
@@ -242,7 +242,7 @@ function StoryCard({
           placeholder={t('story-find-ph', { defaultValue: 'Search news titles…' })}
         />
         {search.data?.articles.length ? (
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2 t-body">
             {search.data.articles.map((a) => (
               <li key={a.slug} className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate text-site-text-muted">{a.title}</span>
@@ -278,7 +278,7 @@ function StoryCard({
           suggest.isPending ? (
             <Skeleton className="mt-3 h-10 w-full" />
           ) : (suggest.data?.suggestions.length ?? 0) === 0 ? (
-            <p className="mt-3 text-sm text-site-text-muted">
+            <p className="mt-3 t-body text-site-text-muted">
               {story.articles.length === 0
                 ? t('story-suggest-needs-article', {
                     defaultValue:
@@ -287,12 +287,12 @@ function StoryCard({
                 : t('story-suggest-none', { defaultValue: 'No related unlinked articles found.' })}
             </p>
           ) : (
-            <ul className="mt-3 space-y-2 text-sm">
+            <ul className="mt-3 space-y-2 t-body">
               {suggest.data!.suggestions.map((s) => (
                 <li key={s.slug} className="flex items-center gap-2">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-site-text">{s.title}</span>
-                    <span className="block text-xs text-site-text-muted">
+                    <span className="block t-meta">
                       {s.reason === 'tags'
                         ? t('suggest-tags', {
                             tags: s.overlap.join(', '),

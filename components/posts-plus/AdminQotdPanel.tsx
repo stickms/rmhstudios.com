@@ -96,8 +96,8 @@ export function AdminQotdPanel() {
     >
       <AdminBody width="narrow">
         {data && (
-          <section className="rounded-site p-5">
-            <p className="text-xs font-semibold text-site-text-muted">
+          <section className="min-w-0">
+            <p className="t-label">
               {t('admin-today', { defaultValue: 'Running today' })}
               {data.today.source === 'builtin' && (
                 <span className="ms-2 text-site-warning">
@@ -110,13 +110,13 @@ export function AdminQotdPanel() {
         )}
 
         <form
-          className="space-y-3 rounded-site p-5"
+          className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
           onSubmit={(e) => {
             e.preventDefault();
             void add();
           }}
         >
-          <label className="block text-sm text-site-text-muted">
+          <label className="block t-body text-site-text-muted">
             <span className="mb-2 block">{t('admin-new', { defaultValue: 'New prompt' })}</span>
             <Textarea
               value={text}
@@ -128,7 +128,7 @@ export function AdminQotdPanel() {
               })}
             />
           </label>
-          <label className="block text-sm text-site-text-muted">
+          <label className="block t-body text-site-text-muted">
             <span className="mb-2 block">
               {t('admin-day', { defaultValue: 'Pin to a day (optional)' })}
             </span>
@@ -151,7 +151,7 @@ export function AdminQotdPanel() {
         ) : (
           <>
             <section aria-labelledby="qotd-queue" className="space-y-3">
-              <h2 id="qotd-queue" className="site-section-label">
+              <h2 id="qotd-queue" className="t-heading text-site-text">
                 {t('admin-queue', { defaultValue: 'Queue and scheduled' })}
               </h2>
               {data.queue.length === 0 ? (
@@ -162,16 +162,16 @@ export function AdminQotdPanel() {
                   })}
                 />
               ) : (
-                <ul className="space-y-3">
+                <ul className="divide-y divide-site-border border-t border-site-border">
                   {data.queue.map((row) => (
                     <li
                       key={row.id}
-                      className="flex items-center gap-3 rounded-site px-4 py-3"
+                      className="flex items-center gap-3 py-3"
                     >
-                      <span className="w-24 shrink-0 text-xs text-site-text-muted">
+                      <span className="w-24 shrink-0 t-meta">
                         {row.dayKey ?? t('admin-next-free', { defaultValue: 'Next free day' })}
                       </span>
-                      <span className="min-w-0 flex-1 text-sm text-site-text">{row.text}</span>
+                      <span className="min-w-0 flex-1 t-body text-site-text">{row.text}</span>
                       <IconButton
                         icon={Trash2}
                         variant="ghost"
@@ -187,17 +187,17 @@ export function AdminQotdPanel() {
 
             {data.recent.length > 0 && (
               <section aria-labelledby="qotd-recent" className="space-y-3">
-                <h2 id="qotd-recent" className="site-section-label">
+                <h2 id="qotd-recent" className="t-heading text-site-text">
                   {t('admin-recent', { defaultValue: 'Recently run' })}
                 </h2>
-                <ul className="space-y-3">
+                <ul className="divide-y divide-site-border border-t border-site-border">
                   {data.recent.map((row) => (
                     <li
                       key={row.id}
-                      className="flex items-center gap-3 rounded-site px-4 py-3"
+                      className="flex items-center gap-3 py-3"
                     >
-                      <span className="w-24 shrink-0 text-xs text-site-text-muted">{row.dayKey}</span>
-                      <span className="min-w-0 flex-1 text-sm text-site-text-muted">
+                      <span className="w-24 shrink-0 t-meta">{row.dayKey}</span>
+                      <span className="min-w-0 flex-1 t-body text-site-text-muted">
                         {row.text}
                       </span>
                     </li>

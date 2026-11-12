@@ -216,15 +216,15 @@ function ManageAlbumPage() {
       wide
     >
       <AdminBody width="narrow">
-        {/* Album details — a singular editing panel gets the L2 glass pane. */}
-        <div className="relative flex flex-col gap-3 rounded-site p-5">
+        {/* Album details: fields on the page gutter. */}
+        <div className="relative flex flex-col gap-3">
           <Input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={120}
             placeholder={t('album-title-label', { defaultValue: 'Album title' })}
-            className="h-11 text-base font-semibold"
+            className="font-semibold"
           />
           <Textarea
             value={description}
@@ -244,9 +244,7 @@ function ManageAlbumPage() {
             >
               {t('save-details', { defaultValue: 'Save details' })}
             </Button>
-            <span className="truncate font-mono text-xs text-site-text-muted">
-              /library/albums/{album.slug}
-            </span>
+            <span className="t-meta min-w-0 break-all">/library/albums/{album.slug}</span>
           </div>
         </div>
 
@@ -254,7 +252,7 @@ function ManageAlbumPage() {
 
         {slides.length > 0 && (
           <div className="flex flex-col gap-3">
-            <p className="text-xs text-site-text-muted">
+            <p className="t-body text-site-text-muted">
               {t('slides-count-reorder', {
                 count: slides.length,
                 defaultValue_one: '{{count}} item · drag to reorder',
@@ -306,7 +304,7 @@ function ManageAlbumPage() {
         )}
 
         {/* Danger zone */}
-        <div className="flex justify-end border-t border-site-border pt-4">
+        <div className="flex justify-end border-t border-site-border pt-4 first:border-t-0 first:pt-0">
           <Button variant="danger" onClick={deleteAlbum}>
             <Trash2 aria-hidden="true" /> {t('delete-album', { defaultValue: 'Delete album' })}
           </Button>

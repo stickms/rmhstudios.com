@@ -109,7 +109,7 @@ function AdminUserBuildsPage() {
           aria-label={t("search-builds-label", { defaultValue: "Search builds" })}
         />
 
-        <div className="overflow-hidden rounded-site">
+        <div>
           {loading && builds.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16 text-site-text-muted">
               <Spinner />
@@ -125,10 +125,10 @@ function AdminUserBuildsPage() {
               {builds.map((build, index) => {
                 const isLast = index === builds.length - 1;
                 return (
-                  <div key={build.id} ref={isLast ? lastElementRef : null} className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-site-surface-hover sm:flex-row sm:items-center sm:gap-4">
+                  <div key={build.id} ref={isLast ? lastElementRef : null} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:gap-4">
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Link to={`/user-builds/${build.slug}` as string} className="truncate text-base font-semibold text-site-text hover:text-site-accent">{build.title}</Link>
+                        <Link to={`/user-builds/${build.slug}` as string} className="t-heading min-w-0 break-words text-site-text hover:underline">{build.title}</Link>
                         <Badge
                           variant={build.visibility === 'PUBLIC' ? 'success' : build.visibility === 'UNLISTED' ? 'warning' : 'default'}
                           icon={build.visibility === 'PRIVATE' ? <Lock aria-hidden /> : undefined}
@@ -140,7 +140,7 @@ function AdminUserBuildsPage() {
                           <Badge variant="warning" icon={<Award aria-hidden />}>{t("curated-badge", { defaultValue: "Curated" })}</Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 truncate text-sm text-site-text-muted">
+                      <div className="t-body flex items-center gap-2 truncate text-site-text-muted">
                         <Link to={`/u/${build.user.handle || build.user.username}` as string} className="transition-colors hover:text-site-text">@{build.user.handle || build.user.username}</Link>
                         <span aria-hidden>&bull;</span>
                         <span>{build.category?.name || t("uncategorized", { defaultValue: "Uncategorized" })}</span>
@@ -150,7 +150,7 @@ function AdminUserBuildsPage() {
                       <IconButton
                         icon={Award}
                         variant="default"
-                        className={build.featured ? 'border-site-warning/40 text-site-warning' : undefined}
+                        className={build.featured ? 'border-site-text' : undefined}
                         aria-pressed={build.featured}
                         onClick={() => handleToggleCurated(build.id)}
                         label={build.featured ? t("remove-curated-badge", { defaultValue: "Remove Curated badge" }) : t("add-curated-badge", { defaultValue: "Add Curated badge" })}
@@ -169,7 +169,7 @@ function AdminUserBuildsPage() {
           )}
 
           {loadingMore && (
-            <div className="flex justify-center p-4 text-site-text-muted"><Spinner /></div>
+            <div className="flex justify-center py-4 text-site-text-muted"><Spinner /></div>
           )}
         </div>
       </AdminBody>

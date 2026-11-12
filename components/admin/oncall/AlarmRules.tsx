@@ -48,11 +48,11 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
   const firing = rule.evaluations.some((e) => e.active);
 
   return (
-    <li className="min-w-0 rounded-site p-5">
+    <li className="min-w-0 py-4">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h3 className="font-semibold text-site-text">{rule.title}</h3>
-          <p className="mt-0.5 break-words font-mono text-xs text-site-text-muted">
+          <p className="mt-0.5 break-words font-mono t-meta">
             {rule.id} · {rule.metric}
             {rule.dim
               ? ` (${rule.dim === '*' ? t('rule-each', { defaultValue: 'each' }) : rule.dim})`
@@ -73,7 +73,7 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
         </div>
       </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-site-text-muted sm:grid-cols-3">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 t-meta sm:grid-cols-3">
         <div>
           <dt className="text-site-text-muted">{t('rule-current', { defaultValue: 'Now' })}</dt>
           <dd className="tabular-nums">{formatValue(worst, rule.unit)}</dd>
@@ -89,7 +89,7 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
       </dl>
 
       <div className="mt-3 flex flex-wrap items-end gap-3">
-        <label className="flex min-w-0 flex-col gap-1 text-xs text-site-text-muted">
+        <label className="flex min-w-0 flex-col gap-1 t-meta">
           {t('rule-threshold', {
             defaultValue: 'Alarm above ({{unit}})',
             unit: unitLabel(rule.unit),
@@ -109,7 +109,7 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
         >
           {t('rule-save', { defaultValue: 'Save threshold' })}
         </Button>
-        <label className="flex items-center gap-2 text-sm text-site-text-muted">
+        <label className="flex items-center gap-2 t-body text-site-text-muted">
           <Switch
             checked={rule.muted}
             disabled={saving}
@@ -155,17 +155,17 @@ export function AlarmRules() {
 
   return (
     <section>
-      <h2 className="site-section-label">
+      <h2 className="t-heading text-site-text">
         {t('rules-title', { defaultValue: 'Alarm rules' })}
       </h2>
-      <p className="mt-1 text-sm text-site-text-muted">
+      <p className="mt-1 t-body text-site-text-muted">
         {t('rules-body', {
           defaultValue:
             'Thresholds over the one-minute metrics history. Defaults live in lib/ops/alarm-rules.ts; a change here overrides the code until you reset it.',
         })}
       </p>
       {failed ? (
-        <p className="mt-3 rounded-site p-5 text-sm text-site-text-muted">
+        <p className="mt-3 t-body text-site-text-muted">
           {t('rules-failed', {
             defaultValue: 'Could not load the alarm rules. Refresh to try again.',
           })}
@@ -175,7 +175,7 @@ export function AlarmRules() {
           <Spinner />
         </div>
       ) : (
-        <ul className="mt-3 space-y-3">
+        <ul className="mt-3 divide-y divide-site-border border-t border-site-border">
           {rules.map((r) => (
             <RuleRow key={r.key} rule={r} onSaved={() => void load()} />
           ))}
