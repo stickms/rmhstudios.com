@@ -16,6 +16,7 @@ import {
   type ExploreTab,
 } from './ExploreRecommendations';
 import { PageTabs } from './PageTabs';
+import { Spine } from '@/components/ui/spine';
 import { SearchField } from '@/components/ui/search-field';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
@@ -291,15 +292,11 @@ export function ExploreColumn({
           apps, pages). Say so, rather than letting the People tab read as "no
           one by that name exists". */}
       {hasQuery && !session && (
-        <p className="px-4 pb-3 text-sm text-site-text-muted">
+        <p className="t-body pb-3 text-site-text-muted">
           {t('search-signed-out-scope', {
             defaultValue: 'Showing games, apps and pages.',
           })}{' '}
-          <Link
-            to="/login"
-            search={{ callbackURL: '/explore' }}
-            className="font-semibold text-site-accent hover:underline"
-          >
+          <Link to="/login" search={{ callbackURL: '/explore' }} className="underline">
             {t('search-signed-out-cta', { defaultValue: 'Sign in to search people and posts' })}
           </Link>
         </p>
@@ -309,12 +306,9 @@ export function ExploreColumn({
           a near-miss (a typo, or the wrong name for a game) is one tap from the
           right query instead of a dead end. */}
       {hasQuery && meta.suggestion && (
-        <div className="px-4 pb-3 text-sm text-site-text-muted">
+        <div className="t-body pb-3 text-site-text-muted">
           {t('search-did-you-mean', { defaultValue: 'Did you mean' })}{' '}
-          <button
-            onClick={() => setQuery(meta.suggestion!)}
-            className="font-semibold text-site-accent hover:underline"
-          >
+          <button onClick={() => setQuery(meta.suggestion!)} className="underline">
             {meta.suggestion}
           </button>
         </div>
@@ -338,7 +332,7 @@ export function ExploreColumn({
           })}
         />
       ) : (
-        <div className="divide-y divide-site-border">
+        <Spine>
           {tab === 'top' ? (
             <>
               <SearchHitSection hits={strong} />
@@ -360,7 +354,7 @@ export function ExploreColumn({
               />
             ))
           )}
-        </div>
+        </Spine>
       )}
     </div>
   );

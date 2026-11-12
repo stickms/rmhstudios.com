@@ -671,6 +671,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   feed: [
     // Steel phase 5 (2026-11-12): the settings hub's stations. English-only until the translate pipeline runs on build; remove with it.
     'conversation-send',
+    'explore-from-studio',
+    'explore-talked-about',
     'profile-period-last-week',
     'profile-period-this-week',
     'rmh-coins-label',

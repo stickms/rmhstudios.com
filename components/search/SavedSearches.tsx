@@ -78,7 +78,7 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
   if (saved.length === 0 && !q) return null;
 
   return (
-    <div className="px-4 pt-4">
+    <div className="pb-3">
       <div className="mb-3 flex items-center justify-between gap-2">
         <span className="site-section-label flex items-center gap-2">
           <Bookmark className="size-4" aria-hidden />
@@ -111,7 +111,7 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
               onClick={() => void copyOperator(op)}
               aria-label={t('operator-copy', { defaultValue: 'Copy {{operator}}', operator: op })}
               title={t('operator-copy', { defaultValue: 'Copy {{operator}}', operator: op })}
-              className="glass-fill rounded-full px-3 py-1.5 font-mono text-site-text hover:text-site-accent"
+              className="t-meta underline"
             >
               {op}
             </button>
@@ -122,10 +122,7 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
       {saved.length > 0 ? (
         <ul className="flex flex-wrap gap-2">
           {saved.map((s) => (
-            <li
-              key={s.id}
-              className="glass-fill inline-flex items-center gap-2 rounded-full py-1 ps-3 pe-1 text-sm"
-            >
+            <li key={s.id} className="inline-flex items-center gap-2 text-sm">
               <a
                 href={`/explore?q=${encodeURIComponent(s.query)}`}
                 className="max-w-44 truncate text-site-text hover:underline"
