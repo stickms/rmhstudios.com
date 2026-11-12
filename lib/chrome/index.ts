@@ -10,6 +10,22 @@ import { ChromeRenderer, type BallState, type Host } from './renderer';
 
 let renderer: ChromeRenderer | null = null;
 
+/**
+ * Has React finished hydrating this element? React stamps a node with a `__reactFiber$…` key as it hydrates it, in
+ * document order, and completes an element in the same step as the last node inside it. So the element is done once the
+ * last node of its subtree carries the key. (Comments are skipped: React keeps no fiber on a Suspense marker.)
+ */
+export function hydrated(el: Element): boolean {
+  let node: Node = el;
+  for (;;) {
+    let last = node.lastChild;
+    while (last && last.nodeType === 8) last = last.previousSibling;
+    if (!last) break;
+    node = last;
+  }
+  return Object.keys(node).some((key) => key.startsWith('__reactFiber$'));
+}
+
 function browserHost(): Host {
   return {
     window,
@@ -24,6 +40,7 @@ function browserHost(): Host {
     },
     createGlCanvas: () => document.createElement('canvas'),
     createEnvCanvas: () => document.createElement('canvas'),
+    ready: hydrated,
   };
 }
 
