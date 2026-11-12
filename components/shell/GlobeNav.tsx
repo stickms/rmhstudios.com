@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { GlobeFirstPaint } from './GlobeFirstPaint';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
@@ -180,7 +181,7 @@ export function GlobeNav() {
         <button
           ref={buttonRef}
           type="button"
-          className="globe-nav__globe chrome-globe"
+          className="globe-nav__globe"
           style={{ '--d': 'var(--globe-d)' } as CSSProperties}
           data-chrome="ball"
           data-globe-button=""
@@ -192,7 +193,9 @@ export function GlobeNav() {
               : t('shell-globe-open', { defaultValue: 'Open navigation' })
           }
           onClick={() => setOpenAnd(!open)}
-        />
+        >
+          <GlobeFirstPaint points={nodes.length} />
+        </button>
         {inbox > 0 && (
           <span className="globe-nav__dot">
             <span className="sr-only">{unreadText}</span>

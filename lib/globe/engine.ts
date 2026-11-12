@@ -24,6 +24,7 @@
  *
  * Axes are the screen's: x right, y DOWN, z toward the viewer. Rotation vectors are degrees, angular velocity deg/s.
  */
+import { placePoints, type GlobePoint } from './points';
 import { clamp01 } from '@/lib/core/math';
 import { DoughBody } from '@/lib/dough';
 import {
@@ -92,33 +93,8 @@ const WOBBLE_KICK = (() => {
 })();
 /** A pointer that has not moved for this long is "stationary": the magnet may act and the dough stops being carried. */
 const STATIONARY_MS = 110;
-const GOLDEN_DEG = 180 * (3 - Math.sqrt(5));
-
-/** A destination fixed on the sphere, as direction cosines. */
-export interface GlobePoint {
-  bx: number;
-  by: number;
-  bz: number;
-}
-
 interface Ripple extends GlobePoint {
   t0: number;
-}
-
-/**
- * Fibonacci-sphere placement over the whole globe. Deterministic from the count, so the same list always puts the same
- * destination on the same face: this is navigation, and muscle memory is the point.
- */
-export function placePoints(n: number): GlobePoint[] {
-  const out: GlobePoint[] = [];
-  for (let i = 0; i < n; i++) {
-    const sinLat = n <= 1 ? 0 : 1 - (2 * (i + 0.5)) / n;
-    const lat = Math.asin(sinLat);
-    const lon = (((i * GOLDEN_DEG) % 360) - 180) * DEG;
-    const cl = Math.cos(lat);
-    out.push({ bx: cl * Math.sin(lon), by: -Math.sin(lat), bz: cl * Math.cos(lon) });
-  }
-  return out;
 }
 
 export interface StepInput {
@@ -127,6 +103,8 @@ export interface StepInput {
   /** Keyboard focus is inside the globe: an ambient globe keeps its pose. */
   focusInside: boolean;
 }
+
+export { placePoints, type GlobePoint };
 
 export class GlobeEngine {
   /** The real orientation and angular velocity. */
