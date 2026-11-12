@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { useSession } from '@/components/Providers';
 import '@/lib/csgo-game/client/register-profile';
+import './register-session';
 import { createTf2Client, type Tf2Session } from '@/lib/tf2-game/client/tf2-client';
 import { findTf2Map } from '@/lib/tf2-game/data/maps';
 import { HUD_PARAM, parseSelection } from '@/lib/tf2-game/client/custom-hud/selection';
