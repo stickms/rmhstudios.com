@@ -19,7 +19,6 @@ import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
 import { PinnedHero } from'@/components/feed/PinnedHero';
-import { Reveal, RevealGroup, RevealItem } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from'@/lib/contract/client';
 import { getWrappedApi } from'@/lib/wrapped/wrapped.contract';
@@ -116,77 +115,77 @@ export function WrappedColumn({
 
  <div className="space-y-6 pt-4 pb-12">
  {/* Level badge — leads the below-fold content. */}
- <Reveal>
+ <div>
  <div className="flex items-center gap-3 rounded-site glass-fill px-4 py-3">
  <Star className="h-5 w-5 text-site-accent"/>
  <span className="text-sm font-semibold text-site-text">
  {t('level-value', { level: data.level, defaultValue:'Level {{level}}'})}
  </span>
  </div>
- </Reveal>
+ </div>
 
  {/* Stat tiles */}
- <Reveal>
+ <div>
  <h2 className="site-section-label mb-3">
  {t('wrapped-stats-heading', { defaultValue:'Your year in numbers'})}
  </h2>
- <RevealGroup as="div"className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+ <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
  {tiles.map((tile) => (
- <RevealItem key={tile.label}>
+ <div key={tile.label}>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <tile.icon className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{tile.value}</p>
  <p className="text-xs text-site-text-muted">{tile.label}</p>
  </div>
- </RevealItem>
+ </div>
  ))}
- <RevealItem>
+ <div>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <CoinIcon className="h-5 w-5"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.coinsEarned)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-coins-earned', { defaultValue:'Coins earned'})}</p>
  </div>
- </RevealItem>
+ </div>
  {data.play ? (
  <>
- <RevealItem>
+ <div>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <Gamepad2 className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{hours(data.play.seconds)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-time-played', { defaultValue:'Time played'})}</p>
  </div>
- </RevealItem>
- <RevealItem>
+ </div>
+ <div>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <Layers className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.play.cardDrops)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-cards-dropped', { defaultValue:'Cards dropped'})}</p>
  </div>
- </RevealItem>
- <RevealItem>
+ </div>
+ <div>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <Award className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.play.badges)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-badges-crafted', { defaultValue:'Badges crafted'})}</p>
  </div>
- </RevealItem>
+ </div>
  </>
  ) : null}
  {data.busiestMonth && (
- <RevealItem>
+ <div>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <CalendarDays className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{data.busiestMonth}</p>
  <p className="text-xs text-site-text-muted">{t('tile-busiest-month', { defaultValue:'Busiest month'})}</p>
  </div>
- </RevealItem>
+ </div>
  )}
- </RevealGroup>
- </Reveal>
+ </div>
+ </div>
 
  {/* Top post */}
  {data.play && data.play.top.length > 0 && (
- <Reveal>
+ <div>
  <h2 className="site-section-label mb-3">
  {t('wrapped-top-games', { defaultValue:'Most played'})}
  </h2>
@@ -200,10 +199,10 @@ export function WrappedColumn({
  </li>
  ))}
  </ol>
- </Reveal>
+ </div>
  )}
  {data.topPost && (
- <Reveal>
+ <div>
  <h2 className="site-section-label mb-3">
  {t('your-top-post', { defaultValue:'Your top post'})}
  </h2>
@@ -218,7 +217,7 @@ export function WrappedColumn({
  <Heart className="h-3.5 w-3.5 text-site-accent"/> {t('top-post-likes', { count: data.topPost.likeCount, formattedCount: fmt(data.topPost.likeCount), defaultValue:'{{formattedCount}} likes'})}
  </p>
  </Link>
- </Reveal>
+ </div>
  )}
  </div>
  </div>

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SearchField } from '@/components/ui/search-field';
 import { Select } from '@/components/ui/select';
-import { Reveal } from '@/components/motion';
 import { transition } from '@/lib/motion';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
@@ -160,9 +159,9 @@ export function NewsList({
     <div className="px-4 pt-4 pb-12">
       {/* Featured Hero */}
       {!hasActiveFilters && featuredArticles.length > 0 && (
-        <Reveal className="mb-[var(--site-section-gap)]">
+        <div className="mb-[var(--site-section-gap)]">
           <NewsHero articles={featuredArticles} />
-        </Reveal>
+        </div>
       )}
 
       {/* Filter Controls - collapsible */}

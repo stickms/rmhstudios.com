@@ -99,7 +99,7 @@ export default function LaterTab() {
               {t('later-add-all', { defaultValue: 'Add all to this room’s queue' })}
             </button>
           )}
-          <ul className="space-y-1" data-jelly-group>
+          <ul className="space-y-1">
             {items.map((i) => (
               <li key={i.id} className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate" title={i.url}>

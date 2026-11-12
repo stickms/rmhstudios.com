@@ -104,7 +104,6 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
             data-floating="backtotop"
             // A FAB-like disc (04 §1, tier C): `.glass-overlay` alone resolves to a
             // pane-mode body, which never moves; this one presses like a control.
-            data-jelly="control"
             aria-label={t('back-to-top', { defaultValue: 'Back to top' })}
             title={t('back-to-top', { defaultValue: 'Back to top' })}
             initial={{ opacity: 0, scale: 0.8, y: 8 }}

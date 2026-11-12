@@ -71,7 +71,6 @@ export function HorizontalScroller({
  data-slot="horizontal-scroller"
  // A pill holds flat members (filter chips): pressing any of them squashes the pill as one body. A card tray does not:
  // each card in it is its own body.
- data-jelly-press-body={surface === 'pill' ? '' : undefined}
  className={cn(
  'group/scroll relative min-w-0 max-w-full',
  // `.glass-fill` (L1): a tray holding repeated children is exactly that tier,

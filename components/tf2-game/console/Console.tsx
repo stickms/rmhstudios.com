@@ -361,7 +361,7 @@ function ConsolePanel({ con, inputRef, onClose }: { con: GameConsole; inputRef: 
   };
 
   return (
-    <section className="tf2g-console tf2g-interactive" aria-labelledby={titleId} data-jelly="off">
+    <section className="tf2g-console tf2g-interactive" aria-labelledby={titleId}>
       <header className="tf2g-console-head">
         <h2 id={titleId} className="tf2g-console-title">
           {t('console_title', { defaultValue: 'Console' })}
@@ -457,7 +457,7 @@ function CfgEditor({ con, file, onDone }: { con: GameConsole; file: string; onDo
     ref.current?.focus({ preventScroll: true });
   }, []);
   return (
-    <section className="tf2g-console tf2g-interactive" aria-labelledby={`${id}-title`} data-jelly="off">
+    <section className="tf2g-console tf2g-interactive" aria-labelledby={`${id}-title`}>
       <header className="tf2g-console-head">
         <h2 id={`${id}-title`} className="tf2g-console-title">
           {t('console_editing', { defaultValue: 'Editing {{file}}', file })}

@@ -426,7 +426,7 @@ export default function RmhTypeSolo() {
               )}
 
               {/* Passage — fills remaining space, scrolls internally */}
-              <div ref={passageRef} data-jelly-group="off" data-jelly="lite" className="flex-1 min-h-0 rounded-app app-glass p-6 rmhtype-passage-scroll">
+              <div ref={passageRef} className="flex-1 min-h-0 rounded-app app-glass p-6 rmhtype-passage-scroll">
                 <div className={`rmhtype-passage select-none${source === 'code' ? ' font-mono whitespace-pre-wrap' : ''}`}>
                   {[...soloPassage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';

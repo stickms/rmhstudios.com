@@ -12,7 +12,6 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { UserAvatar } from'./UserAvatar';
 import { PinnedHero } from'./PinnedHero';
 import { ColumnHeader } from'./ColumnHeader';
-import { Reveal } from'@/components/motion';
 import { api } from'@/lib/contract/client';
 import { HttpError, serverError } from'@/lib/http';
 import {
@@ -303,7 +302,7 @@ export function StorefrontColumn({
  </div>
  )}
 
- <Reveal className="space-y-3 px-4 pt-4 pb-12">
+ <div className="space-y-3 px-4 pt-4 pb-12">
  {products.length === 0 ? (
  <EmptyState
  description={
@@ -400,7 +399,7 @@ export function StorefrontColumn({
  </div>
  ))
  )}
- </Reveal>
+ </div>
  </div>
  );
 }

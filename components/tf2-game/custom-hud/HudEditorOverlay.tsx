@@ -104,7 +104,6 @@ export default function HudEditorOverlay({ store }: { store: HudStore }) {
           onEscapeKeyDown={(e) => e.preventDefault()}
           onOpenAutoFocus={(e) => e.preventDefault()}
           className="tf2g-hud-editor fixed inset-0 z-50 bg-app-bg outline-none"
-          data-jelly="off"
         >
           <DialogPrimitive.Title className="sr-only">
             {t('hud_editor', { defaultValue: 'HUD editor' })}

@@ -188,7 +188,6 @@ export function CarFamily() {
                 type="button"
                 onClick={() => setSelected(info.id)}
                 aria-pressed={on}
-                data-fluid-press=""
                 // Selection is marked twice on purpose. The accent tint is the
                 // obvious cue and the only one a screenshot shows, but colour
                 // alone is not a cue under the colour-vision modes (§13) — so

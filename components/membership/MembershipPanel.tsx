@@ -21,7 +21,6 @@ import { Check, ArrowUpRight, ArrowRight, X } from 'lucide-react';
 import type { Tier } from '@/lib/entitlements';
 import { useMembershipActions } from '@/components/membership/useMembershipActions';
 import { PinnedHero } from '@/components/feed/PinnedHero';
-import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -203,13 +202,11 @@ export function MembershipPanel({
         <div className="relative pb-12 pt-8 sm:pt-12 md:px-4">
           {/* ── Status banner ──────────────────────────────────── */}
           {status && (
-            <Reveal
-              className={`mb-6 flex items-center justify-between gap-3 rounded-site border px-4 py-3 text-sm ${
+            <div className={`mb-6 flex items-center justify-between gap-3 rounded-site border px-4 py-3 text-sm ${
                 status === 'success'
                   ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
                   : 'glass-pane text-site-text-muted'
-              }`}
-            >
+              }`}>
               <span>
                 {status === 'success'
                   ? t('status-success', {
@@ -227,7 +224,7 @@ export function MembershipPanel({
               >
                 <X className="h-4 w-4" aria-hidden />
               </button>
-            </Reveal>
+            </div>
           )}
 
           {/* ── Plan grid ──────────────────────────────────────────
@@ -240,7 +237,7 @@ export function MembershipPanel({
             actually exists: two up in the centre column, four only when a host
             genuinely has room for them. */}
           <div className="@container">
-            <RevealGroup className="grid items-stretch gap-4 @md:grid-cols-2 @5xl:grid-cols-4">
+            <div className="grid items-stretch gap-4 @md:grid-cols-2 @5xl:grid-cols-4">
               {PLANS.map((plan) => {
                 const isCurrent = !signedOut && tier === plan.tier;
                 const owned = !signedOut && RANK[tier] > RANK[plan.tier];
@@ -250,7 +247,7 @@ export function MembershipPanel({
                     ? t('upgrade', { defaultValue: 'Upgrade' })
                     : t('subscribe', { defaultValue: 'Subscribe' });
                 return (
-                  <RevealItem key={plan.tier} className="flex">
+                  <div key={plan.tier} className="flex">
                     {/* Card is a plain <article> so its CSS hover/featured
                       transforms aren't clobbered by the RevealItem motion node's
                       inline transform. */}
@@ -398,10 +395,10 @@ export function MembershipPanel({
                         )}
                       </div>
                     </article>
-                  </RevealItem>
+                  </div>
                 );
               })}
-            </RevealGroup>
+            </div>
           </div>
 
           {/* ── What a membership unlocks ──────────────────────── */}
@@ -414,11 +411,11 @@ export function MembershipPanel({
           />
 
           {/* ── Footnote ───────────────────────────────────────── */}
-          <Reveal as="p" className="mt-8 text-center font-mono text-xs text-site-text-muted">
+          <p className="mt-8 text-center font-mono text-xs text-site-text-muted">
             {t('billing-footnote', {
               defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe',
             })}
-          </Reveal>
+          </p>
         </div>
       </DeferOnNavigate>
     </section>

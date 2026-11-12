@@ -9,7 +9,6 @@ import { Select } from'@/components/ui/select';
 import { UserAvatar } from'./UserAvatar';
 import { HandleInput } from'./HandleInput';
 import { ColumnHeader } from'./ColumnHeader';
-import { Reveal } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import type { RankTier } from'@/lib/ranked/tiers';
 import { api } from'@/lib/contract/client';
@@ -213,10 +212,7 @@ export function RankedColumn({
  {signedIn && (
  <>
  {/* Issue a challenge */}
- <Reveal
- as="section"
- className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
- >
+ <section className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <h2 id="ranked-challenge-heading"className="site-section-label mb-3">
  {t('challenge-a-player', { defaultValue:'Challenge a player'})}
  </h2>
@@ -252,11 +248,11 @@ export function RankedColumn({
  </Button>
  </div>
  {formMsg && <p className="mt-3 text-xs text-site-text-muted">{formMsg}</p>}
- </Reveal>
+ </section>
 
  {/* Incoming challenges */}
  {incoming.length > 0 && (
- <Reveal as="section">
+ <section>
  <h2 className="site-section-label mb-3">
  {t('challenges-for-you', { defaultValue:'Challenges for you'})}
  </h2>
@@ -305,12 +301,12 @@ export function RankedColumn({
  </div>
  ))}
  </div>
- </Reveal>
+ </section>
  )}
 
  {/* Outgoing challenges */}
  {outgoing.length > 0 && (
- <Reveal as="section">
+ <section>
  <h2 className="site-section-label mb-3">
  {t('your-challenges', { defaultValue:'Your challenges'})}
  </h2>
@@ -335,12 +331,12 @@ export function RankedColumn({
  </div>
  ))}
  </div>
- </Reveal>
+ </section>
  )}
 
  {/* Your ratings */}
  {ratings.length > 0 && (
- <Reveal as="section">
+ <section>
  <h2 className="site-section-label mb-3">
  {t('your-ratings', { defaultValue:'Your ratings'})}
  </h2>
@@ -363,13 +359,13 @@ export function RankedColumn({
  </div>
  ))}
  </div>
- </Reveal>
+ </section>
  )}
  </>
  )}
 
  {/* Leaderboard */}
- <Reveal as="section">
+ <section>
  <div className="mb-3 flex items-center justify-between gap-2">
  <h2 id="ranked-leaderboard-heading"className="site-section-label flex items-center gap-2">
  <Trophy className="h-3.5 w-3.5"aria-hidden /> {t('leaderboard', { defaultValue:'Leaderboard'})}
@@ -420,7 +416,7 @@ export function RankedColumn({
  ))}
  </div>
  )}
- </Reveal>
+ </section>
  </div>
  </div>
  );

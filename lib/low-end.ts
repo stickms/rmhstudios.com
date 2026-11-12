@@ -4,8 +4,8 @@
  * This replaces the old low-end class on `<html>` (removed 2026-11-08, docs/superpowers/specs/2026-11-08-refractive-glass-design.md,
  * "Calls made" 1 and 2). It is deliberately NOT a material tier:
  *
- * - It is never stamped on `<html>`, never a CSS class, and the site's glass material (`app/jelly-material.css`,
- *   `lib/jelly/`) does not read it. Software-rendering browsers, Data Saver and low-memory devices get the full material.
+ * - It is never stamped on `<html>`, never a CSS class, and the site's surfaces (flat under Steel) do not
+ *   read it. Software-rendering browsers, Data Saver and low-memory devices get the same page.
  * - It is read by code that decides what ONE heavy feature does on a weak machine: the games' canvas glow and 3D tiers
  *   (`lib/game-capabilities.ts`, `lib/render/canvas2d-fx.ts`, slice-it, void-breaker, hearthworks model loading), the
  *   eversion effect's quality tier, and RUM (which reports the inputs). The liquid globe keeps one narrower read,

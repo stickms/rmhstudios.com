@@ -3,7 +3,7 @@
  *
  * Two things it does that `absolute bottom-full right-0 z-30` cannot:
  *
- * 1. **It portals to `<body>`.** Page content renders inside `.radial-frame`,
+ * 1. **It portals to `<body>`.** Page content renders inside the page frame,
  *    which is `position: relative; z-index: var(--z-content)` — a stacking
  *    context pinned at 1 (globals.css §5.6). Every z-index inside it is then
  *    measured INSIDE that context, so a menu left where its trigger lives can

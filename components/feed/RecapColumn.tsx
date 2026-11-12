@@ -6,7 +6,6 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
 import { useTranslation } from'react-i18next';
 import { PinnedHero } from'@/components/feed/PinnedHero';
-import { Reveal, RevealGroup, RevealItem } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from'@/lib/contract/client';
 import { getRecapApi } from'@/lib/wrapped/wrapped.contract';
@@ -90,25 +89,25 @@ export function RecapColumn({
 
  <div className="space-y-6 pt-4 pb-12">
  {/* Stat grid */}
- <Reveal>
+ <div>
  <h2 className="site-section-label mb-3">
  {t('recap-stats-heading', { defaultValue:'This week'})}
  </h2>
- <RevealGroup as="div"className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+ <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
  {STAT_META.map(({ key, labelKey, labelDefault, icon: Icon }) => (
- <RevealItem key={key}>
+ <div key={key}>
  <div className={`rounded-site glass-fill p-5 text-center ${LIFT_CARD}`}>
  <Icon className="mx-auto h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-bold text-site-text">{recap[key] as number}</p>
  <p className="text-xs text-site-text-muted">{t(labelKey, { defaultValue: labelDefault })}</p>
  </div>
- </RevealItem>
+ </div>
  ))}
- </RevealGroup>
- </Reveal>
+ </div>
+ </div>
 
  {recap.topPost && (
- <Reveal>
+ <div>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <p className="mb-2 text-xs font-semibold text-site-text-muted">{t('recap-top-post', { defaultValue:'Your top post'})}</p>
  <p className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
@@ -117,17 +116,17 @@ export function RecapColumn({
  {recap.topPost.likeCount} {t('recap-likes', { defaultValue:'likes'})}
  </p>
  </div>
- </Reveal>
+ </div>
  )}
 
- <Reveal>
+ <div>
  <Link
  to="/achievements"
  className={`block rounded-site glass-fill px-4 py-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover ${LIFT_CARD}`}
  >
  {t('recap-view-achievements', { defaultValue:'View your achievements →'})}
  </Link>
- </Reveal>
+ </div>
  </div>
  </>
  )}

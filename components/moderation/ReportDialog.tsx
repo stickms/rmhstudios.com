@@ -101,7 +101,6 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
           {REPORT_REASONS.map((value) => (
             <label
               key={value}
-              data-jelly
               className={`flex cursor-pointer items-center gap-3 rounded-site-sm border px-3 py-2 text-sm transition-colors ${
                 reason === value
                   ? 'border-site-accent bg-site-bg-subtle text-site-text'

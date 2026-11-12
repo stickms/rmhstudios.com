@@ -67,7 +67,6 @@ export function TouchPad({ onMenu, host }: { onMenu: () => void; host: HTMLEleme
   return createPortal(
     <div
       className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex select-none items-end justify-between p-3"
-      data-jelly-scope="off"
     >
       <div className="flex gap-2">
         <PadButton code="ArrowLeft" label="◀" ariaLabel={t("touch-left", { defaultValue: "Move left" })} />

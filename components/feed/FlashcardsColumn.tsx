@@ -6,7 +6,6 @@ import { Loader2, BookOpen, Plus, Sparkles, X, Globe, Lock, Layers } from 'lucid
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { ColumnHeader } from './ColumnHeader';
 import { StudyTabs } from '@/components/study/StudyTabs';
@@ -238,14 +237,14 @@ export function FlashcardsColumn({
 
       <div className="space-y-6 py-4">
         {mine.length > 0 && (
-          <Reveal as="section">
+          <section>
             <h2 className="site-section-label mb-2">
               {t('your-decks', { defaultValue: 'Your decks' })}
             </h2>
             <div className="space-y-2">{mine.map((d) => DeckCard(d))}</div>
-          </Reveal>
+          </section>
         )}
-        <Reveal as="section">
+        <section>
           <h2 className="site-section-label mb-2">
             {t('public-decks', { defaultValue: 'Public decks' })}
           </h2>
@@ -269,7 +268,7 @@ export function FlashcardsColumn({
           ) : (
             <div className="space-y-2">{popular.map((d) => DeckCard(d, true))}</div>
           )}
-        </Reveal>
+        </section>
       </div>
     </div>
   );

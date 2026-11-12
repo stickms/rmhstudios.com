@@ -11,7 +11,7 @@ function SliceItLayout() {
   // this layout is mounted on EVERY Slice It route, so the chart editor and the
   // player page get them too.
   return (
-    <div className="slice-theme min-h-svh" data-jelly-scope="off">
+    <div className="slice-theme min-h-svh">
       {/* No <Toaster> here. `components/Providers.tsx` already mounts one for
           the whole app, at bottom-left and themed. A second one rendered every
           toast a second time at sonner's default bottom-right — the same

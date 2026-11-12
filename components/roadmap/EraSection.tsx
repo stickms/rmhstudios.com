@@ -1,4 +1,3 @@
-import { RevealGroup, RevealItem } from "@/components/motion";
 import type { YearSection } from "./roadmap-types";
 import { eraColorFor } from "./roadmap-model";
 
@@ -48,13 +47,13 @@ export function EraSection({ section }: { section: YearSection }) {
       </header>
 
       {/* Milestone grid — staggered into view via the shared motion primitives. */}
-      <RevealGroup className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {section.milestones.map((milestone, i) => (
-          <RevealItem key={`${section.year}-${i}`} className="flex">
+          <div key={`${section.year}-${i}`} className="flex">
             <MilestoneCard title={milestone.title} body={milestone.body} />
-          </RevealItem>
+          </div>
         ))}
-      </RevealGroup>
+      </div>
     </section>
   );
 }

@@ -14,12 +14,6 @@ export {
   scaleIn,
 } from './motionTokens';
 
-export { Reveal } from './Reveal';
-export type { RevealProps } from './Reveal';
-
-export { RevealGroup, RevealItem } from './RevealGroup';
-export type { RevealGroupProps, RevealItemProps } from './RevealGroup';
-
 export { AsyncReveal } from './AsyncReveal';
 export type { AsyncRevealProps } from './AsyncReveal';
 

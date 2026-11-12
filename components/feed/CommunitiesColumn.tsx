@@ -4,7 +4,6 @@ import { SearchField } from '@/components/ui/search-field';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Users, Plus, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { RevealGroup, RevealItem } from '@/components/motion';
 import { CommunityListSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
@@ -207,12 +206,12 @@ export function CommunitiesColumn({
           }
         />
       ) : (
-        <RevealGroup as="ul" className="flex flex-col gap-3 px-4 pb-12">
+        <ul className="flex flex-col gap-3 px-4 pb-12">
           {items.map((c) => {
             if (c.locked) {
               // Listed + locked: metadata and the way in, nothing of the content.
               return (
-                <RevealItem as="li" key={c.id}>
+                <li key={c.id}>
                   <div className="flex flex-col gap-3 rounded-site glass-fill p-5">
                     <Link
                       to={`/c/${c.slug}` as string}
@@ -226,7 +225,7 @@ export function CommunitiesColumn({
                       className="justify-end"
                     />
                   </div>
-                </RevealItem>
+                </li>
               );
             }
             const roleLabel =
@@ -238,7 +237,7 @@ export function CommunitiesColumn({
                     ? t('joined-badge', { defaultValue: 'Joined' })
                     : null;
             return (
-              <RevealItem as="li" key={c.id}>
+              <li key={c.id}>
                 <Link
                   to={`/c/${c.slug}` as string}
                   className="flex items-start gap-4 rounded-site glass-fill p-5 transition-[translate,border-color,background-color] duration-site hover:-translate-y-0.5 hover:border-site-accent/50 hover:bg-site-surface-hover"
@@ -283,10 +282,10 @@ export function CommunitiesColumn({
                     </div>
                   </div>
                 </Link>
-              </RevealItem>
+              </li>
             );
           })}
-        </RevealGroup>
+        </ul>
       )}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

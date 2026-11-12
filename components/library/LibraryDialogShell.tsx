@@ -4,9 +4,9 @@
  * All five (`UploadModal`, `LibraryEditControls`, and three inside
  * `LibraryCollections`) rendered `<div className="lib-upload__overlay">` in
  * place. `.lib-upload__overlay` is `position: fixed; inset: 0; z-index: 120`,
- * and `fixed` was fine — `.radial-frame` is `position: relative`, which is not a
+ * and `fixed` was fine — the page frame is `position: relative`, which is not a
  * containing block for fixed descendants — so the 72%-black scrim really did
- * cover the viewport. The **z-index** was the problem: `.radial-frame` is
+ * cover the viewport. The **z-index** was the problem: the page frame is
  * `z-index: var(--z-content)`, a stacking context pinned at 1, so 120 was
  * measured inside that 1 and the shell's chrome kept painting over the scrim.
  *

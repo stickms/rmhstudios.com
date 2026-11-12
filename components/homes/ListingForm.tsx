@@ -297,7 +297,6 @@ export function ListingForm({ listing }: ListingFormProps) {
                 key={a}
                 type="button"
                 onClick={() => toggleAmenity(a)}
-                data-jelly
                 className={`min-h-11 rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
                   on
                     ? 'border-site-accent bg-site-bg-subtle text-site-accent'

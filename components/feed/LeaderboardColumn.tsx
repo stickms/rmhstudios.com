@@ -8,7 +8,6 @@ import { ColumnHeader } from'./ColumnHeader';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
 import { Tabs, type TabItem } from'@/components/ui/tabs';
-import { Reveal } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
 
 type Scope ='global'|'friends';
@@ -110,15 +109,11 @@ export function LeaderboardColumn({
  ) : (
  <div className="space-y-1">
  {entries.map((e) => (
- <Reveal
- as="div"
- key={e.userId}
- className={`flex items-center gap-3 rounded-site border p-2.5 ${LIFT_CARD} ${
+ <div key={e.userId} className={`flex items-center gap-3 rounded-site border p-2.5 ${LIFT_CARD} ${
  e.isViewer
  ?'border-site-accent bg-site-bg-subtle'
  :'border-site-border bg-site-surface'
- }`}
- >
+ }`}>
  <span className={`w-6 text-center text-sm font-bold ${rankClass(e.rank)}`}>
  {e.rank}
  </span>
@@ -142,7 +137,7 @@ export function LeaderboardColumn({
  <span className="flex items-center gap-1 text-sm font-semibold text-site-text">
  <Coins className="h-3.5 w-3.5 text-site-podium-gold"aria-hidden /> {fmt(e.coins)}
  </span>
- </Reveal>
+ </div>
  ))}
  </div>
  )}

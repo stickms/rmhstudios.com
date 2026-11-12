@@ -809,7 +809,7 @@ export function VoidBreakerGame() {
           on a phone held sideways the score sits under the sensor housing and
           the wave counter under the home indicator. */}
       {showGame && (
-        <div className="app-hud pointer-events-none flex flex-col justify-between p-2 sm:p-3" data-jelly-zone="hud">
+        <div className="app-hud pointer-events-none flex flex-col justify-between p-2 sm:p-3">
           {/* Top bar */}
           <div className="flex justify-between items-start">
             {/* Score + multiplier */}

@@ -4,7 +4,6 @@ import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useTranslation } from'react-i18next';
-import { Reveal, RevealGroup, RevealItem } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from '@/lib/contract/client';
 import { getStreakApi } from '@/lib/streak.contract';
@@ -82,7 +81,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
 
  <div className="space-y-8 p-4">
  {/* Current streak hero */}
- <Reveal>
+ <div>
  <section className="flex flex-col items-center gap-3 rounded-site glass-fill p-6 text-center">
  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-site-warning/15">
  <Flame className="h-10 w-10 fill-site-warning/30 text-site-warning"/>
@@ -107,12 +106,12 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  </span>
  )}
  </section>
- </Reveal>
+ </div>
 
  {/* Stats */}
- <Reveal>
- <RevealGroup as="div"className="grid grid-cols-2 gap-3">
- <RevealItem>
+ <div>
+ <div className="grid grid-cols-2 gap-3">
+ <div>
  <div
  className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
  >
@@ -127,8 +126,8 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  : t('days-unit', { defaultValue:'days'})}
  </p>
  </div>
- </RevealItem>
- <RevealItem>
+ </div>
+ <div>
  <div
  className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
  >
@@ -141,13 +140,13 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  {t('all-time', { defaultValue:'all time'})}
  </p>
  </div>
- </RevealItem>
- </RevealGroup>
- </Reveal>
+ </div>
+ </div>
+ </div>
 
  {/* Next milestone */}
  {next && (
- <Reveal>
+ <div>
  <section className="rounded-site glass-fill p-5">
  <div className="mb-2 flex items-center justify-between">
  <h2 className="text-sm font-semibold text-site-text">
@@ -177,11 +176,11 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  })}
  </p>
  </section>
- </Reveal>
+ </div>
  )}
 
  {/* Milestones list */}
- <Reveal>
+ <div>
  <section>
  <h2 className="site-section-label mb-2">
  {t('milestones-heading', { defaultValue:'Milestones'})}
@@ -222,7 +221,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  })}
  </div>
  </section>
- </Reveal>
+ </div>
 
  <p className="flex items-center justify-center gap-1.5 text-center text-xs text-site-text-muted">
  <CoinIcon className="h-3.5 w-3.5"/>{''}

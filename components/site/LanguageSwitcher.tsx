@@ -187,7 +187,6 @@ export function LanguageSwitcher() {
                   onClick={() => choose(l)}
                   data-evert=""
                   data-row-glow=""
-                  data-jelly="off"
                   className={cn(
                     "flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition-colors",
                     "focus:outline-none",

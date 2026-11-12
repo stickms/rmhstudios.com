@@ -79,7 +79,7 @@ export default function HUD({ hud }: { hud: HudState }) {
     return (
         // `app-hud` insets the layer by the device's safe area, so nothing here sits under a
         // notch or home indicator; the panels keep ordinary small offsets from its edges.
-        <div className="app-hud kk-hud" data-jelly-zone="hud">
+        <div className="app-hud kk-hud">
             <div className="kk-hud__bar">
                 <div className="kk-hud__col kk-hud__col--l">
                     {left.map((f) => <FighterPanel key={f.seat} f={f} side="l" mode={hud.mode} />)}

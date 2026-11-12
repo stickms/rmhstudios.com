@@ -60,8 +60,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
       <DialogContent
         hideClose
         container={host}
-        aria-describedby={undefined}
-        data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
+        aria-describedby={undefined} data-liquid-material="off" data-dialog-shell="bare"
         className="max-w-xl gap-0 rounded-none border-0 bg-transparent p-0 shadow-none"
         onInteractOutside={(event) => event.preventDefault()}
         onCloseAutoFocus={returnFocus}

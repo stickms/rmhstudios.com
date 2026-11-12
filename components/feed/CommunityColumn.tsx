@@ -13,7 +13,6 @@ import {
 } from'lucide-react';
 import { formatDistanceToNow } from'date-fns';
 import { CommunityPlusBody } from'@/components/communities/CommunityPlusBody';
-import { Reveal } from'@/components/motion';
 import { VoiceRoomBanner } from'@/components/groupcall/VoiceRoomBanner';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -189,7 +188,7 @@ export function CommunityColumn({
  <h1 className="truncate text-lg font-bold text-site-text">{community.name}</h1>
  </header>
 
- <Reveal className="border-b border-site-border p-4">
+ <div className="border-b border-site-border p-4">
  <div className="flex items-start gap-3">
  <div
  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-2xl"
@@ -245,7 +244,7 @@ export function CommunityColumn({
  {community.description && (
  <p className="mt-2 text-sm text-site-text-muted">{community.description}</p>
  )}
- </Reveal>
+ </div>
 
  {community.joined && (
  <VoiceRoomBanner
@@ -257,7 +256,7 @@ export function CommunityColumn({
 
  {/* Pinned announcements */}
  {(community.announcements.length > 0 || isMod) && (
- <Reveal delay={0.06} className="border-b border-site-border bg-site-bg-subtle/30 p-4">
+ <div className="border-b border-site-border bg-site-bg-subtle/30 p-4">
  <div className="mb-2 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Megaphone className="h-4 w-4 text-site-accent"/>{''}
@@ -320,7 +319,7 @@ export function CommunityColumn({
  ))}
  </ul>
  )}
- </Reveal>
+ </div>
  )}
 
  {/* Composer, tabs (posts · hall of fame · challenge · census · top · mod tools) */}

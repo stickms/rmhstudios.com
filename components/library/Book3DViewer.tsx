@@ -211,7 +211,7 @@ export function Book3DViewer({ book, onClose }: { book: LibraryBook; onClose: ()
   } as React.CSSProperties;
 
   // PORTALLED to <body>, which is what makes `.b3d`'s `position: fixed` mean the
-  // VIEWPORT. In place it renders inside `.radial-frame` — `position: relative;
+  // VIEWPORT. In place it renders inside the page frame — `position: relative;
   // z-index: var(--z-content)`, a stacking context pinned at 1 — so its z-index
   // of 130 was measured inside that 1 and the shell's opaque z-60 top bar
   // painted over the viewer's top 56px (mobile) / 64px (desktop). `.b3d__bar` is

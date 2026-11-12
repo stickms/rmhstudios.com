@@ -5,7 +5,6 @@ import { ProgressColumn } from'./ProgressColumn';
 import { AchievementsColumn } from'./AchievementsColumn';
 import { StreakColumn } from'./StreakColumn';
 import { PageTabs } from'./PageTabs';
-import { Reveal } from'@/components/motion';
 import type { AchievementsPayload } from'@/lib/achievements.server';
 
 export type JourneyTab ='streaks'|'progress'|'achievements';
@@ -59,7 +58,7 @@ export function JourneyColumn({
  return (
  <div>
  {/* Reveal header — stat-grid dashboard, lighter treatment than marquee pages. */}
- <Reveal>
+ <div>
  {/* The tab strip *is* this page's header: no title, so the nav fills the
  row. PageTabs owns the placement (same gutter and sheet as Inbox and
  Explore) instead of a one-off sticky capsule. */}
@@ -73,7 +72,7 @@ export function JourneyColumn({
  icon,
  }))}
  />
- </Reveal>
+ </div>
 
  {tab ==='streaks'&& <StreakColumn hideHeader />}
  {tab ==='progress'&& <ProgressColumn hideHeader />}

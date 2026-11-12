@@ -151,7 +151,7 @@ export default function Tf2MainMenu({
         </Modal>
         {/* The developer console over the menu (its own key, ` , works here too). */}
         {active ? (
-          <div className="tf2g-hud app-theme tf2hud-theme" data-game="tf2" data-jelly="off">
+          <div className="tf2g-hud app-theme tf2hud-theme" data-game="tf2">
             <Console game="tf2" store={store} settings={settings} onSettingsChange={onSettings} />
           </div>
         ) : null}

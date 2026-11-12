@@ -101,12 +101,8 @@ export default function AppShell({
       // Daylight inherited for the light one (components/shared/app-theme.css,
       // "The AppShell tier reads the site contract").
       data-tier="app"
-      // Historic claim on the app subtree for the old press layer. The CSS soft
-      // body (app/jelly-material.css §8) now presses every button, tab
-      // and menu item everywhere by default, so the attribute is a no-op alias
-      // kept for readers. Gesture surfaces opt out with `data-jelly` set to off (or
-      // the alias `data-fluid-press="none"`), and held HUD regions with
-      // `data-jelly-scope="off"`.
+      // Read by app/globals/base-interaction.css only: links inside the app subtree do not select or call out on a
+      // long press.
       data-fluid-press-scope
     >
       {toaster && <AppToaster />}

@@ -90,7 +90,7 @@ export function ImageCropModal({
  // did nothing at all on /u/<id>.
  //
  // `ProfileEditModal` renders it as a sibling AFTER `</SheetContent></Sheet>`,
- // so in place it lands inside `.radial-frame` — `position: relative; z-index:
+ // so in place it lands inside the page frame — `position: relative; z-index:
  // var(--z-content)`, a stacking context PINNED AT 1 (globals.css §5.6). The
  // `z-[300]` this used to carry was therefore measured inside that 1 and lost
  // to the host Sheet's BODY-level z-50: the cropper painted underneath the very

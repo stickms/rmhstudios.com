@@ -260,7 +260,7 @@ export default function RmhStudyFlashcards() {
             </p>
 
             {revealed && (
-              <div className="grid grid-cols-4 gap-2" data-jelly-group>
+              <div className="grid grid-cols-4 gap-2">
                 {GRADES.map((g) => (
                   <button
                     key={g.grade}

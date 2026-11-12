@@ -257,7 +257,6 @@ export function LocationSearch({
             onClick={() => choose(r)}
             data-evert=""
             data-row-glow=""
-            data-jelly="off"
             className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2 px-4 py-2 text-left text-sm text-site-text transition-colors duration-site"
           >
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />

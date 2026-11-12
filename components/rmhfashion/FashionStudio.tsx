@@ -326,7 +326,6 @@ export function FashionStudio() {
                         type="button"
                         onClick={() => setOutfit((o) => wear(o, garment.id))}
                         aria-pressed={on}
-                        data-fluid-press=""
                         // Worn is marked twice — an accent tint AND a heavier
                         // outline — so the state does not depend on hue under
                         // the colour-vision modes (§13).

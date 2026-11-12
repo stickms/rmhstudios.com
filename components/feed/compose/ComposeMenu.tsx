@@ -43,7 +43,7 @@ const ITEM =
  * draft and schedule.
  *
  * The panel is an AnchoredMenu: it portals to <body> (in place it is trapped
- * inside `.radial-frame`'s stacking context, so the top bar and the floating
+ * inside the page frame's stacking context, so the top bar and the floating
  * chrome paint over it) and it opens on whichever side of the composer has
  * room, rather than being shoved back down the screen by a viewport clamp.
  */

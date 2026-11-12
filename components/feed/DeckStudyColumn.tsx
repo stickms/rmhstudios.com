@@ -8,7 +8,6 @@ import { Button } from'@/components/ui/button';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { useTranslation } from'react-i18next';
-import { Reveal } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
@@ -297,7 +296,7 @@ export function DeckStudyColumn({
 
  <div className="space-y-4 p-4">
  {signedIn && (
- <Reveal>
+ <div>
  <Button
  variant="default"
  className="w-full gap-2"
@@ -313,13 +312,11 @@ export function DeckStudyColumn({
  })
  : t('review-deck', { defaultValue:'Review deck'})}
  </Button>
- </Reveal>
+ </div>
  )}
 
  {deck.isOwner && (
- <Reveal
- className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
- >
+ <div className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}>
  <p className="mb-2 flex items-center gap-1.5 site-section-label">
  <Plus className="h-3.5 w-3.5"/> {t('add-a-card', { defaultValue:'Add a card'})}
  </p>
@@ -356,10 +353,10 @@ export function DeckStudyColumn({
  </Button>
  </div>
  </div>
- </Reveal>
+ </div>
  )}
 
- <Reveal as="section">
+ <section>
  <h2 className="site-section-label mb-2 flex items-center gap-1.5">
  <RotateCcw className="h-3.5 w-3.5"/>{''}
  {t('card-count', { count: cards.length, defaultValue_one:'{{count}} card', defaultValue:'{{count}} cards'})}
@@ -375,7 +372,7 @@ export function DeckStudyColumn({
  </div>
  ))}
  </div>
- </Reveal>
+ </section>
  </div>
  </div>
  );

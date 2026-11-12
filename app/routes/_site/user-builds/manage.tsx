@@ -13,7 +13,6 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import type { Build } from '@/lib/user-builds-types';
 import { useTranslation } from 'react-i18next';
-import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
@@ -137,7 +136,7 @@ function ManageContent() {
             }
           />
         ) : (
-          <Reveal className="space-y-3">
+          <div className="space-y-3">
             {builds.map((build) => (
               <div
                 key={build.id}
@@ -217,7 +216,7 @@ function ManageContent() {
                 </div>
               </div>
             ))}
-          </Reveal>
+          </div>
         )}
       </div>
     </PageLayout>

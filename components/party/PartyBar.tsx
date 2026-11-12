@@ -72,7 +72,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   // now. This file carried its own usePopPresence + useMenuViewportFit and
   // nothing else — the panel had no Escape and no outside-press, so once open
   // the only way out was the X in its own header. It also rendered in place, so
-  // it was measured inside `.radial-frame`'s stacking context (pinned at
+  // it was measured inside the page frame's stacking context (pinned at
   // z-index 1) and painted under the shell's chrome. AnchoredMenu portals to
   // <body>.
 

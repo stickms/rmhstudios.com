@@ -183,7 +183,7 @@ export default function HomePage() {
               ['s01-f3', 'Maintenance windows published a quarter ahead'],
               ['s01-f4', 'The same change calendar we schedule our own migrations against'],
             ].map(([key, dflt]) => (
-              <li key={key} className="u-reveal-soft flex items-start gap-2 text-sm text-site-text">
+              <li key={key} className="flex items-start gap-2 text-sm text-site-text">
                 <Check className="mt-1 size-4 shrink-0 text-site-accent" aria-hidden />
                 <span>{t(key, { defaultValue: dflt })}</span>
               </li>

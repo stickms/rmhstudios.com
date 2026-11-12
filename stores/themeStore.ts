@@ -30,8 +30,8 @@ export const SITE_STYLES = [
 ] as const;
 
 /**
- * Theme applied when the visitor has no stored/saved preference: Midnight
- * (`graphite`), the near-black void of the Plasmatic Jelly identity (owner
+ * Theme applied when the visitor has no stored/saved preference: Night
+ * (`graphite`), the near-black edition of Steel (owner
  * decision, 2026-10-23 — it was Daylight).
  *
  * Migration semantics, which follow from what is persisted rather than from any

@@ -217,7 +217,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
   if (phase === 'idle') return null;
 
   // Both shapes portal to <body>. This mounts from `Providers`, outside
-  // `.radial-frame`, so z-120 is already body-level today — the portal makes
+  // the page frame, so z-120 is already body-level today — the portal makes
   // that true wherever it is rendered, and keeps the fixed overlay clear of any
   // blurred glass ancestor (design-language §4/§5.6). Only reached on the
   // client: the surface is lazy-loaded and `phase` is idle during SSR.

@@ -1,7 +1,6 @@
 /**
  * Canonical top-level site navigation (client-safe). Single source of truth for
- * both the rendered nav (`components/radial/LiquidGlobe`, which pins one
- * destination per point on the hub's globe) and the reorder editor (`components/site/SidebarEditMode`),
+ * both the rendered nav (`components/shell/GlobeNav` and the sidebar) and the reorder editor (`components/site/SidebarEditMode`),
  * so the two never drift. Named "sidebar" for the left rail this predates.
  *
  * Each item has a stable `id`: leaves use their href (`/library`), groups use
@@ -146,7 +145,7 @@ export const SIDEBAR_NAV: NavItem[] = [
  * Whether `pathname` is "inside" a nav leaf — the one definition of what lights
  * a pin, used by the desktop rail and by the globe's you-are-here orientation.
  *
- * It lived twice, once in `RadialNavRail` and once in `LiquidGlobe`, which is
+ * It lived twice, once in the old nav rail and once in the old globe, which is
  * how `/apps` came to be marked in neither: a second copy is a second thing to
  * remember to update. `/` matches only itself (every path starts with it);
  * everything else matches its own path or a `/`-delimited descendant, so

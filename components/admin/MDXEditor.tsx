@@ -126,7 +126,7 @@ export function MDXEditor({
 
   // PORTALLED to <body>. This is a full-screen takeover (its own header carries
   // Back-to-admin and Save Post), but it renders from a route under `_site`, so
-  // in place it landed inside `.radial-frame` — `position: relative; z-index:
+  // in place it landed inside the page frame — `position: relative; z-index:
   // var(--z-content)`, a stacking context pinned at 1 — and its `z-50` was
   // measured inside that 1. The shell's OPAQUE top bar (`--z-topbar: 60`,
   // 4rem at >=768px) then painted over the editor's own 4rem header: at desktop

@@ -3722,7 +3722,6 @@ export function GameCanvas() {
             <div
               data-mobile-btn
               className="absolute inset-0 pointer-events-none flex flex-row"
-              data-jelly-scope="off"
             >
               <button
                 data-mobile-btn

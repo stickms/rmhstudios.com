@@ -625,7 +625,6 @@ export default function GameHud(props: GameHudProps) {
       data-game={game}
       data-calm={settings.reducedFlashing}
       data-touch={touch ? 'true' : undefined}
-      data-jelly="off"
       data-jelly-zone="playfield"
     >
       <div ref={probe} className="tf2g-safe-probe" aria-hidden="true" />

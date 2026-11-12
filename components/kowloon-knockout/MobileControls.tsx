@@ -129,8 +129,6 @@ export default function MobileControls({ input }: { input: LocalInputSource }) {
         // first pixel the hardware leaves alone. The layer never takes a gesture itself.
         <div
             className={`app-hud kk-controls${hand === 'left' ? ' kk-controls--lefty' : ''}`}
-            data-jelly-zone="hud"
-            data-jelly-scope="off"
             ref={root}
         >
             <div

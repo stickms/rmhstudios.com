@@ -85,7 +85,7 @@ export default function TrackTab() {
             {t('track-empty', { defaultValue: 'No commentary for this video yet.' })}
           </p>
         ) : (
-          <ul className="space-y-1" data-jelly-group>
+          <ul className="space-y-1">
             {tracks.map((tr) => (
               <li key={tr.id} className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate">
