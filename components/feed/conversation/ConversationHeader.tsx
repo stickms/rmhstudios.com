@@ -56,10 +56,10 @@ export function ConversationHeader({
               fallbackName={otherUser.name ?? undefined}
             />
             <div className="min-w-0">
-              <p className="t-body flex items-center gap-2 font-semibold text-site-text">
+              <h1 className="t-body flex items-center gap-2 font-semibold text-site-text">
                 {otherUser.name || 'Unknown'}
                 {otherUser.isBot && <AutomatedBadge />}
-              </p>
+              </h1>
               {otherUser.username && <p className="t-meta">@{otherUser.username}</p>}
               <Suspense fallback={null}>
                 <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />

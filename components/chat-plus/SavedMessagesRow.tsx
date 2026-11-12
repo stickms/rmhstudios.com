@@ -76,9 +76,9 @@ export function SavedMessagesHeader() {
   return (
     <div className="flex items-center gap-2">
       <div>
-        <p className="t-body font-semibold text-site-text">
+        <h1 className="t-body font-semibold text-site-text">
           {t('saved-messages', { defaultValue: 'Saved Messages' })}
-        </p>
+        </h1>
         <p className="text-xs text-site-text-muted">
           {t('saved-subtitle', { defaultValue: 'Only you can see this' })}
         </p>

@@ -25,7 +25,7 @@ export function GroupHeader({
         </Link>
       </Button>
       <div className="min-w-0 flex-1">
-        <p className="t-body truncate font-semibold text-site-text">{group.name}</p>
+        <h1 className="t-body truncate font-semibold text-site-text">{group.name}</h1>
         <p className="t-meta truncate">
           {t('member-count', { count: group.members.length, defaultValue: '{{count}} members' })}
         </p>
