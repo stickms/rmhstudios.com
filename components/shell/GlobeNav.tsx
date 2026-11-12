@@ -209,6 +209,8 @@ export function GlobeNav() {
         ref={navRef}
         id={navId}
         className="globe-nav__pins"
+        // Docked, the pins are a picture on the ball (they orbit with it): not focusable, not read, not pressable.
+        inert={!open}
         aria-label={t('shell-sections-label', { defaultValue: 'Sections' })}
       >
         <span className="globe-nav__reticle" aria-hidden />

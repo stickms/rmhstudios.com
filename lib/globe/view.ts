@@ -27,13 +27,14 @@ const HOLD_MS = 350;
 const DRIFT_HZ = { fine: 15, coarse: 7 } as const;
 /** How long the dots take to change size when the globe opens or closes (the M4 move), ms. */
 const OPEN_MS = 360;
-/**
- * Destination-dot size, dot strength and cage-line strength, docked and open. Open, the real icon pins sit where the
- * dots were, so the dots fade out under them.
- */
 /** The chrome renderer starts at idle; until it is up, ask again this often, this many times. */
 const ATTACH_RETRY_MS = 400;
 const ATTACH_TRIES = 40;
+/**
+ * Dot size, dot strength and cage-line strength, docked and open. The dots are off at both sizes when the globe has
+ * icon pins: the icons ride the ball docked as well as open, and a flat dot under each would be a second mark for the
+ * same place. A globe with destinations but no pin elements keeps its dots while docked.
+ */
 const DOTS = { docked: [1.25, 1, 0.55], open: [0.5, 0, 1] } as const;
 
 export { RETICLE_FRACTION };
@@ -107,6 +108,8 @@ export class GlobeView {
 
   constructor(options: GlobeViewOptions) {
     this.o = options;
+    // The pins are always laid out at the open globe's radius: docked, their anchor is scaled down with the ball.
+    this.radius = options.pinRadius?.() ?? 144;
     this.points = placePoints(options.points);
     this.engine = new GlobeEngine(this.points);
     this.ball = {
@@ -393,7 +396,8 @@ export class GlobeView {
     ball.soft = e.soft;
     const k = this.openness;
     ball.dots[0] = DOTS.docked[0] + (DOTS.open[0] - DOTS.docked[0]) * k;
-    ball.dots[1] = DOTS.docked[1] + (DOTS.open[1] - DOTS.docked[1]) * k;
+    const dockedDots = this.o.pins ? 0 : DOTS.docked[1];
+    ball.dots[1] = dockedDots + (DOTS.open[1] - dockedDots) * k;
     ball.dots[2] = DOTS.docked[2] + (DOTS.open[2] - DOTS.docked[2]) * k;
     if (this.chrome) {
       if (this.attached === null) {
@@ -403,7 +407,7 @@ export class GlobeView {
       }
       if (this.attached) this.chrome.drawChrome();
     }
-    if (this.open || this.openness > 0) this.paintPins(now);
+    this.paintPins(now);
   }
 
   /** Compositor-only writes, and only the ones whose value changed. */
