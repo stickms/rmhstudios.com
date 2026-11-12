@@ -64,7 +64,7 @@ export function AccentPicker() {
                 'flex h-11 w-11 items-center justify-center rounded-full border-2 transition-transform',
                 active
                   ? 'border-site-text ring-2 ring-site-text/40'
-                  : 'border-site-border hover:scale-110',
+                  : 'border-site-border',
               )}
               style={{ background: preset.value }}
             >

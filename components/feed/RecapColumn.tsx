@@ -6,7 +6,6 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
 import { useTranslation } from'react-i18next';
 import { PinnedHero } from'@/components/feed/PinnedHero';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from'@/lib/contract/client';
 import { getRecapApi } from'@/lib/wrapped/wrapped.contract';
 
@@ -83,8 +82,6 @@ export function RecapColumn({
  </Button>
  </Link>
  }
- scrollCue={t('recap-scroll-cue', { defaultValue:'Scroll to explore'})}
- screens={2.6}
  />
 
  <div className="space-y-6 pt-4 pb-12">
@@ -96,9 +93,9 @@ export function RecapColumn({
  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
  {STAT_META.map(({ key, labelKey, labelDefault, icon: Icon }) => (
  <div key={key}>
- <div className={`rounded-site p-5 text-center ${LIFT_CARD}`}>
+ <div className={`rounded-site p-5 text-center`}>
  <Icon className="mx-auto h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-bold text-site-text">{recap[key] as number}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{recap[key] as number}</p>
  <p className="text-xs text-site-text-muted">{t(labelKey, { defaultValue: labelDefault })}</p>
  </div>
  </div>
@@ -108,7 +105,7 @@ export function RecapColumn({
 
  {recap.topPost && (
  <div>
- <div className={`rounded-site p-5 ${LIFT_CARD}`}>
+ <div className={`rounded-site p-5`}>
  <p className="mb-2 text-xs font-semibold text-site-text-muted">{t('recap-top-post', { defaultValue:'Your top post'})}</p>
  <p className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
  <p className="mt-2 text-xs text-site-text-muted">
@@ -122,7 +119,7 @@ export function RecapColumn({
  <div>
  <Link
  to="/achievements"
- className={`block rounded-site px-4 py-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover ${LIFT_CARD}`}
+ className={`block rounded-site px-4 py-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover`}
  >
  {t('recap-view-achievements', { defaultValue:'View your achievements →'})}
  </Link>

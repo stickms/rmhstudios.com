@@ -119,7 +119,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                     <Calendar className="size-3.5" aria-hidden />
                     {article.date}
                   </span>
-                  <h2 className="mb-6 font-display text-2xl font-medium leading-tight text-site-text md:text-4xl">
+                  <h2 className="t-heading mb-6">
                     {article.title}
                   </h2>
                   <Link

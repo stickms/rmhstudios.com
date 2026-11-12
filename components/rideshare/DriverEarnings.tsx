@@ -59,7 +59,7 @@ export function DriverEarnings() {
             <Wallet className="h-5 w-5" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-site-text">{formatUsd(data.earningsCents)}</div>
+            <div className="text-2xl font-semibold text-site-text">{formatUsd(data.earningsCents)}</div>
             <div className="text-xs text-site-text-muted">{tr("total-take-home", { defaultValue: "Total take-home" })}</div>
           </div>
         </div>
@@ -83,8 +83,8 @@ export function DriverEarnings() {
           ))}
         </dl>
         <div className="mt-3 flex items-center justify-between border-t border-site-border pt-3">
-          <span className="text-base font-bold text-site-text">{tr("take-home", { defaultValue: "Take-home" })}</span>
-          <span className="text-lg font-bold text-site-success">{formatUsd(data.earningsCents)}</span>
+          <span className="text-base font-semibold text-site-text">{tr("take-home", { defaultValue: "Take-home" })}</span>
+          <span className="text-lg font-semibold text-site-success">{formatUsd(data.earningsCents)}</span>
         </div>
       </div>
 
@@ -93,7 +93,7 @@ export function DriverEarnings() {
         {stats.map((s) => (
           <div key={s.label} className="rounded-site p-5">
             <s.icon className="h-4 w-4 text-site-accent" />
-            <div className="mt-2 text-lg font-bold text-site-text">{s.value}</div>
+            <div className="mt-2 text-lg font-semibold text-site-text">{s.value}</div>
             <div className="text-xs text-site-text-muted">{s.label}</div>
             <div className="text-xs text-site-text-muted">{s.sub}</div>
           </div>

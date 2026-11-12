@@ -45,7 +45,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
  <DialogContent className="max-w-md p-0 gap-0 flex flex-col max-h-[80dvh] overflow-hidden">
  <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
- <DialogTitle className="font-display font-bold text-lg text-site-text">
+ <DialogTitle className="font-semibold text-lg text-site-text">
  {title}
  </DialogTitle>
  </div>
@@ -68,7 +68,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
  >
  <UserAvatar user={user} linkToProfile={false} />
  <div className="min-w-0">
- <p className="font-bold text-site-text text-sm truncate">
+ <p className="font-semibold text-site-text text-sm truncate">
  {user.name || user.username ||'Unknown'}
  </p>
  {user.handle && (

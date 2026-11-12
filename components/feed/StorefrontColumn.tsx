@@ -193,7 +193,6 @@ export function StorefrontColumn({
  return (
  <div>
  <PinnedHero
- screens={2}
  eyebrow={
  creator.handle
  ? `@${creator.handle}`
@@ -203,7 +202,6 @@ export function StorefrontColumn({
  subtitle={t('storefront-hero-sub', {
  defaultValue:'Coin-purchasable drops, straight from the creator.',
  })}
- scrollCue={t('storefront-scroll-cue', { defaultValue:'View products'})}
  />
  <ColumnHeader
  title={t('creators-store', {
@@ -332,7 +330,7 @@ export function StorefrontColumn({
  {!p.active ? t('hidden-suffix', { defaultValue:'· hidden'}) :''}
  </p>
  </div>
- <span className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-site-text">
+ <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-site-text">
  <CoinIcon className="h-4 w-4"/> {fmt(p.price)}
  </span>
  </div>

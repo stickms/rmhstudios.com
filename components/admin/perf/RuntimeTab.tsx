@@ -30,7 +30,7 @@ function RedisCard({ title, report }: { title: string; report: RedisPlaneReport 
   const misses = Number(get('keyspace_misses') ?? 0);
   return (
     <article className="space-y-3 rounded-site p-5">
-      <h3 className="text-base font-bold text-site-text">{title}</h3>
+      <h3 className="text-base font-semibold text-site-text">{title}</h3>
       {!report || !i ? (
         <p className="text-sm text-site-text-muted">
           {t('redis-unreachable', { defaultValue: 'Redis is not configured or did not answer.' })}
@@ -229,7 +229,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
               const c = s.cgroup!;
               return (
                 <article key={s.service} className="space-y-3 rounded-site p-5">
-                  <h3 className="text-base font-bold text-site-text">
+                  <h3 className="text-base font-semibold text-site-text">
                     {s.service} · cgroup v{c.version}
                   </h3>
                   <Pairs

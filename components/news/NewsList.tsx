@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { m as motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Newspaper, X } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
@@ -8,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SearchField } from '@/components/ui/search-field';
 import { Select } from '@/components/ui/select';
-import { transition } from '@/lib/motion';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
 import { NewsCategoryTabs } from './NewsCategoryTabs';
@@ -234,27 +232,12 @@ export function NewsList({
       )}
 
       {/* Grid */}
-      <div
-        ref={gridRef}
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-[var(--site-section-gap)] scroll-mt-8"
-      >
-        <AnimatePresence mode="popLayout">
-          {paginatedArticles.map((article, i) => (
-            <motion.div
-              key={article.slug}
-              layout
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              // A spring, not a 0.25s tween: `layout` reflows the grid on every
-              // filter change, and a card caught mid-move retargets from where it
-              // is instead of restarting.
-              transition={transition}
-            >
-              <NewsCard article={article} index={i} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+      <div ref={gridRef} className="grid grid-cols-1 scroll-mt-8">
+        {paginatedArticles.map((article) => (
+          <div key={article.slug} className="border-b border-site-border">
+            <NewsCard article={article} />
+          </div>
+        ))}
 
         {/* Canonical EmptyState, and it tells the truth about why the
                     grid is empty. It used to blame "your filters" and offer
@@ -292,14 +275,9 @@ export function NewsList({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <motion.div
-          className="mt-[var(--site-section-gap)]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={transition}
-        >
+        <div className="mt-[var(--site-section-gap)]">
           <Pagination page={safePage} totalPages={totalPages} onPageChange={goToPage} />
-        </motion.div>
+        </div>
       )}
     </div>
   );

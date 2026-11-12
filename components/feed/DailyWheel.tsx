@@ -78,7 +78,7 @@ export function DailyWheel() {
  <section className="rounded-site relative p-5">
  <div className="mb-3 flex items-center gap-2">
  <Sparkles className="h-4 w-4 text-site-accent"/>
- <h2 className="text-sm font-bold text-site-text">{t('daily-wheel', { defaultValue:'Daily wheel'})}</h2>
+ <h2 className="text-sm font-semibold text-site-text">{t('daily-wheel', { defaultValue:'Daily wheel'})}</h2>
  </div>
 
  <div className="flex flex-col items-center gap-4">
@@ -99,7 +99,7 @@ export function DailyWheel() {
  return (
  <div
  key={i}
- className="text-on-media absolute left-1/2 top-1/2 flex items-center gap-0.5 text-xs font-bold"
+ className="text-on-media absolute left-1/2 top-1/2 flex items-center gap-0.5 text-xs font-semibold"
  style={{
  transform: `rotate(${a}deg) translate(0, -88px) rotate(${-a - angle}deg)`,
  transformOrigin:'center',

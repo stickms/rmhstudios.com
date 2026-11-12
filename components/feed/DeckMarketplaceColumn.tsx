@@ -82,7 +82,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
      than a link one way and a Back the other. */}
  <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Library className="h-5 w-5 text-site-accent"/>
- <h1 className="text-lg font-bold text-site-text">
+ <h1 className="text-lg font-semibold text-site-text">
  {t('deck-marketplace', { defaultValue:'Browse decks'})}
  </h1>
  </header>
@@ -120,7 +120,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  className="flex flex-col rounded-site relative p-5"
  >
  <Link to="/study/$deckId"params={{ deckId: deck.id }} className="min-w-0">
- <h2 className="truncate text-sm font-bold text-site-text hover:text-site-accent">
+ <h2 className="truncate text-sm font-semibold text-site-text hover:text-site-accent">
  {deck.title}
  </h2>
  </Link>

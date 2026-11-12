@@ -157,10 +157,10 @@ export function ListingsMap({
                     e.stopPropagation();
                     onSelect?.(l.id);
                   }}
-                  className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold ring-1 transition ${
+                  className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-semibold ring-1 transition ${
                     active
                       ? 'scale-110 bg-site-text text-site-bg ring-2 ring-site-accent'
-                      : 'bg-site-accent text-site-accent-fg ring-site-text hover:scale-105 hover:ring-2 hover:ring-site-text/70'
+                      : 'bg-site-accent text-site-accent-fg ring-site-text hover:ring-2 hover:ring-site-text/70'
                   }`}
                 >
                   {pinLabel(l)}
@@ -170,7 +170,7 @@ export function ListingsMap({
           })}
         </Map>
       ) : (
-        <div className="h-full min-h-64 w-full animate-pulse bg-site-bg" />
+        <div className="h-full min-h-64 w-full bg-site-bg" />
       )}
     </div>
   );

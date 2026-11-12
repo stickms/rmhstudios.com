@@ -171,7 +171,7 @@ export function PersonaChatColumn({
  )}
  </div>
  <div className="min-w-0 flex-1">
- <p className="truncate text-sm font-bold text-site-text">{persona.name}</p>
+ <p className="truncate text-sm font-semibold text-site-text">{persona.name}</p>
  {persona.tagline && (
  <p className="truncate text-xs text-site-text-muted">{persona.tagline}</p>
  )}

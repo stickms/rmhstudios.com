@@ -61,7 +61,7 @@ export default function TopContributorsPanel({ slug }: { slug: string }) {
           const name = r.user.name || r.user.handle || t('someone', { defaultValue: 'Someone' });
           return (
             <li key={r.user.id} className="flex items-center gap-3 px-4 py-3">
-              <span className="w-6 text-center text-sm font-bold tabular-nums text-site-text-muted">
+              <span className="w-6 text-center text-sm font-semibold tabular-nums text-site-text-muted">
                 {i + 1}
               </span>
               <UserAvatar src={r.user.image} alt={name} size={36} fallbackName={name} />
@@ -92,7 +92,7 @@ export default function TopContributorsPanel({ slug }: { slug: string }) {
                   </p>
                 )}
               </div>
-              <span className="text-sm font-bold tabular-nums text-site-text">{r.score}</span>
+              <span className="text-sm font-semibold tabular-nums text-site-text">{r.score}</span>
             </li>
           );
         })}

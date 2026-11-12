@@ -35,7 +35,7 @@ export function HubLinkRow({
         <Icon className="size-5" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-display text-lg font-semibold tracking-[-0.015em] text-site-text">
+        <span className="block text-lg font-semibold tracking-[-0.015em] text-site-text">
           {title}
         </span>
         <span className="mt-1 block text-sm text-site-text-muted">{description}</span>

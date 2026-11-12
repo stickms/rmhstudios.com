@@ -27,7 +27,7 @@ function BuildMiniCard({ build }: { build: Build }) {
             className="h-12 w-16 shrink-0 rounded-site-sm object-cover"
           />
         ) : (
-          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-bg-subtle text-xs font-bold text-site-accent">
+          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-bg-subtle text-xs font-semibold text-site-accent">
             {build.title[0]?.toUpperCase()}
           </div>
         )}

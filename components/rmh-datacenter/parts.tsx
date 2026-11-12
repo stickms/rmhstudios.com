@@ -38,8 +38,8 @@ export function Stat({
       <span
         className={
           tone === 'load'
-            ? 'font-display text-3xl font-semibold tracking-tight text-site-warning'
-            : 'font-display text-3xl font-semibold tracking-tight text-site-text'
+            ? 'text-3xl font-semibold tracking-tight text-site-warning'
+            : 'text-3xl font-semibold tracking-tight text-site-text'
         }
       >
         {value}
@@ -62,7 +62,7 @@ export function SectionHeading({
   return (
     <div className="flex flex-col gap-2">
       <span className="text-xs font-medium text-site-accent">{kicker}</span>
-      <h2 id={id} className="font-display text-2xl font-semibold tracking-tight text-site-text">
+      <h2 id={id} className="text-2xl font-semibold tracking-tight text-site-text">
         {heading}
       </h2>
     </div>

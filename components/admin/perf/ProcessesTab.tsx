@@ -40,7 +40,7 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
   return (
     <article className="space-y-3 rounded-site p-5">
       <header className="flex flex-wrap items-center gap-2">
-        <h3 className="text-base font-bold text-site-text">{p.service}</h3>
+        <h3 className="text-base font-semibold text-site-text">{p.service}</h3>
         <Badge variant="default">
           {t('proc-pid', { defaultValue: 'pid {{pid}}', pid: p.pid })}
         </Badge>

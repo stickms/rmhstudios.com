@@ -99,7 +99,7 @@ export function ProfileHoverCard({
  className="z-(--z-floating) w-72 p-4 surface-overlay outline-none"
  >
  {!profile ? (
- <div className="flex animate-pulse items-center gap-3">
+ <div className="flex items-center gap-3">
  <div className="h-12 w-12 rounded-full bg-site-surface-active"/>
  <div className="flex-1 space-y-2">
  <div className="h-3.5 w-2/3 rounded bg-site-surface-active"/>
@@ -135,7 +135,7 @@ export function ProfileHoverCard({
  )}
  </div>
  <Link to={profileHref} className="group block">
- <p className="flex items-center gap-1 font-bold text-site-text group-hover:underline">
+ <p className="flex items-center gap-1 font-semibold text-site-text group-hover:underline">
  <span className="truncate">{profile.name || t('unknown-user', { defaultValue:'Unknown'})}</span>
  {profile.isVerified && <BadgeCheck className="h-4 w-4 shrink-0 text-site-success"aria-hidden />}
  {profile.isAdmin && <ShieldCheck className="h-4 w-4 shrink-0 text-site-accent"aria-hidden />}
@@ -147,11 +147,11 @@ export function ProfileHoverCard({
  )}
  <div className="mt-2 flex gap-4 text-sm">
  <span>
- <AnimatedCount value={profile.followingCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text"/>{' '}
+ <AnimatedCount value={profile.followingCount} format={(n) => n.toLocaleString()} className="font-semibold text-site-text"/>{' '}
  <span className="text-site-text-muted">{t('following-label', { defaultValue:'Following'})}</span>
  </span>
  <span>
- <AnimatedCount value={profile.followerCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text"/>{' '}
+ <AnimatedCount value={profile.followerCount} format={(n) => n.toLocaleString()} className="font-semibold text-site-text"/>{' '}
  <span className="text-site-text-muted">{t('followers-label', { defaultValue:'Followers'})}</span>
  </span>
  </div>

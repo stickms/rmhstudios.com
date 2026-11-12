@@ -52,7 +52,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  <DialogContent className="max-w-sm p-0 gap-0">
  {/* Header */}
  <div className="flex items-center justify-between px-5 py-4 border-b border-site-border">
- <DialogTitle className="font-bold text-site-text">{t('share-title', { defaultValue:'Share'})}</DialogTitle>
+ <DialogTitle className="font-semibold text-site-text">{t('share-title', { defaultValue:'Share'})}</DialogTitle>
  </div>
 
  {/* Share options */}

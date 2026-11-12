@@ -49,7 +49,7 @@ export default function VisitorCounterModule({ title, userId }: { title: string;
           <span
             key={i}
             aria-hidden
-            className="surface-field rounded-site-sm px-2 py-1 font-mono text-xl font-bold tabular-nums text-site-text"
+            className="surface-field rounded-site-sm px-2 py-1 font-mono text-xl font-semibold tabular-nums text-site-text"
           >
             {d}
           </span>

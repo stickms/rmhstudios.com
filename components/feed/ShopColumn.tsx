@@ -62,7 +62,7 @@ export function Preview({ item }: { item: ShopItemView }) {
     // the colour of a name.
     return (
       <div
-        className="flex h-12 items-center justify-center rounded-site-sm bg-site-media-scrim-strong px-3 text-sm font-bold"
+        className="flex h-12 items-center justify-center rounded-site-sm bg-site-media-scrim-strong px-3 text-sm font-semibold"
         style={
           data.gradient
             ? {
@@ -205,16 +205,11 @@ export function ShopColumn({
     <div>
       {showHero && (
         <PinnedHero
-          /* 1.2 screens, not the 2.6 default: at 2.6 the catalog started three
- viewport-heights below the fold and no product was visible on the
- first screen at any size. */
-          screens={1.2}
           title={t('shop-title', { defaultValue: 'Shop' })}
           subtitle={t('shop-hero-sub', {
             defaultValue:
               'Spend your coins on name colors, badges, avatar frames and more — then equip them across the studio.',
           })}
-          scrollCue={t('shop-scroll-cue', { defaultValue: 'Browse the shop' })}
         />
       )}
       <ColumnHeader
@@ -277,7 +272,7 @@ export function ShopColumn({
                       "legendary" at a glance) and the word takes the surface's own
                       ink. Same fix as the achievement tier chips. */}
                   <span
-                    className="shrink-0 rounded-site-sm border px-2 py-0.5 text-xs font-bold uppercase text-site-text"
+                    className="shrink-0 rounded-site-sm border px-2 py-0.5 text-xs font-semibold text-site-text"
                     style={{
                       background: `${RARITY_COLORS[item.rarity]}2e`,
                       borderColor: `${RARITY_COLORS[item.rarity]}99`,
@@ -290,7 +285,7 @@ export function ShopColumn({
                   {item.description}
                 </p>
                 {item.requiresTier && (
-                  <p className="text-xs uppercase text-site-accent">
+                  <p className="text-xs text-site-accent">
                     {t('requires-tier-plan', {
                       tier: item.requiresTier,
                       defaultValue: '{{tier}} plan',

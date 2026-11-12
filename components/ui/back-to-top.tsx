@@ -117,12 +117,9 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
               // this still clears the home indicator and iOS Safari's tab bar.
               'floating-fab-lane fixed z-40',
               'flex size-11 items-center justify-center rounded-full',
-              // Floating L4 glass disc; the always-on optics-ring glint comes free
-              // from .surface-overlay, and .glass-bevel-sm thins the ring (6px) so it
-              // fits this small disc instead of the 12px pane default.
-              'surface-overlay glass-bevel-sm text-site-text',
+              // A floating disc: the overlay surface (fill, 1px border, shadow).
+              'surface-overlay text-site-text',
               'hover:border-site-accent',
-              'active:scale-95',
             )}
           >
             <ArrowUp className="h-5 w-5" aria-hidden />

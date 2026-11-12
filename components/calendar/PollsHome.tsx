@@ -181,7 +181,7 @@ function CreatePollForm({ attach, onCancel }: { attach: WhenSearch; onCancel: ()
 
   return (
     <form onSubmit={submit} className="space-y-4 rounded-site p-5">
-      <h2 className="font-display text-lg font-medium text-site-text">
+      <h2 className="text-lg font-medium text-site-text">
         {t('form-title', { defaultValue: 'New availability poll' })}
       </h2>
       {(attach.communityId || attach.groupChatId) && (

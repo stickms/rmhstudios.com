@@ -60,7 +60,7 @@ export function ComposerAvatar({
 }) {
   const { t } = useTranslation('feed');
   return (
-    <div className="w-10 h-10 rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
+    <div className="w-10 h-10 rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-semibold text-sm ring-2 ring-site-bg shrink-0">
       {image ? (
         // Optimized at ~2x the 40px display size (avoids the raw CDN original).
         <img

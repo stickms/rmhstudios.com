@@ -297,7 +297,7 @@ export default function CensusPanel({
   return (
     <div className="flex flex-col gap-3 px-3 py-3">
       <section className="p-4">
-        <h3 className="text-base font-bold text-site-text">{census.title}</h3>
+        <h3 className="text-base font-semibold text-site-text">{census.title}</h3>
         {census.description && (
           <p className="mt-1 whitespace-pre-wrap break-words text-sm text-site-text-muted">
             {census.description}

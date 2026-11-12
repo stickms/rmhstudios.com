@@ -77,7 +77,7 @@ export function RequestCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="min-w-0 font-display text-base font-semibold text-site-text">
+            <h3 className="min-w-0 text-base font-semibold text-site-text">
               {request.title}
             </h3>
             <RequestStatusBadge status={request.status} />

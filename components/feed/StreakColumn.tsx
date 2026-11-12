@@ -4,7 +4,6 @@ import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useTranslation } from'react-i18next';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from '@/lib/contract/client';
 import { getStreakApi } from '@/lib/streak.contract';
 import { ColumnHeader } from'./ColumnHeader';
@@ -72,7 +71,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  <ColumnHeader>
  <div className="flex items-center gap-2">
  <Flame className="h-5 w-5 text-site-warning"/>
- <h1 className="text-lg font-bold text-site-text">
+ <h1 className="text-lg font-semibold text-site-text">
  {t('streak-title', { defaultValue:'Streak'})}
  </h1>
  </div>
@@ -87,7 +86,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  <Flame className="h-10 w-10 fill-site-warning/30 text-site-warning"/>
  </div>
  <div>
- <p className="text-4xl font-extrabold text-site-text">{streak.current}</p>
+ <p className="text-4xl font-semibold text-site-text">{streak.current}</p>
  <p className="text-sm text-site-text-muted">
  {streak.current === 1
  ? t('streak-day-in-a-row', { defaultValue:'day in a row'})
@@ -113,13 +112,13 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  <div className="grid grid-cols-2 gap-3">
  <div>
  <div
- className={`rounded-site p-5 ${LIFT_CARD}`}
+ className={`rounded-site p-5`}
  >
  <div className="flex items-center gap-1.5 site-section-label">
  <Trophy className="h-3.5 w-3.5"/>{''}
  {t('longest-label', { defaultValue:'Longest'})}
  </div>
- <p className="mt-1 text-2xl font-bold text-site-text">{streak.longest}</p>
+ <p className="mt-1 text-2xl font-semibold text-site-text">{streak.longest}</p>
  <p className="text-xs text-site-text-muted">
  {streak.longest === 1
  ? t('day-unit', { defaultValue:'day'})
@@ -129,13 +128,13 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  </div>
  <div>
  <div
- className={`rounded-site p-5 ${LIFT_CARD}`}
+ className={`rounded-site p-5`}
  >
  <div className="flex items-center gap-1.5 site-section-label">
  <CalendarCheck className="h-3.5 w-3.5"/>{''}
  {t('total-check-ins-label', { defaultValue:'Total check-ins'})}
  </div>
- <p className="mt-1 text-2xl font-bold text-site-text">{streak.totalCheckIns}</p>
+ <p className="mt-1 text-2xl font-semibold text-site-text">{streak.totalCheckIns}</p>
  <p className="text-xs text-site-text-muted">
  {t('all-time', { defaultValue:'all time'})}
  </p>

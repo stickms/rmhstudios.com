@@ -161,7 +161,7 @@ function QuoteCard({ quote, index }: { quote: (typeof quotes)[number]; index: nu
 
       {/* Quote text */}
       <blockquote className="mb-4">
-        <p className="text-site-text text-lg leading-relaxed font-display italic">
+        <p className="text-site-text text-lg leading-relaxed italic">
           &ldquo;{quote.text}&rdquo;
         </p>
       </blockquote>

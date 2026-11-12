@@ -99,7 +99,7 @@ function RideshareLanding() {
           <Badge variant="default" icon={<Sparkles aria-hidden />}>
             {t('community-rideshare', { defaultValue: 'Community rideshare' })}
           </Badge>
-          <h2 className="font-display text-3xl font-bold tracking-tight text-site-text md:text-4xl">
+          <h2 className="t-heading">
             {t('hero-heading', { defaultValue: 'Getting around, together.' })}
           </h2>
           <p className="max-w-xl text-base text-site-text-muted">
@@ -264,7 +264,7 @@ function PriceEstimator() {
             <label htmlFor="estimator-distance" className="text-sm font-medium text-site-text">
               {t('trip-distance', { defaultValue: 'Trip distance' })}
             </label>
-            <span className="text-sm font-bold text-site-accent">{km} km</span>
+            <span className="text-sm font-semibold text-site-accent">{km} km</span>
           </div>
           <input
             id="estimator-distance"

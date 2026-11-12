@@ -179,7 +179,6 @@ import { Route as GamesShopRouteImport } from './routes/games/shop'
 import { Route as GamesStoreRouteImport } from './routes/games/store'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
-import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as NewsRssDotxmlRouteImport } from './routes/news.rss[.]xml'
 import { Route as RefCodeRouteImport } from './routes/ref.$code'
 import { Route as ReplaysIdRouteImport } from './routes/replays.$id'
@@ -304,6 +303,7 @@ import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/i
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
 import { Route as SiteMomentsIdRouteImport } from './routes/_site/moments.$id'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
+import { Route as SiteNewsSlugRouteImport } from './routes/_site/news/$slug'
 import { Route as SiteOfficeHoursIndexRouteImport } from './routes/_site/office-hours/index'
 import { Route as SiteOfficeHoursUserIdRouteImport } from './routes/_site/office-hours/$userId'
 import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/index'
@@ -2239,11 +2239,6 @@ const LibrarySlugRoute = LibrarySlugRouteImport.update({
   path: '/library/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NewsSlugRoute = NewsSlugRouteImport.update({
-  id: '/news/$slug',
-  path: '/news/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const NewsRssDotxmlRoute = NewsRssDotxmlRouteImport.update({
   id: '/news/rss.xml',
   path: '/news/rss.xml',
@@ -2866,6 +2861,11 @@ const SiteMomentsIdRoute = SiteMomentsIdRouteImport.update({
 const SiteNewsIndexRoute = SiteNewsIndexRouteImport.update({
   id: '/news/',
   path: '/news/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteNewsSlugRoute = SiteNewsSlugRouteImport.update({
+  id: '/news/$slug',
+  path: '/news/$slug',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteOfficeHoursIndexRoute = SiteOfficeHoursIndexRouteImport.update({
@@ -8696,7 +8696,6 @@ export interface FileRoutesByFullPath {
   '/games/shop': typeof GamesShopRoute
   '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
-  '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
   '/ref/$code': typeof RefCodeRoute
   '/replays/$id': typeof ReplaysIdRoute
@@ -8808,6 +8807,7 @@ export interface FileRoutesByFullPath {
   '/marathon/$shareId': typeof SiteMarathonShareIdRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/moments/$id': typeof SiteMomentsIdRoute
+  '/news/$slug': typeof SiteNewsSlugRoute
   '/office-hours/$userId': typeof SiteOfficeHoursUserIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
@@ -10050,7 +10050,6 @@ export interface FileRoutesByTo {
   '/games/shop': typeof GamesShopRoute
   '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
-  '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
   '/ref/$code': typeof RefCodeRoute
   '/replays/$id': typeof ReplaysIdRoute
@@ -10162,6 +10161,7 @@ export interface FileRoutesByTo {
   '/marathon/$shareId': typeof SiteMarathonShareIdRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/moments/$id': typeof SiteMomentsIdRoute
+  '/news/$slug': typeof SiteNewsSlugRoute
   '/office-hours/$userId': typeof SiteOfficeHoursUserIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
@@ -11430,7 +11430,6 @@ export interface FileRoutesById {
   '/games/shop': typeof GamesShopRoute
   '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
-  '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
   '/ref/$code': typeof RefCodeRoute
   '/replays/$id': typeof ReplaysIdRoute
@@ -11543,6 +11542,7 @@ export interface FileRoutesById {
   '/_site/marathon/$shareId': typeof SiteMarathonShareIdRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/moments/$id': typeof SiteMomentsIdRoute
+  '/_site/news/$slug': typeof SiteNewsSlugRoute
   '/_site/office-hours/$userId': typeof SiteOfficeHoursUserIdRoute
   '/_site/personas/$id': typeof SitePersonasIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
@@ -12812,7 +12812,6 @@ export interface FileRouteTypes {
     | '/games/shop'
     | '/games/store'
     | '/library/$slug'
-    | '/news/$slug'
     | '/news/rss.xml'
     | '/ref/$code'
     | '/replays/$id'
@@ -12924,6 +12923,7 @@ export interface FileRouteTypes {
     | '/marathon/$shareId'
     | '/messages/$conversationId'
     | '/moments/$id'
+    | '/news/$slug'
     | '/office-hours/$userId'
     | '/personas/$id'
     | '/profile/$id'
@@ -14166,7 +14166,6 @@ export interface FileRouteTypes {
     | '/games/shop'
     | '/games/store'
     | '/library/$slug'
-    | '/news/$slug'
     | '/news/rss.xml'
     | '/ref/$code'
     | '/replays/$id'
@@ -14278,6 +14277,7 @@ export interface FileRouteTypes {
     | '/marathon/$shareId'
     | '/messages/$conversationId'
     | '/moments/$id'
+    | '/news/$slug'
     | '/office-hours/$userId'
     | '/personas/$id'
     | '/profile/$id'
@@ -15545,7 +15545,6 @@ export interface FileRouteTypes {
     | '/games/shop'
     | '/games/store'
     | '/library/$slug'
-    | '/news/$slug'
     | '/news/rss.xml'
     | '/ref/$code'
     | '/replays/$id'
@@ -15658,6 +15657,7 @@ export interface FileRouteTypes {
     | '/_site/marathon/$shareId'
     | '/_site/messages/$conversationId'
     | '/_site/moments/$id'
+    | '/_site/news/$slug'
     | '/_site/office-hours/$userId'
     | '/_site/personas/$id'
     | '/_site/profile/$id'
@@ -16856,7 +16856,6 @@ export interface RootRouteChildren {
   DiscordLightsOutRoute: typeof DiscordLightsOutRoute
   DiscordRmhboxRoute: typeof DiscordRmhboxRoute
   LibrarySlugRoute: typeof LibrarySlugRoute
-  NewsSlugRoute: typeof NewsSlugRoute
   NewsRssDotxmlRoute: typeof NewsRssDotxmlRoute
   RefCodeRoute: typeof RefCodeRoute
   ReplaysIdRoute: typeof ReplaysIdRoute
@@ -18811,13 +18810,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibrarySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/news/$slug': {
-      id: '/news/$slug'
-      path: '/news/$slug'
-      fullPath: '/news/$slug'
-      preLoaderRoute: typeof NewsSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/news/rss.xml': {
       id: '/news/rss.xml'
       path: '/news/rss.xml'
@@ -19684,6 +19676,13 @@ declare module '@tanstack/react-router' {
       path: '/news'
       fullPath: '/news/'
       preLoaderRoute: typeof SiteNewsIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/news/$slug': {
+      id: '/_site/news/$slug'
+      path: '/news/$slug'
+      fullPath: '/news/$slug'
+      preLoaderRoute: typeof SiteNewsSlugRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/office-hours/': {
@@ -27525,6 +27524,7 @@ interface SiteRouteChildren {
   SiteMarathonShareIdRoute: typeof SiteMarathonShareIdRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteMomentsIdRoute: typeof SiteMomentsIdRoute
+  SiteNewsSlugRoute: typeof SiteNewsSlugRoute
   SiteOfficeHoursUserIdRoute: typeof SiteOfficeHoursUserIdRoute
   SitePersonasIdRoute: typeof SitePersonasIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
@@ -27673,6 +27673,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteMarathonShareIdRoute: SiteMarathonShareIdRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteMomentsIdRoute: SiteMomentsIdRoute,
+  SiteNewsSlugRoute: SiteNewsSlugRoute,
   SiteOfficeHoursUserIdRoute: SiteOfficeHoursUserIdRoute,
   SitePersonasIdRoute: SitePersonasIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
@@ -29661,7 +29662,6 @@ const rootRouteChildren: RootRouteChildren = {
   DiscordLightsOutRoute: DiscordLightsOutRoute,
   DiscordRmhboxRoute: DiscordRmhboxRoute,
   LibrarySlugRoute: LibrarySlugRoute,
-  NewsSlugRoute: NewsSlugRoute,
   NewsRssDotxmlRoute: NewsRssDotxmlRoute,
   RefCodeRoute: RefCodeRoute,
   ReplaysIdRoute: ReplaysIdRoute,

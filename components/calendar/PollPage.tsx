@@ -283,7 +283,7 @@ export default function PollPage({ id }: { id: string }) {
   return (
     <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <header className="space-y-1">
-        <h2 className="font-display text-xl font-medium text-site-text">{poll.title}</h2>
+        <h2 className="text-xl font-medium text-site-text">{poll.title}</h2>
         {poll.description && (
           <p className="whitespace-pre-wrap text-sm text-site-text-muted">{poll.description}</p>
         )}
@@ -308,7 +308,7 @@ export default function PollPage({ id }: { id: string }) {
               <Lock className="size-3.5" aria-hidden />
               {t('locked-label', { defaultValue: 'Locked in' })}
             </p>
-            <p className="mt-1 text-base font-bold text-site-text">
+            <p className="mt-1 text-base font-semibold text-site-text">
               {fmtRange(poll.lockedStartMin as number, poll.lockedEndMin as number)}
             </p>
           </div>

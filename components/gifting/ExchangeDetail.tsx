@@ -99,7 +99,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
     <div className="space-y-4 px-4 pt-4 pb-12">
       <header className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-display text-lg font-semibold">{ex.title}</h2>
+          <h2 className="text-lg font-semibold">{ex.title}</h2>
           <Badge variant={ex.status === 'DRAWN' ? 'success' : 'default'}>{statusLabel}</Badge>
         </div>
         <p className="text-sm text-site-text-muted">

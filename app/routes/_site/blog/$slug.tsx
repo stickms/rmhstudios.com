@@ -5,7 +5,7 @@
  * `PageLayout` owning the title, lede and back link — the same move
  * `/builds/$slug` and `/user-builds/$slug` made. It used to be a top-level
  * full-screen route that re-typed its own `pt-20 pb-20 min-h-screen` frame, a
- * hand-rolled back link and a `text-4xl md:text-5xl font-black` title clamp
+ * hand-rolled back link and a `text-4xl md:text-5xl font-semibold` title clamp
  * beside the shared display scale.
  *
  * The public URL is unchanged — only the layout nesting moved.

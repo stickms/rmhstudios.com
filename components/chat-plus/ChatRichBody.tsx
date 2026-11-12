@@ -76,7 +76,7 @@ function DiceCard({ meta, authorName }: { meta: DiceMeta; authorName: string }) 
         })}
       </p>
       <p
-        className="mt-1 font-display text-3xl font-bold tabular-nums"
+        className="mt-1 text-3xl font-semibold tabular-nums"
         aria-label={t('dice-total', { total: meta.total, defaultValue: 'Total {{total}}' })}
       >
         {meta.total}
@@ -97,7 +97,7 @@ function CoinCard({ meta, authorName }: { meta: CoinMeta; authorName: string }) 
         <Coins className="size-4" aria-hidden />
         {t('coin-flipped', { name: authorName, defaultValue: '{{name}} flipped a coin' })}
       </p>
-      <p className="mt-1 font-display text-2xl font-bold">
+      <p className="mt-1 text-2xl font-semibold">
         {meta.result === 'heads'
           ? t('coin-heads', { defaultValue: 'Heads' })
           : t('coin-tails', { defaultValue: 'Tails' })}

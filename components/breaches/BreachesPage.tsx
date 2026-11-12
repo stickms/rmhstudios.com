@@ -319,7 +319,6 @@ page.setAttribute('data-animate', '');
             </>
           }
           subtitle="In March 2026 a Discord webhook URL was committed to this repository in plain text and stayed at the tip of the default branch for nine days. No user data was ever reachable through it. Here is exactly how it got there, why nobody caught it, and why deleting the line did not undo it."
-          scrollCue="Read the post-mortem"
           actions={
             <>
               <Button asChild variant="default" size="lg">

@@ -83,7 +83,7 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
             <button
               key={emoji}
               type="button"
-              className="text-lg leading-none hover:scale-125 transition-transform"
+              className="text-lg leading-none transition-transform"
               onClick={() => {
                 onSelect(emoji);
                 onClose();

@@ -174,7 +174,7 @@ export function AchievementsColumn({
  fill and border, where it carries the tier perfectly well; the word
  takes the surface's own ink so it is actually readable. */}
  <span
- className="rounded-site-sm border px-2 py-0.5 text-xs font-bold uppercase text-site-text"
+ className="rounded-site-sm border px-2 py-0.5 text-xs font-semibold text-site-text"
  style={{
  background: `${TIER_COLORS[a.tier]}2e`,
  borderColor: `${TIER_COLORS[a.tier]}99`,

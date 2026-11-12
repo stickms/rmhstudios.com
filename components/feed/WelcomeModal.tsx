@@ -75,7 +75,7 @@ export function WelcomeModal() {
  </div>
  </div>
 
- <DialogTitle className="text-center text-xl font-bold text-site-text">
+ <DialogTitle className="text-center text-xl font-semibold text-site-text">
  {current.title}
  </DialogTitle>
  <p className="mx-auto mt-2 max-w-sm text-center text-sm text-site-text-muted">{current.body}</p>

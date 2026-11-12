@@ -8,7 +8,6 @@ import { Button } from'@/components/ui/button';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { useTranslation } from'react-i18next';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { reviewCardApi } from '@/lib/study/decks.contract';
@@ -231,7 +230,7 @@ export function DeckStudyColumn({
  >
  <ArrowLeft className="h-5 w-5"/>
  </button>
- <h1 className="text-sm font-bold text-site-text">{deck.title}</h1>
+ <h1 className="text-sm font-semibold text-site-text">{deck.title}</h1>
  <span className="ml-auto text-xs text-site-text-muted">
  {idx + 1} / {queue.length}
  </span>
@@ -277,7 +276,7 @@ export function DeckStudyColumn({
  <ArrowLeft className="h-5 w-5"/>
  </Link>
  <div className="min-w-0 flex-1">
- <h1 className="truncate text-lg font-bold text-site-text">{deck.title}</h1>
+ <h1 className="truncate text-lg font-semibold text-site-text">{deck.title}</h1>
  {deck.description && (
  <p className="truncate text-xs text-site-text-muted">{deck.description}</p>
  )}
@@ -316,7 +315,7 @@ export function DeckStudyColumn({
  )}
 
  {deck.isOwner && (
- <div className={`rounded-site relative p-4 ${LIFT_CARD}`}>
+ <div className={`rounded-site relative p-4`}>
  <p className="mb-2 flex items-center gap-1.5 site-section-label">
  <Plus className="h-3.5 w-3.5"/> {t('add-a-card', { defaultValue:'Add a card'})}
  </p>
@@ -365,7 +364,7 @@ export function DeckStudyColumn({
  {cards.map((c) => (
  <div
  key={c.id}
- className={`rounded-site-sm relative p-3 ${LIFT_CARD}`}
+ className={`rounded-site-sm relative p-3`}
  >
  <p className="text-sm font-medium text-site-text">{c.front}</p>
  <p className="mt-0.5 text-sm text-site-text-muted">{c.back}</p>

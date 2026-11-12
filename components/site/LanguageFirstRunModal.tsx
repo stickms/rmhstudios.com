@@ -59,7 +59,7 @@ export function LanguageFirstRunModal() {
           </div>
         </div>
 
-        <DialogTitle className="text-center text-xl font-bold text-site-text">
+        <DialogTitle className="text-center text-xl font-semibold text-site-text">
           {t('lang-firstrun-title', { defaultValue: 'Choose your language' })}
         </DialogTitle>
         <p className="mx-auto mt-2 max-w-sm text-center text-sm text-site-text-muted">

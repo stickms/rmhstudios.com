@@ -128,7 +128,7 @@ export default function PlatformPage() {
                 <span className="text-xs font-medium text-site-accent">
                   {code}
                 </span>
-                <h3 className="font-display text-lg font-semibold text-site-text">{name}</h3>
+                <h3 className="text-lg font-semibold text-site-text">{name}</h3>
                 <p className="text-sm text-site-text-muted">{desc}</p>
                 <Badge variant="default">{chip}</Badge>
               </Card>
@@ -256,7 +256,7 @@ export default function PlatformPage() {
                 <span className="text-xs font-medium text-site-accent">
                   {code}
                 </span>
-                <h3 className="font-display text-lg font-semibold text-site-text">{name}</h3>
+                <h3 className="text-lg font-semibold text-site-text">{name}</h3>
                 <p className="text-sm text-site-text-muted">{desc}</p>
               </Card>
             ))}

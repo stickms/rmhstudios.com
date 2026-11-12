@@ -406,7 +406,6 @@ page.setAttribute('data-animate', '');
             </>
           }
           subtitle="We stand with the Black community against racism and injustice. Diversity, equity, and inclusion aren’t a page we published once — they’re a commitment we build into the product and into how we work, every day."
-          scrollCue="Our commitment"
           actions={
             <>
               <Button asChild variant="default" size="lg">

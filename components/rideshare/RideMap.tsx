@@ -187,7 +187,7 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
       )}
 
       {ready && (
-        <div className="space-y-1 border-t border-site-border bg-site-bg/95 p-3 backdrop-blur">
+        <div className="space-y-1 border-t border-site-border bg-site-bg p-3">
           {driverLocation && (
             <div className="flex items-center gap-2 text-xs font-medium text-site-accent">
               <Car className="h-3.5 w-3.5 shrink-0" />

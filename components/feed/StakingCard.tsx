@@ -88,7 +88,7 @@ export function StakingCard() {
  <div className="mb-3 flex items-center justify-between">
  <div className="flex items-center gap-2">
  <PiggyBank className="h-4 w-4 text-site-accent"/>
- <h2 className="text-sm font-bold text-site-text">{t("coin-vault", { defaultValue:"Coin vault"})}</h2>
+ <h2 className="text-sm font-semibold text-site-text">{t("coin-vault", { defaultValue:"Coin vault"})}</h2>
  </div>
  <span className="inline-flex items-center gap-1 rounded-full bg-site-accent/15 px-2 py-0.5 text-xs font-semibold text-site-accent">
  <TrendingUp className="h-3 w-3"/> {(data.apr * 100).toFixed(0)}% APR
@@ -97,19 +97,19 @@ export function StakingCard() {
 
  <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3">
  <div className="rounded-site-sm bg-site-bg p-2">
- <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-text">
+ <p className="inline-flex items-center gap-0.5 text-sm font-semibold text-site-text">
  <CoinIcon className="h-3.5 w-3.5"/> {fmt(data.principal)}
  </p>
  <p className="text-micro text-site-text-muted">{t("staked", { defaultValue:"Staked"})}</p>
  </div>
  <div className="rounded-site-sm bg-site-bg p-2">
- <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-accent">
+ <p className="inline-flex items-center gap-0.5 text-sm font-semibold text-site-accent">
  <CoinIcon className="h-3.5 w-3.5"/> {fmt(data.accrued)}
  </p>
  <p className="text-micro text-site-text-muted">{t("interest", { defaultValue:"Interest"})}</p>
  </div>
  <div className="rounded-site-sm bg-site-bg p-2">
- <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-text">
+ <p className="inline-flex items-center gap-0.5 text-sm font-semibold text-site-text">
  <CoinIcon className="h-3.5 w-3.5"/> {fmt(data.balance)}
  </p>
  <p className="text-micro text-site-text-muted">{t("wallet", { defaultValue:"Wallet"})}</p>

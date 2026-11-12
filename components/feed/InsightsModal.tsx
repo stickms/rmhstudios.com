@@ -62,7 +62,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
  <DialogContent className="max-w-md p-0 gap-0 flex flex-col max-h-[80dvh] overflow-hidden">
  <div className="flex shrink-0 items-center justify-between border-b border-site-border px-5 py-4">
- <DialogTitle className="flex items-center gap-2 font-display text-lg font-bold text-site-text">
+ <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-site-text">
  <TrendingUp className="h-5 w-5 text-site-accent"/>
  {t('post-insights', { defaultValue:'Post insights'})}
  </DialogTitle>
@@ -85,13 +85,13 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  {stats.map((s) => (
  <div key={s.label} className="rounded-site p-4">
  <s.icon className="h-4 w-4 text-site-text-muted"/>
- <p className="mt-1 text-lg font-bold text-site-text">{fmt(s.value)}</p>
+ <p className="mt-1 text-lg font-semibold text-site-text">{fmt(s.value)}</p>
  <p className="text-xs text-site-text-muted">{s.label}</p>
  </div>
  ))}
  <div className="rounded-site p-4">
  <TrendingUp className="h-4 w-4 text-site-text-muted"/>
- <p className="mt-1 text-lg font-bold text-site-text">
+ <p className="mt-1 text-lg font-semibold text-site-text">
  {(data.engagementRate * 100).toFixed(1)}%
  </p>
  <p className="text-xs text-site-text-muted">{t('engagement-rate', { defaultValue:'Engagement rate'})}</p>
@@ -107,7 +107,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <p className="text-xs text-site-text-muted">{t('unlock-price-each', { price: data.unlockPrice, defaultValue:'at {{price}} each'})}</p>
  </div>
  </div>
- <span className="inline-flex items-center gap-1 text-sm font-bold text-site-text">
+ <span className="inline-flex items-center gap-1 text-sm font-semibold text-site-text">
  <CoinIcon className="h-4 w-4"/> {fmt(data.coinsEarned)}
  </span>
  </div>

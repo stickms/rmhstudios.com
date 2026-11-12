@@ -144,7 +144,7 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
         aria-live="polite"
       >
         <PackageOpen className="mx-auto size-8 text-site-accent" aria-hidden />
-        <p className="font-display text-xl font-medium text-site-text">{revealed.itemName}</p>
+        <p className="text-xl font-medium text-site-text">{revealed.itemName}</p>
         <p className="text-sm text-site-text-muted">
           {t('gifts-from', { defaultValue: 'From {{name}}', name: partyName(gift.from) })}
         </p>

@@ -159,7 +159,7 @@ export function DeepseekPanel() {
             <h2 className="text-xs text-site-text-muted">
               {t('balance-heading', { defaultValue: '{{currency}} balance', currency: b.currency })}
             </h2>
-            <p className="mt-1 font-display text-2xl font-bold tabular-nums text-site-text">
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-site-text">
               {fmtMoney(b.totalBalance, b.currency)}
             </p>
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">

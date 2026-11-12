@@ -34,7 +34,7 @@ export function CoverField({
         {preview ? (
           <img src={preview} alt="" className="size-full object-cover" />
         ) : (
-          <span className="flex size-full items-center justify-center bg-linear-to-br from-site-bg-subtle via-site-surface to-site-bg-subtle text-site-text-muted">
+          <span className="flex size-full items-center justify-center bg-site-bg-subtle text-site-text-muted">
             <ImageIcon className="size-6" aria-hidden />
           </span>
         )}

@@ -216,7 +216,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
                     <span
-                      className="mt-0.5 inline-block rounded-full border px-2 py-0.5 text-xs font-semibold uppercase text-site-text"
+                      className="mt-0.5 inline-block rounded-full border px-2 py-0.5 text-xs font-semibold text-site-text"
                       style={{
                         background: `${RARITY_COLORS[item.rarity]}2e`,
                         borderColor: `${RARITY_COLORS[item.rarity]}99`,

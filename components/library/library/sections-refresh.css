@@ -1069,9 +1069,8 @@
 
 /* ─── Library glass playground ───────────────────────────────────────────────
    The index route opts into this layer with `.lib--glass-playground`; reader,
-   upload, and admin routes keep their purpose-built layouts above. All repeated
-   media cards use cheap L1 glass, while the hero and explorer are the page's two
-   rationed refractive surfaces. */
+   upload, and admin routes keep their purpose-built layouts above. Steel: the page is flat (no ground
+   gradient) and its sections are rows on rules. */
 .lib--glass-playground {
   /* Matches `PageTabs`' gutter (`px-2 md:px-3` → 8px / 12px). It used to run up
      to 28px, and since the tab strip sits OUTSIDE `.lib-playground` while every
@@ -1085,17 +1084,6 @@
   --lib-gutter: 1rem;
   --lib-content: 1400px;
   padding-bottom: var(--site-page-bottom-space);
-  background:
-    radial-gradient(
-      circle at 84% 8%,
-      color-mix(in srgb, var(--site-accent) 20%, transparent),
-      transparent 30rem
-    ),
-    radial-gradient(
-      circle at 4% 46%,
-      color-mix(in srgb, var(--site-accent) 9%, transparent),
-      transparent 34rem
-    );
 }
 
 .lib-playground {

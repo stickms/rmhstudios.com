@@ -87,7 +87,7 @@ export function FreeMonthModal() {
 
  {claimed ? (
  <>
- <DialogTitle className="text-xl font-bold text-site-text">{t("claimed-title", { defaultValue:"You’re on Pro! 🎉"})}</DialogTitle>
+ <DialogTitle className="text-xl font-semibold text-site-text">{t("claimed-title", { defaultValue:"You’re on Pro! 🎉"})}</DialogTitle>
  <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">
  {t("claimed-body", { defaultValue:"Your free month of Pro is active. Enjoy the perks — including the developer API."})}
  </p>
@@ -97,7 +97,7 @@ export function FreeMonthModal() {
  </>
  ) : (
  <>
- <DialogTitle className="inline-flex items-center gap-2 text-xl font-bold text-site-text">
+ <DialogTitle className="inline-flex items-center gap-2 text-xl font-semibold text-site-text">
  <Sparkles className="h-5 w-5 text-site-accent"/> {t("offer-title", { defaultValue:"A month of Pro, on us"})}
  </DialogTitle>
  <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">

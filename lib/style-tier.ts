@@ -26,7 +26,6 @@ export type StyleTier = 'site' | 'app';
 export const SITE_SHEET_ROUTES: ReadonlySet<string> = new Set([
   '/login',
   '/offline',
-  '/news/$slug',
   '/library/$slug',
   '/library/albums/$albumId',
   '/embed/post/$id',

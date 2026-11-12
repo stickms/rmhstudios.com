@@ -134,7 +134,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  <DialogContent className="max-w-md p-0 gap-0 flex flex-col max-h-[80dvh] overflow-hidden">
  {/* Header */}
  <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
- <DialogTitle className="font-display font-bold text-lg text-site-text">
+ <DialogTitle className="font-semibold text-lg text-site-text">
  {title}
  </DialogTitle>
  </div>
@@ -164,7 +164,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  >
  <UserAvatar src={user.image ?? undefined} alt={user.name || t('user-alt', { defaultValue:'User'})} size={40} fallbackName={user.name ?? undefined} />
  <div className="min-w-0">
- <p className="font-bold text-site-text text-sm truncate">
+ <p className="font-semibold text-site-text text-sm truncate">
  {user.name || user.username || t('unknown-user', { defaultValue:'Unknown'})}
  </p>
  {user.handle && (
@@ -177,7 +177,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  <button
  onClick={() => handleFollowToggle(user)}
  disabled={followingInProgress.has(user.id)}
- className={`shrink-0 px-4 py-2 rounded-site-sm text-xs font-bold transition-[color,background-color,border-color,scale] duration-site-fast active:scale-95 ${
+ className={`shrink-0 px-4 py-2 rounded-site-sm text-xs font-semibold transition-[color,background-color,border-color,scale] duration-site-fast active:scale-95 ${
  user.isFollowing
  ?'border border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10'
  :'bg-site-accent text-site-bg hover:bg-site-accent-hover'

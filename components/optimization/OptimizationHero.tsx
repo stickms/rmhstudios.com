@@ -18,7 +18,6 @@ export function OptimizationHero() {
             </>
           }
           subtitle="Fast isn’t a setting we flipped on — it’s hundreds of small decisions, from the first byte the server sends to the last second of a deploy. Here’s how we keep RMH Studios quick."
-          scrollCue="The runtime"
           actions={
             <>
               <Button asChild variant="default" size="lg">

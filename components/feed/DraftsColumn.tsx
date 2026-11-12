@@ -16,7 +16,6 @@ import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from'@/lib/contract/client';
 import {
  discardScheduledApi,
@@ -191,7 +190,7 @@ function Section({
  return (
  <div
  key={r.id}
- className={`rounded-site px-4 py-3 ${LIFT_CARD}`}
+ className={`rounded-site px-4 py-3`}
  >
  <p className="whitespace-pre-wrap break-words text-sm text-site-text">
  {r.content || (

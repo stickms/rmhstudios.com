@@ -28,7 +28,7 @@ export function StatTile({
         {Icon ? <Icon className="size-4 shrink-0 text-site-accent" aria-hidden /> : null}
         <p className="min-w-0 truncate text-xs text-site-text-muted">{label}</p>
       </div>
-      <p className={cn('mt-1 font-display text-2xl font-bold tabular-nums', toneClass)}>
+      <p className={cn('mt-1 text-2xl font-semibold tabular-nums', toneClass)}>
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>
       {hint ? <p className="mt-1 text-xs text-site-text-muted">{hint}</p> : null}

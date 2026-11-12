@@ -128,7 +128,7 @@ export function RankedSummary() {
                   <span className="min-w-0 flex-1 truncate font-semibold text-site-text">
                     {nameFor(r.game)}
                   </span>
-                  <span className="font-bold tabular-nums text-site-accent">{fmt(r.rating)}</span>
+                  <span className="font-semibold tabular-nums text-site-accent">{fmt(r.rating)}</span>
                   <span className="tabular-nums text-site-text-muted">
                     {t('ranked-summary-record', {
                       wins: r.wins,

@@ -9,7 +9,6 @@ import { Select } from'@/components/ui/select';
 import { UserAvatar } from'./UserAvatar';
 import { HandleInput } from'./HandleInput';
 import { ColumnHeader } from'./ColumnHeader';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import type { RankTier } from'@/lib/ranked/tiers';
 import { api } from'@/lib/contract/client';
 import { serverError } from'@/lib/http';
@@ -212,7 +211,7 @@ export function RankedColumn({
  {signedIn && (
  <>
  {/* Issue a challenge */}
- <section className={`rounded-site p-5 ${LIFT_CARD}`}>
+ <section className={`rounded-site p-5`}>
  <h2 id="ranked-challenge-heading"className="site-section-label mb-3">
  {t('challenge-a-player', { defaultValue:'Challenge a player'})}
  </h2>
@@ -260,7 +259,7 @@ export function RankedColumn({
  {incoming.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site px-3 py-3`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -314,7 +313,7 @@ export function RankedColumn({
  {outgoing.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site px-3 py-3`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -344,7 +343,7 @@ export function RankedColumn({
  {ratings.map((r) => (
  <div
  key={r.game}
- className={`flex items-center justify-between gap-2 rounded-site px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center justify-between gap-2 rounded-site px-3 py-3`}
  >
  <span className="flex min-w-0 items-center gap-2">
  <span className="truncate text-sm font-medium text-site-text">
@@ -394,9 +393,9 @@ export function RankedColumn({
  {lb.map((row) => (
  <div
  key={row.user.id}
- className={`flex items-center gap-3 rounded-site px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site px-3 py-3`}
  >
- <span className="w-5 text-center text-xs font-bold text-site-text-muted">
+ <span className="w-5 text-center text-xs font-semibold text-site-text-muted">
  {row.rank}
  </span>
  <UserAvatar user={row.user} />
@@ -411,7 +410,7 @@ export function RankedColumn({
  {row.wins}W {row.losses}L {row.draws}D
  </p>
  </div>
- <span className="text-sm font-bold text-site-text">{fmt(row.rating)}</span>
+ <span className="text-sm font-semibold text-site-text">{fmt(row.rating)}</span>
  </div>
  ))}
  </div>

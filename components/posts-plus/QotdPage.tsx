@@ -127,7 +127,7 @@ export function QotdPage({ day }: { day?: string }) {
                 ? t('qotd-today', { defaultValue: 'Today' })
                 : formatDay(selected.dayKey, i18n.language)}
             </p>
-            <h2 className="mt-1 font-display text-xl font-medium text-site-text">
+            <h2 className="mt-1 text-xl font-medium text-site-text">
               {selected.text}
             </h2>
             <p className="mt-1 text-sm text-site-text-muted">

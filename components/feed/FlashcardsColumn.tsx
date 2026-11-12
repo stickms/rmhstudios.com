@@ -6,7 +6,6 @@ import { Loader2, BookOpen, Plus, Sparkles, X, Globe, Lock, Layers } from 'lucid
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { ColumnHeader } from './ColumnHeader';
 import { StudyTabs } from '@/components/study/StudyTabs';
 import { api } from '@/lib/contract/client';
@@ -104,7 +103,7 @@ export function FlashcardsColumn({
     <Link
       key={d.id}
       to={`/study/${d.id}` as string}
-      className={`flex items-center gap-3 rounded-site p-4 ${LIFT_CARD}`}
+      className={`flex items-center gap-3 rounded-site p-4`}
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/12 text-site-accent">
         <Layers className="h-5 w-5" />

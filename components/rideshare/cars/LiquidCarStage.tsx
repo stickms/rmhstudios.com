@@ -287,7 +287,7 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
 
   return (
     <div className="flex flex-col gap-3">
-      <div ref={hostRef} className="rmhcar-stage glass-bevel-sm rounded-site">
+      <div ref={hostRef} className="rmhcar-stage rounded-site">
         {failed ? (
           // No GPU, or the context went away. The silhouette is the same body,
           // drawn from the same sections — a smaller thing to see, not a

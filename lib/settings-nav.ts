@@ -64,7 +64,7 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] = [
     group: 'personalization',
     icon: Palette,
     label: 'Appearance & accessibility',
-    hint: 'Text size, density, motion, glass clarity, colour vision',
+    hint: 'Text size, density, motion, colour vision',
     keywords: 'dark mode light dyslexia font colorblind',
   },
   {

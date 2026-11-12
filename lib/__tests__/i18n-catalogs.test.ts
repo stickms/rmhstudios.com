@@ -85,7 +85,17 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Globe motion setting (Steel phase 6, 2026-11-12). English-only until the translate pipeline runs on build.
-  'settings-appearance': ['globe-motion', 'globe-motion-desc', 'globe-motion-on', 'globe-motion-still'],
+  // Steel phase 7 (2026-11-12): the news article is a titled page; its not-found line is new.
+  pages: ['article-not-found-hint'],
+  // Steel phase 7 (2026-11-12): the editions are named Night and Day.
+  'settings-appearance': [
+    'choose-edition',
+    'globe-motion',
+    'globe-motion-desc',
+    'globe-motion-on',
+    'globe-motion-still',
+    'theme-desc-two-editions',
+  ],
   // Dream Rift menu redesign (2026-11-04). English-only until the translate pipeline
   // runs on build; remove with it.
   'c-dream-rift': [
@@ -679,6 +689,10 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'profile-period-this-week',
     'rmh-coins-label',
     'settings-alerts',
+    // Steel phase 7: the edition list (Night and Day).
+    'settings-edition-aria',
+    'settings-edition-day-hint',
+    'settings-edition-night-hint',
     'settings-look',
     // Steel phase 4 (2026-11-12): the K8 action words, the home title and the reply/repost lines. English-only until the translate pipeline runs on build; remove with it.
     'action-more',

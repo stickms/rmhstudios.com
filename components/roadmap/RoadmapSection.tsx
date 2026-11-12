@@ -29,7 +29,6 @@ export function RoadmapSection() {
           defaultValue:
             "We're an indie studio building rhythm games, deckbuilders, narrative horror, and more. Our roadmap isn't tied to one title—we're growing the catalog, Discord, and new worlds in parallel. Timelines are guides, not promises.",
         })}
-        scrollCue={t("hero-scroll-cue", { defaultValue: "Where we're going" })}
       />
 
       {/* ── Timeline ──────────────────────────────────────────

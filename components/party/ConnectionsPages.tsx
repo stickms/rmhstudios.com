@@ -385,7 +385,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
               key={f.index}
               className={cn('rounded-site px-4 py-3 text-center', BAND[f.index % 4])}
             >
-              <p className="text-xs font-bold text-site-text uppercase">{f.label}</p>
+              <p className="text-xs font-semibold text-site-text">{f.label}</p>
               <p className="text-sm text-site-text">{f.items.join(', ')}</p>
             </div>
           ))}
@@ -397,7 +397,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
                 BAND[(grid.found.length + i) % 4],
               )}
             >
-              <p className="text-xs font-bold uppercase text-site-text">{g.label}</p>
+              <p className="text-xs font-semibold text-site-text">{g.label}</p>
               <p className="text-sm text-site-text">{g.items.join(', ')}</p>
             </div>
           ))}

@@ -144,7 +144,7 @@ export function SellSheet({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
                   <span
-                    className="text-xs font-semibold uppercase"
+                    className="text-xs font-semibold"
                     style={{ color: RARITY_COLORS[item.rarity] }}
                   >
                     {item.rarity}

@@ -161,7 +161,7 @@ export function AccountStandingPanel() {
             <dt className="text-xs text-site-text-muted">
               {t('standing-active-strikes', { defaultValue: 'Active strikes' })}
             </dt>
-            <dd className="text-lg font-bold text-site-text">
+            <dd className="text-lg font-semibold text-site-text">
               {standing.activeStrikes}
               <span className="text-sm font-normal text-site-text-muted">
                 {' / '}
@@ -173,13 +173,13 @@ export function AccountStandingPanel() {
             <dt className="text-xs text-site-text-muted">
               {t('standing-total-strikes', { defaultValue: 'Total on record' })}
             </dt>
-            <dd className="text-lg font-bold text-site-text">{standing.totalStrikes}</dd>
+            <dd className="text-lg font-semibold text-site-text">{standing.totalStrikes}</dd>
           </div>
           <div className="rounded-site px-4 py-3">
             <dt className="text-xs text-site-text-muted">
               {t('standing-appeal-window', { defaultValue: 'Appeal window' })}
             </dt>
-            <dd className="text-lg font-bold text-site-text">
+            <dd className="text-lg font-semibold text-site-text">
               {t('standing-appeal-days', {
                 defaultValue: '{{count}} days',
                 count: standing.appealWindowDays,

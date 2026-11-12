@@ -36,7 +36,7 @@ export function TestKeyCreator({ onCreated }: { onCreated: (plaintext: string) =
     <div className="space-y-2 rounded-site px-4 py-3">
       <div className="flex items-center gap-2">
         <FlaskConical className="size-4 text-site-accent" aria-hidden />
-        <h3 className="text-sm font-bold text-site-text">
+        <h3 className="text-sm font-semibold text-site-text">
           {t('testKeys-title', { defaultValue: 'Test-mode key' })}
         </h3>
       </div>

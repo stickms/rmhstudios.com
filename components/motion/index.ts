@@ -16,9 +16,3 @@ export {
 
 export { AsyncReveal } from './AsyncReveal';
 export type { AsyncRevealProps } from './AsyncReveal';
-
-export { ScrollScene, useScrollScene } from './ScrollScene';
-export type { ScrollSceneProps } from './ScrollScene';
-
-export { useScrollProgress } from './useScrollProgress';
-export type { ScrollProgress } from './useScrollProgress';

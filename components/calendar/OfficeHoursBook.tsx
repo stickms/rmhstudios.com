@@ -130,7 +130,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
       <header className="flex items-start gap-3">
         <UserAvatar src={view.host.image} alt="" size={48} />
         <div className="min-w-0">
-          <h2 className="font-display text-xl font-medium text-site-text">
+          <h2 className="text-xl font-medium text-site-text">
             {view.title || t('oh-default-title', { defaultValue: 'Office hours' })}
           </h2>
           <p className="text-sm text-site-text-muted">

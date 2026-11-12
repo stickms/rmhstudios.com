@@ -19,7 +19,6 @@ import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
 import { PinnedHero } from'@/components/feed/PinnedHero';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from'@/lib/contract/client';
 import { getWrappedApi } from'@/lib/wrapped/wrapped.contract';
 
@@ -109,8 +108,6 @@ export function WrappedColumn({
  </Button>
  </Link>
  }
- scrollCue={t('wrapped-scroll-cue', { defaultValue:'Scroll to explore'})}
- screens={2.6}
  />
 
  <div className="space-y-6 pt-4 pb-12">
@@ -132,40 +129,40 @@ export function WrappedColumn({
  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
  {tiles.map((tile) => (
  <div key={tile.label}>
- <div className={`rounded-site p-5 ${LIFT_CARD}`}>
+ <div className={`rounded-site p-5`}>
  <tile.icon className="h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{tile.value}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{tile.value}</p>
  <p className="text-xs text-site-text-muted">{tile.label}</p>
  </div>
  </div>
  ))}
  <div>
- <div className={`rounded-site p-5 ${LIFT_CARD}`}>
+ <div className={`rounded-site p-5`}>
  <CoinIcon className="h-5 w-5"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.coinsEarned)}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{fmt(data.coinsEarned)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-coins-earned', { defaultValue:'Coins earned'})}</p>
  </div>
  </div>
  {data.play ? (
  <>
  <div>
- <div className={`rounded-site p-5 ${LIFT_CARD}`}>
+ <div className={`rounded-site p-5`}>
  <Gamepad2 className="h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{hours(data.play.seconds)}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{hours(data.play.seconds)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-time-played', { defaultValue:'Time played'})}</p>
  </div>
  </div>
  <div>
- <div className={`rounded-site p-5 ${LIFT_CARD}`}>
+ <div className={`rounded-site p-5`}>
  <Layers className="h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.play.cardDrops)}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{fmt(data.play.cardDrops)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-cards-dropped', { defaultValue:'Cards dropped'})}</p>
  </div>
  </div>
  <div>
- <div className={`rounded-site p-5 ${LIFT_CARD}`}>
+ <div className={`rounded-site p-5`}>
  <Award className="h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.play.badges)}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{fmt(data.play.badges)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-badges-crafted', { defaultValue:'Badges crafted'})}</p>
  </div>
  </div>
@@ -173,9 +170,9 @@ export function WrappedColumn({
  ) : null}
  {data.busiestMonth && (
  <div>
- <div className={`rounded-site p-5 ${LIFT_CARD}`}>
+ <div className={`rounded-site p-5`}>
  <CalendarDays className="h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{data.busiestMonth}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{data.busiestMonth}</p>
  <p className="text-xs text-site-text-muted">{t('tile-busiest-month', { defaultValue:'Busiest month'})}</p>
  </div>
  </div>
@@ -208,7 +205,7 @@ export function WrappedColumn({
  </h2>
  <Link
  to={`/u/me/post/${data.topPost.id}`as string}
- className={`block rounded-site p-5 ${LIFT_CARD}`}
+ className={`block rounded-site p-5`}
  >
  <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-site-text">
  {data.topPost.content || t('media-post-fallback', { defaultValue:'(media post)'})}

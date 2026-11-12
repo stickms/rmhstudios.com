@@ -1,41 +1,30 @@
 import { Link } from '@tanstack/react-router';
-import { m as motion } from 'framer-motion';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { getCategoryColor } from '@/lib/news-categories';
 import { NewsSourceBadge } from './NewsSourceBadge';
-import { DUR_FAST, EASE_OUT_EXPO, STAGGER } from '@/components/motion';
 import { useLiquidLink } from '@/hooks/useLiquidLink';
 import { liquidVTName } from '@/lib/view-transition';
 import type { NewsArticle } from '@/lib/news';
 
 interface NewsCardProps {
   article: Partial<NewsArticle>;
-  index: number;
 }
 
-export function NewsCard({ article, index }: NewsCardProps) {
+export function NewsCard({ article }: NewsCardProps) {
   const { t } = useTranslation('c-news');
   const categoryColor = getCategoryColor(article.category ?? '');
   const liquidOpen = useLiquidLink();
   const slug = article.slug ?? '';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DUR_FAST, delay: Math.min(index, 8) * STAGGER, ease: EASE_OUT_EXPO }}
-      className="h-full"
-    >
+    <div className="h-full">
       {/* A repeated tile: the L1 fill via Card (interactive = hover tint-raise +
           press flex). One padding value (`p-4`/`sm:p-5`) owns the inside — the
           old card stacked a `px-5 pt-5` category row on a second `p-5` body. */}
-      <Card
-        interactive
-        className="group relative h-full gap-3 py-4 sm:gap-3 sm:py-5"
-      >
+      <Card interactive className="group relative h-full gap-3 py-4 sm:gap-3 sm:py-5">
         {/* §5.48: the overlay link's box == the card, so tagging it at
             click time morphs the whole card into the article header. */}
         <Link
@@ -92,6 +81,6 @@ export function NewsCard({ article, index }: NewsCardProps) {
           </div>
         </div>
       </Card>
-    </motion.div>
+    </div>
   );
 }

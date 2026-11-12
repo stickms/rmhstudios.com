@@ -109,7 +109,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
     <section className="rounded-site p-5 sm:p-6"aria-labelledby="request-board">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 id="request-board" className="font-display text-xl font-bold text-site-text">
+          <h2 id="request-board" className="text-xl font-semibold text-site-text">
             {t('request-board-title', { defaultValue: 'Request board' })}
           </h2>
           <p className="mt-1 text-sm text-site-text-muted">

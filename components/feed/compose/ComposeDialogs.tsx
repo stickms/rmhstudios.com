@@ -126,7 +126,7 @@ export function CheatSheetDialog({ onClose }: { onClose: () => void }) {
               {
                 code: '**bold**',
                 node: (
-                  <strong className="font-bold">
+                  <strong className="font-semibold">
                     {t('cheatsheet-bold', { defaultValue: 'bold' })}
                   </strong>
                 ),

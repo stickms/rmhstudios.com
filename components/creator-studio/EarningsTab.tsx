@@ -71,7 +71,7 @@ export function EarningsTab() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-[var(--site-section-gap)]">
       <div>
-        <h2 className="font-display text-lg font-medium text-site-text">
+        <h2 className="text-lg font-medium text-site-text">
           {t('earnings', { defaultValue: 'Creator earnings' })}
         </h2>
         <p className="text-sm text-site-text-muted">
@@ -88,7 +88,7 @@ export function EarningsTab() {
           <div className="text-xs font-medium text-site-text-muted">
             {t('redeemable', { defaultValue: 'Redeemable' })}
           </div>
-          <div className="flex items-center gap-2 text-2xl font-bold tabular-nums">
+          <div className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
             <Coins className="size-5 text-site-warning" />
             {loading ? '—' : (earnings?.redeemable ?? 0)}
           </div>
@@ -97,7 +97,7 @@ export function EarningsTab() {
           <div className="text-xs font-medium text-site-text-muted">
             {t('lifetime', { defaultValue: 'Lifetime earned' })}
           </div>
-          <div className="text-2xl font-bold tabular-nums">
+          <div className="text-2xl font-semibold tabular-nums">
             {loading ? '—' : (earnings?.lifetimeEarned ?? 0)}
           </div>
         </Card>
@@ -105,7 +105,7 @@ export function EarningsTab() {
           <div className="text-xs font-medium text-site-text-muted">
             {t('balance', { defaultValue: 'Coin balance' })}
           </div>
-          <div className="text-2xl font-bold tabular-nums">
+          <div className="text-2xl font-semibold tabular-nums">
             {loading ? '—' : (earnings?.spendable ?? 0)}
           </div>
         </Card>

@@ -175,7 +175,7 @@ export function FashionStudio() {
         <section aria-label={t('stage-label', { defaultValue: 'Figure viewer' })}>
           <Suspense
             fallback={
-              <div className="rmhfash-stage glass-bevel-sm rounded-site flex items-center justify-center">
+              <div className="rmhfash-stage rounded-site flex items-center justify-center">
                 <p className="px-6 text-center text-xs text-site-text-muted">
                   {t('loading', { defaultValue: 'Preparing the fitting room…' })}
                 </p>

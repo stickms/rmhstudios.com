@@ -58,7 +58,7 @@ function StatTile({
   return (
     <Card className="p-4">
       <div className="text-xs font-medium text-site-text-muted">{label}</div>
-      <div className="flex items-center gap-2 text-2xl font-bold tabular-nums">
+      <div className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
         {Icon ? <Icon className="size-5 text-site-warning" aria-hidden /> : null}
         {value.toLocaleString()}
       </div>
@@ -135,7 +135,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
                 <span className={`inline-block size-2.5 rounded-full ${bar}`} aria-hidden />
                 {label}
               </div>
-              <div className="mt-1 text-xl font-bold tabular-nums text-site-text">
+              <div className="mt-1 text-xl font-semibold tabular-nums text-site-text">
                 {bySource[key].toLocaleString()}
               </div>
             </div>

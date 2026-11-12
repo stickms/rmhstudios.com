@@ -54,7 +54,7 @@ export function CapacityMeter({
         <span className="text-xs font-medium text-site-text-muted">
           {label}
         </span>
-        <span className="font-display text-sm font-semibold text-site-text">{value}</span>
+        <span className="text-sm font-semibold text-site-text">{value}</span>
       </div>
       <div className="flex h-3 gap-[3px] overflow-hidden rounded-site-sm" aria-hidden>
         {Array.from({ length: units }, (_, i) => (

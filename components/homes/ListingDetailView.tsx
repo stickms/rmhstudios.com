@@ -262,7 +262,7 @@ export function ListingDetailView({ id }: { id: string }) {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-3xl font-bold text-site-text font-display">
+            <div className="text-3xl font-semibold text-site-text">
               {formatPrice(listing.price, listing.listingType)}
             </div>
             <div className="mt-2 flex items-center gap-2 text-site-text-muted">

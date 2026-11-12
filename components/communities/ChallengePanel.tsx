@@ -199,7 +199,7 @@ export default function ChallengePanel({
     <div className="flex flex-col gap-3 px-3 py-3">
       <section className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-base font-bold text-site-text">{challenge.title}</h3>
+          <h3 className="text-base font-semibold text-site-text">{challenge.title}</h3>
           <span className="rounded-full border border-site-accent/30 bg-site-bg-subtle px-2.5 py-0.5 text-xs font-semibold text-site-accent">
             {phaseLabel}
           </span>

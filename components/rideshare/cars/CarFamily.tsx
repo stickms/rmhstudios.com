@@ -150,7 +150,7 @@ export function CarFamily() {
         <Suspense
           fallback={
             <div className="flex flex-col gap-3">
-              <div className="rmhcar-stage glass-bevel-sm rounded-site">
+              <div className="rmhcar-stage rounded-site">
                 <CarSilhouette
                   spec={active.body}
                   frame="body"
@@ -216,11 +216,11 @@ export function CarFamily() {
       {/* What is on the stage. */}
       <section className="rounded-site p-5 sm:p-5">
         <div className="flex items-start gap-4">
-          <div className="glass-bevel-sm flex size-12 shrink-0 items-center justify-center rounded-site text-site-accent">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-site text-site-accent">
             <ActiveIcon className="size-6" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-site-text">
+            <h3 className="text-xl font-semibold tracking-[-0.02em] text-site-text">
               {active.info.name}
             </h3>
             <p className="text-sm text-site-accent">{copy[active.info.id].tagline}</p>

@@ -125,7 +125,7 @@ export function ArcadeHub({
       {!hideHeader && (
         <div className="flex items-center gap-2 border-b border-site-border px-5 py-4 max-md:sr-only max-md:border-b-0">
           <Gamepad2 className="h-5 w-5 text-site-accent" aria-hidden />
-          <h1 className="font-display text-2xl font-semibold tracking-[-0.022em] text-site-text">
+          <h1 className="text-2xl font-semibold tracking-[-0.022em] text-site-text">
             {t('arcade-title', { defaultValue: 'Arcade Pass' })}
           </h1>
         </div>
@@ -139,7 +139,7 @@ export function ArcadeHub({
               <Flame className="h-6 w-6" aria-hidden />
             </div>
             <div>
-              <p className="text-2xl font-bold leading-none text-site-text">
+              <p className="text-2xl font-semibold leading-none text-site-text">
                 {streak.current}
                 <span className="ml-2 text-sm font-medium text-site-text-muted">
                   {t('arcade-day-streak', { defaultValue: 'day streak' })}

@@ -36,7 +36,7 @@ export function MarketItemPreview({
   if (kind === 'NAME_COLOR') {
     return (
       <div
-        className="flex h-12 items-center justify-center rounded-site-sm px-3 text-sm font-bold"
+        className="flex h-12 items-center justify-center rounded-site-sm px-3 text-sm font-semibold"
         style={data.gradient ? { background: data.gradient, color: '#fff' } : { color: data.color }}
       >
         {t('market-name-preview', { defaultValue: 'Name' })}
@@ -133,7 +133,7 @@ export function ListingCard({
         <div className="flex flex-wrap items-center gap-2">
           <p className="break-words text-sm font-semibold text-site-text">{name}</p>
           <span
-            className="text-xs font-semibold uppercase"
+            className="text-xs font-semibold"
             style={{ color: RARITY_COLORS[rarity] }}
           >
             {rarity}

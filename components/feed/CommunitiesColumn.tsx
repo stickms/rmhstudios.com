@@ -240,7 +240,7 @@ export function CommunitiesColumn({
               <li key={c.id}>
                 <Link
                   to={`/c/${c.slug}` as string}
-                  className="flex items-start gap-4 rounded-site relative p-5 transition-[translate,border-color,background-color] duration-site hover:-translate-y-0.5 hover:border-site-accent/50 hover:bg-site-surface-hover"
+                  className="flex items-start gap-4 rounded-site relative p-5 transition-[translate,border-color,background-color] duration-site hover:border-site-accent/50 hover:bg-site-surface-hover"
                 >
                   <div
                     className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-3xl"
@@ -250,7 +250,7 @@ export function CommunitiesColumn({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="truncate text-base font-bold text-site-text">{c.name}</p>
+                      <p className="truncate text-base font-semibold text-site-text">{c.name}</p>
                       {roleLabel && (
                         <span className="shrink-0 rounded-full bg-site-bg-subtle px-2 py-0.5 text-xs font-medium text-site-accent">
                           {roleLabel}

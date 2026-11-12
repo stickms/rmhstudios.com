@@ -83,8 +83,8 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
               />
             </div>
           ) : (
-            <div className="aspect-video w-full bg-gradient-to-br from-site-accent/20 to-site-bg-subtle flex items-center justify-center">
-              <div className="text-4xl font-bold text-site-accent/50">
+            <div className="aspect-video w-full bg-site-bg-subtle flex items-center justify-center">
+              <div className="text-4xl font-semibold text-site-accent/50">
                 {build.title[0]?.toUpperCase()}
               </div>
             </div>

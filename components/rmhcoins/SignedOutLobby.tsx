@@ -65,7 +65,7 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
         <div className="flex items-start gap-3">
           <LogIn className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
           <div className="min-w-0">
-            <h3 className="text-sm font-bold text-site-text">
+            <h3 className="text-sm font-semibold text-site-text">
               {t('signed-out-lobby-title', { defaultValue: 'Sign in to take a seat' })}
             </h3>
             <p className="mt-1 text-sm text-site-text-muted">
@@ -90,7 +90,7 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
 
       {hasLobby && (
       <div className="max-w-125 mx-auto w-full">
-        <h4 className="mb-2 text-sm font-bold text-site-text">
+        <h4 className="mb-2 text-sm font-semibold text-site-text">
           {t('open-tables', { defaultValue: 'Open tables' })}
         </h4>
 

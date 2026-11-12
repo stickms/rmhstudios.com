@@ -92,7 +92,7 @@ export default function HomePage() {
         <section className="rounded-site p-5 sm:p-6">
           <div className="grid items-center gap-6 lg:grid-cols-[1.1fr_1fr]">
             <div className="min-w-0">
-              <h2 className="font-display text-3xl leading-tight font-semibold tracking-tight text-site-text sm:text-4xl">
+              <h2 className="t-heading">
                 {t('hero-heading', {
                   defaultValue: 'Floor space, power and a network that is already there.',
                 })}
@@ -210,7 +210,7 @@ export default function HomePage() {
                     {p.code}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block font-display text-lg font-semibold text-site-text">
+                    <span className="block text-lg font-semibold text-site-text">
                       {p.name}
                     </span>
                     <span className="mt-1 block text-sm text-site-text-muted">{p.desc}</span>
@@ -243,7 +243,7 @@ export default function HomePage() {
                   <span className="text-xs font-medium text-site-accent">
                     {c.code} · {c.region}
                   </span>
-                  <span className="font-display text-lg font-semibold text-site-text">
+                  <span className="text-lg font-semibold text-site-text">
                     {names[c.id]}
                   </span>
                   <CapacityMeter

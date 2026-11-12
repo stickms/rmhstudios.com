@@ -517,7 +517,7 @@ function RideCard({
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-site-border pt-3">
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-bold text-site-success">
+            <span className="text-sm font-semibold text-site-success">
               {formatUsd(payoutBreakdown(ride.estimatedFareCents).driverEarningsCents)}
             </span>
             <span className="text-xs text-site-text-muted">{t('est-pay', { defaultValue: 'est. pay' })}</span>

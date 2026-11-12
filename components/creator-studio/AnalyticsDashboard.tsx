@@ -68,7 +68,7 @@ export function AnalyticsDashboard() {
               <Icon className="size-4" aria-hidden="true" />
               <span className="text-xs font-medium">{label}</span>
             </div>
-            <p className="mt-2 text-2xl font-bold text-site-text">{formatCount(value)}</p>
+            <p className="mt-2 text-2xl font-semibold text-site-text">{formatCount(value)}</p>
           </div>
         ))}
       </div>
@@ -81,7 +81,7 @@ export function AnalyticsDashboard() {
             {t('engagement-rate', { defaultValue: 'Engagement rate' })}
           </span>
         </div>
-        <p className="mt-2 text-2xl font-bold text-site-text">{engagementPct}%</p>
+        <p className="mt-2 text-2xl font-semibold text-site-text">{engagementPct}%</p>
         <p className="text-xs text-site-text-muted">
           {t('engagement-rate-desc', {
             defaultValue: 'Interactions ÷ impressions across all your posts',

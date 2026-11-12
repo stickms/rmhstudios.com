@@ -42,7 +42,7 @@ function QuoteRow({
       <UserAvatar user={item.user} size={nested ? 'xs' : 'sm'} linkToProfile={false} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm">
-          <span className="font-bold text-site-text">{item.user?.name || item.user?.handle}</span>
+          <span className="font-semibold text-site-text">{item.user?.name || item.user?.handle}</span>
           {item.user?.handle && <span className="text-site-text-muted"> @{item.user.handle}</span>}
           <span className="text-site-text-muted">
             {' · '}
@@ -107,7 +107,7 @@ export function QuotesDialog({
     >
       <DialogContent className="flex max-h-[80dvh] max-w-lg flex-col gap-0 overflow-hidden p-0">
         <div className="shrink-0 border-b border-site-border px-5 py-4">
-          <DialogTitle className="font-display text-lg font-bold text-site-text">
+          <DialogTitle className="text-lg font-semibold text-site-text">
             {t('quotes-title', { defaultValue: 'Quotes' })}
           </DialogTitle>
         </div>

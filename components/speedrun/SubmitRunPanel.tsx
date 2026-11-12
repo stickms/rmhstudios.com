@@ -104,7 +104,7 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
   return (
     <Card pane className="px-5 sm:px-6">
       <div className="flex flex-col gap-3">
-        <h2 className="font-display text-lg font-medium text-site-text">
+        <h2 className="text-lg font-medium text-site-text">
           {t('speedrun-submit-title', { defaultValue: 'Submit a run' })}
         </h2>
 

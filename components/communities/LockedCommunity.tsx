@@ -67,7 +67,7 @@ export function LockedCommunityHeader({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Heading className="truncate text-base font-bold text-site-text">
+          <Heading className="truncate text-base font-semibold text-site-text">
             {community.name}
           </Heading>
           <LockBadge />

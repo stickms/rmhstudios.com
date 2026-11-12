@@ -64,7 +64,7 @@ export default function ChallengePanel({ compact = false }: { compact?: boolean 
       aria-label={t('challenge-heading', { year, defaultValue: '{{year}} reading challenge' })}
       className={compact ?'rounded-site p-5':'rounded-site p-5'}
     >
-      <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-site-text">
+      <h2 className="flex items-center gap-2 text-lg font-semibold text-site-text">
         <Target className="size-4 text-site-accent" aria-hidden />
         {t('challenge-heading', { year, defaultValue: '{{year}} reading challenge' })}
       </h2>
@@ -190,7 +190,7 @@ function Progress({ goal, year }: { goal: GoalProgress; year: number }) {
           : t('pace-on-track', { defaultValue: 'Right on pace' });
   return (
     <div className="mt-3 space-y-2">
-      <p className="text-2xl font-bold text-site-text">
+      <p className="text-2xl font-semibold text-site-text">
         {t('challenge-progress', {
           done: goal.done,
           target: goal.target,

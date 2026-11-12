@@ -245,7 +245,7 @@ export function ActiveRidePanel({
       {/* Status timeline */}
       <div className="rounded-site p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-site-text">{rideClassName(ride.rideClass)}</h2>
+          <h2 className="text-lg font-semibold text-site-text">{rideClassName(ride.rideClass)}</h2>
           {status === 'CANCELLED' ? (
             <span className="flex items-center gap-1 rounded-full bg-site-surface-hover px-2.5 py-1 text-xs font-medium text-site-text-muted">
               <XCircle className="h-3.5 w-3.5" /> {t("cancelled", { defaultValue: "Cancelled" })}

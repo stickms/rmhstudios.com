@@ -137,7 +137,7 @@ export default function OfficeHoursManage() {
     <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <form onSubmit={save} className="space-y-4 rounded-site p-5">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-lg font-medium text-site-text">
+          <h2 className="text-lg font-medium text-site-text">
             {t('oh-manage-title', { defaultValue: 'Your office hours' })}
           </h2>
           <label className="flex items-center gap-2 text-sm text-site-text-muted">

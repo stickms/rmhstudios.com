@@ -53,7 +53,7 @@ export function DailyMutatorPage() {
                   <Flame className="h-4 w-4 text-site-accent" aria-hidden />
                   {data.mutator.day}
                 </p>
-                <h2 className="mt-1 font-display text-xl font-bold text-site-text">{game.label}</h2>
+                <h2 className="mt-1 text-xl font-semibold text-site-text">{game.label}</h2>
                 <p className="text-sm text-site-text-muted">{data.mutator.modifier.label}</p>
                 <p className="mt-1 text-xs text-site-text-muted">
                   {t('resets-in', { defaultValue: 'Resets in {{time}}', time: untilReset() })}

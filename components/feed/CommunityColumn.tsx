@@ -185,7 +185,7 @@ export function CommunityColumn({
  >
  <ArrowLeft className="h-5 w-5"/>
  </Link>
- <h1 className="truncate text-lg font-bold text-site-text">{community.name}</h1>
+ <h1 className="truncate text-lg font-semibold text-site-text">{community.name}</h1>
  </header>
 
  <div className="border-b border-site-border p-4">
@@ -197,7 +197,7 @@ export function CommunityColumn({
  {community.icon ||'👥'}
  </div>
  <div className="min-w-0 flex-1">
- <h2 className="text-xl font-bold text-site-text">{community.name}</h2>
+ <h2 className="text-xl font-semibold text-site-text">{community.name}</h2>
  <div className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-site-text-muted">
  <span className="inline-flex items-center gap-1">
  <Users className="h-3.5 w-3.5"/>{''}
