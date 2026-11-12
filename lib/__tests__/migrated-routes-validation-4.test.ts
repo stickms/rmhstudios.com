@@ -70,7 +70,7 @@ async function handler(mod: string, method: string): Promise<Handler> {
   return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
-const SPACES = '@/app/routes/api/spaces/index';
+const SPACES = '@/lib/spaces/api/spaces.server';
 const SPACE_START = '@/lib/spaces/api/spaces.$id.start.server';
 const SPACE_END = '@/lib/spaces/api/spaces.$id.end.server';
 const FREEZE = '@/lib/api/routes/streak.freeze.server';

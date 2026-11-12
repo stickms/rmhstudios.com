@@ -10,7 +10,7 @@ export default defineFeature({
     'features/signal-forge/api/signal-forge.abandon.server.ts',
     'features/signal-forge/api/signal-forge.leaderboard.server.ts',
     'features/signal-forge/api/signal-forge.load.server.ts',
-    'app/routes/api/signal-forge/save.ts',
+    'features/signal-forge/api/signal-forge.save.server.ts',
     'features/signal-forge/api/signal-forge.score.server.ts',
     'app/routes/secret/signal-forge.tsx',
   ],

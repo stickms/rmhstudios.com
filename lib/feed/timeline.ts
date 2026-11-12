@@ -103,7 +103,7 @@ const SEARCH_ID_CAP = 1000;
  * recency-ordered id set; the caller folds it into its Prisma `where` as
  * `id: { in: [...] }`, so every audience / deleted / following / community
  * filter and the keyset cursor still apply on top — behaviour matches the old
- * `contains` filter, just index-backed. Mirrors app/routes/api/search.ts's
+ * `contains` filter, just index-backed. Mirrors lib/search/api/search.server.ts's
  * `searchPosts`; `content_tsv` is a raw-SQL migration column (not in
  * schema.prisma), hence `$queryRaw`. Fully parameterised — no interpolation.
  */

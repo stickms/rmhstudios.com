@@ -24,7 +24,7 @@ authorizeReference: async ({ user, referenceId }) =&gt; {
 
 <p>The user has <i>already</i> been authenticated by the time this runs; the rule only decides whether that known user may manage the subscription whose reference id was passed. And in a game route, the same split appears: first authenticate, then authorize.</p>
 
-<pre><code>// app/routes/api/slice-it/score.ts
+<pre><code>// features/slice-it/api/slice-it.score.server.ts
 const session = await auth.api.getSession({ headers: request.headers });
 if (!session?.user) {
   return Response.json({ error: 'Unauthorized.' }, { status: 401 });
@@ -255,7 +255,7 @@ erDiagram
 <h2 id="games-leaderboards">How games use auth for leaderboards</h2>
 <p>Most of the games library (Chapter coverage of the games comes later) is playable anonymously. Auth becomes relevant the moment a game wants to <i>attribute</i> something to a person — a high score, progression, a ranked match. The pattern is uniform: a server route calls <code>getSession</code>, refuses the write if there is no user, and otherwise keys the persisted row on <code>session.user.id</code>.</p>
 
-<pre><code>// app/routes/api/slice-it/score.ts — auth-gated leaderboard write
+<pre><code>// features/slice-it/api/slice-it.score.server.ts — auth-gated leaderboard write
 const session = await auth.api.getSession({ headers: request.headers });
 if (!session?.user) {
   return Response.json({ error: 'Unauthorized.' }, { status: 401 });

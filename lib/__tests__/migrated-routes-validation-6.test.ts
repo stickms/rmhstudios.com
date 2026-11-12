@@ -53,7 +53,7 @@ async function handler(mod: string, method: string): Promise<Handler> {
 const EVENTS = '@/lib/calendar/api/events.server';
 const RSVP = '@/lib/api/routes/events.$id.rsvp.server';
 const LISTINGS = '@/lib/market/api/market.listings.server';
-const TIERS = '@/app/routes/api/studio/tiers';
+const TIERS = '@/lib/studio/api/studio.tiers.server';
 const SCORE = '@features/dream-rift/api/dream-rift.score.server';
 
 function req(method: string, body?: unknown, cookie = true): Request {

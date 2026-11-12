@@ -136,7 +136,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // X1 — the rest of the ladder. Unlock checks live in `lib/achievements/slice-it.ts`
   // (pure, per-run logic) and `features/slice-it/engine/progression.server.ts` (the Prisma
   // orchestration), called from `score.ts`. `charted` is granted from
-  // `app/routes/api/slice-it/charts/$id.ts` on the draft→public transition —
+  // `features/slice-it/api/slice-it.charts.$id.server.ts` on the draft→public transition —
   // the only place a chart's publish state actually changes.
   { id: 'game.slice_it.s_rank', name: 'Sharp', description: 'Finish a song with an S rank.', icon: '🔪', category: 'games', tier: 'silver', coinReward: 25, target: 1, group: 'Slice It!' },
   { id: 'game.slice_it.ss_rank', name: 'Flawless', description: 'Finish a song with 100% accuracy.', icon: '💎', category: 'games', tier: 'gold', coinReward: 100, target: 1, group: 'Slice It!' },
