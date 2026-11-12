@@ -235,10 +235,20 @@ const BUDGETS = {
   //   chunks instead of 72; entry 409,201 -> 408,395 B.
   //   framer's `m` and AnimatePresence off the critical path (the one static user was a route's pending
   //   component): critical path 961,788 -> 945,407 B raw and 270,249 -> 263,171 B brotli, 54 chunks; entry 408,401 B.
+  //
+  // Third-pass audit AR2 (2026-11-12): entry RAISED 416,400 -> 448,100 B; critical path LOWERED 964,300 -> 957,800 B
+  // raw and 268,400 -> 265,600 B brotli. No feature bought the entry bytes: the same code moved, by the mechanism of
+  // the 2026-10-08 and 2026-11-11 notes above. The 22 `*.queries.ts` files lost their `createServerFn` twins, so the
+  // server-function client runtime (TanStack Start's RPC stub and its serializer, a 37,155 B `createServerFn` chunk
+  // plus a 963 B `qss` chunk, both already on the critical path) is no longer shared with any lazily loaded chunk,
+  // and rolldown folds it into the entry instead of emitting it beside it. Measured on a plain `vite build` of the
+  // parent commit and of this one: entry 408,401 -> 439,342 B; critical path 945,407 -> 938,977 B raw and
+  // 263,171 -> 260,371 B brotli, 54 -> 52 chunks. Every page downloads the whole critical path before it hydrates,
+  // so this is 6.4 KB fewer bytes in two fewer requests. Each line is the measurement + ~2%, as above.
   siteCssBrotli: 32_600,
-  entryRaw: 416_400,
-  criticalPathRaw: 964_300,
-  criticalPathBrotli: 268_400,
+  entryRaw: 448_100,
+  criticalPathRaw: 957_800,
+  criticalPathBrotli: 265_600,
 };
 
 /**

@@ -710,7 +710,7 @@ the UI and can be taken whenever a Steel phase is in review.
 
 ```
 AR1: open
-AR2: in-progress (contractQuery + in-process GET dispatch; lib/admin/admin-ops.queries.ts converted, 22 queries files to go)
+AR2: done (2026-11-12: all 23 `*.queries.ts` are `contractQuery` over their GET route, run in-process by the loader; no queries file imports `createServerFn`, `routeQueryFn` is deleted, and lib/__tests__/queries-server-fn-ratchet.test.ts holds the count at zero. Shipped as `contractQuery(key, contract)` over the existing route + contract rather than the `defineQuery({ load })` sketch above, so a read is the route file plus one line in a queries file. New contract: `getDailyMutatorApi`. /api/account/standing declares its rate limit in `defineHandler` so a page render is not charged for it. Not covered: the other `createServerFn` loaders outside queries files)
 AR3: open
 AR4: open
 AR5: open
