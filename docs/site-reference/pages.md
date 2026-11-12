@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 365 routes. 198 render inside the standard site shell (sidebar, nav, context rail); 167 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 362 routes. 198 render inside the standard site shell (sidebar, nav, context rail); 164 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -257,7 +257,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/elections` | — | public | `app/routes/elections.tsx` |
 | `/embed/post/:id` | — | public | `app/routes/embed.post.$id.tsx` |
 | `/embed/replay/:id` | — | public | `app/routes/embed.replay.$id.tsx` |
-| `/eversion-lab` | — | admin | `app/routes/eversion-lab.tsx` |
 | `/gabriels-horn` | Gabriel | public | `app/routes/gabriels-horn.tsx` |
 | `/games` | redirects to `/arcade` | public | `app/routes/games/_library/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/games/_library/$gameId.tsx` |
@@ -283,14 +282,12 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/handle` | — | public | `app/routes/handle.ts` |
 | `/hearthworks` | Hearthworks — build a cozy town, farm, cook and trade | public | `app/routes/hearthworks.tsx` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |
-| `/jelly` | — | public | `app/routes/jelly.tsx` |
 | `/kaikaidebtcounter` | The Kaikai Debt Counter | public | `app/routes/kaikaidebtcounter.tsx` |
 | `/kowloon-knockout` | — | public | `app/routes/kowloon-knockout/index.tsx` |
 | `/laundry-sort` | Laundry Sort | public | `app/routes/laundry-sort.tsx` |
 | `/library/:slug` | — | public | `app/routes/library.$slug.tsx` |
 | `/library/albums/:albumId` | — | public | `app/routes/library.albums.$albumId.tsx` |
 | `/lights-out` | redirects to `/daily/lights-out` | public | `app/routes/lights-out.tsx` |
-| `/liquid-glass` | redirects to `/jelly` | public | `app/routes/liquid-glass.tsx` |
 | `/login` | Login \| RMH | public | `app/routes/login.tsx` |
 | `/neon-driftway` | — | public | `app/routes/neon-driftway.tsx` |
 | `/news/:slug` | — | public | `app/routes/news.$slug.tsx` |

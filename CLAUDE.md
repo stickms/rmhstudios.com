@@ -35,7 +35,7 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / jobs (pg-boss) workers.                  | [`server/CLAUDE.md`](server/CLAUDE.md)           |
 | `go-services/` | **Go** microservice fleet (Bazel + gazelle): `status` and `assets` run in prod; the gateway, Go hubs, workers and supervisor were removed (§5.2, D3).            | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                           | `lib/CLAUDE.md`                                  |
-| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useJellyPointer`, `useLiquidBackground`, `useReveal`, …).                       | `lib/CLAUDE.md`                                  |
+| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLiquidBackground`, `useReveal`, …).                       | `lib/CLAUDE.md`                                  |
 | `prisma/`      | `schema/` (one file per domain; model/enum/line counts: `docs/_generated/facts.json`) + migrations.                                                                                                        | `lib/CLAUDE.md`                                  |
 | `locales/`     | 16 shipped locales × the registered namespaces (count: `docs/_generated/facts.json`); `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                      | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                    | —                                                |
@@ -69,15 +69,6 @@ make gazelle && make test    # Go: regenerate BUILD files, run Bazel tests
 Local ports: web 7005 · socket-server 7001 · rmhtube 7003 · rmhbox 7676 ·
 status 7008 · assets 7007. Env: see `.env.example`; minimum is
 `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
-
-**Frontend WebAssembly:** `wasm/` holds the AssemblyScript dough/Peirce kernels;
-`lib/wasm/` owns browser/worker loading and fallbacks. Vite compiles them before
-dev/build, and `pnpm test` compiles before Vitest. Use `pnpm wasm:build` explicitly
-before direct `pnpm exec vitest` runs involving these modules; `pnpm wasm:bench`
-compares warm CPU costs with JavaScript. `lib/wasm/generated/` and
-`wasm/.generated/` are generated, gitignored outputs. See
-[`docs/frontend-webassembly.md`](docs/frontend-webassembly.md) for the source map,
-memory contract, asset checks and one-time Apache policy update.
 
 ## The commit gate — run this before EVERY commit
 
@@ -137,7 +128,7 @@ _why_.
 ## Cross-cutting conventions (the ones agents break most)
 
 1. **Routing:** add files under `app/routes/`; the route tree regenerates on
-   dev/build. Pages under `_site/` get the radial shell; top-level routes are
+   dev/build. Pages under `_site/` get the Steel shell (`components/shell/SiteShell.tsx`); top-level routes are
    full-screen (games, login, legal — intentional). Never edit
    `routeTree.gen.ts`.
 2. **Server-only code:** `lib/**/*.server.ts` is stubbed out of the client
@@ -290,17 +281,23 @@ ms, tab underline and toggle slide 140 ms, chrome activation 280 ms, globe 360 m
 staggers, hover lifts, springs, parallax or shimmer. Route changes swap content with no
 transition.
 
-**What phase 1 left in place, on purpose.** The old JS runtime (`lib/jelly`, `lib/liquid`,
-`components/radial`, the liquid globe, `hooks/useJellyPointer`, the page-motion entrances)
-is still wired and still runs, with its stylesheets gone: it is deleted in phases 3 and 6
-(plan 15.3). Do not extend it, and do not add a new consumer. `components/ui` primitives
-keep their old variants until phase 2; the `glass-*` class names stay until phases 3 to 5.
-The user-theme and accent-preset systems (`lib/themes`, `lib/appearance.ts`) still write
-`--site-*` overrides; whether they survive two fixed editions is an owner decision.
+**What phase 6 deleted (plan 15.3).** The radial shell and the liquid globe (`components/radial/`),
+the eversion (`lib/eversion/`), the jelly runtime (`lib/jelly/`, `lib/liquid/`), the WebAssembly
+kernels (`wasm/`, `lib/wasm/`), the glass/jelly/arc stylesheets, the page entrances
+(`lib/page-transition.ts`, the `u-reveal` and `page-enter` rules) and the settings that only
+configured them (electric arcs, navigation transition, eversion level, always-evert, desktop
+navigation mode) are gone. Do not bring them back, and do not add a consumer of what is left.
+**Kept on purpose (owner, G5a):** `lib/dough.ts`, `lib/fluid.ts` and `lib/trackball.ts`, the
+physics the chrome globe (`lib/globe/`, `lib/chrome/`, `components/shell/`) runs on. The globe's
+idle drift is the one ambient motion; the "Globe motion: On / Still" setting (Appearance) stamps
+`html[data-jelly-motion='still']`, which `lib/globe/view.ts` and the games' ambient canvases read
+(`motionStill()` in `lib/appearance/prefs.ts`). The `glass-*` class names and `data-jelly*`
+attributes still in components are dead names; phase 7 removes them. The user-theme and
+accent-preset systems (`lib/themes`, `lib/appearance.ts`) still write `--site-*` overrides;
+whether they survive two fixed editions is an owner decision.
 
-**Layout (plan section 9, phase 3):** phone one column and the globe the only fixed
-element; desktop sidebar 220px · content · margin 320px, capped at 1240px. Until then the
-radial shell stands. Full-screen games and apps are outside the shell and keep their own
+**Layout (plan section 9):** phone one column and the globe the only fixed
+element; desktop sidebar 220px · content · margin 320px, capped at 1240px. Full-screen games and apps are outside the shell and keep their own
 look (L8): `components/shared/app-theme.css` carries the literal palette the app tier read
 from the old site tokens, so a change to a site token never moves an app.
 
@@ -308,12 +305,8 @@ from the old site tokens, so a change to a site token never moves an app.
 strips behind its status bar and floating tab bar from any `position: fixed` / sticky
 layer at a screen edge, as one flat band. So: no `theme-color` on iOS, no full-viewport
 fixed decoration (hide it on `html.ios-webkit`; the root carries the flat `--site-bg`
-ground), and nothing pinned flush to the top or bottom (float it off the edge like
-`.radial-topbar`). **One deliberate exception (owner, 2026-10-29):** below 640px the top bar
-is a full-bleed bar (`.radial-topbar.glass-chrome` in `radial.css`), square-cornered,
-carrying `env(safe-area-inset-top)` in its own height and in `--rad-topbar-h`. Don't turn
-it back into a pill on phones, and don't take it as licence for any other flush layer
-(phase 3 replaces the bar with the globe). `lib/__tests__/ios-edge-contract.test.ts`
+ground), and nothing pinned flush to the top or bottom (the phone shell has no fixed header, and
+the docked globe floats 18px off the bottom edge). `lib/__tests__/ios-edge-contract.test.ts`
 asserts the invariants and ratchets any new edge-pinned layer; `pnpm audit:pages` finds the
 rest in a real browser. Both are described in
 [`docs/page-consistency.md`](docs/page-consistency.md) §"How consistency is enforced".
@@ -325,8 +318,8 @@ one WebGL context (the chrome renderer) and no worker, `MutationObserver` or dec
 Geist and Geist Mono only, self-hosted. **The site-tier CSS gets smaller in every phase (B5):**
 the ledger in section 17 of the plan records the built `site-tier-*.css` and the critical-path
 JavaScript for `/` before phase 1 and after each phase; `pnpm -s exec tsx
-scripts/check-bundle-budget.ts` must pass. Until phases 3 and 6 land, the old globe still
-draws in its worker; that is the one ambient clock left and it goes with `components/radial`.
+scripts/check-bundle-budget.ts` must pass.  The one ambient clock is the chrome globe's idle drift (a 15 Hz tick, 7 on
+handhelds), bounded by `testing/e2e/steel-rest.mjs`.
 
 ## Runtime & deploy reality (summary — details in docs/architecture.md)
 

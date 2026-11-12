@@ -17,14 +17,15 @@ is the bug. Steel replaces Plasmatic Jelly and the Broadsheet brief; the documen
 that describe those ([`docs/design-language.md`](docs/design-language.md),
 [`docs/plasmatic-jelly-system.md`](docs/plasmatic-jelly-system.md)) are historical.
 
-The plan is executed one phase at a time (its section 16). Phase 1, tokens and type,
-is in: the values and type classes below are real, the old material's stylesheets
-are gone, and the existing role classes (`glass-fill`, `glass-pane`, `glass-chrome`,
-`glass-overlay`, `glass-inset`) still work as names but render flat surfaces
-(`app/styles/steel-surfaces.css`). Phase 3, the shell, is in: every `_site` page sits in
-`components/shell/SiteShell.tsx` (a sidebar of the five sections on desktop, the docked
-globe on a phone, an optional margin; `/sections` is the no-script list). Pages keep their
-old content inside it and look unfinished until phases 4 and 5.
+The plan is executed one phase at a time (its section 16). Phases 1 to 6 are in: the values and
+type classes below are real; every `_site` page sits in `components/shell/SiteShell.tsx` (a sidebar
+of the five sections on desktop, the docked globe on a phone, an optional margin; `/sections` is the
+no-script list); controls, overlays, the spine and the page recipes are built; and phase 6 deleted
+the old material and shell (`components/radial/`, `lib/jelly/`, `lib/liquid/`, `lib/eversion/`, the
+WebAssembly kernels, the glass, jelly and arc stylesheets, the page entrances). The role classes
+(`glass-fill`, `glass-pane`, `glass-chrome`, `glass-overlay`, `glass-inset`) and the `data-jelly*`
+attributes still in components are dead names that render flat surfaces
+(`app/styles/steel-surfaces.css`); phase 7 removes them.
 
 ## 1. The five rules
 
@@ -101,7 +102,7 @@ focusable element (K10). A page's one structural signature is the spine, a 1px v
 line with a dot per item and a hollow dot per section heading. Phone navigation is the
 globe alone; desktop navigation is a word list in a left sidebar. Controls (plan
 section 6), the spine (7), the globe and shell (8, 9) and the page recipes (10) are
-specified in the plan and arrive in phases 2 to 5.
+specified in the plan.
 
 ## 5. What the code enforces
 

@@ -19,13 +19,8 @@ app/
     api/             server routes (~415 files)
     <game>.tsx       full-screen games/apps (top level, no shell)
     sitemap[.]xml.ts /sitemap.xml ([.]= escaped literal dot)
-  globals.css        theme tokens: base + curated themes as .style-* classes (see design-language.md)
-  glass-roles.css   the glass role base (.glass-*) the jelly material builds on
-  jelly-material.css Plasmatic Jelly CSS material: role knobs, static haze floor and rim, woken haze, CSS-spring soft body, degradation
-  jelly-arcs.css     the electric-arc overlay layer (.jelly-arc-layer)
-  jelly-coverage.css selector-level adapters that bring Radix/sonner/[data-slot] surfaces onto the material
-                     (contract for all four: docs/plasmatic-jelly-system.md — no backdrop-filter, no
-                     `infinite` animation outside the woken haze, jelly paint layers at negative z-index)
+  globals.css        theme tokens: base + curated themes as .style-* classes (see design.md)
+  styles/            Steel sheets: steel-surfaces (flat role names), steel-type, steel-chrome, steel-overlay
   site-tier.css      entry sheet for _site pages: Tailwind + globals.css, minus game/app-only sources
   app-tier.css       entry sheet for full-screen routes: the superset (lib/style-tier.ts picks)
   router.tsx         router config: intent preloading, pending component timings
@@ -190,7 +185,7 @@ route that never mentions `defineHandler`, a page with no `head()`, a stale
 generated docs/site reference, a hand-edited `routeTree.gen.ts`. Confirm the
 rest yourself:
 
-- [ ] **Placement decides chrome.** `_site/` for a standard page (radial shell,
+- [ ] **Placement decides chrome.** `_site/` for a standard page (the Steel shell,
       `PageLayout`), top level for a full-screen experience. Games, `/login`,
       `secret/*`, `discord/*` and the legal pages are intentionally top-level.
 - [ ] **`head()` on every page** — at minimum `meta: [{ title: "X | RMH

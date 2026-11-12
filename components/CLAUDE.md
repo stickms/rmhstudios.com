@@ -14,7 +14,7 @@ feature lives in that feature's directory; genuinely shared primitives live in
 | Directory       | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ui/`           | **Shared primitives** — Button, Badge, Card, Dialog, Input, Textarea, Select, Label, EmptyState, Skeleton, Spinner/RadialLoader, Tooltip, IconButton, CopyButton, ConfirmDialog, Breadcrumbs, BackToTop, NotificationBadge, UserAvatar, OptimizedImage/BlurImage, AnimatedCount, ViewTransitionLink, NavigationProgress, RoutePending, pagination, slider, resizable, skeletons/. Also `tabs` (`<Tabs>`, the **only** sanctioned tab strip) and `glass-filter` (the global `GlassFilter` SVG host). Always check here before writing new UI. Full API notes in `docs/design-language.md` §5. |
-| `feed/`         | Feed/timeline plus the **layout system**: `SiteShell.tsx` (site-wide chrome, delegates to `radial/RadialShell`), `PageLayout.tsx` (canonical page wrapper), `ContextRail.tsx` (portals a page's `rightSidebar` into the shell's desktop live rail), `AnimatedMain.tsx`, `ColumnHeader.tsx`, post cards, composer. Also `feed.css`. Navigation lives in `radial/RadialHub` plus the desktop `radial/RadialNavRail`; the old left rail and mobile push-drawer are gone.                                                                                                                                                         |
+| `feed/`         | Feed/timeline plus the **layout system**: `SiteShell.tsx` (the shell lives in `components/shell/`), `PageLayout.tsx` (canonical page wrapper), `ContextRail.tsx` (portals a page's `rightSidebar` into the shell's desktop live rail), `AnimatedMain.tsx`, `ColumnHeader.tsx`, post cards, composer. Also `feed.css`. Navigation lives in `components/shell/` (the sidebar, the globe).                                                                                                                                                         |
 | `site/`         | Site-level chrome: `CommandPalette` (mounted globally), `LanguageSwitcher`, `PasskeyManager`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `shared/`       | Cross-feature building blocks. **The full-screen app tier lives here**: `app-theme.css` (the `--app-*` token contract + chrome shared by RMHbox/RMHType/RMHStudy/RMHTube/RMHMusic), `AppShell`, `AppHeader`, `AppToaster`, `ConnectionStatus` (reconnect banner + peer-wait overlay), `useQuitGame` (hooks/) is the shared "leave this game" handler games wire to their menu Quit button. Also `GameLoadingFallback`, `GameErrorBoundary`, ChatPanel, EmojiPicker, ReactionMenu.                                                                                                                                                                                           |
 | `errors/`       | `RouteErrorFallback`, `NotFound` — wired as route error/404 components.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -40,32 +40,12 @@ rounded-site shadow-site-sm` renders the same _box_ and none of the
   _material_ — no haze, no rim, no soft body, and nothing for
   print or the app tier's high contrast to switch off. **No box-shadow on any UI surface** — shadow tokens are
   zero; the soft molded rim is the depth.
-- **Plasmatic Jelly material.** Every role is a hazy translucent slab with a static
-  molded rim, a haze that drifts when woken, a soft body made of CSS springs, and an
-  electric arc on click — all in `app/jelly-material.css` (plus the click-arc service),
-  never in a component. The rim is one inset glow on the host (`--gel-glow`); the haze is
-  one transform-only layer on the host's own `::after` that has no box at rest and drifts
-  only while the host is hovered or keyboard-focused; hover plumps and press squashes by a
-  transition on `scale` through the `--jelly-spring-t` hook, with the pointer position as
-  `--px` / `--py` (`lib/jelly/pointer-vars.ts`); `lib/jelly/arcs/` draws the click arc on
-  one body-level canvas, created on the first press. Nothing is injected into a host, so a
-  component's children are exactly its own. **There is no `backdrop-filter` in any glass
-  role, and you must not add one.** Floating glass reads the page behind it plainly; there
-  is no live refraction on site surfaces (the liquid globe has its own shader and refracts
-  a page snapshot).
-  Opt an element out with `data-jelly="off"`; opt a gesture subtree out with
-  `data-jelly-scope="off"` and a game
-  play-field with `data-jelly-zone="playfield"`. **Nothing `position: fixed` inside a jelly
-  host** — a host that can carry a transform is its containing block; portal it. Never add
-  per-card pointer listeners, CSS hover lifts, framer `whileHover`/`whileTap` scale, your
-  own `transition` on `scale`/`translate`/`transform` of a host, `infinite` keyframes, arc
-  drawing, gradient-position animation, or inherited root variable writes in frames.
-  `app/glass-roles.css` + `app/jelly-material.css` are the whole material. Layout never
-  changes: hosts squash within 4px/3% and an arc nudges the struck hosts ≤1.5px. Keep 16px
-  (`--jelly-margin`) of free room round a slab inside any `overflow` container so the squash
-  and the focus ring are not cut. Buttons are flat until touched (`data-jelly-rest="flat"`);
-  only `variant="signal"` and the semantic fills are always slabs. See
-  [`docs/plasmatic-jelly-system.md`](../docs/plasmatic-jelly-system.md).
+- **Steel, not Plasmatic Jelly.** The glass, jelly and arc material (`app/glass-roles.css`,
+  `app/jelly-material.css`, `lib/jelly/`, the click arcs, the soft body) was deleted in
+  Steel phase 6. The role classes above and the `data-jelly*` attributes still in
+  components are dead names that render a flat surface or nothing; do not add new uses.
+  Polished chrome is the globe and the toggle and slider thumbs only (R2); see
+  [`design.md`](../design.md) and the Steel plan.
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`
   attribute on new primitives — themes restyle components through
@@ -155,7 +135,7 @@ cannot see, and it is the half that decides whether the change looks native:
       namespace, `pnpm i18n:extract` run, key present in `locales/en/`. New
       namespace ⇒ also register it in `NAMESPACES` (`lib/i18n/config.ts`).
 - [ ] **Looked at in both themes × two widths** — Daylight and `.style-graphite`,
-      phone and desktop, once with jelly motion `still`.
+      phone and desktop, once with Globe motion `still`.
       Nothing in CI can do this for you (design-language.md §0.9).
 - [ ] **iOS bars stay clear**: nothing new is `fixed`/`sticky` flush to the top or bottom
       edge, and no new full-viewport fixed layer (hide it on `html.ios-webkit`).
@@ -165,9 +145,7 @@ cannot see, and it is the half that decides whether the change looks native:
       (app/globals.css, "Bottom-anchored fixed UI that follows Safari's toolbar, in CSS only"), never a bare
       `bottom: <offset>`. `--vv-follow` is `100% - 100dvh` on iOS WebKit and `0px` elsewhere, so the element stays on the
       visible area while the toolbar resizes, resolved by layout with no script. Don't add a script that measures and
-      writes the position: it runs on the main thread and trails the toolbar. There is no exception: the hub orb,
-      the open menu's overlay (and its foot pill) and the docked globe follow the same way
-      (`components/radial/radial.css`), the globe's pose being a CSS length of `dvh` rather than a measured one;
+      writes the position: it runs on the main thread and trails the toolbar. There is no exception: the docked globe follows the same way (`components/shell/globe-nav.css`);
       `--vv-shift` and its probe are gone (`lib/__tests__/viewport-follow-css.test.ts`).
 - [ ] **Keyboard + screen reader**: icon-only controls named, decorative icons
       `aria-hidden`, focus ring visible against the surface it lands on, no new
