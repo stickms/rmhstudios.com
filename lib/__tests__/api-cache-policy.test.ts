@@ -58,6 +58,7 @@ vi.mock('@/lib/prisma', () => ({ prisma: new Proxy({}, { get: () => () => [] }) 
 
 import { clearResponseCache } from '@/lib/api/response-cache.server';
 import { triage, type Row } from '../../scripts/api-cache-triage';
+import { loadApiHandlers } from './api-handler-modules';
 
 const rows = triage();
 const isPublicDeclared = (r: Row) => !!r.declared && /visibility: 'public'/.test(r.declared);
@@ -196,13 +197,6 @@ const ALLOWED_HEADER_READS = new Set([
   'accept-encoding',
 ]);
 
-const loaders = import.meta.glob('../../app/routes/api/**/*.ts') as Record<
-  string,
-  () => Promise<{ Route?: { options?: { server?: { handlers?: Record<string, unknown> } } } }>
->;
-
-type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
-
 function instrument(request: Request): { request: Request; reads: Set<string> } {
   const reads = new Set<string>();
   const real = request.headers;
@@ -290,12 +284,7 @@ describe('public cache declarations are anonymous-invariant (dynamic)', () => {
   it.each(targets.map((r) => [r.url, r.file] as const))(
     '%s',
     async (url, file) => {
-      const key = `../../${file}`;
-      const load = loaders[key];
-      expect(load, `import.meta.glob did not cover ${key}`).toBeTypeOf('function');
-      const mod = await load();
-      const handlers = mod.Route?.options?.server?.handlers as Record<string, Handler> | undefined;
-      const GET = handlers?.GET;
+      const GET = (await loadApiHandlers(file)).GET;
       expect(GET, `${url} has no GET handler`).toBeTypeOf('function');
 
       const base = `https://rmhstudios.com${concretePath(url)}?limit=5&to=English&id=x&userId=x&slug=x`;

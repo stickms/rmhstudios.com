@@ -3,6 +3,7 @@
  * walking the real route tree and the product catalogs:
  *
  *   app/routes/**            → every page route and every API route
+ *   lib/api/route-sources    → the API endpoints registered behind app/routes/api/$.ts
  *   lib/catalog              → the game catalog
  *   lib/catalog              → the app catalog
  *
@@ -20,6 +21,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { games, apps } from '../lib/catalog';
+import { registeredApiRoutes } from '../lib/api/route-sources';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ROUTES = join(ROOT, 'app', 'routes');
@@ -329,11 +331,30 @@ function renderPages(routes: RouteFile[]): string {
 
 /* ── API inventory ───────────────────────────────────────────────────────── */
 
+/**
+ * The dispatcher for registered endpoints (third-pass audit AR3): `app/routes/api/$.ts`
+ * serves the modules that `export const route = apiRoute('/api/…', { … })`. It is listed
+ * through them, not as a route of its own.
+ */
+const API_DISPATCHER_ID = 'api/$';
+
+/** Registered endpoints, in the same row shape as a route file. */
+function registeredApiRows(): Array<{ url: string; methods: string[]; file: string }> {
+  return registeredApiRoutes(ROOT)
+    .filter((r) => !UNPUBLISHED.some((re) => re.test(r.template.slice(1))))
+    .map((r) => ({
+      url: r.template.replace(/\$([A-Za-z0-9_]+)/g, ':$1'),
+      methods: methodsOf(r.file),
+      file: r.file,
+    }));
+}
+
 function renderApi(routes: RouteFile[]): string {
-  const api = routes
-    .filter((r) => r.isApi)
-    .map((r) => ({ ...r, ...toUrl(r.id), methods: methodsOf(r.file) }))
-    .sort((a, b) => a.url.localeCompare(b.url));
+  const fileRows = routes
+    .filter((r) => r.isApi && r.id !== API_DISPATCHER_ID)
+    .map((r) => ({ url: toUrl(r.id).url, methods: methodsOf(r.file), file: r.file }));
+  const registeredRows = registeredApiRows();
+  const api = [...fileRows, ...registeredRows].sort((a, b) => a.url.localeCompare(b.url));
 
   const groups = new Map<string, typeof api>();
   for (const route of api) {
@@ -347,7 +368,9 @@ function renderApi(routes: RouteFile[]): string {
   out.push('# API routes');
   out.push('');
   out.push(
-    `Every server route in the app tier — ${api.length} files across ${groups.size} groups. ` +
+    `Every server route in the app tier — ${api.length} endpoints across ${groups.size} groups: ` +
+      `${fileRows.length} route files under \`app/routes/api\` and ${registeredRows.length} registered ` +
+      'modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). ' +
       'This is the whole internal surface, not just the public developer API: ' +
       'the public, versioned, key-authenticated subset is `/api/v1/*`, documented in ' +
       '[the developer API reference](../developer-api/endpoints/index.md). ' +
@@ -355,7 +378,8 @@ function renderApi(routes: RouteFile[]): string {
   );
   out.push('');
   out.push(
-    "Methods are read from each file's `server.handlers` block. A route with no methods listed " +
+    "Methods are read from each file's `server.handlers` block, or from the handlers a registered " +
+      'module passes to `apiRoute`. A route with no methods listed ' +
       'exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).',
   );
   out.push('');
@@ -497,9 +521,10 @@ if (CHECK && stale.length) {
 
 const pageCount = routes.filter((r) => !r.isApi).length;
 const apiCount = routes.filter((r) => r.isApi).length;
+const registeredCount = registeredApiRows().length;
 process.stdout.write(
   (CHECK
     ? 'Site reference is up to date.'
-    : `Wrote site reference: ${pageCount} page route files, ${apiCount} API route files, ${games.length} games, ${apps.length} apps.`) +
+    : `Wrote site reference: ${pageCount} page route files, ${apiCount} API route files, ${registeredCount} registered API endpoints, ${games.length} games, ${apps.length} apps.`) +
     '\n',
 );

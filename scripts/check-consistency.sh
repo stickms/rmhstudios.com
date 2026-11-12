@@ -370,10 +370,27 @@ if list '^app/routes/api/.*\.ts$' | grep -q .; then
   for f in $(list '^app/routes/api/.*\.ts$'); do
     [ -f "$f" ] || continue
     case "$f" in app/routes/api/v1/*) continue ;; esac
+    # The dispatcher for registered endpoints: it hands the request to a module that is
+    # checked below, and wraps nothing itself.
+    [ "$f" = 'app/routes/api/$.ts' ] && continue
     grep -qxF "$f" "$HANDLER_BACKLOG" && continue
     if grep -q 'handlers' "$f" && ! grep -qE 'defineHandler|implement\.server' "$f"; then
       fail "API route without defineHandler: $f"
       printf '%s    → Wrap every handler in defineHandler from @/lib/api/handler.server (session → rate limit → zod → try/catch). /api/v1/** uses withDeveloperApi.%s\n' "$dim" "$off"
+    fi
+  done
+fi
+
+# A registered endpoint (`export const route = apiRoute(…)`, served by app/routes/api/$.ts)
+# is only implement() bindings; anything else stays a route file. The vitest gate
+# lib/api/__tests__/route-table.test.ts checks every one; this names a changed one early.
+if list '^(lib|features)/.*\.server\.ts$' | grep -q .; then
+  for f in $(list '^(lib|features)/.*\.server\.ts$'); do
+    [ -f "$f" ] || continue
+    grep -q '^export const route = apiRoute(' "$f" || continue
+    if ! grep -q 'implement\.server' "$f"; then
+      fail "registered API endpoint without implement(): $f"
+      printf '%s    → A registered endpoint binds contracts with implement() from @/lib/api/implement.server; a handler that needs more is a route file under app/routes/api.%s\n' "$dim" "$off"
     fi
   done
 fi
@@ -442,6 +459,8 @@ else
     lib/__tests__/raf-loop-allowlist.test.ts
     lib/__tests__/performance-guardrails.test.ts
     lib/__tests__/api-handler-adoption.test.ts
+    lib/api/__tests__/route-match.test.ts
+    lib/api/__tests__/route-table.test.ts
     lib/__tests__/discord-sdk-security.test.ts
     lib/__tests__/i18n-catalogs.test.ts
     lib/__tests__/i18n-config.test.ts
@@ -529,7 +548,9 @@ else
       skip "tsc --noEmit" "no TypeScript changed"
     fi
 
-    if has '^(lib/api/(registry|openapi)\.ts|lib/games\.ts|lib/apps\.ts|app/routes/)'; then
+    # `/api/[^/]+\.server\.ts`: a registered API endpoint (lib/api/route-sources.ts), which
+    # docs/site-reference/api.md and the facts count like a route file.
+    if has '^(lib/api/(registry|openapi)\.ts|lib/games\.ts|lib/apps\.ts|app/routes/|(lib|features)/.*/api/[^/]+\.server\.ts$|lib/api/routes/|lib/api/route-)'; then
       docs_checks() { pnpm run docs:api:check && pnpm run docs:site:check && pnpm run sdk:check; }
       run_step "docs freshness" docs_checks
       case $? in
@@ -556,7 +577,7 @@ else
     # docs/_generated/facts.json holds the counts (models, routes, tests, css, ...)
     # that CLAUDE.md and the living docs point at. Only the paths that feed those
     # counts (or the file itself) can make it stale.
-    if has '^(prisma/|app/routes/|components/.*\.tsx$|.*\.css$|.*\.test\.tsx?$|\.github/workflows/|lib/i18n/config\.ts|scripts/gen-repo-facts\.ts|docs/_generated/)'; then
+    if has '^(prisma/|app/routes/|(lib|features)/.*/api/[^/]+\.server\.ts$|lib/api/routes/|components/.*\.tsx$|.*\.css$|.*\.test\.tsx?$|\.github/workflows/|lib/i18n/config\.ts|scripts/gen-repo-facts\.ts|docs/_generated/)'; then
       run_step "facts:check" pnpm run facts:check
       case $? in
         0) pass_timed "docs/_generated/facts.json is current" ;;

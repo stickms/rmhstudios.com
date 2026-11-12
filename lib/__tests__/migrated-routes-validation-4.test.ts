@@ -66,10 +66,12 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
+  // A route file exports `Route`; a registered endpoint (lib/api/route.server.ts) exports `route`.
   const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
+    Route?: { options: { server: { handlers: Record<string, Handler> } } };
+    route?: { handlers: Record<string, Handler> };
   };
-  return m.Route.options.server.handlers[method]!;
+  return (m.route?.handlers ?? m.Route!.options.server.handlers)[method]!;
 }
 
 const SPACES = '@/app/routes/api/spaces/index';

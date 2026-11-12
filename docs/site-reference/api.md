@@ -6,9 +6,9 @@
 
 # API routes
 
-Every server route in the app tier — 987 files across 197 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 987 endpoints across 197 groups: 976 route files under `app/routes/api` and 11 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
-Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
+Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
 ## `/api/account`
 
@@ -113,9 +113,9 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/perf/db` | `GET` | `app/routes/api/admin/perf/db.ts` |
 | `/api/admin/perf/heap` | `GET` | `app/routes/api/admin/perf/heap.ts` |
 | `/api/admin/perf/profile` | `POST` | `app/routes/api/admin/perf/profile.ts` |
-| `/api/admin/predictions` | `GET` | `app/routes/api/admin/predictions/index.ts` |
-| `/api/admin/predictions/:id/moderate` | `POST` | `app/routes/api/admin/predictions/$id/moderate.ts` |
-| `/api/admin/predictions/:id/resolve` | `POST` | `app/routes/api/admin/predictions/$id/resolve.ts` |
+| `/api/admin/predictions` | `GET` | `lib/predictions/api/admin.predictions.server.ts` |
+| `/api/admin/predictions/:id/moderate` | `POST` | `lib/predictions/api/admin.predictions.$id.moderate.server.ts` |
+| `/api/admin/predictions/:id/resolve` | `POST` | `lib/predictions/api/admin.predictions.$id.resolve.server.ts` |
 | `/api/admin/qotd` | `GET` `POST` | `app/routes/api/admin/qotd/index.ts` |
 | `/api/admin/qotd/:id` | `DELETE` | `app/routes/api/admin/qotd/$id.ts` |
 | `/api/admin/reading/glossary` | `GET` `POST` | `app/routes/api/admin/reading/glossary/index.ts` |
@@ -1131,10 +1131,10 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
-| `/api/lists` | `GET` `POST` | `app/routes/api/lists/index.ts` |
-| `/api/lists/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/lists/$id.ts` |
-| `/api/lists/:id/feed` | `GET` | `app/routes/api/lists/$id.feed.ts` |
-| `/api/lists/:id/members` | `DELETE` `PUT` | `app/routes/api/lists/$id.members.ts` |
+| `/api/lists` | `GET` `POST` | `lib/lists/api/lists.server.ts` |
+| `/api/lists/:id` | `DELETE` `GET` `PATCH` | `lib/lists/api/lists.$id.server.ts` |
+| `/api/lists/:id/feed` | `GET` | `lib/lists/api/lists.$id.feed.server.ts` |
+| `/api/lists/:id/members` | `DELETE` `PUT` | `lib/lists/api/lists.$id.members.server.ts` |
 
 ## `/api/marathon-lists`
 
@@ -1392,11 +1392,11 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
-| `/api/predictions` | `GET` `POST` | `app/routes/api/predictions/index.ts` |
+| `/api/predictions` | `GET` `POST` | `lib/predictions/api/predictions.server.ts` |
 | `/api/predictions/:id` | `GET` | `app/routes/api/predictions/$id.ts` |
-| `/api/predictions/:id/comments` | `GET` `POST` | `app/routes/api/predictions/$id/comments.ts` |
-| `/api/predictions/:id/devils-advocate` | `POST` | `app/routes/api/predictions/$id/devils-advocate.ts` |
-| `/api/predictions/:id/trade` | `POST` | `app/routes/api/predictions/$id/trade.ts` |
+| `/api/predictions/:id/comments` | `GET` `POST` | `lib/predictions/api/predictions.$id.comments.server.ts` |
+| `/api/predictions/:id/devils-advocate` | `POST` | `lib/predictions/api/predictions.$id.devils-advocate.server.ts` |
+| `/api/predictions/:id/trade` | `POST` | `lib/predictions/api/predictions.$id.trade.server.ts` |
 
 ## `/api/preferences`
 

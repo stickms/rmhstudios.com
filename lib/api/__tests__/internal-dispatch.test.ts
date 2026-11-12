@@ -4,7 +4,7 @@ vi.mock('@tanstack/react-start/server', () => ({
   getRequest: () => new Request('http://site.test/admin/flags'),
 }));
 
-import { templateOfRouteFile } from '@/lib/api/internal-dispatch.server';
+import { templateOfRouteFile } from '@/lib/api/route-template';
 import { isInternalRequest, markInternalRequest } from '@/lib/api/internal-request.server';
 
 describe('in-process API reads', () => {

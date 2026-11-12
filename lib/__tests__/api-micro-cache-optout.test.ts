@@ -6,15 +6,11 @@
  * See lib/api/response-cache.server.ts.
  */
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { apiSourcePaths } from '@/lib/api/route-sources';
 
 const ROOT = join(__dirname, '..', '..');
-const walk = (d: string): string[] =>
-  readdirSync(d).flatMap((n) => {
-    const p = join(d, n);
-    return statSync(p).isDirectory() ? walk(p) : p.endsWith('.ts') ? [p] : [];
-  });
 
 /** Cache/auth plumbing: defines invalidate(), says nothing about the route's own data. */
 const INFRA = new Set(['lib/cached.server', 'lib/auth']);
@@ -25,7 +21,8 @@ function invalidates(src: string): boolean {
 }
 
 describe('micro-cache opt-out', () => {
-  const routes = walk(join(ROOT, 'app/routes/api')).filter((f) => {
+  // Route files and the registered endpoints (lib/api/route-sources.ts) alike.
+  const routes = apiSourcePaths(ROOT).filter((f) => {
     const s = readFileSync(f, 'utf8');
     return /auth: 'none'/.test(s) && /(visibility: 'public'|CACHE_POLICY\.)/.test(s);
   });

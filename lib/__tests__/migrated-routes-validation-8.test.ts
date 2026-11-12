@@ -81,16 +81,18 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
+  // A route file exports `Route`; a registered endpoint (lib/api/route.server.ts) exports `route`.
   const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
+    Route?: { options: { server: { handlers: Record<string, Handler> } } };
+    route?: { handlers: Record<string, Handler> };
   };
-  return m.Route.options.server.handlers[method]!;
+  return (m.route?.handlers ?? m.Route!.options.server.handlers)[method]!;
 }
 
 const REPLAYS = '@/app/routes/api/replays/index';
 const MOMENTS = '@/app/routes/api/moments/index';
 const GIFT = '@/app/routes/api/coins/gift';
-const TRADE = '@/app/routes/api/predictions/$id/trade';
+const TRADE = '@/lib/predictions/api/predictions.$id.trade.server';
 const BACKFILL = '@/app/routes/api/admin/vibe/backfill-thumbs';
 const VB_SCORE = '@/app/routes/api/void-breaker/score';
 const DISCORD = '@/app/routes/api/discord/token';

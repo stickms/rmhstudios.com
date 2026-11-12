@@ -51,10 +51,12 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
+  // A route file exports `Route`; a registered endpoint (lib/api/route.server.ts) exports `route`.
   const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
+    Route?: { options: { server: { handlers: Record<string, Handler> } } };
+    route?: { handlers: Record<string, Handler> };
   };
-  return m.Route.options.server.handlers[method]!;
+  return (m.route?.handlers ?? m.Route!.options.server.handlers)[method]!;
 }
 
 interface Case {
@@ -73,8 +75,8 @@ const REORDER = '@/app/routes/api/admin/albums/$id/reorder';
 const LIB_REORDER = '@/app/routes/api/admin/library/reorder';
 const LIB_ID = '@/app/routes/api/admin/library/$id';
 const PROFILE = '@/app/routes/api/profile';
-const MODERATE = '@/app/routes/api/admin/predictions/$id/moderate';
-const RESOLVE = '@/app/routes/api/admin/predictions/$id/resolve';
+const MODERATE = '@/lib/predictions/api/admin.predictions.$id.moderate.server';
+const RESOLVE = '@/lib/predictions/api/admin.predictions.$id.resolve.server';
 
 const ADMIN_CASES: Case[] = [
   {
@@ -200,7 +202,7 @@ describe('admin routes: 401 signed out, 403 non-admin', () => {
     [LIB_REORDER, 'POST'],
     [LIB_ID, 'PATCH'],
     [LIB_ID, 'DELETE'],
-    ['@/app/routes/api/admin/predictions/index', 'GET'],
+    ['@/lib/predictions/api/admin.predictions.server', 'GET'],
     [MODERATE, 'POST'],
     [RESOLVE, 'POST'],
   ];

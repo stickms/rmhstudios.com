@@ -165,6 +165,9 @@ function inScope(path: string): boolean {
   if (path.startsWith('app/routes/api/')) return true;
   // A feature's socket handlers (features/<id>/server/) are hub code like server/socket-server/handlers/.
   if (/^features\/[^/]+\/server\//.test(path)) return true;
+  // A feature's registered API endpoints (features/<id>/api/, served by app/routes/api/$.ts)
+  // are request handlers like the route files they were.
+  if (/^features\/[^/]+\/api\//.test(path)) return true;
   if (path.startsWith('lib/') && /\.server\.(ts|mts|cts|js|mjs|cjs)$/.test(path)) return true;
   return EXTRA_FILES.includes(path);
 }
