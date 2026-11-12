@@ -68,10 +68,6 @@ function flatCount(src: string): FlatCount {
  * entry when it reaches zero; never raise one.
  */
 const FLAT_BASELINE: Record<string, FlatCount> = {
-  // Phase 6 (deletion): the radial shell, the liquid globe and the eversion are deleted wholesale (15.3).
-  'components/radial/eversion/eversion.css': { bf: 0, fl: 6, gr: 1 },
-  'components/radial/radial/overlay-globe.css': { bf: 0, fl: 5, gr: 17 },
-  'components/radial/radial/shell-frame.css': { bf: 2, fl: 0, gr: 3 },
   // Phase 5 (remaining recipes): the catalogue and article pages.
   'components/library/album-viewer.css': { bf: 8, fl: 1, gr: 2 },
   'components/library/book-3d.css': { bf: 0, fl: 0, gr: 5 },
@@ -160,15 +156,6 @@ function code(file: string, src: string): string {
 const REMOVED_TOKEN =
   /--site-(?:glass|jelly|arc)-[\w-]*|--site-shadow[\w-]*|--site-(?:surface-opaque|border-bright|text-dim|accent-dim|canvas|aurora-far-[12])\b|\b(?:bg|text|border|ring|from|via|to|fill|stroke|divide|outline|decoration|placeholder|caret|accent)-site-(?:glass-[\w-]+|surface-opaque|border-bright|text-dim|accent-dim)\b|(?<![\w-])(?:[\w[\]&>*:-]+:)?shadow-site(?:-sm)?(?![\w-])/;
 
-/**
- * Files that still read a deleted token on purpose. All of them are the old material's JS runtime, which phase 6
- * deletes (15.3), and each reads it through a probe or a numeric read that falls back when the token is absent.
- */
-const REMOVED_TOKEN_RUNTIME = new Set([
-  'components/radial/LiquidGlobe.tsx', // reads --site-jelly-haze, -haze-pane, -quiet with fallbacks: phase 6
-  'lib/jelly/arcs/renderer.ts', // probes --site-arc-core/-glow, falls back to its FALLBACK_* palette: phase 6
-]);
-
 function walkSource(dir: string, out: string[] = []): string[] {
   let entries;
   try {
@@ -200,7 +187,6 @@ describe('Steel: deleted tokens stay deleted (T3, Appendix A)', () => {
   it('nothing reads a deleted token or a utility built on one', () => {
     const offenders: string[] = [];
     for (const file of sources) {
-      if (REMOVED_TOKEN_RUNTIME.has(file)) continue;
       const hit = REMOVED_TOKEN.exec(code(file, readFileSync(join(ROOT, file), 'utf8')));
       if (hit) offenders.push(`${file}: ${hit[0]}`);
     }
@@ -209,14 +195,6 @@ describe('Steel: deleted tokens stay deleted (T3, Appendix A)', () => {
       'These tokens were deleted by Steel (T3, Appendix A): use the replacement Appendix A names ' +
         '(--site-surface, --site-text, --site-text-muted, --site-bg-subtle), or nothing for a shadow or glass token.',
     ).toEqual([]);
-  });
-
-  it('the runtime allowlist only holds files that still need it', () => {
-    const stale = [...REMOVED_TOKEN_RUNTIME].filter(
-      (f) =>
-        !existsSync(join(ROOT, f)) || !REMOVED_TOKEN.test(code(f, readFileSync(join(ROOT, f), 'utf8'))),
-    );
-    expect(stale, 'Remove these from REMOVED_TOKEN_RUNTIME.').toEqual([]);
   });
 });
 

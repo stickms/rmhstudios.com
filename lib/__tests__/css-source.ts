@@ -1,13 +1,12 @@
 /**
  * Read a stylesheet the way the build sees it when it has been split (redesign E4).
  *
- * `app/globals.css`, `components/radial/radial.css` and
- * `components/library/library.css` are entry sheets: a short prelude plus ordered `@import './<stem>/<part>.css'`
+ * `app/globals.css` and `components/library/library.css`
+ * are entry sheets: a short prelude plus ordered `@import './<stem>/<part>.css'`
  * lines. The source-reading gates were written against one big file; `readCss` returns the entry with each
  * partial import replaced, in place, by that partial's text — i.e. the text the single file used to have.
  *
- * Only imports of a sibling `<stem>/` directory are inlined; every other `@import` (fonts, glass-roles, the jelly
- * sheets, `tailwindcss`) is left exactly as written, so a gate that looks at the entry still sees them.
+ * Only imports of a sibling `<stem>/` directory are inlined; every other `@import` (fonts, `tailwindcss`) is left exactly as written, so a gate that looks at the entry still sees them.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve, basename } from 'node:path';

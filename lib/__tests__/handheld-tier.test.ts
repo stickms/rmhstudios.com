@@ -47,18 +47,14 @@ const read = (path: string) => readCss(join(ROOT, path));
  */
 const HANDHELD_QUERY = '(pointer: coarse) and (max-width: 1024px)';
 
-const RADIAL = read('components/radial/radial.css');
+const GLOBALS = read('app/globals.css');
 const HOOK = read('hooks/useLiquidBackground.ts');
-/** Plasmatic Jelly's shared policy: its `handheld` tier is this same device class, so it carries this same query. */
-const JELLY_TIERS = read('lib/jelly/tiers.ts');
+/** The paper backdrop halves its frame rate on the same device class, so it carries this same query. */
+const PAPER = read('components/rmhmusic/learn/PaperBackdrop.tsx');
 describe('the handheld query is identical everywhere it appears', () => {
-  // radial.css used to carry it too, for a block that stopped the ring/blob
-  // animations on tablets. Those animations no longer exist on any tier (see
-  // static-backdrop.test.ts), so neither does the block. The near-miss check
-  // below still scans radial.css, so a reintroduced variant is still caught.
   it.each([
     ['hooks/useLiquidBackground.ts', HOOK],
-    ['lib/jelly/tiers.ts', JELLY_TIERS],
+    ['components/rmhmusic/learn/PaperBackdrop.tsx', PAPER],
   ])('%s carries the exact query', (_file, source) => {
     expect(source).toContain(HANDHELD_QUERY);
   });
@@ -70,7 +66,7 @@ describe('the handheld query is identical everywhere it appears', () => {
     // Scoped to real `@media` preludes (`@media … {`) rather than scanning the
     // raw text: both stylesheets discuss `(pointer: coarse)` in prose, and a
     // comment is not a rule.
-    for (const source of [RADIAL]) {
+    for (const source of [GLOBALS]) {
       for (const [, prelude] of source.matchAll(/@media([^{]+)\{/g)) {
         // A prelude can be a comma-separated LIST (`(max-width: 640px),
         // (hover: none) and (pointer: coarse)` — a real rule in globals.css).
@@ -91,31 +87,11 @@ describe('the handheld query is identical everywhere it appears', () => {
       if (!/pointer:\s*coarse/.test(query) || !/max-width/.test(query)) continue;
       expect(query.replace(/\s+/g, ' ').trim()).toBe(HANDHELD_QUERY);
     }
-    // tiers.ts holds the query as a string constant handed to `matchMedia` later, so every string literal that looks
-    // like a width-bounded coarse query is judged, not only `matchMedia(...)` arguments.
-    for (const [, query] of JELLY_TIERS.matchAll(
-      /['"`]([^'"`\n]*pointer:\s*coarse[^'"`\n]*)['"`]/g,
-    )) {
+    // Every string literal that looks like a width-bounded coarse query is judged, not only `matchMedia(...)` arguments.
+    for (const [, query] of PAPER.matchAll(/['"`]([^'"`\n]*pointer:\s*coarse[^'"`\n]*)['"`]/g)) {
       if (!/max-width/.test(query)) continue;
       expect(query.replace(/\s+/g, ' ').trim()).toBe(HANDHELD_QUERY);
     }
-  });
-});
-
-describe('the CSS half: nothing is left to stop (Steel phase 1)', () => {
-  // The CSS half of this contract (the aurora's drift and parallax `translate`, the blur cap) went with the aurora and
-  // the glass blur: Steel has neither (R1, B2), and `static-backdrop.test.ts` plus `steel-flat.test.ts` keep it that
-  // way. What is left of the tier is the JS half below, until the hook goes with the rest of the material.
-  it('the radial rings and blob field need no handheld override — they never move', () => {
-    // This used to assert a handheld block in radial.css that switched off six
-    // breathing rings and four drifting blobs on coarse-pointer tablets. Those
-    // animations are gone on EVERY tier now (perf audit 2026-10-08), so there is
-    // nothing left for a handheld rule to stop; static-backdrop.test.ts is the
-    // gate that keeps it that way. Pinned here so a reintroduced handheld block
-    // reads as the signal it would be: someone put the motion back.
-    expect(RADIAL).not.toMatch(
-      /\.radial-backdrop__(ring|blob)[^{]*\{[^}]*animation\s*:\s*(?!none)/,
-    );
   });
 });
 

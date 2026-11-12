@@ -8,17 +8,6 @@ on:
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
-    inputs:
-      update-baselines:
-        description: >-
-          Eversion e2e only: run eversion-load / eversion-perf with
-          --update-baselines on this runner and upload the resulting
-          testing/e2e/baselines/*.json as the `eversion-baselines` artifact, for
-          committing. Baselines must come from a CI runner (a laptop's numbers
-          would fail every run here) and from a production build. See
-          docs/testing.md.
-        type: boolean
-        default: false
 
 concurrency:
   group: web-ci-${{ github.ref }}
@@ -91,48 +80,21 @@ jobs:
     permissions:
       contents: read
 
-  eversion-changes:
+  # Steel section 17: the site tier is at rest (no pending frame, one WebGL context, no worker on `/`, `/terms`,
+  # `/settings`) and the phone globe opens and closes (testing/e2e/steel-rest.mjs). Runs against the checked build, on
+  # the nightly and manual runs, as the browser jobs it replaces did.
+  steel-rest:
+    needs: build
     if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      run: ${{ steps.filter.outputs.run }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 2
-      - name: Does this change touch the eversion?
-        id: filter
-        env:
-          EVENT: ${{ github.event_name }}
-        run: |
-          set -euo pipefail
-          if [ "$EVENT" != "pull_request" ] && [ "$EVENT" != "merge_group" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          changed=$(git diff --name-only HEAD^1 HEAD)
-          echo "$changed"
-          if echo "$changed" | grep -Eq '^(lib/eversion/|components/radial/|app/globals\.css$|app/routes/eversion-lab\.tsx$|app/routes/api/preferences/appearance\.ts$|testing/e2e/eversion|testing/e2e/lib/|testing/e2e/baselines/|stores/themeStore|lib/appearance/|lib/low-end|lib/render/|components/settings/AppearancePanel|components/ui/liquid-|lib/jelly/|lib/liquid/|app/jelly-[a-z-]+\.css$|app/liquid-glass\.css$|testing/e2e/(frame-budget|jelly-interaction)\.mjs$|locales/en/(feed|settings-appearance)\.json$|prisma/schema/|package\.json$|pnpm-lock\.yaml$|vite\.config\.[cm]?[jt]s$|scripts/check-bundle-budget|\.github/workflows/web-ci\.yml$)'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
-
-  eversion-e2e:
-    needs: [build, eversion-changes]
-    if: needs.eversion-changes.outputs.run == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 75
-    continue-on-error: true
+    timeout-minutes: 20
     env:
       NODE_OPTIONS: --max-old-space-size=8192
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
-      BETTER_AUTH_SECRET: ci-eversion-e2e-not-a-real-secret-0000000000
+      BETTER_AUTH_SECRET: ci-steel-rest-not-a-real-secret-000000000000
       BETTER_AUTH_URL: http://localhost:7005
       PORT: '7005'
       BASE_URL: http://localhost:7005
-      EVERSION_ARTIFACT_DIR: ${{ github.workspace }}/eversion-artifacts
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -159,196 +121,21 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Start the built server
         run: |
-          mkdir -p "$EVERSION_ARTIFACT_DIR"
-          nohup node .output/server/index.mjs > "$EVERSION_ARTIFACT_DIR/server.log" 2>&1 &
-          echo $! > "$RUNNER_TEMP/server.pid"
+          nohup node .output/server/index.mjs > "$RUNNER_TEMP/steel-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/steel-server.pid"
           for i in $(seq 1 60); do
             if curl -fsS -o /dev/null "$BASE_URL/"; then echo "server up after ${i}s"; exit 0; fi
             sleep 1
           done
-          echo "server did not come up"
-          tail -50 "$EVERSION_ARTIFACT_DIR/server.log"
-          exit 1
-      - name: Run eversion e2e scripts
-        env:
-          CI: 'true'
-          UPDATE_BASELINES: ${{ inputs.update-baselines && '1' || '' }}
-        run: |
-          shopt -s nullglob
-          all=(testing/e2e/eversion-*.mjs)
-          scripts=()
-          for s in "${all[@]}"; do
-            case "$s" in
-              */eversion-lab.mjs|*/eversion-hub.mjs|*/eversion-smoothness.mjs|*/eversion-smoothness-screencast.mjs) ;;
-              *) scripts+=("$s") ;;
-            esac
-          done
-          if [ ${#scripts[@]} -eq 0 ]; then
-            echo "no testing/e2e/eversion-*.mjs scripts yet — nothing to run"
-            exit 0
-          fi
-          if [ -n "$UPDATE_BASELINES" ]; then
-            scripts=(testing/e2e/eversion-load.mjs testing/e2e/eversion-perf.mjs)
-            echo "update-baselines: refreshing baselines on this runner"
-          fi
-          # One wedged script must not run out the whole job's clock and hide every
-          # result behind it (nightly runs were being cancelled at the 75-minute cap).
-          cap() { timeout --foreground -k 30 "${EVERSION_SCRIPT_TIMEOUT_SECONDS:-900}" "$@"; }
-          failed=()
-          passed=()
-          {
-            echo "### Eversion e2e"
-            echo
-            echo "_This job is non-blocking (\`continue-on-error\`): a red row here does not fail the PR check. Look at it._"
-            echo
-            echo "| script | result |"
-            echo "| --- | --- |"
-          } >> "$GITHUB_STEP_SUMMARY"
-          record() { echo "| \`$1\` | $2 |" >> "$GITHUB_STEP_SUMMARY"; }
-          for s in "${scripts[@]}"; do
-            echo "::group::$s"
-            extra=()
-            [ -n "$UPDATE_BASELINES" ] && extra=(--update-baselines)
-            if cap node "$s" "${extra[@]}"; then
-              echo "PASS $s"; passed+=("$s"); record "$s" "PASS"
-            else
-              echo "FAIL $s"; failed+=("$s"); record "$s" "**FAIL**"
-              echo "::error title=eversion e2e::$s failed"
-            fi
-            echo "::endgroup::"
-          done
-          if [ -f testing/e2e/eversion-hub.mjs ] && [ -z "$UPDATE_BASELINES" ]; then
-            for profile in desktop mobile; do
-              for theme in dark light; do
-                echo "::group::eversion-hub.mjs $profile/$theme"
-                if PROFILE="$profile" THEME="$theme" cap node testing/e2e/eversion-hub.mjs; then
-                  echo "PASS eversion-hub $profile/$theme"; record "eversion-hub $profile/$theme" "PASS"
-                else
-                  echo "FAIL eversion-hub $profile/$theme"; failed+=("eversion-hub:$profile/$theme")
-                  record "eversion-hub $profile/$theme" "**FAIL**"
-                  echo "::error title=eversion e2e::eversion-hub $profile/$theme failed"
-                fi
-                echo "::endgroup::"
-              done
-            done
-          fi
-          {
-            echo
-            echo "${#passed[@]} script(s) passed, ${#failed[@]} failed."
-          } >> "$GITHUB_STEP_SUMMARY"
-          if [ ${#failed[@]} -ne 0 ]; then
-            echo "::error::failed: ${failed[*]}"
-            exit 1
-          fi
-      - name: Eversion smoothness (deterministic stills)
-        if: ${{ !inputs.update-baselines }}
-        env:
-          EVERSION_LAB_OPEN: '1'
-          XAI_API_KEY: ci-not-a-key
-          OPENAI_API_KEY: ci-not-a-key
-        run: |
-          nohup pnpm exec vite dev --port 7371 --strictPort --host 127.0.0.1 > "$EVERSION_ARTIFACT_DIR/vite-dev.log" 2>&1 &
-          echo $! > "$RUNNER_TEMP/vite-dev.pid"
-          for i in $(seq 1 90); do
-            if curl -fsS -o /dev/null "http://127.0.0.1:7371/eversion-lab"; then echo "dev server up after ${i}s"; break; fi
-            sleep 1
-          done
-          if BASE_URL=http://127.0.0.1:7371 cap node testing/e2e/eversion-smoothness.mjs --quick; then
-            echo "| \`eversion-smoothness.mjs --quick\` | PASS |" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "| \`eversion-smoothness.mjs --quick\` | **FAIL** |" >> "$GITHUB_STEP_SUMMARY"
-            echo "::error title=eversion e2e::eversion-smoothness failed"
-            kill "$(cat "$RUNNER_TEMP/vite-dev.pid")" 2>/dev/null || true
-            exit 1
-          fi
-          kill "$(cat "$RUNNER_TEMP/vite-dev.pid")" 2>/dev/null || true
-      - name: Upload refreshed baselines
-        if: always() && inputs.update-baselines
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: eversion-baselines
-          path: testing/e2e/baselines/
-          if-no-files-found: error
-          retention-days: 14
-      - name: Stop the server
-        if: always()
-        run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
-      - name: Upload artefacts
-        if: failure()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: eversion-e2e-artefacts
-          path: ${{ env.EVERSION_ARTIFACT_DIR }}
-          if-no-files-found: ignore
-          retention-days: 7
-
-  frame-budget:
-    needs: build
-    if: github.event_name != 'pull_request' && github.event_name != 'merge_group' && !inputs.update-baselines
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
-      BETTER_AUTH_SECRET: ci-jelly-e2e-not-a-real-secret-00000000000000
-      BETTER_AUTH_URL: http://localhost:7005
-      PORT: '7005'
-      BASE_URL: http://localhost:7005
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: rmh
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s --health-timeout 5s --health-retries 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup-deps
-      - name: Restore the checked build
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
-        with:
-          name: checked-frontend
-      - name: Extract the checked build
-        run: tar -xf checked-frontend.tar
-      - name: Migrate database
-        if: ${{ !cancelled() }}
-        run: pnpm exec prisma migrate deploy
-      - name: Start the built server
-        if: ${{ !cancelled() }}
-        run: |
-          nohup node .output/server/index.mjs > "$RUNNER_TEMP/jelly-server.log" 2>&1 &
-          echo $! > "$RUNNER_TEMP/jelly-server.pid"
-          for i in $(seq 1 60); do
-            if curl -fsS -o /dev/null "$BASE_URL/"; then echo "server up after ${i}s"; exit 0; fi
-            sleep 1
-          done
-          echo "server did not come up"; tail -50 "$RUNNER_TEMP/jelly-server.log"; exit 1
-      - name: Frame budget (built app, non-blocking)
-        id: frame-budget
-        if: ${{ !cancelled() }}
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          status=0
-          node testing/e2e/frame-budget.mjs --gate | tee "$RUNNER_TEMP/frame-budget.log" || status=$?
-          summary=$(grep -E '^[0-9]+/[0-9]+ route\(s\) passed' "$RUNNER_TEMP/frame-budget.log" | sed 's/|/\\|/g' || true)
-          if [ "$status" -eq 0 ]; then
-            echo "| \`frame-budget.mjs --gate\` (non-blocking) | PASS — ${summary:-no summary line} |" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "| \`frame-budget.mjs --gate\` (non-blocking) | **FAIL** — ${summary:-no summary line} |" >> "$GITHUB_STEP_SUMMARY"
-            echo "::error title=frame-budget::frame-budget --gate failed: ${summary}"
-          fi
-          exit "$status"
+          echo "server did not come up"; tail -50 "$RUNNER_TEMP/steel-server.log"; exit 1
+      - name: Steel rest and globe check
+        run: node testing/e2e/steel-rest.mjs
       - name: Server log (on failure)
-        if: ${{ failure() || steps.frame-budget.outcome == 'failure' }}
-        run: tail -100 "$RUNNER_TEMP/jelly-server.log" 2>/dev/null || true
+        if: failure()
+        run: tail -100 "$RUNNER_TEMP/steel-server.log" 2>/dev/null || true
       - name: Stop the server
         if: always()
-        run: kill "$(cat "$RUNNER_TEMP/jelly-server.pid" 2>/dev/null)" 2>/dev/null || true
+        run: kill "$(cat "$RUNNER_TEMP/steel-server.pid" 2>/dev/null)" 2>/dev/null || true
 
   migrations:
     needs: changes

@@ -25,13 +25,7 @@ const islands = readdirSync(join(ROOT, 'features')).filter((id) =>
 );
 
 /** Repo paths an island must never reach: each one IS the site shell, or drags it in. */
-const FORBIDDEN = [
-  'app/',
-  'components/Providers.tsx',
-  'components/radial/',
-  'components/feed/',
-  'lib/auth-client.ts',
-];
+const FORBIDDEN = ['app/', 'components/Providers.tsx', 'components/feed/', 'lib/auth-client.ts'];
 /** Packages that only the site document needs. */
 const FORBIDDEN_PACKAGES = [/^@tanstack\/react-start/, /^@tanstack\/react-query/];
 

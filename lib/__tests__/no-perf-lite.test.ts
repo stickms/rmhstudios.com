@@ -57,32 +57,9 @@ describe('perf-lite is gone', () => {
     expect(read('components/Providers.tsx')).not.toContain('applyPerfTier');
   });
 
-  it('the jelly mount hook stamps data-jelly-ready without probing for a software renderer', () => {
-    const hook = read('hooks/useJellyPointer.ts');
-    expect(hook).toContain("setAttribute('data-jelly-ready', '')");
-    for (const probe of [
-      'reconcileSoftRender',
-      'settleSoftRender',
-      'detectSoftRender',
-      'probeGpu',
-      'lib/low-end',
-    ]) {
-      expect(hook, probe).not.toContain(probe);
-    }
-  });
-
   it('the soft-render finding is settled by its own hook, mounted by Providers on every route', () => {
     expect(read('hooks/useSoftRenderSettle.ts')).toContain('settleSoftRender()');
     expect(read('components/Providers.tsx')).toContain('useSoftRenderSettle(pathname);');
-  });
-
-  it('the material never reads the low-end capability signal', () => {
-    for (const f of FILES) {
-      const rel = relative(ROOT, f).split(sep).join('/');
-      if (!rel.startsWith('lib/jelly/') && !rel.startsWith('lib/liquid/')) continue;
-      if (rel.includes('__tests__')) continue;
-      expect(readFileSync(f, 'utf8'), rel).not.toContain('@/lib/low-end');
-    }
   });
 
   it('the low-end signal is not a document class: lib/low-end.ts writes nothing to <html>', () => {

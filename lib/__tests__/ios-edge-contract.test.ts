@@ -38,7 +38,6 @@ const BASELINE_PATH = join(__dirname, 'ios-edge.baseline.json');
 describe('iOS edge contract: invariants', () => {
   const root = read('app/routes/__root.tsx');
   const globals = read('app/globals.css');
-  const radial = read('components/radial/radial.css');
   const theme = read('stores/themeStore.ts');
 
   it('the page paints edge to edge (viewport-fit=cover), so the bars show the page, not a gutter', () => {
@@ -70,15 +69,9 @@ describe('iOS edge contract: invariants', () => {
     );
   });
 
-  it('the full-viewport fixed decoration is not rendered on iOS WebKit', () => {
-    expect(globals).toMatch(
-      /html\.ios-webkit :is\(\.radial-backdrop, \.jelly-arc-layer\) \{\s*display: none;/,
-    );
-  });
-
   it('the ROOT carries the page ground on iOS (the bars tint from it), not a fixed layer', () => {
     // Steel has no canvas (R1: a flat ground), so the root's own `--site-bg` is the whole story: there is no aurora to
-    // mirror onto it and no fixed decoration to hide beyond the radial backdrop and the arc layer above.
+    // mirror onto it and no fixed decoration.
     expect(globals).toMatch(/html \{[^}]*background-color: var\(--site-bg\);/);
     expect(globals).not.toContain('--site-canvas');
     expect(globals).not.toMatch(/html\.ios-webkit:not\(\.app-route\) \{\s*background-image/);
@@ -122,8 +115,6 @@ describe('iOS edge contract: invariants', () => {
     // The old design mirrored the veil's tint onto the root's canvas so the strips behind the bars matched the menu.
     // With a flat `--site-bg` ground and a `--site-bg` veil there is nothing to mirror, and no rule may bring a root
     // background-image back (it is the band).
-    expect(radial).not.toMatch(/html\.ios-webkit:not\(\.app-route\):has\(\.radial-hub/);
-    expect(radial).not.toContain('--site-canvas');
     for (const css of [shell, globe]) expect(css).not.toMatch(/html\.ios-webkit[^{]*:has\(|--site-canvas/);
   });
 });
