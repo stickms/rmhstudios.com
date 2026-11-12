@@ -1137,7 +1137,14 @@ every class, > 90 % of bots moving, the bots' share of a tick; ~15 minutes) and
 
 The game's tests are their own suite, `pnpm test:tf2` (`vitest.tf2.config.ts`),
 because the main suite is scoped to mission-critical code (see
-[testing](testing.md)). Tests that need real game files read them from
+[testing](testing.md)). The engine is also its own TypeScript project,
+`tsconfig.engine.json` (`pnpm typecheck:engine` checks it and the core project
+alone, in about 3 s): it imports itself and the core project and nothing else of
+the site, so the session token its hub client sends is registered by the site
+(`components/tf2-game/register-session.ts`). The engine suite runs every test of
+that project, the HUD editor's and the loadout's model included; their
+server-side tests (`*.server.ts` and what tests it) are site files and stay in
+`pnpm test`. Tests that need real game files read them from
 `TF2_ROOT` (a Steam install) and skip when it is unset.
 
 ## Models

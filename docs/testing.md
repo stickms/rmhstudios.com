@@ -99,6 +99,35 @@ check is 10 to 13 s and 2.9 GB. So the full `pnpm check:consistency` is a pre-PR
 run on a box with nothing else going on, and its first run in a checkout is the
 expensive one; it is not a per-commit step here (audit AR1 is the fix).
 
+**The typecheck is three projects (audit AR1 steps 1 and 2, AR4; measured
+2026-11-12 on the same box, alone).** `pnpm typecheck` is `tsc -b` over
+`tsconfig.core.json`, `tsconfig.engine.json` and `tsconfig.site.json`; a project
+whose inputs did not change is not loaded. "Before" is the single project at
+`cf699d712`. Peak is resident memory summed over the process tree.
+
+| Run                                                    | Before                     | After                    |
+| ------------------------------------------------------ | -------------------------- | ------------------------ |
+| cold, `GOMEMLIMIT=4GiB GOGC=25 --singleThreaded`        | 151–159 s · 9.60 GiB       | 150 s · 9.22 GiB         |
+| cold, no flags                                         | killed at 13.29 GiB, twice | 61–65 s · 12.6–12.9 GiB  |
+| no source change                                       | 7.8 s · 2.83 GiB           | 0.3–0.4 s · 0.06 GiB     |
+| one site file (`components/feed/PageLayout.tsx`)       | 24.6 s · 6.83 GiB          | 23.0 s · 6.69 GiB        |
+| one engine file, body only (`lib/tf2-game/core/vec.ts`) | 23.6 s · 6.96 GiB          | 1.3 s · 0.40 GiB         |
+| one engine file, a new export                          | 24.6 s · 7.00 GiB          | 26.7 s · 6.69 GiB        |
+| one core file, body only (`lib/core/math.ts`)          | 64.6 s · 12.95 GiB         | 0.5 s · 0.11 GiB         |
+| one core file, a new export                            | killed at 13.29 GiB        | 66.8 s · 13.25 GiB       |
+| the engine and core projects alone, cold               | not possible               | 2.5 s · 0.83 GiB         |
+
+What moved: a run with nothing to do, and a change that stays inside the core or
+the engine project. What did not: the site project is still about 1.2 million
+lines in one program, so a cold run and any site change cost what they did, and a
+change to a declaration the site imports rechecks the site. The cold run does not
+fit in 4 GB; that needs the site project split (AR1 steps 3 and 4). A site change
+loads neither other project's source, which `tsc -b --verbose` shows.
+
+A bare `tsc --noEmit` at the root checks nothing and exits 0, because the root
+`tsconfig.json` has no files of its own. `lib/__tests__/tsconfig-projects.test.ts`
+fails if a script, workflow or contributor document tells anyone to run it.
+
 **A killed step says so.** `scripts/gate-step.sh` runs every tool and tells a
 rule failure from a step that never finished: exit 129–192 (`137` SIGKILL, `143`
 SIGTERM, `134` SIGABRT), the `Command was killed with SIG…` line `pnpm exec`
@@ -264,7 +293,10 @@ sites go through `scripts/epic/browser.ts`.
 #### Game suites (`vitest.tf2.config.ts`, `vitest.balatro.config.ts`)
 
 Gameplay tests for the browser games run in their own suites, which the main
-config excludes glob for glob: `pnpm test:tf2` (TF2, HL2, Portal) and
+config excludes glob for glob: `pnpm test:tf2` (the Source-engine port: TF2, HL2,
+Portal, CS:GO, and the tests of `lib/tf2-hud` and `lib/tf2-loadout` that belong to
+the engine TypeScript project; `vitest.engine-tests.mjs` reads that list from
+`tsconfig.engine.json`, so the two configs cannot disagree) and
 `pnpm test:balatro` (multiplayer Balatro, including its Lua specs, which need
 `lua5.1` and fail without it). `pnpm test:balatro:e2e` is the Balatro browser
 suite. Their workflows (`tf2-game-tests.yml`, `balatro-mp-tests.yml`) are
@@ -447,7 +479,7 @@ Quality workflows live in `.github/workflows/`. The release graph and operator a
 
 | Workflow                                  | Runs                                                                                    | Gate?                                                                                                                                 |
 | ----------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `web-ci.yml` (`typecheck`)                | `tsc --noEmit` → `eslint` → docs freshness                                              | **all block**                                                                                                                         |
+| `web-ci.yml` (`typecheck`)                | `tsc -b` (`pnpm typecheck`) → `eslint` → docs freshness                                 | **all block**                                                                                                                         |
 | `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs                 | **blocks**, tests included (as of 2026-08-08)                                                                                         |
 | `web-ci.yml` (`build` job)                | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                                                                         |
 | `web-ci.yml` (`audit` job)                | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                                                               |

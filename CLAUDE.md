@@ -52,7 +52,7 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 pnpm install                 # postinstall runs prisma generate
 pnpm db:push                 # apply schema to local Postgres (dev)
 pnpm dev                     # Vite (7005) + socket/rmhbox/rmhtube hubs + ladder/homes/jobs workers
-pnpm exec tsc --noEmit       # typecheck
+pnpm typecheck               # typecheck: `tsc -b` over the core, engine and site projects (a bare `tsc --noEmit` checks nothing)
 pnpm lint                    # eslint (jsx-a11y at warn — add no new warnings)
 pnpm format                  # prettier
 pnpm test                    # main test suite (mission-critical scope — docs/testing.md; time it with `time pnpm test`)
@@ -92,7 +92,7 @@ classes are eslint `local/no-raw-palette-color`, `local/no-hardcoded-radius`,
 `local/no-transition-all`, `local/no-dead-animate-classes`, scoped by
 `eslint-local-rules/design-scope.js`) ·
 the executable gates in `lib/__tests__/` that are the **authority** for
-`design.md` and the Steel plan §17 · eslint on the changed files · `tsc --noEmit` ·
+`design.md` and the Steel plan §17 · eslint on the changed files · `tsc -b` (`pnpm typecheck`) ·
 the generated-docs freshness checks. Then it prints the handful of things no
 script can check — both editions, the role-less switcher that is really a
 tab strip — because a green gate means you did not regress an enforced rule,
@@ -248,6 +248,20 @@ _why_.
     (`any`, `@ts-ignore`, `@ts-nocheck`…) are count-ratcheted down in
     `lib/__tests__/ts-escape-hatch-ratchet.test.ts`; the 26 `@ts-nocheck` files are
     `components/velum2099/game/` and must not grow.
+12. **TypeScript projects (third-pass audit AR1 steps 1-2, AR4):** the root `tsconfig.json` holds the
+    compiler options and no files; `pnpm typecheck` is `tsc -b` over three projects, each with its own
+    build info under `.cache/tsc`. `tsconfig.core.json` (`lib/core`, `lib/contract`, `lib/shared`,
+    `lib/http.ts`, `lib/url.ts`, `lib/network-quality.ts`, `lib/display-scale.ts`) imports nothing else;
+    `tsconfig.engine.json` (the Source-engine port: `lib/tf2-game`, `lib/sp-game`, `lib/csgo-game`,
+    `lib/tf2-hud`, `lib/tf2-loadout`, minus their `*.server.ts` side) imports itself and core;
+    `tsconfig.site.json` is everything else and sees the other two through their declarations. Import
+    specifiers did not change (`@/lib/core/...` still). A core or engine file that imports a site module
+    fails `tsc` (TS6307) and `lib/__tests__/tsconfig-projects.test.ts`, which also holds that every
+    source file is in exactly one project: a new `*.server.ts` inside an engine directory is a site file
+    and goes in `tsconfig.site.json`'s `files`, and so does a test that imports one (name it
+    `*.server.test.ts`, or add it to `tsconfig.engine.json`'s `exclude` as well). What the engine needs from the
+    site, the site registers (`components/tf2-game/register-session.ts`). The engine project's tests run
+    in `pnpm test:tf2`, not in `pnpm test`.
 
 ## Design system: Steel
 

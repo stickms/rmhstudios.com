@@ -165,7 +165,7 @@ Work through this for every new or edited page.
       then prints what it cannot check. It runs itself on `git commit` via `.githooks/pre-commit` (after
       `pnpm hooks:install`) and, in agent sessions, `.claude/hooks/commit-gate.sh`. Fix what it reports; do not reach for
       `--no-verify`.
-- [ ] `pnpm exec tsc --noEmit` and `pnpm lint` introduce no new warnings.
+- [ ] `pnpm typecheck` and `pnpm lint` introduce no new warnings.
 - [ ] `pnpm test`, the full suite, before you push.
 - [ ] Build or dev run once so `app/routeTree.gen.ts` regenerates (never edit it by hand).
 - [ ] Walk design-language.md §0 once more against the finished diff and look at the page. A green gate means you did not

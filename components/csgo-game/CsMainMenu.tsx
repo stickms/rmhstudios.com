@@ -21,6 +21,7 @@ import { loadSettings, saveSettings, type GameSettings } from '@/lib/tf2-game/cl
 import { BOT_DIFFICULTIES, TF2_LIMITS, TF2_ROOM_CODE_RE, type BotDifficulty, type CsRoomMode, type RoomListEntry } from '@/lib/tf2-game/net/events';
 import { cn } from '@/lib/utils';
 import OptionsDialog from '../tf2-game/menus/OptionsDialog';
+import '../tf2-game/register-session';
 import { useMenuSource } from '../tf2-game/menus/use-menu-source';
 import { CS_LOGO, CsScene } from './cs-art';
 import './cs-menu.css';

@@ -23,7 +23,6 @@
  */
 
 import type { Socket } from 'socket.io-client';
-import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import {
@@ -38,6 +37,7 @@ import {
   type RoomsPayload,
 } from './events';
 import type { P2pAdmitPayload, P2pHostPayload, P2pJoinPayload, P2pSignalOut, P2pUpdatePayload } from './p2p/signal';
+import { sessionToken } from './session-token';
 
 export interface Tf2ClientHandlers {
   onStatus?(status: RealtimeStatus): void;
@@ -96,8 +96,7 @@ export async function connectTf2(next?: Tf2ClientHandlers): Promise<Socket> {
     url: import.meta.env.VITE_SOCKET_URL,
     path: '/socket/',
     auth: async () => {
-      const current = await authClient.getSession();
-      const token = current?.data?.session?.token;
+      const token = await sessionToken();
       handshakeSignedIn = !!token;
       return { token };
     },

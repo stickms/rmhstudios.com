@@ -18,7 +18,7 @@
 #   2. The executable design/consistency gates (`lib/__tests__/*`), which are
 #      the AUTHORITY for rules 1-9 of docs/design-language.md §13. The fast
 #      scan is a preview of these, not a replacement.
-#   3. The repo-wide quality bar: eslint on changed files, `tsc --noEmit`, and
+#   3. The repo-wide quality bar: eslint on changed files, `tsc -b` (pnpm typecheck), and
 #      the generated-docs freshness checks that `web-ci.yml` runs.
 #
 # Anything it cannot verify mechanically is printed as a REVIEW item — the
@@ -34,8 +34,10 @@
 # What it costs (audit OP1; 4 cores / 15 GB, measured 2026-11-12, docs/testing.md
 # §"The commit gate's budget"): `--fast` is 7–11 s and about 1 GB peak for a
 # docs-only, CSS-only, 3-file or 40-file change. The one step that does not fit
-# a 15 GB container is a COLD whole-repo `tsc` (about 10 GB; about 3 GB once its
-# .tsbuildinfo exists), and `--fast` — what both hooks run — never starts it.
+# a 15 GB container is a COLD typecheck of the site project (about 10 GB with
+# GOMEMLIMIT; a no-change run is under a second, and a change inside the core or
+# engine project is 1 to 2 s since audit AR1 steps 1-2), and `--fast` — what both
+# hooks run — never starts it.
 # ─────────────────────────────────────────────────────────────────────────────
 set -uo pipefail
 
@@ -527,26 +529,28 @@ else
   fi
 
   if [ "$FAST" = 1 ]; then
-    skip "tsc --noEmit" "--fast"
+    skip "tsc -b" "--fast"
     skip "docs freshness" "--fast"
   else
-    if has '\.(ts|tsx)$'; then
+    if has '(\.(ts|tsx)|^tsconfig[^/]*\.json)$'; then
       mkdir -p .cache/tsc
       # `pnpm run typecheck`, never bare `tsc`. Two packages in this workspace
       # ship a `tsc` bin — `typescript` (6.x, the module typescript-eslint
       # imports) and `typescript-native` (7.x, the Go compiler) — so
       # node_modules/.bin/tsc is whichever pnpm linked last. The script pins the
-      # native one by path, and its .tsbuildinfo is a separate file because the
-      # two compilers' formats are not interchangeable.
-      GATE_STEP_HINT='A cold whole-repo typecheck peaks near 10 GB (docs/testing.md, "The commit gate'"'"'s budget"); nothing else heavy can run beside it.'
-      run_step "tsc --noEmit" pnpm run typecheck
+      # native one by path. It is `tsc -b` over the three projects the root
+      # tsconfig.json lists (core, engine, site; audit AR1), each with its own
+      # .tsbuildinfo under .cache/tsc, so a project whose inputs did not change is
+      # not loaded at all.
+      GATE_STEP_HINT='A cold typecheck of the site project peaks near 10 GB (docs/testing.md, "The commit gate'"'"'s budget"); nothing else heavy can run beside it.'
+      run_step "tsc -b" pnpm run typecheck
       case $? in
-        0) pass_timed "tsc --noEmit" ;;
-        1) fail "tsc --noEmit" ;;
+        0) pass_timed "tsc -b" ;;
+        1) fail "tsc -b" ;;
       esac
       GATE_STEP_HINT=""
     else
-      skip "tsc --noEmit" "no TypeScript changed"
+      skip "tsc -b" "no TypeScript changed"
     fi
 
     # `/api/[^/]+\.server\.ts`: a registered API endpoint (lib/api/route-sources.ts), which

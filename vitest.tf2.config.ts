@@ -1,5 +1,5 @@
 /**
- * The TF2 browser game's suite — `pnpm test:tf2`.
+ * The Source-engine port's suite — `pnpm test:tf2`.
  *
  * Separate from the main suite because the main suite is scoped to what breaks
  * money, user data, privacy, auth or a deploy (docs/testing.md), and these
@@ -10,6 +10,7 @@
  */
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
+import { ENGINE_TESTS_FROM_MAIN_SUITE } from './vitest.engine-tests.mjs';
 
 export default defineConfig({
   test: {
@@ -22,6 +23,9 @@ export default defineConfig({
       'lib/sp-game/**/*.test.ts',
       // Counter-Strike: Global Offensive (de_dust2) on the same engine.
       'lib/csgo-game/**/*.test.ts',
+      // The HUD editor's and the loadout's model: the rest of the engine project
+      // (tsconfig.engine.json). Their server-side tests stay in the main suite.
+      ...ENGINE_TESTS_FROM_MAIN_SUITE,
     ],
     testTimeout: 60_000,
     pool: 'threads',

@@ -49,6 +49,7 @@ import {
   type SortDir,
   type SortKey,
 } from '@/lib/tf2-game/client/server-browser';
+import './register-session';
 import { useClassNames, useTeamNames } from './strings';
 import { useLobbyGamepad } from './use-lobby-gamepad';
 
