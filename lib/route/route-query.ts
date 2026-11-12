@@ -102,7 +102,7 @@ export function contractQuery<E extends Endpoint, const TKey extends QueryKey>(
   queryKey: TKey,
   contract: E,
   input?: Pick<ApiInput<E>, 'params' | 'query'> & { retries?: number; timeoutMs?: number },
-  options?: { staleTime?: number; enabled?: boolean },
+  options?: { staleTime?: number; enabled?: boolean; retry?: boolean | number },
 ) {
   const { params, query, ...transport } = (input ?? {}) as {
     params?: Record<string, string>;
