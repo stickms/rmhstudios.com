@@ -36,6 +36,9 @@
 @source not "../go-services";
 @source not "../docs";
 @source not "../deploy";
+/* The typecheck's emitted declarations (.cache/tsc, audit AR1). Git ignores them, but a build without
+   a .gitignore (the Docker context has none) would read the engine's string literals as class names. */
+@source not "../.cache";
 /* Tests never ship, and their fixtures are full of class-like strings. */
 @source not "../**/__tests__";
 @source not "../**/*.test.{ts,tsx}";

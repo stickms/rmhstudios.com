@@ -288,7 +288,7 @@ what each one gates:
 | Workflow                 | Gates                                                                                                                                                                                                          |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `deploy.yml`             | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above). Its in-workflow `ci` job re-runs typecheck/lint/tests and its `integration` job the integration suite on the merge result — all block the deploy. The Discord embed shows a live CI checklist (`.github/scripts/ci-checklist.sh`) before the VPS stages take over.                        |
-| `web-ci.yml`             | Frontend gate on PRs: `tsc --noEmit` + `eslint` + docs freshness + `pnpm test` (check job — **all blocking**), `build:frontend:sourcemap` + the two size gates (build job), `pnpm audit --prod` (audit job), `pnpm test:integration` against the booted app + Postgres (integration job, blocking) |
+| `web-ci.yml`             | Frontend gate on PRs: `tsc -b` (`pnpm typecheck`) + `eslint` + docs freshness + `pnpm test` (check job — **all blocking**), `build:frontend:sourcemap` + the two size gates (build job), `pnpm audit --prod` (audit job), `pnpm test:integration` against the booted app + Postgres (integration job, blocking) |
 | `epic-tests.yml`         | The epic content-build suite (`pnpm test:epic`) with a Chromium install; path-filtered to `scripts/epic/**`                                                                                                     |
 | `go-microservices.yml`   | Go fleet: `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.) |
 | `senior-review.yml`      | LLM review gate on PRs (Claude Opus over the diff; fails on a FAIL verdict; short-circuits green for non-owner authors)                                                                                        |
@@ -296,7 +296,7 @@ what each one gates:
 | `build-vibe-packages.yml`, `compose-validate.yml`, `prisma.yml` | Build/deploy guards — the vibe package bundle, `docker compose config`, `prisma validate`, and migration drift                                              |
 
 Dependabot (`.github/dependabot.yml`) covers npm (root), gomod (`go-services/`),
-and github-actions weekly. Run at least `pnpm exec tsc --noEmit`, `pnpm lint`,
+and github-actions weekly. Run at least `pnpm typecheck`, `pnpm lint`,
 and `pnpm test` locally before pushing — or just `pnpm check:consistency`, which
 runs the changed-file subset of all three. Test suites and what gates them:
 [`testing.md`](./testing.md).

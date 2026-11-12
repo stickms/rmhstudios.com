@@ -18,6 +18,7 @@ import { createTf2Client, type Tf2Session } from '@/lib/tf2-game/client/tf2-clie
 import { TF2_LIMITS, type BotDifficulty, type CsRoomMode } from '@/lib/tf2-game/net/events';
 import { languageForSite } from '@/lib/tf2-hud/localisation';
 import '@/lib/csgo-game/client/register-profile';
+import '@/components/tf2-game/register-session';
 import CsLoadingScreen from './CsLoadingScreen';
 import CsMainMenu, { usePanoramaFonts } from './CsMainMenu';
 import '@/components/tf2-game/play.css';

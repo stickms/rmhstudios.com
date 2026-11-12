@@ -92,6 +92,18 @@ bundle only**. SSR/server builds get the real module.
   Math/RNG are guarded by the `no-restricted-syntax` block in `eslint.config.mjs`. The
   AudioContext has one owner too (`getAudioContext()` in `shared/platform.ts`);
   `lib/__tests__/audio-context-ratchet.test.ts` fails a new `new AudioContext()` / `window.AudioContext`.
+- **TypeScript projects (third-pass audit AR1, AR4):** `core/`, `contract/`, `shared/`, `http.ts`,
+  `url.ts`, `network-quality.ts` and `display-scale.ts` are the **core project**
+  (`tsconfig.core.json`): they import each other and packages, never the rest of `lib/`. The
+  Source-engine port (`tf2-game/`, `sp-game/`, `csgo-game/`, `tf2-hud/`, `tf2-loadout/`, without
+  their `*.server.ts` files) is the **engine project** (`tsconfig.engine.json`): it imports itself
+  and core. Everything else is the site project. `pnpm typecheck` builds the three in order and
+  skips a project whose inputs did not change; an import that crosses the wrong way fails `tsc`
+  (TS6307) and `lib/__tests__/tsconfig-projects.test.ts`. A new module that belongs in core joins
+  both `tsconfig.core.json`'s `include` and `tsconfig.site.json`'s `exclude`; a new `*.server.ts`
+  inside an engine directory goes in `tsconfig.site.json`'s `files` (the test's failure message
+  names it), and so does a test that imports one: name it `*.server.test.ts`, or add it to
+  `tsconfig.engine.json`'s `exclude` too. Tests under the core directories are site files too.
 - **`shared/`:** the cross-app tier. `realtime/client.ts` is the socket.io
   factory every app's `socket.ts` builds on (fast reconnect, wake signals,
   per-attempt auth, an opt-in outbox); `realtime/types.ts` holds the
@@ -279,6 +291,11 @@ don't remove that plugin.
   passing gameplay test is still the wrong thing to add here.
 - Separate: `pnpm test:epic` (`vitest.epic.config.ts`, 60s timeout, launches
   Chromium) for `scripts/epic/`, gated by `.github/workflows/epic-tests.yml`.
+- Separate: `pnpm test:tf2` (`vitest.tf2.config.ts`) for the Source-engine port, gated by
+  `.github/workflows/tf2-game-tests.yml`. It runs every test of the engine TypeScript project,
+  which since audit AR4 includes the engine-side tests of `tf2-hud/` and `tf2-loadout/`
+  (`vitest.engine-tests.mjs` reads the list from `tsconfig.engine.json`). Their server-side tests
+  stay in the main suite.
 - Coverage: `pnpm test:coverage` — informational, never a gate.
 - **Isolation is on and stays on.** `--no-isolate` is ~40% faster and produces
   order-dependent failures (`lib/rmhladder/pipeline/*` fail on a different set

@@ -44,7 +44,7 @@ change the rule in the same commit and say why in the message.
 
 ```bash
 pnpm check:consistency --base main   # gate the whole branch, not just the last commit
-pnpm exec tsc --noEmit   # typecheck — don't add new errors vs. the base branch
+pnpm typecheck           # typecheck — don't add new errors vs. the base branch
 pnpm lint                # ESLint (incl. jsx-a11y at "warn")
 pnpm format              # Prettier (optional but appreciated for files you touch)
 ```

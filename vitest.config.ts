@@ -32,6 +32,7 @@
 import { defineConfig } from 'vitest/config';
 import { availableParallelism } from 'node:os';
 import path from 'node:path';
+import { ENGINE_TESTS_FROM_MAIN_SUITE } from './vitest.engine-tests.mjs';
 
 /**
  * Test files are import-bound more than CPU-bound — each one pays a transform +
@@ -77,6 +78,11 @@ export default defineConfig({
       'lib/sp-game/**',
       // CS:GO (de_dust2) is gameplay on the same engine too: the TF2 suite runs it.
       'lib/csgo-game/**',
+      // The HUD editor's and the loadout's model are the same engine project
+      // (tsconfig.engine.json, audit AR4), so their tests run in that suite too.
+      // Their server side is not: `*.server.test.ts` and the tests the engine
+      // project names in its `exclude` are site files and stay here.
+      ...ENGINE_TESTS_FROM_MAIN_SUITE,
       // Multiplayer Balatro is gameplay too: its own suite, `pnpm test:balatro`
       // (vitest.balatro.config.ts, which includes exactly these globs), gated by
       // .github/workflows/balatro-mp-tests.yml. The mission-critical Balatro

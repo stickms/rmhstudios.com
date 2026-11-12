@@ -1,0 +1,29 @@
+{
+  // The core project (third-pass audit AR1 step 1): the modules everything may import and that
+  // import nothing of the site. No React, no Prisma, no server tier. `tsc` proves the closure: a
+  // file here that imports outside this list fails with TS6307.
+  //
+  // The files stay where they are and keep their `@/lib/...` specifiers; this is a compile unit,
+  // not yet a package. Their tests are checked with the site project (tsconfig.site.json `files`),
+  // because some of them import the site.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "allowJs": false,
+    "rootDir": ".",
+    "outDir": ".cache/tsc/core",
+    "tsBuildInfoFile": ".cache/tsc/core.tsbuildinfo"
+  },
+  "include": [
+    "lib/core/**/*",
+    "lib/contract/**/*",
+    "lib/shared/**/*",
+    "lib/http.ts",
+    "lib/url.ts",
+    "lib/network-quality.ts",
+    "lib/display-scale.ts"
+  ],
+  "exclude": ["**/*.test.ts", "**/__tests__/**"]
+}
