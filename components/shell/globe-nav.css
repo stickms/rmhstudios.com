@@ -127,6 +127,28 @@ html.ios-webkit .globe-nav__fade {
   opacity: 0;
 }
 
+/* THE BODY (lib/globe). Once the renderer draws the ball as a body it sets `data-chrome-live`: the canvas then hangs
+   outside the disc so a pushed limb can bulge past it, so the disc stops clipping, the rigid hairline and the static
+   first paint step aside (a dent would show them through), and the flat dot grid goes: the dots are on the sphere now
+   and turn with it. The contact shadow stays. A finger on the globe turns it, so it must not also scroll the page. */
+.globe-nav .globe-nav__globe {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.globe-nav .globe-nav__globe[data-chrome-live] {
+  overflow: visible;
+  background: none;
+  box-shadow: 0 14px 14px -8px rgba(0, 0, 0, 0.35);
+}
+.globe-nav .globe-nav__globe[data-chrome-live]::after {
+  display: none;
+}
+.globe-nav[data-open] .globe-nav__veil,
+.globe-nav[data-open] .globe-nav__pins {
+  touch-action: none;
+}
+
 /* G8: 8px danger dot at the docked globe's upper right; the number lives on the pin once open. */
 .globe-nav__dot {
   position: absolute;
@@ -262,6 +284,64 @@ html.ios-webkit .globe-nav__fade {
   font-size: 13px;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* LIVE PINS (lib/globe/view.ts). The five sections are fixed on the sphere and placed by `transform` each frame the
+   globe moves, so the fixed G3 offsets are dropped. Every pin wears the ink pill; the one inside the reticle (the lock)
+   takes the page-coloured, larger look G3 gives the current section, and carries the dwell bar: `--fill` (0 to 1, set
+   on the nav by the view) is how far a hold has got. Letting go with it full goes there. */
+.globe-nav[data-globe-live] .globe-nav__pin {
+  --dx: 0px;
+  --dy: 0px;
+  block-size: 36px;
+  padding-inline: 16px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-weight: 500;
+  transform-origin: 50% 50%;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.globe-nav[data-globe-live] .globe-nav__pin[data-locked] {
+  block-size: 44px;
+  padding-inline: 20px;
+  background: var(--site-bg);
+  color: var(--site-text);
+  font-weight: 600;
+  overflow: hidden;
+}
+.globe-nav[data-globe-live] .globe-nav__pin[data-locked]::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 3px;
+  background: var(--site-text);
+  transform: scaleX(var(--fill, 0));
+  transform-origin: 0 50%;
+}
+/* The reticle: the circle a destination must be inside to lock, drawn at its true size (RETICLE_FRACTION of the open
+   globe, 31% of 288px) and only while the globe is held. */
+.globe-nav__reticle {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  inline-size: 89px;
+  block-size: 89px;
+  translate: -50% -50%;
+  border: 1px solid var(--site-text);
+  border-radius: 50%;
+  corner-shape: round;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+[dir='rtl'] .globe-nav__reticle {
+  translate: 50% -50%;
+}
+.globe-nav[data-globe-live]:has(.globe-nav__globe[data-grabbing]) .globe-nav__reticle {
+  opacity: 0.35;
 }
 
 /* M7: reduced motion turns the move into an instant change. The globe still opens. */

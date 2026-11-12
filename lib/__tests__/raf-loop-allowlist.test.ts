@@ -202,6 +202,12 @@ const ALLOW = new Set<string>([
   // or a declared transition (the globe opening) is running. Settle proven in
   // lib/chrome/__tests__/chrome.test.ts ("leaves no frame pending once input stops").
   'lib/chrome/index.ts',
+  // The globe's body (owner, 2026-11-12: the chrome globe keeps the liquid globe's physics and rotation). The loop
+  // SLEEPS when nothing moves: a press, a scroll kick, a keyboard focus or the menu opening wakes it and it runs until
+  // lib/globe/engine.ts reports rest. The idle drift advances on a 15 Hz timer (7 on handhelds), one frame per tick,
+  // and not at all while the tab is hidden or unfocused, the ball is off screen, or motion is Still / reduced.
+  // Rest is proven in lib/globe/__tests__/engine.test.ts.
+  'lib/globe/view.ts',
   // The TF2 HUD editor's preview canvas. Not a loop: it requests ONE frame per
   // change (scene, zoom, selection) to coalesce redraws, and the effect's cleanup
   // cancels any pending frame on re-run and on unmount. Nothing is scheduled at rest.

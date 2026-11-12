@@ -21,10 +21,39 @@ import { FRAGMENT_SHADER, ROOM, VERTEX_SHADER } from './shader';
 
 export type ChromeKind = 'ball' | 'pill';
 
+/**
+ * A ball that is a BODY (lib/globe): it turns, ripples and gives like dough. The globe's view owns this object,
+ * mutates it, and asks for a frame; the renderer only reads it. Nothing here pulls the physics into this module.
+ */
+export interface BallState {
+  /** Body -> view rotation, row-major 3x3. */
+  rot: Float32Array;
+  /** Up to three ripples: view-space direction and age in seconds (negative: none). 12 numbers. */
+  ripples: Float32Array;
+  /** The dough field (RGBA float, `fieldSize` squared), and a version that changes when it does. */
+  field: Float32Array;
+  fieldSize: number;
+  version: number;
+  /** True while the field is deformed. */
+  soft: boolean;
+  /** Dot size (1 = docked), dot strength, cage-line strength. */
+  dots: [number, number, number];
+  /** How far the canvas hangs outside the disc, as a fraction of its diameter. */
+  bleed: number;
+}
+
 interface Entry {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   kind: ChromeKind;
+  ball?: BallState;
+  /** The field version last uploaded for this ball. */
+  uploaded?: number;
+}
+
+interface Program {
+  program: WebGLProgram;
+  uniforms: Record<string, WebGLUniformLocation | null>;
 }
 
 /** What the renderer needs from its surroundings; the tests replace these. */
@@ -55,7 +84,8 @@ const UNIFORMS = [
   'u_pointer',
   'u_night',
 ] as const;
-type UniformName = (typeof UNIFORMS)[number];
+/** The body program's own uniforms (lib/globe/shader.ts). */
+const BALL_UNIFORMS = ['u_field', 'u_soft', 'u_rot', 'u_rip', 'u_dots'] as const;
 
 function parseColour(css: string): [number, number, number] {
   const m = /rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/.exec(css);
@@ -66,7 +96,12 @@ export class ChromeRenderer {
   private readonly entries = new Map<Element, Entry>();
   private gl: WebGLRenderingContext | null = null;
   private glCanvas: HTMLCanvasElement | OffscreenCanvas | null = null;
-  private uniforms = {} as Record<UniformName, WebGLUniformLocation | null>;
+  private flat: Program | null = null;
+  private body: Program | null = null;
+  private bodySource: string | null = null;
+  private fieldTexture: WebGLTexture | null = null;
+  private fieldOwner: Entry | null = null;
+  private readonly pendingBalls = new Map<Element, BallState>();
   private envCanvas: HTMLCanvasElement | OffscreenCanvas | null = null;
   private envTexture: WebGLTexture | null = null;
   private envWindow: EnvWindow | null = null;
@@ -145,6 +180,55 @@ export class ChromeRenderer {
     });
   }
 
+  private link: ((source: string, extra: readonly string[]) => Program | null) | null = null;
+
+  /**
+   * Make `el` (a `data-chrome="ball"` element) a body drawn from `state` with the body shader `fragment`. False when
+   * this machine cannot do it (no float textures, or the program does not link): the ball stays flat chrome.
+   */
+  attachBall(el: Element, state: BallState, fragment: string): boolean {
+    const gl = this.gl;
+    if (!gl) return false;
+    this.bodySource = fragment;
+    if (!this.bodyProgram()) return false;
+    this.pendingBalls.set(el, state);
+    this.schedule();
+    return true;
+  }
+
+  detachBall(el: Element): void {
+    this.pendingBalls.delete(el);
+    const entry = this.entries.get(el);
+    if (!entry?.ball) return;
+    delete entry.ball;
+    delete entry.uploaded;
+    entry.canvas.style.inset = '0';
+    entry.canvas.style.width = entry.canvas.style.height = '100%';
+    entry.canvas.style.borderRadius = 'inherit';
+    (el as HTMLElement).removeAttribute('data-chrome-live');
+    this.schedule();
+  }
+
+  /** The body program and its field texture, built on first use and again after a context restore. */
+  private bodyProgram(): Program | null {
+    const gl = this.gl;
+    if (this.body || !gl || !this.bodySource || !this.link) return this.body;
+    if (!gl.getExtension('OES_texture_float') || !gl.getExtension('OES_texture_float_linear')) return null;
+    const body = this.link(this.bodySource, BALL_UNIFORMS);
+    if (!body) return null;
+    gl.uniform1i(body.uniforms.u_field ?? null, 1);
+    this.fieldTexture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.fieldTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.activeTexture(gl.TEXTURE0);
+    this.body = body;
+    return body;
+  }
+
   private build(): boolean {
     const gl = this.gl;
     if (!gl) return false;
@@ -156,28 +240,38 @@ export class ChromeRenderer {
       return gl.getShaderParameter(shader, gl.COMPILE_STATUS) ? shader : null;
     };
     const vs = compile(gl.VERTEX_SHADER, VERTEX_SHADER);
-    const fs = compile(gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
-    const program = gl.createProgram();
-    if (!vs || !fs || !program) return false;
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return false;
-    gl.useProgram(program);
+    const link = (source: string, extra: readonly string[]): Program | null => {
+      const fs = compile(gl.FRAGMENT_SHADER, source);
+      const program = gl.createProgram();
+      if (!vs || !fs || !program) return null;
+      gl.attachShader(program, vs);
+      gl.attachShader(program, fs);
+      gl.bindAttribLocation(program, 0, 'a_pos');
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+      gl.useProgram(program);
+      const uniforms: Program['uniforms'] = {};
+      for (const name of [...UNIFORMS, ...extra]) uniforms[name] = gl.getUniformLocation(program, name);
+      gl.uniform1i(uniforms.u_env ?? null, 0);
+      return { program, uniforms };
+    };
+    this.link = link;
+    this.flat = link(FRAGMENT_SHADER, []);
+    if (!this.flat) return false;
+    this.body = null;
+    this.fieldTexture = null;
+    this.fieldOwner = null;
     const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-    const at = gl.getAttribLocation(program, 'a_pos');
-    gl.enableVertexAttribArray(at);
-    gl.vertexAttribPointer(at, 2, gl.FLOAT, false, 0, 0);
-    for (const name of UNIFORMS) this.uniforms[name] = gl.getUniformLocation(program, name);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     this.envTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.envTexture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.uniform1i(this.uniforms.u_env, 0);
     this.maxTexture = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 4096;
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.BLEND);
@@ -274,6 +368,18 @@ export class ChromeRenderer {
       if (seen.has(el)) continue;
       entry.canvas.remove();
       this.entries.delete(el);
+      this.pendingBalls.delete(el);
+    }
+    for (const [el, state] of this.pendingBalls) {
+      const entry = this.entries.get(el);
+      if (!entry || entry.ball === state) continue;
+      entry.ball = state;
+      entry.uploaded = -1;
+      const over = `${(-state.bleed * 100).toFixed(2)}%`;
+      const size = `${((1 + 2 * state.bleed) * 100).toFixed(2)}%`;
+      entry.canvas.style.inset = over;
+      entry.canvas.style.width = entry.canvas.style.height = size;
+      entry.canvas.style.borderRadius = '0';
     }
   }
 
@@ -384,13 +490,28 @@ export class ChromeRenderer {
     const bg = parseColour(win.getComputedStyle(doc.body).backgroundColor);
     let fading = false;
 
-    gl.uniform2f(this.uniforms.u_envOrigin, this.envWindow.x, this.envWindow.y);
-    gl.uniform2f(this.uniforms.u_envSize, this.envWindow.width, this.envWindow.height);
-    gl.uniform3f(this.uniforms.u_bg, bg[0], bg[1], bg[2]);
-    gl.uniform3f(this.uniforms.u_lo, room.lo[0], room.lo[1], room.lo[2]);
-    gl.uniform3f(this.uniforms.u_hi, room.hi[0], room.hi[1], room.hi[2]);
-    gl.uniform2f(this.uniforms.u_pointer, this.pointer[0], this.pointer[1]);
-    gl.uniform1f(this.uniforms.u_night, night ? 1 : 0);
+    const envWindow = this.envWindow;
+    let current: Program | null = null;
+    const primed = new Set<Program>();
+    const bind = (prog: Program) => {
+      if (current !== prog) {
+        gl.useProgram(prog.program);
+        current = prog;
+      }
+      if (primed.has(prog)) return prog.uniforms;
+      primed.add(prog);
+      const u = prog.uniforms;
+      gl.uniform2f(u.u_envOrigin ?? null, envWindow.x, envWindow.y);
+      gl.uniform2f(u.u_envSize ?? null, envWindow.width, envWindow.height);
+      gl.uniform3f(u.u_bg ?? null, bg[0], bg[1], bg[2]);
+      gl.uniform3f(u.u_lo ?? null, room.lo[0], room.lo[1], room.lo[2]);
+      gl.uniform3f(u.u_hi ?? null, room.hi[0], room.hi[1], room.hi[2]);
+      gl.uniform2f(u.u_pointer ?? null, this.pointer[0], this.pointer[1]);
+      gl.uniform1f(u.u_night ?? null, night ? 1 : 0);
+      return u;
+    };
+    const flat = this.flat;
+    if (!flat) return;
 
     for (const [el, entry] of this.entries) {
       if (entry.kind === 'pill') {
@@ -405,7 +526,11 @@ export class ChromeRenderer {
       // V2: backing size = the element's CSS size (or the largest size it declares, for a
       // globe that is scaled up when open) times min(dpr, 2).
       const declared = Number((el as HTMLElement).dataset.chromeMax) || 0;
-      const w = Math.max(1, Math.round(Math.max(rect.width, declared) * dprCap));
+      const body = entry.ball ? this.bodyProgram() : null;
+      const ball = body ? entry.ball : undefined;
+      // A body's canvas hangs outside the disc so a pushed limb has somewhere to go.
+      const over = ball ? 1 + 2 * ball.bleed : 1;
+      const w = Math.max(1, Math.round(Math.max(rect.width, declared) * dprCap * over));
       const h = Math.max(1, Math.round((w * rect.height) / rect.width));
       if (entry.canvas.width !== w || entry.canvas.height !== h) {
         entry.canvas.width = w;
@@ -414,16 +539,45 @@ export class ChromeRenderer {
       if (glCanvas.width < w) glCanvas.width = w;
       if (glCanvas.height < h) glCanvas.height = h;
 
+      const u = bind(body && ball ? body : flat);
+      if (body && ball) {
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this.fieldTexture);
+        if (this.fieldOwner !== entry || entry.uploaded !== ball.version) {
+          gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            ball.fieldSize,
+            ball.fieldSize,
+            0,
+            gl.RGBA,
+            gl.FLOAT,
+            ball.field,
+          );
+          this.fieldOwner = entry;
+          entry.uploaded = ball.version;
+        }
+        gl.activeTexture(gl.TEXTURE0);
+        gl.uniform1f(u.u_soft ?? null, ball.soft ? 1 : 0);
+        gl.uniformMatrix3fv(u.u_rot ?? null, false, ball.rot);
+        gl.uniform4fv(u.u_rip ?? null, ball.ripples);
+        gl.uniform3f(u.u_dots ?? null, ball.dots[0], ball.dots[1], ball.dots[2]);
+        if (!(el as HTMLElement).hasAttribute('data-chrome-live')) {
+          (el as HTMLElement).setAttribute('data-chrome-live', '');
+        }
+      }
+
       gl.viewport(0, glCanvas.height - h, w, h);
       gl.enable(gl.SCISSOR_TEST);
       gl.scissor(0, glCanvas.height - h, w, h);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform2f(this.uniforms.u_viewport, w, glCanvas.height); // gl_FragCoord.y counts from the canvas bottom
-      gl.uniform1f(this.uniforms.u_dpr, w / rect.width);
-      gl.uniform2f(this.uniforms.u_hs, rect.width / 2, rect.height / 2);
+      gl.uniform2f(u.u_viewport ?? null, w, glCanvas.height); // gl_FragCoord.y counts from the canvas bottom
+      gl.uniform1f(u.u_dpr ?? null, w / (rect.width * over));
+      gl.uniform2f(u.u_hs ?? null, rect.width / 2, rect.height / 2);
       gl.uniform2f(
-        this.uniforms.u_centre,
+        u.u_centre ?? null,
         rect.left + rect.width / 2 + v.scrollX,
         rect.top + rect.height / 2 + v.scrollY,
       );
