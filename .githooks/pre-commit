@@ -16,12 +16,16 @@ GATE="$ROOT/scripts/check-consistency.sh"
 
 # If an agent session already gated this exact staged tree (see
 # .claude/hooks/commit-gate.sh), don't pay for it twice.
-STAMP="$ROOT/.git/rmh-commit-gate-ok"
+# `--git-path`, not "$ROOT/.git/…": in a worktree `.git` is a file, and writing the
+# stamp under it failed the commit after a passing gate.
+STAMP=$(git rev-parse --git-path rmh-commit-gate-ok)
 CURRENT=$(git diff --cached | sha1sum | cut -d' ' -f1)
 if [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$CURRENT" ]; then
   printf '\033[2m[gate]\033[0m staged tree already passed the consistency gate.\n'
   exit 0
 fi
 
+# Exit 1 = a rule failed; exit 3 = a step was killed before it could answer
+# (scripts/gate-step.sh). Both stop the commit, and the gate has said which.
 bash "$GATE" --staged --fast || exit 1
-printf '%s' "$CURRENT" > "$STAMP"
+printf '%s' "$CURRENT" > "$STAMP" || true
