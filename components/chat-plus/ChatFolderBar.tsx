@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FolderCog } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useChatFolders } from './folders-hooks';
@@ -43,7 +44,7 @@ export function ChatFolderBar({
   ];
 
   return (
-    <div className="flex items-center gap-1 px-4 pb-3">
+    <div className="flex items-center gap-1 pb-3">
       <div className="min-w-0 flex-1">
         <Tabs
           tabs={tabs}
@@ -53,16 +54,17 @@ export function ChatFolderBar({
           aria-label={t('folder-tabs', { defaultValue: 'Chat folders' })}
         />
       </div>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setManaging(true)}
         aria-haspopup="dialog"
         aria-label={t('folders-manage', { defaultValue: 'Manage folders' })}
         title={t('folders-manage', { defaultValue: 'Manage folders' })}
-        className="flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-muted hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
+        className="shrink-0 text-site-text-muted"
       >
         <FolderCog className="size-5" />
-      </button>
+      </Button>
       {managing && (
         <Suspense fallback={null}>
           <ManageFoldersDialog onClose={() => setManaging(false)} />

@@ -30,9 +30,8 @@
  * `SearchField`, same position, just owned by the panel that filters.
  */
 
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Tabs, type TabItem, type TabRenderProps } from '@/components/ui/tabs';
-import { swapContentAfter } from '@/lib/page-transition';
 
 interface PageTabsProps {
   tabs: TabItem[];
@@ -60,9 +59,6 @@ interface PageTabsProps {
   search?: ReactNode;
 }
 
-/** The shared gutter. One number, so no page can drift off the column edge. */
-const GUTTER = 'px-4';
-
 export function PageTabs({
   tabs,
   value,
@@ -72,22 +68,9 @@ export function PageTabs({
   'aria-label': ariaLabel,
   search,
 }: PageTabsProps) {
-  // A tab switch that does not change the route (the content below is swapped by state) gets the same quick dip as a
-  // navigation: the content after this strip dims-and-rises, the strip itself never moves, and nothing in the new
-  // content replays its entrance (lib/page-transition.ts). Not on the first render.
-  const controls = useRef<HTMLDivElement>(null);
-  const previousValue = useRef(value);
-  useLayoutEffect(() => {
-    if (previousValue.current === value) return;
-    previousValue.current = value;
-    // Route tabs are animated by the committed-page service; don't stack a
-    // second fade over the same panel when a link changes the route.
-    if (controls.current && !renderTab) swapContentAfter(controls.current);
-  }, [value, renderTab]);
-
   return (
-    <div ref={controls} data-slot="page-controls" className="page-controls">
-      <div className={`mt-3 ${search ? 'mb-2' : 'mb-3'} ${GUTTER}`}>
+    <div data-slot="page-controls" className="page-controls">
+      <div className={search ? 'mb-2' : 'mb-3'}>
         <Tabs
           tabs={tabs}
           value={value}
@@ -97,7 +80,7 @@ export function PageTabs({
           aria-label={ariaLabel}
         />
       </div>
-      {search && <div className={`mb-3 ${GUTTER}`}>{search}</div>}
+      {search && <div className="mb-3">{search}</div>}
     </div>
   );
 }

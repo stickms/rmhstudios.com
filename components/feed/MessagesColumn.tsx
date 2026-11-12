@@ -1,665 +1,615 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
-import { useEffect, useState, useRef, useCallback } from'react';
-import { useTranslation } from'react-i18next';
-import { Loader2, MessageCircle, CheckCheck, Plus, Search } from'lucide-react';
-import { Spinner } from'@/components/ui/spinner';
-import { SearchField } from'@/components/ui/search-field';
-import { UserAvatar } from'@/components/ui/UserAvatar';
-import { Reveal } from'@/components/motion';
-import { Link, useNavigate } from'@tanstack/react-router';
-import { MobileBrandPrefix } from'./MobileHeader';
-import { useSession } from'@/components/Providers';
-import { Button } from'@/components/ui/button';
-import { EmptyState } from'@/components/ui/empty-state';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from'@/components/ui/dialog';
-import { subscribeMessageStream } from'@/lib/useUnreadCount';
-import { toast } from'sonner';
-import { ChatFolderBar } from'@/components/chat-plus/ChatFolderBar';
-import { SavedMessagesRow } from'@/components/chat-plus/SavedMessagesRow';
-import { SavedMessagesLabel } from'@/components/chat-plus/MessageBadges';
-import { AutomatedBadge } from'@/components/feed/AutomatedBadge';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Search } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+import { SearchField } from '@/components/ui/search-field';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import { Spine, SpineItem } from '@/components/ui/spine';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useSession } from '@/components/Providers';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { subscribeMessageStream } from '@/lib/useUnreadCount';
+import { toast } from 'sonner';
+import { ChatFolderBar } from '@/components/chat-plus/ChatFolderBar';
+import { SavedMessagesRow } from '@/components/chat-plus/SavedMessagesRow';
+import { SavedMessagesLabel } from '@/components/chat-plus/MessageBadges';
+import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 import { api } from '@/lib/contract/client';
 import { searchUsersApi } from '@/lib/discovery/explore.contract';
 import { HttpError, serverError } from '@/lib/http';
 import {
- listConversationsApi,
- markAllMessagesReadApi,
- searchConversationsApi,
- sendMessageApi,
+  listConversationsApi,
+  markAllMessagesReadApi,
+  searchConversationsApi,
+  sendMessageApi,
 } from '@/lib/messages/messages.contract';
 
 export interface ConversationItem {
- id: string;
- otherUser: {
- id: string;
- name: string | null;
- image: string | null;
- username: string | null;
- isBot?: boolean;
- };
- lastMessage: {
- id: string;
- content: string;
- senderId: string;
- read: boolean;
- createdAt: string;
- gifUrl?: string | null;
- imageUrls?: string[];
- } | null;
- unreadCount: number;
- lastMessageAt: string;
- matchSnippet?: string | null;
+  id: string;
+  otherUser: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    username: string | null;
+    isBot?: boolean;
+  };
+  lastMessage: {
+    id: string;
+    content: string;
+    senderId: string;
+    read: boolean;
+    createdAt: string;
+    gifUrl?: string | null;
+    imageUrls?: string[];
+  } | null;
+  unreadCount: number;
+  lastMessageAt: string;
+  matchSnippet?: string | null;
 }
 
 export function MessagesColumn({
- embedded = false,
- initialData,
+  embedded = false,
+  initialData,
 }: {
- embedded?: boolean;
- /** First page of conversations prefetched by the route loader; `null`when signed out. */
- initialData?: {
- conversations: ConversationItem[];
- nextCursor: string | null;
- hasMore: boolean;
- } | null;
+  embedded?: boolean;
+  /** First page of conversations prefetched by the route loader; `null`when signed out. */
+  initialData?: {
+    conversations: ConversationItem[];
+    nextCursor: string | null;
+    hasMore: boolean;
+  } | null;
 } = {}) {
- const [conversations, setConversations] = useState<ConversationItem[]>(
- initialData?.conversations ?? [],
- );
- const [loading, setLoading] = useState(!initialData);
- const [cursor, setCursor] = useState<string | null>(initialData?.nextCursor ?? null);
- const [hasMore, setHasMore] = useState(initialData?.hasMore ?? true);
- const [loadingMore, setLoadingMore] = useState(false);
- const [markingAll, setMarkingAll] = useState(false);
- const [newChatOpen, setNewChatOpen] = useState(false);
- const [query, setQuery] = useState('');
- // M1: 'all' | 'unread' | a folder id — filtered server-side.
- const [folder, setFolder] = useState('all');
- const folderRef = useRef(folder);
- folderRef.current = folder;
- const [searchResults, setSearchResults] = useState<ConversationItem[]>([]);
- const [searching, setSearching] = useState(false);
- const sentinelRef = useRef<HTMLDivElement>(null);
- // Seeded from the route loader → treat the first page as already fetched.
- const initialFetched = useRef(initialData != null);
- const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [conversations, setConversations] = useState<ConversationItem[]>(
+    initialData?.conversations ?? [],
+  );
+  const [loading, setLoading] = useState(!initialData);
+  const [cursor, setCursor] = useState<string | null>(initialData?.nextCursor ?? null);
+  const [hasMore, setHasMore] = useState(initialData?.hasMore ?? true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
+  const [newChatOpen, setNewChatOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  // M1: 'all' | 'unread' | a folder id — filtered server-side.
+  const [folder, setFolder] = useState('all');
+  const folderRef = useRef(folder);
+  folderRef.current = folder;
+  const [searchResults, setSearchResults] = useState<ConversationItem[]>([]);
+  const [searching, setSearching] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  // Seeded from the route loader → treat the first page as already fetched.
+  const initialFetched = useRef(initialData != null);
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
- const { t } = useTranslation('feed');
- const { data: session } = useSession();
- const navigate = useNavigate();
+  const { t } = useTranslation('feed');
+  const { data: session } = useSession();
+  const navigate = useNavigate();
 
- const fetchConversations = useCallback(
- async (isInitial = false) => {
- if (!isInitial && loadingMore) return;
- if (!isInitial) setLoadingMore(true);
+  const fetchConversations = useCallback(
+    async (isInitial = false) => {
+      if (!isInitial && loadingMore) return;
+      if (!isInitial) setLoadingMore(true);
 
- try {
- const data = await api(listConversationsApi, {
- query: {
- cursor: cursor && !isInitial ? cursor : undefined,
- filter: folderRef.current === 'unread' ? 'unread' : undefined,
- folder:
- folderRef.current !== 'unread' && folderRef.current !== 'all' ? folderRef.current : undefined,
- },
- retries: 0,
- });
+      try {
+        const data = await api(listConversationsApi, {
+          query: {
+            cursor: cursor && !isInitial ? cursor : undefined,
+            filter: folderRef.current === 'unread' ? 'unread' : undefined,
+            folder:
+              folderRef.current !== 'unread' && folderRef.current !== 'all'
+                ? folderRef.current
+                : undefined,
+          },
+          retries: 0,
+        });
 
- if (isInitial) {
- setConversations(data.conversations);
- } else {
- setConversations((prev) => [...prev, ...data.conversations]);
- }
- setCursor(data.nextCursor);
- setHasMore(data.hasMore);
- } catch (error) {
- // A non-2xx answer used to return quietly; only transport failures log.
- if (!(error instanceof HttpError)) console.error('Fetch conversations error:', error);
- } finally {
- setLoading(false);
- setLoadingMore(false);
- }
- },
- [cursor, loadingMore],
- );
+        if (isInitial) {
+          setConversations(data.conversations);
+        } else {
+          setConversations((prev) => [...prev, ...data.conversations]);
+        }
+        setCursor(data.nextCursor);
+        setHasMore(data.hasMore);
+      } catch (error) {
+        // A non-2xx answer used to return quietly; only transport failures log.
+        if (!(error instanceof HttpError)) console.error('Fetch conversations error:', error);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [cursor, loadingMore],
+  );
 
- const markAllAsRead = useCallback(async () => {
- if (markingAll) return;
- setMarkingAll(true);
- // Optimistically clear unread badges.
- setConversations((prev) => prev.map((c) => (c.unreadCount > 0 ? { ...c, unreadCount: 0 } : c)));
- try {
- await api(markAllMessagesReadApi);
- } catch (error) {
- // A non-2xx answer rolls back by refetching the authoritative list; only transport failures log.
- if (!(error instanceof HttpError)) console.error('Mark all as read error:', error);
- fetchConversations(true);
- } finally {
- setMarkingAll(false);
- }
- }, [markingAll, fetchConversations]);
+  const markAllAsRead = useCallback(async () => {
+    if (markingAll) return;
+    setMarkingAll(true);
+    // Optimistically clear unread badges.
+    setConversations((prev) => prev.map((c) => (c.unreadCount > 0 ? { ...c, unreadCount: 0 } : c)));
+    try {
+      await api(markAllMessagesReadApi);
+    } catch (error) {
+      // A non-2xx answer rolls back by refetching the authoritative list; only transport failures log.
+      if (!(error instanceof HttpError)) console.error('Mark all as read error:', error);
+      fetchConversations(true);
+    } finally {
+      setMarkingAll(false);
+    }
+  }, [markingAll, fetchConversations]);
 
- // Switching folder tabs refetches page one of that folder's list.
- const fetchRef = useRef(fetchConversations);
- fetchRef.current = fetchConversations;
- const firstFolderRun = useRef(true);
- useEffect(() => {
- if (firstFolderRun.current) {
- firstFolderRun.current = false;
- return;
- }
- setLoading(true);
- setHasMore(true);
- void fetchRef.current(true);
- }, [folder]);
+  // Switching folder tabs refetches page one of that folder's list.
+  const fetchRef = useRef(fetchConversations);
+  fetchRef.current = fetchConversations;
+  const firstFolderRun = useRef(true);
+  useEffect(() => {
+    if (firstFolderRun.current) {
+      firstFolderRun.current = false;
+      return;
+    }
+    setLoading(true);
+    setHasMore(true);
+    void fetchRef.current(true);
+  }, [folder]);
 
- useEffect(() => {
- if (!initialFetched.current && session) {
- initialFetched.current = true;
- fetchConversations(true);
- }
- }, [session, fetchConversations]);
+  useEffect(() => {
+    if (!initialFetched.current && session) {
+      initialFetched.current = true;
+      fetchConversations(true);
+    }
+  }, [session, fetchConversations]);
 
- // Debounced conversation/message search.
- useEffect(() => {
- const q = query.trim();
- if (searchDebounce.current) clearTimeout(searchDebounce.current);
- if (!q) {
- setSearchResults([]);
- setSearching(false);
- return;
- }
- setSearching(true);
- searchDebounce.current = setTimeout(async () => {
- try {
- const res = await api(searchConversationsApi, { query: { q } });
- setSearchResults(res.conversations);
- } catch {
- /* ignore */
- } finally {
- setSearching(false);
- }
- }, 250);
- return () => {
- if (searchDebounce.current) clearTimeout(searchDebounce.current);
- };
- }, [query]);
+  // Debounced conversation/message search.
+  useEffect(() => {
+    const q = query.trim();
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    if (!q) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    searchDebounce.current = setTimeout(async () => {
+      try {
+        const res = await api(searchConversationsApi, { query: { q } });
+        setSearchResults(res.conversations);
+      } catch {
+        /* ignore */
+      } finally {
+        setSearching(false);
+      }
+    }, 250);
+    return () => {
+      if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    };
+  }, [query]);
 
- // Real-time conversation-list updates ride the ONE shared message stream
- // (see lib/useUnreadCount) instead of this view opening its own EventSource.
- useEffect(() => {
- if (!session) return;
- return subscribeMessageStream((type, data) => {
- if (type ==='new-message') {
- const msg = data as {
- id: string;
- conversationId: string;
- content: string;
- senderId: string;
- read: boolean;
- createdAt: string;
- gifUrl?: string | null;
- imageUrls?: string[];
- };
- setConversations((prev) => {
- const idx = prev.findIndex((c) => c.id === msg.conversationId);
- if (idx === -1) {
- // New conversation we don't have yet — refetch
- fetchConversations(true);
- return prev;
- }
- const updated = [...prev];
- const conv = { ...updated[idx] };
- conv.lastMessage = {
- id: msg.id,
- content: msg.content,
- senderId: msg.senderId,
- read: msg.read,
- createdAt: msg.createdAt,
- gifUrl: msg.gifUrl,
- imageUrls: msg.imageUrls,
- };
- conv.lastMessageAt = msg.createdAt;
- // Increment unread if the message is from the other user
- if (msg.senderId !== session.user.id) {
- conv.unreadCount += 1;
- }
- // Remove from current position and move to top
- updated.splice(idx, 1);
- updated.unshift(conv);
- return updated;
- });
- } else if (type ==='unread') {
- const c = (data as { count?: number }).count;
- // If unread count dropped (e.g. opened a chat), refetch to sync
- if (typeof c ==='number'&& c === 0) {
- setConversations((prev) => {
- if (prev.some((cv) => cv.unreadCount > 0)) {
- fetchConversations(true);
- }
- return prev;
- });
- }
- }
- });
- }, [session, fetchConversations]);
+  // Real-time conversation-list updates ride the ONE shared message stream
+  // (see lib/useUnreadCount) instead of this view opening its own EventSource.
+  useEffect(() => {
+    if (!session) return;
+    return subscribeMessageStream((type, data) => {
+      if (type === 'new-message') {
+        const msg = data as {
+          id: string;
+          conversationId: string;
+          content: string;
+          senderId: string;
+          read: boolean;
+          createdAt: string;
+          gifUrl?: string | null;
+          imageUrls?: string[];
+        };
+        setConversations((prev) => {
+          const idx = prev.findIndex((c) => c.id === msg.conversationId);
+          if (idx === -1) {
+            // New conversation we don't have yet — refetch
+            fetchConversations(true);
+            return prev;
+          }
+          const updated = [...prev];
+          const conv = { ...updated[idx] };
+          conv.lastMessage = {
+            id: msg.id,
+            content: msg.content,
+            senderId: msg.senderId,
+            read: msg.read,
+            createdAt: msg.createdAt,
+            gifUrl: msg.gifUrl,
+            imageUrls: msg.imageUrls,
+          };
+          conv.lastMessageAt = msg.createdAt;
+          // Increment unread if the message is from the other user
+          if (msg.senderId !== session.user.id) {
+            conv.unreadCount += 1;
+          }
+          // Remove from current position and move to top
+          updated.splice(idx, 1);
+          updated.unshift(conv);
+          return updated;
+        });
+      } else if (type === 'unread') {
+        const c = (data as { count?: number }).count;
+        // If unread count dropped (e.g. opened a chat), refetch to sync
+        if (typeof c === 'number' && c === 0) {
+          setConversations((prev) => {
+            if (prev.some((cv) => cv.unreadCount > 0)) {
+              fetchConversations(true);
+            }
+            return prev;
+          });
+        }
+      }
+    });
+  }, [session, fetchConversations]);
 
- // Infinite scroll
- const observerCallback = useCallback(
- (entries: IntersectionObserverEntry[]) => {
- if (entries[0].isIntersecting && hasMore && !loadingMore) {
- fetchConversations();
- }
- },
- [hasMore, loadingMore, fetchConversations],
- );
+  // Infinite scroll
+  const observerCallback = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (entries[0].isIntersecting && hasMore && !loadingMore) {
+        fetchConversations();
+      }
+    },
+    [hasMore, loadingMore, fetchConversations],
+  );
 
- useEffect(() => {
- const sentinel = sentinelRef.current;
- if (!sentinel) return;
- const observer = new IntersectionObserver(observerCallback, { rootMargin:'200px'});
- observer.observe(sentinel);
- return () => observer.disconnect();
- }, [observerCallback]);
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(observerCallback, { rootMargin: '200px' });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [observerCallback]);
 
- const formatTime = (dateStr: string) => {
- const d = new Date(dateStr);
- const now = new Date();
- const diffMs = now.getTime() - d.getTime();
- const diffMins = Math.floor(diffMs / 60000);
- const diffHours = Math.floor(diffMs / 3600000);
- const diffDays = Math.floor(diffMs / 86400000);
+  const formatTime = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
- if (diffMins < 1) return t('time-now', { defaultValue:'now'});
- if (diffMins < 60) return t('time-minutes', { count: diffMins, defaultValue:'{{count}}m'});
- if (diffHours < 24) return t('time-hours', { count: diffHours, defaultValue:'{{count}}h'});
- if (diffDays < 7) return t('time-days', { count: diffDays, defaultValue:'{{count}}d'});
- return d.toLocaleDateString('en-US', { month:'short', day:'numeric'});
- };
+    if (diffMins < 1) return t('time-now', { defaultValue: 'now' });
+    if (diffMins < 60) return t('time-minutes', { count: diffMins, defaultValue: '{{count}}m' });
+    if (diffHours < 24) return t('time-hours', { count: diffHours, defaultValue: '{{count}}h' });
+    if (diffDays < 7) return t('time-days', { count: diffDays, defaultValue: '{{count}}d' });
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
- if (!session) {
- return (
- <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
- <MessageCircle className="w-12 h-12 text-site-text-muted mb-4"/>
- <p className="text-lg font-medium text-site-text mb-1">
- {t('sign-in-to-view-messages', { defaultValue:'Sign in to view messages'})}
- </p>
- <p className="text-sm text-site-text-muted mb-4">
- {t('login-required-message', {
- defaultValue:'You need to be logged in to send and receive messages.',
- })}
- </p>
- <Link to="/login"search={{ callbackURL: undefined }}>
- <Button variant="default"size="sm">
- {t('sign-in', { defaultValue:'Sign in'})}
- </Button>
- </Link>
- </div>
- );
- }
+  if (!session) {
+    return (
+      <EmptyState
+        title={t('sign-in-to-view-messages', { defaultValue: 'Sign in to view messages' })}
+        description={t('login-required-message', {
+          defaultValue: 'You need to be logged in to send and receive messages.',
+        })}
+        action={
+          <Button asChild>
+            <Link to="/login" search={{ callbackURL: undefined }}>
+              {t('sign-in', { defaultValue: 'Sign in' })}
+            </Link>
+          </Button>
+        }
+      />
+    );
+  }
 
- const hasUnread = conversations.some((c) => c.unreadCount > 0);
+  const hasUnread = conversations.some((c) => c.unreadCount > 0);
 
- return (
- <div className="flex flex-col">
- {/* Header */}
- <div
- className={
- embedded
- ?'border-b border-site-border'
- : // Floating L3 .glass-chrome capsule (§8.2); bg/blur/glint clip to
- // rounded-site without overflow-hidden.
-'glass-chrome site-sticky-chrome'
- }
- >
- {!embedded && (
- <div className="flex items-center gap-3 px-4 pt-3">
- <h1 className="font-display font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
- <MobileBrandPrefix />
- {t('messages-heading', { defaultValue:'Messages'})}
- </h1>
- </div>
- )}
- {/* Search + actions share a single row; the actions are icon-only. */}
- <div className="flex items-center gap-2 px-4 py-3">
- <SearchField
- containerClassName="flex-1"
- value={query}
- onValueChange={setQuery}
- placeholder={t('search-messages-placeholder', {
- defaultValue:'Search people or chats…',
- })}
- aria-label={t('search-messages', { defaultValue:'Search messages'})}
- />
- <button
- type="button"
- onClick={() => setNewChatOpen(true)}
- className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-site-accent text-site-accent-fg transition-opacity hover:opacity-90"
- title={t('new-chat-title', { defaultValue:'Start a new chat'})}
- aria-label={t('new-chat', { defaultValue:'New chat'})}
- >
- <Plus className="w-4 h-4"/>
- </button>
- <button
- type="button"
- onClick={markAllAsRead}
- disabled={!hasUnread || markingAll}
- className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-site-accent transition-colors hover:bg-site-bg-subtle disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
- title={t('mark-all-as-read-title', { defaultValue:'Mark all conversations as read'})}
- aria-label={t('mark-all-as-read', { defaultValue:'Mark all as read'})}
- >
- {markingAll ? (
- <Loader2 className="w-4 h-4 animate-spin"/>
- ) : (
- <CheckCheck className="w-4 h-4"/>
- )}
- </button>
- </div>
- <ChatFolderBar value={folder} onChange={setFolder} />
- </div>
+  return (
+    <div className="flex flex-col">
+      {/* The search field, and the two actions as words: New chat, Mark all as read. No primary here (section 10). */}
+      <div className="flex flex-wrap items-center gap-2 pb-3">
+        <SearchField
+          containerClassName="min-w-full sm:min-w-0 sm:flex-1"
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t('search-messages-placeholder', {
+            defaultValue: 'Search people or chats…',
+          })}
+          aria-label={t('search-messages', { defaultValue: 'Search messages' })}
+        />
+        <Button variant="ghost" onClick={() => setNewChatOpen(true)}>
+          {t('new-chat', { defaultValue: 'New chat' })}
+        </Button>
+        <Button variant="ghost" onClick={markAllAsRead} disabled={!hasUnread || markingAll}>
+          {t('mark-all-as-read', { defaultValue: 'Mark all as read' })}
+        </Button>
+      </div>
+      <ChatFolderBar value={folder} onChange={setFolder} />
 
- {/* Saved Messages (M2): pinned above the list. */}
- {!query.trim() && folder === 'all' && <SavedMessagesRow />}
+      {query.trim() ? (
+        searching ? (
+          <div className="flex items-center justify-center py-12">
+            <Spinner size={24} />
+          </div>
+        ) : searchResults.length === 0 ? (
+          <p className="t-body py-8 text-site-text-muted">
+            {t('no-search-results', { defaultValue: 'No people or messages match your search.' })}
+          </p>
+        ) : (
+          <Spine>
+            {searchResults.map((conv) => (
+              <ConversationRow
+                key={conv.id}
+                conv={conv}
+                currentUserId={session.user.id}
+                t={t}
+                formatTime={formatTime}
+              />
+            ))}
+          </Spine>
+        )
+      ) : loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Spinner size={24} />
+        </div>
+      ) : conversations.length === 0 && folder !== 'all' ? (
+        <p className="t-body py-8 text-site-text-muted">
+          {t('no-messages-yet', { defaultValue: 'No messages yet' })}
+        </p>
+      ) : conversations.length === 0 ? (
+        <>
+          {/* Saved Messages (M2) is always there, even in an empty inbox. */}
+          <Spine>
+            <SavedMessagesRow />
+          </Spine>
+          <EmptyState
+            title={t('no-messages-yet', { defaultValue: 'No messages yet' })}
+            description={t('no-messages-hint', {
+              defaultValue: 'Start a new chat, or message someone from their profile page.',
+            })}
+            action={
+              <Button onClick={() => setNewChatOpen(true)}>
+                {t('new-chat', { defaultValue: 'New chat' })}
+              </Button>
+            }
+          />
+        </>
+      ) : (
+        <>
+          {/* One dot per unread thread (section 10, Inbox): the rows hang on the spine, read ones with no dot. */}
+          <Spine>
+            {folder === 'all' && <SavedMessagesRow />}
+            {conversations.map((conv) => (
+              <ConversationRow
+                key={conv.id}
+                conv={conv}
+                currentUserId={session.user.id}
+                t={t}
+                formatTime={formatTime}
+              />
+            ))}
+          </Spine>
 
- {/* Search results */}
- {query.trim() ? (
- searching ? (
- <div className="flex items-center justify-center px-4 pt-4 pb-12">
- <Spinner size={32} />
- </div>
- ) : searchResults.length === 0 ? (
- <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
- <Search className="w-10 h-10 text-site-text-muted mb-4"/>
- <p className="text-sm text-site-text-muted">
- {t('no-search-results', { defaultValue:'No people or messages match your search.'})}
- </p>
- </div>
- ) : (
- // Density page (§8.4): one floating glass-fill container; rows stay
- // dense with divide-y hairlines inside (not per-row cards).
- <div className="glass-fill rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden">
- {searchResults.map((conv) => (
- <ConversationRow
- key={conv.id}
- conv={conv}
- currentUserId={session.user.id}
- t={t}
- formatTime={formatTime}
- />
- ))}
- </div>
- )
- ) : /* Conversation list */ loading ? (
- <div className="flex items-center justify-center px-4 pt-4 pb-12">
- <Spinner size={32} />
- </div>
- ) : conversations.length === 0 ? (
- /* The copy told the reader to start a chat but embedded no way to do
- it — the button that does is a 32px glyph up in the header, off the
- top of a scrolled column. EmptyState takes an action; use it. */
- <EmptyState
- icon={MessageCircle}
- title={t('no-messages-yet', { defaultValue:'No messages yet'})}
- description={t('no-messages-hint', {
- defaultValue:'Start a new chat, or message someone from their profile page.',
- })}
- action={
- <Button onClick={() => setNewChatOpen(true)}>
- <Plus className="h-4 w-4"aria-hidden />
- {t('new-chat', { defaultValue:'New chat'})}
- </Button>
- }
- />
- ) : (
- <Reveal>
- {/* Density page (§8.4): rows stay dense inside one floating glass-fill
- container with divide-y hairlines; the spinner/sentinel sit outside. */}
- <div className="glass-fill rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden">
- {conversations.map((conv) => (
- <ConversationRow
- key={conv.id}
- conv={conv}
- currentUserId={session.user.id}
- t={t}
- formatTime={formatTime}
- />
- ))}
- </div>
+          {loadingMore && (
+            <div className="flex items-center justify-center py-8">
+              <Spinner />
+            </div>
+          )}
 
- {loadingMore && (
- <div className="flex items-center justify-center py-8">
- <Spinner />
- </div>
- )}
+          {!hasMore && conversations.length > 0 && (
+            <p className="t-meta py-6">
+              {t('no-more-conversations', { defaultValue: 'No more conversations' })}
+            </p>
+          )}
 
- {!hasMore && conversations.length > 0 && (
- <div className="py-8 text-center text-sm text-site-text-muted">
- {t('no-more-conversations', { defaultValue:'No more conversations'})}
- </div>
- )}
+          <div ref={sentinelRef} className="h-1" />
+        </>
+      )}
 
- <div ref={sentinelRef} className="h-1"/>
- </Reveal>
- )}
-
- {newChatOpen && (
- <NewChatDialog
- onClose={() => setNewChatOpen(false)}
- onStarted={(conversationId) => {
- setNewChatOpen(false);
- navigate({ to: `/messages/${conversationId}`as string });
- }}
- t={t}
- />
- )}
- </div>
- );
+      {newChatOpen && (
+        <NewChatDialog
+          onClose={() => setNewChatOpen(false)}
+          onStarted={(conversationId) => {
+            setNewChatOpen(false);
+            navigate({ to: `/messages/${conversationId}` as string });
+          }}
+          t={t}
+        />
+      )}
+    </div>
+  );
 }
 
 type TFn = ReturnType<typeof useTranslation>['t'];
 
 function ConversationRow({
- conv,
- currentUserId,
- t,
- formatTime,
+  conv,
+  currentUserId,
+  t,
+  formatTime,
 }: {
- conv: ConversationItem;
- currentUserId: string;
- t: TFn;
- formatTime: (s: string) => string;
+  conv: ConversationItem;
+  currentUserId: string;
+  t: TFn;
+  formatTime: (s: string) => string;
 }) {
- const preview = conv.matchSnippet?.trim()
- ? conv.matchSnippet
- : conv.lastMessage?.content?.trim()
- ? `${conv.lastMessage.senderId === currentUserId ? t('you-prefix', { defaultValue:'You:'}) :''}${conv.lastMessage.content}`
- : conv.lastMessage?.gifUrl
- ? t('sent-a-gif', { defaultValue:'GIF'})
- : conv.lastMessage?.imageUrls && conv.lastMessage.imageUrls.length > 0
- ? t('sent-a-photo', { defaultValue:'Photo'})
- :'';
+  const preview = conv.matchSnippet?.trim()
+    ? conv.matchSnippet
+    : conv.lastMessage?.content?.trim()
+      ? `${conv.lastMessage.senderId === currentUserId ? `${t('you-prefix', { defaultValue: 'You:' })} ` : ''}${conv.lastMessage.content}`
+      : conv.lastMessage?.gifUrl
+        ? t('sent-a-gif', { defaultValue: 'GIF' })
+        : conv.lastMessage?.imageUrls && conv.lastMessage.imageUrls.length > 0
+          ? t('sent-a-photo', { defaultValue: 'Photo' })
+          : '';
 
- return (
- <Link
- to={`/messages/${conv.id}`as string}
- // Row separators come from the container's divide-y (§8.4), not a per-row
- // border, so rows read as one dense card rather than stacked slabs.
- className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 active:scale-[0.99] transition-[background-color,scale] duration-site-fast"
- >
- <UserAvatar
- src={conv.otherUser.image ?? undefined}
- alt={conv.otherUser.name || t('user-alt', { defaultValue:'User'})}
- size={48}
- fallbackName={conv.otherUser.name ?? undefined}
- className="ring-2 ring-site-bg"
- />
- <div className="flex-1 min-w-0">
- <div className="flex items-center justify-between gap-2">
- <div className="flex items-center gap-1.5 min-w-0">
- <span
- className={`text-sm truncate ${conv.unreadCount > 0 ?'font-bold text-site-text':'font-medium text-site-text'}`}
- >
- {conv.otherUser.id === currentUserId ? (
- <SavedMessagesLabel />
- ) : (
- conv.otherUser.name || t('unknown-user', { defaultValue:'Unknown'})
- )}
- </span>
- {conv.otherUser.username && conv.otherUser.id !== currentUserId && (
- <span className="text-xs text-site-text-muted truncate">
- @{conv.otherUser.username}
- </span>
- )}
- {conv.otherUser.isBot && <AutomatedBadge />}
- </div>
- <div className="flex items-center gap-2 shrink-0">
- {conv.lastMessage && (
- <span className="text-xs text-site-text-muted">
- {formatTime(conv.lastMessage.createdAt)}
- </span>
- )}
- {conv.unreadCount > 0 && (
- <span className="flex items-center justify-center min-w-5 h-5 rounded-full bg-site-accent text-site-bg text-xs font-bold px-1.5">
- {conv.unreadCount > 99 ?'99+': conv.unreadCount}
- </span>
- )}
- </div>
- </div>
- {preview && (
- <p
- className={`text-sm truncate mt-0.5 ${conv.unreadCount > 0 ?'text-site-text':'text-site-text-muted'}`}
- >
- {preview}
- </p>
- )}
- </div>
- </Link>
- );
+  const unread = conv.unreadCount > 0;
+  return (
+    <SpineItem dot={unread} className="hover:bg-site-bg-subtle">
+      <Link
+        to={`/messages/${conv.id}` as string}
+        className="block after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="flex min-w-0 items-baseline gap-2">
+            <span
+              className={`t-body truncate text-site-text ${unread ? 'font-semibold' : 'font-medium'}`}
+            >
+              {conv.otherUser.id === currentUserId ? (
+                <SavedMessagesLabel />
+              ) : (
+                conv.otherUser.name || t('unknown-user', { defaultValue: 'Unknown' })
+              )}
+            </span>
+            {conv.otherUser.username && conv.otherUser.id !== currentUserId && (
+              <span className="t-meta truncate" dir="ltr">
+                @{conv.otherUser.username}
+              </span>
+            )}
+            {conv.otherUser.isBot && <AutomatedBadge />}
+          </div>
+          <div className="flex shrink-0 items-baseline gap-2">
+            {conv.lastMessage && (
+              <span className="t-meta">{formatTime(conv.lastMessage.createdAt)}</span>
+            )}
+            {unread && (
+              <span className="t-meta font-semibold text-site-danger">
+                {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+              </span>
+            )}
+          </div>
+        </div>
+        {preview && (
+          <p
+            className={`t-body mt-0.5 truncate ${unread ? 'font-semibold text-site-text' : 'text-site-text-muted'}`}
+          >
+            {preview}
+          </p>
+        )}
+      </Link>
+    </SpineItem>
+  );
 }
 
 interface SearchUser {
- id: string;
- name: string | null;
- image: string | null;
- username?: string | null;
- handle?: string | null;
+  id: string;
+  name: string | null;
+  image: string | null;
+  username?: string | null;
+  handle?: string | null;
 }
 
 function NewChatDialog({
- onClose,
- onStarted,
- t,
+  onClose,
+  onStarted,
+  t,
 }: {
- onClose: () => void;
- onStarted: (conversationId: string) => void;
- t: TFn;
+  onClose: () => void;
+  onStarted: (conversationId: string) => void;
+  t: TFn;
 }) {
- const [q, setQ] = useState('');
- const [users, setUsers] = useState<SearchUser[]>([]);
- const [loading, setLoading] = useState(false);
- const [starting, setStarting] = useState<string | null>(null);
- const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [q, setQ] = useState('');
+  const [users, setUsers] = useState<SearchUser[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [starting, setStarting] = useState<string | null>(null);
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
- useEffect(() => {
- const term = q.trim();
- if (debounce.current) clearTimeout(debounce.current);
- if (!term) {
- setUsers([]);
- return;
- }
- setLoading(true);
- debounce.current = setTimeout(async () => {
- try {
- const res = await api(searchUsersApi, { query: { q: term } });
- setUsers(res.users);
- } catch {
- // typeahead: keep the previous results
- } finally {
- setLoading(false);
- }
- }, 250);
- return () => {
- if (debounce.current) clearTimeout(debounce.current);
- };
- }, [q]);
+  useEffect(() => {
+    const term = q.trim();
+    if (debounce.current) clearTimeout(debounce.current);
+    if (!term) {
+      setUsers([]);
+      return;
+    }
+    setLoading(true);
+    debounce.current = setTimeout(async () => {
+      try {
+        const res = await api(searchUsersApi, { query: { q: term } });
+        setUsers(res.users);
+      } catch {
+        // typeahead: keep the previous results
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+    return () => {
+      if (debounce.current) clearTimeout(debounce.current);
+    };
+  }, [q]);
 
- const start = async (userId: string) => {
- setStarting(userId);
- try {
- const data = await api(sendMessageApi, { body: { recipientId: userId } });
- if (data.conversationId) onStarted(data.conversationId);
- else toast.error(t('could-not-start-chat', { defaultValue:'Could not start chat'}));
- } catch (err) {
- toast.error(serverError(err) || t('could-not-start-chat', { defaultValue:'Could not start chat'}));
- } finally {
- setStarting(null);
- }
- };
+  const start = async (userId: string) => {
+    setStarting(userId);
+    try {
+      const data = await api(sendMessageApi, { body: { recipientId: userId } });
+      if (data.conversationId) onStarted(data.conversationId);
+      else toast.error(t('could-not-start-chat', { defaultValue: 'Could not start chat' }));
+    } catch (err) {
+      toast.error(
+        serverError(err) || t('could-not-start-chat', { defaultValue: 'Could not start chat' }),
+      );
+    } finally {
+      setStarting(null);
+    }
+  };
 
- return (
- <Dialog open onOpenChange={(o) => !o && onClose()}>
- <DialogContent className="sm:max-w-md">
- <DialogHeader>
- <DialogTitle>{t('new-chat-title', { defaultValue:'Start a new chat'})}</DialogTitle>
- </DialogHeader>
- <div className="relative">
- <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted"/>
- <input
- autoFocus
- value={q}
- onChange={(e) => setQ(e.target.value)}
- placeholder={t('search-people-placeholder', { defaultValue:'Search people…'})}
- className="glass-inset border w-full rounded-site-sm py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
- />
- </div>
- <div className="max-h-[50vh] overflow-y-auto">
- {loading ? (
- <div className="flex justify-center py-8">
- <Spinner size={20} />
- </div>
- ) : users.length === 0 ? (
- <p className="py-8 text-center text-sm text-site-text-muted">
- {q.trim()
- ? t('no-people-found', { defaultValue:'No people found.'})
- : t('type-to-search-people', { defaultValue:'Type a name to search.'})}
- </p>
- ) : (
- <ul className="flex flex-col">
- {users.map((u) => (
- <li key={u.id}>
- <button
- type="button"
- disabled={starting === u.id}
- onClick={() => start(u.id)}
- className="flex w-full items-center gap-3 rounded-site-sm px-2 py-2 text-left hover:bg-site-surface-hover disabled:opacity-50"
- >
- <UserAvatar
- src={u.image ?? undefined}
- alt={u.name ??''}
- size={36}
- fallbackName={u.name ?? undefined}
- className="rounded-full"
- />
- <div className="min-w-0 flex-1">
- <p className="truncate text-sm font-medium text-site-text">
- {u.name ??
- (u.handle
- ? `@${u.handle}`
- : t('unknown-user', { defaultValue:'Unknown'}))}
- </p>
- {(u.username || u.handle) && (
- <p className="truncate text-xs text-site-text-muted">
- @{u.username ?? u.handle}
- </p>
- )}
- </div>
- {starting === u.id && <Spinner size={16} />}
- </button>
- </li>
- ))}
- </ul>
- )}
- </div>
- </DialogContent>
- </Dialog>
- );
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t('new-chat-title', { defaultValue: 'Start a new chat' })}</DialogTitle>
+        </DialogHeader>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('search-people-placeholder', { defaultValue: 'Search people…' })}
+            className="glass-inset border w-full rounded-site-sm py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
+          />
+        </div>
+        <div className="max-h-[50vh] overflow-y-auto">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Spinner size={20} />
+            </div>
+          ) : users.length === 0 ? (
+            <p className="py-8 text-center text-sm text-site-text-muted">
+              {q.trim()
+                ? t('no-people-found', { defaultValue: 'No people found.' })
+                : t('type-to-search-people', { defaultValue: 'Type a name to search.' })}
+            </p>
+          ) : (
+            <ul className="flex flex-col">
+              {users.map((u) => (
+                <li key={u.id}>
+                  <button
+                    type="button"
+                    disabled={starting === u.id}
+                    onClick={() => start(u.id)}
+                    className="flex w-full items-center gap-3 rounded-site-sm px-2 py-2 text-left hover:bg-site-surface-hover disabled:opacity-50"
+                  >
+                    <UserAvatar
+                      src={u.image ?? undefined}
+                      alt={u.name ?? ''}
+                      size={36}
+                      fallbackName={u.name ?? undefined}
+                      className="rounded-full"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-site-text">
+                        {u.name ??
+                          (u.handle
+                            ? `@${u.handle}`
+                            : t('unknown-user', { defaultValue: 'Unknown' }))}
+                      </p>
+                      {(u.username || u.handle) && (
+                        <p className="truncate text-xs text-site-text-muted">
+                          @{u.username ?? u.handle}
+                        </p>
+                      )}
+                    </div>
+                    {starting === u.id && <Spinner size={16} />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

@@ -273,9 +273,7 @@ function DmPollCard({
               onClick={() => void vote(i)}
               className={cn(
                 'relative overflow-hidden rounded-site-sm border px-3 py-1.5 text-left text-sm focus-visible:ring-2 focus-visible:ring-site-accent',
-                chosen
-                  ? 'border-site-accent'
-                  : 'border-site-border hover:border-site-text',
+                chosen ? 'border-site-accent' : 'border-site-border hover:border-site-text',
               )}
             >
               {voted && (

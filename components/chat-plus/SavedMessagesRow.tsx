@@ -4,9 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { api } from '@/lib/contract/client';
 import { getSavedMessagesApi, openSavedMessagesApi } from '@/lib/messages/messages.contract';
-import { Bookmark } from 'lucide-react';
 import { toast } from 'sonner';
 import { useIdleReady } from '@/hooks/useIdleReady';
+import { SpineItem } from '@/components/ui/spine';
 
 /**
  * M2 — Saved Messages, pinned above the conversation list. It is a note-to-self
@@ -55,21 +55,18 @@ export function SavedMessagesRow() {
           : t('saved-empty', { defaultValue: 'Notes, links and media just for you' });
 
   return (
-    <button
-      type="button"
-      onClick={() => void open()}
-      className="flex min-h-14 w-full items-center gap-3 border-b border-site-border px-4 py-3 text-left hover:bg-site-surface/50 focus-visible:ring-2 focus-visible:ring-site-accent"
-    >
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
-        <Bookmark className="size-5" aria-hidden />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-site-text">
+    <SpineItem dot={false} className="hover:bg-site-bg-subtle">
+      <button
+        type="button"
+        onClick={() => void open()}
+        className="block w-full text-start after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
+      >
+        <span className="t-body block font-medium text-site-text">
           {t('saved-messages', { defaultValue: 'Saved Messages' })}
         </span>
-        <span className="block truncate text-sm text-site-text-muted">{preview}</span>
-      </span>
-    </button>
+        <span className="t-body block truncate text-site-text-muted">{preview}</span>
+      </button>
+    </SpineItem>
   );
 }
 
@@ -78,11 +75,8 @@ export function SavedMessagesHeader() {
   const { t } = useTranslation('f-messaging');
   return (
     <div className="flex items-center gap-2">
-      <span className="flex size-8 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
-        <Bookmark className="size-4" aria-hidden />
-      </span>
       <div>
-        <p className="font-display text-sm font-bold text-site-text">
+        <p className="t-body font-semibold text-site-text">
           {t('saved-messages', { defaultValue: 'Saved Messages' })}
         </p>
         <p className="text-xs text-site-text-muted">

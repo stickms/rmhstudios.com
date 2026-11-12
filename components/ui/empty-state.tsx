@@ -12,30 +12,18 @@ interface EmptyStateProps {
 }
 
 /**
- * Canonical empty / zero-state block. Replaces the many inconsistent
- * `px-4 py-16/py-20/py-24 text-center text-site-text-muted` empty messages
- * with one consistently-spaced component.
+ * Canonical empty / zero-state block (Steel): a flat, start-aligned heading and one line, with the next move under it.
+ * No medallion and no icon: the words say what is missing. `icon` stays in the API so existing call sites compile; it
+ * is not drawn.
  */
-export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({ title, description, action, className }: EmptyStateProps) {
   return (
-    <div
-      data-slot="empty-state"
-      className={cn(
-        'flex flex-col items-center justify-center gap-3 px-5 py-[clamp(2.5rem,7vw,4rem)] text-center',
-        className,
-      )}
-    >
-      {Icon ? (
-        // Glass medallion — the icon rests on a small L1 .glass-fill disc (§7.2).
-        <div className="glass-fill flex h-12 w-12 items-center justify-center rounded-full">
-          <Icon className="h-5 w-5 text-site-text-muted" aria-hidden />
-        </div>
-      ) : null}
-      {title ? <p className="font-display text-xl font-medium text-site-text">{title}</p> : null}
+    <div data-slot="empty-state" className={cn('flex flex-col items-start gap-2 py-8', className)}>
+      {title ? <p className="t-heading text-site-text">{title}</p> : null}
       {description ? (
-        <p className="max-w-sm text-sm leading-relaxed text-site-text-muted">{description}</p>
+        <p className="t-body max-w-prose text-site-text-muted">{description}</p>
       ) : null}
-      {action ? <div className="mt-1">{action}</div> : null}
+      {action ? <div className="mt-2">{action}</div> : null}
     </div>
   );
 }
