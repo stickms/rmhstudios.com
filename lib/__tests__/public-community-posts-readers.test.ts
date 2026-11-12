@@ -6,6 +6,7 @@
  * its members.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({
   rmharkFindMany: vi.fn(),
@@ -50,7 +51,7 @@ vi.mock('@/lib/ai/text.server', () => ({
 import { communityVisibleWhere } from '@/lib/feed/audience.server';
 import { topPostsFromFollows } from '@/lib/digest/assemble.server';
 import { postCandidates } from '@/lib/recommend/recommend.server';
-import { Route } from '@/app/routes/api/ai/ask-feed';
+import { route } from '@/lib/feed/api/ai.ask-feed.server';
 
 function expectCommunityPredicate(where: Record<string, unknown>, viewerId: string | null) {
   // Not the blanket "no community at all" filter ...
@@ -86,11 +87,7 @@ describe('public-community posts are not excluded wholesale', () => {
   });
 
   it('ask-feed: both the keyword query and the recent fallback use the rule', async () => {
-    const handler = (Route as unknown as {
-      options: {
-        server: { handlers: { POST: (c: unknown) => Promise<Response> } };
-      };
-    }).options.server.handlers.POST;
+    const handler = handlersOf<(c: unknown) => Promise<Response>>(route).POST;
     await handler({
       request: new Request('http://x/api/ai/ask-feed', { method: 'POST' }),
       userId: 'viewer-1',

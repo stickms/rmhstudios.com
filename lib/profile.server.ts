@@ -145,7 +145,7 @@ const profileMissKey = (idOrHandle: string) => hashTagged('profile-miss', idOrHa
  *
  * Call from every path that makes a handle start resolving: signup's
  * auto-handle (`lib/auth.ts`), `changeHandle` (`lib/handles/history.server.ts`),
- * and the handle backfill sweep. `app/routes/api/profile.ts` still renames
+ * and the handle backfill sweep. `lib/api/routes/profile.server.ts` still renames
  * handles directly instead of delegating to `changeHandle` (noted in
  * `lib/handles/history.server.ts`), so a rename through that route is not
  * announced here; the exposure is bounded by `NEGATIVE_TTL_MS` (10s) and closes

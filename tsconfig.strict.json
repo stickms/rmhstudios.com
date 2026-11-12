@@ -18,6 +18,10 @@
     "lib/admin/census.ts",
     "lib/session/**/*.ts",
     "lib/api/implement.server.ts",
+    "lib/api/route.server.ts",
+    "lib/api/route-match.ts",
+    "lib/api/route-template.ts",
+    "lib/api/route-sources.ts",
     "lib/streak-reminders.server.ts",
     "server/shared/session-auth.ts",
     "server/shared/redis-adapter.ts"

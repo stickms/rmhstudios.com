@@ -7,6 +7,7 @@
  *    rule, and a non-public / community post is never broadcast globally.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({
   posts: {} as Record<string, Record<string, unknown>>,
@@ -102,15 +103,9 @@ vi.mock('@/lib/prisma.server', () => {
   };
 });
 
-import { Route } from '../../../app/routes/api/rmharks';
+import { route as Route } from '@/lib/feed/api/rmharks.server';
 
-const POST = (
-  Route as unknown as {
-    options: {
-      server: { handlers: { POST: (a: { request: Request }) => Promise<Response> } };
-    };
-  }
-).options.server.handlers.POST;
+const POST = handlersOf<(a: { request: Request }) => Promise<Response>>(Route).POST;
 
 const author = { id: 'a', name: 'Secret Author', image: null, handle: 'secret' };
 const row = (id: string, over: Record<string, unknown> = {}) => ({

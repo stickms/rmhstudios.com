@@ -5,6 +5,7 @@
  * exact status and `{ error }` text the client has always shown.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({
   getSession: vi.fn(),
@@ -46,10 +47,7 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
-  };
-  return m.Route.options.server.handlers[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
 function call(
@@ -100,7 +98,7 @@ const VALID_RIDE = {
 const CASES: Case[] = [
   {
     name: 'rate: out of range',
-    mod: '@/app/routes/api/rideshare/rides/$id/rate',
+    mod: '@/lib/rideshare/api/rideshare.rides.$id.rate.server',
     method: 'POST',
     body: { rating: 9 },
     status: 400,
@@ -108,7 +106,7 @@ const CASES: Case[] = [
   },
   {
     name: 'rate: malformed JSON (was a 500 before)',
-    mod: '@/app/routes/api/rideshare/rides/$id/rate',
+    mod: '@/lib/rideshare/api/rideshare.rides.$id.rate.server',
     method: 'POST',
     body: '{nope',
     status: 400,
@@ -116,7 +114,7 @@ const CASES: Case[] = [
   },
   {
     name: 'messages: empty',
-    mod: '@/app/routes/api/rideshare/rides/$id/messages',
+    mod: '@/lib/rideshare/api/rideshare.rides.$id.messages.server',
     method: 'POST',
     body: { content: '   ' },
     status: 400,
@@ -124,7 +122,7 @@ const CASES: Case[] = [
   },
   {
     name: 'messages: too long',
-    mod: '@/app/routes/api/rideshare/rides/$id/messages',
+    mod: '@/lib/rideshare/api/rideshare.rides.$id.messages.server',
     method: 'POST',
     body: { content: 'x'.repeat(501) },
     status: 400,
@@ -132,7 +130,7 @@ const CASES: Case[] = [
   },
   {
     name: 'ride action: unknown action',
-    mod: '@/app/routes/api/rideshare/rides/$id',
+    mod: '@/lib/rideshare/api/rideshare.rides.$id.server',
     method: 'POST',
     body: { action: 'explode' },
     status: 400,
@@ -140,7 +138,7 @@ const CASES: Case[] = [
   },
   {
     name: 'ride action: tip over the cap',
-    mod: '@/app/routes/api/rideshare/rides/$id',
+    mod: '@/lib/rideshare/api/rideshare.rides.$id.server',
     method: 'POST',
     body: { action: 'tip', tipCents: 10_000_000 },
     status: 400,
@@ -148,7 +146,7 @@ const CASES: Case[] = [
   },
   {
     name: 'location: not numbers',
-    mod: '@/app/routes/api/rideshare/location',
+    mod: '@/lib/rideshare/api/rideshare.location.server',
     method: 'POST',
     body: { lat: 'x', lng: 1 },
     status: 400,
@@ -156,7 +154,7 @@ const CASES: Case[] = [
   },
   {
     name: 'location: out of range',
-    mod: '@/app/routes/api/rideshare/location',
+    mod: '@/lib/rideshare/api/rideshare.location.server',
     method: 'POST',
     body: { lat: 500, lng: 1 },
     status: 400,
@@ -188,7 +186,7 @@ const CASES: Case[] = [
   },
   {
     name: 'ride create: first zod issue (bad ride class)',
-    mod: '@/app/routes/api/rideshare/rides',
+    mod: '@/lib/rideshare/api/rideshare.rides.server',
     method: 'POST',
     body: { ...VALID_RIDE, rideClass: 'NOPE' },
     status: 400,
@@ -196,7 +194,7 @@ const CASES: Case[] = [
   },
   {
     name: 'ride create: coordinates outside the globe',
-    mod: '@/app/routes/api/rideshare/rides',
+    mod: '@/lib/rideshare/api/rideshare.rides.server',
     method: 'POST',
     body: { ...VALID_RIDE, pickupLat: 999 },
     status: 400,
@@ -204,7 +202,7 @@ const CASES: Case[] = [
   },
   {
     name: 'ride create: schedule too soon',
-    mod: '@/app/routes/api/rideshare/rides',
+    mod: '@/lib/rideshare/api/rideshare.rides.server',
     method: 'POST',
     body: { ...VALID_RIDE, scheduledFor: new Date(Date.now() + 60_000).toISOString() },
     status: 400,
@@ -212,7 +210,7 @@ const CASES: Case[] = [
   },
   {
     name: 'ride create: schedule too far',
-    mod: '@/app/routes/api/rideshare/rides',
+    mod: '@/lib/rideshare/api/rideshare.rides.server',
     method: 'POST',
     body: { ...VALID_RIDE, scheduledFor: new Date(Date.now() + 40 * 86_400_000).toISOString() },
     status: 400,
@@ -220,7 +218,7 @@ const CASES: Case[] = [
   },
   {
     name: 'saved place: coordinates outside the globe',
-    mod: '@/app/routes/api/rideshare/places',
+    mod: '@/lib/rideshare/api/rideshare.places.server',
     method: 'POST',
     body: { label: 'Home', address: 'x', lat: 999, lng: 0 },
     status: 400,
@@ -228,7 +226,7 @@ const CASES: Case[] = [
   },
   {
     name: 'saved place: empty label reports the first zod issue',
-    mod: '@/app/routes/api/rideshare/places',
+    mod: '@/lib/rideshare/api/rideshare.places.server',
     method: 'POST',
     body: { label: '', address: 'x', lat: 1, lng: 1 },
     status: 400,
@@ -236,7 +234,7 @@ const CASES: Case[] = [
   },
   {
     name: 'admin decision: bad action',
-    mod: '@/app/routes/api/admin/rideshare/applications',
+    mod: '@/lib/rideshare/api/admin.rideshare.applications.server',
     method: 'PATCH',
     body: { id: 'd1', action: 'maybe' },
     status: 400,
@@ -247,7 +245,7 @@ const CASES: Case[] = [
 describe('rideshare routes keep their bespoke 400 messages', () => {
   for (const c of CASES) {
     it(c.name, async () => {
-      if (c.mod.endsWith('admin/rideshare/applications')) {
+      if (c.mod.includes('admin.rideshare.applications')) {
         h.getSession.mockResolvedValue({ user: { id: 'a1', isAdmin: true } });
       }
       const res = await call(await handler(c.mod, c.method), c.method, c.body);
@@ -266,7 +264,7 @@ describe('rideshare routes keep their bespoke 400 messages', () => {
   it('anonymous callers still get 401 before any validation', async () => {
     h.getSession.mockResolvedValue(null);
     const res = await call(
-      await handler('@/app/routes/api/rideshare/rides/$id/rate', 'POST'),
+      await handler('@/lib/rideshare/api/rideshare.rides.$id.rate.server', 'POST'),
       'POST',
       { rating: 9 },
     );

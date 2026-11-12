@@ -12,7 +12,7 @@
  * Exactly one place: `debitCoinsOn`, when the debit is classified `WAGER`.
  *
  * That is not a shortcut, it is the reason the feature is small. Every
- * coin-risking path on the site — plinko (`app/routes/api/coins/bet.ts`),
+ * coin-risking path on the site — plinko (`lib/api/routes/coins.bet.server.ts`),
  * predictions (`lib/predictions/predictions.server.ts`), wager escrow
  * (`lib/wager/escrow.server.ts`), and blackjack, baccarat, roulette and hold'em
  * in the socket tier — already books its stake through the ledger as

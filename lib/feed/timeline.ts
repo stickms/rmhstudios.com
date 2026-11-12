@@ -3,7 +3,7 @@
  *
  * One function — `getTimeline()` — is the single read path for both feed
  * surfaces. Previously the "all"/global and "friends" branches in
- * app/routes/api/rmharks.ts duplicated ~150 lines of mapping logic; folding
+ * lib/feed/api/rmharks.server.ts duplicated ~150 lines of mapping logic; folding
  * them here gives one place to add caching, ranking, and fan-out later.
  *
  * Twitter-shaped naming:

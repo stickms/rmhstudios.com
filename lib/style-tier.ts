@@ -35,6 +35,13 @@ export const SITE_SHEET_ROUTES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * The API dispatcher (`app/routes/api/$.ts`). When no endpoint answers an `/api` path it
+ * is the matched route under the root's 404, which is the page such a path rendered before
+ * the splat existed (root-only), so it keeps that page's sheet.
+ */
+const API_SPLAT_ROUTE = '/api/$';
+
+/**
  * The tier for a match list (root first). `appSheetLoaded` is whether the
  * document already holds the app sheet; pass `false` on the server.
  */
@@ -42,7 +49,7 @@ export function styleTierFor(routeIds: readonly string[], appSheetLoaded: boolea
   if (appSheetLoaded) return 'app';
   const top = routeIds[1];
   // Root-only: the global 404, rendered by the root's own components.
-  if (top === undefined || top === '/_site') return 'site';
+  if (top === undefined || top === '/_site' || top === API_SPLAT_ROUTE) return 'site';
   return SITE_SHEET_ROUTES.has(top) ? 'site' : 'app';
 }
 

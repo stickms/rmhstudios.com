@@ -8,8 +8,8 @@ export default defineFeature({
   delivery: 'island',
   routes: [
     'app/routes/void-breaker.tsx',
-    'app/routes/api/void-breaker/leaderboard.ts',
-    'app/routes/api/void-breaker/score.ts',
+    'lib/game/api/void-breaker.leaderboard.server.ts',
+    'lib/game/api/void-breaker.score.server.ts',
   ],
   // The game's strings (`c-void-breaker`) and the Boss Rush menu's (`f-action`). An island's
   // document hands the reader's locale for these to its first render (lib/islands/document.server.ts).

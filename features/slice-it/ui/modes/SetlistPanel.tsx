@@ -10,7 +10,7 @@
  *
  * - The order is an array column (`SliceSetlist.songIds`) and the editor sends
  *   the whole array. There is no move/insert endpoint, because for an array the
- *   new array IS the move — see `app/routes/api/slice-it/setlists/$id.ts`.
+ *   new array IS the move — see `features/slice-it/api/slice-it.setlists.$id.server.ts`.
  * - "Liked Songs" is virtual, assembled from `SongLike` server-side. It is not
  *   editable here, and there is nothing to save: liking a song is how you edit
  *   it.

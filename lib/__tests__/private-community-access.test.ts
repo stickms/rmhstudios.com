@@ -8,6 +8,7 @@
  * missing community (404 / null / not listed), so existence does not leak.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({
   community: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
@@ -94,10 +95,7 @@ const session = (id: string) => ({ session: { user: { id } }, userId: id });
 
 type Handler = (ctx: Record<string, unknown>) => Promise<Response>;
 async function routeHandlers(mod: string, method: string): Promise<Handler> {
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
-  };
-  return m.Route.options.server.handlers[method];
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method];
 }
 
 beforeEach(() => {
@@ -206,7 +204,7 @@ describe('members / announcements / join / pages routes', () => {
   });
 
   it('members: 404 for a non-member, roster for a member', async () => {
-    const GET = await routeHandlers('@/app/routes/api/communities/$slug/members', 'GET');
+    const GET = await routeHandlers('@/lib/communities/api/communities.$slug.members.server', 'GET');
     expect((await GET({ params: { slug: 's' }, ...session('stranger') })).status).toBe(404);
     expect((await GET({ params: { slug: 's' }, session: null })).status).toBe(404);
     h.member.findUnique.mockResolvedValue({ role: 'MEMBER' });
@@ -215,7 +213,7 @@ describe('members / announcements / join / pages routes', () => {
   });
 
   it('announcements: 404 for a non-member, list for a member', async () => {
-    const GET = await routeHandlers('@/app/routes/api/communities/$slug/announcements', 'GET');
+    const GET = await routeHandlers('@/lib/communities/api/communities.$slug.announcements.server', 'GET');
     expect((await GET({ params: { slug: 's' }, ...session('stranger') })).status).toBe(404);
     expect((await GET({ params: { slug: 's' }, session: null })).status).toBe(404);
     expect(h.announcement.findMany).not.toHaveBeenCalled();
@@ -224,7 +222,7 @@ describe('members / announcements / join / pages routes', () => {
   });
 
   it('join: no invite means 404; a member can still leave', async () => {
-    const POST = await routeHandlers('@/app/routes/api/communities/$slug/join', 'POST');
+    const POST = await routeHandlers('@/lib/communities/api/communities.$slug.join.server', 'POST');
     h.transaction.mockResolvedValue([]);
     expect((await POST({ params: { slug: 's' }, ...session('stranger') })).status).toBe(404);
     expect(h.transaction).not.toHaveBeenCalled();

@@ -160,7 +160,7 @@ function discordAvatarUrl(id: string, avatar: string | null, discriminator: stri
  * in the same round trip, so this is one outbound call, not two.
  *
  * No client secret is involved: the code→token exchange (the only operation
- * that needs one) stays in `app/routes/api/discord/token.ts` on the web tier.
+ * that needs one) stays in `lib/api/routes/discord.token.server.ts` on the web tier.
  * This is the verify half, and verification is Bearer-only.
  */
 async function verifyDiscordActivityToken(token: string): Promise<DiscordIdentity | null> {

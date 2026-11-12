@@ -1,0 +1,16 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import { prisma } from '@/lib/prisma.server';
+import { loadSynapseStormSaveApi } from '@features/synapse-storm/engine/synapse-storm.contract';
+
+export const route = apiRoute('/api/games/synapse-storm/save', {
+  GET: implement(loadSynapseStormSaveApi, {}, async ({ session }) => {
+    const player = await prisma.synapseStormPlayer.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    // No row yet is a normal state for a first-time player, not an error: a
+    // 404 here shows as a red failed request in every new player's console.
+    return player ? (player as unknown as Record<string, unknown>) : null;
+  }),
+});

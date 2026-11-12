@@ -92,7 +92,7 @@ const UNCATALOGED_SCORE_BOARDS: readonly GameScoreRules[] = [
   },
   {
     // Temple of Joy's idle-efficiency board: floor(log10(joy per hour) * 100),
-    // derived server-side from the stored save (app/routes/api/temple-of-joy/efficiency.ts).
+    // derived server-side from the stored save (lib/temple-of-joy/api/temple-of-joy.efficiency.server.ts).
     // A double tops out near 10^308, so 31,000 is the honest ceiling.
     id: 'temple-of-joy-efficiency',
     label: 'Temple of Joy efficiency',

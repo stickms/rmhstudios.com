@@ -15,7 +15,7 @@ features/<id>/
   ui/            React components (was components/<id>/)
   net/           client realtime/API wrappers, if split out of engine
   server/        socket handlers; registered by server/socket-server/features.ts
-  api/           API route handlers, if they move out of app/routes/api/<id>/
+  api/           registered API endpoints (`route = apiRoute(…)`, served by app/routes/api/$.ts; see app/CLAUDE.md)
 ```
 
 Rules:

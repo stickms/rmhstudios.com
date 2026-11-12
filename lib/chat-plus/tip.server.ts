@@ -2,7 +2,7 @@
  * `/tip <amount>` (M4). Server-only.
  *
  * Moves coins with `transferCoins` — the ledger's conserved-supply transfer, the
- * same call `app/routes/api/coins/tip.ts` makes — so nothing is minted. It is a
+ * same call `lib/economy/api/coins.tip.server.ts` makes — so nothing is minted. It is a
  * second entry point to the existing tip flow, not a second economy: same
  * ledger type (`TIP`), same recovery-hold gate, same notification and
  * achievements. The in-chat line is posted by the server AFTER the transfer

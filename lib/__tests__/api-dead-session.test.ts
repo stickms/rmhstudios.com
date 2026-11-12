@@ -26,15 +26,9 @@ vi.mock('@/lib/prisma.server', () => {
 });
 
 import { triage } from '../../scripts/api-cache-triage';
+import { loadApiHandlers } from './api-handler-modules';
 
 const rows = triage();
-
-const loaders = import.meta.glob('../../app/routes/api/**/*.ts') as Record<
-  string,
-  () => Promise<{ Route?: { options?: { server?: { handlers?: Record<string, unknown> } } } }>
->;
-
-type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 const FORMERLY_DEAD_SESSION = [
   '/api/slice-it/showcase',
@@ -55,8 +49,7 @@ describe('dead session lookups', () => {
     const row = rows.find((r) => r.url === url && r.method === 'GET')!;
     expect(row.auth).toBe('none');
 
-    const mod = await loaders[`../../${row.file}`]();
-    const GET = (mod.Route?.options?.server?.handlers as Record<string, Handler>).GET;
+    const GET = (await loadApiHandlers(row.file)).GET;
     getSession.mockReset();
     getSession.mockResolvedValue({ user: { id: 'viewer-1' } });
 

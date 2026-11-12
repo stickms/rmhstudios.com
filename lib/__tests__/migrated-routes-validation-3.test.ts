@@ -6,6 +6,7 @@
  * the 403 for a signed-in non-admin. Drives the real route handlers.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({ getSession: vi.fn() }));
 
@@ -51,10 +52,7 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
-  };
-  return m.Route.options.server.handlers[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
 interface Case {
@@ -65,16 +63,16 @@ interface Case {
   error: string;
 }
 
-const ANN = '@/app/routes/api/admin/announcements';
-const ANN_ID = '@/app/routes/api/admin/announcements/$id';
-const ALBUMS = '@/app/routes/api/admin/albums/index';
-const ALBUM = '@/app/routes/api/admin/albums/$id';
-const REORDER = '@/app/routes/api/admin/albums/$id/reorder';
-const LIB_REORDER = '@/app/routes/api/admin/library/reorder';
-const LIB_ID = '@/app/routes/api/admin/library/$id';
-const PROFILE = '@/app/routes/api/profile';
-const MODERATE = '@/app/routes/api/admin/predictions/$id/moderate';
-const RESOLVE = '@/app/routes/api/admin/predictions/$id/resolve';
+const ANN = '@/lib/admin/api/admin.announcements.server';
+const ANN_ID = '@/lib/admin/api/admin.announcements.$id.server';
+const ALBUMS = '@/lib/admin/api/admin.albums.server';
+const ALBUM = '@/lib/admin/api/admin.albums.$id.server';
+const REORDER = '@/lib/admin/api/admin.albums.$id.reorder.server';
+const LIB_REORDER = '@/lib/library/api/admin.library.reorder.server';
+const LIB_ID = '@/lib/library/api/admin.library.$id.server';
+const PROFILE = '@/lib/api/routes/profile.server';
+const MODERATE = '@/lib/predictions/api/admin.predictions.$id.moderate.server';
+const RESOLVE = '@/lib/predictions/api/admin.predictions.$id.resolve.server';
 
 const ADMIN_CASES: Case[] = [
   {
@@ -195,12 +193,12 @@ describe('admin routes: 401 signed out, 403 non-admin', () => {
     [ALBUM, 'PATCH'],
     [ALBUM, 'DELETE'],
     [REORDER, 'POST'],
-    ['@/app/routes/api/admin/library/index', 'GET'],
-    ['@/app/routes/api/admin/library/migrate', 'POST'],
+    ['@/lib/library/api/admin.library.server', 'GET'],
+    ['@/lib/library/api/admin.library.migrate.server', 'POST'],
     [LIB_REORDER, 'POST'],
     [LIB_ID, 'PATCH'],
     [LIB_ID, 'DELETE'],
-    ['@/app/routes/api/admin/predictions/index', 'GET'],
+    ['@/lib/predictions/api/admin.predictions.server', 'GET'],
     [MODERATE, 'POST'],
     [RESOLVE, 'POST'],
   ];
@@ -223,16 +221,16 @@ describe('admin routes: 401 signed out, 403 non-admin', () => {
 
 describe('steam routes answer 401 signed out and 400 on a bad body', () => {
   const STEAM: [string, unknown][] = [
-    ['@/app/routes/api/games/trades/propose', { toId: 'x', give: 'no', ask: [] }],
-    ['@/app/routes/api/games/trades/accept', {}],
-    ['@/app/routes/api/games/trades/cancel', {}],
-    ['@/app/routes/api/games/trades/decline', {}],
-    ['@/app/routes/api/games/cards/craft', {}],
-    ['@/app/routes/api/games/customize', {}],
-    ['@/app/routes/api/games/gems/unpack', {}],
-    ['@/app/routes/api/games/hub/thread', {}],
-    ['@/app/routes/api/games/market/list', {}],
-    ['@/app/routes/api/games/showcase', {}],
+    ['@/lib/cards/api/games.trades.propose.server', { toId: 'x', give: 'no', ask: [] }],
+    ['@/lib/cards/api/games.trades.accept.server', {}],
+    ['@/lib/cards/api/games.trades.cancel.server', {}],
+    ['@/lib/cards/api/games.trades.decline.server', {}],
+    ['@/lib/cards/api/games.cards.craft.server', {}],
+    ['@/lib/cards/api/games.customize.server', {}],
+    ['@/lib/cards/api/games.gems.unpack.server', {}],
+    ['@/lib/cards/api/games.hub.thread.server', {}],
+    ['@/lib/cards/api/games.market.list.server', {}],
+    ['@/lib/cards/api/games.showcase.server', {}],
   ];
   for (const [mod, body] of STEAM) {
     it(`${mod}: signed out`, async () => {

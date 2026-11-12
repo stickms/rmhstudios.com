@@ -389,7 +389,7 @@ export const config = {
 
   // ─── Discord Activity auth ───
   //
-  // The *same* application id `app/routes/api/discord/token.ts` exchanges codes
+  // The *same* application id `lib/api/routes/discord.token.server.ts` exchanges codes
   // for. The hub needs only the id, never the secret: the code→token exchange
   // (the one operation that requires the secret) happens on the web tier, and
   // the hub only ever *verifies* an already-issued token. Leaving this unset

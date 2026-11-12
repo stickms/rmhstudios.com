@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { apiSources } from '@/lib/api/route-sources';
 
 /**
  * ─────────── the API wrapper is adopted, and stays adopted (D2) ───────────
@@ -23,8 +24,9 @@ import { join } from 'node:path';
  *   • `zod.parse` instead of `safeParse` → the throw above, on every bad input.
  *   • no rate limit at all → the default when nobody remembers to add one.
  *
- * Two static rules, both source scans (no build, no DB), over
- * `app/routes/api/**`:
+ * Two static rules, both source scans (no build, no DB), over every API handler
+ * source — the route files in `app/routes/api/**` and the registered modules the
+ * dispatcher `app/routes/api/$.ts` serves (`lib/api/route-sources.ts` lists both):
  *
  *   1. **Every route file references a wrapper.** `defineHandler` for the site
  *      API, or `withDeveloperApi` for `/api/v1/**` (which speaks a different
@@ -41,50 +43,44 @@ import { join } from 'node:path';
  *      config, and the wrapper's version cannot forget the try/catch.
  *
  * Raw `auth.api.getSession` is still correct OUTSIDE an API route (server
- * functions, workers, the socket hubs) — this scan only covers
- * `app/routes/api/**`.
+ * functions, workers, the socket hubs) — this scan only covers the API handler
+ * sources.
  */
 
 const ROOT = process.cwd();
-const API_DIR = join('app', 'routes', 'api');
-
-/** Recursively collect every `.ts` file under `app/routes/api/`. */
-function collectRoutes(dir: string, out: string[] = []): string[] {
-  let entries;
-  try {
-    entries = readdirSync(join(ROOT, dir), { withFileTypes: true });
-  } catch {
-    return out;
-  }
-  for (const entry of entries) {
-    const rel = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      collectRoutes(rel, out);
-    } else if (entry.name.endsWith('.ts')) {
-      out.push(rel);
-    }
-  }
-  return out;
-}
-
-/** Posix-normalised so the allowlists below read the same on every platform. */
-const posix = (p: string): string => p.split(/[\\/]/).join('/');
 
 interface RouteFile {
   /** Repo-relative, forward slashes. */
   file: string;
+  /** The path it answers, e.g. `/api/admin/flags`. */
+  template: string;
   src: string;
 }
 
 /**
- * Only files that actually declare a server handler are in scope. A route file
- * that is pure types, or a `createFileRoute` with only a loader, has nothing to
- * wrap.
+ * The dispatcher for registered endpoints (third-pass audit AR3). It is the one route file
+ * that is not an endpoint: it hands the request to a registered module, and those are
+ * scanned below like any route file.
  */
-const ROUTES: RouteFile[] = collectRoutes(API_DIR)
-  .map((f) => ({ file: posix(f), src: readFileSync(join(ROOT, f), 'utf8') }))
-  .filter((r) => r.src.includes('server:') && r.src.includes('handlers'))
-  .sort((a, b) => a.file.localeCompare(b.file));
+const DISPATCHER = 'app/routes/api/$.ts';
+
+/**
+ * Every API handler source: the route files under `app/routes/api` and the registered
+ * modules (`export const route = apiRoute(…)`, listed in `lib/api/route-table.server.ts`).
+ * Only route files that actually declare a server handler are in scope: one that is pure
+ * types, or a `createFileRoute` with only a loader, has nothing to wrap.
+ */
+const ROUTES: RouteFile[] = apiSources(ROOT)
+  .filter((s) => s.file !== DISPATCHER)
+  .map((s) => ({
+    file: s.file,
+    template: s.template,
+    src: readFileSync(join(ROOT, s.file), 'utf8'),
+  }))
+  .filter(
+    (r) => r.src.includes('apiRoute(') || (r.src.includes('server:') && r.src.includes('handlers')),
+  )
+  .sort((x, y) => x.file.localeCompare(y.file));
 
 // `implement` (lib/api/implement.server.ts) is `defineHandler` bound to a typed
 // contract (redesign audit C1); it runs the same preamble.
@@ -191,24 +187,24 @@ const KNOWN_UNWRAPPED: readonly string[] = [
 const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
   'app/routes/api/ai/transform.ts',
   'app/routes/api/doctrine/puzzles/replay.ts',
-  'app/routes/api/doctrine/sahur/status.ts',
   'app/routes/api/events/$id/index.ts',
   'app/routes/api/homes/listings.ts',
   'app/routes/api/library/collection/$id.ts',
-  'app/routes/api/library/collection/$id/cover.ts',
   'app/routes/api/library/collection/$id/items.ts',
   'app/routes/api/library/collections.ts',
   'app/routes/api/replays/$id.ts',
-  'app/routes/api/rmharks/$id/summary.ts',
-  'app/routes/api/rmharks/$id/translate.ts',
   'app/routes/api/rmhcalculator/compute.ts',
   'app/routes/api/rmhcalculator/graph.ts',
   'app/routes/api/rmhladder/resume/index.ts',
   'app/routes/api/signal-forge/save.ts',
-  'app/routes/api/user-builds.ts',
-  'app/routes/api/user-builds/$id.ts',
-  'app/routes/api/user-builds/$id/comments.ts',
-  'app/routes/api/user-builds/$id/like.ts',
+  'features/doctrine/api/doctrine.sahur.status.server.ts',
+  'lib/ai/api/rmharks.$id.translate.server.ts',
+  'lib/api/routes/user-builds.$id.comments.server.ts',
+  'lib/api/routes/user-builds.$id.like.server.ts',
+  'lib/api/routes/user-builds.$id.server.ts',
+  'lib/api/routes/user-builds.server.ts',
+  'lib/feed/api/rmharks.$id.summary.server.ts',
+  'lib/library/api/library.collection.$id.cover.server.ts',
 ];
 
 const POINTER =
@@ -228,7 +224,7 @@ describe('every API route rides the shared handler wrapper (D2)', () => {
   it('declares admin authorization in the wrapper before body validation', () => {
     const offenders = ROUTES.filter(
       (r) =>
-        r.file.startsWith('app/routes/api/admin/') &&
+        r.template.startsWith('/api/admin/') &&
         /defineHandler\(\s*\{[^}]*\bauth:\s*['"]optional['"]/.test(r.src),
     ).map((r) => r.file);
     expect(offenders, 'Use auth: admin instead of authorizing inside an optional handler.').toEqual(
@@ -242,6 +238,9 @@ describe('every API route rides the shared handler wrapper (D2)', () => {
     // way, but this assertion says *why* in one line.
     expect(ROUTES.length).toBeGreaterThan(400);
     expect(ROUTES.map((r) => r.file)).toContain('app/routes/api/health.ts');
+    // The registered modules are scanned too, and the dispatcher is not an endpoint.
+    expect(ROUTES.some((r) => r.src.includes('apiRoute('))).toBe(true);
+    expect(ROUTES.map((r) => r.file)).not.toContain(DISPATCHER);
   });
 
   it('references defineHandler or withDeveloperApi', () => {

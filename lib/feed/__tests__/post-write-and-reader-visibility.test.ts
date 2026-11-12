@@ -8,6 +8,7 @@
  * API, link previews) filter in the query or per post.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 import { evalWhere, type Row } from './where-eval';
 
 type Audience = 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'SUPPORTERS' | 'CIRCLE';
@@ -151,11 +152,11 @@ vi.mock('@/lib/prisma.server', () => {
 });
 
 import { Route as LikeRoute } from '../../../app/routes/api/rmharks/$id/like';
-import { Route as ReactRoute } from '../../../app/routes/api/rmharks/$id/react';
-import { Route as BookmarkRoute } from '../../../app/routes/api/rmharks/$id/bookmark';
+import { route as ReactRoute } from '@/lib/feed/api/rmharks.$id.react.server';
+import { route as BookmarkRoute } from '@/lib/feed/api/rmharks.$id.bookmark.server';
 import { Route as VoteRoute } from '../../../app/routes/api/rmharks/$id/vote';
 import { Route as UnlockRoute } from '../../../app/routes/api/rmharks/$id/unlock';
-import { Route as SavesRoute } from '../../../app/routes/api/saves/index';
+import { route as SavesRoute } from '@/lib/saves/api/saves.server';
 import { Route as V1Post } from '../../../app/routes/api/v1/posts/$id';
 import { Route as V1Bookmarks } from '../../../app/routes/api/v1/me/bookmarks';
 import { notifyMentions } from '../notify-mentions.server';
@@ -218,7 +219,7 @@ const privateCommunity = { isPrivate: true, members: [{ userId: 'someone-else' }
 
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 const call = (route: unknown, method: string, params: Record<string, string>, body?: unknown) =>
-  (route as { options: { server: { handlers: Record<string, Handler> } } }).options.server.handlers[method]({
+  handlersOf<Handler>(route)[method]({
     request: new Request('https://x.test/x', {
       method,
       headers: { 'cf-connecting-ip': '1.1.1.1', cookie: 'better-auth.session_token=t', 'content-type': 'application/json' },

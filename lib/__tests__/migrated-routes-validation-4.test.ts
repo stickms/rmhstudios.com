@@ -7,6 +7,7 @@
  * readers that answer a quiet empty value. Drives the real route handlers.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({ getSession: vi.fn() }));
 
@@ -66,21 +67,18 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
-  };
-  return m.Route.options.server.handlers[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
 const SPACES = '@/app/routes/api/spaces/index';
-const SPACE_START = '@/app/routes/api/spaces/$id/start';
-const SPACE_END = '@/app/routes/api/spaces/$id/end';
-const FREEZE = '@/app/routes/api/streak.freeze';
-const MARKET_BUY = '@/app/routes/api/market/listings/$id/buy';
-const MARKET_CANCEL = '@/app/routes/api/market/listings/$id/index';
-const STORE_BUY = '@/app/routes/api/storefront/products/$id/buy';
-const QUOTA = '@/app/routes/api/admin/library/quota-requests';
-const HEALTH = '@/app/routes/api/admin/library/storage-health';
+const SPACE_START = '@/lib/spaces/api/spaces.$id.start.server';
+const SPACE_END = '@/lib/spaces/api/spaces.$id.end.server';
+const FREEZE = '@/lib/api/routes/streak.freeze.server';
+const MARKET_BUY = '@/lib/market/api/market.listings.$id.buy.server';
+const MARKET_CANCEL = '@/lib/market/api/market.listings.$id.server';
+const STORE_BUY = '@/lib/storefront/api/storefront.products.$id.buy.server';
+const QUOTA = '@/lib/library/api/admin.library.quota-requests.server';
+const HEALTH = '@/lib/library/api/admin.library.storage-health.server';
 const REDEEM = '@/app/routes/api/creator/redeem/index';
 
 function req(
@@ -203,7 +201,7 @@ describe('optional-session readers keep their quiet signed-out answers', () => {
 
   it('users search answers an empty list for a blank query', async () => {
     h.getSession.mockResolvedValue(null);
-    const fn = await handler('@/app/routes/api/users/search', 'GET');
+    const fn = await handler('@/lib/discovery/api/users.search.server', 'GET');
     const res = await fn({
       params: {},
       request: req('GET', undefined, false, 'https://rmhstudios.com/api/users/search?q='),
@@ -212,7 +210,7 @@ describe('optional-session readers keep their quiet signed-out answers', () => {
   });
 
   it('push public key is a 404 when push is not configured', async () => {
-    const fn = await handler('@/app/routes/api/push/public-key', 'GET');
+    const fn = await handler('@/lib/push/api/push.public-key.server', 'GET');
     const res = await fn({ params: {}, request: req('GET', undefined, false) });
     expect(res.status).toBe(404);
   });
