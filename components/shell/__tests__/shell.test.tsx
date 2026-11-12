@@ -45,7 +45,7 @@ vi.mock('@/lib/useNotificationCount', () => ({ useNotificationCount: () => ({ co
 vi.mock('@/hooks/useMediaQuery', () => ({ useMediaQuery: () => false }));
 
 const { SiteShell } = await import('../SiteShell');
-const { SECTIONS, currentSection } = await import('../sections');
+const { SECTIONS, currentSection, pageOwnsPrimary } = await import('../sections');
 const { globeKeyAction } = await import('../globe-nav-state');
 
 const ROOT = join(__dirname, '../../..');
@@ -109,6 +109,16 @@ describe('the sidebar lists exactly the five sections (L4)', () => {
     expect(nav).not.toContain('<svg');
     expect(out).toContain('Write a post');
     expect(out).not.toContain('<header');
+  });
+
+  it('the sidebar button is the primary only where the page has none of its own (R4)', () => {
+    const write = (path: string) => /<a [^>]*data-variant="(\w+)"[^>]*>Write a post/.exec(html(path))?.[1];
+    expect(write('/')).toBe('default');
+    expect(write('/u/rmh/post/abc')).toBe('default');
+    expect(write('/explore')).toBe('primary');
+    expect(write('/u/rmh')).toBe('primary');
+    expect(pageOwnsPrimary('/u/rmh/post/abc')).toBe(true);
+    expect(pageOwnsPrimary('/u/rmh')).toBe(false);
   });
 
   it('maps paths to sections', () => {

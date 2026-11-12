@@ -1,21 +1,20 @@
 /**
  * Home / Feed Page Route (/)
  *
- * The RMH radial home feed: RMHarks orbit the central RMH core and spin into
- * focus. The first timeline page is streamed UNAWAITED from the loader so the
- * core paints immediately and the ring fills as the feed resolves.
+ * The home feed (Steel X1): the feed itself, with no hero, masthead or stories above it. The first timeline page is
+ * streamed UNAWAITED from the loader so the page paints immediately and the feed fills as it resolves.
  */
 
 import { createFileRoute } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
-import { RadialFeed } from '@/components/radial/RadialFeed';
+import { HomeFeed } from '@/components/feed/HomeFeed';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getTimeline } from '@/lib/feed/timeline';
 import { trackPromise } from '@/lib/route/tracked-promise';
 
 // The first feed page is fetched by its own server fn so the loader can return
-// it UNAWAITED (deferred) — it streams into the wheel after the shell instead of
+// it UNAWAITED (deferred): it streams into the feed after the shell instead of
 // blocking the initial response.
 const fetchInitialFeed = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();
@@ -66,5 +65,5 @@ function Home() {
   // suspending and being client-rendered over (docs/archive/2026/performance-audit-2026-10-21.md
   // §Home LCP). Idempotent, and a no-op on the server.
   trackPromise(initialFeed);
-  return <RadialFeed initialFeed={initialFeed} />;
+  return <HomeFeed initialFeed={initialFeed} />;
 }

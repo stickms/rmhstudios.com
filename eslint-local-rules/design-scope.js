@@ -181,8 +181,7 @@ export function isSiteTier(file) {
  * fails when an entry no longer breaks a rule, so the list cannot go stale.
  */
 export const STEEL_PALETTE_BASELINE = {
-  // Phase 4 and 5 (recipes): the feed, article and profile pages.
-  'components/feed/ShareModal.tsx': 'phase 4: share sheet on S5',
+  // Phase 5 (recipes): the article and profile pages.
   'components/blog/MDXAnimations.tsx': 'phase 5: article recipe',
   'components/blog/ShareButton.tsx': 'phase 5: article recipe',
   'components/creator-studio/AnalyticsDashboard.tsx': 'phase 7: long tail (rounded-t-sm chart bars)',

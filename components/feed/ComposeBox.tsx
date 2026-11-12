@@ -334,7 +334,7 @@ export function ComposeBox({
     // page is in budget. focus-within lifts the pane's hairline while writing,
     // then settles back — an activation cue, not a layout change.
     <div
-      className="glass-pane social-composer relative px-4 py-3"
+      className="glass-pane relative px-4 py-3"
       onPaste={smartPaste.onPaste}
       onDragEnter={smartPaste.onDragEnter}
       onDragOver={smartPaste.onDragOver}

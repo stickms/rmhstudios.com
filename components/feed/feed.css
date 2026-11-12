@@ -28,18 +28,6 @@
   padding-bottom: var(--site-page-bottom-space);
 }
 
-/* Global navigation */
-
-.site-nav {
-  position: sticky;
-  z-index: 45;
-  top: 0;
-  width: 100%;
-  border-bottom: 1px solid color-mix(in srgb, var(--site-border) 70%, transparent);
-  background: color-mix(in srgb, var(--site-bg) 86%, transparent);
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--site-text) 2%, transparent);
-}
-
 /* Page headers */
 
 /* ONE page-header language (audit SPA-002). This used to paint a bordered,
@@ -119,335 +107,75 @@
   margin-top: 0.75rem;
 }
 
-/* Feed */
-
-.feed-column {
-  gap: 0.75rem;
-}
-
-/* Post page (`PostDetail`). ONE column: the post, the reply surface, every reply
-   thread and the related posts are direct children of `.post-page` (or of a
-   section that is), so they share the shell's gutter and width, and sit
-   --space-4 apart (the jelly's minimum gap between bodies). Nothing here is a
-   rule or a border: surfaces are `.glass-pane` / `.glass-fill` by role, and the
-   space between them is the only separator. */
-.post-page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
+/* Post page (`PostDetail`): one column, one spine. The post, the reply field, every reply and the related posts are items
+   on a single `Spine` (components/ui/spine.css); nothing here is a box. */
 .post-page__back {
   display: flex;
-  /* The back control is quiet text; the column's gap already clears it. */
-  margin-block-end: calc(var(--space-4) * -0.5);
+  margin-block-end: 8px;
 }
 
-.post-page__post {
-  padding: var(--rad-card-pad, 1.25rem);
+/* The post's own text is 19px (section 10, Post and replies). */
+.post-page__text {
+  font-size: 19px;
+  line-height: 1.45;
 }
 
-.post-page__compose {
-  padding: var(--space-4);
-}
-
-.post-page__replies,
-.post-page__related {
+/* K8, post actions: plain muted 13px words, 18px apart. On is ink at weight 600 (A2), never a colour. No icons, no
+   counter animation. Each word keeps a 44px hit area (A3) through ::after, which reaches 9px into the 18px gap on each
+   side, so neighbouring areas meet and never overlap. */
+.feed-actions {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 18px;
+  margin-block-start: 10px;
+  color: var(--site-text-muted);
+  font-size: 13px;
+  line-height: 1.3;
 }
-
-/* A section label sits with the cards it names, not a full gap above them. */
-.post-page__related > .site-section-label {
-  margin-block-end: calc(var(--space-4) * -0.5);
-}
-
-/* The feed card keeps a side margin of its own on phones (the feed column has no
-   gutter); inside the post page the column already supplies it. */
-.post-page .social-post {
-  margin-inline: 0;
-}
-
-/* Homepage hero — an Apple-style editorial header: big SF display type, a lead
-   line, a live pulse, and two drifting monochrome auras for parallax depth. */
-.feed-hero {
+.feed-action {
   position: relative;
-  overflow: clip;
-  margin: 0.25rem 0.75rem;
-  padding: 1.75rem 1.5rem;
-  border-radius: var(--site-radius);
-  isolation: isolate;
-}
-
-.feed-hero__aura {
-  position: absolute;
-  z-index: -1;
-  border-radius: 50%;
-  corner-shape: round;
-  pointer-events: none;
-  filter: blur(28px);
-}
-
-.feed-hero__aura--a {
-  top: -3rem;
-  right: -2rem;
-  width: 13rem;
-  height: 13rem;
-  --u-parallax: 26px;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--site-text) 8%, transparent),
-    transparent 70%
-  );
-}
-
-.feed-hero__aura--b {
-  bottom: -4rem;
-  left: -3rem;
-  width: 11rem;
-  height: 11rem;
-  --u-parallax: 64px;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--site-accent) 12%, transparent),
-    transparent 70%
-  );
-}
-
-.feed-hero__inner {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.feed-hero__eyebrow {
-  display: inline-block;
-  color: var(--site-text-muted);
-  font-size: var(--site-kicker-size);
-  font-weight: var(--site-kicker-weight);
-}
-
-.feed-hero__title {
-  margin-top: 0.55rem;
-  font-family: var(--site-font-display);
-  font-size: clamp(2rem, 8.5vw, 3.1rem);
-  font-weight: 600;
-  line-height: 1.02;
-  letter-spacing: -0.038em;
-  text-wrap: balance;
-}
-
-.feed-hero__sub {
-  max-width: 34rem;
-  margin-top: 0.7rem;
-  color: var(--site-text-muted);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  text-wrap: pretty;
-}
-
-.feed-hero__live {
   display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.7rem;
-  border-radius: 999px;
-  corner-shape: round;
-  color: var(--site-text-muted);
-  font-size: 0.66rem;
+  align-items: baseline;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: color var(--m1) ease;
+}
+.feed-action::after {
+  content: '';
+  position: absolute;
+  inset-block: -14px;
+  inset-inline: -9px;
+}
+.feed-action:hover {
+  color: var(--site-text);
+}
+.feed-action[aria-pressed='true'],
+.feed-action[data-on] {
+  color: var(--site-text);
   font-weight: 600;
 }
-
-.feed-hero__live > span {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  corner-shape: round;
-  background: var(--site-success);
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--site-success) 45%, transparent);
-  animation: feed-live-pulse 2.4s ease-out infinite;
+.feed-action__count {
+  font-variant-numeric: tabular-nums;
+}
+.feed-actions__views {
+  margin-inline-start: auto;
 }
 
-@keyframes feed-live-pulse {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--site-success) 45%, transparent);
-  }
-  70%,
-  100% {
-    box-shadow: 0 0 0 0.4rem color-mix(in srgb, var(--site-success) 0%, transparent);
-  }
-}
-
-.feed-search {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  min-height: 3.25rem;
-  align-items: center;
-  margin-inline: 0.75rem;
-  padding-inline: 1rem 0.5rem;
-  border-radius: var(--site-control-radius);
-}
-
-.feed-search > svg {
-  width: 1rem;
-  height: 1rem;
-  color: var(--site-text-muted);
-}
-
-.feed-search input {
-  width: 100%;
-  min-width: 0;
-  height: 3.15rem;
-  padding-inline: 0.75rem;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--site-text);
-  /* Floored on touch so focusing it can't zoom the page — see
-     `--site-field-font-floor` in globals.css. */
-  font-size: max(0.9rem, var(--site-field-font-floor));
-}
-
-.feed-search button {
-  display: grid;
-  width: 2.5rem;
-  height: 2.5rem;
-  place-items: center;
-  border-radius: var(--site-control-radius);
-  background: var(--site-bg-subtle);
-  color: var(--site-text-muted);
-}
-
-.feed-search button svg {
-  width: 0.95rem;
-  height: 0.95rem;
-}
-
-.feed-tabs-wrap {
-  margin-inline: 0.75rem;
-}
-
-.feed-tabs {
-  overflow: hidden;
-  border-radius: var(--site-control-radius);
-}
-
-.feed-tabs__timeline,
-.feed-tabs__filters {
+/* The home composer row: avatar, a borderless field, Post. It holds the same height signed in, signed out and while the
+   session is unknown, so nothing shifts when the session resolves. */
+.home-composer__row {
   display: flex;
   align-items: center;
-}
-
-.feed-tabs__timeline {
-  gap: 0.25rem;
-  padding: 0.25rem;
-}
-
-.feed-tabs__timeline button {
-  min-height: 2.75rem;
-  flex: 1;
-  border-radius: var(--site-control-radius);
-  color: var(--site-text-muted);
-  font-size: 0.8rem;
-  font-weight: 740;
-}
-
-.feed-tabs__timeline button[data-active] {
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-}
-
-.feed-tabs__filters {
-  gap: 0.25rem;
-  overflow-x: auto;
-  padding: 0.5rem;
-  border-top: 1px solid var(--site-border);
-  scrollbar-width: none;
-  scroll-padding-inline: 0.5rem;
-}
-
-.feed-tabs__filters::-webkit-scrollbar {
-  display: none;
-}
-
-.feed-tabs__filters button {
-  min-height: 2.5rem;
-  flex: 0 0 auto;
-  padding-inline: 0.75rem;
-  border-radius: var(--site-control-radius);
-  color: var(--site-text-muted);
-  font-size: 0.72rem;
-  font-weight: 680;
-  white-space: nowrap;
-}
-
-.feed-tabs__filters button[data-active] {
-  background: var(--site-bg-subtle);
-  color: var(--site-accent);
-}
-
-/* The two most-seen surfaces on the whole site, and the two that were still
-   hand-rolling the material as a flat tint + hairline: the composer is a
-   singular L2 slab (§8.3) and a post is the repeated L1 fill. Both carry their
-   TIER CLASS in the markup now (`.glass-pane` / `.glass-fill`), so the border,
-   radius, tint, rim and — the part that was missing — the glint all come from
-   the one place that knows how to degrade them. What is left here is the only
-   thing the tier does not own: the aurora gutter these float in. */
-.social-composer,
-.social-post {
-  margin-inline: 0.75rem;
-}
-
-.social-composer {
-  transition:
-    border-color 160ms var(--ease-out),
-    box-shadow 160ms var(--ease-out);
-}
-
-.social-composer:focus-within {
-  border-color: color-mix(in srgb, var(--site-accent) 55%, var(--site-border));
-  box-shadow: 0 0 0 3px var(--site-bg-subtle);
-}
-
-.social-post {
-  overflow: hidden;
-  /* The glass role owns the resting coat and directional rim. */
-  transition:
-    border-color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
-    background-color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
-    /* `scale`, not `transform`: the press cue is the independent property now
-       (`.glass-interactive:active`, globals.css) so it composes with whatever
-       transform the card carries instead of erasing it. */
-    scale calc(var(--site-transition-speed) * 0.75) var(--ease-out);
-}
-
-.social-feed-row {
-  padding-top: 0.75rem;
-}
-
-.social-announcement {
-  display: block;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .social-post:hover {
-    /* background-COLOR, not the shorthand: a post is `.glass-fill` now, and the
-       shorthand would drop its noise + glint layers for as long as the pointer
-       was on it — the one moment the surface should look MORE like glass. */
-    background-color: var(--site-surface-hover);
-  }
-}
-
-/* `.social-post` is deliberately NOT in this list: it is `.glass-interactive`
-   now, and that rule presses it with the independent `scale` property. Leaving
-   it here would apply BOTH, and a `transform: scale()` multiplied by a `scale`
-   is a 0.94 double-squish (globals.css §glass-interactive:active). */
-.feed-tabs button:active {
-  transform: scale(0.97);
+  gap: 12px;
+  min-block-size: 40px;
 }
 
 /* Release modal, kept compact on phones. */
@@ -592,28 +320,12 @@
 }
 
 @media (min-width: 768px) {
-  .page-heading,
-  .feed-search,
-  .feed-tabs-wrap,
-  .social-composer,
-  .social-post {
+  .page-heading {
     margin-inline: 0;
   }
 
   .page-heading {
     margin-bottom: 1rem;
-  }
-
-  .feed-heading {
-    padding-inline: 0.25rem;
-  }
-
-  .feed-column {
-    gap: 1rem;
-  }
-
-  .social-feed-row {
-    padding-top: 1rem;
   }
 
   .spatial-whats-new__intro {
@@ -631,20 +343,8 @@
 }
 
 @media (max-width: 419px) {
-  .feed-heading__live {
-    padding-inline: 0.55rem;
-  }
-
   .page-heading__content {
     align-items: flex-start;
     flex-direction: column;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .site-nav {
-    background: var(--site-surface);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 }

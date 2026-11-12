@@ -669,6 +669,15 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // Steel phase 4 (2026-11-12): the K8 action words, the home title and the reply/repost lines. English-only until the translate pipeline runs on build; remove with it.
+    'action-more',
+    'action-repost',
+    'action-reposted',
+    'action-undo-repost',
+    'feed-today',
+    'post-views',
+    'replying-to',
+    'reposted-by-label',
     // Steel phase 3 shell (2026-11-11): English-only until the translate pipeline runs on build; remove with it.
     'shell-account-menu',
     'shell-account-menu-label',

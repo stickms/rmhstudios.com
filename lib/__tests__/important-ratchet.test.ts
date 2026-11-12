@@ -31,8 +31,8 @@ const BASELINE: Record<string, number> = {
   'app/globals/loader-print-access.css': 21,
   'app/globals/page-motion.css': 3,
   'features/balatro/ui/balatro.css': 2,
-  'components/radial/eversion/eversion.css': 4,
   'components/radial/radial/feed-cards-panels.css': 3,
+  'components/radial/eversion/eversion.css': 4,
   'components/rmhcalculator/rmhcalculator.css': 1,
   'components/tf2-hud/tf2-hud.css': 1,
 };

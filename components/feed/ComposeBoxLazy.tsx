@@ -101,7 +101,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  }
 
  return (
- <div className="glass-pane social-composer relative px-4 py-3">
+ <div className="glass-pane relative px-4 py-3">
  <div className="flex gap-3">
  {/* Avatar — the same box and classes as ComposeBox's, so the swap cannot
  move or re-ring it. `eager`: it is above the fold, and `lazy` here

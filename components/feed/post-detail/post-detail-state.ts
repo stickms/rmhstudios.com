@@ -106,3 +106,33 @@ export function formatFullDate(dateStr: string): string {
     minute: '2-digit',
   });
 }
+
+/** One reply on a top-level reply's nested spine, with who it answers when that is not the reply above it in the thread. */
+export interface FlatReply {
+  comment: Comment;
+  /** The handle (or name) of the reply this one answers, set below the first level only. */
+  replyingTo: string | null;
+}
+
+/**
+ * The replies under a top-level reply, flattened for ONE nested spine (Steel P2: a nested spine is allowed for replies to a
+ * reply and no deeper). Depth-first, so a thread still reads in order; a reply to a reply to a reply says whom it answers
+ * instead of being indented a third time. A reply the post's author hid (X2) takes its whole subtree with it into the
+ * hidden group.
+ */
+export function flattenReplies(root: Comment): { visible: FlatReply[]; hidden: FlatReply[] } {
+  const visible: FlatReply[] = [];
+  const hidden: FlatReply[] = [];
+  const walk = (node: Comment, isRoot: boolean, inHidden: boolean) => {
+    for (const reply of node.replies ?? []) {
+      const goesHidden = inHidden || !!reply.hidden;
+      (goesHidden ? hidden : visible).push({
+        comment: reply,
+        replyingTo: isRoot ? null : node.user?.handle || node.user?.name || null,
+      });
+      walk(reply, false, goesHidden);
+    }
+  };
+  walk(root, true, false);
+  return { visible, hidden };
+}

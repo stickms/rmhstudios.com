@@ -70,11 +70,8 @@ function flatCount(src: string): FlatCount {
 const FLAT_BASELINE: Record<string, FlatCount> = {
   // Phase 6 (deletion): the radial shell, the liquid globe and the eversion are deleted wholesale (15.3).
   'components/radial/eversion/eversion.css': { bf: 0, fl: 6, gr: 1 },
-  'components/radial/radial/feed-cards-panels.css': { bf: 0, fl: 1, gr: 0 },
   'components/radial/radial/overlay-globe.css': { bf: 0, fl: 5, gr: 17 },
   'components/radial/radial/shell-frame.css': { bf: 2, fl: 0, gr: 3 },
-  // Phase 4 (spine and home): the feed column.
-  'components/feed/feed.css': { bf: 2, fl: 1, gr: 2 },
   // Phase 5 (remaining recipes): the catalogue and article pages.
   'components/library/album-viewer.css': { bf: 8, fl: 1, gr: 2 },
   'components/library/book-3d.css': { bf: 0, fl: 0, gr: 5 },

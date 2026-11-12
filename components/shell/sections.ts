@@ -49,7 +49,9 @@ export function currentSection(pathname: string): SectionId | null {
 }
 
 /** The path of the viewer's own profile, or null when signed out. */
-export function viewerPathFor(user: { id: string; handle?: string | null } | null | undefined): string | null {
+export function viewerPathFor(
+  user: { id: string; handle?: string | null } | null | undefined,
+): string | null {
   return user ? `/u/${user.handle || user.id}` : null;
 }
 
@@ -58,3 +60,12 @@ export function viewerPathFor(user: { id: string; handle?: string | null } | nul
  * params (title, text, url) are all optional in practice but required by its generated type.
  */
 export const WRITE_HREF: string = '/share';
+
+/**
+ * Whether the page at `pathname` has an ink primary of its own (R4: one per view). On the front page that is Post (or
+ * Sign in), and on a post it is Reply (or Sign in), so the sidebar's "Write a post" steps down to the plain button there
+ * and stays the shell's primary everywhere else.
+ */
+export function pageOwnsPrimary(pathname: string): boolean {
+  return pathname === '/' || /^\/u\/[^/]+\/post\/[^/]+\/?$/.test(pathname);
+}

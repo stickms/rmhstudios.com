@@ -36,10 +36,6 @@ describe('--vv-follow', () => {
       'var(--vv-follow, 0px)',
     );
     expect(globals).not.toContain('--vv-shift, 0px');
-    // The compose button's fixed rule (`.radial-feed__compose` is also restyled elsewhere, so match the declaration).
-    expect(radial).toContain(
-      'bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px));',
-    );
     expect(radial).not.toContain('var(--site-fab-row-bottom) - var(--vv-shift');
   });
 

@@ -1,0 +1,80 @@
+/* The spine (docs/plans/2026-11-11-steel-design-implementation.md section 7, P1 to P5).
+
+   A 1px vertical line down the inline-start side of a content column. Items hang on it with a dot, stations (section
+   headings) with a hollow dot. Pure CSS (P1): nothing here is measured and no script touches it. Logical properties
+   throughout, so the line, the dots and the rules move to the right in `ar` and `ur` (P5).
+
+   Geometry, from the plan: the line sits 4px in from the column edge and starts 6px down; content is indented 20px. A dot
+   is 6px, centred on the line, with a 3px gap cut in the line by a `--site-bg` ring; a station's dot is 8px and hollow.
+
+   One spine per column (P2). The only nested spine is the replies to a reply: one level, indented 8px, and it ends the
+   parent row without a second rule. */
+
+.spine {
+  position: relative;
+  padding-inline-start: 20px;
+}
+.spine::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 4px;
+  inset-block-start: 6px;
+  inset-block-end: 0;
+  inline-size: 1px;
+  background: var(--site-border);
+}
+
+.spine-item {
+  position: relative;
+  padding-block: 14px;
+  border-block-end: 1px solid var(--site-border);
+}
+/* The dot, with a gap cut in the line (P3: a discrete item has one). It exists only inside a `.spine`: an item on a page
+   that has not been given its spine yet is a plain row on a rule, never a dot floating off the column. */
+.spine .spine-item::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -18.5px;
+  inset-block-start: 21px;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--site-text);
+  box-shadow: 0 0 0 3px var(--site-bg);
+}
+/* An item with no dot: running prose, a form (P3). */
+.spine .spine-item[data-dot='false']::before {
+  display: none;
+}
+
+/* The station: a heading hanging on the line with a hollow dot. The colour, size and weight come from `t-label`. */
+.spine-station {
+  position: relative;
+  margin: 0;
+  padding-block: 22px 8px;
+}
+.spine-station::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -20.5px;
+  inset-block-start: 25px;
+  inline-size: 8px;
+  block-size: 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--site-text-muted);
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--site-bg);
+}
+
+/* P2: replies to a reply. The nested spine sits inside its parent row, indented 8px, and is the last thing in that row, so
+   the parent's own rule closes it: its last row carries none. */
+.spine .spine {
+  margin-inline-start: 8px;
+  margin-block-start: 6px;
+}
+.spine .spine > .spine-item:last-child {
+  border-block-end: 0;
+  padding-block-end: 0;
+}

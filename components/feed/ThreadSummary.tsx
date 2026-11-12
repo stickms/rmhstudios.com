@@ -1,7 +1,8 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { SpineItem } from '@/components/ui/spine';
 import { postSummaryApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
@@ -45,31 +46,24 @@ export function ThreadSummary({ postId, commentCount }: { postId: string; commen
   };
 
   return (
-    <div className="rounded-site glass-fill px-5 py-4">
+    <SpineItem dot={false}>
       {!requested ? (
-        <button
-          onClick={run}
-          className="flex items-center gap-2 text-sm font-medium text-site-accent hover:underline"
-        >
-          <Sparkles className="h-4 w-4" />
+        <button onClick={run} className="feed-action">
           {t('summarize-thread', { defaultValue: 'Summarize this thread' })}
         </button>
       ) : loading ? (
-        <div className="flex items-center gap-2 text-sm text-site-text-muted">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <p className="t-body flex items-center gap-2 text-site-text-muted">
+          <Loader2 className="size-4 animate-spin" />
           {t('summarizing', { defaultValue: 'Summarizing…' })}
-        </div>
+        </p>
       ) : error ? (
-        <p className="text-sm text-site-text-muted">{error}</p>
+        <p className="t-body text-site-text-muted">{error}</p>
       ) : (
         <div>
-          <p className="mb-1 flex items-center gap-2 site-section-label">
-            <Sparkles className="h-3.5 w-3.5 text-site-accent" />{' '}
-            {t('ai-summary', { defaultValue: 'AI summary' })}
-          </p>
-          <p className="whitespace-pre-line text-sm text-site-text">{summary}</p>
+          <p className="t-label">{t('ai-summary', { defaultValue: 'AI summary' })}</p>
+          <p className="t-body mt-1 whitespace-pre-line">{summary}</p>
         </div>
       )}
-    </div>
+    </SpineItem>
   );
 }

@@ -6,7 +6,7 @@
  * everything is warm and fast. They are pinned here together because they are the
  * same story: the homepage looked like it streamed, and didn't.
  *
- *   1. THE SSR MARKUP. `RadialFeed` renders from the module-level `feedStore`,
+ *   1. THE SSR MARKUP. `HomeFeed` renders from the module-level `feedStore`,
  *      which is seeded from the streamed first page by a `useEffect`. Effects do
  *      not run during SSR, so the server rendered the SKELETON and the real
  *      rmharks appeared only after the entry bundle downloaded, parsed and
@@ -23,11 +23,11 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { shouldUseStreamedPage } from '@/components/radial/RadialFeed';
+import { shouldUseStreamedPage } from '@/components/feed/HomeFeed';
 
 const ROOT = path.resolve(__dirname, '../..');
 
-describe('RadialFeed — server-rendering the streamed first page', () => {
+describe('HomeFeed — server-rendering the streamed first page', () => {
   const pristine = {
     initialized: false,
     storeCount: 0,

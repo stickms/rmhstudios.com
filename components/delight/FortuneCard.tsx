@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Cookie } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SpineItem } from '@/components/ui/spine';
 import { fetchJson } from '@/lib/http';
 import { FORTUNE_MAX } from '@/lib/delight/shared';
 
@@ -53,53 +53,42 @@ export default function FortuneCard() {
     }
   };
 
+  // A dotless spine item (P3): a note between posts, not a post. No icon, box or colour.
   return (
-    <aside
-      className="glass-fill rounded-site p-[var(--rad-card-pad)]"
+    <SpineItem
+      as="section"
+      dot={false}
       aria-label={t('fortune-title', { defaultValue: 'Fortune cookie' })}
     >
-      <div className="flex items-start gap-3">
-        <Cookie className="mt-0.5 size-5 shrink-0 text-site-accent" aria-hidden />
-        <div className="min-w-0 flex-1">
-          <p className="site-section-label">
-            {t('fortune-title', { defaultValue: 'Fortune cookie' })}
-          </p>
-          <p className="mt-1 text-site-text">
-            {fortune ??
-              t('fortune-none', { defaultValue: 'No fortune today. Write the next one!' })}
-          </p>
-          {session && !composing && (
-            <Button size="sm" variant="ghost" className="mt-2" onClick={() => setComposing(true)}>
-              {t('fortune-add', { defaultValue: 'Submit a fortune' })}
-            </Button>
-          )}
-          {session && composing && (
-            <form
-              className="mt-3 flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void submit();
-              }}
-            >
-              <Input
-                value={text}
-                maxLength={FORTUNE_MAX}
-                onChange={(e) => setText(e.target.value)}
-                aria-label={t('fortune-input', { defaultValue: 'Your fortune' })}
-                placeholder={t('fortune-placeholder', { defaultValue: 'A kind, short one-liner' })}
-              />
-              <Button
-                type="submit"
-                variant="default"
-                loading={busy}
-                disabled={text.trim().length < 8}
-              >
-                {t('fortune-send', { defaultValue: 'Send' })}
-              </Button>
-            </form>
-          )}
-        </div>
-      </div>
-    </aside>
+      <p className="t-label">{t('fortune-title', { defaultValue: 'Fortune cookie' })}</p>
+      <p className="t-post mt-1">
+        {fortune ?? t('fortune-none', { defaultValue: 'No fortune today. Write the next one!' })}
+      </p>
+      {session && !composing && (
+        <Button size="sm" variant="ghost" className="mt-2" onClick={() => setComposing(true)}>
+          {t('fortune-add', { defaultValue: 'Submit a fortune' })}
+        </Button>
+      )}
+      {session && composing && (
+        <form
+          className="mt-3 flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+        >
+          <Input
+            value={text}
+            maxLength={FORTUNE_MAX}
+            onChange={(e) => setText(e.target.value)}
+            aria-label={t('fortune-input', { defaultValue: 'Your fortune' })}
+            placeholder={t('fortune-placeholder', { defaultValue: 'A kind, short one-liner' })}
+          />
+          <Button type="submit" variant="default" loading={busy} disabled={text.trim().length < 8}>
+            {t('fortune-send', { defaultValue: 'Send' })}
+          </Button>
+        </form>
+      )}
+    </SpineItem>
   );
 }
