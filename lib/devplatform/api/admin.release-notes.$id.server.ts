@@ -1,0 +1,21 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { defineHandler } from '@/lib/api/handler.server';
+import { releaseNotePatchSchema } from '@/lib/devplatform/release-notes-schema';
+import { deleteNote, updateNote } from '@/lib/devplatform/release-notes.server';
+
+export const route = apiRoute('/api/admin/release-notes/$id', {
+  PATCH: defineHandler(
+    { auth: 'admin', rateLimit: 'write', body: releaseNotePatchSchema },
+    async ({ params, body }) => {
+      const note = await updateNote(params.id, body);
+      return note
+        ? Response.json({ note })
+        : Response.json({ error: 'Not found' }, { status: 404 });
+    },
+  ),
+  DELETE: defineHandler({ auth: 'admin', rateLimit: 'write' }, async ({ params }) =>
+    (await deleteNote(params.id))
+      ? Response.json({ ok: true })
+      : Response.json({ error: 'Not found' }, { status: 404 }),
+  ),
+});

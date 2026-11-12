@@ -47,7 +47,7 @@ describe('micro-cache opt-out', () => {
     for (const f of [
       'app/routes/api/users/$id.wishlist.ts',
       'lib/tournaments/api/tournaments.server.ts',
-      'app/routes/api/achievements/$userId.ts',
+      'lib/achievements/api/achievements.$userId.server.ts',
     ])
       expect(readFileSync(join(ROOT, f), 'utf8')).toMatch(/microCache:\s*false/);
   });

@@ -382,15 +382,16 @@ if list '^app/routes/api/.*\.ts$' | grep -q .; then
 fi
 
 # A registered endpoint (`export const route = apiRoute(…)`, served by app/routes/api/$.ts)
-# is only implement() bindings; anything else stays a route file. The vitest gate
-# lib/api/__tests__/route-table.test.ts checks every one; this names a changed one early.
+# binds every handler through the wrapper: implement() for a typed contract, defineHandler()
+# where there is no contract yet. A handler written without it stays a route file. The vitest
+# gate lib/api/__tests__/route-table.test.ts checks every one; this names a changed one early.
 if list '^(lib|features)/.*\.server\.ts$' | grep -q .; then
   for f in $(list '^(lib|features)/.*\.server\.ts$'); do
     [ -f "$f" ] || continue
     grep -q '^export const route = apiRoute(' "$f" || continue
-    if ! grep -q 'implement\.server' "$f"; then
-      fail "registered API endpoint without implement(): $f"
-      printf '%s    → A registered endpoint binds contracts with implement() from @/lib/api/implement.server; a handler that needs more is a route file under app/routes/api.%s\n' "$dim" "$off"
+    if ! grep -qE 'defineHandler|implement\.server' "$f"; then
+      fail "registered API endpoint without defineHandler or implement(): $f"
+      printf '%s    → A registered endpoint wraps every handler: implement() from @/lib/api/implement.server for a contract, defineHandler from @/lib/api/handler.server otherwise. A handler written without the wrapper is a route file under app/routes/api.%s\n' "$dim" "$off"
     fi
   done
 fi

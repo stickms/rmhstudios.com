@@ -40,8 +40,8 @@ interface Case {
 const VEGA = '@/features/vega/api/vega.score.server';
 const LAUNDRY = '@/features/laundry-sort/api/laundry-sort.score.server';
 const FORGE = '@/features/signal-forge/api/signal-forge.score.server';
-const ALTAIR_SCORE = '@/app/routes/api/altair/score';
-const ALTAIR_META = '@/app/routes/api/altair/meta';
+const ALTAIR_SCORE = '@/features/altair/api/altair.score.server';
+const ALTAIR_META = '@/features/altair/api/altair.meta.server';
 const BET = '@/lib/api/routes/coins.bet.server';
 const PURCHASE = '@/app/routes/api/coins/purchase';
 const VERSECRAFT = '@/lib/versecraft/api/versecraft.save.server';
