@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { CalendarCheck, Play, Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import RmhStudyHeader from '@/components/rmhstudy/RmhStudyHeader';

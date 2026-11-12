@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronUp, Megaphone, GitMerge } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { isVotable } from '@/lib/requests/status';
 import type { FeatureRequestDTO } from '@/lib/requests/schema';

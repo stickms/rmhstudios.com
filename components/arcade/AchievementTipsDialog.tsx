@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { ThumbsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/components/Providers';

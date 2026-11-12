@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Flag, Plus, Stamp as StampIcon, Minus } from 'lucide-react';
 import { WidgetFrame } from '@/components/ui/widget-frame';
 import { Button } from '@/components/ui/button';

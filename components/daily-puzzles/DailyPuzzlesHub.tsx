@@ -17,7 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   Sparkles,
   Clock,

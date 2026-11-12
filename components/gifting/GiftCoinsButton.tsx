@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Gift } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { coinGiftApi } from '@/lib/gifting/gift.contract';

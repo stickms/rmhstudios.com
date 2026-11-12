@@ -20,7 +20,7 @@ import { readString, writeString } from '@/lib/core/persist';
 import { Download, LogOut, Maximize, Minimize, RotateCw, Upload, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { createCloudSaves } from '@features/balatro/engine/cloud-saves';

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Users } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import type { SteamGroup } from '@/lib/games/community-types';
 import type { SteamAnnouncement, SteamGroupPost } from '@/lib/games/group-posts';

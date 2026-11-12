@@ -31,7 +31,7 @@ import { DialogPortal, DialogTitle } from '@/components/ui/dialog';
 import { Link } from '@tanstack/react-router';
 import { BookOpen, Crosshair, Rotate3d, Smartphone, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { IDENTITY, fromAxisAngle, multiply, toCssMatrix3d, type Quat } from '@/lib/device-attitude';
 import { useDeviceAttitude } from '@/hooks/useDeviceAttitude';
 import type { LibraryBook } from '@/lib/library/library';

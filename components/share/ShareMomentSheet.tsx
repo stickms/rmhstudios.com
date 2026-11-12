@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { createMomentApi } from '@/lib/moments.contract';

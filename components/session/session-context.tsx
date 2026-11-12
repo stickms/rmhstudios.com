@@ -8,12 +8,37 @@
  * {@link useEffectiveSession}.
  */
 import { readJson, removeKey, writeJson } from '@/lib/core/persist';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import type { authClient } from '@/lib/auth-client';
+import {
+  getLiveSession,
+  getPendingSession,
+  startLiveSession,
+  subscribeLiveSession,
+} from '@/lib/session/live-session';
 
 export type SessionCtxValue = ReturnType<typeof authClient.useSession>;
 
 export const SessionCtx = createContext<SessionCtxValue | null>(null);
+
+/**
+ * The site's live session: `lib/session/live-session.ts` asks Better Auth's
+ * session endpoint itself, so the auth client stays out of the entry and loads
+ * with the pages that sign in, sign out or manage an account. Same shape as
+ * `authClient.useSession()`; hand it to {@link useEffectiveSession}.
+ */
+export function useLiveSession(): SessionCtxValue {
+  const live = useSyncExternalStore(subscribeLiveSession, getLiveSession, getPendingSession);
+  useEffect(() => startLiveSession(), []);
+  return live as unknown as SessionCtxValue;
+}
 
 /** Use this instead of authClient.useSession() in navigation/shell components. */
 export function useSession() {

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   Bomb,
   Check,

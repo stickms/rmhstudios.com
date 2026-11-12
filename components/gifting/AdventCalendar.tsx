@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Check, Gift, Lock } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { apiJson, errorCode } from '@/components/economy-plus/api';

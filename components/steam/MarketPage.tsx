@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useRouter } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cardName } from '@/lib/cards/cards';

@@ -20,7 +20,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MarathonLink } from './MarathonLink';
 import { AeroWindow } from './AeroWindow';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type { CloudSync } from './useCloudSync';
 
 async function copy(text: string, done: string, failed: string) {

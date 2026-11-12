@@ -20,7 +20,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Info, MapPin, Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { formatDistance, milesToKm, type DistanceUnit } from '@/lib/homes/distance';
 import {
   addSavedPlace,

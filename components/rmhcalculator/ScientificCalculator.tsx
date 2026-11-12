@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Delete, Equal, History as HistoryIcon } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { computeStream, CalcStreamError } from '@/lib/rmhcalculator/client';
 import type { AngleMode, CalcModel, ComputeResult } from '@/lib/rmhcalculator/types';

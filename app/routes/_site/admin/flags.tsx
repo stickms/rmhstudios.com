@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { adminFlagsQuery } from '@/lib/admin/admin-ops.queries';
 import { Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AdminBody } from '@/components/admin/AdminBody';

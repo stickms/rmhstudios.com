@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Eye } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Select } from '@/components/ui/select';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';

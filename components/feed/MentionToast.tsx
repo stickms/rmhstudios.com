@@ -1,4 +1,4 @@
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import type { useNavigate } from'@tanstack/react-router';
 import type { MentionNotification } from'@/lib/feed-sse';
 

@@ -63,7 +63,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 /** How long the ended-room notice lingers before it clears itself. */
 const ENDED_LINGER_MS = 4000;

@@ -65,6 +65,18 @@ const FORBIDDEN: Record<string, string> = {
   zod: 'validators belong in *-schema.ts split points, not the shell',
   'emoji-picker-react': 'composer-only',
   'maplibre-gl': 'map routes only',
+  // Third-pass audit RT1 (2026-11-12): each of these left the entry closure in the commit that listed it.
+  sonner: 'loads on the first toast: import `toast` from @/lib/toast, never from sonner',
+  'better-auth':
+    'the shell reads the session from lib/session/live-session.ts; import @/lib/auth-client only from a page that signs in or manages an account, or dynamically at the action',
+  '@simplewebauthn/browser': 'passkeys: comes in with @/lib/auth-client, see better-auth',
+  '@radix-ui/react-dialog':
+    'a dialog opens behind an interaction: mount it lazily, as components/ui/confirm-dialog.tsx does its view',
+  'react-remove-scroll':
+    'the scroll lock under every Radix dialog and sheet: see @radix-ui/react-dialog',
+  'framer-motion':
+    'pages that animate import it; nothing the router loads with the route tree (a pendingComponent, a route head) may. See KNOWN_VIOLATIONS for what is left',
+  'motion-dom': "framer-motion's engine: see framer-motion",
 };
 
 /**
@@ -84,7 +96,21 @@ const FORBIDDEN: Record<string, string> = {
  * `features/slice-it/engine/library-search.ts`). Its baseline was deleted; `zod` in the
  * entry is a plain FAIL again.
  */
-const KNOWN_VIOLATIONS: Record<string, { maxBytes: number; note: string }> = {};
+const KNOWN_VIOLATIONS: Record<string, { maxBytes: number; note: string }> = {
+  // Third-pass audit RT1, 2026-11-12. What is left of framer-motion in the closure is `<LazyMotion>` and
+  // `<MotionConfig>` in components/Providers.tsx: the provider every `m` component on the site reads its renderer
+  // from. It is 1,442 B of framer-motion, but `loadFeatures` imports `setFeatureDefinitions`, which motion-dom
+  // defines in the same module as the VisualElement class (25,832 B). Caps are those measurements + 2%. They come
+  // out when the provider leaves the shell, which needs every `m` user to sit under a provider of its own.
+  'framer-motion': {
+    maxBytes: 1_480,
+    note: '2026-11-12: <LazyMotion> + <MotionConfig> in components/Providers.tsx',
+  },
+  'motion-dom': {
+    maxBytes: 26_400,
+    note: '2026-11-12: VisualElement.mjs, pulled by <LazyMotion> through setFeatureDefinitions',
+  },
+};
 
 type SourceMap = {
   sources: string[];

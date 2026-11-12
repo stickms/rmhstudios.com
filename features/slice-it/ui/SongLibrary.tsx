@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { isHeicCover, normalizeCover } from '@features/slice-it/engine/cover-image';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   Heart,
   Image as ImageIcon,

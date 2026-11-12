@@ -124,7 +124,7 @@ Work through this for every new or edited page.
 - [ ] Empty: `<EmptyState icon title description action?>`.
 - [ ] Errors: rely on route `errorComponent` inheritance (`components/errors/RouteErrorFallback`); throw `notFound()` in
       loaders for 404s (renders `components/errors/NotFound`). An error says what happened and what to do next.
-- [ ] Feedback: `toast` from `sonner`; never custom toast UI.
+- [ ] Feedback: `toast` from `@/lib/toast` (sonner, loaded on the first toast); never custom toast UI.
 - [ ] Destructive confirmations: `await useConfirm()({ title, danger })`; never `window.confirm`.
 - [ ] Copy-to-clipboard: `<CopyButton value label />`.
 - [ ] Nested pages (2+ levels): orientation via `PageLayout`'s `breadcrumbs` or `backTo`.

@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from'@/components/ui
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { UserAvatar } from'@/components/ui/UserAvatar';
 import { useSession } from'@/components/Providers';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from'react-i18next';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import type { FeedItem } from'@/lib/feed-types';

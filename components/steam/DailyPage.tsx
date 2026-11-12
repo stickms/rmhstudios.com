@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { RARITY_COLORS } from '@/lib/shop/catalog';

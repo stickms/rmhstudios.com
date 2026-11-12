@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Compass, Trophy } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { PageLayout } from '@/components/feed/PageLayout';

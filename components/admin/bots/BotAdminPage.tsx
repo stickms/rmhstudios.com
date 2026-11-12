@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bot, FileText, MessageCircle, Mail, Users, Gauge, AlertTriangle } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { StatTile } from '@/components/admin/StatTile';
 import { EmptyState } from '@/components/ui/empty-state';

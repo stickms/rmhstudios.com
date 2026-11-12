@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Gem } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BUY_UNIT_GEMS, MAX_BUY_UNITS, PACK_COST, PACK_SIZE, coinCostFor } from '@/lib/cards/gems';

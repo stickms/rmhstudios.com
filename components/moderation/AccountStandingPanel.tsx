@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ShieldCheck, ShieldAlert, ShieldX, ExternalLink } from 'lucide-react';
 import { Link } from '@tanstack/react-router';

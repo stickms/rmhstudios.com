@@ -1,6 +1,6 @@
 import { useEffect, useState } from'react';
 import { useTranslation } from'react-i18next';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { Plus, ListMusic, Check } from'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from'@/components/ui/dialog';
 import { Button } from'@/components/ui/button';

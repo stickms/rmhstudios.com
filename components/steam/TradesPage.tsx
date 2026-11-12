@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useRouter } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { api, errorField } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';

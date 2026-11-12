@@ -12,7 +12,7 @@ import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState }
 import { useNavigate } from '@tanstack/react-router';
 import { ArrowRight, CloudUpload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { SearchField } from '@/components/ui/search-field';
 import { useSession } from '@/components/Providers';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';

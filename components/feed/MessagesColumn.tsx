@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { subscribeMessageStream } from '@/lib/useUnreadCount';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { ChatFolderBar } from '@/components/chat-plus/ChatFolderBar';
 import { SavedMessagesRow } from '@/components/chat-plus/SavedMessagesRow';
 import { SavedMessagesLabel } from '@/components/chat-plus/MessageBadges';

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Scale } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { useNearViewport } from '@/hooks/useNearViewport';

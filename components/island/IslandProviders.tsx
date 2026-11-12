@@ -29,7 +29,7 @@ import {
   type SessionCtxValue,
 } from '@/components/session/session-context';
 import { AppTierContext } from '@/components/ui/app-tier-context';
-import { SiteToaster } from '@/components/ui/site-toaster';
+import { ToastHost } from '@/components/ui/toast-host';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { usePlaytimeHeartbeat } from '@/hooks/usePlaytimeHeartbeat';
 import { recordRecent } from '@/hooks/useRecents';
@@ -81,7 +81,7 @@ export function IslandProviders({ data, children }: { data: IslandData; children
               <TwemojiProvider>{children}</TwemojiProvider>
             </AppTierContext.Provider>
           </IslandSession>
-          <SiteToaster theme={dark ? 'dark' : 'light'} />
+          <ToastHost theme={dark ? 'dark' : 'light'} />
         </MotionConfig>
       </LazyMotion>
     </AppI18nProvider>

@@ -64,7 +64,7 @@ vi.mock('@tanstack/react-router', () => ({
   ),
   useNavigate: () => () => undefined,
 }));
-vi.mock('sonner', () => ({ toast: { success: () => undefined, error: () => undefined } }));
+vi.mock('@/lib/toast', () => ({ toast: { success: () => undefined, error: () => undefined } }));
 vi.mock('@/lib/auth-client', () => ({ authClient: { updateUser: () => undefined } }));
 vi.mock('@/components/Providers', () => ({
   useSession: () => ({ data: ctl.session }),

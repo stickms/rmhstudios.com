@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { api } from '@/lib/contract/client';

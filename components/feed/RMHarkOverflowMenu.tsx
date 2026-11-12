@@ -26,7 +26,7 @@ import {
  TrendingUp,
  AlarmClock,
 } from'lucide-react';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from'react-i18next';
 import { useSession } from'@/components/Providers';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';

@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { submitLaundryScoreApi } from '@features/laundry-sort/engine/laundry.contract';
 import { useRouterState } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { ConnectionBanner } from '@/components/shared/ConnectionStatus';
 import { Button } from '@/components/ui/button';

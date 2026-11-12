@@ -14,6 +14,8 @@
   "include": [
     "lib/core/**/*.ts",
     "lib/contract/**/*.ts",
+    "lib/toast.ts",
+    "lib/session/**/*.ts",
     "lib/api/implement.server.ts",
     "lib/streak-reminders.server.ts",
     "server/shared/session-auth.ts",

@@ -4,7 +4,7 @@ import { flushSync } from 'react-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';

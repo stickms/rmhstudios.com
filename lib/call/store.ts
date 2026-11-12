@@ -14,7 +14,7 @@
 
 import { create } from 'zustand';
 import type { Socket } from 'socket.io-client';
-import { authClient } from '@/lib/auth-client';
+import { readSession } from '@/lib/session/live-session';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import {
   CALL_C2S,
@@ -118,8 +118,8 @@ export function initCalls(): void {
       // client-supplied id would be an impersonation hole, so the server
       // ignores one — leaving the socket anonymous, which silently disables
       // every call handler and the `user:<id>` room an incoming call rings.
-      const session = await authClient.getSession();
-      return { token: session?.data?.session?.token };
+      const session = await readSession();
+      return { token: session?.session.token };
     },
   });
 

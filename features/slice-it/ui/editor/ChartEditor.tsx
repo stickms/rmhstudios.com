@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { ArrowLeft, Keyboard, Loader2 } from 'lucide-react';
 import { DIFFICULTIES } from '@features/slice-it/engine/constants';
 import { loadArtefacts } from '@features/slice-it/engine/editor/artefacts';

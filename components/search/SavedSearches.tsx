@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Bookmark, BookmarkPlus, Bell, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';

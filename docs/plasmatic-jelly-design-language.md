@@ -775,8 +775,8 @@ rounded-site`; hover affordance `hover:bg-site-surface-hover
 hover:border-site-border-bright` (or `hover:border-site-accent`). Dividers:
 `divide-y divide-site-border`.
 
-Toasts: **sonner**. A themed global `<Toaster>` is mounted in
-`components/Providers.tsx`; pages just `import { toast } from "sonner"`.
+Toasts: **sonner**, loaded on the first toast. Pages `import { toast } from "@/lib/toast"`;
+`<ToastHost>` in `components/Providers.tsx` mounts the themed `<Toaster>` when one is raised.
 
 `SheetContent` follows the same rule: ordinary pickers are horizontally
 centered floating bottom sheets on phones, while `mobileFullscreen` is reserved

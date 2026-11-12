@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { ApiError } from '@/lib/tf2-hud/api';
 import { saveExisting, validateForCloud } from '@/lib/tf2-hud/cloud';

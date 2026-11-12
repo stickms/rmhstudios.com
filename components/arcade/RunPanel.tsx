@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Link2, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useArcadeRun, seedKeyOf } from '@/lib/arcade/run-client';

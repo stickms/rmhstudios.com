@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Radio, Send, Pin, PinOff, Users } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { Badge } from '@/components/ui/badge';

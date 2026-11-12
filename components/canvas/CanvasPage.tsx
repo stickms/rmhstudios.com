@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Film, Grid2x2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { PageLayout } from '@/components/feed/PageLayout';

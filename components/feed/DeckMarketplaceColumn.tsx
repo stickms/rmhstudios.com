@@ -2,7 +2,7 @@
 import { useState, useRef, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { Library, Search, Plus, Check, Loader2 } from'lucide-react';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';

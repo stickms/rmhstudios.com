@@ -11,7 +11,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Smile, Check, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { PageLayout } from '@/components/feed/PageLayout';

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Heart, Eye, GitBranch, ExternalLink, Calendar, Edit, Trash2, Lock } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';

@@ -18,7 +18,7 @@ import {
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AeroWindow } from './AeroWindow';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   addDays,
   daysBetween,

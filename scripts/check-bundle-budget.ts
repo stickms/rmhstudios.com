@@ -225,10 +225,20 @@ const BUDGETS = {
   // Steel phase 7 (2026-11-12): lowered to the measured values plus ~2% for build-to-build variance (the plan's
   // ledger, section 17, has the numbers). Measured: site CSS 31,941 B brotli; entry 441,074 B raw; critical path
   // 1,091,976 B raw and 309,564 B brotli. (Phase 6 had measured 32,190, 442,305, 1,093,213 and 309,620.)
+  //
+  // Third-pass audit RT1 (2026-11-12), one line per cut, each measured + ~2% on a `vite build --sourcemap`:
+  //   sonner on the first toast: entry 441,074 -> 408,202 B raw; critical path 1,091,976 -> 1,059,228 B raw and
+  //   309,564 -> 301,992 B brotli.
+  //   auth client out of the shell: critical path 1,059,228 -> 1,012,555 B raw and 301,992 -> 287,739 B brotli. The
+  //   entry is 408,202 -> 409,201 B (the session store that replaces it), so its line stays where it was.
+  //   confirm dialog on first use: critical path 1,012,555 -> 961,788 B raw and 287,739 -> 270,249 B brotli, in 61
+  //   chunks instead of 72; entry 409,201 -> 408,395 B.
+  //   framer's `m` and AnimatePresence off the critical path (the one static user was a route's pending
+  //   component): critical path 961,788 -> 945,407 B raw and 270,249 -> 263,171 B brotli, 54 chunks; entry 408,401 B.
   siteCssBrotli: 32_600,
-  entryRaw: 450_000,
-  criticalPathRaw: 1_114_000,
-  criticalPathBrotli: 315_700,
+  entryRaw: 416_400,
+  criticalPathRaw: 964_300,
+  criticalPathBrotli: 268_400,
 };
 
 /**
@@ -264,10 +274,13 @@ const BUDGETS = {
  */
 export const ISLAND_BUDGETS: Readonly<Record<string, { jsBrotli: number; cssBrotli: number }>> = {
   // Steel phase 6: re-measured + 3%.
-  nightrail: { jsBrotli: 273_000, cssBrotli: 20_000 },
-  'signal-forge': { jsBrotli: 163_800, cssBrotli: 19_900 },
-  vega: { jsBrotli: 128_700, cssBrotli: 18_200 },
-  'void-breaker': { jsBrotli: 322_000, cssBrotli: 20_900 },
+  // Third-pass audit RT1 (2026-11-12): an island's toaster now loads on its first toast too, so sonner left every
+  // island's first load. JS re-measured + 3%: nightrail 257,072, signal-forge 151,112, vega 117,079,
+  // void-breaker 304,606 B brotli. CSS unchanged.
+  nightrail: { jsBrotli: 264_800, cssBrotli: 20_000 },
+  'signal-forge': { jsBrotli: 155_650, cssBrotli: 19_900 },
+  vega: { jsBrotli: 120_600, cssBrotli: 18_200 },
+  'void-breaker': { jsBrotli: 313_750, cssBrotli: 20_900 },
 };
 
 const ISLANDS_DIR = path.join(ROOT, 'dist-islands');

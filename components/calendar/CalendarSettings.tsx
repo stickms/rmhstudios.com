@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { CalendarCheck, CalendarClock, RefreshCw } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';

@@ -8,7 +8,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Download, GitFork, Heart, Pencil } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { useSession } from '@/components/Providers';
 import { api, ApiError } from '@/lib/tf2-hud/api';

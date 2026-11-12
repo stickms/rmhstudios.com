@@ -1,7 +1,7 @@
 /** N3 — the questions a new member sees in a sheet right after joining. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';

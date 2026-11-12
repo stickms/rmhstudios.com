@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Heart } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { addWishApi, removeWishApi } from '@/lib/wishlist/wishlist.contract';

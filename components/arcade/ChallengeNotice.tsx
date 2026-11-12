@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { readPending } from '@/lib/arcade/run-client';
 
 /** Tells a player who arrived by seed or daily link that their next solo run uses it. */

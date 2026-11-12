@@ -1,7 +1,7 @@
 import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type { Collection } from '@/lib/games/collections';
 import { FAVORITES } from '@/lib/games/collections';
 

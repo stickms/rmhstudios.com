@@ -9,7 +9,7 @@ import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Globe, Highlighter, Lock, Pencil, StickyNote, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { resolveAnchor } from '@/lib/library/text-anchor';

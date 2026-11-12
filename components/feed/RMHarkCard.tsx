@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { BadgeCheck, ShieldCheck } from 'lucide-react';
 import { AutomatedBadge } from './AutomatedBadge';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { RMHarkOverflowMenu } from './RMHarkOverflowMenu';
 import { PostLockedCard } from './PostLockedCard';
 import { Link } from '@tanstack/react-router';

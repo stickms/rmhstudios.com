@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Coins, Dices, ListChecks, BarChart3 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { tickChatChecklistApi, voteChatPollApi } from '@/lib/chat-plus/chat.contract';

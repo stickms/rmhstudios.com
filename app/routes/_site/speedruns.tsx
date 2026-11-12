@@ -20,7 +20,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Timer } from 'lucide-react';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { PageLayout } from '@/components/feed/PageLayout';

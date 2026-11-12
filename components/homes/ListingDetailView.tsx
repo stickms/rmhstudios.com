@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Bath, BedDouble, CalendarClock, ExternalLink, Eye, Globe, Home, MapPin, MessageCircle, PawPrint, Pencil, Ruler, Sparkles, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';

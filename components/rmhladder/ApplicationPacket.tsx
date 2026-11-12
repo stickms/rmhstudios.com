@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ClipboardList, ExternalLink, Eye, EyeOff } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { getLadderAnswersApi } from '@/lib/rmhladder/answers.contract';
 import {

@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowUp, Eye, Globe, KeyRound, LogIn, RefreshCw, Search, Share2, Server, Star, Users, Zap } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Btn, EmptyNote, Field, IconBtn, SelectField, TextField, Toggle } from '@/components/tf2-hud/ui';
 import { TfTabs } from '@/components/tf2-hud/TfTabs';
 import { useLobbyLink } from '@/hooks/useLobbyLink';

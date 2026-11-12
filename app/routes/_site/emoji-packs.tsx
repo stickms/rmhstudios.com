@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Plus, Check, Upload, Sparkles } from 'lucide-react';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { PageLayout } from '@/components/feed/PageLayout';

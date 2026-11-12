@@ -6,7 +6,7 @@ import { Download } from 'lucide-react';
 import { useState } from 'react';
 import { BLOCKS_FILE } from '@/lib/tf2-hud/blocks/types';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { changedFiles } from '@/lib/tf2-hud/project/model';
 import { useEditor } from '@/lib/tf2-hud/store';
 import { slugify, type ExportScope } from '@/lib/tf2-hud/zip/export';

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { setCircleApi } from '@/lib/circle.contract';
 import { circleQuery } from '@/lib/circle.queries';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Star } from 'lucide-react';
 
 import { cn } from '@/lib/utils';

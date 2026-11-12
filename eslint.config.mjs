@@ -259,6 +259,13 @@ export default tseslint.config(
               message:
                 'Import `m as motion` instead. `motion` ships its own full feature bundle and defeats the <LazyMotion> split in components/Providers.tsx (docs/archive/2026/performance-audit-2026-08-12.md §1.3).',
             },
+            {
+              // Third-pass audit RT1: sonner loads on the first toast, not with the shell. `lib/toast.ts` queues
+              // until `components/ui/site-toaster.tsx` (the one module that imports sonner) is up.
+              name: 'sonner',
+              message:
+                'Import `toast` from `@/lib/toast`. Importing sonner directly puts the library back in the entry closure (scripts/check-entry-composition.ts fails on it).',
+            },
           ],
         },
       ],

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Award, Star, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { REVIEW_BODY_MAX, type RatingAgg, type ReviewView } from '@/lib/games/reviews';
 import { AWARD_CATALOG } from '@/lib/awards/catalog';

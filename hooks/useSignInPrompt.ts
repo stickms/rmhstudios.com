@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 /**
  * Shared "you need an account for that" prompt.

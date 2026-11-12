@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { tipApi } from '@/lib/economy/tip.contract';

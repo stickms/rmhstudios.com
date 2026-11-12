@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Check, Inbox, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';

@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouterState } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import AppShell from '@/components/shared/AppShell';
 import { useSession } from '@/components/Providers';
 import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';

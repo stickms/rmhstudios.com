@@ -5,7 +5,7 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';

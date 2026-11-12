@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { MessagesSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { splitThread } from '@/lib/feed/thread-splitter';

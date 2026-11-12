@@ -477,8 +477,12 @@ describe('FOUC contract: hydration', () => {
    * and a spinner on the client's first pass, so React #418'd on every signed-out
    * redirect to it. `useSession()` from `components/Providers` is seeded from the
    * server's session lookup on both sides.
+   *
+   * Since the third-pass audit's RT1 the provider does not call it either: the
+   * shell's live session is `lib/session/live-session.ts`, which keeps the auth
+   * client out of the entry. So the hook has no caller at all.
    */
-  it('nothing renders from authClient.useSession() except the provider that wraps it', () => {
+  it('nothing renders from authClient.useSession()', () => {
     const callers = grepRepoMatching(/authClient\.useSession\(\)/).filter((f) => {
       const src = readFileSync(join(REPO, f), 'utf8');
       // Mentions in comments are fine; a call is a `= authClient.useSession()`.
@@ -487,7 +491,7 @@ describe('FOUC contract: hydration', () => {
     expect(
       callers,
       'use `useSession()` from @/components/Providers — the raw hook disagrees with the server on the first client render',
-    ).toEqual(['components/Providers.tsx']);
+    ).toEqual([]);
   });
 
   /**

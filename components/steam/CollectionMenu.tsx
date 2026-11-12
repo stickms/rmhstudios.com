@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { getRouteApi } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { FolderPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FAVORITES, MAX_NAME } from '@/lib/games/collections';

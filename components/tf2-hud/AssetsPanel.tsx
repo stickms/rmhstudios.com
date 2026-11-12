@@ -6,7 +6,7 @@
 import { Download, Play, Trash2, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { TfTabs, type TfTab } from './TfTabs';
 import { readFontNames } from '@/lib/tf2-hud/assets/ttf-names';
 import { decodeVtf } from '@/lib/tf2-hud/assets/vtf';

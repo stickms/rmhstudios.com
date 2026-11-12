@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
 import { Check, X, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Button } from '@/components/ui/button';

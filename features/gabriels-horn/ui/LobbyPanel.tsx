@@ -9,7 +9,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Check, Copy, Crown, Link2, LogOut, Play, RefreshCw, UserX } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useLobbyLink } from '@/hooks/useLobbyLink';
 import { useClipboard } from '@/hooks/useClipboard';
 import { MAX_PLAYERS, MIN_PLAYERS } from '@features/gabriels-horn/engine/constants';

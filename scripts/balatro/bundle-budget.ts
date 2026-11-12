@@ -84,7 +84,7 @@ export interface Baseline {
 /**
  * Packages the site shell (app/routes/__root.tsx and the radial shell) already
  * loads on every page, so a route chunk never carries them: React, the TanStack
- * router/start/store family, i18next, sonner and framer-motion. Everything else —
+ * router/start/store family, i18next and framer-motion. Everything else —
  * zod, lucide icons, small helpers — is bundled and counted, because a route or
  * the lazy MP chunk really does pay for it.
  */
@@ -92,7 +92,6 @@ export const SHELL_EXTERNALS = [
   /^react(-dom)?(\/.*)?$/,
   /^@tanstack\//,
   /^(react-)?i18next(\/.*)?$/,
-  /^sonner$/,
   /^framer-motion(\/.*)?$/,
 ];
 

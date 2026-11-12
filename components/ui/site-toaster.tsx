@@ -1,12 +1,19 @@
-import { Toaster } from 'sonner';
+import { useEffect } from 'react';
+// eslint-disable-next-line no-restricted-imports -- the one module that loads sonner; everything else uses @/lib/toast
+import { Toaster, toast } from 'sonner';
+import { bindToaster } from '@/lib/toast';
 
 /**
  * The site's sonner `<Toaster>`: one placement and one fill for every toast.
- * Mounted once by `components/Providers.tsx` on the site, and by
- * `components/island/IslandProviders.tsx` in a separately built island
- * (redesign audit B1), so a toast looks and sits the same in both.
+ * Loaded by `<ToastHost>` (components/ui/toast-host.tsx) on the first toast, on
+ * the site and in a separately built island (redesign audit B1), so a toast
+ * looks and sits the same in both.
  */
 export function SiteToaster({ theme }: { theme: 'light' | 'dark' }) {
+  // The `<Toaster>` below subscribes to sonner's store in its own effect, and a
+  // child's effect runs before its parent's: by the time this one runs, a toast
+  // replayed from the queue has a listener to land on.
+  useEffect(() => bindToaster(toast), []);
   return (
     <Toaster
       theme={theme}

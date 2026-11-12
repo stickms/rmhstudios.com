@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
 
 import { WidgetFrame } from '@/components/ui/widget-frame';

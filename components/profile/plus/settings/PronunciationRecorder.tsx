@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Mic, Square, Trash2, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PRONUNCIATION_MAX_MS } from '@/lib/profile/plus';

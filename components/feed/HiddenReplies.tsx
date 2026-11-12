@@ -1,7 +1,7 @@
 import { useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { MenuItem } from '@/components/ui/menu';
 import { SpineItem } from '@/components/ui/spine';
 import { hideCommentApi } from '@/lib/feed/rmhark-actions.contract';

@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { TfTabs, type TfTab } from './TfTabs';
 import { changedFiles, statusOf } from '@/lib/tf2-hud/project/model';
 import {

@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { m as motion } from 'framer-motion';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Check, Clock, Flame, Gamepad2, Gift, Play, Trophy, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
