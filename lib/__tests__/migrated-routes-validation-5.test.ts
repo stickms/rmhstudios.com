@@ -65,7 +65,7 @@ const WAGER = '@/app/routes/api/wager/index';
 const TOURNEY = '@/app/routes/api/tournaments/index';
 const T_REPORT = '@/app/routes/api/tournaments/$id/matches/$matchId/report';
 const FEEDBACK = '@/app/routes/api/feedback';
-const SEARCHES = '@/app/routes/api/rmhladder/searches';
+const SEARCHES = '@/lib/rmhladder/api/rmhladder.searches.server';
 const GEOCODE = '@/lib/homes/api/homes.geocode.server';
 
 function req(

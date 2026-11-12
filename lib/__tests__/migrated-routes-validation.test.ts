@@ -80,20 +80,20 @@ const CASES: Case[] = [
   },
   {
     name: 'referral claim: code too short',
-    mod: '@/app/routes/api/referrals/claim',
+    mod: '@/lib/api/routes/referrals.claim.server',
     method: 'POST',
     body: { code: 'ab' },
     error: 'Invalid code',
   },
   {
     name: 'referral claim: no body',
-    mod: '@/app/routes/api/referrals/claim',
+    mod: '@/lib/api/routes/referrals.claim.server',
     method: 'POST',
     error: 'Invalid code',
   },
   {
     name: 'push subscribe: not a URL',
-    mod: '@/app/routes/api/push/subscribe',
+    mod: '@/lib/push/api/push.subscribe.server',
     method: 'POST',
     body: { endpoint: 'nope', keys: { p256dh: 'a', auth: 'b' } },
     error: 'Invalid subscription',
@@ -188,7 +188,7 @@ describe('migrated routes keep their bespoke 400 messages', () => {
 
   it('anonymous callers still get 401 before any validation', async () => {
     h.getSession.mockResolvedValue(null);
-    const fn = await handler('@/app/routes/api/referrals/claim', 'POST');
+    const fn = await handler('@/lib/api/routes/referrals.claim.server', 'POST');
     const res = await fn({
       params: {},
       request: new Request('https://rmhstudios.com/api/x', {

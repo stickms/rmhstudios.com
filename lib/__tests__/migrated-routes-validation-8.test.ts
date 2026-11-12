@@ -85,7 +85,7 @@ async function handler(mod: string, method: string): Promise<Handler> {
   return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
-const REPLAYS = '@/app/routes/api/replays/index';
+const REPLAYS = '@/lib/game/api/replays.server';
 const MOMENTS = '@/lib/api/routes/moments.server';
 const GIFT = '@/lib/gifting/api/coins.gift.server';
 const TRADE = '@/lib/predictions/api/predictions.$id.trade.server';

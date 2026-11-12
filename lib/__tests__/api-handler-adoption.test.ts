@@ -193,8 +193,6 @@ const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
   'app/routes/api/library/collection/$id/items.ts',
   'app/routes/api/library/collections.ts',
   'app/routes/api/replays/$id.ts',
-  'app/routes/api/rmharks/$id/summary.ts',
-  'app/routes/api/rmharks/$id/translate.ts',
   'app/routes/api/rmhcalculator/compute.ts',
   'app/routes/api/rmhcalculator/graph.ts',
   'app/routes/api/rmhladder/resume/index.ts',
@@ -204,6 +202,8 @@ const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
   'app/routes/api/user-builds/$id/comments.ts',
   'app/routes/api/user-builds/$id/like.ts',
   'features/doctrine/api/doctrine.sahur.status.server.ts',
+  'lib/ai/api/rmharks.$id.translate.server.ts',
+  'lib/feed/api/rmharks.$id.summary.server.ts',
   'lib/library/api/library.collection.$id.cover.server.ts',
 ];
 

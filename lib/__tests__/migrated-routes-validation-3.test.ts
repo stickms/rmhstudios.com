@@ -70,7 +70,7 @@ const ALBUM = '@/lib/admin/api/admin.albums.$id.server';
 const REORDER = '@/lib/admin/api/admin.albums.$id.reorder.server';
 const LIB_REORDER = '@/lib/library/api/admin.library.reorder.server';
 const LIB_ID = '@/lib/library/api/admin.library.$id.server';
-const PROFILE = '@/app/routes/api/profile';
+const PROFILE = '@/lib/api/routes/profile.server';
 const MODERATE = '@/lib/predictions/api/admin.predictions.$id.moderate.server';
 const RESOLVE = '@/lib/predictions/api/admin.predictions.$id.resolve.server';
 

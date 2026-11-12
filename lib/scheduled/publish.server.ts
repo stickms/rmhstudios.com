@@ -57,7 +57,7 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
     });
 
     // Keep the denormalized post counters consistent with the compose path
-    // (app/routes/api/rmharks.ts): the author's post total and, when the post
+    // (lib/feed/api/rmharks.server.ts): the author's post total and, when the post
     // targets a community, that community's post count. The RMHark.create above
     // succeeds only if the community FK resolves, so the update is safe.
     await tx.user.update({

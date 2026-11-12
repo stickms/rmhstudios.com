@@ -188,7 +188,7 @@ lint` jobs were removed. Production binaries build via the root `Dockerfile`.
 | Understand the shell / global setup | `app/routes/__root.tsx`, `app/routes/_site.tsx`, `components/Providers.tsx`                    |
 | Add a page                          | a new file under `app/routes/_site/`                                                           |
 | Add an API endpoint                 | a new file under `app/routes/api/` (then regenerate the route tree)                            |
-| Work on the feed                    | `components/feed/*`, `app/routes/api/rmharks.ts`, `lib/feed/*`                                 |
+| Work on the feed                    | `components/feed/*`, `lib/feed/api/rmharks.server.ts`, `lib/feed/*`                                 |
 | Work on a game                      | `app/routes/<game>.tsx` + `components/<game>/*` + `server/socket-server/*` (or `go-services/`) |
 | Change theming                      | `app/globals.css`, `stores/themeStore.ts`                                                      |
 | Understand priorities / open work   | `docs/website-improvement-plan.md`                                                             |

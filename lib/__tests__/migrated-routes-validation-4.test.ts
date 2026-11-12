@@ -210,7 +210,7 @@ describe('optional-session readers keep their quiet signed-out answers', () => {
   });
 
   it('push public key is a 404 when push is not configured', async () => {
-    const fn = await handler('@/app/routes/api/push/public-key', 'GET');
+    const fn = await handler('@/lib/push/api/push.public-key.server', 'GET');
     const res = await fn({ params: {}, request: req('GET', undefined, false) });
     expect(res.status).toBe(404);
   });

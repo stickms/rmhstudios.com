@@ -6,7 +6,7 @@
  * the `HandleChange` row all happen together, in one transaction, so a change
  * cannot land without its record.
  *
- * NOTE for whoever owns `app/routes/api/profile.ts`: that route still changes
+ * NOTE for whoever owns `lib/api/routes/profile.server.ts`: that route still changes
  * handles directly (14-day cooldown, no history row, no reclaim block). It
  * should delegate to `changeHandle` here — until it does, the J2 rules are only
  * enforced on `POST /api/handles/change`.

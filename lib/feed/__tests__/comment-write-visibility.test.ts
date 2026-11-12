@@ -112,7 +112,7 @@ vi.mock('@/lib/prisma.server', () => {
 
 import { Route as LikeRoute } from '../../../app/routes/api/rmharks/$id/comment/$commentId/like';
 import { Route as RepostRoute } from '../../../app/routes/api/rmharks/$id/comment/$commentId/repost';
-import { Route as ViewRoute } from '../../../app/routes/api/rmharks/$id/comment/$commentId/view';
+import { route as ViewRoute } from '@/lib/feed/api/rmharks.$id.comment.$commentId.view.server';
 import { route as ReactRoute } from '@/lib/social/api/comments.$commentId.react.server';
 import { Route as PostLikersRoute } from '../../../app/routes/api/rmharks/$id/like';
 import { Route as PostRepostersRoute } from '../../../app/routes/api/rmharks/$id/repost';

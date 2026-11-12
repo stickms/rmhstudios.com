@@ -11,6 +11,7 @@
  * only for a non-default value; the default (`lively`) is expressed by absence.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 const { getSession, upsert, findUnique } = vi.hoisted(() => ({
   getSession: vi.fn(),
@@ -24,7 +25,7 @@ vi.mock('@/lib/prisma.server', () => ({
   prisma: { appearancePreference: { upsert, findUnique } },
 }));
 
-import { Route } from '@/app/routes/api/preferences/appearance';
+import { route as Route } from '@/lib/preferences/api/preferences.appearance.server';
 import {
   JELLY_MOTION_LEVELS,
   DEFAULT_JELLY_MOTION,
@@ -40,9 +41,7 @@ import { runPrepaint } from './prepaint-harness';
 
 
 type Handler = (ctx: { params: object; request: Request }) => Promise<Response>;
-const handlers = (
-  Route as unknown as { options: { server: { handlers: Record<string, Handler> } } }
-).options.server.handlers;
+const handlers = handlersOf<Handler>(Route);
 
 const put = (body: unknown) =>
   handlers.PUT({
