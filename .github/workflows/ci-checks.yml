@@ -102,6 +102,9 @@ jobs:
       BETTER_AUTH_URL: http://localhost:7005
       PORT: '7005'
       INTEGRATION_BASE_URL: http://localhost:7005
+      # The table store for testing/integration/casino-restart.test.ts. Not REDIS_STATE_URL:
+      # the web app under test must not read it.
+      INTEGRATION_REDIS_STATE_URL: redis://127.0.0.1:6379
       # Placeholders, not secrets: the Stripe webhook test signs events with this
       # secret and the server verifies them with it. No Stripe key is set, so
       # neither the app nor a test can reach api.stripe.com.
@@ -115,6 +118,10 @@ jobs:
           nohup sh -c 'docker run -d --name pg -p 127.0.0.1:5432:5432 \
             -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rmh \
             pgvector/pgvector:pg16' > "$RUNNER_TEMP/pg-start.log" 2>&1 &
+      - name: Start Redis (background)
+        run: |
+          nohup sh -c 'docker run -d --name redis-state -p 127.0.0.1:6379:6379 \
+            redis:7.4-alpine redis-server --appendonly yes --maxmemory-policy noeviction' > "$RUNNER_TEMP/redis-start.log" 2>&1 &
       - uses: ./.github/actions/setup-deps
       - name: Restore image variants
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
@@ -135,6 +142,14 @@ jobs:
           exit 1
       - name: Migrate database
         run: pnpm exec prisma migrate deploy
+      - name: Wait for Redis
+        run: |
+          for i in $(seq 1 60); do
+            if docker exec redis-state redis-cli ping 2>/dev/null | grep -q PONG; then echo "redis ready (${i}s into the wait)"; exit 0; fi
+            sleep 1
+          done
+          echo "redis never became ready"; cat "$RUNNER_TEMP/redis-start.log"; docker logs redis-state 2>&1 | tail -40 || true
+          exit 1
       - name: Start the built server
         run: |
           nohup node .output/server/index.mjs > "$RUNNER_TEMP/server.log" 2>&1 &
