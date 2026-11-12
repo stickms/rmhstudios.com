@@ -89,18 +89,50 @@ describe('SiteShell renders complete without client hooks (B1, L1, L2)', () => {
   });
 });
 
+describe('the sidebar never scrolls: the lists give way to the globe and the foot (owner, 2026-11-12)', () => {
+  const shell = read('components/shell/site-shell.css');
+  it('is, top to bottom: the words, the other places, the globe, the primary, the handle', () => {
+    const out = html();
+    const order = ['site-sidebar__sections', 'site-sidebar__more', 'site-sidebar__globe-space', 'site-sidebar__write', 'site-sidebar__account'].map(
+      (name) => out.indexOf(name),
+    );
+    expect(order.every((at) => at > 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it('clips, never scrolls, and drops whole links when the window is short', () => {
+    const inner = /\.site-sidebar__inner \{([^}]*)\}/.exec(shell)![1]!;
+    expect(inner).toContain('overflow: hidden');
+    expect(inner).not.toContain('overflow-y: auto');
+    // The second list takes what is left and the five words shrink only after it; the globe's place never shrinks.
+    expect(shell).toMatch(/\.site-sidebar__more \{\s*flex: 1 1 0;/);
+    expect(shell).toMatch(/\.site-sidebar__sections \{\s*flex: 0 1 auto;/);
+    expect(shell).toMatch(/\.site-sidebar__globe-space \{\s*flex: none;\s*block-size: 140px;/);
+    expect(shell).toMatch(/flex-flow: column wrap;/);
+  });
+
+  it('places the globe above the foot: 26px plus the primary, the handle and their gaps', () => {
+    const css = read('components/shell/globe-nav.css');
+    const desktop = /@media \(min-width: 1024px\) \{\s*\.globe-nav \{([^}]*)\}/.exec(css)![1]!;
+    expect(desktop).toContain('--globe-bottom: 130px');
+    expect(shell).toMatch(/\.site-sidebar__write \{[^}]*block-size: 36px/);
+    expect(shell).toMatch(/\.site-sidebar__account \{[^}]*margin-block-start: 14px;\s*block-size: 36px/);
+    expect(shell).toMatch(/\.site-sidebar__globe-space \{[^}]*margin-block-end: 18px/);
+  });
+});
+
 describe('the sidebar lists exactly the five sections (L4)', () => {
   it('Feed, Explore, Games, Inbox, You, as words, in that order', () => {
     expect(SECTIONS.map((s) => s.id)).toEqual(['front', 'explore', 'games', 'inbox', 'you']);
     const out = html();
-    const nav = /<nav aria-label="Sections">([\s\S]*?)<\/nav>/.exec(out)![1]!;
+    const nav = /<nav class="site-sidebar__sections" aria-label="Sections">([\s\S]*?)<\/nav>/.exec(out)![1]!;
     const labels = [...nav.matchAll(/<a [^>]*>([^<]+)</g)].map((m) => m[1]);
     expect(labels).toEqual(['Feed', 'Explore', 'Games', 'Inbox', 'You']);
   });
 
   it('lists the other destinations as a second, quieter list of words', () => {
     const out = html('/library');
-    const nav = /<nav aria-label="More places">([\s\S]*?)<\/nav>/.exec(out)![1]!;
+    const nav = /<nav class="site-sidebar__more" aria-label="More places">([\s\S]*?)<\/nav>/.exec(out)![1]!;
     const hrefs = [...nav.matchAll(/<a [^>]*href="([^"]+)"/g)].map((m) => m[1]);
     for (const href of ['/create', '/library', '/communities', '/store']) expect(hrefs).toContain(href);
     // Nothing the five words already lead to, and nothing that needs an account or an admin when signed out.
@@ -111,14 +143,14 @@ describe('the sidebar lists exactly the five sections (L4)', () => {
 
   it('marks the current section and no other', () => {
     const out = html('/explore');
-    const nav = /<nav aria-label="Sections">([\s\S]*?)<\/nav>/.exec(out)![1]!;
+    const nav = /<nav class="site-sidebar__sections" aria-label="Sections">([\s\S]*?)<\/nav>/.exec(out)![1]!;
     expect(nav.match(/aria-current="page"/g)).toHaveLength(1);
     expect(/href="\/explore"[^>]*aria-current="page"/.test(nav)).toBe(true);
   });
 
   it('puts the primary button, no icons beside the words, and no top bar anywhere', () => {
     const out = html();
-    const nav = /<nav aria-label="Sections">([\s\S]*?)<\/nav>/.exec(out)![1]!;
+    const nav = /<nav class="site-sidebar__sections" aria-label="Sections">([\s\S]*?)<\/nav>/.exec(out)![1]!;
     expect(nav).not.toContain('<svg');
     expect(out).toContain('Write a post');
     expect(out).not.toContain('<header');
@@ -218,12 +250,12 @@ describe('Escape closes and Tab stays inside while open (G4, G7)', () => {
 describe('the globe animates transform and opacity only, in 360 ms (G2, G6)', () => {
   const css = read('components/shell/globe-nav.css').replace(/\/\*[\s\S]*?\*\//g, '');
 
-  it('opens by transform (4.5x on a phone) in 0.36s on cubic-bezier(0.2, 0, 0, 1), under a flat 96% veil', () => {
+  it('opens by transform (4.5x on a phone) in 0.36s on cubic-bezier(0.2, 0, 0, 1), under a flat 80% veil', () => {
     expect(css).toMatch(/transition: transform 0\.36s var\(--globe-ease\)/);
     expect(css).toContain('--globe-ease: var(--m4-curve)');
     expect(read('app/styles/steel-chrome.css')).toContain('--m4-curve: cubic-bezier(0.2, 0, 0, 1)');
     expect(css).toMatch(/scale\(var\(--globe-scale, 4\.5\)\)/);
-    expect(css).toMatch(/\.globe-nav\[data-open\] \.globe-nav__veil \{[^}]*opacity: 0\.96/);
+    expect(css).toMatch(/\.globe-nav\[data-open\] \.globe-nav__veil \{[^}]*opacity: 0\.8/);
     expect(css).not.toMatch(/backdrop-filter|[^-]filter:|blur\(/);
   });
 
