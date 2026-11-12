@@ -1,7 +1,7 @@
 # features/ — one folder per game or app (redesign audit A1)
 
 > Scope: guidance for `features/<id>/`. Repo-wide context: [`/CLAUDE.md`](../CLAUDE.md).
-> Imported as `@features/<id>/...` (alias in `tsconfig.json`, `tsconfig.server.json`,
+> Imported as `@features/<id>/...` (alias in `tsconfig.json`, which every project config extends, `tsconfig.server.json`,
 > `vitest*.config.ts`; Vite reads `tsconfig.json` paths).
 
 A feature is everything one game or app owns, in one folder, instead of four to

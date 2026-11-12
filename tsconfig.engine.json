@@ -1,0 +1,46 @@
+{
+  // The Source-engine port (third-pass audit AR4): TF2, the single-player layer, CS:GO, the HUD
+  // editor's model and the loadout model. It imports itself and the core project, nothing else of
+  // the site; `tsc` proves it (TS6307). What it needs from the site, the site registers
+  // (lib/tf2-game/net/session-token.ts, lib/tf2-game/client/game-profile.ts).
+  //
+  // Not here, although they live in these directories: the server side (`*.server.ts`, which
+  // includes every `api/` module) and the tests that reach it. Those import Prisma, storage and
+  // the API handler, so they are site files and tsconfig.site.json lists them in `files`.
+  // The three `components/` files are engine modules that only the engine and its UI import.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "allowJs": false,
+    "rootDir": ".",
+    "outDir": ".cache/tsc/engine",
+    "tsBuildInfoFile": ".cache/tsc/engine.tsbuildinfo"
+  },
+  "include": [
+    "lib/tf2-game/**/*",
+    "lib/sp-game/**/*",
+    "lib/csgo-game/**/*",
+    "lib/tf2-hud/**/*",
+    "lib/tf2-loadout/**/*",
+    "components/tf2-game/hud-layout.ts",
+    "components/tf2-game/preview/sample-states.ts",
+    "components/tf2-hud/loadout/model-utils.ts"
+  ],
+  "exclude": [
+    "**/*.server.ts",
+    "**/*.server.test.ts",
+    "lib/tf2-game/assets/assets.test.ts",
+    "lib/tf2-hud/__tests__/base-store.test.ts",
+    "lib/tf2-hud/__tests__/blob-codec.test.ts",
+    "lib/tf2-loadout/__tests__/asset-codec.test.ts",
+    "lib/tf2-loadout/__tests__/catalog.test.ts",
+    "lib/tf2-loadout/__tests__/effect-categories.test.ts",
+    "lib/tf2-loadout/__tests__/model-manifest.test.ts",
+    "lib/tf2-loadout/__tests__/particles.test.ts",
+    "lib/tf2-loadout/__tests__/stored-cache.test.ts",
+    "lib/tf2-loadout/__tests__/warpaint.test.ts"
+  ],
+  "references": [{ "path": "./tsconfig.core.json" }]
+}

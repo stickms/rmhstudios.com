@@ -164,7 +164,7 @@ stage (`go build ./cmd/...`), not Bazel; Bazel is the CI unit-test gate.
 pnpm install
 pnpm db:push            # apply schema to a local Postgres
 pnpm dev                # Vite + WS servers → http://localhost:7005
-pnpm exec tsc --noEmit  # typecheck    pnpm lint    pnpm format
+pnpm typecheck          # typecheck    pnpm lint    pnpm format
 pnpm build              # Vite/Nitro build + esbuild bundles the WS servers
 ```
 
