@@ -136,24 +136,6 @@ export function revealPageContent(root: Element, kind: NavKind): void {
   }
 }
 
-/**
- * A tab switch with no route change (PageTabs' `value` changed): the content after the tab strip swaps with the same
- * quick dip as a navigation, by animating its siblings from `--swap-dim` to 1 over `--swap-in`, and the entrances
- * its new content mounted with are finished so nothing replays. The strip itself never moves.
- */
-export function swapContentAfter(
-  anchor: Element,
-  opts: { dim?: number; ms?: number; finish?: (root: Element) => number } = {},
-): void {
-  const dim = opts.dim ?? tokenNumber('--swap-dim', 0.72);
-  const ms = opts.ms ?? tokenNumber('--swap-in', 220);
-  for (let n = anchor.nextElementSibling; n; n = n.nextElementSibling) {
-    if (n.matches(NOT_CONTENT)) continue;
-    (opts.finish ?? finishEntranceAnimations)(n);
-    revealContent(n, dim, ms);
-  }
-}
-
 let guardOff: (() => void) | null = null;
 
 /** The longest a navigation may keep the guard armed on its own (a load that never commits). */

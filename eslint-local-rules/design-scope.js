@@ -182,7 +182,6 @@ export function isSiteTier(file) {
  */
 export const STEEL_PALETTE_BASELINE = {
   // Phase 5 (recipes): the article and profile pages.
-  'components/blog/MDXAnimations.tsx': 'phase 5: article recipe',
   'components/blog/ShareButton.tsx': 'phase 5: article recipe',
   'components/creator-studio/AnalyticsDashboard.tsx': 'phase 7: long tail (rounded-t-sm chart bars)',
   'components/library/LibraryCollections.tsx': 'phase 5: catalogue recipe (book-spine radius)',

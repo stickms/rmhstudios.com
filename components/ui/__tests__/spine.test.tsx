@@ -64,10 +64,10 @@ describe('Spine stylesheet (plan section 7, P1, P2, P5)', () => {
       /\.spine::before \{[^}]*inset-inline-start: 4px;[^}]*inset-block-start: 6px;[^}]*inline-size: 1px/,
     );
     expect(css).toMatch(
-      /\.spine-item \{[^}]*padding-block: 14px;[^}]*border-block-end: 1px solid var\(--site-border\)/,
+      /\.spine-item \{[^}]*--spine-pad: 14px;[^}]*padding-block: var\(--spine-pad\);[^}]*border-block-end: 1px solid var\(--site-border\)/,
     );
     expect(css).toMatch(
-      /\.spine-item::before \{[^}]*inset-inline-start: -18\.5px;[^}]*inset-block-start: 21px;[^}]*inline-size: 6px;[^}]*block-size: 6px/,
+      /\.spine-item::before \{[^}]*inset-inline-start: -18\.5px;[^}]*inset-block-start: calc\(var\(--spine-pad\) \+ 7px\);[^}]*inline-size: 6px;[^}]*block-size: 6px/,
     );
     expect(css).toContain('box-shadow: 0 0 0 3px var(--site-bg)');
     expect(css).toMatch(/\.spine-station \{[^}]*padding-block: 22px 8px/);

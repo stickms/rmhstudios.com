@@ -6,7 +6,6 @@ import {
   navKind,
   shellLayoutFor,
   armEntranceGuard,
-  swapContentAfter,
   revealPageContent,
   watchEntrances,
 } from '../page-transition';
@@ -297,67 +296,6 @@ describe('armEntranceGuard', () => {
     armEntranceGuard(800); // re-arming replaces the previous guard without throwing
     vi.useRealTimers();
     vi.unstubAllGlobals();
-  });
-});
-
-describe('swapContentAfter (a state-based tab switch)', () => {
-  type Sib = {
-    matches: (s: string) => boolean;
-    animate: ReturnType<typeof vi.fn>;
-    nextElementSibling: Sib | null;
-  };
-  const sib = (excluded = false): Sib => ({
-    matches: () => excluded,
-    animate: vi.fn(),
-    nextElementSibling: null,
-  });
-  const chain = (...items: Sib[]) => {
-    items.forEach((x, i) => (x.nextElementSibling = items[i + 1] ?? null));
-    return items;
-  };
-
-  it('dims-and-rises every sibling after the tab strip with the shared tokens, never the strip itself', () => {
-    const [anchor, a, b] = chain(sib(), sib(), sib());
-    swapContentAfter(anchor as never, { dim: 0.6, ms: 120, finish: () => 0 });
-    expect(anchor.animate).not.toHaveBeenCalled();
-    for (const x of [a, b]) {
-      expect(x.animate).toHaveBeenCalledWith(
-        [{ opacity: 0.6 }, { opacity: 1 }],
-        expect.objectContaining({ duration: 120 }),
-      );
-    }
-  });
-
-  it('skips elements that are not content (the floating compose button, opted-out entrances)', () => {
-    const [anchor, fab, content] = chain(sib(), sib(true), sib());
-    swapContentAfter(anchor as never, { dim: 0.6, ms: 120, finish: () => 0 });
-    expect(fab.animate).not.toHaveBeenCalled();
-    expect(content.animate).toHaveBeenCalledOnce();
-  });
-
-  it('also finishes the entrances the swapped content mounted with', () => {
-    const [anchor] = chain(sib(), sib());
-    const finish = vi.fn(() => 0);
-    swapContentAfter(anchor as never, { dim: 0.6, ms: 120, finish });
-    expect(finish).toHaveBeenCalled();
-  });
-
-  it('a rapid tab reversal continues from the painted opacity instead of jumping back to the floor', () => {
-    const [anchor, content] = chain(sib(), sib());
-    const cancel = vi.fn();
-    content.animate.mockReturnValue({ playState: 'running', cancel });
-    swapContentAfter(anchor as never, { dim: 0.72, ms: 220, finish: () => 0 });
-    vi.stubGlobal('getComputedStyle', () => ({ opacity: '0.91' }));
-    try {
-      swapContentAfter(anchor as never, { dim: 0.72, ms: 220, finish: () => 0 });
-      expect(cancel).toHaveBeenCalledOnce();
-      expect(content.animate).toHaveBeenLastCalledWith(
-        [{ opacity: 0.91 }, { opacity: 1 }],
-        expect.objectContaining({ duration: 220 }),
-      );
-    } finally {
-      vi.unstubAllGlobals();
-    }
   });
 });
 
