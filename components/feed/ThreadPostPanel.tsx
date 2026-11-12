@@ -9,7 +9,7 @@ import type { FeedItem } from '@/lib/feed-types';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createThreadApi } from '@/lib/feed/compose-assist.contract';
-/** Mirrors MAX_SEGMENTS in app/routes/api/rmharks/thread.ts. */
+/** Mirrors MAX_SEGMENTS in lib/feed/api/rmharks.thread.server.ts. */
 const MAX_THREAD_POSTS = 25;
 
 interface ThreadPostPanelProps {

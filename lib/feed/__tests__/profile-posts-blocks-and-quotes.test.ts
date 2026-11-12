@@ -67,19 +67,10 @@ vi.mock('@/lib/prisma.server', () => {
   };
 });
 
-import { Route } from '../../../app/routes/api/profile/$id/rmharks';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
+import { route as Route } from '@/lib/profile/api/profile.$id.rmharks.server';
 
-const GET = (
-  Route as unknown as {
-    options: {
-      server: {
-        handlers: {
-          GET: (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
-        };
-      };
-    };
-  }
-).options.server.handlers.GET;
+const GET = handlersOf(Route).GET!;
 
 async function load() {
   const request = new Request('https://x.test/api/profile/author/rmharks', {

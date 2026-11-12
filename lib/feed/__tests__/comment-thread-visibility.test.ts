@@ -8,6 +8,7 @@
  * now gets 404, the same answer as a post that does not exist.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 type Post = {
   userId: string;
@@ -61,13 +62,13 @@ vi.mock('@/lib/prisma.server', () => {
   return { prisma };
 });
 
-import { Route as ThreadRoute } from '../../../app/routes/api/rmharks/$id/comment';
-import { Route as LikersRoute } from '../../../app/routes/api/rmharks/$id/comment/$commentId/like';
-import { Route as RepostersRoute } from '../../../app/routes/api/rmharks/$id/comment/$commentId/repost';
+import { route as ThreadRoute } from '@/lib/feed/api/rmharks.$id.comment.server';
+import { route as LikersRoute } from '@/lib/feed/api/rmharks.$id.comment.$commentId.like.server';
+import { route as RepostersRoute } from '@/lib/feed/api/rmharks.$id.comment.$commentId.repost.server';
 
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 const get = (route: unknown, params: Record<string, string>) =>
-  (route as { options: { server: { handlers: { GET: Handler } } } }).options.server.handlers.GET({
+  handlersOf<Handler>(route).GET({
     request: new Request('https://x.test/x', { headers: { 'cf-connecting-ip': '1.1.1.1', cookie: 'better-auth.session_token=t' } }),
     params,
   });

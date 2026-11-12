@@ -5,6 +5,7 @@
  * original under the same two rules, and ancestor comments only from that thread.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 type Row = {
   userId: string;
@@ -57,11 +58,11 @@ vi.mock('@/lib/prisma.server', () => ({
   },
 }));
 
-import { Route } from '../../../app/routes/api/rmharks/ai-generate';
+import { route as Route } from '@/lib/feed/api/rmharks.ai-generate.server';
 
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 const post = (body: unknown) =>
-  (Route as unknown as { options: { server: { handlers: { POST: Handler } } } }).options.server.handlers.POST({
+  handlersOf<Handler>(Route).POST({
     params: {},
     request: new Request('https://x.test/api/rmharks/ai-generate', {
       method: 'POST',

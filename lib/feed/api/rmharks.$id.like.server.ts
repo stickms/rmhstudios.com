@@ -1,0 +1,40 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { prisma } from '@/lib/prisma.server';
+import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { canReadPostThread } from '@/lib/feed/audience.server';
+import { togglePostLike } from '@/lib/social/engagement.server';
+import { likePostApi } from '@/lib/feed/rmhark-actions.contract';
+
+export const route = apiRoute('/api/rmharks/$id/like', {
+  GET: defineHandler({ auth: 'optional' }, async ({ params, userId: viewerId }) => {
+    const { id } = params;
+    if (!(await canReadPostThread(id, viewerId))) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const likes = await prisma.rMHarkLike.findMany({
+      where: { rmheetId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: { user: { select: userDisplaySelect } },
+    });
+    return Response.json(likes.map((l) => ({ ...resolveUser(l.user), likedAt: l.createdAt })));
+  }),
+  POST: implement(
+    likePostApi,
+    { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'rmhark-like' } },
+    async ({ params, session }) => {
+      const { id } = params;
+      const userId = session.user.id;
+
+      // Toggle via the shared engagement service (counters, SSE, notifications,
+      // XP, quests, achievements, and webhooks all live there).
+      const result = await togglePostLike(userId, id);
+      if (!result.found) {
+        return Response.json({ error: 'Post not found' }, { status: 404 });
+      }
+      return Response.json({ success: true, liked: result.liked });
+    },
+  ),
+});

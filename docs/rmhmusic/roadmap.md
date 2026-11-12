@@ -165,7 +165,7 @@ model MusicLearnProfile { /* …existing… */ sound String? @db.VarChar(16) }
 ```
 
 ```ts
-// app/routes/api/rmhmusic/learn/profile.ts (EDIT): zod z.enum(INSTRUMENT_IDS).nullable() in the
+// lib/rmhmusic/api/rmhmusic.learn.profile.server.ts (EDIT): zod z.enum(INSTRUMENT_IDS).nullable() in the
 // body schema, via defineHandler({ rateLimit: 'write', body }, …). Client: store.ts `sound`,
 // resolveSound(profile) = profile.sound ?? (profile.instrument === 'guitar' ? 'guitar' : 'piano').
 // UI: components/rmhmusic/learn/SoundDialog.tsx — plain text rows (no chips), opened from

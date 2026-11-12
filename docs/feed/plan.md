@@ -127,7 +127,7 @@ Mirror Twitter's async-count model.
 
 - Add `likeCount`, `commentCount`, `repostCount`, `viewCount` **columns** to
   `RMHark` (and comments). Maintain them transactionally in the like/comment/
-  repost/view routes (e.g. [.../like.ts](../../app/routes/api/rmharks/$id/like.ts)
+  repost/view routes (e.g. [.../like.ts](../../lib/feed/api/rmharks.$id.like.server.ts)
   already counts after every toggle — switch to an atomic `increment`/`decrement`
   on the column instead of `count()` + `_count` joins on read).
 - Read path drops all `_count` includes → one row read per post, no aggregation.

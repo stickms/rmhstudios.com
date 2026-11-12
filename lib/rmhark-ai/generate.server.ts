@@ -3,7 +3,7 @@
  *
  * Powers two things:
  *  1. The "✨ generate" buttons real users tap in the composer / reply boxes
- *     (app/routes/api/rmharks/ai-generate.ts).
+ *     (lib/feed/api/rmharks.ai-generate.server.ts).
  *  2. The bot-worker, which invents synthetic users and posts as them
  *     (server/bot-worker/index.ts).
  *

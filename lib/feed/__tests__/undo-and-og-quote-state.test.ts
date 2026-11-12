@@ -77,7 +77,7 @@ vi.mock('@/lib/prisma.server', () => {
 });
 
 import { setPostLike } from '@/lib/social/engagement.server';
-import { Route as VoteRoute } from '../../../app/routes/api/rmharks/$id/vote';
+import { route as VoteRoute } from '@/lib/feed/api/rmharks.$id.vote.server';
 import { route as OgRoute } from '@/lib/og/api/og.post.$id.server';
 
 type H = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;

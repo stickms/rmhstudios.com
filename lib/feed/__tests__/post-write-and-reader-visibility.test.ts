@@ -151,10 +151,10 @@ vi.mock('@/lib/prisma.server', () => {
   return { prisma };
 });
 
-import { Route as LikeRoute } from '../../../app/routes/api/rmharks/$id/like';
+import { route as LikeRoute } from '@/lib/feed/api/rmharks.$id.like.server';
 import { route as ReactRoute } from '@/lib/feed/api/rmharks.$id.react.server';
 import { route as BookmarkRoute } from '@/lib/feed/api/rmharks.$id.bookmark.server';
-import { Route as VoteRoute } from '../../../app/routes/api/rmharks/$id/vote';
+import { route as VoteRoute } from '@/lib/feed/api/rmharks.$id.vote.server';
 import { Route as UnlockRoute } from '../../../app/routes/api/rmharks/$id/unlock';
 import { route as SavesRoute } from '@/lib/saves/api/saves.server';
 import { Route as V1Post } from '../../../app/routes/api/v1/posts/$id';
