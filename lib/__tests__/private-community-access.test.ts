@@ -327,7 +327,7 @@ describe('events of a private community are members-only', () => {
 
   it('GET /api/events?scope=community: no event data for an anonymous viewer', async () => {
     privateCommunity(false);
-    const GET = await routeHandlers('@/app/routes/api/events/index', 'GET');
+    const GET = await routeHandlers('@/lib/calendar/api/events.server', 'GET');
     const res = await GET({
       request: new Request('http://x/api/events?scope=community&communityId=c1'),
       session: null,

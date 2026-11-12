@@ -7,7 +7,7 @@ export default defineFeature({
   basePath: '/synapse-storm',
   delivery: 'island',
   routes: [
-    'app/routes/api/games/synapse-storm/leaderboard.ts',
+    'features/synapse-storm/api/games.synapse-storm.leaderboard.server.ts',
     'features/synapse-storm/api/games.synapse-storm.save.server.ts',
     'lib/game/api/games.synapse-storm.score.server.ts',
     'app/routes/synapse-storm.tsx',

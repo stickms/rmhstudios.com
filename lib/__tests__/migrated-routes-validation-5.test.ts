@@ -64,7 +64,7 @@ const JOIN = '@/lib/creator/api/creators.$id.join.server';
 const WAGER = '@/lib/wager/api/wager.server';
 const TOURNEY = '@/lib/tournaments/api/tournaments.server';
 const T_REPORT = '@/lib/tournaments/api/tournaments.$id.matches.$matchId.report.server';
-const FEEDBACK = '@/app/routes/api/feedback';
+const FEEDBACK = '@/lib/api/routes/feedback.server';
 const SEARCHES = '@/lib/rmhladder/api/rmhladder.searches.server';
 const GEOCODE = '@/lib/homes/api/homes.geocode.server';
 
