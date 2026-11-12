@@ -27,20 +27,28 @@ type El<T extends keyof React.JSX.IntrinsicElements> = ComponentPropsWithoutRef<
  * (`components/reading/ArticleBody.tsx`, the admin preview); nothing here animates (M6) and nothing is boxed (R3).
  */
 
-export const MdH1 = ({ className, ...props }: El<'h1'>) => (
-  <h1 className={cn('t-title mt-10 mb-4 first:mt-0', className)} {...props} />
+export const MdH1 = ({ className, children, ...props }: El<'h1'>) => (
+  <h1 className={cn('t-title mt-10 mb-4 first:mt-0', className)} {...props}>
+    {children}
+  </h1>
 );
 
-export const MdH2 = ({ className, ...props }: El<'h2'>) => (
-  <h2 className={cn('spine-station t-label', className)} {...props} />
+export const MdH2 = ({ className, children, ...props }: El<'h2'>) => (
+  <h2 className={cn('spine-station t-label', className)} {...props}>
+    {children}
+  </h2>
 );
 
-export const MdH3 = ({ className, ...props }: El<'h3'>) => (
-  <h3 className={cn('t-heading mt-8 mb-2 first:mt-0', className)} {...props} />
+export const MdH3 = ({ className, children, ...props }: El<'h3'>) => (
+  <h3 className={cn('t-heading mt-8 mb-2 first:mt-0', className)} {...props}>
+    {children}
+  </h3>
 );
 
-export const MdH4 = ({ className, ...props }: El<'h4'>) => (
-  <h4 className={cn('t-body mt-6 mb-2 font-semibold first:mt-0', className)} {...props} />
+export const MdH4 = ({ className, children, ...props }: El<'h4'>) => (
+  <h4 className={cn('t-body mt-6 mb-2 font-semibold first:mt-0', className)} {...props}>
+    {children}
+  </h4>
 );
 
 export const MdP = ({ className, ...props }: El<'p'>) => (
