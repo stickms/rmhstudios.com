@@ -274,7 +274,7 @@ function AdminUsersPage() {
                   user.email ?? (user.isBot ? t("bot-no-email", { defaultValue: "Automated account" }) : null);
                 return (
                   <div key={user.id} ref={isLast ? lastUserElementRef : null} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
-                    <div className="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-auto">
+                    <div className="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-0">
                       <UserAvatar src={user.image} alt={user.name || user.handle || user.username} size={40} fallbackName={user.name || user.handle || 'U'} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
