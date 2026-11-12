@@ -274,7 +274,7 @@ export function BotAdminPage() {
               />
             </div>
 
-            <section className="glass-pane rounded-site p-5">
+            <section className="rounded-site p-5">
               <h2 className="site-section-label mb-3">
                 {t('bots-habit-mix', { defaultValue: 'Pool by posting habit' })}
               </h2>
@@ -291,7 +291,7 @@ export function BotAdminPage() {
             </section>
 
             <form
-              className="glass-pane space-y-4 rounded-site p-5"
+              className="space-y-4 rounded-site p-5"
               onSubmit={(e) => {
                 e.preventDefault();
                 void save();
@@ -344,7 +344,7 @@ export function BotAdminPage() {
               </div>
 
               {preview ? (
-                <div className="glass-inset space-y-2 rounded-site px-4 py-3 text-sm text-site-text-muted">
+                <div className="surface-field space-y-2 rounded-site px-4 py-3 text-sm text-site-text-muted">
                   <p>
                     {t('bots-preview-now', {
                       defaultValue: 'With the current {{bots}} bots: ≈ {{posts}} posts/day.',

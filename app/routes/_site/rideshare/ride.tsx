@@ -334,7 +334,7 @@ function RequestRidePage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Left: form */}
             <div className="space-y-4">
-              <div className="glass-fill rounded-site p-5">
+              <div className="relative rounded-site p-5">
                 <h2 className="site-section-label mb-3">
                   {t('where-to-heading', { defaultValue: 'Where to?' })}
                 </h2>
@@ -360,14 +360,14 @@ function RequestRidePage() {
                 </div>
 
                 {routing && !routeInfo && (
-                  <div className="glass-inset mt-3 flex items-center gap-2 rounded-site-sm px-4 py-3 text-sm text-site-text-muted">
+                  <div className="surface-field mt-3 flex items-center gap-2 rounded-site-sm px-4 py-3 text-sm text-site-text-muted">
                     <Loader2 className="h-4 w-4 animate-spin" />{' '}
                     {t('calculating-route', { defaultValue: 'Calculating route…' })}
                   </div>
                 )}
               </div>
 
-              <div className="glass-fill rounded-site p-5">
+              <div className="relative rounded-site p-5">
                 <h2 className="site-section-label mb-3">
                   {t('pick-your-ride-heading', { defaultValue: 'Pick your ride' })}
                 </h2>
@@ -386,7 +386,7 @@ function RequestRidePage() {
                 />
               )}
 
-              <div className="glass-fill rounded-site p-5">
+              <div className="relative rounded-site p-5">
                 <label htmlFor="ride-notes" className="mb-2 block text-sm font-medium text-site-text">
                   {t('notes-label', { defaultValue: 'Notes for your driver (optional)' })}
                 </label>
@@ -404,7 +404,7 @@ function RequestRidePage() {
               </div>
 
               {/* Schedule for later */}
-              <div className="glass-fill rounded-site p-5">
+              <div className="relative rounded-site p-5">
                 <div className="flex items-center justify-between gap-3">
                   <span
                     id="ride-schedule-label"
@@ -472,7 +472,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between gap-3 glass-fill rounded-site p-5"
+                  className="flex items-center justify-between gap-3 relative rounded-site p-5"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
@@ -539,7 +539,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="glass-fill rounded-site p-5"
+                  className="relative rounded-site p-5"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-site-text">

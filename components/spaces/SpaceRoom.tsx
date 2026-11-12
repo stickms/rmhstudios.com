@@ -88,7 +88,7 @@ function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
         ? t('space-pinned-post', { defaultValue: 'Pinned post' })
         : t('space-pinned-tube', { defaultValue: 'Watch party' });
   return (
-    <div className="glass-fill mx-4 mt-3 rounded-site px-4 py-3">
+    <div className="relative mx-4 mt-3 rounded-site px-4 py-3">
       <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-site-accent">
         <Pin className="size-3.5" aria-hidden />
         {label}
@@ -439,7 +439,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
 
       {/* Composer + reactions (live only) */}
       {status === 'LIVE' && (
-        <div className="glass-pane mx-4 mb-4 space-y-3 rounded-site px-4 py-3">
+        <div className="relative mx-4 mb-4 space-y-3 rounded-site px-4 py-3">
           <div className="flex flex-wrap gap-2">
             {REACTIONS.map((emoji) => (
               <Button

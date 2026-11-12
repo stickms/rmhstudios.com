@@ -24,7 +24,7 @@ function FeedRow({ f }: { f: FeedSummary }) {
       <Link
         to="/feeds/$id"
         params={{ id: f.id }}
-        className="glass-fill block rounded-site px-4 py-3 hover:bg-site-surface-hover"
+        className="block rounded-site px-4 py-3 hover:bg-site-surface-hover"
       >
         <p className="text-sm font-semibold text-site-text">{f.name}</p>
         <p className="mt-0.5 truncate text-xs text-site-text-muted">

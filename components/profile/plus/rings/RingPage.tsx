@@ -151,7 +151,7 @@ export default function RingPage({ slug }: { slug: string }) {
               <li key={m.id}>
                 <Link
                   to={`/u/${m.handle ?? m.id}` as string}
-                  className="glass-fill glass-interactive flex items-center gap-3 rounded-site px-4 py-3"
+                  className="surface-press flex items-center gap-3 rounded-site px-4 py-3"
                 >
                   <span className="w-6 text-sm tabular-nums text-site-text-muted">{i + 1}</span>
                   <UserAvatar src={m.image} alt="" size={32} fallbackName={m.name ?? undefined} />

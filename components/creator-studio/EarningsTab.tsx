@@ -238,7 +238,7 @@ export function EarningsTab() {
             {requests.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between glass-fill rounded-site px-4 py-3 text-sm"
+                className="flex items-center justify-between rounded-site px-4 py-3 text-sm"
               >
                 <span>
                   {r.kind === 'SUB_CREDIT'

@@ -146,7 +146,7 @@ export function GroupComposerBar({
             })}
             rows={1}
             maxLength={2000}
-            className="max-h-32 w-full resize-none rounded-site glass-inset px-3 py-2 text-sm text-site-text"
+            className="max-h-32 w-full resize-none rounded-site surface-field px-3 py-2 text-sm text-site-text"
           />
           <ComposerLengthCounter used={input.length} />
         </div>

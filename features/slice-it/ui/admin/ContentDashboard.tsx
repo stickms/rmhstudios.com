@@ -113,7 +113,7 @@ export function ContentDashboard() {
           />
         ) : (
           <>
-            <section className="glass-fill space-y-3 rounded-site p-5">
+            <section className="surface-card space-y-3 rounded-site p-5">
               <h2 className="site-section-label flex items-center gap-2">
                 <HardDrive className="size-4" aria-hidden />
                 {t('admin-content-storage', { defaultValue: 'Storage' })}
@@ -156,7 +156,7 @@ export function ContentDashboard() {
               </dl>
             </section>
 
-            <section className="glass-fill space-y-3 rounded-site p-5">
+            <section className="surface-card space-y-3 rounded-site p-5">
               <h2 className="site-section-label flex items-center gap-2">
                 <TrendingUp className="size-4" aria-hidden />
                 {t('admin-content-uploads', { defaultValue: 'Uploads per day' })}
@@ -168,7 +168,7 @@ export function ContentDashboard() {
               ) : (
                 <ul className="flex flex-wrap gap-2 text-xs">
                   {dashboard.uploadRate.map((day) => (
-                    <li key={day.day} className="glass-inset rounded-site px-3 py-2 tabular-nums">
+                    <li key={day.day} className="surface-field rounded-site px-3 py-2 tabular-nums">
                       <span className="text-site-text-muted">{day.day.slice(5)}</span>{' '}
                       <span className="text-site-text font-medium">{day.count}</span>
                     </li>
@@ -177,7 +177,7 @@ export function ContentDashboard() {
               )}
             </section>
 
-            <section className="glass-fill space-y-3 rounded-site p-5">
+            <section className="surface-card space-y-3 rounded-site p-5">
               <h2 className="site-section-label flex items-center gap-2">
                 <AlertTriangle className="size-4" aria-hidden />
                 {t('admin-content-broken', { defaultValue: 'Charts that look broken' })}
@@ -193,7 +193,7 @@ export function ContentDashboard() {
                   {broken.map((chart) => (
                     <li
                       key={chart.chartId}
-                      className="glass-inset flex flex-wrap items-baseline gap-x-3 gap-y-2 rounded-site px-4 py-3"
+                      className="surface-field flex flex-wrap items-baseline gap-x-3 gap-y-2 rounded-site px-4 py-3"
                     >
                       <span className="font-medium text-site-text">{chart.title}</span>
                       <span className="text-sm text-site-text-muted">
@@ -215,7 +215,7 @@ export function ContentDashboard() {
               )}
             </section>
 
-            <section className="glass-fill space-y-3 rounded-site p-5">
+            <section className="surface-card space-y-3 rounded-site p-5">
               <h2 className="site-section-label flex items-center gap-2">
                 <Trash2 className="size-4" aria-hidden />
                 {t('admin-content-orphans', { defaultValue: 'Orphaned storage objects' })}
@@ -249,7 +249,7 @@ export function ContentDashboard() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="glass-inset rounded-site px-4 py-3">
+    <div className="surface-field rounded-site px-4 py-3">
       <dt className="text-xs text-site-text-muted">{label}</dt>
       <dd className="text-site-text font-medium tabular-nums">{value}</dd>
     </div>

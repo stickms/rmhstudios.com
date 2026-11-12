@@ -47,7 +47,7 @@ export function ChatPinnedBar({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="glass-chrome flex w-full shrink-0 items-center gap-2 px-4 py-2 text-left focus-visible:ring-2 focus-visible:ring-site-accent"
+        className="surface-chrome flex w-full shrink-0 items-center gap-2 px-4 py-2 text-left focus-visible:ring-2 focus-visible:ring-site-accent"
         aria-haspopup="dialog"
       >
         <Pin className="size-4 shrink-0 text-site-accent" aria-hidden />

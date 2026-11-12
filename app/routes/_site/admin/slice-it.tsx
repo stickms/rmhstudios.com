@@ -207,7 +207,7 @@ function ChartRow({
   const clearRate = evidence.clearRate;
 
   return (
-    <li className="glass-fill rounded-site p-5">
+    <li className="rounded-site p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -345,7 +345,7 @@ function Gate({
   passed: boolean;
 }) {
   return (
-    <div className="glass-inset rounded-site-sm p-3">
+    <div className="surface-field rounded-site-sm p-3">
       <dt className="flex items-center gap-2 text-xs text-site-text-muted">
         <Icon className="size-3.5" aria-hidden="true" />
         {label}

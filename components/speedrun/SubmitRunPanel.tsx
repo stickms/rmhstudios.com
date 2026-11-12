@@ -132,7 +132,7 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
                     onClick={() => setSelected(isSelected ? null : replay.id)}
                     aria-pressed={isSelected}
                     className={cn(
-                      'glass-fill flex min-h-11 w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-site px-3 py-2 text-left transition-colors',
+'flex min-h-11 w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-site px-3 py-2 text-left transition-colors',
                       isSelected && 'ring-1 ring-site-accent',
                       !boardOpen && 'opacity-60',
                     )}

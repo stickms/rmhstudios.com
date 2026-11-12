@@ -30,7 +30,7 @@ export function LibraryBlogRow({ posts, query = '' }: { posts: Partial<Post>[]; 
   if (!visible.length) return null;
 
   return (
-    <section className="lib__section lib-blog glass-fill lib-section-shell">
+    <section className="lib__section lib-blog lib-section-shell">
       <div className="lib-blog__head">
         <h2 className="lib__section-title">{t('section-blog', { defaultValue: 'Blog' })}</h2>
       </div>
@@ -53,7 +53,7 @@ function BlogCard({ post }: { post: Partial<Post> }) {
       to={`/blog/${post.slug}` as string}
       // §5.48: liquidly expand the card into the article header on click.
       onClick={(e) => liquidOpen(e, liquidVTName('blog', slug), { to: `/blog/${slug}` })}
-      className="lib-blog__card lib-reveal glass-fill glass-interactive lib-orbit-card"
+      className="lib-blog__card lib-reveal surface-press lib-orbit-card"
       data-library-orbit=""
       role="listitem"
     >

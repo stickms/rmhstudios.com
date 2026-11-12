@@ -55,7 +55,7 @@ describe('spatial redesign — responsive layout contract', () => {
   });
 
   it('lets tall dialogs scroll instead of clipping what does not fit', () => {
-    // Every overlay is capped at the visible viewport by `.glass-overlay`
+    // Every overlay is capped at the visible viewport by `.surface-overlay`
     // (max-block-size), so a dialog taller than a phone has exactly two
     // outcomes: it scrolls, or the overflow is unreachable. `overflow-hidden`
     // on the content element picks the second one — it overrides the Dialog

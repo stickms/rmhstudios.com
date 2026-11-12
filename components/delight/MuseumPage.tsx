@@ -40,7 +40,7 @@ export function MuseumPage() {
         ) : (
           <ol className="max-w-2xl space-y-3 border-s border-site-border ps-4">
             {q.data.eras.map((e) => (
-              <li key={e.id} className="glass-fill space-y-3 rounded-site px-4 py-3">
+              <li key={e.id} className="space-y-3 rounded-site px-4 py-3">
                 <time
                   className="site-section-label"
                   dateTime={e.eraDate}

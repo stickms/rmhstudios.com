@@ -157,7 +157,7 @@ export function AccountStandingPanel() {
         description={levelCopy[standing.level].description}
       >
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="glass-fill rounded-site px-4 py-3">
+          <div className="rounded-site px-4 py-3">
             <dt className="text-xs text-site-text-muted">
               {t('standing-active-strikes', { defaultValue: 'Active strikes' })}
             </dt>
@@ -169,13 +169,13 @@ export function AccountStandingPanel() {
               </span>
             </dd>
           </div>
-          <div className="glass-fill rounded-site px-4 py-3">
+          <div className="rounded-site px-4 py-3">
             <dt className="text-xs text-site-text-muted">
               {t('standing-total-strikes', { defaultValue: 'Total on record' })}
             </dt>
             <dd className="text-lg font-bold text-site-text">{standing.totalStrikes}</dd>
           </div>
-          <div className="glass-fill rounded-site px-4 py-3">
+          <div className="rounded-site px-4 py-3">
             <dt className="text-xs text-site-text-muted">
               {t('standing-appeal-window', { defaultValue: 'Appeal window' })}
             </dt>
@@ -228,7 +228,7 @@ export function AccountStandingPanel() {
             {standing.strikes.map((s) => {
               const href = entityHref(s);
               return (
-                <li key={s.id} className="glass-fill rounded-site px-4 py-3">
+                <li key={s.id} className="rounded-site px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2">
                     {s.appealStatus === 'OVERTURNED' ? (
                       <Badge variant="success">
@@ -290,7 +290,7 @@ export function AccountStandingPanel() {
                   )}
 
                   {s.appealText && (
-                    <div className="glass-fill mt-3 p-3">
+                    <div className="mt-3 p-3">
                       <p className="text-xs font-semibold text-site-text-muted">
                         {t('your-appeal', { defaultValue: 'Your appeal' })}
                       </p>

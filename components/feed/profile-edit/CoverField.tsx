@@ -29,7 +29,7 @@ export function CoverField({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="glass-fill glass-interactive group relative block h-32 w-full overflow-hidden rounded-site"
+        className="surface-press group relative block h-32 w-full overflow-hidden rounded-site"
       >
         {preview ? (
           <img src={preview} alt="" className="size-full object-cover" />

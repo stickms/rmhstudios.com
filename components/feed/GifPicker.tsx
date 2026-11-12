@@ -60,7 +60,7 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
  if (error ==='unavailable') return null; // feature off → hide entirely
 
  return (
- <div className={`glass-fill rounded-site p-4 ${className}`}>
+ <div className={`surface-card rounded-site p-4 ${className}`}>
  <div className="flex items-center justify-between gap-2 mb-2">
  <div className="relative flex-1">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-muted"/>
@@ -69,7 +69,7 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
  value={query}
  onChange={(e) => setQuery(e.target.value)}
  placeholder={t('gif-search-placeholder', { defaultValue:'Search GIFs...'})}
- className="w-full glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm pl-9 pr-3 py-2 outline-none focus:border-site-accent transition-colors"
+ className="w-full surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm pl-9 pr-3 py-2 outline-none focus:border-site-accent transition-colors"
  />
  </div>
  {onClose && (

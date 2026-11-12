@@ -135,7 +135,7 @@ function AdminEmojiPacksPage() {
         ) : (
           <ul className="space-y-3">
             {rows.map((p) => (
-              <li key={p.id} className="glass-fill space-y-3 rounded-site p-5">
+              <li key={p.id} className="space-y-3 rounded-site p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="min-w-0 truncate text-base font-medium text-site-text">
                     {p.name}
@@ -181,7 +181,7 @@ function AdminEmojiPacksPage() {
 
                 {p.description && <p className="text-sm text-site-text-muted">{p.description}</p>}
 
-                <ul className="glass-inset flex flex-wrap gap-2 rounded-site-sm p-3">
+                <ul className="surface-field flex flex-wrap gap-2 rounded-site-sm p-3">
                   {p.items.map((item) => (
                     <li key={item.id} title={`:${item.name}:`}>
                       <img

@@ -119,7 +119,7 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
 
   return (
     <div
-      className={`glass-fill relative overflow-hidden rounded-site ${className ?? ''}`}
+      className={`relative overflow-hidden rounded-site ${className ??''}`}
     >
       {ready && mounted ? (
         <div

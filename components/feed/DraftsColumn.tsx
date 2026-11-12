@@ -191,7 +191,7 @@ function Section({
  return (
  <div
  key={r.id}
- className={`rounded-site glass-fill px-4 py-3 ${LIFT_CARD}`}
+ className={`rounded-site px-4 py-3 ${LIFT_CARD}`}
  >
  <p className="whitespace-pre-wrap break-words text-sm text-site-text">
  {r.content || (

@@ -185,7 +185,7 @@ export function LibraryCollections({
   const openedLive = opened ? (collections.find((c) => c.id === opened.id) ?? opened) : null;
 
   return (
-    <section className="lib__section lib-collections glass-fill lib-section-shell">
+    <section className="lib__section lib-collections relative lib-section-shell">
       <div className="lib-collections__head">
         <h2 className="lib__section-title">
           {t('section-collections', { defaultValue: 'Collections' })}
@@ -318,7 +318,7 @@ function CollectionTile({
     >
       <button
         type="button"
-        className="lib-book lib-coll-tile__btn glass-fill glass-interactive lib-orbit-card"
+        className="lib-book lib-coll-tile__btn surface-press lib-orbit-card"
         data-library-orbit=""
         onClick={onOpen}
         aria-label={t('open-collection', { title: c.title, defaultValue: 'Open {{title}}' })}
@@ -394,7 +394,7 @@ function ViewModal({
 
   return (
     <LibraryDialogShell onClose={onClose}>
-      <div className="glass-overlay lib-upload lib-coll-modal" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="surface-overlay lib-upload lib-coll-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <div className="lib-collections__group-titles">
             <h2 className="lib-upload__title">{c.title}</h2>
@@ -489,7 +489,7 @@ function CreateModal({
   return (
     <LibraryDialogShell onClose={onClose}>
       <div
-        className="glass-overlay lib-upload"
+        className="surface-overlay lib-upload"
         onMouseDown={(e) => e.stopPropagation()}
         style={{ maxWidth: 440 }}
       >
@@ -510,7 +510,7 @@ function CreateModal({
           <label className="lib-upload__label">
             {t('label-title', { defaultValue: 'Title' })}
             <input
-              className="glass-inset lib-upload__input"
+              className="surface-field lib-upload__input"
               value={title}
               maxLength={120}
               autoFocus
@@ -523,7 +523,7 @@ function CreateModal({
           <label className="lib-upload__label">
             {t('label-description', { defaultValue: 'Description' })}
             <textarea
-              className="glass-inset lib-upload__input lib-upload__textarea"
+              className="surface-field lib-upload__input lib-upload__textarea"
               value={description}
               maxLength={500}
               onChange={(e) => setDescription(e.target.value)}
@@ -589,7 +589,7 @@ function AddBooksModal({
 
   return (
     <LibraryDialogShell onClose={onClose}>
-      <div className="glass-overlay lib-upload" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="surface-overlay lib-upload" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <h2 className="lib-upload__title">
             {t('add-to-collection', { name: collection.title, defaultValue: 'Add to “{{name}}”' })}
@@ -604,7 +604,7 @@ function AddBooksModal({
           </button>
         </div>
         <input
-          className="glass-inset lib-upload__input"
+          className="surface-field lib-upload__input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('search-your-books', { defaultValue: 'Search your books…' })}

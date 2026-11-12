@@ -183,7 +183,7 @@ export function ListingDetailView({ id }: { id: string }) {
       <div className="w-full max-w-4xl px-4 pt-4 pb-12">
         {/* Owner controls */}
         {listing.isOwner && (
-          <div className="mb-4 glass-fill flex flex-wrap items-center gap-2 rounded-site px-4 py-3">
+          <div className="mb-4 relative flex flex-wrap items-center gap-2 rounded-site px-4 py-3">
             <span className="text-sm text-site-text-muted">You posted this ·</span>
             <Select
               value={listing.status}
@@ -213,7 +213,7 @@ export function ListingDetailView({ id }: { id: string }) {
         {/* Gallery */}
         {images.length > 0 && (
           <div className="mb-4">
-            <div className="glass-pane relative aspect-[16/9] w-full overflow-hidden">
+            <div className="relative aspect-[16/9] w-full overflow-hidden">
               <img
                 src={images[activeImage]}
                 alt={listing.title}
@@ -307,7 +307,7 @@ export function ListingDetailView({ id }: { id: string }) {
 
         {/* Poster / source card */}
         {isExternal ? (
-          <div className="mt-4 flex flex-wrap items-center gap-3 glass-fill rounded-site p-5">
+          <div className="mt-4 flex flex-wrap items-center gap-3 relative rounded-site p-5">
             <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
               <Globe className="h-5 w-5" />
             </span>
@@ -332,7 +332,7 @@ export function ListingDetailView({ id }: { id: string }) {
             )}
           </div>
         ) : (
-          <div className="mt-4 flex flex-wrap items-center gap-3 glass-fill rounded-site p-5">
+          <div className="mt-4 flex flex-wrap items-center gap-3 relative rounded-site p-5">
             <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
               {listing.author?.image ? (
                 <img src={listing.author.image} alt="" className="h-full w-full object-cover" />
@@ -415,7 +415,7 @@ export function ListingDetailView({ id }: { id: string }) {
 
 function Spec({ icon: Icon, label, sub }: { icon: typeof Home; label: string; sub: string }) {
   return (
-    <div className="glass-fill rounded-site px-4 py-3">
+    <div className="relative rounded-site px-4 py-3">
       <Icon className="mb-2 h-5 w-5 text-site-accent" />
       <div className="font-semibold text-site-text">{label}</div>
       <div className="text-xs text-site-text-muted">{sub}</div>

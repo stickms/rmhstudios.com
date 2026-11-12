@@ -72,7 +72,7 @@ function SchedulePage() {
         </p>
 
         {grid?.next && (
-          <section className="glass-pane rounded-site px-4 py-3">
+          <section className="rounded-site px-4 py-3">
             <p className="text-xs font-medium text-site-text-muted">
               {t('schedule-next', { defaultValue: 'Next up' })}
             </p>
@@ -106,7 +106,7 @@ function SchedulePage() {
         )}
 
         {grid?.byDay.map((bucket) => (
-          <section key={bucket.day} className="glass-fill rounded-site px-4 py-3">
+          <section key={bucket.day} className="rounded-site px-4 py-3">
             <h2 className="site-section-label">{dayLabel(bucket.day)}</h2>
             {bucket.occurrences.length === 0 ? (
               <p className="mt-2 text-sm text-site-text-muted">

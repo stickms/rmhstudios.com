@@ -61,7 +61,7 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
 
   return (
     <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
-      <div className="glass-pane rounded-site p-5">
+      <div className="rounded-site p-5">
         <div className="flex items-start gap-3">
           <LogIn className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
           <div className="min-w-0">
@@ -113,7 +113,7 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
               // and a control that only ever refuses is worse than no control.
               <li
                 key={room.roomId}
-                className="glass-fill flex items-center justify-between gap-3 rounded-site p-4"
+                className="flex items-center justify-between gap-3 rounded-site p-4"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-site-text">{room.name}</p>

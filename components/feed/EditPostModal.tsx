@@ -82,7 +82,7 @@ export function EditPostModal({
  className="resize-none"
  />
  {/* GIF section */}
- <div className="mt-3 glass-fill rounded-site px-4 py-3">
+ <div className="mt-3 relative rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
  <span className="text-xs font-semibold text-site-text-muted">
  {t('gif-heading', { defaultValue:'GIF'})}

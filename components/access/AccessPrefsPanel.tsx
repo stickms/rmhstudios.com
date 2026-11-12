@@ -29,7 +29,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="glass-pane rounded-site p-5">
+    <section className="rounded-site p-5">
       <h3 className="text-sm font-semibold text-site-text">{title}</h3>
       {description ? (
         <p className="mb-3 text-sm text-site-text-muted">{description}</p>
@@ -171,7 +171,7 @@ export function AccessPrefsPanel() {
           options={spacingOpts}
           value={p.spacing}
         />
-        <p className="glass-inset rounded-site-sm p-3 text-sm text-site-text">
+        <p className="surface-field rounded-site-sm p-3 text-sm text-site-text">
           {t('spacing-sample', {
             defaultValue:
               'The quick brown fox jumps over the lazy dog. Spacing changes here as soon as you pick a level.',

@@ -26,9 +26,9 @@ function OfflinePage() {
     // No opaque full-viewport fill — the body already paints the theme aurora,
     // so the offline card floats on it as glass. Pure CSS, zero network needed.
     <main className="flex min-h-dvh items-center justify-center px-4 py-8">
-      <div className="glass-pane flex w-full max-w-sm flex-col items-center gap-4 rounded-site p-6 text-center sm:p-8">
+      <div className="surface-panel flex w-full max-w-sm flex-col items-center gap-4 rounded-site p-6 text-center sm:p-8">
         {/* Medallion: a small glass field holding the wifi-off glyph. */}
-        <div className="glass-inset flex size-16 items-center justify-center rounded-full">
+        <div className="surface-field flex size-16 items-center justify-center rounded-full">
           <WifiOff className="h-7 w-7 text-site-text-muted" aria-hidden />
         </div>
         <h1 className="font-display text-2xl font-semibold tracking-tight text-site-text">

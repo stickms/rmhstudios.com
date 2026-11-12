@@ -141,7 +141,7 @@ export function AchievementsColumn({
  return (
  <div
  key={a.id}
- className={`glass-fill flex items-start gap-3 rounded-site px-4 py-3 transition-colors ${
+ className={`flex items-start gap-3 rounded-site px-4 py-3 transition-colors ${
  a.unlocked ?'':'opacity-70'
  }`}
  >

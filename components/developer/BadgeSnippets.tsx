@@ -32,7 +32,7 @@ export function BadgeSnippets({ userId }: { userId: string }) {
       {rows.map((r) => {
         const md = `![${r.label}](${origin}${r.path})`;
         return (
-          <div key={r.path} className="glass-fill flex items-center gap-2 rounded-site px-3 py-2">
+          <div key={r.path} className="flex items-center gap-2 rounded-site px-3 py-2">
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-site-text-muted">{r.label}</p>
               <code className="block truncate text-xs text-site-text">{md}</code>

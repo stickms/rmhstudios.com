@@ -165,7 +165,7 @@ function NewsArticlePage() {
         {article.sourceUrl && (
           <motion.div
             variants={fade}
-            className="glass-fill mb-10 p-4 sm:p-6"
+            className="surface-card mb-10 p-4 sm:p-6"
           >
             <p className="text-xs font-semiboldst text-site-accent mb-2">
               {t('original-source', { defaultValue: 'Original Source' })}

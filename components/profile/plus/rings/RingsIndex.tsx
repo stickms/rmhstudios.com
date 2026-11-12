@@ -27,7 +27,7 @@ function RingCard({ ring }: { ring: RingSummary }) {
     <li>
       <Link
         to={`/rings/${ring.slug}` as string}
-        className="glass-fill glass-interactive block rounded-site p-5"
+        className="surface-press block rounded-site p-5"
       >
         <p className="truncate site-section-label">{ring.name}</p>
         {ring.description ? (
@@ -119,7 +119,7 @@ export default function RingsIndex() {
         </>
       )}
 
-      <section className="glass-pane space-y-3 rounded-site p-5" aria-labelledby="rings-start">
+      <section className="space-y-3 rounded-site p-5"aria-labelledby="rings-start">
         <h2 id="rings-start" className="site-section-label">
           {t('rings-start', { defaultValue: 'Start a ring' })}
         </h2>

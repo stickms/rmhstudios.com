@@ -102,7 +102,7 @@ export default function ManageFoldersDialog({ onClose }: { onClose: () => void }
               placeholder={t('folder-new-placeholder', {
                 defaultValue: 'New folder, e.g. Friends',
               })}
-              className="glass-inset min-h-11 min-w-0 flex-1 rounded-site px-3 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+              className="surface-field min-h-11 min-w-0 flex-1 rounded-site px-3 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
             />
             <Button
               type="submit"
@@ -143,7 +143,7 @@ function FolderRow({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         maxLength={FOLDER_NAME_MAX}
-        className="glass-inset min-h-11 min-w-0 flex-1 rounded-site px-3 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+        className="surface-field min-h-11 min-w-0 flex-1 rounded-site px-3 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
       />
       <span className="shrink-0 text-xs tabular-nums text-site-text-muted">
         {t('folder-chat-count', {

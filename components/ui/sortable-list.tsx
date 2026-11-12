@@ -102,8 +102,8 @@ function SortableRow<T extends SortableItem>({
  dragListener={false}
  dragControls={controls}
  transition={transition}
- // L1 .glass-fill row — cheap, unlimited, matches list surfaces.
- className="glass-fill flex items-center gap-2 rounded-site px-3 py-2 text-site-text"
+ // L1 . row — cheap, unlimited, matches list surfaces.
+ className="flex items-center gap-2 rounded-site px-3 py-2 text-site-text"
  >
  {/* Drag handle (pointer devices). Touch/keyboard users use the buttons. */}
  <span

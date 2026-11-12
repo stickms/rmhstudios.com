@@ -185,7 +185,7 @@ export function SeriesPage({ id }: { id: string }) {
       description={series.description ?? undefined}
     >
       <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
-        <section className="glass-pane flex flex-wrap items-center gap-3 rounded-site px-4 py-3">
+        <section className="flex flex-wrap items-center gap-3 rounded-site px-4 py-3">
           <p className="min-w-0 flex-1 text-sm text-site-text-muted">
             {t('series-by', { defaultValue: 'A series by' })}{' '}
             <Link

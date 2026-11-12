@@ -62,7 +62,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className={`glass-fill rounded-app border-2 p-4 ${
+          className={`surface-card rounded-app border-2 p-4 ${
             winnerIsA && !isDraw
               ? 'border-app-success/60 bg-app-success/10'
               : 'border-app-border'
@@ -84,7 +84,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className={`glass-fill rounded-app border-2 p-4 ${
+          className={`surface-card rounded-app border-2 p-4 ${
             !winnerIsA && !isDraw
               ? 'border-app-success/60 bg-app-success/10'
               : 'border-app-border'

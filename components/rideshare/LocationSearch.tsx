@@ -158,7 +158,7 @@ export function LocationSearch({
       <span className="mb-2 block text-sm font-medium text-site-text">{label}</span>
 
       {value ? (
-        <div className="glass-inset flex min-h-11 items-center gap-2 rounded-site-sm px-3 py-2">
+        <div className="surface-field flex min-h-11 items-center gap-2 rounded-site-sm px-3 py-2">
           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotClassName}`} />
           <span className="min-w-0 flex-1 truncate text-sm text-site-text" title={value.label}>
             {value.label}

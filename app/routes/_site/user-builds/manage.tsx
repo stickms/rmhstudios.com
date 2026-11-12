@@ -140,7 +140,7 @@ function ManageContent() {
             {builds.map((build) => (
               <div
                 key={build.id}
-                className={`flex items-center gap-3 rounded-site px-4 py-3 glass-fill ${LIFT_CARD}`}
+                className={`flex items-center gap-3 rounded-site px-4 py-3 ${LIFT_CARD}`}
               >
                 {build.thumbnailUrl ? (
                   <img

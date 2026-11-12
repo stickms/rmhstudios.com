@@ -73,7 +73,7 @@ export function NoticesTab() {
 
   return (
     <section className="space-y-[var(--site-section-gap)]">
-      <form onSubmit={publish} className="glass-pane space-y-3 rounded-site p-5">
+      <form onSubmit={publish} className="space-y-3 rounded-site p-5">
         <div className="space-y-1">
           <Label htmlFor="notice-title">{t('notices-title', { defaultValue: 'Title' })}</Label>
           <Input
@@ -180,7 +180,7 @@ export function NoticesTab() {
           {(data?.notices ?? []).map((n) => (
             <li
               key={n.id}
-              className="glass-fill flex flex-wrap items-start justify-between gap-3 rounded-site px-4 py-3"
+              className="flex flex-wrap items-start justify-between gap-3 rounded-site px-4 py-3"
             >
               <div className="min-w-0 space-y-1">
                 <p className="text-sm font-semibold text-site-text">{n.title}</p>

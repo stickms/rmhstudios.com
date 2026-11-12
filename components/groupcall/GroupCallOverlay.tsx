@@ -356,7 +356,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
           {announcement}
         </p>
 
-        <div className="glass-chrome flex items-center gap-2 rounded-site px-2.5 py-2">
+        <div className="surface-chrome flex items-center gap-2 rounded-site px-2.5 py-2">
           <GroupCallRoster layout="strip" includeSelf max={4} className="shrink-0" />
 
           <div className="min-w-0 flex-1">
@@ -447,7 +447,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
         </div>
 
         {phase === 'active' && rosterOpen && (
-          <div id={rosterPanelId} className="glass-overlay mt-2 rounded-site p-2">
+          <div id={rosterPanelId} className="surface-overlay mt-2 rounded-site p-2">
             <GroupCallRoster layout="list" includeSelf />
             {(onInvite || isHost) && (
               <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
@@ -473,7 +473,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
         )}
 
         {micDenied && (
-          <p className="glass-overlay mt-2 rounded-site px-3 py-2 text-xs text-site-text-muted">
+          <p className="surface-overlay mt-2 rounded-site px-3 py-2 text-xs text-site-text-muted">
             {t('mic-denied', {
               defaultValue:
                 'Microphone access was blocked. Allow it in your browser to join calls.',

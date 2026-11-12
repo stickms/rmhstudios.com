@@ -5,7 +5,7 @@ const src = readFileSync(new URL('../PagesTab.tsx', import.meta.url), 'utf8');
 
 describe('the Create "Pages" gallery uses the shared page toolbar', () => {
   it('its search sits in the same `page-controls` toolbar as /games and /create/builds, not in a custom title bar', () => {
-    // /create drifted: a `glass-chrome` bar with a "Pages" title on the left pushed the search to x=76 on a phone while
+    // /create drifted: a `surface-chrome` bar with a "Pages" title on the left pushed the search to x=76 on a phone while
     // the heading and tab strip started at 16 (pnpm audit:pages). The tab already says "Pages"; the search takes the row.
     expect(src).toContain('data-slot="page-controls"');
     expect(src).toContain('builds-toolbar');

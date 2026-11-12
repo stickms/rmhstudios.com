@@ -140,11 +140,11 @@ function SubmitBuildContent() {
       wide
     >
       <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
-        <div className="glass-pane rounded-site p-5 sm:p-6">
+        <div className="rounded-site p-5 sm:p-6">
           <BuildForm key={build?.id} build={build ?? undefined} />
         </div>
         {!isEditing && (
-          <div className="glass-fill space-y-2 rounded-site px-4 py-3">
+          <div className="space-y-2 rounded-site px-4 py-3">
             <h2 className="site-section-label">
               {t('prefer-the-cli', { defaultValue: 'Prefer the CLI?' })}
             </h2>
@@ -154,7 +154,7 @@ function SubmitBuildContent() {
                   'You can also publish builds directly from the terminal with rmhcode.',
               })}
             </p>
-            <code className="glass-inset block rounded-site-sm px-3 py-2 font-mono text-sm text-site-accent">
+            <code className="surface-field block rounded-site-sm px-3 py-2 font-mono text-sm text-site-accent">
               rmhcode push-build
             </code>
           </div>

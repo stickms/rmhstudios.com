@@ -53,7 +53,7 @@ function CreateForm() {
 
   return (
     <form
-      className="glass-pane space-y-3 p-4"
+      className="space-y-3 p-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (valid) create.mutate();
@@ -181,7 +181,7 @@ export default function ExchangesPage() {
                 <Link
                   to="/exchange/$id"
                   params={{ id: e.id }}
-                  className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3 hover:text-site-accent"
+                  className="flex items-center justify-between gap-3 rounded-site px-4 py-3 hover:text-site-accent"
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     {e.kind === 'MIXTAPE' ? (

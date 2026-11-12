@@ -47,7 +47,7 @@ export function ArticleOutline({
   if (!matched || items.length < MIN_OUTLINE_ITEMS) return null;
 
   return (
-    <details data-rf-skip="" className="glass-fill mb-6 max-w-2xl rounded-site-sm text-sm">
+    <details data-rf-skip="" className="surface-card mb-6 max-w-2xl rounded-site-sm text-sm">
       <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-2 font-semibold text-site-text">
         <ListTree className="size-4 text-site-text-muted" aria-hidden />
         {t('outline-title', { defaultValue: 'Contents' })}

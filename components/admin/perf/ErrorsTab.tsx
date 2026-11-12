@@ -19,7 +19,7 @@ export function ErrorsTab({ overview }: { overview: PerfOverview }) {
 
   if (errors.length === 0) {
     return (
-      <p className="glass-fill rounded-site p-6 text-center text-sm text-site-text-muted">
+      <p className="rounded-site p-6 text-center text-sm text-site-text-muted">
         {t('errors-empty', { defaultValue: 'No server errors since the processes started.' })}
       </p>
     );
@@ -37,7 +37,7 @@ export function ErrorsTab({ overview }: { overview: PerfOverview }) {
         {errors.map((e) => (
           <li
             key={`${e.service}:${e.pid}:${e.at}:${e.message}`}
-            className="glass-fill space-y-2 rounded-site p-5"
+            className="space-y-2 rounded-site p-5"
           >
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="danger">

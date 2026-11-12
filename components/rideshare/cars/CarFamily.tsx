@@ -150,7 +150,7 @@ export function CarFamily() {
         <Suspense
           fallback={
             <div className="flex flex-col gap-3">
-              <div className="rmhcar-stage glass-pane glass-bevel-sm rounded-site">
+              <div className="rmhcar-stage glass-bevel-sm rounded-site">
                 <CarSilhouette
                   spec={active.body}
                   frame="body"
@@ -194,7 +194,7 @@ export function CarFamily() {
                 // the chosen card also carries a visibly heavier outline, which
                 // is a change in WEIGHT rather than in hue. `aria-pressed`
                 // carries the same fact to assistive tech.
-                className={`glass-fill flex flex-col gap-1 rounded-site px-4 py-3 text-left transition-colors ${
+                className={`flex flex-col gap-1 rounded-site px-4 py-3 text-left transition-colors ${
                   on
                     ? 'text-site-accent ring-2 ring-site-accent'
                     : 'text-site-text-muted hover:text-site-text'
@@ -214,9 +214,9 @@ export function CarFamily() {
       </section>
 
       {/* What is on the stage. */}
-      <section className="glass-pane rounded-site p-5 sm:p-5">
+      <section className="rounded-site p-5 sm:p-5">
         <div className="flex items-start gap-4">
-          <div className="glass-fill glass-bevel-sm flex size-12 shrink-0 items-center justify-center rounded-site text-site-accent">
+          <div className="glass-bevel-sm flex size-12 shrink-0 items-center justify-center rounded-site text-site-accent">
             <ActiveIcon className="size-6" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
@@ -275,7 +275,7 @@ export function CarFamily() {
         <h3 className="site-section-label">
           {t('cars-lineup-heading', { defaultValue: 'The family, to scale' })}
         </h3>
-        <div className="glass-fill rounded-site p-5">
+        <div className="rounded-site p-5">
           <ul className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4 lg:grid-cols-7">
             {FLEET.map(({ info, body }) => (
               <li key={info.id} className="flex flex-col items-center gap-1">

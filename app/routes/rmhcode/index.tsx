@@ -42,7 +42,7 @@ function CodeBlock({ code, className = '' }: { code: string; className?: string 
   const { t } = useTranslation("r-rmhcode");
   return (
     <div className={`relative ${className}`}>
-      <pre className="glass-inset overflow-x-auto rounded-site-sm p-4 pr-14 font-mono text-sm text-site-text-muted">
+      <pre className="surface-field overflow-x-auto rounded-site-sm p-4 pr-14 font-mono text-sm text-site-text-muted">
         <code>{code}</code>
       </pre>
       <CopyButton
@@ -108,7 +108,7 @@ function RmhCodePage() {
       {/* Back Button */}
       <div className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-50">
         <Link to="/apps" onClick={goBack}>
-          <Button variant="default" size="sm" className="glass-fill text-xs sm:text-sm">
+          <Button variant="default" size="sm" className="surface-card text-xs sm:text-sm">
             <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">{t("back-to-builds", { defaultValue: "Back to Builds" })}</span>
           </Button>
@@ -122,7 +122,7 @@ function RmhCodePage() {
         <div className="relative max-w-4xl mx-auto px-4 py-16 md:py-24">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
             <div className="flex justify-center mb-8">
-              <div className="glass-pane relative w-64 h-80 md:w-80 md:h-[28rem] overflow-hidden">
+              <div className="surface-panel relative w-64 h-80 md:w-80 md:h-[28rem] overflow-hidden">
                 <img src="/images/games/rmhcode.webp" alt="rmhcode" className="object-cover w-full h-full" loading="lazy" />
               </div>
             </div>
@@ -140,7 +140,7 @@ function RmhCodePage() {
 
           {/* Install Section */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={transition} className="max-w-2xl mx-auto">
-            <div className="glass-fill rounded-site p-6">
+            <div className="surface-card rounded-site p-6">
               <h2 className="text-lg font-semibold text-site-text mb-2 flex items-center gap-2">
                 <Terminal className="w-5 h-5 text-site-accent" />
                 {t("installation", { defaultValue: "Installation" })}
@@ -201,7 +201,7 @@ function RmhCodePage() {
               {installTab === 'binary' && (
                 <div className="space-y-3">
                   <p className="text-sm text-site-text-muted">{t("binary-desc", { defaultValue: "Pre-built binaries — no Node.js required. Download, make executable (" })}<code className="text-site-accent">chmod +x</code>{t("binary-desc-2", { defaultValue: " on Linux/macOS), and place in your PATH." })}</p>
-                  <div className="glass-inset rounded-site-sm overflow-x-auto">
+                  <div className="surface-field rounded-site-sm overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead><tr className="border-b border-site-border bg-site-surface-hover"><th className="text-left py-2.5 px-3 font-medium text-site-text text-xs">{t("col-platform", { defaultValue: "Platform" })}</th><th className="text-left py-2.5 px-3 font-medium text-site-text text-xs">{t("col-arch", { defaultValue: "Arch" })}</th><th className="text-left py-2.5 px-3 font-medium text-site-text text-xs">{t("col-binary", { defaultValue: "Binary" })}</th></tr></thead>
                       <tbody className="divide-y divide-site-border">
@@ -219,7 +219,7 @@ function RmhCodePage() {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 pt-12 pb-12 space-y-12">
         <motion.div {...inViewProps}>
-          <div className="glass-fill rounded-site p-6">
+          <div className="surface-card rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-2 flex items-center gap-2"><Key className="w-5 h-5 text-site-accent" />{t("cli-auth-title", { defaultValue: "CLI Authentication" })}</h2>
             <p className="text-sm text-site-text-muted mb-6">{t("cli-auth-desc", { defaultValue: "Generate a token to link rmhcode with your RMH account, or use the browser login flow." })}</p>
             {isPending ? (<div className="h-12 w-full bg-site-surface-hover rounded-site-sm animate-pulse" />) : session ? (<Suspense fallback={<GameLoadingFallback />}><TokenGenerator /></Suspense>) : (
@@ -235,7 +235,7 @@ function RmhCodePage() {
           <h2 className="text-xl font-semibold text-site-text mb-6">{t("features-heading", { defaultValue: "Features" })}</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {features.map((feature) => (
-              <div key={feature.title} className="glass-fill rounded-site p-5 hover:border-site-text transition-colors">
+              <div key={feature.title} className="surface-card rounded-site p-5 hover:border-site-text transition-colors">
                 <feature.icon className="w-6 h-6 text-site-accent mb-3" />
                 <h3 className="font-semibold text-site-text mb-1">{feature.title}</h3>
                 <p className="text-sm text-site-text-muted">{feature.description}</p>
@@ -245,7 +245,7 @@ function RmhCodePage() {
         </motion.div>
 
         <motion.div {...inViewProps}>
-          <div className="glass-fill rounded-site p-6">
+          <div className="surface-card rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Terminal className="w-5 h-5 text-site-accent" />{t("usage-heading", { defaultValue: "Usage" })}</h2>
             <CodeBlock code={`rmhcode              # launch with banner\nrmhcode --init       # generate a CLAUDE.md for your project\nrmhcode --tmux       # launch a 3-pane tmux workspace\nrmhcode --version    # show version\nrmhcode -p "prompt"  # print mode (no banner)\nrmhcode --no-banner  # suppress banner`} />
             <p className="text-sm text-site-text-muted mt-3">{t("usage-banner-note", { defaultValue: "Set" })} <code className="text-site-accent text-xs">RMHCODE_NO_BANNER=1</code> {t("usage-banner-note-2", { defaultValue: "to always suppress the banner. All standard Claude Code arguments and flags work as normal." })}</p>
@@ -253,10 +253,10 @@ function RmhCodePage() {
         </motion.div>
 
         <motion.div {...inViewProps}>
-          <div className="glass-fill rounded-site p-6">
+          <div className="surface-card rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Globe className="w-5 h-5 text-site-accent" />{t("ai-providers-heading", { defaultValue: "AI Providers" })}</h2>
             <p className="text-sm text-site-text-muted mb-4">{t("ai-providers-desc", { defaultValue: "rmhcode supports multiple AI coding backends. By default, it uses Claude." })}</p>
-            <div className="glass-inset rounded-site-sm overflow-x-auto mb-4">
+            <div className="surface-field rounded-site-sm overflow-x-auto mb-4">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-site-border bg-site-surface-hover"><th className="text-left py-2.5 px-4 font-medium text-site-text">{t("col-provider", { defaultValue: "Provider" })}</th><th className="text-left py-2.5 px-4 font-medium text-site-text">{t("col-flag", { defaultValue: "Flag" })}</th><th className="text-left py-2.5 px-4 font-medium text-site-text">{t("col-requires", { defaultValue: "Requires" })}</th></tr></thead>
                 <tbody className="divide-y divide-site-border">
@@ -269,7 +269,7 @@ function RmhCodePage() {
         </motion.div>
 
         <motion.div {...inViewProps}>
-          <div className="glass-fill rounded-site p-6">
+          <div className="surface-card rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Package className="w-5 h-5 text-site-accent" />{t("rmh-builds-heading", { defaultValue: "RMH Builds Integration" })}</h2>
             <p className="text-sm text-site-text-muted mb-6">{t("rmh-builds-desc-prefix", { defaultValue: "Publish and manage projects on the" })}{' '}<Link to="/user-builds" className="text-site-accent hover:text-site-accent">{t("user-builds-link", { defaultValue: "User Builds" })}</Link>{' '}{t("rmh-builds-desc-suffix", { defaultValue: "showcase directly from the terminal." })}</p>
             <div className="mb-6">
@@ -291,16 +291,16 @@ function RmhCodePage() {
         </motion.div>
 
         <motion.div {...inViewProps}>
-          <div className="glass-fill rounded-site p-6">
+          <div className="surface-card rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Layout className="w-5 h-5 text-site-accent" />{t("tmux-heading", { defaultValue: "Tmux Workspace" })}</h2>
             <p className="text-sm text-site-text-muted mb-4">{t("tmux-desc", { defaultValue: "Launch a ready-made 3-pane tmux session:" })}</p>
-            <pre className="p-4 glass-inset rounded-site-sm font-mono text-xs text-site-accent mb-4 overflow-x-auto">{`+──────────────+──────────────+\n|              |   rmhcode    |\n|   rmhcode    |   (top-R)    |\n|   (left)     +--------------+\n|              |   shell      |\n|              |   (bot-R)    |\n+──────────────+──────────────+`}</pre>
+            <pre className="p-4 surface-field rounded-site-sm font-mono text-xs text-site-accent mb-4 overflow-x-auto">{`+──────────────+──────────────+\n|              |   rmhcode    |\n|   rmhcode    |   (top-R)    |\n|   (left)     +--------------+\n|              |   shell      |\n|              |   (bot-R)    |\n+──────────────+──────────────+`}</pre>
             <CodeBlock code={`rmhcode --tmux                    # launch workspace\nrmhcode --tmux --provider gemini  # all panes use Gemini`} />
           </div>
         </motion.div>
 
         <motion.div {...inViewProps}>
-          <div className="glass-fill rounded-site p-6">
+          <div className="surface-card rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><FileText className="w-5 h-5 text-site-accent" />{t("auto-generate-heading", { defaultValue: "Auto-generate CLAUDE.md" })}</h2>
             <p className="text-sm text-site-text-muted mb-4">{t("auto-generate-desc-prefix", { defaultValue: "Running" })} <code className="text-site-accent">rmhcode --init</code> {t("auto-generate-desc-suffix", { defaultValue: "in any project directory scans your codebase and generates a" })} <code className="text-site-accent">CLAUDE.md</code> {t("auto-generate-desc-with", { defaultValue: "file with:" })}</p>
             <ul className="space-y-2 text-sm text-site-text-muted">
@@ -312,19 +312,19 @@ function RmhCodePage() {
         </motion.div>
 
         <motion.div {...inViewProps}>
-          <div className="glass-fill rounded-site p-6">
+          <div className="surface-card rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Layers className="w-5 h-5 text-site-accent" />{t("mcp-heading", { defaultValue: "MCP Integrations" })}</h2>
             <p className="text-sm text-site-text-muted mb-4">{t("mcp-desc", { defaultValue: "rmhcode comes with bundled MCP (Model Context Protocol) servers that are automatically configured during installation." })}</p>
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-4 glass-inset rounded-site-sm"><h3 className="font-semibold text-site-text mb-1">DeepWiki</h3><p className="text-sm text-site-text-muted">{t("deepwiki-desc", { defaultValue: "AI-powered documentation for any public GitHub repository." })}</p></div>
-              <div className="p-4 glass-inset rounded-site-sm"><h3 className="font-semibold text-site-text mb-1">GitHub MCP</h3><p className="text-sm text-site-text-muted">{t("github-mcp-desc", { defaultValue: "Interact with GitHub issues, pull requests, and repositories directly from the CLI." })}</p></div>
+              <div className="p-4 surface-field rounded-site-sm"><h3 className="font-semibold text-site-text mb-1">DeepWiki</h3><p className="text-sm text-site-text-muted">{t("deepwiki-desc", { defaultValue: "AI-powered documentation for any public GitHub repository." })}</p></div>
+              <div className="p-4 surface-field rounded-site-sm"><h3 className="font-semibold text-site-text mb-1">GitHub MCP</h3><p className="text-sm text-site-text-muted">{t("github-mcp-desc", { defaultValue: "Interact with GitHub issues, pull requests, and repositories directly from the CLI." })}</p></div>
             </div>
           </div>
         </motion.div>
 
         <motion.div {...inViewProps}>
           <h2 className="text-xl font-semibold text-site-text mb-6">{t("cli-commands-heading", { defaultValue: "CLI Commands" })}</h2>
-          <div className="glass-fill rounded-site overflow-x-auto">
+          <div className="surface-card rounded-site overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-site-border bg-site-surface-hover"><th className="text-left py-3 px-4 font-medium text-site-text">{t("col-command", { defaultValue: "Command" })}</th><th className="text-left py-3 px-4 font-medium text-site-text">{t("col-description", { defaultValue: "Description" })}</th></tr></thead>
               <tbody className="divide-y divide-site-border">
@@ -336,7 +336,7 @@ function RmhCodePage() {
 
         <motion.div {...inViewProps}>
           <Link to="/user-builds">
-            <div className="glass-fill rounded-site p-6 hover:border-site-text hover:border-site-text transition-colors group">
+            <div className="surface-card rounded-site p-6 hover:border-site-text hover:border-site-text transition-colors group">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-site-text mb-1 flex items-center gap-2"><Boxes className="w-5 h-5 text-site-accent" />{t("browse-builds-heading", { defaultValue: "Browse User Builds" })}</h2>
@@ -349,7 +349,7 @@ function RmhCodePage() {
         </motion.div>
 
         <motion.div {...inViewProps}>
-          <div className="glass-fill rounded-site p-6">
+          <div className="surface-card rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Trash2 className="w-5 h-5 text-site-text-muted" />{t("uninstall-heading", { defaultValue: "Uninstall" })}</h2>
             <div className="space-y-4">
               <div><p className="text-xs text-site-text-muted font-medium mb-2">{t("tab-mac-linux", { defaultValue: "macOS / Linux" })}</p><CodeBlock code={UNINSTALL_MAC} /></div>

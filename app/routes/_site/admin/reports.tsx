@@ -159,7 +159,7 @@ function AdminReportsPage() {
             {reports.map((r) => {
               const link = entityLink(r);
               return (
-                <li key={r.id} className="glass-fill space-y-3 rounded-site p-5">
+                <li key={r.id} className="space-y-3 rounded-site p-5">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="danger">{r.reason.replace('_', ' ')}</Badge>
                     <Badge variant="default">{r.entityType}</Badge>

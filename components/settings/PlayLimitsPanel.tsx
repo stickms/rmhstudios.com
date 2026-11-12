@@ -126,7 +126,7 @@ export function PlayLimitsPanel() {
       })}
     >
       {excludedUntil && (
-        <p className="glass-inset rounded-site p-4 text-sm text-site-text">
+        <p className="surface-field rounded-site p-4 text-sm text-site-text">
           {t('play-limits-excluded-until', {
             defaultValue: "You're excluded from staking until {{when}}.",
             when: excludedUntil,
@@ -134,7 +134,7 @@ export function PlayLimitsPanel() {
         </p>
       )}
       {!excludedUntil && coolingUntil && (
-        <p className="glass-inset rounded-site p-4 text-sm text-site-text">
+        <p className="surface-field rounded-site p-4 text-sm text-site-text">
           {t('play-limits-cooling-until', {
             defaultValue: "You're taking a break from staking until {{when}}.",
             when: coolingUntil,

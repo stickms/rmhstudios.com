@@ -46,11 +46,11 @@ export function rarityClass(tier: RarityTier): string {
     case 'legendary':
     case 'epic':
       // Floating-feeling treatment for the two tiers worth drawing the eye.
-      return 'glass-overlay';
+      return 'surface-overlay';
     case 'rare':
-      return 'glass-pane';
+      return 'surface-panel';
     default:
-      return 'glass-fill';
+      return 'surface-card';
   }
 }
 

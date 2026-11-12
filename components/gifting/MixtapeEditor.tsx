@@ -74,7 +74,7 @@ export default function MixtapeEditor({
   }
 
   return (
-    <section aria-labelledby="mx-h" className="glass-pane space-y-3 p-4">
+    <section aria-labelledby="mx-h"className="space-y-3 p-4">
       <h2 id="mx-h" className="site-section-label">
         {t('mixtape-title', {
           defaultValue: 'Your mixtape ({{count}}/{{max}})',
@@ -86,7 +86,7 @@ export default function MixtapeEditor({
         {tracks.map((tr) => (
           <li
             key={tr.id}
-            className="glass-inset flex items-center justify-between gap-2 rounded-site-sm px-3 py-2 text-sm"
+            className="surface-field flex items-center justify-between gap-2 rounded-site-sm px-3 py-2 text-sm"
           >
             <span className="min-w-0 truncate">
               {tr.title} <span className="text-site-text-muted">· {tr.artist}</span>

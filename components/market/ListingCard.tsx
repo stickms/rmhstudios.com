@@ -116,13 +116,13 @@ export function ListingCard({
 
   return (
     <div
-      className="glass-fill glass-interactive flex min-w-0 flex-col items-stretch gap-4 rounded-site p-5"
+      className="surface-press flex min-w-0 flex-col items-stretch gap-4 rounded-site p-5"
       style={{
         borderColor: `${RARITY_COLORS[rarity]}55`,
         boxShadow: `inset 0 1px 0 ${RARITY_COLORS[rarity]}55`,
       }}
     >
-      <div className="glass-inset flex min-h-32 items-center justify-center rounded-site-sm p-4">
+      <div className="surface-field flex min-h-32 items-center justify-center rounded-site-sm p-4">
         {listing.item ? (
           <MarketItemPreview kind={listing.item.kind} data={listing.item.data} />
         ) : (

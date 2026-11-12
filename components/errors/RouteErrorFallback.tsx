@@ -79,8 +79,8 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
       role="alert"
       className="error-page flex min-h-dvh w-full flex-col items-center justify-center px-4 py-10 text-center"
     >
-      <div className="glass-fill flex w-full max-w-lg min-w-0 flex-col items-center gap-6 p-5 sm:p-8">
-        <div className="glass-fill flex h-16 w-16 items-center justify-center rounded-full text-site-text">
+      <div className="surface-card flex w-full max-w-lg min-w-0 flex-col items-center gap-6 p-5 sm:p-8">
+        <div className="surface-card flex h-16 w-16 items-center justify-center rounded-full text-site-text">
           <AlertTriangle className="size-8" aria-hidden="true" />
         </div>
 
@@ -94,7 +94,7 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
             })}
           </p>
           {message ? (
-            <p className="glass-inset mt-3 max-w-full [overflow-wrap:anywhere] px-3 py-2 text-left font-mono text-xs text-site-text-muted">
+            <p className="surface-field mt-3 max-w-full [overflow-wrap:anywhere] px-3 py-2 text-left font-mono text-xs text-site-text-muted">
               {message.slice(0, 300)}
             </p>
           ) : null}

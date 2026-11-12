@@ -37,7 +37,7 @@ const blank = (): Draft => ({
 const fmt = (m: number) =>
   m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ''}` : `${m}m`;
 
-const inputCls = 'glass-inset h-10 rounded-app-sm px-3 text-sm text-app-text';
+const inputCls = 'surface-field h-10 rounded-app-sm px-3 text-sm text-app-text';
 
 export default function StudyPlanner() {
   const { t } = useTranslation('f-tools');
@@ -193,7 +193,7 @@ export default function StudyPlanner() {
             )}
           </div>
 
-          <section className="glass-pane space-y-4 rounded-app p-4">
+          <section className="surface-panel space-y-4 rounded-app p-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1 text-sm">
                 <span className="text-app-text-muted">
@@ -325,7 +325,7 @@ export default function StudyPlanner() {
               aria-label={t('plan-days', { defaultValue: 'Day-by-day plan' })}
             >
               {plan.shortfallHours > 0 && (
-                <p role="status" className="glass-fill rounded-app p-3 text-sm">
+                <p role="status" className="surface-card rounded-app p-3 text-sm">
                   {t('plan-shortfall', {
                     defaultValue:
                       'This does not fit: you are {{hours}} hours short. Add study time or cut a topic.',
@@ -337,7 +337,7 @@ export default function StudyPlanner() {
                 {plan.days
                   .filter((d) => d.blocks.length > 0)
                   .map((d) => (
-                    <li key={d.date} className="glass-fill rounded-app p-3">
+                    <li key={d.date} className="surface-card rounded-app p-3">
                       <h3 className="mb-2 text-sm font-semibold">
                         {new Date(`${d.date}T00:00:00`).toLocaleDateString(undefined, {
                           weekday: 'long',

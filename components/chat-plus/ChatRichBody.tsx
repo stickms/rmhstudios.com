@@ -16,7 +16,7 @@ import type {
 
 /**
  * The card bodies for the non-text message kinds: dice and coin results (M4),
- * a shared checklist (M5) and a DM poll (M4). They render as `glass-fill` cards
+ * a shared checklist (M5) and a DM poll (M4). They render as`relative`cards
  * rather than inside the coloured bubble — a card is something you act on, not
  * something somebody said.
  */
@@ -66,7 +66,7 @@ function DiceCard({ meta, authorName }: { meta: DiceMeta; authorName: string }) 
   const { t } = useTranslation('f-messaging');
   if (!meta?.rolls) return null;
   return (
-    <div className="glass-fill w-56 max-w-full rounded-site p-4 text-site-text">
+    <div className="relative w-56 max-w-full rounded-site p-4 text-site-text">
       <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Dices className="size-4" aria-hidden />
         {t('dice-rolled', {
@@ -92,7 +92,7 @@ function CoinCard({ meta, authorName }: { meta: CoinMeta; authorName: string }) 
   const { t } = useTranslation('f-messaging');
   if (!meta?.result) return null;
   return (
-    <div className="glass-fill w-56 max-w-full rounded-site p-4 text-site-text">
+    <div className="relative w-56 max-w-full rounded-site p-4 text-site-text">
       <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Coins className="size-4" aria-hidden />
         {t('coin-flipped', { name: authorName, defaultValue: '{{name}} flipped a coin' })}
@@ -156,7 +156,7 @@ function ChecklistCard({
   };
 
   return (
-    <div className="glass-fill w-72 max-w-full rounded-site p-4 text-site-text">
+    <div className="relative w-72 max-w-full rounded-site p-4 text-site-text">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold">
           <ListChecks className="size-4 shrink-0 text-site-accent" aria-hidden />
@@ -255,7 +255,7 @@ function DmPollCard({
   };
 
   return (
-    <div className="glass-fill w-64 max-w-full rounded-site p-4 text-site-text">
+    <div className="relative w-64 max-w-full rounded-site p-4 text-site-text">
       <p className="mb-2 flex items-start gap-1.5 text-sm font-semibold">
         <BarChart3 className="mt-0.5 size-4 shrink-0 text-site-accent" aria-hidden />
         {view.question}

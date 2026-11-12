@@ -82,7 +82,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  // visitor never flashes a sign-in prompt either.
  if (!session && !isPending) {
  return (
- <div className="glass-fill rounded-site mx-3 px-4 py-6 text-center">
+ <div className="rounded-site mx-3 px-4 py-6 text-center">
  <p className="text-sm text-site-text-muted mb-2">
  {t('sign-in-prompt', { defaultValue:'Sign in to post RMHarks'})}
  </p>
@@ -101,7 +101,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  }
 
  return (
- <div className="glass-pane relative px-4 py-3">
+ <div className="relative px-4 py-3">
  <div className="flex gap-3">
  {/* Avatar — the same box and classes as ComposeBox's, so the swap cannot
  move or re-ring it. `eager`: it is above the fold, and `lazy` here
@@ -136,7 +136,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  onFocus={activate}
  placeholder={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
  aria-label={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
- className="block w-full glass-inset text-site-text placeholder:text-site-text-muted text-base resize-none px-3 py-2 outline-none cursor-text"
+ className="block w-full surface-field text-site-text placeholder:text-site-text-muted text-base resize-none px-3 py-2 outline-none cursor-text"
  />
  <div className="flex items-center justify-between mt-2"aria-hidden>
  <span className="text-xs font-mono text-site-text-muted">{MAX_RMHARK_LENGTH}</span>

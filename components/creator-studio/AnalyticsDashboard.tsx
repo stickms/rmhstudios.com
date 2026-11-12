@@ -63,7 +63,7 @@ export function AnalyticsDashboard() {
       {/* Summary tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {tiles.map(({ icon: Icon, label, value }) => (
-          <div key={label} className="glass-fill rounded-site px-4 py-3">
+          <div key={label} className="rounded-site px-4 py-3">
             <div className="flex items-center gap-2 text-site-text-muted">
               <Icon className="size-4" aria-hidden="true" />
               <span className="text-xs font-medium">{label}</span>
@@ -74,7 +74,7 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* Engagement rate */}
-      <div className="glass-fill rounded-site px-4 py-3">
+      <div className="rounded-site px-4 py-3">
         <div className="flex items-center gap-2 text-site-text-muted">
           <TrendingUp className="size-4" aria-hidden="true" />
           <span className="text-xs font-medium">
@@ -90,7 +90,7 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* Posts-per-day chart (last 30 days) */}
-      <div className="glass-fill rounded-site px-4 py-3">
+      <div className="rounded-site px-4 py-3">
         <h2 className="site-section-label mb-3">
           {t('posts-last-30-days', { defaultValue: 'Posts in the last 30 days' })}
         </h2>
@@ -126,7 +126,7 @@ export function AnalyticsDashboard() {
                 <Link
                   to="/u/$userid/post/$postid"
                   params={{ userid: '_', postid: p.id }}
-                  className="glass-fill glass-interactive block rounded-site px-4 py-3"
+                  className="surface-press block rounded-site px-4 py-3"
                 >
                   <p className="line-clamp-2 text-sm text-site-text">
                     {p.content || t('no-text-post', { defaultValue: '(media post)' })}

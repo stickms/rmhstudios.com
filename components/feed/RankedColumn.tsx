@@ -212,7 +212,7 @@ export function RankedColumn({
  {signedIn && (
  <>
  {/* Issue a challenge */}
- <section className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
+ <section className={`rounded-site p-5 ${LIFT_CARD}`}>
  <h2 id="ranked-challenge-heading"className="site-section-label mb-3">
  {t('challenge-a-player', { defaultValue:'Challenge a player'})}
  </h2>
@@ -234,7 +234,7 @@ export function RankedColumn({
  value={opponent}
  onChange={setOpponent}
  placeholder={t('handle-placeholder', { defaultValue:'@handle'})}
- className="glass-inset h-11 w-full rounded-[var(--site-control-radius)] px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus-visible:border-site-accent focus-visible:outline-none"
+ className="surface-field h-11 w-full rounded-[var(--site-control-radius)] px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus-visible:border-site-accent focus-visible:outline-none"
  />
  </div>
  <Button
@@ -260,7 +260,7 @@ export function RankedColumn({
  {incoming.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site px-3 py-3 ${LIFT_CARD}`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -314,7 +314,7 @@ export function RankedColumn({
  {outgoing.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site px-3 py-3 ${LIFT_CARD}`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -344,7 +344,7 @@ export function RankedColumn({
  {ratings.map((r) => (
  <div
  key={r.game}
- className={`flex items-center justify-between gap-2 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center justify-between gap-2 rounded-site px-3 py-3 ${LIFT_CARD}`}
  >
  <span className="flex min-w-0 items-center gap-2">
  <span className="truncate text-sm font-medium text-site-text">
@@ -394,7 +394,7 @@ export function RankedColumn({
  {lb.map((row) => (
  <div
  key={row.user.id}
- className={`flex items-center gap-3 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site px-3 py-3 ${LIFT_CARD}`}
  >
  <span className="w-5 text-center text-xs font-bold text-site-text-muted">
  {row.rank}

@@ -183,7 +183,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
       bodyClassName="space-y-0"
     >
       {completion ? (
-        <div className="glass-inset mb-4 rounded-site-sm p-3">
+        <div className="surface-field mb-4 rounded-site-sm p-3">
           <h3 className="text-sm font-semibold text-site-text">
             {t('recovery-complete-title', { defaultValue: 'Finish account recovery' })}
           </h3>
@@ -236,7 +236,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
       ) : (
         <>
           {hold?.active ? (
-            <p className="glass-fill mb-4 flex items-start gap-2 rounded-site-sm p-3 text-sm text-site-warning">
+            <p className="mb-4 flex items-start gap-2 rounded-site-sm p-3 text-sm text-site-warning">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <span>
                 {t('recovery-hold-active', {
@@ -251,7 +251,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
           {requests.length > 0 ? (
             <ul className="mb-4 space-y-2">
               {requests.map((row) => (
-                <li key={row.id} className="glass-fill rounded-site-sm p-3">
+                <li key={row.id} className="rounded-site-sm p-3">
                   <p className="flex items-start gap-2 text-sm font-semibold text-site-danger">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                     <span>
@@ -281,7 +281,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
             </ul>
           ) : null}
 
-          <div className="glass-fill rounded-site-sm p-3">
+          <div className="rounded-site-sm p-3">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-site-accent" aria-hidden />
               <h3 className="text-sm font-semibold text-site-text">

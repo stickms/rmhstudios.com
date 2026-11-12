@@ -55,7 +55,7 @@ export function LiquidGlassPage() {
         {t('skip-to-content', { defaultValue: 'Skip to content' })}
       </a>
 
-      <header className="glass-chrome spatial-design-nav">
+      <header className="surface-chrome spatial-design-nav">
         <a href="/" className="spatial-design-nav__brand">
           <ChevronLeft aria-hidden />
           <span>{t('rmh-studios', { defaultValue: 'RMH Studios' })}</span>

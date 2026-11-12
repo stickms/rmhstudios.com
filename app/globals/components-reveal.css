@@ -153,7 +153,7 @@ body {
 }
 
 /* The glass sticky chrome keeps only its page-edge geometry here; the material
-   (tint, blur, glint) comes from the .glass-chrome tier the surface also carries. */
+   (tint, blur, glint) comes from the .surface-chrome tier the surface also carries. */
 .site-sticky-chrome {
   top: var(--site-sticky-edge);
   margin-inline: var(--site-page-gutter);

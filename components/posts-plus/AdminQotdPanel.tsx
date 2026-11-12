@@ -96,7 +96,7 @@ export function AdminQotdPanel() {
     >
       <AdminBody width="narrow">
         {data && (
-          <section className="glass-fill rounded-site p-5">
+          <section className="rounded-site p-5">
             <p className="text-xs font-semibold text-site-text-muted">
               {t('admin-today', { defaultValue: 'Running today' })}
               {data.today.source === 'builtin' && (
@@ -110,7 +110,7 @@ export function AdminQotdPanel() {
         )}
 
         <form
-          className="glass-pane space-y-3 rounded-site p-5"
+          className="space-y-3 rounded-site p-5"
           onSubmit={(e) => {
             e.preventDefault();
             void add();
@@ -166,7 +166,7 @@ export function AdminQotdPanel() {
                   {data.queue.map((row) => (
                     <li
                       key={row.id}
-                      className="glass-fill flex items-center gap-3 rounded-site px-4 py-3"
+                      className="flex items-center gap-3 rounded-site px-4 py-3"
                     >
                       <span className="w-24 shrink-0 text-xs text-site-text-muted">
                         {row.dayKey ?? t('admin-next-free', { defaultValue: 'Next free day' })}
@@ -194,7 +194,7 @@ export function AdminQotdPanel() {
                   {data.recent.map((row) => (
                     <li
                       key={row.id}
-                      className="glass-fill flex items-center gap-3 rounded-site px-4 py-3"
+                      className="flex items-center gap-3 rounded-site px-4 py-3"
                     >
                       <span className="w-24 shrink-0 text-xs text-site-text-muted">{row.dayKey}</span>
                       <span className="min-w-0 flex-1 text-sm text-site-text-muted">

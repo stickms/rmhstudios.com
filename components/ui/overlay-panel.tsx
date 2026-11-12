@@ -8,7 +8,7 @@
  * ```tsx
  * <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
  *   <div className="glass-scrim absolute inset-0" onClick={close} />
- *   <motion.div variants={modalContent} className="relative … glass-overlay">…</motion.div>
+ *   <motion.div variants={modalContent} className="relative … surface-overlay">…</motion.div>
  * </div>
  * ```
  *
@@ -16,17 +16,17 @@
  * and every copy was wrong in all three.
  *
  * **1. `fixed` did not mean the viewport.** `ComposeBox`'s single root is
- * `.glass-pane`, which carries a live `backdrop-filter`. A non-`none`
+ *`.`, which carries a live`backdrop-filter`. A non-`none`
  * `backdrop-filter` makes the element a **containing block for `position: fixed`
  * descendants** — so `inset: 0` resolved to the composer's own border box,
  * about 600×160px. The "full-screen" scrim dimmed only the composer slab, the
  * panel was centred and squeezed inside it (on a phone the panel is wider than
- * its containing block, so `.glass-overlay`'s `max-inline-size` clamp crushed
+ * its containing block, so `.surface-overlay`'s `max-inline-size` clamp crushed
  * it), the page behind stayed bright and clickable, and scrolling the feed
  * carried the "fixed" dialog off-screen with the composer.
  *
  * **2. `z-[100]` did not mean 100.** The same `backdrop-filter` also opens a
- * stacking context, and `.glass-pane` is `relative` with no `z-index` — so the
+ * stacking context, and`.`is`relative`with no`z-index`— so the
  * whole subtree painted as one unit at the composer's place in DOM order and no
  * number inside it could escape. The composer's own sibling `ComposeModal`
  * already portals for exactly this reason, with a comment saying so.

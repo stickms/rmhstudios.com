@@ -52,7 +52,7 @@ export default function ReadabilityPanel({
     <section
       aria-label={t('readability-heading', { defaultValue: 'Readability' })}
       aria-busy={stale}
-      className={cn('glass-fill space-y-3 rounded-site-sm p-3 text-sm', className)}
+      className={cn('space-y-3 rounded-site-sm p-3 text-sm', className)}
     >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <h3 className="font-semibold text-site-text">
@@ -117,7 +117,7 @@ export default function ReadabilityPanel({
             {excerpts.map((e) => (
               <li
                 key={e.key}
-                className="glass-fill rounded-site-sm px-2.5 py-1.5 text-site-text-muted"
+                className="rounded-site-sm px-2.5 py-1.5 text-site-text-muted"
               >
                 <span className="me-2 font-mono text-xs font-semibold text-site-warning">
                   {t('n-words', { n: e.words, defaultValue: '{{n}} words' })}

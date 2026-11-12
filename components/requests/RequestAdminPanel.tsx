@@ -67,7 +67,7 @@ export function RequestAdminPanel({
   }
 
   return (
-    <div className="glass-inset mt-3 space-y-3 rounded-site p-4">
+    <div className="surface-field mt-3 space-y-3 rounded-site p-4">
       <label className="block text-xs font-semibold text-site-text-muted" htmlFor={`s-${request.id}`}>
         {t('request-status', { defaultValue: 'Status' })}
       </label>

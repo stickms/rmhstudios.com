@@ -378,7 +378,7 @@ page.setAttribute('data-animate', '');
       </a>
 
       <header>
-        <nav className="glass-chrome sec-nav" aria-label="Black Lives Matter">
+        <nav className="surface-chrome sec-nav" aria-label="Black Lives Matter">
           <div className="sec-nav__inner">
             <a className="sec-nav__back" href="/">
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />
@@ -430,7 +430,7 @@ page.setAttribute('data-animate', '');
           {VALUES.map((v, i) => (
             <div
               key={v.word}
-              className="glass-fill sec-stat sec-reveal"
+              className="surface-card sec-stat sec-reveal"
               style={{ '--sec-delay': `${i * 70}ms` } as CSSProperties}
             >
               <p className="sec-stat__num">{v.word}</p>
@@ -473,7 +473,7 @@ page.setAttribute('data-animate', '');
                 return (
                   <article
                     key={p.title}
-                    className="glass-fill sec-card sec-reveal"
+                    className="surface-card sec-card sec-reveal"
                     style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}
                   >
                     <span className="sec-card__icon">
@@ -502,7 +502,7 @@ page.setAttribute('data-animate', '');
                 make the news and the thousand small ones that don’t.
               </p>
             </div>
-            <div className="glass-fill sec-spec sec-reveal">
+            <div className="surface-card sec-spec sec-reveal">
               {PRINCIPLES.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -563,7 +563,7 @@ page.setAttribute('data-animate', '');
                 Here’s where it lives in the foundation itself.
               </p>
             </div>
-            <div className="glass-fill sec-spec sec-reveal">
+            <div className="surface-card sec-spec sec-reveal">
               {PRODUCT_SPECS.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -627,7 +627,7 @@ page.setAttribute('data-animate', '');
             <ol className="sec-steps">
               {ACCOUNTABILITY.map((s, i) => (
                 <li
-                  className="glass-fill sec-step sec-reveal"
+                  className="surface-card sec-step sec-reveal"
                   key={s.title}
                   style={{ '--sec-delay': `${(i % 2) * 80}ms` } as CSSProperties}
                 >
@@ -663,7 +663,7 @@ page.setAttribute('data-animate', '');
                   href={r.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glass-fill sec-card sec-reveal"
+                  className="surface-card sec-card sec-reveal"
                   style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}
                 >
                   <span className="sec-card__icon">
@@ -725,7 +725,7 @@ page.setAttribute('data-animate', '');
             </div>
             <div className="sec-faq sec-reveal">
               {BLM_FAQ.map((f) => (
-                <details className="glass-fill sec-faq__item" key={f.q}>
+                <details className="surface-card sec-faq__item" key={f.q}>
                   <summary className="sec-faq__q">{f.q}</summary>
                   <p className="sec-faq__a">{f.a}</p>
                 </details>
@@ -737,7 +737,7 @@ page.setAttribute('data-animate', '');
         {/* ─── Closing ──────────────────────────────────────────────────── */}
         <section className="sec-section sec-section--hair" aria-labelledby="blm-closing-title">
           <div className="sec-shell">
-            <div className="glass-pane sec-disclosure sec-reveal">
+            <div className="surface-panel sec-disclosure sec-reveal">
               <div className="sec-disclosure__glow" aria-hidden="true" />
               <div className="sec-disclosure__inner">
                 <p className="sec-eyebrow">Still, and always</p>

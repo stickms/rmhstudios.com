@@ -96,7 +96,7 @@ export function ProfileHoverCard({
  align="start"
  sideOffset={6}
  data-motion="pop"
- className="z-(--z-floating) w-72 p-4 glass-overlay outline-none"
+ className="z-(--z-floating) w-72 p-4 surface-overlay outline-none"
  >
  {!profile ? (
  <div className="flex animate-pulse items-center gap-3">

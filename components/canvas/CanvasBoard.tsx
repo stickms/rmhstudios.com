@@ -188,7 +188,7 @@ export default function CanvasBoard({
         aria-label={t('board-label', {
           defaultValue: 'Pixel canvas. Drag to pan, scroll to zoom, arrow keys to pick a pixel.',
         })}
-        className="glass-inset relative h-[60vh] min-h-72 touch-none overflow-hidden rounded-site"
+        className="surface-field relative h-[60vh] min-h-72 touch-none overflow-hidden rounded-site"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

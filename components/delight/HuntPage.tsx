@@ -97,7 +97,7 @@ export function HuntPage() {
           />
         ) : (
           <>
-            <section className="glass-pane space-y-3 rounded-site p-5">
+            <section className="space-y-3 rounded-site p-5">
               <h2 className="text-lg font-semibold text-site-text">{s.title}</h2>
               <p className="text-sm text-site-text-muted">
                 {t('hunt-progress', {
@@ -156,7 +156,7 @@ export function HuntPage() {
                   {q.data.board.rows.map((r, i) => (
                     <li
                       key={r.user.id}
-                      className="glass-fill flex items-center gap-3 rounded-site px-4 py-3"
+                      className="flex items-center gap-3 rounded-site px-4 py-3"
                     >
                       <span className="w-6 text-sm text-site-text-muted">{i + 1}</span>
                       <UserAvatar

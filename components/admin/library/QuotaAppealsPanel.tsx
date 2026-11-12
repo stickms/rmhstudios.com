@@ -119,7 +119,7 @@ export function QuotaAppealsPanel() {
       {requests.map((req) => {
         const who = req.user.handle ? `@${req.user.handle}` : (req.user.name ?? req.user.id);
         return (
-          <li key={req.id} className="glass-fill rounded-site p-5">
+          <li key={req.id} className="rounded-site p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-semibold text-site-text">{who}</p>

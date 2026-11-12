@@ -9,7 +9,7 @@
  * never detached from the runs it applies to
  * (`lib/speedrun/versions.ts` does the arithmetic and is shared with the server).
  *
- * Rows are `.glass-fill` — L1, no backdrop blur — because they repeat.
+ * Rows are`.`— L1, no backdrop blur — because they repeat.
  */
 
 import { Link } from '@tanstack/react-router';
@@ -67,7 +67,7 @@ export function SpeedrunBoard({ entries, metric, tier, version, viewerId }: Spee
               <li
                 key={entry.id}
                 className={cn(
-                  'glass-fill rounded-site px-3 py-3',
+'rounded-site px-3 py-3',
                   entry.runner.id === viewerId && 'ring-1 ring-site-accent',
                 )}
               >
@@ -149,7 +149,7 @@ export function SpeedrunQueue({
       </h3>
       <ul className="flex flex-col gap-2">
         {unranked.map((entry) => (
-          <li key={entry.id} className="glass-fill rounded-site px-3 py-3">
+          <li key={entry.id} className="rounded-site px-3 py-3">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <span className="min-w-0 flex-1 truncate text-sm text-site-text">
                 {entry.runner.name ??

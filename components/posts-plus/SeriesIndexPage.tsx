@@ -68,7 +68,7 @@ export function SeriesIndexPage() {
       <Link
         to="/series/$id"
         params={{ id: s.id }}
-        className="glass-fill glass-interactive block rounded-site px-4 py-3"
+        className="surface-press block rounded-site px-4 py-3"
       >
         <span className="block text-sm font-medium text-site-text">{s.title}</span>
         <span className="mt-1 block text-xs text-site-text-muted">
@@ -101,7 +101,7 @@ export function SeriesIndexPage() {
       ) : (
         <div className="space-y-[var(--site-section-gap)]">
           <form
-            className="glass-pane flex gap-2 rounded-site px-4 py-3"
+            className="flex gap-2 rounded-site px-4 py-3"
             onSubmit={(e) => {
               e.preventDefault();
               void create();

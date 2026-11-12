@@ -55,7 +55,7 @@ export function EmojiPickerButton({
       </button>
       {/* PORTALLED, because the 300x360 panel is bigger than the boxes it opens
           inside. Every host — EditPostModal, ProfileEditModal, ComposeModal — is
-          a `.glass-overlay`, which declares `overflow-y: auto`; `overflow-y:
+          a `.surface-overlay`, which declares `overflow-y: auto`; `overflow-y:
           auto` with a visible `overflow-x` computes overflow-x to `auto` too, so
           BOTH axes clip. The worst case is EditPostModal, where the trigger is
           pinned to the LEFT of the footer (`mr-auto`) while this panel is

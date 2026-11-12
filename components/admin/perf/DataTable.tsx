@@ -57,14 +57,14 @@ export function DataTable<T>({
 
   if (rows.length === 0) {
     return (
-      <p className="glass-fill rounded-site p-6 text-center text-sm text-site-text-muted">
+      <p className="rounded-site p-6 text-center text-sm text-site-text-muted">
         {empty}
       </p>
     );
   }
 
   return (
-    <div className="glass-fill overflow-x-auto rounded-site">
+    <div className="overflow-x-auto rounded-site">
       <table className="w-full min-w-max text-sm">
         <thead>
           <tr>

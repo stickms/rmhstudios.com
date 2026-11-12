@@ -41,7 +41,7 @@ export function ListingCard({
       params={{ id: listing.id }}
       onMouseEnter={() => onHover?.(listing.id)}
       onMouseLeave={() => onHover?.(null)}
-      className={`glass-fill glass-interactive group flex h-full flex-col overflow-hidden hover:border-site-accent/50 ${
+      className={`surface-press group flex h-full flex-col overflow-hidden hover:border-site-accent/50 ${
         active ? 'border-site-accent ring-1 ring-site-accent/40' : 'border-site-border'
       }`}
     >

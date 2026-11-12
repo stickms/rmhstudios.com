@@ -26,7 +26,7 @@ export function StatsTable({ stats, nowMs }: { stats: DebtStats; nowMs: number }
   const total = Math.max(1, valueNow(stats.totals, nowMs));
 
   return (
-    <div className="glass-fill flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
+    <div className="surface-card flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
       <div className="flex flex-col gap-0.5">
         <h3 className="font-display text-sm font-semibold text-site-text">
           {t('stats.table.title', { defaultValue: 'Every number on this page' })}

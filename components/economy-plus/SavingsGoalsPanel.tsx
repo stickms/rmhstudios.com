@@ -144,7 +144,7 @@ export default function SavingsGoalsPanel() {
       ) : (
         <ul className="space-y-3">
           {data.goals.map((g) => (
-            <li key={g.id} className="glass-fill flex items-center gap-4 p-4">
+            <li key={g.id} className="flex items-center gap-4 p-4">
               <ProgressRing value={g.progress} label={`${Math.floor(g.progress * 100)}%`} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-site-text">{g.title}</p>
@@ -183,7 +183,7 @@ export default function SavingsGoalsPanel() {
 
       {adding ? (
         <form
-          className="glass-pane space-y-3 p-4"
+          className="space-y-3 p-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (canSave) create.mutate();

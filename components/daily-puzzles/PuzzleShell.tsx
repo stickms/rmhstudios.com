@@ -200,7 +200,7 @@ export function PuzzleResultCard({
   return (
     <section
       className={cn(
-        'glass-pane flex flex-col items-center gap-4 rounded-site border px-4 py-5 text-center sm:px-6',
+        'surface-panel flex flex-col items-center gap-4 rounded-site border px-4 py-5 text-center sm:px-6',
         TONE_RIM[tone],
       )}
     >
@@ -248,7 +248,7 @@ export function PuzzleSection({
   className?: string;
 }) {
   return (
-    <section className={cn('glass-fill flex flex-col gap-3 rounded-site px-4 py-4', className)}>
+    <section className={cn('surface-card flex flex-col gap-3 rounded-site px-4 py-4', className)}>
       {title ? (
         <h3 className="site-section-label flex items-center gap-2">
           {icon ? (

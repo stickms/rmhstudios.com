@@ -270,7 +270,7 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                     <motion.section
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="glass-pane flex flex-col gap-3 rounded-site px-4 py-4"
+                        className="surface-panel flex flex-col gap-3 rounded-site px-4 py-4"
                     >
                         <h2 className="site-section-label flex items-center gap-2">
                             <AlertTriangle className="size-4 shrink-0 text-site-danger" aria-hidden />
@@ -295,13 +295,13 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                                     transition={{ delay: i * 0.06 }}
                                     onClick={() => clickable && handleAccuse(suspect.name)}
                                     disabled={!clickable}
-                                    className={`glass-fill relative flex flex-col gap-2 rounded-site border px-4 py-3 text-left transition-colors duration-site-fast disabled:cursor-default ${
+                                    className={`surface-card relative flex flex-col gap-2 rounded-site border px-4 py-3 text-left transition-colors duration-site-fast disabled:cursor-default ${
                                         cleared
                                             ? 'border-site-border opacity-60'
                                             : accused
                                               ? 'border-site-danger/50 bg-site-danger/10'
                                               : clickable
-                                                ? 'glass-interactive cursor-pointer border-transparent'
+                                                ? 'surface-press cursor-pointer border-transparent'
                                                 : 'border-transparent'
                                     }`}
                                 >

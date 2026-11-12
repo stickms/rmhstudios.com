@@ -413,7 +413,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
                 aria-pressed={picked.includes(item)}
                 onClick={() => toggle(item)}
                 className={cn(
-                  'glass-fill min-h-14 break-words rounded-site px-2 py-2 text-xs font-semibold text-site-text transition-colors disabled:opacity-60 sm:text-sm',
+'min-h-14 break-words rounded-site px-2 py-2 text-xs font-semibold text-site-text transition-colors disabled:opacity-60 sm:text-sm',
                   picked.includes(item) && 'bg-site-accent text-site-accent-fg',
                 )}
               >

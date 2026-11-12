@@ -79,7 +79,7 @@ export function ModQueue({ slug }: { slug: string }) {
       ) : (
         <ul className="flex flex-col gap-2">
           {items.map((i) => (
-            <li key={i.id} className="glass-fill flex flex-col gap-2 p-3">
+            <li key={i.id} className="flex flex-col gap-2 p-3">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-site-text-muted">
                 <span className="font-semibold text-site-text">
                   {i.author.name || i.author.handle || t('someone', { defaultValue: 'Someone' })}

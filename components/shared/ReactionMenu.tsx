@@ -55,7 +55,7 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
         // renders its own emoji and re-renders internally, so letting twemoji
         // rewrite its nodes crashes React with a removeChild error.
         // The picker floats in a bare fixed div, so it carries the L4 surface itself.
-        <div data-no-twemoji className="glass-overlay overflow-hidden p-0">
+        <div data-no-twemoji className="surface-overlay overflow-hidden p-0">
           <Suspense
             fallback={
               <Skeleton className="h-[360px] w-[300px] rounded-site" />
@@ -77,7 +77,7 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
           // dismiss, so there is only ever an enter to play — and it plays from
           // the centre, which is where the finger is.
           data-motion="pop"
-          className="flex items-center gap-1 rounded-full px-2 py-1.5 glass-overlay"
+          className="flex items-center gap-1 rounded-full px-2 py-1.5 surface-overlay"
         >
           {CHAT_REACTION_EMOJIS.map((emoji) => (
             <button

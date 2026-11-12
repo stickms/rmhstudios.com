@@ -41,7 +41,7 @@ function PostingNotice({ posting }: { posting: CommunityExtrasDTO['posting'] }) 
     });
   }
   return (
-    <div role="status" className="glass-fill m-3 flex items-start gap-3 p-4 text-sm text-site-text">
+    <div role="status"className="m-3 flex items-start gap-3 p-4 text-sm text-site-text">
       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-site-warning" aria-hidden />
       <p>{text}</p>
     </div>

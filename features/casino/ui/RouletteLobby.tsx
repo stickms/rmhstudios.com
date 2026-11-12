@@ -66,7 +66,7 @@ export function RouletteLobby() {
           value={joinCodeInput}
           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
           maxLength={5}
-          className="glass-inset border flex-1 rounded-site-sm px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+          className="surface-field border flex-1 rounded-site-sm px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
         />
         <Button
           onClick={handleJoinByCode}
@@ -79,14 +79,14 @@ export function RouletteLobby() {
 
       {/* Create room toggle */}
       {showCreate ? (
-        <div className="glass-fill flex flex-col gap-2 p-3 rounded-site-sm">
+        <div className="surface-card flex flex-col gap-2 p-3 rounded-site-sm">
           <input
             type="text"
             placeholder={t("room-name-placeholder", { defaultValue: "Room name (optional)" })}
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             maxLength={30}
-            className="glass-inset border w-full rounded-site-sm px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+            className="surface-field border w-full rounded-site-sm px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
@@ -159,7 +159,7 @@ export function RouletteLobby() {
               key={room.roomId}
               onClick={() => handleJoin(room.roomId)}
               disabled={room.playerCount >= room.maxPlayers}
-              className="glass-fill glass-interactive flex items-center justify-between p-3 rounded-site-sm transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+              className="surface-card surface-press flex items-center justify-between p-3 rounded-site-sm transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>

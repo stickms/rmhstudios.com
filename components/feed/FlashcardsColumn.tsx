@@ -104,7 +104,7 @@ export function FlashcardsColumn({
     <Link
       key={d.id}
       to={`/study/${d.id}` as string}
-      className={`flex items-center gap-3 rounded-site glass-fill p-4 ${LIFT_CARD}`}
+      className={`flex items-center gap-3 rounded-site p-4 ${LIFT_CARD}`}
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/12 text-site-accent">
         <Layers className="h-5 w-5" />
@@ -177,14 +177,14 @@ export function FlashcardsColumn({
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder={t('deck-title-placeholder', { defaultValue: 'Deck title' })}
               maxLength={100}
-              className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <input
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder={t('description-placeholder', { defaultValue: 'Description (optional)' })}
               maxLength={500}
-              className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <div className="rounded-site-sm border border-site-accent/30 bg-site-accent/5 p-2">
               <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-site-accent">
@@ -199,7 +199,7 @@ export function FlashcardsColumn({
                   defaultValue: "Topic, e.g.'French Revolution causes'(optional)",
                 })}
                 maxLength={200}
-                className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+                className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
             </div>
             <div className="flex items-center justify-between">

@@ -256,7 +256,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
       {/* Thumbnail — §5.48 liquid-open hero the build card's thumbnail morphs into. */}
       {build.thumbnailUrl && (
         <div
-          className="glass-pane overflow-hidden"
+          className="overflow-hidden"
           style={{ viewTransitionName: liquidVTName('build', build.id) }}
         >
           {/* `priority`: on both pages that render this body (/builds/$slug and
@@ -312,7 +312,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
             <h2 className="mb-4 text-lg font-semibold text-site-text">{t("version-history", { defaultValue: "Version History" })}</h2>
             <div className="space-y-3">
               {build.versions.map((version) => (
-                <div key={version.id} className="glass-fill flex items-start gap-3 rounded-site-sm p-3">
+                <div key={version.id} className="flex items-start gap-3 rounded-site-sm p-3">
                   <Badge className="font-mono">v{version.version}</Badge>
                   <div className="min-w-0 flex-1">
                     {version.changelog && <p className="text-sm text-site-text-muted">{version.changelog}</p>}

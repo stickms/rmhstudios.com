@@ -174,7 +174,7 @@ export function TrustedContactsPanel() {
           {approvable.length > 0 ? (
             <ul className="mb-4 space-y-2">
               {approvable.map((request) => (
-                <li key={request.id} className="glass-fill rounded-site-sm p-3">
+                <li key={request.id} className="rounded-site-sm p-3">
                   <div className="flex items-center gap-2">
                     {request.owner ? (
                       <UserAvatar
@@ -223,7 +223,7 @@ export function TrustedContactsPanel() {
           ) : (
             <ul className="mb-3 space-y-2">
               {contacts.map((row) => (
-                <li key={row.id} className="glass-fill flex items-center gap-2 rounded-site-sm p-3">
+                <li key={row.id} className="flex items-center gap-2 rounded-site-sm p-3">
                   <UserAvatar
                     src={row.user.image}
                     alt={row.user.name ?? row.user.handle ?? ''}
@@ -285,7 +285,7 @@ export function TrustedContactsPanel() {
                 {trustedFor.map((row) => (
                   <li
                     key={row.id}
-                    className="glass-fill flex items-center gap-2 rounded-site-sm p-3"
+                    className="flex items-center gap-2 rounded-site-sm p-3"
                   >
                     <UserAvatar
                       src={row.user.image}

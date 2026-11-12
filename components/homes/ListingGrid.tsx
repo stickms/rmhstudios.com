@@ -24,7 +24,7 @@ interface ListingGridProps {
 
 function CardSkeleton() {
   return (
-    <div className="glass-fill overflow-hidden rounded-site">
+    <div className="overflow-hidden rounded-site">
       <Skeleton className="aspect-[4/3] w-full rounded-none" />
       <div className="space-y-2 p-4">
         <Skeleton className="h-5 w-24" />

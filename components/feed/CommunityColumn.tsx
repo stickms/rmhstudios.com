@@ -177,7 +177,7 @@ export function CommunityColumn({
 
  return (
  <div>
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link
  to="/communities"
  className="text-site-text-muted hover:text-site-text"
@@ -277,7 +277,7 @@ export function CommunityColumn({
  {community.announcements.map((a) => (
  <li
  key={a.id}
- className="rounded-site glass-fill p-4"
+ className="rounded-site relative p-4"
  >
  <div className="flex items-start gap-2">
  <UserAvatar
@@ -390,7 +390,7 @@ function AnnounceDialog({
  placeholder={t('announcement-placeholder', {
  defaultValue:'Share an update with the community…',
  })}
- className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
+ className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
  />
  <div className="flex justify-end gap-2">
  <Button variant="ghost"onClick={onClose} disabled={submitting}>

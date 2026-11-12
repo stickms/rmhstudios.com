@@ -38,7 +38,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
         <div className="flex flex-wrap items-center gap-3">
           <Link
             to="/slice-it"
-            className="glass-fill glass-interactive rounded-site px-4 py-3 inline-flex items-center gap-2 font-medium text-site-text"
+            className="surface-card surface-press rounded-site px-4 py-3 inline-flex items-center gap-2 font-medium text-site-text"
           >
             <Play className="size-4" aria-hidden />
             {t('hub-play', { defaultValue: 'Play Slice It!' })}
@@ -82,7 +82,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
                       className="size-12 rounded-site object-cover shrink-0"
                     />
                   ) : (
-                    <span className="size-12 rounded-site glass-inset shrink-0" aria-hidden />
+                    <span className="size-12 rounded-site surface-field shrink-0" aria-hidden />
                   )}
                   <span className="min-w-0">
                     <span className="block truncate font-medium text-site-text">{chart.title}</span>

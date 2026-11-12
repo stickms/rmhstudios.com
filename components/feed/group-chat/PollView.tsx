@@ -5,7 +5,7 @@ export function PollView({ poll, onVote }: { poll: Poll; onVote: (idx: number) =
   const { t } = useTranslation('feed');
   const voted = poll.myVote !== null;
   return (
-    <div className="mt-1.5 w-64 max-w-full rounded-site glass-fill p-4">
+    <div className="mt-1.5 w-64 max-w-full rounded-site relative p-4">
       <p className="mb-2 text-sm font-semibold text-site-text">{poll.question}</p>
       <div className="flex flex-col gap-1.5">
         {poll.options.map((o, i) => {

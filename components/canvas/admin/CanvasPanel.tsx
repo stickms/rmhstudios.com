@@ -62,7 +62,7 @@ export default function CanvasPanel() {
   return (
     <div className="space-y-[var(--site-section-gap)]">
       <form
-        className="glass-pane space-y-3 rounded-site p-5"
+        className="space-y-3 rounded-site p-5"
         onSubmit={(e) => {
           e.preventDefault();
           void create();
@@ -120,7 +120,7 @@ export default function CanvasPanel() {
         {q.data?.events.map((e) => (
           <li
             key={e.id}
-            className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3"
+            className="flex items-center justify-between gap-3 rounded-site px-4 py-3"
           >
             <div className="min-w-0">
               <p className="truncate font-medium text-site-text">{e.title}</p>

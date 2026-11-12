@@ -125,7 +125,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
           return (
             <div
               key={url}
-              className="glass-fill group relative aspect-square overflow-hidden rounded-site-sm"
+              className="group relative aspect-square overflow-hidden rounded-site-sm"
             >
               <img src={url} alt="" className="h-full w-full object-cover" />
               {i === 0 && (
@@ -207,7 +207,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
       </div>
 
       {aiAvailable && aiOpen && (
-        <div className="glass-fill mt-3 rounded-site p-5">
+        <div className="relative mt-3 rounded-site p-5">
           <label
             htmlFor="ai-prompt"
             className="mb-2 flex items-center gap-2 text-sm font-medium text-site-text"

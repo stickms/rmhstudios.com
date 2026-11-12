@@ -272,7 +272,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
   const band = creditBand(summary.score);
 
   return (
-    <section className="glass-pane flex flex-col gap-4 rounded-site p-4 sm:p-4">
+    <section className="surface-panel flex flex-col gap-4 rounded-site p-4 sm:p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
           <h3 className="font-display text-base font-semibold text-site-text">
@@ -521,7 +521,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
 
 function Mini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="glass-fill flex flex-col gap-0.5 rounded-site-sm px-2.5 py-2">
+    <div className="surface-card flex flex-col gap-0.5 rounded-site-sm px-2.5 py-2">
       <dt className="text-xs text-site-text-muted">{label}</dt>
       <dd className="font-display text-sm font-semibold text-site-text tabular-nums">{value}</dd>
     </div>

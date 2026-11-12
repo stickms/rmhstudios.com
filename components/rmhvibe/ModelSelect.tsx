@@ -91,7 +91,7 @@ export function ModelSelect({
       {present && (
         <div
           ref={menuRef}
-          className="vibe-model-select__menu glass-overlay"
+          className="vibe-model-select__menu surface-overlay"
           data-slot="model-select-menu"
           data-motion="pop"
           data-state={state}

@@ -154,7 +154,7 @@ function PendingState() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-fill rounded-site"
+      className="rounded-site"
     >
       <EmptyState
         icon={Clock}
@@ -254,7 +254,7 @@ function ApplicationForm({
         </div>
       )}
 
-      <div className="glass-fill rounded-site p-5">
+      <div className="rounded-site p-5">
         <h3 className="site-section-label mb-3">{t('vehicle-details', { defaultValue: 'Vehicle details' })}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {field('drv-make', t('label-make', { defaultValue: 'Make' }),
@@ -274,7 +274,7 @@ function ApplicationForm({
         </div>
       </div>
 
-      <div className="glass-fill space-y-3 rounded-site p-5">
+      <div className="space-y-3 rounded-site p-5">
         <div>
           <h3 className="site-section-label">{t('which-class-drive', { defaultValue: 'Which class will you drive?' })}</h3>
           <p className="mt-2 text-xs text-site-text-muted">{t('class-hint', { defaultValue: 'Pick the option that best matches your vehicle.' })}</p>
@@ -413,7 +413,7 @@ function DriverDashboard({
       </div>
 
       {!online && (
-        <p className="glass-inset rounded-site px-4 py-3 text-center text-sm text-site-text-muted">
+        <p className="surface-field rounded-site px-4 py-3 text-center text-sm text-site-text-muted">
           {t('offline-hint', { defaultValue: "You're offline. Go online to receive new ride requests." })}
         </p>
       )}
@@ -486,7 +486,7 @@ function RideCard({
     <motion.li
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`glass-fill rounded-site p-5 ${busy ? 'opacity-70' : ''}`}
+      className={`rounded-site p-5 ${busy ?'opacity-70':''}`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
@@ -512,7 +512,7 @@ function RideCard({
         </div>
       </div>
       {ride.notes && (
-        <p className="glass-inset mt-3 rounded-site-sm px-3 py-2 text-xs text-site-text-muted">"{ride.notes}"</p>
+        <p className="surface-field mt-3 rounded-site-sm px-3 py-2 text-xs text-site-text-muted">"{ride.notes}"</p>
       )}
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-site-border pt-3">
         <div className="min-w-0">

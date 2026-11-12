@@ -165,7 +165,7 @@ export function BaccaratControls({ coins }: Props) {
 
         {/* Current bets summary + clear button */}
         {totalBet > 0 && (
-          <div className="glass-fill flex flex-col gap-2 p-3 rounded-site-sm">
+          <div className="surface-card flex flex-col gap-2 p-3 rounded-site-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs text-site-text-muted">{t("your-bets-this-round", { defaultValue: "Your bets this round:" })}</span>
               <div className="flex items-center gap-1">

@@ -1129,7 +1129,7 @@
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
-/* Surface comes from `.glass-overlay` on the element (the L4 floating-UI role), so
+/* Surface comes from `.surface-overlay` on the element (the L4 floating-UI role), so
    the dialog takes the shared material, its jelly body and every degradation tier.
    It used to hand-roll a `--site-bg-subtle` fill, hairline, radius and a dark drop
    shadow. Size and padding stay here. */
@@ -1416,7 +1416,7 @@
   font-size: 12px;
   color: var(--site-text-muted);
 }
-/* Fill, edge colour and radius come from `.glass-inset` on the element (the field
+/* Fill, edge colour and radius come from `.surface-field` on the element (the field
    role). The edge keeps its width here so the focus colour below has a line to tint. */
 .lib-upload__input {
   width: 100%;

@@ -51,7 +51,7 @@ function RouteTable({ rows }: { rows: { route: string; views: number }[] }) {
       </p>
     );
   return (
-    <ul className="glass-fill divide-y divide-site-border rounded-site">
+    <ul className="divide-y divide-site-border rounded-site">
       {rows.map((r) => (
         <li key={r.route} className="flex items-center justify-between px-4 py-3 text-sm">
           <span className="font-mono text-site-text">{r.route}</span>

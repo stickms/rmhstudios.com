@@ -58,7 +58,7 @@ export default function ThreadPostPanel({ content, blockedBy, onPosted }: Thread
 
   return (
     <section
-      className="glass-fill mt-2 rounded-site px-4 py-3"
+      className="mt-2 rounded-site px-4 py-3"
       aria-label={t('thread-panel-label', { defaultValue: 'Post as thread' })}
     >
       <div className="flex items-start gap-2">
@@ -76,7 +76,7 @@ export default function ThreadPostPanel({ content, blockedBy, onPosted }: Thread
           {posts.map((post, i) => (
             <li
               key={i}
-              className="glass-inset rounded-site-sm px-3 py-2 text-sm text-site-text whitespace-pre-wrap break-words"
+              className="surface-field rounded-site-sm px-3 py-2 text-sm text-site-text whitespace-pre-wrap break-words"
             >
               {post}
             </li>

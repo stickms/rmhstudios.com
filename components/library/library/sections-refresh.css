@@ -206,7 +206,7 @@
 }
 
 /* ─── Right-click context menu (book / collection management) ────────────────── */
-/* Surface comes from `.glass-overlay` (globals.css §L4) — the shared floating-UI
+/* Surface comes from `.surface-overlay` (globals.css §L4) — the shared floating-UI
    material. This used to hand-roll it: two stacked `rgba(0,0,0,0.55)` shadows
    built for a dark theme, its own border and blur (with the `-webkit-` prefix
    declared twice). Placement and size stay here.
@@ -222,7 +222,7 @@
   min-width: 196px;
   max-width: 260px;
   padding: 6px;
-  /* No fill override. `.glass-overlay` used to be 62%, which was too thin for a
+  /* No fill override. `.surface-overlay` used to be 62%, which was too thin for a
      menu opening over book covers with no scrim, so this repainted it at a flat
      88%. That tier is now 90% with a HARD 78% floor and, unlike this override,
      it tracks the Glass clarity slider — so the override had become both weaker
@@ -1128,7 +1128,7 @@
 }
 
 /* Each content family uses the same outer bubble and internal spacing rhythm.
-   The border is `.glass-fill`'s own, NOT a transparent override: L1's 1px rim
+   The border is `.surface-card`'s own, NOT a transparent override: L1's 1px rim
    is what grounds a surface, and without it these sections were a shadow with
    no edge — the one place on the site where a repeated content card floated
    instead of sitting. (High contrast used to patch the rim back on for exactly

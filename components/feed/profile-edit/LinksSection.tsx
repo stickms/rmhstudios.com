@@ -59,7 +59,7 @@ export function LinksSection({
         />
         <div className="space-y-3">
           {links.map((link: ProfileLink, index: number) => (
-            <div key={index} className="glass-fill rounded-site-sm px-4 py-3">
+            <div key={index} className="rounded-site-sm px-4 py-3">
               <div className="flex items-center gap-2">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
                   <LinkIcon className="size-4" aria-hidden />

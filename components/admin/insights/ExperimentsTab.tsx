@@ -78,7 +78,7 @@ export function ExperimentsTab() {
       </p>
       <form
         onSubmit={create}
-        className="glass-pane grid gap-3 rounded-site p-5 sm:grid-cols-[1fr_1fr_6rem_auto] sm:items-end"
+        className="relative grid gap-3 rounded-site p-5 sm:grid-cols-[1fr_1fr_6rem_auto] sm:items-end"
       >
         <div className="space-y-1">
           <Label htmlFor="exp-key">{t('exp-key', { defaultValue: 'Key' })}</Label>
@@ -119,7 +119,7 @@ export function ExperimentsTab() {
       ) : (
         <ul className="space-y-3">
           {(data?.experiments ?? []).map((x) => (
-            <li key={x.id} className="glass-fill space-y-2 rounded-site px-4 py-3">
+            <li key={x.id} className="relative space-y-2 rounded-site px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-site-text">{x.name}</span>

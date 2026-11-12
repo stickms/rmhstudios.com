@@ -27,7 +27,7 @@ export default function EmojiSentence({ emojis, maxEmojis, onRemove, readOnly = 
   return (
     <div className="flex flex-col items-center gap-2 w-full">
       {/* Constant-width container: 6 × 3rem cells + 5 × 0.25rem gaps + 2 × 0.75rem padding = ~21.25rem */}
-      <div className="glass-fill flex flex-wrap items-center gap-1 min-h-14 p-3 rounded-app w-86">
+      <div className="surface-card flex flex-wrap items-center gap-1 min-h-14 p-3 rounded-app w-86">
         {safeEmojis.length === 0 ? (
           <span className="text-app-text-muted text-sm italic mx-auto">
             {readOnly ? 'Waiting for emojis…' : 'Tap emojis below to build your clue'}

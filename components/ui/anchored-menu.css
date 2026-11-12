@@ -1,4 +1,4 @@
-/* AnchoredMenu — placement only. The surface (fill, border, radius, shadow) comes from `.glass-overlay`, the
+/* AnchoredMenu — placement only. The surface (fill, border, radius, shadow) comes from `.surface-overlay`, the
    Steel S5 overlay (app/styles/steel-surfaces.css); nothing here re-rolls it. */
 
 .anchored-menu {
@@ -12,7 +12,7 @@
      render. A custom property survives that, and because the cap keeps the
      panel inside the viewport the fit pass then finds nothing left to correct.
 
-     `.glass-overlay` already declares a `max-block-size` of its own as a
+     `.surface-overlay` already declares a `max-block-size` of its own as a
      last-line viewport guard; this file is unlayered, so the tighter,
      side-aware cap wins over that layered fallback. */
   max-height: var(--anchored-menu-max-h, none);

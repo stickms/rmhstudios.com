@@ -93,10 +93,10 @@
   mask-image: linear-gradient(to left, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
 }
 
-/* The track. It rides `.glass-inset` (the field tier) and takes a touch more of
+/* The track. It rides `.surface-field` (the field tier) and takes a touch more of
    the theme's ink than a text field, so the opaque thumb separates from it on
    Daylight (white on near-white would vanish) and on Midnight alike. It is a
-   flush fill like every field, not a recessed well — see `.glass-inset`. */
+   flush fill like every field, not a recessed well — see `.surface-field`. */
 [data-slot='liquid-tabs-sheet'] {
   background: color-mix(in srgb, var(--site-text) 7%, var(--site-surface));
   border-radius: var(--site-control-radius);
@@ -265,7 +265,7 @@
   }
 
   /* ── 1. Chrome, decoration and floating UI ─────────────────────────────── */
-  .glass-chrome,
+  .surface-chrome,
   .glass-scrim,
   [data-sonner-toaster],
   [data-print='hide'] {
@@ -285,12 +285,12 @@
   }
 
   /* ── 3. Strip the glass material ───────────────────────────────────────── */
-  .glass-fill,
-  .glass-pane,
-  .glass-overlay,
-  .glass-inset,
+  .surface-card,
+  .surface-panel,
+  .surface-overlay,
+  .surface-field,
   .glass-opaque,
-  .glass-interactive {
+  .surface-press {
     background: none !important;
     background-image: none !important;
     backdrop-filter: none !important;

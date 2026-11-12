@@ -163,7 +163,7 @@
   /* Was `overflow: hidden`, and that is the whole bug this rule now fixes: the
      announcement is taller than a phone (a full-bleed intro, then a card per
      item, then the footer), the Dialog primitive caps every overlay at the
-     visible viewport (`.glass-overlay` max-block-size), and `hidden` meant the
+     visible viewport (`.surface-overlay` max-block-size), and `hidden` meant the
      part that did not fit was simply gone — cards and the "Got it" button both,
      with nothing to scroll. `auto` clips to the rounded corners exactly the same
      way (a scroll container is still a clipping context) and gives the overflow

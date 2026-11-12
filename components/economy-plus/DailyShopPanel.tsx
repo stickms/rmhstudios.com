@@ -153,7 +153,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
           />
         </div>
 
-        <div className="glass-pane flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-sm font-semibold text-site-text">
               <Layers className="size-4" aria-hidden />
@@ -209,7 +209,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
             return (
               <li
                 key={item.id}
-                className={`glass-fill flex flex-col gap-3 p-4 ${picked ? 'ring-2 ring-site-accent' : ''}`}
+                className={`flex flex-col gap-3 p-4 ${picked ?'ring-2 ring-site-accent':''}`}
               >
                 <div className="flex items-center gap-3">
                   <Preview item={{ ...item, equipped: false }} />
@@ -397,7 +397,7 @@ function LoadoutsSection({ onApplied }: { onApplied: () => void }) {
       </div>
 
       <form
-        className="glass-pane flex flex-wrap items-center gap-2 p-4"
+        className="flex flex-wrap items-center gap-2 p-4"
         onSubmit={(e) => {
           e.preventDefault();
           if (name.trim()) save.mutate();
@@ -434,7 +434,7 @@ function LoadoutsSection({ onApplied }: { onApplied: () => void }) {
       ) : (
         <ul className="space-y-3">
           {loadouts.map((l) => (
-            <li key={l.id} className="glass-fill flex flex-wrap items-center gap-3 p-4">
+            <li key={l.id} className="flex flex-wrap items-center gap-3 p-4">
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2 text-sm font-semibold text-site-text">
                   <span className="truncate">{l.name}</span>

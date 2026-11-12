@@ -185,7 +185,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
             </div>
           ) : null}
 
-          <div className="glass-fill sticky bottom-0 flex items-center justify-between gap-3 border-x-0 border-b-0 px-4 py-3 md:px-6">
+          <div className="sticky bottom-0 flex items-center justify-between gap-3 border-x-0 border-b-0 px-4 py-3 md:px-6">
             <p className="hidden text-xs text-site-text-muted sm:block">
               {dirty
                 ? t('unsaved-profile-changes', { defaultValue: 'You have unsaved changes.' })

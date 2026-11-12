@@ -166,7 +166,7 @@ export function ModAutomod({ slug }: { slug: string }) {
       </p>
       <ul className="flex flex-col gap-2">
         {rules.map((r) => (
-          <li key={r.id} className="glass-fill flex items-start gap-3 p-3">
+          <li key={r.id} className="flex items-start gap-3 p-3">
             <Switch
               checked={r.enabled}
               onCheckedChange={(v) => void toggle(r, v)}
@@ -197,7 +197,7 @@ export function ModAutomod({ slug }: { slug: string }) {
       </ul>
 
       <form
-        className="glass-pane flex flex-col gap-3 p-4"
+        className="flex flex-col gap-3 p-4"
         onSubmit={(e) => {
           e.preventDefault();
           void add();

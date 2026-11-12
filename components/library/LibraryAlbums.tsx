@@ -47,7 +47,7 @@ export function LibraryAlbums({
   if (allAlbums.length === 0 && !isAdmin) return null;
 
   return (
-    <section className="lib__section lib-albums glass-fill lib-section-shell">
+    <section className="lib__section lib-albums relative lib-section-shell">
       <div className="lib__section-head lib-albums__head">
         <h2 className="lib__section-title">{t('section-albums', { defaultValue: 'Albums' })}</h2>
         {isAdmin && (
@@ -104,7 +104,7 @@ function AlbumCard({ album }: { album: Album }) {
       <ViewTransitionLink
         to="/library/albums/$albumId"
         params={{ albumId: album.id }}
-        className="lib-album glass-fill glass-interactive lib-orbit-card"
+        className="lib-album surface-press lib-orbit-card"
         data-library-orbit=""
         aria-label={t('open-album', { title: album.title, defaultValue: 'Open {{title}}' })}
         {...preload}

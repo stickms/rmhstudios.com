@@ -71,7 +71,7 @@ export function SpacesColumn() {
 
   return (
     <div className="space-y-[var(--site-section-gap)] pt-3 pb-12">
-      <section className="glass-pane space-y-3 rounded-site p-5">
+      <section className="space-y-3 rounded-site p-5">
         <p className="text-sm text-site-text-muted">
           {t('spaces-subtitle', {
             defaultValue: 'Live rooms to chat, listen together, and hang out in real time.',
@@ -136,7 +136,7 @@ export function SpacesColumn() {
                 <Link
                   to="/spaces/$id"
                   params={{ id: s.id }}
-                  className="glass-fill glass-interactive flex flex-col gap-1 rounded-site px-4 py-3"
+                  className="surface-press flex flex-col gap-1 rounded-site px-4 py-3"
                 >
                   <div className="flex items-center gap-2 text-xs text-site-text-muted">
                     <Radio className="size-3.5 text-site-accent" aria-hidden />

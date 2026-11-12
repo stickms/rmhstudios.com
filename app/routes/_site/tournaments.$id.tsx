@@ -355,7 +355,7 @@ function TournamentDetailPage() {
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {(tourney.entrants ?? []).map((e) => (
-              <div key={e.id} className="glass-fill flex items-center gap-2 rounded-site px-4 py-3">
+              <div key={e.id} className="flex items-center gap-2 rounded-site px-4 py-3">
                 {e.placement ? (
                   <span className="w-5 text-center text-sm font-semibold text-site-text-muted">
                     {e.placement === 1 ? (

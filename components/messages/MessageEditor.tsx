@@ -13,7 +13,7 @@ import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
  * the caret at the end so the common case (a missing word at the end) is one
  * keystroke away.
  *
- * The field is `.glass-inset` — the input tier — and sits *outside* the bubble
+ * The field is `.surface-field` — the input tier — and sits *outside* the bubble
  * fill, so it never puts a blurred surface on a repeated list item.
  */
 export function MessageEditor({
@@ -60,7 +60,7 @@ export function MessageEditor({
           }
         }}
         aria-label={t('message-edit-field', { defaultValue: 'Edit message' })}
-        className="glass-inset w-full resize-none rounded-site px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus-visible:border-site-accent focus-visible:outline-none"
+        className="surface-field w-full resize-none rounded-site px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus-visible:border-site-accent focus-visible:outline-none"
       />
       <div className="flex items-center justify-end gap-2">
         <span className="mr-auto text-caption text-site-text-muted">

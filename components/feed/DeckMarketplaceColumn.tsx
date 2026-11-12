@@ -80,7 +80,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
      of the StudyTabs strip below: the two study pages are siblings, not a
      parent and a detail, so the crossing between them is a tab strip rather
      than a link one way and a Back the other. */}
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Library className="h-5 w-5 text-site-accent"/>
  <h1 className="text-lg font-bold text-site-text">
  {t('deck-marketplace', { defaultValue:'Browse decks'})}
@@ -97,7 +97,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  onChange={(e) => onQueryChange(e.target.value)}
  placeholder={t('deck-search-placeholder', { defaultValue:'Search public decks…'})}
  aria-label={t('deck-search-label', { defaultValue:'Search public decks'})}
- className="w-full rounded-site-sm glass-inset py-2 pl-9 pr-3 text-sm text-site-text outline-none focus:border-site-accent"
+ className="w-full rounded-site-sm surface-field py-2 pl-9 pr-3 text-sm text-site-text outline-none focus:border-site-accent"
  />
  </div>
 
@@ -117,7 +117,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  return (
  <div
  key={deck.id}
- className="flex flex-col rounded-site glass-fill p-5"
+ className="flex flex-col rounded-site relative p-5"
  >
  <Link to="/study/$deckId"params={{ deckId: deck.id }} className="min-w-0">
  <h2 className="truncate text-sm font-bold text-site-text hover:text-site-accent">

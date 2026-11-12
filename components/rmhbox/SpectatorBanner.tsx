@@ -73,7 +73,7 @@ export default function SpectatorBanner({
         <div className="relative pointer-events-auto" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen((o) => !o)}
-            className="glass-fill flex items-center gap-1.5 rounded-app-sm px-3 py-1 text-xs font-semibold text-app-text transition-colors hover:bg-app-surface-hover"
+            className="surface-card flex items-center gap-1.5 rounded-app-sm px-3 py-1 text-xs font-semibold text-app-text transition-colors hover:bg-app-surface-hover"
           >
             {t("viewing-player", { defaultValue: "Viewing: {{name}}", name: spectatorTarget.targetPlayerName })}
             <ChevronDown className="h-3 w-3" />

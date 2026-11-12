@@ -62,7 +62,7 @@ export default function ChallengePanel({ compact = false }: { compact?: boolean 
   return (
     <section
       aria-label={t('challenge-heading', { year, defaultValue: '{{year}} reading challenge' })}
-      className={compact ? 'glass-fill rounded-site p-5' : 'glass-pane rounded-site p-5'}
+      className={compact ?'rounded-site p-5':'rounded-site p-5'}
     >
       <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-site-text">
         <Target className="size-4 text-site-accent" aria-hidden />

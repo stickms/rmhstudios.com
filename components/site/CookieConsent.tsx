@@ -127,12 +127,12 @@ export function CookieConsent() {
       // §5.5x A.1: bottom-most member of the mobile floating stack — its presence
       // lifts the mini-player / back-to-top clear of it (globals.css :has() rules).
       data-floating="cookie"
-      // `.glass-overlay`, not `.glass-chrome`. It is a floating notice, it is
+      // `.surface-overlay`, not `.surface-chrome`. It is a floating notice, it is
       // `fixed`, it floats over live content, and it is the one surface a
       // first-time visitor MUST read before they can dismiss it — which is the
-      // definition of the L4 tier. `.glass-chrome` is the sticky-header tier: a
+      // definition of the L4 tier. `.surface-chrome` is the sticky-header tier: a
       // 32% fill with no legibility floor, tuned for something you read THROUGH
-      // on the way to the content behind it. `.glass-overlay` also supplies its
+      // on the way to the content behind it. `.surface-overlay` also supplies its
       // own shadow, so the hand-added `` goes with it.
       //
       // `.glass-opaque` on top of it: L4 elevation (rim, shadow, legibility), no
@@ -141,7 +141,7 @@ export function CookieConsent() {
       // it was re-run on every scroll frame of a first visit — the single
       // largest scroll cost on `/` (perf audit 2026-10-08: ~3.3ms of ~10ms per
       // frame). Opaque also reads better for a notice you are required to read.
-      className="glass-overlay glass-opaque bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-5"
+      className="surface-overlay glass-opaque bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-5"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Cookie className="hidden h-5 w-5 shrink-0 text-site-accent sm:block" aria-hidden />

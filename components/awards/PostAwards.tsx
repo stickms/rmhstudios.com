@@ -107,7 +107,7 @@ export function PostAwards({
         return (
           <span
             key={g.awardId}
-            className="glass-fill inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm"
             title={def.name}
           >
             <span aria-hidden>{def.emoji}</span>
@@ -147,7 +147,7 @@ export function PostAwards({
                 disabled={busy !== null}
                 onClick={() => give(def.id)}
                 className={cn(
-                  'glass-fill flex flex-col items-center gap-1 rounded-site py-3 transition-colors hover:border-site-text',
+'flex flex-col items-center gap-1 rounded-site py-3 transition-colors hover:border-site-text',
                   busy === def.id && 'opacity-60',
                 )}
               >

@@ -10,7 +10,7 @@ const TakeMeter = lazy(() => import('./TakeMeter'));
  */
 export function TakeMeterLazy({ postId }: { postId: string }) {
   return (
-    <Suspense fallback={<div className="glass-fill mt-2 min-h-28 rounded-site" aria-hidden />}>
+    <Suspense fallback={<div className="mt-2 min-h-28 rounded-site"aria-hidden />}>
       <TakeMeter postId={postId} />
     </Suspense>
   );

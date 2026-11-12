@@ -32,7 +32,7 @@ function OptionPicker<V extends string>({
         variants={fade}
         initial="initial"
         animate="animate"
-        className="relative w-full max-w-xs p-2 glass-overlay"
+        className="relative w-full max-w-xs p-2 surface-overlay"
       >
         <div className="mb-1 flex items-center justify-between px-3 pt-1">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">

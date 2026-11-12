@@ -203,7 +203,7 @@ function Tile({
   className?: string;
 }) {
   return (
-    <div className={cn('glass-fill flex flex-col gap-1 rounded-site p-2.5 sm:p-3', className)}>
+    <div className={cn('surface-card flex flex-col gap-1 rounded-site p-2.5 sm:p-3', className)}>
       <dt className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Icon className="size-3.5 shrink-0" aria-hidden />
         <span className="min-w-0 truncate">{label}</span>

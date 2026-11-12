@@ -1,55 +1,57 @@
 /* Steel surfaces (docs/plans/2026-11-11-steel-design-implementation.md S1-S6, M1, T4).
 
-   The role classes `glass-fill`, `glass-pane`, `glass-chrome`, `glass-overlay`, `glass-inset`, `glass-interactive` are
-   still written at ~600 call sites. They keep working as NAMES and are remapped here to flat surfaces (S6); phase 3
-   to 5 remove the class names page by page. There is no material left behind them: no gradient, blur, glow, haze,
-   rim or shadow except the overlay shadow of T4.
+   The role classes `surface-card`, `surface-panel`, `surface-chrome`, `surface-overlay`, `surface-field`, `surface-press` are
+   the S6 names (they were `glass-*` until phase 7). Pages on the `_site` shell no longer write `surface-card` or
+   `surface-panel` at all: a group of content is rows on rules, and those two names remain only on the full-screen
+   games and apps and on components shared with them, where `components/shared/app-theme.css` draws them as the app
+   tier's own panels (L8). There is no material left behind any of them: no gradient, blur, glow, haze, rim or shadow
+   except the overlay shadow of T4.
 
-     glass-fill, glass-pane   no background, no border (S1: content sits on the page, a list is rows on rules)
-     glass-inset              the flat control surface (K4): --site-surface fill, 1px border, control radius
-     glass-chrome             a bar: --site-bg with a 1px rule on its inner edge
-     glass-overlay            S5: the only raised surface
-     glass-interactive        a pressable host: position and the M1 hover transition only
+     surface-card, surface-panel  no background, no border (S1: content sits on the page, a list is rows on rules)
+     surface-field                the flat control surface (K4): --site-surface fill, 1px border, control radius
+     surface-chrome               a bar: --site-bg with a 1px rule on its inner edge
+     surface-overlay              S5: the only raised surface
+     surface-press                a pressable host: position and the M1 hover transition only
 
    In @layer components so a Tailwind utility on the same element (`bg-site-bg-subtle`, `rounded-site`,
    `border-b`) still wins, exactly as the old roles behaved. Every colour is a section-2 token. */
 @layer components {
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-interactive) {
+  :is(.surface-card, .surface-panel, .surface-chrome, .surface-overlay, .surface-press) {
     position: relative;
   }
 
-  :is(.glass-fill, .glass-pane, .glass-chrome--aside) {
+  :is(.surface-card, .surface-panel, .surface-chrome--aside) {
     background: none;
     border: 0;
     box-shadow: none;
   }
 
-  .glass-chrome {
+  .surface-chrome {
     background: var(--site-bg);
     border: 0;
     border-block-end: 1px solid var(--site-border);
     box-shadow: none;
   }
 
-  .glass-overlay {
+  .surface-overlay {
     max-inline-size: calc(100dvw - var(--safe-left, 0px) - var(--safe-right, 0px) - 1rem);
     background: var(--site-surface);
     border: 1px solid var(--site-border);
     border-radius: var(--site-radius);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   }
-  .style-graphite .glass-overlay {
+  .style-graphite .surface-overlay {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   }
 
-  :is(.glass-inset, [data-slot='input'], [data-slot='textarea']) {
+  :is(.surface-field, [data-slot='input'], [data-slot='textarea']) {
     background: var(--site-surface);
     border: 1px solid var(--site-border);
     border-radius: var(--site-control-radius);
     box-shadow: none;
   }
 
-  .glass-interactive {
+  .surface-press {
     transition:
       background-color 90ms ease,
       border-color 90ms ease;

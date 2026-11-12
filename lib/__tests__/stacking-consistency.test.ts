@@ -262,18 +262,18 @@ describe('§5.6 — a big z-index inside the frame is a claim nobody can hear (R
 });
 
 /**
- * R3 under Plasmatic Jelly (gate N4, 05 §1.1). Liquid Glass exempted `.glass-fill` because "L1 has no blur", and blur
+ * R3 under Plasmatic Jelly (gate N4, 05 §1.1). Liquid Glass exempted `.surface-card` because "L1 has no blur", and blur
  * was the only thing that made a glass root a containing block. Jelly changes the reason, not the rule: EVERY role can
  * now carry a transform — hover plump, press squash, release wobble (the CSS soft body, app/jelly-material.css §8), a
  * ≤ 1.5 px arc nudge (lib/jelly/arcs/nudge.ts) — and a transformed element is a containing block for `position: fixed` descendants exactly
- * like a blurred one. So the scan covers every `glass-*` role and every `data-jelly` host. The files that already had
+ * like a blurred one. So the scan covers every `surface-*` role. The files that already had
  * the shape when the rule widened are frozen in {@link DEFORMABLE_HOST_BASELINE} and drain one-directionally.
  */
 const DEFORMABLE_HOST_BASELINE = new Set<string>([]);
 
 describe('§4 — nothing `fixed` inside a deformable jelly host (R3, N4)', () => {
   const JELLY_HOSTS =
-    /className=["'{`][^\n]*\bglass-(?:fill|pane|chrome|overlay|inset|scrim)\b|\bdata-jelly(?:=|\s|>)/;
+    /className=["'{`][^\n]*\b(?:surface-(?:card|panel|chrome|overlay|field)|glass-scrim)\b/;
   const trapped = (src: string) =>
     JELLY_HOSTS.test(src) &&
     // `fixed` AND `inset-0`: a full-viewport overlay declared inside a jelly component. Without the `inset-0` this
@@ -305,11 +305,11 @@ describe('§4 — nothing `fixed` inside a deformable jelly host (R3, N4)', () =
   /**
    * N6 (05 D5): "hazy" is the most likely road back to frosted blur. No role carries a backdrop-filter other than
    * `none` — in the role sheet, the jelly material, or the app tier's adapter. (This is also what keeps L1 safe to
-   * build repeated content from, which the previous version of this test asserted for `.glass-fill` alone.)
+   * build repeated content from, which the previous version of this test asserted for `.surface-card` alone.)
    */
   it.each(['app/styles/steel-surfaces.css', 'components/shared/app-theme.css'])('no role has blur: %s', (sheet) => {
     const css = readCss(join(ROOT, sheet)).replace(/\/\*[\s\S]*?\*\//g, '');
-    const ROLE = /\.glass-[\w-]+|\[data-jelly[\]=\w-]*|\.app-glass\b/;
+    const ROLE = /\.(?:glass|surface)-[\w-]+|\.app-glass\b/;
     const blurred = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
       .filter((m) => ROLE.test(m[1]))
       .filter((m) => /(?:^|;|\s)(?:-webkit-)?backdrop-filter\s*:(?!\s*none\b)[^;]+/.test(m[2]))
@@ -324,8 +324,8 @@ describe('§4 — nothing `fixed` inside a deformable jelly host (R3, N4)', () =
 
   it('the role sheets exist and define the roles (the scan above is not vacuous)', () => {
     const css = readFileSync(join(ROOT, 'app', 'styles', 'steel-surfaces.css'), 'utf8');
-    expect(css).toMatch(/\.glass-fill/);
-    expect(css).toMatch(/\.glass-overlay/);
+    expect(css).toMatch(/\.surface-card/);
+    expect(css).toMatch(/\.surface-overlay/);
   });
 });
 

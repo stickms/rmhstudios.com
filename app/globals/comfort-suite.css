@@ -281,7 +281,7 @@ html.readable-font body {
      `bg-slice-input-bg` / `border-slice-input-border` in the game compiled to
      nothing — nine of them, across the AI search bar, the setlist panel, the
      lobby and the song details panel. The visible result was the worst kind:
-     the fields fell through to `glass-inset`'s own light background and kept
+     the fields fell through to `surface-field`'s own light background and kept
      the game's light-on-dark ink, so the AI search box rendered #f0f0f0 text
      on rgba(255,255,255,.9) — a contrast ratio of about 1.1:1, i.e. typing
      into an invisible field. Binding them fixes all nine at the source. */

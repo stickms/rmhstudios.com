@@ -69,7 +69,7 @@ export default function TopFourSettings() {
         {picked.map((entry, i) => (
           <li
             key={keyOf(entry)}
-            className="glass-fill flex items-center gap-2 rounded-site-sm px-3 py-2"
+            className="flex items-center gap-2 rounded-site-sm px-3 py-2"
           >
             <span className="w-5 text-sm tabular-nums text-site-text-muted">{i + 1}</span>
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-site-text">

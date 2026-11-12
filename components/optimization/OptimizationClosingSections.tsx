@@ -57,7 +57,7 @@ export function OptimizationClosingSections() {
             </div>
             <div className="sec-faq sec-reveal">
               {OPT_FAQ.map((f) => (
-                <details className="glass-fill sec-faq__item" key={f.q}>
+                <details className="surface-card sec-faq__item" key={f.q}>
                   <summary className="sec-faq__q">{f.q}</summary>
                   <p className="sec-faq__a">{f.a}</p>
                 </details>
@@ -69,7 +69,7 @@ export function OptimizationClosingSections() {
         {/* ─── Closing ──────────────────────────────────────────────────── */}
         <section className="sec-section sec-section--hair" aria-labelledby="opt-closing-title">
           <div className="sec-shell">
-            <div className="glass-pane sec-disclosure sec-reveal">
+            <div className="surface-panel sec-disclosure sec-reveal">
               <div className="sec-disclosure__glow" aria-hidden="true" />
               <div className="sec-disclosure__inner">
                 <p className="sec-eyebrow">Never finished</p>

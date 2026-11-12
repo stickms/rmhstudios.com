@@ -105,7 +105,7 @@ export function LibraryContextMenu({
   return createPortal(
     <div
       ref={ref}
-      className="lib-ctx glass-overlay"
+      className="lib-ctx surface-overlay"
       data-slot="context-menu"
       data-motion="pop"
       data-state={state}

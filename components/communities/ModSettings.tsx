@@ -52,7 +52,7 @@ export function ModSettings({
 
   return (
     <form
-      className="glass-pane flex flex-col gap-4 p-4"
+      className="flex flex-col gap-4 p-4"
       onSubmit={(e) => {
         e.preventDefault();
         void save();

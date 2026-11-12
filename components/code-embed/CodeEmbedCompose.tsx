@@ -101,7 +101,7 @@ export function CodeEmbedDialog({ ce }: { ce: CodeEmbedCompose }) {
             <label key={f.key} className="block text-xs font-medium text-site-text-muted">
               {f.label}
               <Textarea
-                className="glass-inset mt-1 h-24 font-mono text-xs"
+                className="surface-field mt-1 h-24 font-mono text-xs"
                 spellCheck={false}
                 maxLength={EMBED_FIELD_MAX}
                 value={draft[f.key]}

@@ -318,7 +318,7 @@ export function useHighlightKit(opts: KitOptions) {
     <>
       {sel ? (
         <div
-          className="rf-seltool glass-overlay"
+          className="rf-seltool surface-overlay"
           data-rf-skip=""
           role="toolbar"
           aria-label={t('selection-toolbar', { defaultValue: 'Selection actions' })}

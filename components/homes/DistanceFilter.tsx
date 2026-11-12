@@ -136,7 +136,7 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
 
   return (
     <section
-      className="glass-pane p-4 sm:p-5"
+      className="surface-panel p-4 sm:p-5"
       aria-labelledby="homes-distance-heading"
       data-slot="distance-filter"
     >

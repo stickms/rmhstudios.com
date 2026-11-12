@@ -98,7 +98,7 @@ function AdminAlbumsPage() {
         {/* Create — a singular action panel gets the L2 glass pane. */}
         <form
           onSubmit={createAlbum}
-          className="glass-pane flex flex-col gap-2 rounded-site p-5 sm:flex-row sm:items-center"
+          className="flex flex-col gap-2 rounded-site p-5 sm:flex-row sm:items-center"
         >
           <Input
             type="text"
@@ -138,7 +138,7 @@ function AdminAlbumsPage() {
                   key={album.id}
                   to="/admin/albums/$id"
                   params={{ id: album.id }}
-                  className="glass-fill glass-interactive group flex flex-col overflow-hidden rounded-site"
+                  className="surface-press group flex flex-col overflow-hidden rounded-site"
                 >
                   <div className="aspect-4/3 w-full overflow-hidden bg-site-bg">
                     {cover ? (

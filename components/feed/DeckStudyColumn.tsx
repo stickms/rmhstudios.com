@@ -224,7 +224,7 @@ export function DeckStudyColumn({
  const card = queue[idx];
  return (
  <div>
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <button
  onClick={exitReview}
  className="text-site-text-muted hover:text-site-text"
@@ -237,7 +237,7 @@ export function DeckStudyColumn({
  </span>
  </header>
  <div className="p-4">
- <div className="flex min-h-64 flex-col items-center justify-center rounded-site glass-fill p-8 text-center">
+ <div className="flex min-h-64 flex-col items-center justify-center rounded-site relative p-8 text-center">
  <p className="text-lg font-semibold text-site-text">{card.front}</p>
  {revealed && (
  <>
@@ -272,7 +272,7 @@ export function DeckStudyColumn({
 
  return (
  <div>
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link to="/study"className="text-site-text-muted hover:text-site-text">
  <ArrowLeft className="h-5 w-5"/>
  </Link>
@@ -316,7 +316,7 @@ export function DeckStudyColumn({
  )}
 
  {deck.isOwner && (
- <div className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}>
+ <div className={`rounded-site relative p-4 ${LIFT_CARD}`}>
  <p className="mb-2 flex items-center gap-1.5 site-section-label">
  <Plus className="h-3.5 w-3.5"/> {t('add-a-card', { defaultValue:'Add a card'})}
  </p>
@@ -326,7 +326,7 @@ export function DeckStudyColumn({
  onChange={(e) => setFront(e.target.value)}
  placeholder={t('front-placeholder', { defaultValue:'Front (question)'})}
  maxLength={500}
- className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <textarea
  value={back}
@@ -334,7 +334,7 @@ export function DeckStudyColumn({
  placeholder={t('back-placeholder', { defaultValue:'Back (answer)'})}
  maxLength={500}
  rows={2}
- className="glass-inset border w-full resize-none rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="surface-field border w-full resize-none rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <div className="flex justify-end">
  <Button
@@ -365,7 +365,7 @@ export function DeckStudyColumn({
  {cards.map((c) => (
  <div
  key={c.id}
- className={`rounded-site-sm glass-fill p-3 ${LIFT_CARD}`}
+ className={`rounded-site-sm relative p-3 ${LIFT_CARD}`}
  >
  <p className="text-sm font-medium text-site-text">{c.front}</p>
  <p className="mt-0.5 text-sm text-site-text-muted">{c.back}</p>

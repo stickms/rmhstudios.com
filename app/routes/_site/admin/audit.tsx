@@ -127,7 +127,7 @@ function AuditLogPage() {
             }
           />
         ) : (
-          <ul className="glass-fill divide-y divide-site-border rounded-site overflow-hidden">
+          <ul className="divide-y divide-site-border rounded-site overflow-hidden">
             {items.map((e) => (
               <li key={e.id} className="flex items-center gap-3 px-4 py-3">
                 <UserAvatar
@@ -139,7 +139,7 @@ function AuditLogPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-site-text">
                     <span className="font-semibold">{e.admin.name || e.admin.handle}</span>{' '}
-                    <code className="glass-inset rounded-site-sm px-2 py-0.5 font-mono text-xs text-site-accent">
+                    <code className="surface-field rounded-site-sm px-2 py-0.5 font-mono text-xs text-site-accent">
                       {e.action}
                     </code>
                     {e.targetType && (

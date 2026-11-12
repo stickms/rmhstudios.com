@@ -208,9 +208,9 @@ export function MemberFeatureGrid({ tier, highlight, signedOut }: Props) {
           return (
             <div key={feature.id} className="flex">
               <article
-                // `.glass-fill` is the repeated-card tier per the design language.
+                // `.surface-card` is the repeated-card tier per the design language.
                 className={cn(
-                  'glass-fill flex w-full flex-col gap-3 rounded-site p-5',
+                  'surface-card flex w-full flex-col gap-3 rounded-site p-5',
                   isHighlight && 'ring-2 ring-site-accent',
                 )}
                 aria-current={isHighlight ? 'true' : undefined}

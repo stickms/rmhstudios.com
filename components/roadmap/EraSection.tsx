@@ -1,11 +1,11 @@
 import type { YearSection } from "./roadmap-types";
 import { eraColorFor } from "./roadmap-model";
 
-/** One milestone → an L2 glass pane (`.glass-pane`). Accent-tinted title,
+/** One milestone → an L2 glass pane (`.`). Accent-tinted title,
  *  muted body, a subtle reduced-motion-safe lift on hover. */
 function MilestoneCard({ title, body }: { title: string; body: string }) {
   return (
-    <div data-slot="card" className="roadmap-card glass-pane rounded-site px-4 py-3">
+    <div data-slot="card"className="roadmap-card rounded-site px-4 py-3">
       <h3 className="site-section-label mb-2 text-site-accent!">
         {title}
       </h3>

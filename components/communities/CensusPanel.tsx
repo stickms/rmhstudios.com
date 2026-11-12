@@ -63,7 +63,7 @@ function CreateCensus({ slug, onCreated }: { slug: string; onCreated: () => void
 
   return (
     <form
-      className="glass-pane m-3 flex flex-col gap-3 p-4"
+      className="m-3 flex flex-col gap-3 p-4"
       onSubmit={(e) => {
         e.preventDefault();
         void save();
@@ -96,7 +96,7 @@ function CreateCensus({ slug, onCreated }: { slug: string; onCreated: () => void
         />
       </label>
       {questions.map((q, i) => (
-        <fieldset key={i} className="glass-inset flex flex-col gap-2 rounded-site p-4">
+        <fieldset key={i} className="surface-field flex flex-col gap-2 rounded-site p-4">
           <div className="flex items-center gap-2">
             <Input
               value={q.prompt}
@@ -211,7 +211,7 @@ function AnswerForm({
             {q.options.map((o) => (
               <label
                 key={o.id}
-                className="glass-fill flex cursor-pointer items-center gap-3 rounded-site px-3 py-2 text-sm text-site-text has-[:checked]:ring-2 has-[:checked]:ring-site-accent"
+                className="flex cursor-pointer items-center gap-3 rounded-site px-3 py-2 text-sm text-site-text has-[:checked]:ring-2 has-[:checked]:ring-site-accent"
               >
                 <input
                   type={q.kind === 'multi' ? 'checkbox' : 'radio'}
@@ -296,7 +296,7 @@ export default function CensusPanel({
 
   return (
     <div className="flex flex-col gap-3 px-3 py-3">
-      <section className="glass-pane p-4">
+      <section className="p-4">
         <h3 className="text-base font-bold text-site-text">{census.title}</h3>
         {census.description && (
           <p className="mt-1 whitespace-pre-wrap break-words text-sm text-site-text-muted">
@@ -323,7 +323,7 @@ export default function CensusPanel({
       </section>
 
       {census.questions && joined && (
-        <section className="glass-pane p-4">
+        <section className="p-4">
           <AnswerForm slug={slug} census={census} onDone={load} />
         </section>
       )}
@@ -340,7 +340,7 @@ export default function CensusPanel({
         </p>
       )}
       {census.withheld && (
-        <p className="glass-fill p-4 text-sm text-site-text-muted">
+        <p className="p-4 text-sm text-site-text-muted">
           {t('census-withheld', {
             n: census.minResponses,
             defaultValue:
@@ -351,7 +351,7 @@ export default function CensusPanel({
       {census.results && (
         <div className="flex flex-col gap-4">
           {census.results.map((q) => (
-            <section key={q.id} className="glass-fill p-4">
+            <section key={q.id} className="p-4">
               <h4 className="mb-2 text-sm font-semibold text-site-text">{q.prompt}</h4>
               <ul className="flex flex-col gap-2">
                 {q.options.map((o) => (

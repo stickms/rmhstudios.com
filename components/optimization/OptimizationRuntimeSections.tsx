@@ -29,7 +29,7 @@ export function OptimizationRuntimeSections() {
                 return (
                   <article
                     key={p.title}
-                    className="glass-fill sec-card sec-reveal"
+                    className="surface-card sec-card sec-reveal"
                     style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}
                   >
                     <span className="sec-card__icon">
@@ -58,7 +58,7 @@ export function OptimizationRuntimeSections() {
                 is won or lost. Here’s how ours is wired.
               </p>
             </div>
-            <div className="glass-fill sec-spec sec-reveal">
+            <div className="surface-card sec-spec sec-reveal">
               {RENDER_SPECS.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -82,7 +82,7 @@ export function OptimizationRuntimeSections() {
                 about what actually reaches your browser.
               </p>
             </div>
-            <div className="glass-fill sec-spec sec-reveal">
+            <div className="surface-card sec-spec sec-reveal">
               {BUNDLE_SPECS.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -146,7 +146,7 @@ export function OptimizationRuntimeSections() {
                 profiled, and tuned.
               </p>
             </div>
-            <div className="glass-fill sec-spec sec-reveal">
+            <div className="surface-card sec-spec sec-reveal">
               {BUILD_SPECS.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>

@@ -1326,9 +1326,9 @@ button.stm-star {
   margin: 0 0 16px;
   color: var(--stm-text);
 }
-.stm-legacy .glass-fill,
-.stm-legacy .glass-pane,
-.stm-legacy .glass-inset,
+.stm-legacy .surface-card,
+.stm-legacy .surface-panel,
+.stm-legacy .surface-field,
 .stm-legacy [data-slot='card'] {
   background: var(--stm-pane-deep) !important;
   border: 1px solid var(--stm-line) !important;

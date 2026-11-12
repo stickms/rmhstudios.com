@@ -90,7 +90,7 @@ export function ModInvites({ slug }: { slug: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="glass-fill flex flex-wrap items-end gap-3 p-3">
+      <div className="flex flex-wrap items-end gap-3 p-3">
         <div className="flex flex-col gap-1">
           <Label htmlFor="invite-max-uses">
             {t('invite-max-uses', { defaultValue: 'Max uses (optional)' })}
@@ -146,9 +146,9 @@ export function ModInvites({ slug }: { slug: string }) {
           {invites.map((i) => {
             const label = stateLabel(i);
             return (
-              <li key={i.id} className="glass-fill flex flex-col gap-2 p-3">
+              <li key={i.id} className="flex flex-col gap-2 p-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <code className="min-w-0 flex-1 truncate rounded-site-sm glass-inset px-2 py-1 text-xs text-site-text">
+                  <code className="min-w-0 flex-1 truncate rounded-site-sm surface-field px-2 py-1 text-xs text-site-text">
                     {linkFor(i.code)}
                   </code>
                   <CopyButton

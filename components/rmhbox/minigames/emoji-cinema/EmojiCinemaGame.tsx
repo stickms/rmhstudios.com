@@ -332,7 +332,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
                   <button
                     key={movie.title}
                     onClick={() => handleSelectMovie(movie.title)}
-                    className="glass-fill p-4 rounded-app hover:border-app-accent hover:bg-app-border transition-colors text-left"
+                    className="surface-card p-4 rounded-app hover:border-app-accent hover:bg-app-border transition-colors text-left"
                   >
                     <div className="font-semibold text-app-text">{movie.title} ({movie.year})</div>
                     <div className="text-xs text-app-text-muted mt-1">

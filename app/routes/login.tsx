@@ -317,7 +317,7 @@ function LoginPage() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               aria-label={t('choose-avatar', { defaultValue: 'Choose a profile picture' })}
-              className="glass-inset relative flex size-20 items-center justify-center rounded-full border-dashed hover:border-site-text transition-colors"
+              className="surface-field relative flex size-20 items-center justify-center rounded-full border-dashed hover:border-site-text transition-colors"
             >
               <img
                 src={avatarPreview || '/images/social/default_avatar.png'}
@@ -433,12 +433,12 @@ function LoginPage() {
         data-glass-lens={isCard ? '' : undefined}
         className={cn(
           'relative flex min-h-dvh w-full max-w-none flex-col justify-center rounded-none px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:min-h-0 sm:max-w-sm sm:rounded-site sm:p-8',
-          isCard && 'glass-pane glass-liquid glass-refract glass-refract--prism',
+          isCard && 'surface-panel glass-liquid glass-refract glass-refract--prism',
         )}
       >
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-site">
+          <div className="surface-field mb-3 flex size-12 items-center justify-center rounded-site">
             <span className="font-display text-lg font-bold tracking-tight text-site-text">R</span>
           </div>
           <p className="site-kicker">RMH Studios</p>

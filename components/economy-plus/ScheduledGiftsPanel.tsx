@@ -70,7 +70,7 @@ export default function ScheduledGiftsPanel() {
               <WrappedGift key={g.id} gift={g} />
             ))}
             {opened.map((g) => (
-              <li key={g.id} className="glass-fill flex items-center gap-3 p-4">
+              <li key={g.id} className="flex items-center gap-3 p-4">
                 <PackageOpen className="size-5 shrink-0 text-site-text-muted" aria-hidden />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-site-text">{g.itemName}</p>
@@ -140,7 +140,7 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
         initial={reduce ? false : { scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={transition}
-        className="glass-pane space-y-1 p-5 text-center"
+        className="space-y-1 p-5 text-center"
         aria-live="polite"
       >
         <PackageOpen className="mx-auto size-8 text-site-accent" aria-hidden />
@@ -157,7 +157,7 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
   }
 
   return (
-    <li className="glass-pane flex items-center gap-4 p-4">
+    <li className="flex items-center gap-4 p-4">
       <div
         className="flex size-14 shrink-0 items-center justify-center rounded-site border border-site-border"
         aria-hidden
@@ -221,7 +221,7 @@ function SentRow({ gift }: { gift: SentGiftView }) {
     );
 
   return (
-    <li className="glass-fill flex flex-wrap items-center gap-3 p-4">
+    <li className="flex flex-wrap items-center gap-3 p-4">
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-site-text">
           {gift.itemName} → {partyName(gift.recipient)}
@@ -311,7 +311,7 @@ function SendGiftForm() {
         {t('gifts-send', { defaultValue: 'Send a gift' })}
       </h2>
       <form
-        className="glass-pane space-y-3 p-4"
+        className="space-y-3 p-4"
         onSubmit={(e) => {
           e.preventDefault();
           if (valid) send.mutate();

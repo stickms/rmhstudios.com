@@ -115,7 +115,7 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
       )}
 
       {/* Submit CTA */}
-      <div className="glass-fill space-y-2 rounded-site px-4 py-3">
+      <div className="space-y-2 rounded-site px-4 py-3">
         <h4 className="font-semibold text-site-text">
           {t('share-your-build', { defaultValue: 'Share Your Build' })}
         </h4>

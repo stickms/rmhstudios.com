@@ -6,9 +6,9 @@
  * single-sheet glint), so the preview reads for real — not a swatch.
  *
  * Two variants:
- *  - `size="sm"` (marketplace cards): L1 `.glass-fill` material ONLY — NO
+ *  -`size="sm"`(marketplace cards): L1`.`material ONLY — NO
  *    backdrop-filter tiers, so a grid of many cards stays inside the §9 budget.
- *  - `size="lg"` (the editor's single live preview): full material (`.glass-pane`)
+ *  -`size="lg"`(the editor's single live preview): full material (`.`)
  *    on the feature surfaces so blur + micro-noise read.
  *
  * Decorative: `aria-hidden`, pointer-events off. It never mutates document-level
@@ -32,7 +32,7 @@ export function ThemeMiniShell({
   const heavy = size === 'lg';
   // Feature surfaces get real material in the large variant; the small variant
   // stays L1 (no backdrop-filter) so a card grid is cheap.
-  const feature = heavy ? 'glass-pane' : 'glass-fill';
+  const feature = heavy ?'':'';
 
   const t = size === 'lg' ? 'text-caption' : 'text-nano';
   const tSm = size === 'lg' ? 'text-tiny' : 'text-pico';
@@ -54,7 +54,7 @@ export function ThemeMiniShell({
         {/* Sidebar rail sliver */}
         <div
           className={cn(
-            'glass-fill flex shrink-0 flex-col items-center gap-1.5 rounded-site',
+'flex shrink-0 flex-col items-center gap-1.5 rounded-site',
             size === 'lg' ? 'w-10 py-2' : 'w-5 py-1.5',
           )}
         >
@@ -114,7 +114,7 @@ export function ThemeMiniShell({
           </div>
 
           {/* Static Tabs-like pill strip */}
-          <div className="glass-fill flex w-fit items-center gap-0.5 rounded-full p-0.5">
+          <div className="flex w-fit items-center gap-0.5 rounded-full p-0.5">
             {['One', 'Two', 'Three'].map((label, i) => (
               <span
                 key={label}
@@ -154,7 +154,7 @@ export function ThemeMiniShell({
             </span>
             <span
               className={cn(
-                'glass-inset ms-auto flex flex-1 items-center rounded-site-sm',
+                'surface-field ms-auto flex flex-1 items-center rounded-site-sm',
                 tSm,
                 size === 'lg' ? 'px-2 py-1.5' : 'px-1.5 py-1',
               )}

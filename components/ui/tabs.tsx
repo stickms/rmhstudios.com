@@ -474,7 +474,7 @@ export function Tabs({
       data-slot="liquid-tabs-sheet"
       className={cn(
         // The app tier's track: always full width, the field tier surface the raised thumb sits on.
-        'glass-inset w-full min-w-0 max-w-full rounded-[var(--site-control-radius)]',
+        'surface-field w-full min-w-0 max-w-full rounded-[var(--site-control-radius)]',
         className,
       )}
     >

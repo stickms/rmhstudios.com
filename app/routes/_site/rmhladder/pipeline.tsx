@@ -265,7 +265,7 @@ function ApplicationEditor({
 
   return (
     <aside
-      className="rl-app-editor glass-pane rounded-site"
+      className="rl-app-editor rounded-site"
       aria-label={t('ladder.pipeline.details', { defaultValue: 'Application details' })}
     >
       <div className="rl-app-editor__head">

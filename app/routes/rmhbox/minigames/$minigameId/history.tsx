@@ -344,7 +344,7 @@ function MinigameHistoryPage() {
                 return (
                   <div
                     key={match.id}
-                    className="glass-fill rounded-app-sm overflow-hidden"
+                    className="surface-card rounded-app-sm overflow-hidden"
                     data-testid={`history-entry-${match.id}`}
                   >
                     {/* Summary row */}

@@ -45,7 +45,7 @@ export function StoryTimeline({
                   <Link
                     to="/news/$slug"
                     params={{ slug: a.slug }}
-                    className="glass-fill glass-interactive mt-2 block rounded-site px-4 py-3"
+                    className="surface-press mt-2 block rounded-site px-4 py-3"
                   >
                     <Badge className={`mb-2 ${color.bg} ${color.text} ${color.border}`}>
                       {a.category}

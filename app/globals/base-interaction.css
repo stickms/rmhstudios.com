@@ -194,7 +194,7 @@ body {
         [role='switch'],
         input,
         select,
-        .glass-interactive
+        .surface-press
       ),
     /* The toast library injects `border-radius: 50%` on its close button with no corner-shape. */
     html.app-route [data-sonner-toast] [data-close-button] {

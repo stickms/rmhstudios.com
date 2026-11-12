@@ -86,7 +86,7 @@ function HealthPage() {
   const { stale, runs, openReviewTasks, resumeReadiness, alerts } = Route.useLoaderData();
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
-  const panel = 'glass-fill space-y-3 rounded-site p-5 sm:p-5';
+  const panel ='space-y-3 rounded-site p-5 sm:p-5';
   const rowCls = 'flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm';
   const hint = 'text-sm text-site-text-muted';
 
@@ -202,7 +202,7 @@ function HealthPage() {
         <h2 id="rl-health-runs" className="site-section-label">
           {t('ladder.health.runs', { defaultValue: 'Scrape runs' })}
         </h2>
-        <table className="rl-jobs-table rl-runs-table glass-fill rounded-site">
+        <table className="rl-jobs-table rl-runs-table rounded-site">
           <thead>
             <tr>
               <th scope="col">{t('ladder.health.started', { defaultValue: 'Started' })}</th>

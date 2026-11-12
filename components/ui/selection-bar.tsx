@@ -17,9 +17,9 @@ import { cn } from '@/lib/utils';
 /**
  * SelectionBar (B9) — the action bar that appears once a list has a selection.
  *
- * L3 `.glass-chrome`: it is persistent chrome pinned to the bottom of the list
+ * L3 `.surface-chrome`: it is persistent chrome pinned to the bottom of the list
  * it belongs to, not a floating popover, so it takes the chrome tier rather than
- * `.glass-overlay`. It is `sticky`, never `fixed` — a bar that escapes its
+ * `.surface-overlay`. It is `sticky`, never `fixed` — a bar that escapes its
  * container ends up over unrelated content the moment the list is inside a sheet
  * or a modal, which is where most editable lists on this site live.
  *

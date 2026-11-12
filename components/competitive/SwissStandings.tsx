@@ -23,7 +23,7 @@ export function SwissStandings({ tournament }: { tournament: SerializedTournamen
         {t('swiss-standings', { defaultValue: 'Standings' })}
         {tournament.swissRounds ? ` · ${done}/${tournament.swissRounds}` : ''}
       </h2>
-      <div className="glass-fill rounded-site overflow-x-auto">
+      <div className="rounded-site overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-site-text-muted">

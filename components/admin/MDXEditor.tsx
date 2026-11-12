@@ -143,7 +143,7 @@ export function MDXEditor({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-site-bg">
-      <div className="glass-chrome flex h-16 w-full shrink-0 items-center justify-between gap-3 px-4 lg:px-6">
+      <div className="surface-chrome flex h-16 w-full shrink-0 items-center justify-between gap-3 px-4 lg:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <Button
             variant="ghost"
@@ -331,7 +331,7 @@ export function MDXEditor({
                     {t('upload-markdown', { defaultValue: 'Upload .md' })}
                   </Button>
                 </div>
-                <div className="glass-inset relative min-h-75 flex-1 overflow-hidden rounded-site-sm sm:min-h-0">
+                <div className="surface-field relative min-h-75 flex-1 overflow-hidden rounded-site-sm sm:min-h-0">
                   <MarkdownEditor
                     value={content}
                     onChange={setContent}
@@ -352,7 +352,7 @@ export function MDXEditor({
             minSize="25%"
             className={`h-full ${!isPreviewMode ? 'hidden lg:block' : 'block'} bg-site-bg overflow-y-auto relative border-l border-site-border lg:border-none min-h-0`}
           >
-            <div className="glass-chrome site-sticky-contained flex h-16 w-full items-center justify-between gap-3 px-4 py-3">
+            <div className="surface-chrome site-sticky-contained flex h-16 w-full items-center justify-between gap-3 px-4 py-3">
               <h2 className="site-section-label">
                 {t('live-preview', { defaultValue: 'Live Preview' })}
               </h2>

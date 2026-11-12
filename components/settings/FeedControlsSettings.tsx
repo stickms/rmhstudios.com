@@ -173,7 +173,7 @@ function TagSection({
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   const { t } = useTranslation('settings-content');
   return (
-    <span className="glass-fill inline-flex items-center gap-2 rounded-full py-1 ps-3 pe-1 text-sm text-site-text">
+    <span className="inline-flex items-center gap-2 rounded-full py-1 ps-3 pe-1 text-sm text-site-text">
       {label}
       <button
         type="button"

@@ -23,7 +23,7 @@ export function DebtDesks() {
 
   return (
     <section
-      className="glass-pane flex flex-col gap-3 rounded-site p-5"
+      className="surface-panel flex flex-col gap-3 rounded-site p-5"
       aria-labelledby="kd-desks-title"
     >
       <div className="flex flex-col gap-1">
@@ -71,7 +71,7 @@ export function DebtDesks() {
         />
       </div>
 
-      <p className="glass-inset rounded-site-sm p-3 text-xs text-site-text-muted">
+      <p className="surface-field rounded-site-sm p-3 text-xs text-site-text-muted">
         {t('desks.workout', {
           defaultValue:
             'Neither desk works this out alone. Debt Capital Markets and Counterparty Treasury run the workout jointly — one marks the paper, the other marks the man behind it, and no restructuring clears without both. Kaikai has not been offered one.',
@@ -93,7 +93,7 @@ function Desk({
   body: string;
 }) {
   return (
-    <article className="glass-fill flex flex-col gap-1.5 rounded-site p-4">
+    <article className="surface-card flex flex-col gap-1.5 rounded-site p-4">
       <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Icon className="size-3.5 shrink-0" aria-hidden />
         {role}

@@ -136,7 +136,7 @@ export function InterviewReports({
       ) : data && data.reports.length > 0 ? (
         <ul className="mt-3 space-y-3">
           {data.reports.map((r) => (
-            <li key={r.id} className="glass-fill rounded-site-sm p-3 text-sm">
+            <li key={r.id} className="rounded-site-sm p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium text-site-text">{r.roleTitle}</span>
                 <Badge variant="default">
@@ -242,7 +242,7 @@ function InterviewForm({
 
   return (
     <form
-      className="glass-pane mt-3 space-y-3 rounded-site p-5"
+      className="mt-3 space-y-3 rounded-site p-5"
       onSubmit={(e) => {
         e.preventDefault();
         submit.mutate();

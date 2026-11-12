@@ -30,7 +30,7 @@ export function RunnableEmbed({ postId }: { postId: string }) {
   };
 
   return (
-    <div className="glass-fill mt-3 overflow-hidden rounded-site">
+    <div className="mt-3 overflow-hidden rounded-site">
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <span className="text-xs font-medium text-site-text-muted">
           {t('run-label', { defaultValue: 'Code snippet' })}

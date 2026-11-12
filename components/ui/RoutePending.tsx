@@ -45,12 +45,12 @@ function SitePagePending() {
         className="w-full min-w-0 pb-dock"
       >
         {/* Sticky-header-height placeholder so content below doesn't jump. */}
-        <div className="mx-2 mb-2 mt-2 flex h-14 items-center glass-fill rounded-site px-3 md:mx-3 md:mb-3 md:mt-3">
+        <div className="mx-2 mb-2 mt-2 flex h-14 items-center surface-card rounded-site px-3 md:mx-3 md:mb-3 md:mt-3">
           <Skeleton className="h-5 w-36" />
         </div>
         <div className="space-y-2 px-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="glass-fill flex gap-3 rounded-site p-4">
+            <div key={i} className="surface-card flex gap-3 rounded-site p-4">
               <Skeleton className="size-10 shrink-0 rounded-full" />
               <div className="min-w-0 flex-1 space-y-3">
                 <Skeleton className="h-3.5 w-40" />

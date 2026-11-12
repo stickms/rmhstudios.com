@@ -52,7 +52,7 @@ export function PersonLeaderboard({
   }, [people, nowMs]);
 
   return (
-    <section className="glass-fill flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
+    <section className="surface-card flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
       <div className="flex flex-col gap-0.5">
         <h3 className="font-display text-sm font-semibold text-site-text">{title}</h3>
         <p className="text-xs text-pretty text-site-text-muted">{hint}</p>

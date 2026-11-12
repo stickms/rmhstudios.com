@@ -175,7 +175,7 @@ export function ComposerBar({
                   placeholder={t('type-a-message', { defaultValue: 'Type a message...' })}
                   rows={1}
                   maxLength={2000}
-                  className="glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site px-3 py-2 resize-none max-h-32 overflow-y-auto"
+                  className="surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site px-3 py-2 resize-none max-h-32 overflow-y-auto"
                   style={{ minHeight: '42px' }}
                 />
                 {shortcodes.menu}

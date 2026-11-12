@@ -315,7 +315,7 @@ export function ComposeBox({
 
   if (!session) {
     return (
-      <div className="glass-fill rounded-site mx-3 px-4 py-6 text-center">
+      <div className="relative rounded-site mx-3 px-4 py-6 text-center">
         <p className="text-sm text-site-text-muted mb-2">
           {t('sign-in-prompt', { defaultValue: 'Sign in to post RMHarks' })}
         </p>
@@ -329,23 +329,23 @@ export function ComposeBox({
   }
 
   return (
-    // Floating composer slab (§8.3): its own L2 .glass-pane over the aurora
+    // Floating composer slab (§8.3): its own L2 .relative over the aurora
     // gutter (mx-3), separated from the first post by the feed gap; one L2 per
     // page is in budget. focus-within lifts the pane's hairline while writing,
     // then settles back — an activation cue, not a layout change.
     <div
-      className="glass-pane relative px-4 py-3"
+      className="relative px-4 py-3"
       onPaste={smartPaste.onPaste}
       onDragEnter={smartPaste.onDragEnter}
       onDragOver={smartPaste.onDragOver}
       onDragLeave={smartPaste.onDragLeave}
       onDrop={smartPaste.onDrop}
     >
-      {/* Drop hint. L4 .glass-overlay: it floats over the composer's own
+      {/* Drop hint. L4 .surface-overlay: it floats over the composer's own
  content, and anything below L4 has no blur, so the text under it
  would ghost through. */}
       {smartPaste.dragActive && (
-        <div className="glass-overlay pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+        <div className="surface-overlay pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
           <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
             <ImagePlus className="h-4 w-4" aria-hidden />
             {t('drop-images-here', { defaultValue: 'Drop images to attach' })}
@@ -391,13 +391,13 @@ export function ComposeBox({
             // thread below, and the Post button stays blocked while it is over the
             // limit, so an over-length single post still cannot be sent.
             maxLength={communityId ? MAX_RMHARK_LENGTH : undefined}
-            // Recessed text well (§8.3): .glass-inset carries the border, radius and
+            // Recessed text well (§8.3): .surface-field carries the border, radius and
             // inner shadow; accent border on focus is the input affordance.
             // `block`: a textarea is inline-block by default, so its wrapper
             // reserved ~6px of baseline descender space under it — a gap nobody
             // meant, and the last 6px of layout shift when this composer replaced
             // its placeholder (which has no wrapper) on the feed.
-            className="block w-full glass-inset text-site-text placeholder:text-site-text-muted text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
+            className="block w-full surface-field text-site-text placeholder:text-site-text-muted text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 handleSubmit();

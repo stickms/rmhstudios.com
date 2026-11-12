@@ -119,22 +119,22 @@ function inPage() {
   };
   const heading = q('.page-heading');
   // Page-level controls only: a tab strip or search inside a card, pane, overlay or dialog is a local control with its
-  // own layout, not part of the page frame. A `glass-chrome` header is page-level, so a custom title+search bar counts.
+  // own layout, not part of the page frame. A `surface-chrome` header is page-level, so a custom title+search bar counts.
   const pageLevel = (el) =>
-    !el.closest('.glass-fill, .glass-pane, .glass-overlay, [role=dialog], dialog');
+    !el.closest('.surface-card, .surface-panel, .surface-overlay, [role=dialog], dialog');
   const first = (sel) =>
     [...document.querySelectorAll(sel)].find(
       (el) => pageLevel(el) && el.getBoundingClientRect().width > 0,
     ) || null;
   const tabs = first("[data-slot='liquid-tabs-sheet']");
   const search = first("[data-slot='search-field']");
-  const card = q('.glass-fill');
+  const card = q('.surface-card');
   // The first page-level card, at least 60% of the screen wide so a chip or a small tile never counts. Its left edge
   // against the heading's is the double-gutter signature: the frame insets the page once (`--rad-gutter`) and the title
   // sits on it, so a card that starts further in has had a second gutter added by a wrapper (docs/archive/2026/ui-audit-2026-10-31.md).
-  const surface = [...document.querySelectorAll('.glass-fill, .glass-pane')].find((el) => {
+  const surface = [...document.querySelectorAll('.surface-card, .surface-panel')].find((el) => {
     if (
-      el.parentElement?.closest('.glass-fill, .glass-pane, .glass-overlay, [role=dialog], dialog')
+      el.parentElement?.closest('.surface-card, .surface-panel, .surface-overlay, [role=dialog], dialog')
     )
       return false;
     const r = el.getBoundingClientRect();

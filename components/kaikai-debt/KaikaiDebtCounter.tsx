@@ -182,9 +182,9 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
       {/* Its own chrome, because this route is deliberately outside the site
           shell — no rail, no dock, nothing to navigate away into while you are
           reading a ledger. What it is NOT is a different design system: the bar
-          is the same `.glass-chrome` every sticky header on the site uses, at
+          is the same `.surface-chrome` every sticky header on the site uses, at
           the same measure, in the same tokens. */}
-      <header className="glass-chrome sticky top-3 z-20 mx-3 rounded-site border border-site-border">
+      <header className="surface-chrome sticky top-3 z-20 mx-3 rounded-site border border-site-border">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-3 sm:gap-3">
           <Link
             to="/"
@@ -221,7 +221,7 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
               })}
             </p>
           </div>
-          <section className="glass-pane rounded-site px-4 py-3">
+          <section className="surface-panel rounded-site px-4 py-3">
             <DebtCounter basisCents={basisCents} asOfMs={snapshot.asOfMs} />
 
             {/* The credit score, directly under the total it is a consequence
@@ -276,7 +276,7 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
           </div>
 
           {!snapshot.aiEnabled && (
-            <p className="glass-inset rounded-site-sm p-4 text-sm text-site-text-muted">
+            <p className="surface-field rounded-site-sm p-4 text-sm text-site-text-muted">
               {t('page.aiOffline', {
                 defaultValue:
                   'The appraiser is offline, so nothing new can be added or answered right now. The counter and the log below still work.',
@@ -337,7 +337,7 @@ function Stat({
   detail: string;
 }) {
   return (
-    <div className="glass-fill flex flex-col gap-1 rounded-site p-4">
+    <div className="surface-card flex flex-col gap-1 rounded-site p-4">
       <dt className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Icon className="size-3.5" aria-hidden />
         {label}

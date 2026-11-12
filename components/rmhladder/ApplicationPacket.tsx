@@ -11,7 +11,7 @@
  * extension. The packet is text you copy; the final button is on the employer's
  * site and the user presses it. The footer says so, on screen, permanently.
  *
- * Rows are repeated content, so they are L1 `.glass-fill` — no backdrop blur on
+ * Rows are repeated content, so they are L1 `.surface-card` — no backdrop blur on
  * a list that can run to twenty rows.
  */
 
@@ -105,14 +105,14 @@ export function ApplicationPacket({
 
   if (loading) {
     return (
-      <section className="glass-pane flex min-h-32 items-center justify-center p-5">
+      <section className="surface-panel flex min-h-32 items-center justify-center p-5">
         <Spinner size={20} className="text-site-text-muted" label={t('ladder.packetLoading', { defaultValue: 'Loading…' })} />
       </section>
     );
   }
 
   return (
-    <section className="glass-pane p-4 sm:p-5" aria-labelledby="ladder-packet-heading">
+    <section className="surface-panel p-4 sm:p-5" aria-labelledby="ladder-packet-heading">
       <div className="flex flex-wrap items-center gap-2">
         <ClipboardList className="size-4 text-site-accent" aria-hidden />
         <h2 id="ladder-packet-heading" className="site-section-label">
@@ -158,7 +158,7 @@ export function ApplicationPacket({
         {fields.map((field, index) => {
           const isHidden = field.sensitive && field.filled && !revealed.has(field.id);
           return (
-            <li key={field.id} className="glass-fill flex flex-wrap items-start gap-2 p-3">
+            <li key={field.id} className="surface-card flex flex-wrap items-start gap-2 p-3">
               <span
                 aria-hidden
                 className="mt-0.5 w-6 shrink-0 font-mono text-xs text-site-text-muted"

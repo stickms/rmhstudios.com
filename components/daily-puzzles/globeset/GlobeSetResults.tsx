@@ -47,7 +47,7 @@ export function GlobeSetResults({
       className="flex flex-col gap-3"
       aria-label={t('globeset-results-label', { defaultValue: 'Your result' })}
     >
-      <div className="glass-pane rounded-site px-4 py-5 text-center sm:px-6">
+      <div className="surface-panel rounded-site px-4 py-5 text-center sm:px-6">
         {summary.solverUsed ? (
           <>
             <Flag className="mx-auto h-8 w-8 text-site-text-muted" aria-hidden />
@@ -115,7 +115,7 @@ export function GlobeSetResults({
       </div>
 
       {/* ── The player's own record ──────────────────────────────────────── */}
-      <div className="glass-fill grid grid-cols-3 gap-3 rounded-site px-4 py-3 text-center">
+      <div className="surface-card grid grid-cols-3 gap-3 rounded-site px-4 py-3 text-center">
         <Figure
           icon={<Trophy className="h-4 w-4" aria-hidden />}
           label={t('globeset-stat-best', { defaultValue: 'Best time' })}

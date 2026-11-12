@@ -14,7 +14,7 @@ export function DraftRestoreBanner({
 }) {
   const { t } = useTranslation('feed');
   return (
-    <div className="mb-3 flex items-center gap-2 rounded-site glass-fill px-3 py-2">
+    <div className="mb-3 flex items-center gap-2 rounded-site px-3 py-2">
       <History className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
       <p className="min-w-0 flex-1 truncate text-xs text-site-text-muted">
         {t('draft-restore-prompt', { defaultValue: 'You have an unsent draft:' })}

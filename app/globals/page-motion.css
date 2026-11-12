@@ -398,7 +398,7 @@ input[type='number'] {
 
    Two things deliberately do NOT animate, both for cost. The **blur** lands at
    once, because it is the one property here that cannot be animated cheaply
-   (`.glass-overlay` re-samples its whole backdrop per frame). And the **shadow**
+   (`.surface-overlay` re-samples its whole backdrop per frame). And the **shadow**
    is never animated: a blurred box-shadow is a full repaint of the panel and its
    penumbra on every frame, and it buys a detail nobody looks at during a 260ms
    open. What is left is compositor-only — transform and opacity, nothing else.

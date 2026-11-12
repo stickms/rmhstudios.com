@@ -82,7 +82,7 @@ export function PopoverPanel({
       id={state.id}
       role="dialog"
       aria-label={label}
-      className="rf-pop glass-overlay"
+      className="rf-pop surface-overlay"
       style={state.pos}
     >
       {children}

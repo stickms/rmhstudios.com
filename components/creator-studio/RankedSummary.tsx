@@ -73,10 +73,10 @@ export function RankedSummary() {
         : t('ranked-summary-signed-out', { defaultValue: 'Sign in to compete in ranked matches.' });
 
   return (
-    <section className="glass-pane rounded-site">
+    <section className="rounded-site">
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
         <span
-          className="glass-inset flex size-9 shrink-0 items-center justify-center rounded-site-sm text-site-accent"
+          className="surface-field flex size-9 shrink-0 items-center justify-center rounded-site-sm text-site-accent"
           aria-hidden="true"
         >
           <Swords className="size-4" />

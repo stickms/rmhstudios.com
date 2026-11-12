@@ -135,7 +135,7 @@ export interface SmartPasteHandlers {
   onDragEnter: (event: DragEvent<HTMLElement>) => void;
   onDragLeave: (event: DragEvent<HTMLElement>) => void;
   onDrop: (event: DragEvent<HTMLElement>) => void;
-  /** True while a drag is over the target — render the `.glass-overlay` hint. */
+  /** True while a drag is over the target — render the `.surface-overlay` hint. */
   dragActive: boolean;
 }
 

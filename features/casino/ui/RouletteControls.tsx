@@ -127,7 +127,7 @@ export function RouletteControls({ coins }: Props) {
 
         {/* Current bets summary */}
         {stagedBets.length > 0 && (
-          <div className="glass-fill flex flex-col gap-1.5 p-2.5 rounded-site-sm">
+          <div className="surface-card flex flex-col gap-1.5 p-2.5 rounded-site-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs text-site-text-muted">{t("your-bets", { defaultValue: "Your bets" })}</span>
               <div className="flex items-center gap-1">

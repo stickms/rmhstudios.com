@@ -71,7 +71,7 @@ export function StakingCard() {
 
  if (loading) {
  return (
- <section className="rounded-site glass-fill p-5">
+ <section className="rounded-site p-5">
  <div className="flex justify-center py-4">
  <Spinner size={20} />
  </div>
@@ -84,7 +84,7 @@ export function StakingCard() {
  const validAmt = Number.isFinite(amt) && amt > 0;
 
  return (
- <section className="rounded-site glass-fill p-5">
+ <section className="rounded-site p-5">
  <div className="mb-3 flex items-center justify-between">
  <div className="flex items-center gap-2">
  <PiggyBank className="h-4 w-4 text-site-accent"/>
@@ -124,7 +124,7 @@ export function StakingCard() {
  onChange={(e) => setAmount(e.target.value)}
  placeholder={t("amount-placeholder", { defaultValue:"Amount"})}
  aria-label={t("coins-aria-label", { defaultValue:"Coins to stake or unstake"})}
- className="glass-inset border w-full rounded-site-sm px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
+ className="surface-field border w-full rounded-site-sm px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <Button
  size="sm"

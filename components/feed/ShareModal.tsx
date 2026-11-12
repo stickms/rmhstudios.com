@@ -150,7 +150,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
 
  {/* URL preview */}
  <div className="px-5 pb-5">
- <div className="flex items-center gap-2 glass-inset rounded-site-sm px-3 py-2 text-xs text-site-text-muted font-mono truncate">
+ <div className="flex items-center gap-2 surface-field rounded-site-sm px-3 py-2 text-xs text-site-text-muted font-mono truncate">
  <Link2 className="w-3.5 h-3.5 shrink-0"/>
  <span className="truncate">{url}</span>
  </div>

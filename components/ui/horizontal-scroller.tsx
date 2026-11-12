@@ -73,10 +73,10 @@ export function HorizontalScroller({
  // each card in it is its own body.
  className={cn(
  'group/scroll relative min-w-0 max-w-full',
- // `.glass-fill` (L1): a tray holding repeated children is exactly that tier,
+ //`.`(L1): a tray holding repeated children is exactly that tier,
  // and L1 has no blur so there is no budget cost to nesting one.
- surface === 'fill' && 'glass-fill rounded-site p-1.5',
- surface === 'pill' && 'glass-fill rounded-full p-1',
+ surface ==='fill'&&'relative rounded-site p-1.5',
+ surface ==='pill'&&'rounded-full p-1',
  className,
  )}
  >
@@ -109,7 +109,7 @@ export function HorizontalScroller({
  type="button"
  onClick={() => scrollByPage(-1)}
  aria-label={t('scroll-back', { defaultValue: 'Scroll left' })}
- className="glass-overlay absolute left-2 top-1/2 z-2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full text-site-text opacity-0 transition-opacity hover:text-site-accent focus-visible:opacity-100 group-hover/scroll:opacity-100 sm:flex"
+ className="surface-overlay absolute left-2 top-1/2 z-2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full text-site-text opacity-0 transition-opacity hover:text-site-accent focus-visible:opacity-100 group-hover/scroll:opacity-100 sm:flex"
  >
  <ChevronLeft className="size-4" aria-hidden />
  </button>
@@ -119,7 +119,7 @@ export function HorizontalScroller({
  type="button"
  onClick={() => scrollByPage(1)}
  aria-label={t('scroll-forward', { defaultValue: 'Scroll right' })}
- className="glass-overlay absolute right-2 top-1/2 z-2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full text-site-text opacity-0 transition-opacity hover:text-site-accent focus-visible:opacity-100 group-hover/scroll:opacity-100 sm:flex"
+ className="surface-overlay absolute right-2 top-1/2 z-2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full text-site-text opacity-0 transition-opacity hover:text-site-accent focus-visible:opacity-100 group-hover/scroll:opacity-100 sm:flex"
  >
  <ChevronRight className="size-4" aria-hidden />
  </button>

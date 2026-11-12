@@ -170,7 +170,7 @@ export function DailyPuzzleLeaderboard({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0 }}
-        className={`glass-fill flex flex-col gap-3 rounded-site px-4 py-4 ${className}`}
+        className={`surface-card flex flex-col gap-3 rounded-site px-4 py-4 ${className}`}
       >
         <div className="flex flex-wrap items-center gap-2">
           <Trophy className="size-5 text-site-warning" aria-hidden />

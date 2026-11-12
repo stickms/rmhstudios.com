@@ -155,7 +155,7 @@ export function KeyboardShortcuts() {
           <DialogPrimitive.Content
             aria-describedby={undefined}
             data-motion="rise"
-            className="glass-overlay fixed left-1/2 top-1/2 z-palette max-h-[80dvh] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto p-4"
+            className="surface-overlay fixed left-1/2 top-1/2 z-palette max-h-[80dvh] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto p-4"
           >
             <DialogPrimitive.Title className="text-base font-bold text-site-text">
               {t('kbd-title', { defaultValue: 'Keyboard shortcuts' })}

@@ -274,7 +274,7 @@ export default function EmojiPickerPanel({
     >
       {/* Search */}
       <div className="shrink-0 p-2">
-        <div className="glass-inset flex items-center gap-2 rounded-site-sm px-2">
+        <div className="surface-field flex items-center gap-2 rounded-site-sm px-2">
           <Search className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
           <input
             type="search"

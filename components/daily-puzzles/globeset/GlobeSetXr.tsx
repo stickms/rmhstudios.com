@@ -312,7 +312,7 @@ export function GlobeSetXr(props: GlobeSetXrProps) {
     <div ref={overlayRef} className="fixed inset-0 z-[400] flex flex-col justify-between pt-[calc(1rem+var(--safe-top))] pr-[calc(1rem+var(--safe-right))] pb-[calc(1rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))]">
       {running && (
         <>
-          <div className="glass-overlay flex items-center justify-between gap-4 rounded-site px-4 py-2">
+          <div className="surface-overlay flex items-center justify-between gap-4 rounded-site px-4 py-2">
             <dl className="flex items-center gap-5 text-site-text">
               <Figure label={t('globeset-stat-time', { defaultValue: 'Time' })}>
                 {formatDuration(props.elapsedSeconds)}
@@ -330,7 +330,7 @@ export function GlobeSetXr(props: GlobeSetXrProps) {
             </Button>
           </div>
 
-          <p className="glass-overlay mx-auto rounded-site px-4 py-2 text-center text-sm text-site-text">
+          <p className="surface-overlay mx-auto rounded-site px-4 py-2 text-center text-sm text-site-text">
             {placed
               ? t('globeset-ar-playing', {
                   defaultValue: 'Walk around the globe. Tap a card to pick it.',

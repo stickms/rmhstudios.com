@@ -205,7 +205,7 @@ export function MembershipPanel({
             <div className={`mb-6 flex items-center justify-between gap-3 rounded-site border px-4 py-3 text-sm ${
                 status === 'success'
                   ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
-                  : 'glass-pane text-site-text-muted'
+                  : 'surface-panel text-site-text-muted'
               }`}>
               <span>
                 {status === 'success'
@@ -252,12 +252,12 @@ export function MembershipPanel({
                       transforms aren't clobbered by the RevealItem motion node's
                       inline transform. */}
                     <article
-                      // Floating L2 slabs (§8.4): .glass-pane owns the frost/tint/
+                      // Floating L2 slabs (§8.4): .surface-panel owns the frost/tint/
                       // border/ring; the featured tier additionally takes the page's
                       // one prism refract slot + ambient sheen + per-element lens.
                       data-glass-lens={plan.featured ? '' : undefined}
                       className={cn(
-                        'pricing-card group relative flex w-full flex-col glass-pane rounded-site p-5',
+                        'pricing-card group relative flex w-full flex-col surface-panel rounded-site p-5',
                         // Clearance for the ribbon that straddles the top edge.
                         plan.featured &&
                           'pricing-card--featured glass-refract glass-refract--prism glass-liquid pt-7',

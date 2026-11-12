@@ -271,7 +271,7 @@ export function AxisLabels({
 /**
  * The floating readout a hover produces.
  *
- * `.glass-overlay` because it floats: the L4 tier is the only one with a blur
+ * `.surface-overlay` because it floats: the L4 tier is the only one with a blur
  * under it, and floating UI below L4 ghosts over whatever it covers — a rule CI
  * enforces. `.kd-readout` only positions it.
  *
@@ -294,7 +294,7 @@ export function Readout({
   const flip = x > 0.6;
   return (
     <div
-      className="kd-readout glass-overlay rounded-site-sm px-2.5 py-2 text-xs "
+      className="kd-readout surface-overlay rounded-site-sm px-2.5 py-2 text-xs "
       style={{
         left: `${x * 100}%`,
         top: `${y * 100}%`,
@@ -428,7 +428,7 @@ export function Legend({
  * The frame one chart sits in: a heading, an optional control row, the plot, and
  * the readout layer.
  *
- * `.glass-fill` rather than `.glass-pane` — these are repeated content (there
+ * `.surface-card` rather than `.surface-panel` — these are repeated content (there
  * are a dozen of them), and L2 has no backdrop blur, which is what keeps the
  * panel inside the ≤8-blurred-surfaces budget no matter how many charts get
  * added to it.
@@ -449,7 +449,7 @@ export function ChartCard({
   className?: string;
 }) {
   return (
-    <section className={cn('glass-fill flex flex-col gap-3 rounded-site p-2.5 sm:p-4', className)}>
+    <section className={cn('surface-card flex flex-col gap-3 rounded-site p-2.5 sm:p-4', className)}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
           <h3 className="font-display text-sm font-semibold text-site-text">{title}</h3>
@@ -494,7 +494,7 @@ export function ChartToggle({
       title={title}
       onClick={() => onPressedChange(!pressed)}
       className={cn(
-        'glass-fill glass-interactive flex min-h-8 items-center gap-1.5 rounded-site-sm px-2 py-1 text-xs transition-colors pointer-coarse:min-h-11',
+        'surface-card surface-press flex min-h-8 items-center gap-1.5 rounded-site-sm px-2 py-1 text-xs transition-colors pointer-coarse:min-h-11',
         pressed
           ? 'border-site-accent bg-site-accent text-site-accent-fg'
           : 'text-site-text-muted hover:text-site-text',

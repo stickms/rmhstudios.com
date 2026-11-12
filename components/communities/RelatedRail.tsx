@@ -21,7 +21,7 @@ export function RelatedRail({ sisters }: { sisters: SisterDTO[] }) {
           <li key={s.slug}>
             <Link
               to={`/c/${s.slug}` as string}
-              className="glass-fill flex items-center gap-2 rounded-site px-3 py-1.5 text-sm text-site-text hover:bg-site-surface-hover focus-visible:ring-2 focus-visible:ring-site-accent"
+              className="flex items-center gap-2 rounded-site px-3 py-1.5 text-sm text-site-text hover:bg-site-surface-hover focus-visible:ring-2 focus-visible:ring-site-accent"
             >
               <span aria-hidden>{s.icon || '👥'}</span>
               <span className="font-medium">{s.name}</span>

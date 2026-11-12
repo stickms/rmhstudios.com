@@ -51,7 +51,7 @@ export function SeasonAdminForm({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <details className="rounded-site-sm glass-inset px-4 py-3">
+    <details className="rounded-site-sm surface-field px-4 py-3">
       <summary className="cursor-pointer text-sm font-medium">
         {t('new-season', { defaultValue: 'New season (admin)' })}
       </summary>

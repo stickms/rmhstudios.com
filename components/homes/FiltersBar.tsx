@@ -58,7 +58,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
     (filters.petsAllowed ? 1 : 0);
 
   return (
-    <div className="glass-fill rounded-site p-5">
+    <div className="rounded-site p-5">
       <div className="flex flex-wrap items-center gap-2">
         <Tabs
           size="sm"

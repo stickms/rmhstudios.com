@@ -516,7 +516,7 @@ export function CommentItem({
               })}
               rows={2}
               maxLength={MAX_COMMENT_LENGTH}
-              className="glass-inset t-body w-full resize-none px-3 py-2 text-site-text outline-none placeholder:text-site-text-muted"
+              className="surface-field t-body w-full resize-none px-3 py-2 text-site-text outline-none placeholder:text-site-text-muted"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   handleSubmitReply();

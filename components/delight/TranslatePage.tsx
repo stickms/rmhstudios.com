@@ -197,7 +197,7 @@ function StringRow({
   const mine = item.suggestions.find((s) => s.mine);
   const [text, setText] = useState(mine?.text ?? '');
   return (
-    <li className="glass-fill space-y-3 rounded-site px-4 py-3">
+    <li className="space-y-3 rounded-site px-4 py-3">
       <p className="text-xs text-site-text-muted">{item.key}</p>
       <p className="text-site-text">{item.en}</p>
       {item.current && (

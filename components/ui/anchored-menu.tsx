@@ -447,7 +447,7 @@ export function AnchoredMenu({
             // `py-1.5`, no side padding: the rows are plain text with a hover
             // glow (components/ui/menu.tsx), and this panel (`overflow-y: auto`,
             // anchored-menu.css) supplies the only curve.
-            className={cn('anchored-menu glass-overlay py-1.5', className)}
+            className={cn('anchored-menu surface-overlay py-1.5', className)}
             style={style}
           >
             {children}

@@ -257,7 +257,7 @@ export function FashionStage({ outfit, description }: FashionStageProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div ref={hostRef} className="rmhfash-stage glass-pane glass-bevel-sm rounded-site">
+      <div ref={hostRef} className="rmhfash-stage glass-bevel-sm rounded-site">
         {failed ? (
           <div className="flex size-full items-center justify-center p-6 text-center text-sm text-site-text-muted">
             {t('stage-unavailable', {

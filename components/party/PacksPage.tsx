@@ -124,7 +124,7 @@ export function PacksPage() {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <code className="glass-inset rounded-site px-3 py-2 font-mono text-sm tracking-widest text-site-text">
+        <code className="surface-field rounded-site px-3 py-2 font-mono text-sm tracking-widest text-site-text">
           {p.code}
         </code>
         <CopyButton

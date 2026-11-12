@@ -194,7 +194,7 @@ export default function PeerReview({
             return (
               <div
                 key={answerSet.anonymousLabel}
-                className={`glass-fill flex items-center justify-between rounded-app-sm border px-3 py-2 text-sm transition-colors ${
+                className={`surface-card flex items-center justify-between rounded-app-sm border px-3 py-2 text-sm transition-colors ${
                   isOwn
                     ? 'border-app-accent/40 bg-app-accent-dim'
                     : isEmpty
@@ -242,7 +242,7 @@ export default function PeerReview({
                         <button
                           type="button"
                           onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'crash')}
-                          className={`glass-fill flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                          className={`surface-card flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
                             myVote === 'crash'
                               ? 'bg-app-danger/30 text-app-danger border border-app-danger/40'
                               : 'text-app-text-muted border border-app-border hover:bg-app-danger-dim hover:text-app-danger'
@@ -254,7 +254,7 @@ export default function PeerReview({
                         <button
                           type="button"
                           onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'safe')}
-                          className={`glass-fill flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                          className={`surface-card flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
                             myVote === 'safe'
                               ? 'bg-app-success/30 text-app-success border border-app-success/40'
                               : 'text-app-text-muted border border-app-border hover:bg-app-success-dim hover:text-app-success'

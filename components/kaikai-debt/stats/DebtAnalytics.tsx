@@ -178,7 +178,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
 
       <StatTiles stats={scoped} nowMs={nowMs} />
 
-      <div className="glass-fill flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
+      <div className="surface-card flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-xs font-medium text-site-text-muted">
             {t('stats.filter.title', { defaultValue: 'Filter every chart' })}
@@ -325,7 +325,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
       )}
 
       {query.isError && (
-        <p className={cn('glass-inset rounded-site-sm p-3 text-sm text-site-text-muted')}>
+        <p className={cn('surface-field rounded-site-sm p-3 text-sm text-site-text-muted')}>
           {t('stats.error', {
             defaultValue:
               'The books would not open just now. The counter and the log are unaffected — try again in a moment.',

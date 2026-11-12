@@ -125,7 +125,7 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
   };
 
   return (
-    <section className="rad-live__card glass-fill">
+    <section className="rad-live__card surface-card">
       <div className="rad-live__head">
         <h2>
           <Flame aria-hidden />

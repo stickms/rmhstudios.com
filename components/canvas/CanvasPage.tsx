@@ -136,7 +136,7 @@ export function CanvasPage() {
               </Suspense>
             )}
             {live && (
-              <section className="glass-pane space-y-3 rounded-site px-4 py-3">
+              <section className="space-y-3 rounded-site px-4 py-3">
                 <div
                   role="radiogroup"
                   aria-label={t('palette', { defaultValue: 'Colour' })}

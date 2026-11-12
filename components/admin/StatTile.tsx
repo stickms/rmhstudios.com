@@ -23,7 +23,7 @@ export function StatTile({
   const toneClass =
     tone === 'good' ? 'text-site-success' : tone === 'bad' ? 'text-site-danger' : 'text-site-text';
   return (
-    <div className={cn('glass-fill min-w-0 rounded-site px-4 py-3', className)}>
+    <div className={cn('min-w-0 rounded-site px-4 py-3', className)}>
       <div className="flex items-center gap-2">
         {Icon ? <Icon className="size-4 shrink-0 text-site-accent" aria-hidden /> : null}
         <p className="min-w-0 truncate text-xs text-site-text-muted">{label}</p>

@@ -337,8 +337,8 @@
  * carry are not drawn. (The layout root also opts the subtree out of the jelly
  * engine, so nothing is armed to draw them.)
  */
-html .slice-theme :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay),
-html .slice-tokens :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay) {
+html .slice-theme :is(.surface-card, .surface-panel, .surface-chrome, .surface-overlay),
+html .slice-tokens :is(.surface-card, .surface-panel, .surface-chrome, .surface-overlay) {
   background-color: var(--slice-card-bg);
   background-image: none;
   border: 1px solid var(--slice-border);
@@ -381,8 +381,8 @@ html
   background: #f4509f;
 }
 
-html .slice-theme .glass-inset,
-html .slice-tokens .glass-inset,
+html .slice-theme .surface-field,
+html .slice-tokens .surface-field,
 html .slice-theme [data-slot='input'],
 html .slice-theme [data-slot='textarea'] {
   background-color: var(--slice-input-bg);

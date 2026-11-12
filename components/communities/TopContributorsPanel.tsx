@@ -56,7 +56,7 @@ export default function TopContributorsPanel({ slug }: { slug: string }) {
             'Ranked by hall of fame posts and challenge wins, not post counts. Updated daily.',
         })}
       </p>
-      <ol className="glass-fill divide-y divide-site-border overflow-hidden">
+      <ol className="divide-y divide-site-border overflow-hidden">
         {rows.map((r, i) => {
           const name = r.user.name || r.user.handle || t('someone', { defaultValue: 'Someone' });
           return (

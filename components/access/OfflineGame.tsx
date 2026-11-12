@@ -126,7 +126,7 @@ export function OfflineGame() {
         ref={canvasRef}
         width={COLS * CELL}
         height={ROWS * CELL}
-        className="glass-inset w-full max-w-[224px] rounded-site-sm"
+        className="surface-field w-full max-w-[224px] rounded-site-sm"
         role="img"
         aria-label={t('game-canvas', {
           defaultValue: 'Dodge game: move left and right to avoid falling blocks',

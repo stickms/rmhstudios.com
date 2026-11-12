@@ -70,7 +70,7 @@ export function ModFlairs({
       </p>
       <ul className="flex flex-col gap-2">
         {flairs.map((f) => (
-          <li key={f.id} className="glass-fill flex items-center justify-between gap-3 px-3 py-2">
+          <li key={f.id} className="flex items-center justify-between gap-3 px-3 py-2">
             <FlairChip flair={f} />
             <Button
               variant="ghost"
@@ -87,7 +87,7 @@ export function ModFlairs({
         ))}
       </ul>
       <form
-        className="glass-pane flex flex-col gap-3 p-4"
+        className="flex flex-col gap-3 p-4"
         onSubmit={(e) => {
           e.preventDefault();
           void add();

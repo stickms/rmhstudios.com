@@ -43,7 +43,7 @@ export default function ClueDisplay({
   const teamBgColor = teamId === 'red' ? 'bg-app-danger/20' : 'bg-app-info/20';
   if (isWaiting && !clue) {
     return (
-      <div className="glass-fill mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-app p-4 text-center">
+      <div className="surface-card mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-app p-4 text-center">
         <MessageSquare className="h-6 w-6 text-app-text-muted animate-pulse" />
         <p className="text-sm text-app-text-muted">
           {t('waiting-for-label', { defaultValue: 'Waiting for' })}{' '}
@@ -63,7 +63,7 @@ export default function ClueDisplay({
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-fill mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-app p-4"
+      className="surface-card mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-app p-4"
     >
       {/* Clue word + number */}
       <div className="flex items-baseline gap-3">

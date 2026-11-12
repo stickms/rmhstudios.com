@@ -59,7 +59,7 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
       voting: t('phase-voting', { defaultValue: 'Voting' }),
       finished: t('phase-finished', { defaultValue: 'Finished' }),
     })[p];
-  if (q.isLoading) return <div className="glass-fill h-24 rounded-app" aria-hidden />;
+  if (q.isLoading) return <div className="surface-card h-24 rounded-app" aria-hidden />;
   const items = q.data?.challenges ?? [];
   if (items.length === 0) {
     return (
@@ -75,7 +75,7 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
           <button
             type="button"
             onClick={() => onOpen(c.id)}
-            className="glass-fill glass-interactive w-full rounded-app p-4 text-left"
+            className="surface-card surface-press w-full rounded-app p-4 text-left"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium text-app-text">{c.title}</span>
@@ -103,7 +103,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
     queryFn: () => fetchJson<ChallengeDetail>(`/api/studio/challenges/${id}`),
   });
   const c = q.data;
-  if (!c) return <div className="glass-fill h-24 rounded-app" aria-hidden />;
+  if (!c) return <div className="surface-card h-24 rounded-app" aria-hidden />;
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -167,21 +167,21 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
       </div>
 
       {c.phase === 'open' && (
-        <div className="glass-pane space-y-2 rounded-app p-4">
+        <div className="surface-panel space-y-2 rounded-app p-4">
           <p className="text-sm font-medium text-app-text">
             {c.myEntryId
               ? t('entry-replace', { defaultValue: 'Replace your entry' })
               : t('entry-new', { defaultValue: 'Submit your flip' })}
           </p>
           <Input
-            className="glass-inset"
+            className="surface-field"
             placeholder={t('entry-title', { defaultValue: 'Title' })}
             maxLength={120}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
           <Input
-            className="glass-inset"
+            className="surface-field"
             placeholder={t('entry-link', { defaultValue: 'Link to your project export (https)' })}
             maxLength={500}
             value={link}
@@ -221,7 +221,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
 
       <ul className="space-y-2">
         {c.entries.map((e) => (
-          <li key={e.id} className="glass-fill rounded-app p-4">
+          <li key={e.id} className="surface-card rounded-app p-4">
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-1.5 font-medium text-app-text">
                 {e.isWinner && (

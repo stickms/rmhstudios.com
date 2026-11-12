@@ -65,7 +65,7 @@ export function FeedForm({
 
   return (
     <form
-      className="glass-pane space-y-3 rounded-site p-5"
+      className="space-y-3 rounded-site p-5"
       onSubmit={(e) => {
         e.preventDefault();
         if (valid) onSubmit(v);

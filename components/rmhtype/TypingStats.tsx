@@ -199,7 +199,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
                     {stats?.worst.map((metric) => (
                       <li
                         key={metric.key}
-                        className="glass-fill flex items-center gap-2 rounded-site px-3 py-1.5"
+                        className="surface-card flex items-center gap-2 rounded-site px-3 py-1.5"
                       >
                         <span className="font-mono text-sm text-site-text">{metric.key}</span>
                         <span className="font-mono text-xs tabular-nums text-site-text-muted">
@@ -276,7 +276,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
 
 function StatTile({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="glass-fill rounded-site px-3 py-2">
+    <div className="surface-card rounded-site px-3 py-2">
       <dt className="text-xs text-site-text-muted">{label}</dt>
       <dd className="font-mono text-lg tabular-nums text-site-text">{value}</dd>
     </div>

@@ -58,8 +58,8 @@ function PackCard({
 }) {
   const { t } = useTranslation('feed');
   return (
-    // `.glass-fill` — repeated content. No blur on list items.
-    <article className="glass-fill flex flex-col gap-3 rounded-site px-4 py-3">
+    //`.`— repeated content. No blur on list items.
+    <article className="flex flex-col gap-3 rounded-site px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-base font-semibold text-site-text">{pack.name}</h3>
@@ -194,8 +194,8 @@ function EmojiPacksPage() {
         <section className="mt-[var(--site-section-gap)]">
           <h2 className="site-section-label">{t('your-packs', { defaultValue: 'Your packs' })}</h2>
 
-          {/* `.glass-pane` — a singular panel, not a repeated card. */}
-          <div className="glass-pane mt-3 flex flex-col gap-3 rounded-site px-4 py-3 sm:flex-row sm:items-center">
+          {/*`.`— a singular panel, not a repeated card. */}
+          <div className="mt-3 flex flex-col gap-3 rounded-site px-4 py-3 sm:flex-row sm:items-center">
             <Input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -223,7 +223,7 @@ function EmojiPacksPage() {
           {canCreate === false && (
             <a
               href={upgradeHref('sticker-packs')}
-              className="glass-fill mt-3 flex items-center gap-3 rounded-site px-4 py-3 text-sm text-site-text"
+              className="mt-3 flex items-center gap-3 rounded-site px-4 py-3 text-sm text-site-text"
             >
               <Sparkles className="size-4 shrink-0 text-site-accent" aria-hidden />
               <span>
@@ -350,7 +350,7 @@ function OwnedPackCard({ pack, onChanged }: { pack: PackSummary; onChanged: () =
   const full = pack.itemCount >= MAX_ITEMS_PER_PACK;
 
   return (
-    <article className="glass-fill flex flex-col gap-3 rounded-site px-4 py-3">
+    <article className="flex flex-col gap-3 rounded-site px-4 py-3">
       <div>
         <h3 className="truncate text-base font-semibold text-site-text">{pack.name}</h3>
         <p className="mt-1 text-xs text-site-text-muted">

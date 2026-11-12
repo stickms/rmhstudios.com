@@ -133,7 +133,7 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
           </SheetDescription>
         </SheetHeader>
         {target.preview && (
-          <p className="glass-inset line-clamp-2 rounded-site-sm px-3 py-2 text-sm text-site-text-muted">
+          <p className="surface-field line-clamp-2 rounded-site-sm px-3 py-2 text-sm text-site-text-muted">
             {target.preview}
           </p>
         )}

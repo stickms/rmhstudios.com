@@ -254,9 +254,9 @@ export function ShopColumn({
           {visible.map((item) => (
             <div
               key={item.id}
-              // L1 .glass-fill + .glass-interactive together light the hover glint
+              // L1 . + .surface-press together light the hover glint
               // ring (the ring selector needs BOTH classes) and the pointer light.
-              className="glass-fill glass-interactive flex min-w-0 flex-col items-stretch gap-4 rounded-site p-5"
+              className="surface-press flex min-w-0 flex-col items-stretch gap-4 rounded-site p-5"
               // Rarity communicates value through the rim colour (§9.4): a tinted
               // border + a matching inner specular hairline over the base rim.
               style={{
@@ -264,7 +264,7 @@ export function ShopColumn({
                 boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55`,
               }}
             >
-              <div className="glass-inset flex min-h-32 items-center justify-center rounded-site-sm p-4">
+              <div className="surface-field flex min-h-32 items-center justify-center rounded-site-sm p-4">
                 <Preview item={item} />
               </div>
               <div className="min-w-0 flex-1">

@@ -105,7 +105,7 @@ export default function CanvasReplay({ event }: { event: CanvasEventView }) {
         height={event.height}
         role="img"
         aria-label={t('replay-label', { defaultValue: 'Timelapse of the finished canvas' })}
-        className="glass-inset aspect-square w-full rounded-site"
+        className="surface-field aspect-square w-full rounded-site"
         style={{ imageRendering: 'pixelated' }}
       />
       <div className="flex items-center gap-3">

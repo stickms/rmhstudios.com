@@ -112,7 +112,7 @@ export function ChecklistComposer({
                 placeholder={t('checklist-title-placeholder', {
                   defaultValue: 'Title, e.g. Game night',
                 })}
-                className="glass-inset min-h-11 rounded-site px-3 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+                className="surface-field min-h-11 rounded-site px-3 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
               />
               {items.map((item, i) => (
                 <div key={i} className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export function ChecklistComposer({
                       index: i + 1,
                       defaultValue: 'Item {{index}}',
                     })}
-                    className="glass-inset min-h-11 min-w-0 flex-1 rounded-site px-3 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+                    className="surface-field min-h-11 min-w-0 flex-1 rounded-site px-3 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
                   />
                   {items.length > 1 && (
                     <button

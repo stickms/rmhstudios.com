@@ -23,7 +23,7 @@ const LEGAL_LINKS = [
  * Every legal page shares: the back/breadcrumb row, the title block, the
  * reading column (`max-w-3xl`, ≈ 75 characters of body copy once the pane's
  * padding is taken off) and the footer. `children` is either prose that sits on
- * one `.glass-pane` (the default) or, with `bare`, a stack of sections that
+ * one `.surface-panel` (the default) or, with `bare`, a stack of sections that
  * bring their own panels (the security page) — in both cases inside the same
  * column, at the same measure.
  */
@@ -82,7 +82,7 @@ export function LegalLayout({
         {bare ? (
           <div className="legal-content__body flex flex-col gap-8">{children}</div>
         ) : (
-          <article className={cn('legal-content__body glass-pane px-5 py-6 sm:px-10 sm:py-10')}>
+          <article className={cn('legal-content__body surface-panel px-5 py-6 sm:px-10 sm:py-10')}>
             {children}
           </article>
         )}

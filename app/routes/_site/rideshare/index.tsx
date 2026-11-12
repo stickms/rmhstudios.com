@@ -94,7 +94,7 @@ function RideshareLanding() {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-pane flex flex-col items-start gap-4 rounded-site p-5 md:p-8"
+          className="flex flex-col items-start gap-4 rounded-site p-5 md:p-8"
         >
           <Badge variant="default" icon={<Sparkles aria-hidden />}>
             {t('community-rideshare', { defaultValue: 'Community rideshare' })}
@@ -142,7 +142,7 @@ function RideshareLanding() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05 }}
-                  className="glass-fill flex flex-col rounded-site p-5"
+                  className="flex flex-col rounded-site p-5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex h-11 w-11 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
@@ -180,7 +180,7 @@ function RideshareLanding() {
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {RIDER_STEPS_KEYS.map((step, i) => (
-              <div key={step.titleKey} className="glass-fill rounded-site p-5">
+              <div key={step.titleKey} className="rounded-site p-5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-site-sm bg-site-surface-hover text-site-accent">
                   <step.icon className="h-5 w-5" />
                 </div>
@@ -203,7 +203,7 @@ function RideshareLanding() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="glass-fill flex flex-col gap-4 rounded-site p-5 md:flex-row md:items-center md:justify-between md:gap-8 md:p-8"
+          className="flex flex-col gap-4 rounded-site p-5 md:flex-row md:items-center md:justify-between md:gap-8 md:p-8"
         >
           <div className="max-w-lg space-y-2">
             <div className="flex items-center gap-2 text-site-accent">
@@ -259,7 +259,7 @@ function PriceEstimator() {
       </p>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="glass-fill flex flex-col gap-4 rounded-site p-5">
+        <div className="flex flex-col gap-4 rounded-site p-5">
           <div className="flex items-center justify-between">
             <label htmlFor="estimator-distance" className="text-sm font-medium text-site-text">
               {t('trip-distance', { defaultValue: 'Trip distance' })}

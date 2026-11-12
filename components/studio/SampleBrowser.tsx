@@ -157,7 +157,7 @@ export function SampleBrowser() {
         ) : (
           <div className="space-y-2 p-2">
             {SAMPLE_PACKS.map((pack) => (
-              <div key={pack.id} className="glass-fill rounded-app-sm p-2">
+              <div key={pack.id} className="surface-card rounded-app-sm p-2">
                 <p className="text-xs font-medium text-app-text">{pack.name}</p>
                 <p className="mt-0.5 text-xs text-app-text-muted">{pack.description}</p>
                 <div className="mt-1 flex items-center gap-2">

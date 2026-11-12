@@ -103,7 +103,7 @@ export function LargeTitle({
       <div className="site-sticky-pinned sticky top-0 z-20">
         <motion.div
           aria-hidden
-          className="glass-chrome absolute inset-0 border-b border-site-border"
+          className="surface-chrome absolute inset-0 border-b border-site-border"
           style={{ opacity: barOpacity }}
         />
         <div className="relative flex h-14 items-center gap-2 px-4 sm:px-6">

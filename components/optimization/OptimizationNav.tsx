@@ -7,7 +7,7 @@ import {
 export function OptimizationNav() {
   return (
       <header>
-        <nav className="glass-chrome sec-nav" aria-label="Optimization">
+        <nav className="surface-chrome sec-nav" aria-label="Optimization">
           <div className="sec-nav__inner">
             <a className="sec-nav__back" href="/">
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />

@@ -17,7 +17,7 @@ interface TrashRowProps {
 /**
  * One row of the bin.
  *
- * `.glass-fill` (L1), never `.glass-pane`: these are repeated list items and the
+ *`.`(L1), never`.`: these are repeated list items and the
  * blur budget is **zero** on repeated surfaces. The actions are full-height
  * `Button`s at the default size, which is the 44px touch target — a `sm` button
  * here would be 36px and fail on a phone, which is where a mis-tapped Delete is
@@ -46,7 +46,7 @@ export function TrashRow({ item, busy, onRestore, onPurge }: TrashRowProps) {
     Date.now() - Date.parse(item.deletedAt) > DELETED_POST_GRACE_MS;
 
   return (
-    <li className="glass-fill rounded-site p-5">
+    <li className="rounded-site p-5">
       <div className="flex flex-col gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <Icon className="mt-0.5 size-4 shrink-0 text-site-text-muted" aria-hidden />

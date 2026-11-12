@@ -17,7 +17,7 @@ export function StatusBadge({
  <span
  data-slot="status-badge"
  className={cn(
-'glass-fill inline-flex max-w-full items-center gap-2 rounded-full px-3 py-1 text-sm text-site-text-muted',
+'inline-flex max-w-full items-center gap-2 rounded-full px-3 py-1 text-sm text-site-text-muted',
  className,
  )}
  >

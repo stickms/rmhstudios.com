@@ -558,7 +558,7 @@ function NewChatDialog({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t('search-people-placeholder', { defaultValue: 'Search people…' })}
-            className="glass-inset border w-full rounded-site-sm py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
+            className="surface-field border w-full rounded-site-sm py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
           />
         </div>
         <div className="max-h-[50vh] overflow-y-auto">

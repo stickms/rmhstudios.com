@@ -548,7 +548,7 @@ export default function UndercoverEditorGame({
                     </p>
                     <button
                       onClick={handleUnsubmitSentence}
-                      className="glass-fill rounded-app-sm px-3 py-2 text-xs text-app-text-muted hover:bg-app-border transition-colors"
+                      className="surface-card rounded-app-sm px-3 py-2 text-xs text-app-text-muted hover:bg-app-border transition-colors"
                     >
                       {t("edit", { defaultValue: "Edit" })}
                     </button>
@@ -637,7 +637,7 @@ export default function UndercoverEditorGame({
             {currentReadingStory && (
               <div className="w-full max-w-lg flex flex-col gap-3">
                 {/* Slim "Story so far" panel — shows story number, prompt as sentence, revealed sentences */}
-                <div className="glass-fill rounded-app-sm p-3">
+                <div className="surface-card rounded-app-sm p-3">
                   <p className="mb-2 text-[10px] uppercase tracking-wider text-app-text-muted">
                     {t("ue-story-number", { defaultValue: "Story {{number}}", number: readingStoryIndex + 1 })}
                   </p>
@@ -753,7 +753,7 @@ export default function UndercoverEditorGame({
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: revealIdx * 0.08, duration: 0.35 }}
-                    className="glass-fill flex flex-col gap-3 rounded-app p-4"
+                    className="surface-card flex flex-col gap-3 rounded-app p-4"
                   >
                     {/* Story header with match result badge */}
                     <div className="flex items-center justify-between">

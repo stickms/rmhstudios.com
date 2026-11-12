@@ -153,7 +153,7 @@ function QuoteCard({ quote, index }: { quote: (typeof quotes)[number]; index: nu
   return (
     <div className="group relative border-s-2 border-site-border py-6 ps-8 transition-colors duration-site-slow hover:border-site-accent">
       {/* Quote number badge */}
-      <div className="absolute -start-3 top-6 flex size-6 items-center justify-center rounded-full glass-fill">
+      <div className="absolute -start-3 top-6 flex size-6 items-center justify-center rounded-full">
         <span className="font-mono text-xs text-site-text-muted transition-colors duration-site-slow group-hover:text-site-accent">
           {index + 1}
         </span>
@@ -185,7 +185,7 @@ function QuotesPage() {
       <div className="px-4 pt-4 pb-12">
         {/* Hero section */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-site glass-fill">
+          <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-site relative">
             <Quote aria-hidden className="size-9 text-site-accent" strokeWidth={1.5} />
           </div>
           <p className="mx-auto max-w-lg text-sm leading-relaxed text-site-text-muted">

@@ -233,7 +233,7 @@ export default function DrawingCanvas({
       {strokes.length > 0 && !disabled && (
         <button
           onClick={onUndo}
-          className="glass-fill absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full text-app-text hover:bg-app-border transition-colors"
+          className="surface-card absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full text-app-text hover:bg-app-border transition-colors"
           title={t("undo-last-stroke", { defaultValue: "Undo last stroke" })}
           aria-label={t("undo-last-stroke", { defaultValue: "Undo last stroke" })}
         >

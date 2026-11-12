@@ -16,7 +16,7 @@ export function EditorPreview({
 }) {
   const { t } = useTranslation('feed');
   return (
-    <div className="glass-fill overflow-hidden rounded-site ">
+    <div className="overflow-hidden rounded-site">
       <div className="relative h-24 overflow-hidden bg-linear-to-br from-site-bg-subtle via-site-surface to-site-bg-subtle">
         {banner ? <img src={banner} alt="" className="size-full object-cover" /> : null}
         <div
