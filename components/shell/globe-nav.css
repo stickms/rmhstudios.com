@@ -36,7 +36,8 @@
     --globe-d: 124px;
     --globe-open-d: 440px;
     --globe-start: calc(max(0px, (100vw - 1240px) / 2) + 24px);
-    --globe-bottom: 26px;
+    /* 26px off the edge, plus the sidebar's foot under it: the primary, the handle and their gaps (site-shell.css). */
+    --globe-bottom: 130px;
     --globe-shift: calc(50vw - var(--globe-start) - var(--globe-d) / 2);
     --globe-travel: calc(50dvh - var(--globe-bottom) - var(--globe-d) / 2);
     --globe-scale: 3.548;
@@ -70,7 +71,7 @@ html.ios-webkit .globe-nav__fade {
   display: none;
 }
 
-/* The veil: --site-bg at 96%, flat, no blur (G2). */
+/* The veil: --site-bg at 80%, flat, no blur (G2; owner, 2026-11-12: the page behind an open globe was dimmed too far). */
 .globe-nav__veil {
   position: fixed;
   inset: -2rem;
@@ -84,7 +85,7 @@ html.ios-webkit .globe-nav__fade {
     visibility 0s linear 0.2s;
 }
 .globe-nav[data-open] .globe-nav__veil {
-  opacity: 0.96;
+  opacity: 0.8;
   visibility: visible;
   pointer-events: auto;
   transition:

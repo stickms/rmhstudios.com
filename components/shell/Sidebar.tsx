@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useResolvedUser, useSession } from '@/components/Providers';
@@ -17,8 +17,10 @@ const SECTION_HREFS = new Set(['/', '/explore', '/games', '/messages']);
 const AccountMenu = lazy(() => import('./AccountMenu').then((m) => ({ default: m.AccountMenu })));
 
 /**
- * The desktop sidebar (Steel L4), top to bottom: the words "RMH Studios", the five sections as words, the one ink
- * primary, the signed-in handle with a 28px avatar, and the 72px globe at the bottom (G10).
+ * The desktop sidebar (Steel L4), top to bottom: the words "RMH Studios", the five sections as words, as many of the
+ * other places as the window's height leaves room for, the globe, the one ink primary, and at the foot the signed-in
+ * handle with a 28px avatar (owner, 2026-11-12). It never scrolls: the globe and the foot keep their place and the
+ * lists give way.
  *
  * It is plain markup with links, so it is complete with scripting off (B1). Below 1024px it is not displayed
  * (site-shell.css) and the phone globe is the navigator.
@@ -50,6 +52,32 @@ export function Sidebar() {
     [signedIn, isAdmin],
   );
 
+  // The lists show as many links as the window's height leaves room for (owner, 2026-11-12: no scrollbar in the
+  // sidebar, the globe comes first). CSS does the fitting: each list is a wrapping column, so a link that does not fit
+  // moves to a second column that is clipped (site-shell.css). This only takes the links that are not wholly in view
+  // out of the tab order and the accessibility tree; with scripting off they are clipped all the same. Read on resize,
+  // never per frame.
+  const innerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const inner = innerRef.current;
+    if (!inner) return;
+    const fit = () => {
+      for (const list of Array.from(inner.querySelectorAll<HTMLElement>('.site-sidebar__list'))) {
+        const first = list.firstElementChild as HTMLElement | null;
+        if (!first) continue;
+        const column = first.offsetLeft;
+        const floor = list.offsetTop + list.clientHeight + 1;
+        for (const item of Array.from(list.children) as HTMLElement[]) {
+          item.inert =
+            Math.abs(item.offsetLeft - column) > 1 || item.offsetTop + item.offsetHeight > floor;
+        }
+      }
+    };
+    fit();
+    window.addEventListener('resize', fit, { passive: true });
+    return () => window.removeEventListener('resize', fit);
+  }, [more]);
+
   const menuAnchor = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuMounted, setMenuMounted] = useState(false);
@@ -63,14 +91,17 @@ export function Sidebar() {
 
   return (
     <aside className="site-sidebar">
-      <div className="site-sidebar__inner">
+      <div ref={innerRef} className="site-sidebar__inner">
         <p className="site-sidebar__brand">
           <Link to="/" aria-label={t('shell-home-aria', { defaultValue: 'RMH Studios front page' })}>
             {t('shell-brand', { defaultValue: 'RMH Studios' })}
           </Link>
         </p>
 
-        <nav aria-label={t('shell-sections-label', { defaultValue: 'Sections' })}>
+        <nav
+          className="site-sidebar__sections"
+          aria-label={t('shell-sections-label', { defaultValue: 'Sections' })}
+        >
           <ul className="site-sidebar__list">
             {SECTIONS.map((section) => {
               const label = labels[section.id];
@@ -102,6 +133,36 @@ export function Sidebar() {
             })}
           </ul>
         </nav>
+
+        {more.length > 0 && (
+          <nav
+            className="site-sidebar__more"
+            aria-label={t('shell-sections-more', { defaultValue: 'More places' })}
+          >
+            <ul className="site-sidebar__list site-sidebar__list--more">
+              {more.map((leaf) => (
+                <li key={leaf.id}>
+                  {leaf.external ? (
+                    <a href={leaf.href} className="site-sidebar__link">
+                      {t(leaf.tKey, { defaultValue: leaf.label })}
+                    </a>
+                  ) : (
+                    <Link
+                      to={leaf.href}
+                      className="site-sidebar__link"
+                      aria-current={isNavLeafActive(pathname, leaf) ? 'page' : undefined}
+                    >
+                      {t(leaf.tKey, { defaultValue: leaf.label })}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+
+        {/* The globe itself is GlobeNav's (one element for phone and desktop); this keeps its place at the foot. */}
+        <div className="site-sidebar__globe-space" aria-hidden />
 
         <Button
           asChild
@@ -158,33 +219,6 @@ export function Sidebar() {
             </Button>
           </div>
         )}
-
-        {more.length > 0 && (
-          <nav aria-label={t('shell-sections-more', { defaultValue: 'More places' })}>
-            <ul className="site-sidebar__list site-sidebar__list--more">
-              {more.map((leaf) => (
-                <li key={leaf.id}>
-                  {leaf.external ? (
-                    <a href={leaf.href} className="site-sidebar__link">
-                      {t(leaf.tKey, { defaultValue: leaf.label })}
-                    </a>
-                  ) : (
-                    <Link
-                      to={leaf.href}
-                      className="site-sidebar__link"
-                      aria-current={isNavLeafActive(pathname, leaf) ? 'page' : undefined}
-                    >
-                      {t(leaf.tKey, { defaultValue: leaf.label })}
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )}
-
-        {/* The globe itself is GlobeNav's (one element for phone and desktop); this keeps its place at the foot. */}
-        <div className="site-sidebar__globe-space" aria-hidden />
       </div>
     </aside>
   );

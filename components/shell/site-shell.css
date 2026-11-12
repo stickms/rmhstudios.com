@@ -86,7 +86,8 @@
     margin-block-start: 16px;
     block-size: calc(100dvh - 32px);
     padding: 6px 24px 16px;
-    overflow-y: auto;
+    /* Never a scrollbar (owner, 2026-11-12): the lists give way to the globe and the foot instead. */
+    overflow: hidden;
   }
 
   /* L5 and L7: 48px side padding in the two-column frame, 26px above the page title. */
@@ -141,11 +142,44 @@
   font-weight: 400;
   text-decoration: none;
 }
-/* The second list: the places the five words do not name. Smaller and closer, so the five stay the headline. */
-.site-sidebar__list--more {
+/* FITTING THE LISTS TO THE WINDOW. The column never scrolls. The second list takes whatever height is left between the
+   five words and the globe; the five words give way only once the second list is gone. Each list is a WRAPPING column
+   of full-width rows, so a link that does not fit moves whole into a second column, and that column is clipped: a link
+   is shown entire or not at all, with no script. (Sidebar.tsx takes the clipped links out of the tab order.) */
+.site-sidebar__sections,
+.site-sidebar__more {
+  min-block-size: 0;
+  overflow: hidden;
+}
+.site-sidebar__sections {
+  flex: 0 1 auto;
+}
+.site-sidebar__more {
+  flex: 1 1 0;
   margin-block-start: 22px;
   padding-block-start: 14px;
   border-block-start: 1px solid var(--site-border);
+}
+.site-sidebar__sections > .site-sidebar__list,
+.site-sidebar__more > .site-sidebar__list {
+  display: flex;
+  flex-flow: column wrap;
+  align-content: flex-start;
+  block-size: 100%;
+}
+.site-sidebar__sections > .site-sidebar__list {
+  /* Its own height when there is room, less when there is not. */
+  block-size: auto;
+  max-block-size: 100%;
+}
+.site-sidebar__sections > .site-sidebar__list > li,
+.site-sidebar__more > .site-sidebar__list > li {
+  flex: none;
+  inline-size: 100%;
+}
+/* The second list: the places the five words do not name. Smaller and closer, so the five stay the headline. */
+.site-sidebar__list--more {
+  margin-block-start: 0;
 }
 .site-sidebar__list--more .site-sidebar__link {
   padding-block: 5px;
@@ -165,16 +199,20 @@
   font-weight: 600;
 }
 .site-sidebar__write {
-  margin-block-start: 18px;
+  flex: none;
+  block-size: 36px;
   align-self: flex-start;
 }
+/* The foot: the handle is the last thing in the column, under the primary, under the globe. Fixed heights, because the
+   globe is placed from them (globe-nav.css `--globe-bottom`: 36px + 14px + 36px + 18px = 104px above the old foot). */
 .site-sidebar__account {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-block-start: 22px;
-  min-block-size: 36px;
+  margin-block-start: 14px;
+  block-size: 36px;
 }
 .site-sidebar__handle {
   display: flex;
@@ -191,12 +229,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* The globe is GlobeNav's element (globe-nav.css "DESKTOP"): a fixed 124px ball at the foot of the sidebar. This
-   keeps its place in the column so the list above never runs under it. */
+/* The globe is GlobeNav's element (globe-nav.css "DESKTOP"): a fixed 124px ball above the sidebar's foot. This keeps
+   its place in the column so the lists above never run under it; it never shrinks (the globe comes first). */
 .site-sidebar__globe-space {
   flex: none;
   block-size: 140px;
-  margin-block-start: auto;
+  margin-block-end: 18px;
 }
 .site-sidebar__brand a {
   color: inherit;
