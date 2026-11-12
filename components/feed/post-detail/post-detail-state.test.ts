@@ -4,6 +4,7 @@ import type { Comment } from '../CommentItem';
 import {
   addReplyDeep,
   canSubmitReply,
+  flattenReplies,
   formatFullDate,
   postBodyUsers,
   postLinkPreviewUrl,
@@ -106,5 +107,37 @@ describe('withResolvedIdentity', () => {
 describe('formatFullDate', () => {
   it('spells out the month with the time', () => {
     expect(formatFullDate('2024-03-05T11:00:00')).toMatch(/^March 5, 2024 at 11:00 AM$/);
+  });
+});
+
+describe('flattenReplies (one nested spine, P2)', () => {
+  const u = (handle: string, hidden = false, replies?: Comment[], id = handle): Comment =>
+    ({
+      id,
+      content: id,
+      createdAt: '2024-01-01',
+      userId: id,
+      user: { handle },
+      hidden,
+      replies,
+    }) as Comment;
+
+  it('is empty for a reply with no replies', () => {
+    expect(flattenReplies(u('a'))).toEqual({ visible: [], hidden: [] });
+  });
+
+  it('lists every descendant depth-first and names whom a deeper reply answers', () => {
+    const tree = u('a', false, [u('b', false, [u('c', false, [u('d')])]), u('e')]);
+    const { visible, hidden } = flattenReplies(tree);
+    expect(visible.map((r) => r.comment.id)).toEqual(['b', 'c', 'd', 'e']);
+    expect(visible.map((r) => r.replyingTo)).toEqual([null, 'b', 'c', null]);
+    expect(hidden).toEqual([]);
+  });
+
+  it('sends a hidden reply and its whole subtree to the hidden group', () => {
+    const tree = u('a', false, [u('b', true, [u('c')]), u('d')]);
+    const { visible, hidden } = flattenReplies(tree);
+    expect(visible.map((r) => r.comment.id)).toEqual(['d']);
+    expect(hidden.map((r) => r.comment.id)).toEqual(['b', 'c']);
   });
 });

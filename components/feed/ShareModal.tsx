@@ -125,7 +125,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  </button>
  {showQr && (
  <div className="flex justify-center py-2">
- <div className="rounded-site bg-white p-4">
+ <div className="rounded-site border border-site-border p-2">
  <QrCode value={url} size={168} />
  </div>
  </div>

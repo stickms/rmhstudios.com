@@ -52,7 +52,6 @@ function offenders(): string[] {
 /** Audited intra-component bands. Entries come out of this list; they do not go in. */
 const LOCAL_BANDS = [
   'app/globals/components-reveal.css :: .spatial-design-nav :: 30',
-  'components/feed/feed.css :: .site-nav :: 45',
   'components/library/library/catalog-reader.css :: .lib-book:hover,\n.lib-book:focus-within,\n.lib-coll-tile:hover,\n.lib-coll-tile:focus-within :: 20',
   'components/library/library/catalog-reader.css :: .lib-book__name :: 21',
   'components/library/library/catalog-reader.css :: .lib-reader__chapters-menu :: 20',

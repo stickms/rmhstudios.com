@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { Spine, SpineItem } from '@/components/ui/spine';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { useFreshUser } from '@/stores/userDisplayStore';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
@@ -69,12 +70,10 @@ export function PostDetail({ postId }: PostDetailProps) {
 
   const authorName = freshPostUser?.name || t('unknown-user', { defaultValue: 'Unknown' });
 
-  // One column, one rhythm: the post, the reply surface, every reply thread and
-  // the related posts are siblings of `.post-page` (feed.css), so they share the
-  // same width, the same gutter and the same --space-4 gap. The page title is
-  // the author's name, visually hidden: the card below already says who wrote it.
+  // One column, one spine: the post, the reply field, every reply and the related posts hang on the same line. The page
+  // title is the author's name, visually hidden: the post below already says who wrote it.
   return (
-    <div className="post-page">
+    <div className="post-page" data-slot="site-main-column">
       <h1 className="sr-only">
         {t('post-by', { defaultValue: 'Post by {{name}}', name: authorName })}
       </h1>
@@ -85,53 +84,54 @@ export function PostDetail({ postId }: PostDetailProps) {
         </button>
       </div>
 
-      <PostArticle
-        post={post}
-        postId={postId}
-        isAuthor={isAuthor}
-        authorName={authorName}
-        freshPostUser={freshPostUser}
-        freshOriginalUser={freshOriginalUser}
-        translation={translation}
-        setPost={setPost}
-        syncToFeed={syncToFeed}
-        onRemove={() => navigate({ to: '/' })}
-      />
-
-      {/* Deleted notice: a quiet card in the column, not a ruled strip. */}
-      {post.deletedAt && (
-        <div className="glass-fill rounded-site px-5 py-4">
-          <p className="text-center text-sm text-site-text-muted">
-            {post.deletedByAdmin
-              ? t('deleted-by-admin', { defaultValue: 'This RMHark was deleted by an admin.' })
-              : t('deleted-by-user', { defaultValue: 'This RMHark was deleted by the user.' })}
-          </p>
-        </div>
-      )}
-
-      {!post.deletedAt && (
-        <ReplyComposer
+      <Spine>
+        <PostArticle
           post={post}
           postId={postId}
-          sessionUser={session?.user ?? null}
-          resolvedUser={resolvedUser}
-          composer={composer}
-          pathname={pathname}
+          isAuthor={isAuthor}
+          authorName={authorName}
+          freshPostUser={freshPostUser}
+          freshOriginalUser={freshOriginalUser}
+          translation={translation}
+          setPost={setPost}
+          syncToFeed={syncToFeed}
+          onRemove={() => navigate({ to: '/' })}
         />
-      )}
 
-      {!post.deletedAt && (
-        <ReplyList
-          postId={postId}
-          postAuthorId={post.user?.id}
-          comments={comments}
-          loadingComments={loadingComments}
-          sessionUser={sessionUserForReplies}
-          thread={thread}
-        />
-      )}
+        {post.deletedAt && (
+          <SpineItem dot={false}>
+            <p className="t-body text-site-text-muted">
+              {post.deletedByAdmin
+                ? t('deleted-by-admin', { defaultValue: 'This RMHark was deleted by an admin.' })
+                : t('deleted-by-user', { defaultValue: 'This RMHark was deleted by the user.' })}
+            </p>
+          </SpineItem>
+        )}
 
-      {!post.deletedAt && <RelatedPosts postId={postId} />}
+        {!post.deletedAt && (
+          <ReplyComposer
+            post={post}
+            postId={postId}
+            sessionUser={session?.user ?? null}
+            resolvedUser={resolvedUser}
+            composer={composer}
+            pathname={pathname}
+          />
+        )}
+
+        {!post.deletedAt && (
+          <ReplyList
+            postId={postId}
+            postAuthorId={post.user?.id}
+            comments={comments}
+            loadingComments={loadingComments}
+            sessionUser={sessionUserForReplies}
+            thread={thread}
+          />
+        )}
+
+        {!post.deletedAt && <RelatedPosts postId={postId} />}
+      </Spine>
     </div>
   );
 }

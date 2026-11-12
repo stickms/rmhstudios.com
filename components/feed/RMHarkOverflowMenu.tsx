@@ -11,7 +11,6 @@
 
 import { lazy, Suspense, useRef, useState } from'react';
 import {
- MoreHorizontal,
  Heart,
  Repeat,
  Trash2,
@@ -79,10 +78,6 @@ interface RMHarkOverflowMenuProps {
  onRemove?: () => void;
  /** Optional translate menu item; the translated body is rendered by the parent. */
  translate?: RMHarkTranslateControl;
- /** Classes for the trigger button. */
- buttonClassName?: string;
- /** Classes for the trigger icon (e.g. `w-4 h-4`on compact cards). */
- iconClassName?: string;
  /** Extra classes for the positioned wrapper. */
  className?: string;
 }
@@ -93,8 +88,6 @@ export function RMHarkOverflowMenu({
  onUpdate,
  onRemove,
  translate,
- buttonClassName,
- iconClassName,
  className,
 }: RMHarkOverflowMenuProps) {
  const { t } = useTranslation('feed');
@@ -259,12 +252,10 @@ export function RMHarkOverflowMenu({
  aria-label={t('more-options', { defaultValue:'More options'})}
  aria-haspopup="menu"
  aria-expanded={menuOpen}
- className={cn(
-'p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors',
- buttonClassName,
- )}
+ // K8: a plain word, not an icon-only button. "More options" (the name) contains the visible "More".
+ className="feed-action"
  >
- <MoreHorizontal className={cn('w-5 h-5', iconClassName)} />
+ {t('action-more', { defaultValue: 'More' })}
  </button>
  <AnchoredMenu
  open={menuOpen}

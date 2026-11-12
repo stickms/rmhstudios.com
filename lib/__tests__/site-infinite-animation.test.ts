@@ -126,7 +126,6 @@ const BASELINE = new Map<string, string>([
     'components/radial/eversion/eversion.css :: evert-popup-turn',
     'eversion popup spinner, while a navigation runs',
   ],
-  ['components/feed/feed.css :: feed-live-pulse', 'the live indicator dot on a live item'],
 ]);
 
 describe('N3 — no perpetual CSS animation on the site tier without an owner', () => {
@@ -137,7 +136,7 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
     for (const f of ['app/globals.css', 'components/radial/radial.css']) {
       expect(SHEETS).toContain(f);
     }
-    expect(found.length).toBeGreaterThan(10);
+    expect(found.length).toBeGreaterThan(5);
   });
 
   it('every infinite animation is on the frozen baseline', () => {

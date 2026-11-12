@@ -6,7 +6,7 @@ import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
 import { RunnableEmbed } from '@/components/code-embed/RunnableEmbed';
 import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadges';
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
-import { postMediaVTName, liquidVTName } from '@/lib/view-transition';
+import { postMediaVTName } from '@/lib/view-transition';
 import { RMHarkOverflowMenu } from '../RMHarkOverflowMenu';
 import { RMHarkActions } from '../RMHarkActions';
 import { RMHarkContent } from '../RMHarkContent';
@@ -18,6 +18,8 @@ import { SensitiveMedia } from '../SensitiveMedia';
 import { LinkPreview } from '../LinkPreview';
 import { UserAvatar } from '../UserAvatar';
 import { EditHistoryButton } from '../EditHistory';
+import { SpineItem } from '@/components/ui/spine';
+import { REPLY_INPUT_ID } from './reply-input-id';
 import { formatFullDate, postLinkPreviewUrl } from './post-detail-state';
 import type { PostTranslation } from './usePostTranslation';
 
@@ -35,10 +37,9 @@ interface PostArticleProps {
 }
 
 /**
- * The post: a singular panel, so `.glass-pane` (L2). It is the liquid-open
- * hero the feed card morphs into (§5.48); the name is static because there
- * is one post per detail page. Author, body, media, timestamp and the
- * action row all live inside it.
+ * The post, the first item on the thread's spine (Steel section 10, Post and replies): author, the text at 19px, its
+ * picture, the full time and the K8 action words. No box and no morph (S1, M8): the replies that follow hang on the same
+ * spine.
  */
 export function PostArticle({
   post,
@@ -57,14 +58,22 @@ export function PostArticle({
   const { translatedText, showTranslated, translating, handleTranslate } = translation;
 
   return (
-    <article
-      className="glass-pane post-page__post relative"
-      style={{ viewTransitionName: liquidVTName('post', postId) }}
-    >
-      {/* More menu — top right (shared with the feed card so features match) */}
-      {!post.deletedAt && (
-        <div className="absolute top-3 right-3 z-20">
+    <SpineItem as="article">
+      {/* Author, with the menu word at the inline end (shared with the feed row so features match) */}
+      <div className="flex items-center gap-3">
+        <UserAvatar user={freshPostUser} size="lg" />
+        <div className="min-w-0 flex-1">
+          <Link
+            to={`/u/${freshPostUser?.handle || freshPostUser?.id}` as string}
+            className="hover:underline"
+          >
+            <span className="t-body block truncate font-semibold text-site-text">{authorName}</span>
+          </Link>
+          {freshPostUser?.handle && <p className="t-meta truncate">@{freshPostUser.handle}</p>}
+        </div>
+        {!post.deletedAt && (
           <RMHarkOverflowMenu
+            className="shrink-0"
             item={post}
             isAuthor={isAuthor}
             onUpdate={(updates) => {
@@ -79,43 +88,27 @@ export function PostArticle({
               onToggle: handleTranslate,
             }}
           />
-        </div>
-      )}
-
-      {/* User header */}
-      <div className="flex items-center gap-3 mb-4 pr-10">
-        <UserAvatar user={freshPostUser} size="lg" />
-        <div className="min-w-0">
-          <Link
-            to={`/u/${freshPostUser?.handle || freshPostUser?.id}` as string}
-            className="hover:underline"
-          >
-            <span className="block truncate text-base font-bold text-site-text">{authorName}</span>
-          </Link>
-          {freshPostUser?.handle && (
-            <p className="truncate text-sm text-site-text-muted">@{freshPostUser.handle}</p>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Content - larger text for detail view */}
+      {/* The text, at 19px */}
       {post.content && (
         <RMHarkContent
           text={post.content}
-          className="mb-4 text-lg leading-relaxed whitespace-pre-wrap break-words text-site-text sm:text-xl"
+          className="post-page__text mt-3 break-words whitespace-pre-wrap text-site-text"
         />
       )}
 
-      {/* Translation (toggled from the overflow menu) */}
+      {/* Translation (toggled from the menu): set off by a rule, not a box */}
       {showTranslated && translatedText && (
-        <div className="mb-3 rounded-site glass-fill px-4 py-3 text-body leading-relaxed text-site-text whitespace-pre-wrap break-words">
+        <p className="t-body mt-3 border-s-2 border-site-border ps-3 break-words whitespace-pre-wrap">
           {translatedText}
-        </div>
+        </p>
       )}
 
       {/* Poll */}
       {post.poll && (
-        <div className="mb-3">
+        <div className="mt-3">
           <PollDisplay
             poll={post.poll}
             postId={postId}
@@ -126,18 +119,18 @@ export function PostArticle({
         </div>
       )}
 
-      {/* Take meter (X6) — only on posts the author marked as a take */}
+      {/* Take meter (X6): only on posts the author marked as a take */}
       {post.isTake && !post.locked && (
-        <div className="mb-3">
+        <div className="mt-3">
           <TakeMeterLazy postId={postId} />
         </div>
       )}
 
       {post.hasEmbed && !post.locked && <RunnableEmbed postId={postId} />}
 
-      {/* Context notes (X3) — a button until opened; open straight away when a note is visible */}
+      {/* Context notes (X3): a button until opened; open straight away when a note is visible */}
       {!post.locked && (
-        <div className="mb-3">
+        <div className="mt-3">
           <ContextNotesLazy postId={postId} hasNote={post.hasNote} />
         </div>
       )}
@@ -148,89 +141,77 @@ export function PostArticle({
           postId={postId}
           seriesId={post.seriesId}
           expiresAt={post.expiresAt}
-          className="mb-3"
+          className="mt-3"
         />
       )}
 
-      {/* Image / GIF — hidden behind a content warning when marked sensitive.
- The gutter is `mb-5`, not the `mb-3` the text blocks above use: a photo's
- edge is a hard rectangle, so the gap that reads as a paragraph break under
- text reads as the timestamp sitting ON the image. */}
+      {/* Image / GIF: hidden behind a content warning when marked sensitive. */}
       {(post.gifUrl || (post.imageUrls && post.imageUrls.length > 0)) && (
-        <SensitiveMedia sensitive={post.isSensitive} className="mb-4">
+        <SensitiveMedia sensitive={post.isSensitive} className="mt-3">
           {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-1" />}
           {post.imageUrls && post.imageUrls.length > 0 && (
             <PostImageGrid
               urls={post.imageUrls}
               alts={post.imageAlts}
               heroName={postMediaVTName(postId)}
-              // This is the single-post page, so the post's first image is the
-              // largest element on it and therefore the LCP candidate. No
-              // `<link rel=preload>` to pair with: the post body is fetched on
-              // the client, so the URL does not exist at head() time.
+              // This is the single-post page, so the post's first image is the largest element on it and therefore the
+              // LCP candidate. No `<link rel=preload>` to pair with: the post body is fetched on the client, so the
+              // URL does not exist at head() time.
               priority
             />
           )}
         </SensitiveMedia>
       )}
 
-      {/* Link preview — only when no poll, gif, or image */}
-      {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mb-3" />}
+      {/* Link preview: only when no poll, gif, or image */}
+      {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
 
-      {/* Quoted original */}
+      {/* Quoted original: set off by a rule, not a box */}
       {post.original && (
-        <div className="glass-fill mb-3 rounded-site px-4 py-3">
-          <div className="flex items-center gap-2 text-sm mb-1">
+        <div className="mt-3 border-s-2 border-site-border ps-3">
+          <div className="t-body mb-1 flex items-center gap-2">
             {freshOriginalUser ? (
               <Link
                 to={`/u/${freshOriginalUser.handle || freshOriginalUser.id}` as string}
-                className="flex items-center gap-2 min-w-0 hover:underline"
+                className="flex min-w-0 items-center gap-2 hover:underline"
               >
-                <span className="font-bold text-site-text truncate">
+                <span className="truncate font-semibold text-site-text">
                   {freshOriginalUser.name || t('unknown-user', { defaultValue: 'Unknown' })}
                 </span>
                 {freshOriginalUser.handle && (
-                  <span className="text-site-text-muted truncate">@{freshOriginalUser.handle}</span>
+                  <span className="t-meta truncate">@{freshOriginalUser.handle}</span>
                 )}
               </Link>
             ) : (
-              <span className="font-bold text-site-text truncate">
+              <span className="truncate font-semibold text-site-text">
                 {t('unknown-user', { defaultValue: 'Unknown' })}
               </span>
             )}
           </div>
           <RMHarkContent
             text={post.original.content ?? ''}
-            className="text-site-text text-sm whitespace-pre-wrap break-words"
+            className="t-body break-words whitespace-pre-wrap text-site-text"
           />
         </div>
       )}
 
-      {/* Full timestamp */}
-      <p className="mb-1 text-sm text-site-text-muted">
+      {/* The full time */}
+      <p className="t-meta mt-3">
         {formatFullDate(post.createdAt)}
-        {post.edited && !post.deletedAt ? (
-          <EditHistoryButton postId={postId} className="text-sm" />
-        ) : null}
+        {post.edited && !post.deletedAt ? <EditHistoryButton postId={postId} /> : null}
       </p>
 
-      {/* The passive "N reRMHarks · N Likes · N Views" bar that used to sit here
-            is gone. `RMHarkActions` directly below already renders every one of
-            those counts against the same icons the rest of the site uses, so the
-            page showed each figure twice: once as text that looked clickable and
-            did nothing, and once on the control that performs the action. The
-            toolbar stays because it is the one you can press. It closes the card
-            with space, not a rule. */}
+      {/* The action words. "Reply" takes you to the field below instead of reloading this page. */}
       {!post.deletedAt && (
         <RMHarkActions
           item={post}
-          className="mt-2 -mb-2"
+          onReply={() => document.getElementById(REPLY_INPUT_ID)?.focus()}
           onUpdate={(_, updates) => {
             setPost((prev) => (prev ? { ...prev, ...updates } : prev));
             syncToFeed(updates);
           }}
         />
       )}
-    </article>
+    </SpineItem>
   );
 }

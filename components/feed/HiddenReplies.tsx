@@ -1,8 +1,9 @@
 import { useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { MenuItem } from '@/components/ui/menu';
+import { SpineItem } from '@/components/ui/spine';
 import { hideCommentApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
 
@@ -58,43 +59,38 @@ export function HideReplyMenuItem({
   );
 }
 
-export function HiddenRepliesGroup({
-  count,
-  children,
-  card,
-}: {
-  count: number;
-  children: ReactNode;
-  /** Top level of the post page: the disclosure is its own `.glass-fill` card in the column. */
-  card?: boolean;
-}) {
+/**
+ * The collapsed disclosure the hidden replies sit under, for everyone reading the conversation. Its toggle is a dotless
+ * spine item (P3: it is a control, not a reply) and, once open, the replies follow it as siblings on the same spine, so
+ * their dots stay on the line. It belongs inside a `Spine`: the post's reply list or a reply's nested spine. Nothing
+ * animates (M6): the chevron flips, it does not turn.
+ */
+export function HiddenRepliesGroup({ count, children }: { count: number; children: ReactNode }) {
   const { t } = useTranslation('f-feed-plus');
   const [open, setOpen] = useState(false);
   const panelId = useId();
   if (count === 0) return null;
   return (
-    <div className={card ? 'glass-fill rounded-site px-2 py-2' : 'py-2'}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-controls={panelId}
-        className="flex min-h-9 pointer-coarse:min-h-11 w-full items-center gap-2 rounded-site-sm px-2 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
-      >
-        <EyeOff className="h-4 w-4 shrink-0" aria-hidden />
-        <span className="flex-1 text-left">
+    <>
+      <SpineItem dot={false}>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls={panelId}
+          className="feed-action"
+        >
           {t('hidden-replies', { n: count, defaultValue: 'Hidden replies ({{n}})' })}
-        </span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 transition-transform duration-site-fast ${open ? 'rotate-180' : ''}`}
-          aria-hidden
-        />
-      </button>
-      {open && (
-        <div id={panelId} className="mt-1 flex flex-col px-2">
-          {children}
-        </div>
-      )}
-    </div>
+          {open ? (
+            <ChevronUp className="size-3.5" aria-hidden />
+          ) : (
+            <ChevronDown className="size-3.5" aria-hidden />
+          )}
+        </button>
+      </SpineItem>
+      <div id={panelId} hidden={!open}>
+        {open ? children : null}
+      </div>
+    </>
   );
 }
