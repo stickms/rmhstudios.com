@@ -1,7 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { gridClassFor } from '@/lib/whats-new';
 import { readCss } from './css-source';
 
 const ROOT = process.cwd();
@@ -35,20 +34,8 @@ describe('spatial redesign — responsive layout contract', () => {
   it('uses a phone-first announcement layout with a full-width primary action', () => {
     const modal = source('components/feed/WhatsNewModal.tsx');
 
-    // The announcement's grid moved into `lib/whats-new.ts` when the modal
-    // became data-driven, so the column classes are asserted there — and as
-    // behaviour rather than as a substring, which is a stronger guarantee than
-    // the grep this replaced: EVERY supported card count must start at one
-    // column and only widen from `sm:` up.
-    for (const count of [2, 3, 4]) {
-      const cls = gridClassFor(count);
-      expect({ count, phoneFirst: cls.startsWith('grid-cols-1') }).toEqual({
-        count,
-        phoneFirst: true,
-      });
-      // No unprefixed multi-column class would override the phone-first base.
-      expect({ count, bare: /(^|\s)grid-cols-[2-9]/.test(cls) }).toEqual({ count, bare: false });
-    }
+    // The changes are one column of rows at every width (Steel R3): there is no multi-column grid to override.
+    expect(modal).not.toMatch(/grid-cols/);
 
     // The dismiss button still spans the sheet on a phone.
     expect(modal).toContain('w-full sm:ml-auto sm:w-auto');
@@ -87,11 +74,8 @@ describe('spatial redesign — responsive layout contract', () => {
       expect({ file, scrolls: src.includes('overflow-y-auto') }).toEqual({ file, scrolls: true });
     }
 
-    // …and the announcement's own stylesheet must not re-clip what the
-    // component stopped clipping.
-    const css = source('components/feed/feed.css');
-    const block = css.slice(css.indexOf('.spatial-whats-new {'));
-    expect(block.slice(0, block.indexOf('}'))).toContain('overflow-y: auto');
+    // …and the announcement has no stylesheet of its own to re-clip it.
+    expect(source('components/feed/feed.css')).not.toContain('spatial-whats-new');
   });
 
   it('gives carousel controls touch-sized hit areas', () => {

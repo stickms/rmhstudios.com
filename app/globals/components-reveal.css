@@ -264,28 +264,6 @@ body {
   color: var(--site-text-muted);
 }
 
-/* ── Reveal on scroll (audit SPA-003) ─────────────────────────────────────
-   The rules that used to be here are GONE, and this note is what replaces them,
-   because the deletion is the interesting part.
-
-   `[data-reveal-armed] .site-reveal` was the site's answer to AUD-006: a reveal
-   whose hidden state was opt-IN, applied only after `hooks/useReveal` had an
-   IntersectionObserver watching, so content could never be left invisible by a
-   mechanism that never ran. The design was right. It was also never adopted —
-   `.site-reveal` finished with ZERO consumers in the entire tree, and the hook
-   with zero importers, while the five implementations it was written to replace
-   carried on (`rmh-pmc`, `rmh-capital`, `LibraryReveal`, `MembershipPanel`,
-   `RoadmapSection`). Two of those still had the exact `opacity: 0` fail-closed
-   bug AUD-006 named.
-
-   So the answer is not a sixth mechanism. It is `.u-reveal` (§ further down this
-   file): `animation-timeline: view()`, no observer, no JS at all, and hidden
-   only inside `@supports` + `@media not (prefers-reduced-motion)` — which gets
-   the fail-open property structurally instead of by arming an attribute.
-   `--site-reveal-distance` / `-duration` / `-ease` above are KEPT and are what
-   the CSS reveals read, so "one curve for the whole site" survives the change.
-   See docs/archive/2026/performance-audit-2026-08-12.md §1.4. */
-
 /* Standalone design-system story. */
 .spatial-design-page {
   min-height: 100dvh;

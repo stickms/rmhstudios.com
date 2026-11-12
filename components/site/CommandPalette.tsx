@@ -525,14 +525,6 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
             data-motion="fade"
             className="fixed inset-0 z-hub-overlay glass-scrim"
           />
-          {/* Plain `surface-overlay` — no `glass-refract`/`--prism` here any more.
-              The displacement lens those classes exist to carry is PARKED (see
-              the note in globals.css §3.3–3.6), so all they contributed was
-              `.glass-refract::before`: a 12px frosted bevel band inset around the
-              whole panel. With nothing bending through it, that band rendered as
-              a thick pale ring around the palette — the chunkiest border on the
-              site, on its most-used surface. The prism budget is better left
-              unspent than spent on an artifact. */}
           <DialogPrimitive.Content
             data-motion="rise"
             className="surface-overlay fixed left-1/2 top-[12dvh] z-palette w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden"

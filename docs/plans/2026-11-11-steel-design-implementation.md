@@ -1,8 +1,9 @@
 # Steel: design scheme and implementation plan (2026-11-11)
 
-Status: **approved direction, not yet implemented.** This document is the single
-source for the redesign's look and layout. It is written to be executed by a
-coding agent one phase at a time.
+Status: **approved direction; phases 1 to 7 are implemented** (section 17 is the
+ledger, section 18 the open decisions and the gaps found along the way). This
+document is the single source for the redesign's look and layout. It is written
+to be executed by a coding agent one phase at a time.
 
 It replaces **Part N ("the new identity, Broadsheet")** and Appendices A to C of
 [`2026-11-11-broadsheet-redesign-audit.md`](2026-11-11-broadsheet-redesign-audit.md).
@@ -502,7 +503,7 @@ Ledger (fill in as phases merge):
 | 4 | | 42,725 B | 313,033 B (brotli) | Spine primitives (section 7) and home/thread on them; the radial feed, the classic feed column and the FAB are deleted. Site CSS 264,623 B raw (phase 3: same-size sheet, 43,116 gzip), brotli 34,282 B. JS critical path 1,102,869 B raw, entry 448,665 B raw, 72 chunks (phase 3: 1,102,921 raw, 312,951 brotli, so JS is flat: the removed feed code left the route chunk and the spine and K8 rows replaced it). Budgets pass unchanged. `steel-rest.mjs` passes (zero rAF at rest, one WebGL context, zero workers). |
 | 5 | | 42,225 B | 312,579 B (brotli) | Settings, inbox, conversation, explore, profile and article on the spine (section 10); catalogue and game page NOT done (the `/games` library is a native Steel-exempt Steam-palette app, L8; see the phase 5 report). Site CSS 259,827 B raw (phase 4: 264,623), `gzip -9` 42,225 B (phase 4: 42,725), brotli 33,811 B (phase 4: 34,282). JS critical path 1,102,457 B raw (phase 4: 1,102,869), 312,579 B brotli (phase 4: 313,033), entry 448,186 B raw, 72 chunks. Budgets pass unchanged. `steel-rest.mjs` passes (zero rAF at rest, one WebGL context, zero workers, globe opens and closes). The article and profile content stays server-rendered; the wasm kernels and chrome renderer are untouched. |
 | 6 | | 40,188 B | 309,620 B (brotli) | Deletion (section 15.3): `components/radial`, `lib/jelly`, `lib/liquid`, `lib/eversion`, the WebAssembly kernels, the page entrances and scroll reveals, the settings that configured them, and the stylesheet rules and tokens of the old shell (about 82,000 lines removed). Site CSS 249,570 B raw (phase 5: 259,827), `gzip -9` 40,188 B (phase 5: 42,225; before phase 1: 51,222), brotli 32,190 B (phase 5: 33,811). JS critical path 1,093,213 B raw (phase 5: 1,102,457), 309,620 B brotli (phase 5: 312,579; before phase 1: 320,349), entry 442,305 B raw, 73 chunks. The JS barely moved because the deleted runtime was already off the critical path; its cost was in lazy chunks, the build and the tree. Budgets lowered to measured plus about 2% (site CSS 33,000 B brotli, entry 451,000 raw, critical path 1,115,000 raw and 316,000 brotli; islands re-measured plus 3%). The build output holds no `jelly-glass`, `LiquidGlobe` (outside elections), eversion module or kernel `.wasm`. `steel-rest.mjs` passes and now runs in CI (`steel-rest` job, nightly and manual). |
-| 7 | | | | |
+| 7 | | 39,841 B | 309,514 B (brotli) | Long tail (X2) and the dead names phase 6 left. Site CSS 244,086 B raw (phase 6: 249,570), `gzip -9` 39,841 B (phase 6: 40,188; before phase 1: 51,222), brotli 31,942 B (phase 6: 32,190). JS critical path 1,091,976 B raw (phase 6: 1,093,213), 309,514 B brotli (phase 6: 309,620; before phase 1: 320,349), entry 441,074 B raw (phase 6: 442,305), 73 chunks. Budgets lowered to measured plus about 2% (site CSS 32,600 B brotli, entry 450,000 raw, critical path 1,114,000 raw and 315,700 brotli). Removed: the `Reveal`, `RevealGroup` and `RevealItem` wrappers and their dead `u-reveal` classes (86 call sites), `data-jelly*` (other than `data-jelly-motion` and the app tier's `playfield` zone), `data-fluid-press`, `glass-refract`, `glass-liquid`, `glass-bevel-sm`, `ScrollScene`, `useScrollProgress`, the `LIFT_CARD` hover lift and the What's new modal's hero art. The `glass-*` role classes became the S6 `surface-*` names: 349 `_site`-only files lost `surface-card`/`surface-panel` entirely. News article moved under `_site`. `pnpm audit:pages --strict --full` on all 132 static routes: see the phase 7 report. `steel-rest.mjs` passes (zero rAF at rest, one WebGL context, zero workers, globe opens and closes). `pnpm i18n:extract` and `i18n:translate` were deliberately not run (owner rule: translation happens later with another tool); new English keys were added by hand and are in `KNOWN_UNTRANSLATED`. |
 
 ## 18. Open decisions
 
@@ -514,6 +515,18 @@ Do not resolve these by assumption.
 | D3 | Should the desktop sidebar globe open a menu or a command palette? | No. It links to the front page (G10). |
 | D5 | Does any state need a colour beyond danger and success (for example a "live" marker)? | No. "Live" is a text label. |
 | D6 | Signed-out home: the public feed, or a sign-in prompt above it? | The public feed with a one-line sign-in row where the composer would be. |
+
+Gaps found by phase 7 (X2: no recipe in section 10 fits, so the page is a titled page of rows on rules with no spine until
+answered). Recorded 2026-11-12; none was resolved by assumption.
+
+| ID | Question | Default until answered |
+| --- | --- | --- |
+| D7 | Catalogues of things you buy or open (Store and Shop product tiles, the membership plans, RMHHomes listings, rideshare vehicle classes, the Library's shelves and collections): a grid of picture tiles like Games and apps, or rows? | A column of rows on rules; where a tile has a picture it keeps the picture (S4) and loses its box. The Shop and Library still draw tiles with their own spacing |
+| D8 | Inline notices (an error, a warning or a success banner above a form): the pages use a tinted box (`bg-site-danger/10` with a coloured border). R1 forbids translucency and R3 forbids a box around a group | Left as they are on about 15 forms. Proposed: a row on a rule with the danger or success colour on a 2px inline-start rule and the words doing the work |
+| D9 | Rarity and tier chips (bronze, silver, gold, platinum on achievements, the shop and the leaderboard) use extra colours | Kept; D5 allows no colour beyond danger and success, so this needs an answer |
+| D10 | Dashboards and data tables (admin, analytics, RMHLadder, tournaments, the creator studio) | Rows on rules with `t-meta` figures. No chart styling has been designed |
+| D11 | The theme studio and accent presets still write `--site-*` overrides. The accent picker offers six colours although Steel has no accent colour | Left working; the picker is on Settings, Look. Decide whether two fixed editions replace them |
+| D12 | Route changes still run a view-transition morph on news cards (`liquidOpen`, `lib/view-transition.ts`), against M8 | Left; the article page keeps the matching name |
 
 Decided (2026-11-11), recorded so they are not reopened:
 

@@ -20,9 +20,8 @@
 /* ── Tab bar placement ───────────────────────────────────────────────────── */
 /* §16.2: the tab bar is now the shared `Tabs` component (sheet + flowing
    capsule + roving nav + goo morph all live there). This class only POSITIONS
-   that sheet — it rides the `className` prop, so the glass pill look (fill, rim,
-   radius, shadow) comes from Tabs' own `.surface-card glass-bevel-sm
-   rounded-full` and must NOT be duplicated here. It stays sticky below the "Make
+   that sheet — it rides the `className` prop, so the look comes from Tabs itself
+   and must NOT be duplicated here. It stays sticky below the "Make
    anything." hero at a top offset that clears the floating header/mobile bar;
    Tabs' `scroll` prop keeps the inner horizontal overflow decoupled from
    this sticky element (the mobile-Safari sticky+overflow bug). */
