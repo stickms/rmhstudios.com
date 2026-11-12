@@ -233,7 +233,7 @@ with a fine pointer, 44px on touch (`@media (pointer: coarse)`).
 | K7 | Slider | Track 2px, `--site-border`. Thumb 22 × 10px pill, 5px radius. Chrome per section 4.1. Hit area 44px high. |
 | K8 | Post actions | Plain muted 13px words ("Like", "Repost", "Reply"), 18px apart. On: ink, 600. No icons-only buttons in the feed, no colour change, no counter animation. |
 | K9 | Tag | 11px, 500, muted, 1px border, 4px radius, `1px 6px` padding. |
-| K10 | Focus | `outline: 2px solid var(--site-text); outline-offset: 2px` on every focusable element. Owner amendment, 2026-11-12: on a text field the ring sits on the field's border (`outline-offset: -1px`) so it does not read as a second, heavier box; a field with no box (the home composer, the reply field) shows a 2px ink line under it instead. |
+| K10 | Focus | `outline: 2px solid var(--site-text); outline-offset: 2px` on every focusable element. Owner amendment, 2026-11-12: on a text field the ring sits on the field's border (`outline-offset: -1px`) so it does not read as a second, heavier box; a text field with no box (the home composer, the reply field, the full composer) shows no ring at all: its caret is the focus mark. |
 | K11 | Avatar | A circle. No ring, no status glow. Online state is a text label, not a dot alone. |
 
 Reference CSS for K6 and K7:

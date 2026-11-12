@@ -426,11 +426,14 @@ select:focus-visible,
 input:not([type='checkbox'], [type='radio'], [type='range'], [type='button'], [type='submit'], [type='reset'], [type='file'], [type='color'], [type='image']):focus-visible {
   outline-offset: -1px;
 }
-/* A field with NO box (no border, no padding: the home composer, the reply field) has nothing for a ring to sit on, and
-   a ring would hug the words. Its focus mark is a 2px ink line under it: the same weight and colour as the ring. */
-:is(input, textarea).field-bare:focus-visible {
+/* A text field with NO box (no border, no padding: the home composer, the reply field, the full composer's textarea)
+   has nothing for a ring to sit on: a ring hugs the words, and a line under it reads as a stray rule (owner,
+   2026-11-12: "weird underline? also new post modal is horrendous for that outline"). Such a field shows no ring. Its
+   focus mark is the caret, which only a text field has. A field opts in by saying so: the `field-bare` class, or the
+   `outline-none` / `outline-hidden` utility its author already wrote (this rule is what lets that utility win over the
+   unlayered K10 rule above). Fields with a border keep the ring on it. */
+:is(input, textarea):is(.field-bare, .outline-none, .outline-hidden, [class*='focus:outline-none'], [class*='focus-visible:outline-none'], [class*='focus:outline-hidden'], [class*='focus-visible:outline-hidden']):focus-visible {
   outline: none;
-  box-shadow: 0 2px 0 var(--site-text);
 }
 
 /* Firefox-specific native chrome that ignores our theme:
