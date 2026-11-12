@@ -173,7 +173,7 @@ export function CallOverlay() {
         style={{ paddingTop: 'max(0.5rem, var(--safe-top, 0px))' }}
       >
         <div
-          className="glass-overlay pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-site px-3 py-2"
+          className="surface-overlay pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-site px-3 py-2"
           role="alert"
         >
           <UserAvatar
@@ -296,7 +296,7 @@ export function CallOverlay() {
       style={{ paddingTop: 'max(0.5rem, var(--safe-top, 0px))' }}
     >
       <div
-        className="glass-overlay flex w-full max-w-md items-center gap-3 rounded-site px-3 py-2"
+        className="surface-overlay flex w-full max-w-md items-center gap-3 rounded-site px-3 py-2"
         role="status"
         aria-live="polite"
       >
@@ -356,7 +356,7 @@ export function CallOverlay() {
       </div>
 
       {micDenied && (
-        <p className="glass-overlay absolute top-full mt-2 rounded-site px-3 py-2 text-xs text-site-text-muted">
+        <p className="surface-overlay absolute top-full mt-2 rounded-site px-3 py-2 text-xs text-site-text-muted">
           {t('call-mic-denied', {
             defaultValue: 'Microphone access was blocked. Allow it in your browser to take calls.',
           })}

@@ -296,7 +296,7 @@
   --site-fab-row-right: clamp(0.9rem, 4vw, 1.5rem);
   --site-fab-row-bottom: clamp(1rem, 4vw, 1.75rem);
   --site-fab-row-gap: 0.6rem;
-  /* Radial hub orb geometry. Lives here (not in radial.css) because the mobile
+  /* Docked-globe geometry (the old hub orb's tokens, kept by name). Lives here because the mobile
      floating-bottom stack in §5.5x A.1 has to reserve exactly the orb's
      footprint — sharing the tokens is what keeps the reserve and the orb from
      drifting apart. The inset is the gap ABOVE the safe area; every consumer

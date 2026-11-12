@@ -75,7 +75,7 @@ export default function ColorPalette({ colors, selectedColor, onSelect, swatchSi
           <Pipette size={14} className="text-white drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
         </button>
         {showPicker && (
-          <div className="glass-overlay absolute z-50 top-10 left-1/2 -translate-x-1/2 p-2 rounded-app-sm">
+          <div className="surface-overlay absolute z-50 top-10 left-1/2 -translate-x-1/2 p-2 rounded-app-sm">
             <HexColorPicker color={selectedColor} onChange={onSelect} />
           </div>
         )}

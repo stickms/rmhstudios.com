@@ -21,7 +21,7 @@ export default function BirthdayBadge() {
   const reduce = useReducedMotion();
   return (
     <div className="relative mx-3 mt-3 inline-flex">
-      <span className="glass-fill inline-flex items-center gap-1.5 rounded-site-sm px-3 py-1.5 text-sm font-medium text-site-text">
+      <span className="inline-flex items-center gap-1.5 rounded-site-sm px-3 py-1.5 text-sm font-medium text-site-text">
         <PartyPopper className="size-4 text-site-accent" aria-hidden />
         {t('birthday-today', { defaultValue: "It's their birthday today" })}
       </span>

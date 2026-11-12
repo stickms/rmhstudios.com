@@ -139,7 +139,7 @@ export default function RmhStudyLanding() {
           {/* Flashcards — solo study with decks + AI tutor */}
           <button
             onClick={() => router.navigate({ to: '/study' })}
-            className="group w-full flex items-center gap-4 rounded-app glass-fill p-5 text-left transition-colors hover:border-app-accent"
+            className="group w-full flex items-center gap-4 rounded-app surface-card p-5 text-left transition-colors hover:border-app-accent"
           >
             <div className="rounded-app-sm p-3 bg-app-bg">
               <Layers className="h-6 w-6 text-app-accent" />
@@ -166,7 +166,7 @@ export default function RmhStudyLanding() {
             </Suspense>
           )}
 
-          <div className="grid md:grid-cols-2 gap-6" data-jelly-group>
+          <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}
             <div className="rounded-app app-glass p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -197,7 +197,7 @@ export default function RmhStudyLanding() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3" data-jelly-group>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label
                       htmlFor="study-short-break"

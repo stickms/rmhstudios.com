@@ -56,7 +56,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
   }
 
   return (
-    <div className="glass-fill rounded-site p-5">
+    <div className="relative rounded-site p-5">
       <div className="flex items-center gap-2">
         <Gift className="h-5 w-5 text-site-accent" />
         <h3 className="font-semibold text-site-text">{t("add-tip-header", { defaultValue: "Add a tip for your driver" })}</h3>
@@ -77,7 +77,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
                 setSelected(cents);
                 setCustom('');
               }}
-              className={`glass-fill glass-interactive min-h-11 rounded-site-sm px-2 py-2 text-center transition-colors ${
+              className={`surface-press min-h-11 rounded-site-sm px-2 py-2 text-center transition-colors ${
                 active
                   ? 'border-site-accent bg-site-accent/10 text-site-accent'
                   : 'text-site-text hover:border-site-text'

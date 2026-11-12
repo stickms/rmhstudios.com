@@ -299,8 +299,8 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  />
  )}
  {/* PORTALLED. As an in-place `absolute z-50` this was measured inside
- `.radial-frame`'s stacking context (pinned at 1) — and the composer's root
- is `.glass-pane`, whose `backdrop-filter` opens a stacking context of its
+ the page frame's stacking context (pinned at 1) — and the composer's root
+ is `.surface-panel`, whose `backdrop-filter` opens a stacking context of its
  own, so the suggestion list painted behind the first feed card. It also had
  no collision flip: typing an @mention near the bottom of the screen ran the
  list off the viewport. `focusOnOpen={false}` — focus must stay in the

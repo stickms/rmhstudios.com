@@ -6,7 +6,7 @@ import { CalendarHeart, Gift } from 'lucide-react';
 export default function GiftingLinks() {
   const { t } = useTranslation('f-gifting');
   const cls =
-    'glass-fill flex items-center gap-2 rounded-site-sm p-3 text-sm text-site-text hover:text-site-accent';
+'flex items-center gap-2 rounded-site-sm p-3 text-sm text-site-text hover:text-site-accent';
   return (
     <div className="grid gap-2 sm:grid-cols-2">
       <Link to="/advent" className={cls}>

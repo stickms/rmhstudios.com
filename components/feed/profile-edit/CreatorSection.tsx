@@ -27,7 +27,7 @@ export function CreatorSection({
   const { t } = useTranslation('feed');
   return (
     <div role="tabpanel" className="space-y-5">
-      <section className="glass-fill rounded-site p-5">
+      <section className="rounded-site p-5">
         <div className="mb-4 flex items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-warning/10 text-site-warning">
             <Coins className="size-4" aria-hidden />
@@ -94,7 +94,7 @@ export function CreatorSection({
         </div>
       </section>
 
-      <section className="glass-fill rounded-site p-5">
+      <section className="rounded-site p-5">
         <div className="mb-4 flex items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
             <Music2 className="size-4" aria-hidden />
@@ -113,7 +113,7 @@ export function CreatorSection({
         <SpotifySongSearch selected={form.selectedSong} onSelect={form.setSelectedSong} />
       </section>
 
-      <section className="glass-fill rounded-site p-5">
+      <section className="rounded-site p-5">
         <div className="flex items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
             <Palette className="size-4" aria-hidden />

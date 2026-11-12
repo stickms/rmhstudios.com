@@ -19,9 +19,9 @@ export function showMentionToast(n: MentionNotification, navigate: NavigateFn) {
  navigate({ to:'/u/$userid/post/$postid', params: { userid, postid: n.rmharkId } });
  toast.dismiss(id);
  }}
- className="flex items-start gap-3 w-full text-left p-3 glass-fill hover:bg-site-surface-hover transition-colors"
+ className="flex items-start gap-3 w-full text-left p-3 hover:bg-site-surface-hover transition-colors"
  >
- <span className="w-9 h-9 rounded-full bg-site-surface-hover shrink-0 overflow-hidden flex items-center justify-center text-sm font-bold text-site-text">
+ <span className="w-9 h-9 rounded-full bg-site-surface-hover shrink-0 overflow-hidden flex items-center justify-center text-sm font-semibold text-site-text">
  {n.author.image ? (
  <img
  src={n.author.image}

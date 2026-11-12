@@ -94,7 +94,7 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
             <button
               key={String(n)}
               onClick={() => setClueNumber(val as number | 'unlimited')}
-              className={`glass-fill rounded-app-sm border px-3 py-1.5 text-sm font-medium transition-colors
+              className={`surface-card rounded-app-sm border px-3 py-1.5 text-sm font-medium transition-colors
                 ${
                   isSelected
                     ? 'border-app-accent bg-app-accent/20 text-app-accent'

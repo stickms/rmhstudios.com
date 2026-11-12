@@ -27,7 +27,7 @@ function BuildMiniCard({ build }: { build: Build }) {
             className="h-12 w-16 shrink-0 rounded-site-sm object-cover"
           />
         ) : (
-          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-bg-subtle text-xs font-bold text-site-accent">
+          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-bg-subtle text-xs font-semibold text-site-accent">
             {build.title[0]?.toUpperCase()}
           </div>
         )}
@@ -115,7 +115,7 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
       )}
 
       {/* Submit CTA */}
-      <div className="glass-fill space-y-2 rounded-site px-4 py-3">
+      <div className="space-y-2 rounded-site px-4 py-3">
         <h4 className="font-semibold text-site-text">
           {t('share-your-build', { defaultValue: 'Share Your Build' })}
         </h4>

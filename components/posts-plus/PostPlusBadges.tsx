@@ -90,7 +90,7 @@ function SeriesChip({ postId }: { postId: string }) {
   return (
     <div
       ref={ref}
-      className="glass-fill inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-xs text-site-text-muted"
+      className="inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-xs text-site-text-muted"
     >
       {step(nav.prev, t('series-prev', { defaultValue: 'Previous part' }), ChevronLeft)}
       <Link
@@ -137,7 +137,7 @@ function ExpiryChip({ expiresAt }: { expiresAt: string }) {
         : t('expires-minutes', { defaultValue: 'Deletes in {{n}}m', n: mins });
 
   return (
-    <span className="glass-fill inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs text-site-text-muted">
+    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs text-site-text-muted">
       <Hourglass className="h-3.5 w-3.5 text-site-warning" aria-hidden />
       {label}
     </span>

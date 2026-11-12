@@ -27,7 +27,7 @@ export function PollEditor({
 }) {
   const { t } = useTranslation('feed');
   return (
-    <div className="glass-fill mt-2 rounded-site px-4 py-3">
+    <div className="mt-2 rounded-site px-4 py-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-semibold text-site-text-muted">
           {t('poll-heading', { defaultValue: 'Poll' })}
@@ -47,7 +47,7 @@ export function PollEditor({
         placeholder={t('poll-question-placeholder', { defaultValue: 'Ask a question…' })}
         aria-label={t('poll-question-aria', { defaultValue: 'Poll question' })}
         maxLength={MAX_POLL_QUESTION_LENGTH}
-        className="w-full glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
+        className="w-full surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
       />
 
       <div className="space-y-2">
@@ -70,7 +70,7 @@ export function PollEditor({
                 defaultValue: 'Poll option {{count}}',
               })}
               maxLength={MAX_POLL_OPTION_LENGTH}
-              className="flex-1 glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
+              className="flex-1 surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
             />
             {poll.options.length > MIN_POLL_OPTIONS && (
               <button

@@ -58,7 +58,7 @@ function StatTile({
   return (
     <Card className="p-4">
       <div className="text-xs font-medium text-site-text-muted">{label}</div>
-      <div className="flex items-center gap-2 text-2xl font-bold tabular-nums">
+      <div className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
         {Icon ? <Icon className="size-5 text-site-warning" aria-hidden /> : null}
         {value.toLocaleString()}
       </div>
@@ -130,12 +130,12 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
 
         <div className="grid grid-cols-3 gap-3">
           {sources.map(({ key, label, bar }) => (
-            <div key={key} className="glass-inset rounded-site px-3 py-3">
+            <div key={key} className="surface-field rounded-site px-3 py-3">
               <div className="flex items-center gap-1.5 text-xs text-site-text-muted">
                 <span className={`inline-block size-2.5 rounded-full ${bar}`} aria-hidden />
                 {label}
               </div>
-              <div className="mt-1 text-xl font-bold tabular-nums text-site-text">
+              <div className="mt-1 text-xl font-semibold tabular-nums text-site-text">
                 {bySource[key].toLocaleString()}
               </div>
             </div>
@@ -202,7 +202,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
             {recentTips.map((tip) => (
               <div
                 key={tip.id}
-                className="flex items-center justify-between gap-3 glass-fill rounded-site px-4 py-3"
+                className="flex items-center justify-between gap-3 rounded-site px-4 py-3"
               >
                 <div className="min-w-0">
                   <span className="text-sm font-medium text-site-text">

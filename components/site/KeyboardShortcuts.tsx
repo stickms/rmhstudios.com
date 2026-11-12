@@ -155,9 +155,9 @@ export function KeyboardShortcuts() {
           <DialogPrimitive.Content
             aria-describedby={undefined}
             data-motion="rise"
-            className="glass-overlay fixed left-1/2 top-1/2 z-palette max-h-[80dvh] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto p-4"
+            className="surface-overlay fixed left-1/2 top-1/2 z-palette max-h-[80dvh] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto p-4"
           >
-            <DialogPrimitive.Title className="text-base font-bold text-site-text">
+            <DialogPrimitive.Title className="text-base font-semibold text-site-text">
               {t('kbd-title', { defaultValue: 'Keyboard shortcuts' })}
             </DialogPrimitive.Title>
 
@@ -192,7 +192,7 @@ export function KeyboardShortcuts() {
               ))}
             </ul>
 
-            <DialogPrimitive.Close data-jelly className="mt-4 w-full rounded-site border border-site-border px-3 py-2 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text">
+            <DialogPrimitive.Close className="mt-4 w-full rounded-site border border-site-border px-3 py-2 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text">
               {t('kbd-close', { defaultValue: 'Close' })}
             </DialogPrimitive.Close>
           </DialogPrimitive.Content>

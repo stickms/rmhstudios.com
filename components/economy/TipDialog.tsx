@@ -79,7 +79,6 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
               key={a}
               onClick={() => setAmount(a)}
               aria-pressed={amount === a}
-              data-jelly
               className={`rounded-site-sm border px-1 py-2 text-sm font-semibold transition-colors ${
                 amount === a ? 'border-site-accent bg-site-bg-subtle text-site-text' : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
               }`}

@@ -219,7 +219,7 @@ export function ActiveRidePanel({
 
   if (loading) {
     return (
-      <div className="flex justify-center glass-fill rounded-site py-12">
+      <div className="flex justify-center rounded-site py-12">
         <Spinner size={24} className="text-site-text-muted" />
       </div>
     );
@@ -243,9 +243,9 @@ export function ActiveRidePanel({
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
       {/* Status timeline */}
-      <div className="glass-fill rounded-site p-5">
+      <div className="rounded-site p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-site-text">{rideClassName(ride.rideClass)}</h2>
+          <h2 className="text-lg font-semibold text-site-text">{rideClassName(ride.rideClass)}</h2>
           {status === 'CANCELLED' ? (
             <span className="flex items-center gap-1 rounded-full bg-site-surface-hover px-2.5 py-1 text-xs font-medium text-site-text-muted">
               <XCircle className="h-3.5 w-3.5" /> {t("cancelled", { defaultValue: "Cancelled" })}
@@ -294,7 +294,7 @@ export function ActiveRidePanel({
 
       {/* Other party */}
       {other && (
-        <div className="flex items-center gap-3 glass-fill rounded-site p-5">
+        <div className="flex items-center gap-3 rounded-site p-5">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-site-accent/15 text-site-accent">
             <Car className="h-5 w-5" />
           </div>
@@ -319,7 +319,7 @@ export function ActiveRidePanel({
 
       {/* Driver location-sharing hint */}
       {sharingActive && (
-        <div className="flex items-center gap-2 glass-fill rounded-site px-4 py-2.5 text-xs">
+        <div className="flex items-center gap-2 rounded-site px-4 py-2.5 text-xs">
           <Crosshair className={`h-4 w-4 ${locationState === 'sharing' ? 'text-site-success' : 'text-site-warning'}`} />
           <span className="text-site-text-muted">
             {locationState === 'sharing'
@@ -363,7 +363,7 @@ export function ActiveRidePanel({
 
       {/* Completed → rate */}
       {status === 'COMPLETED' && (
-        <div className="glass-fill rounded-site p-5 text-center">
+        <div className="rounded-site p-5 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-site-success" />
           <h3 className="mt-2 font-semibold text-site-text">
             {myRatingGiven ? t("thanks-for-riding", { defaultValue: "Thanks for riding with RMH!" }) : (isDriver ? t("rate-your-rider", { defaultValue: "Rate your rider" }) : t("rate-your-driver", { defaultValue: "Rate your driver" }))}

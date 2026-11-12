@@ -900,7 +900,6 @@ const PowerUpRenderer: React.FC<{
             {data.actionType === 'hold' && (
                 <button
                     className="option-btn powerup-action-btn"
-                    data-jelly-scope="off"
                     onMouseDown={startHold}
                     onMouseUp={stopHold}
                     onMouseLeave={stopHold}

@@ -397,7 +397,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
                  `-fg` token, which tracks each theme's green and red. This used
                  to say `text-black`, which was invisible on the themes whose
                  success colour is a dark forest green. */
-              className={`px-4 py-2.5 rounded-site font-bold text-sm sm:text-lg ${
+              className={`px-4 py-2.5 rounded-site font-semibold text-sm sm:text-lg ${
                 resultWon ? 'bg-site-success' : 'bg-site-danger'
               }`}
             >
@@ -416,7 +416,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               key={i}
               onClick={() => isIdle && setSelectedBin(i)}
               disabled={!isIdle}
-              className={`flex-1 min-h-10 py-2 rounded-site text-sm font-bold transition active:scale-95 ${
+              className={`flex-1 min-h-10 py-2 rounded-site text-sm font-semibold transition active:scale-95 ${
                 selectedBin === i
                   ? 'ring-2 ring-site-accent text-casino-ink scale-105'
                   : 'text-site-text-muted hover:text-site-text'
@@ -444,7 +444,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               onChange={(e) => setBetInput(e.target.value)}
               onBlur={handleBetBlur}
               disabled={!isIdle}
-              className="glass-inset border w-full px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40 disabled:opacity-50"
+              className="surface-field border w-full px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40 disabled:opacity-50"
             />
             <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
           </div>
@@ -455,7 +455,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
                 variant="default"
                 onClick={() => isIdle && setQuickBet(amt)}
                 disabled={!isIdle}
-                className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-muted hover:text-site-text"
+                className="h-auto min-h-10 px-0 text-xs font-semibold text-site-text-muted hover:text-site-text"
               >
                 {amt}
               </Button>
@@ -464,7 +464,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               variant="default"
               onClick={() => isIdle && setQuickBet(coins)}
               disabled={!isIdle}
-              className="h-auto min-h-10 px-0 text-xs font-bold text-site-accent"
+              className="h-auto min-h-10 px-0 text-xs font-semibold text-site-accent"
             >
               {t('bet-all', { defaultValue: 'All' })}
             </Button>
@@ -477,7 +477,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         loading={submitting}
         disabled={!isIdle || selectedBin === null}
         variant="default"
-        className="w-full min-h-11 font-bold rounded-site text-base"
+        className="w-full min-h-11 font-semibold rounded-site text-base"
       >
         {gameState === 'dropping'
           ? t('dropping', { defaultValue: 'Dropping...' })

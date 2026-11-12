@@ -17,9 +17,9 @@ import { cn } from '@/lib/utils';
 /**
  * SelectionBar (B9) — the action bar that appears once a list has a selection.
  *
- * L3 `.glass-chrome`: it is persistent chrome pinned to the bottom of the list
+ * L3 `.surface-chrome`: it is persistent chrome pinned to the bottom of the list
  * it belongs to, not a floating popover, so it takes the chrome tier rather than
- * `.glass-overlay`. It is `sticky`, never `fixed` — a bar that escapes its
+ * `.surface-overlay`. It is `sticky`, never `fixed` — a bar that escapes its
  * container ends up over unrelated content the moment the list is inside a sheet
  * or a modal, which is where most editable lists on this site live.
  *
@@ -73,8 +73,6 @@ export function SelectionBar({
       {count > 0 && (
         <motion.div
           data-slot="selection-bar"
-          // The bar is the press body: pressing any action squashes the bar as one (app/jelly-material.css §8).
-          data-jelly-press-body=""
           role="toolbar"
           aria-label={t('selection-actions', { defaultValue: 'Selection actions' })}
           variants={variants}

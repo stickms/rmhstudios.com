@@ -36,7 +36,7 @@ export function HowToPlay({ gameId }: { gameId: string }) {
   }
 
   return (
-    <section className="glass-fill rounded-site p-5">
+    <section className="surface-card rounded-site p-5">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

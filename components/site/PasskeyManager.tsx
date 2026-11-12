@@ -122,7 +122,7 @@ export function PasskeyManager() {
     }
   };
 
-  // `.glass-pane` — the singular-panel tier, and what the three siblings
+  //`.`— the singular-panel tier, and what the three siblings
   // stacked directly under this one in /settings/security already use. This
   // was `bg-site-surface/40`, which is also the alpha-stacking bug:
   // `--site-surface` is already rgba (0.065 on ultra) and Tailwind v4's
@@ -137,7 +137,7 @@ export function PasskeyManager() {
       })}
     >
       {!supported && (
-        <p className="rounded-site-sm glass-fill px-3 py-2 text-sm text-site-text-muted">
+        <p className="rounded-site-sm px-3 py-2 text-sm text-site-text-muted">
           {t('passkeys-unsupported', {
             defaultValue: 'This browser does not support passkeys.',
           })}

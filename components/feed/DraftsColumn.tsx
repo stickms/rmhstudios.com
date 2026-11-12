@@ -16,8 +16,6 @@ import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
-import { Reveal } from'@/components/motion';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from'@/lib/contract/client';
 import {
  discardScheduledApi,
@@ -132,14 +130,14 @@ export function DraftsColumn({
  />
 
  {empty ? (
- <Reveal>
+ <div>
  <EmptyState
  description={t('no-drafts-yet', {
  defaultValue:
 'No drafts yet. Use the"Save as draft"or"Schedule"options in the composer.',
  })}
  />
- </Reveal>
+ </div>
  ) : (
  <div className="space-y-6 pt-4 pb-12">
  <Section
@@ -182,7 +180,7 @@ function Section({
  const { t } = useTranslation('feed');
  if (rows.length === 0) return null;
  return (
- <Reveal as="section">
+ <section>
  <h2 className="site-section-label mb-3 flex items-center gap-2">
  <Icon className="h-3.5 w-3.5"/> {title}
  </h2>
@@ -192,7 +190,7 @@ function Section({
  return (
  <div
  key={r.id}
- className={`rounded-site glass-fill px-4 py-3 ${LIFT_CARD}`}
+ className={`rounded-site px-4 py-3`}
  >
  <p className="whitespace-pre-wrap break-words text-sm text-site-text">
  {r.content || (
@@ -251,6 +249,6 @@ function Section({
  );
  })}
  </div>
- </Reveal>
+ </section>
  );
 }

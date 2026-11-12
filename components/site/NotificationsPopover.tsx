@@ -228,7 +228,7 @@ export function NotificationsPopover({
                           role="menuitem"
                           {...{ [MENU_ITEM_ATTR]: '' }}
                           onClick={() => onItemClick(n)}
-                          className="glass-interactive flex w-full items-start gap-2.5 px-3 py-2.5 text-left"
+                          className="surface-press flex w-full items-start gap-2.5 px-3 py-2.5 text-left"
                         >
                           <UserAvatar
                             src={n.actor?.image}

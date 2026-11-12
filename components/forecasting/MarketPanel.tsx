@@ -93,7 +93,7 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-site-sm glass-inset px-4 py-3">
+    <div className="flex flex-col gap-3 rounded-site-sm surface-field px-4 py-3">
       {aiAvailable && signedIn && (
         <div className="flex flex-col gap-2">
           <Button

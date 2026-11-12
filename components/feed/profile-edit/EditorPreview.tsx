@@ -16,16 +16,12 @@ export function EditorPreview({
 }) {
   const { t } = useTranslation('feed');
   return (
-    <div className="glass-fill overflow-hidden rounded-site ">
-      <div className="relative h-24 overflow-hidden bg-linear-to-br from-site-bg-subtle via-site-surface to-site-bg-subtle">
+    <div className="overflow-hidden rounded-site">
+      <div className="relative h-24 overflow-hidden bg-site-bg-subtle">
         {banner ? <img src={banner} alt="" className="size-full object-cover" /> : null}
-        <div
-          className="absolute inset-0 bg-linear-to-t from-site-surface to-transparent"
-          aria-hidden
-        />
       </div>
       <div className="relative px-4 pb-4">
-        <div className="-mt-9 flex size-18 items-center justify-center overflow-hidden rounded-full border-[3px] border-site-border bg-site-surface text-xl font-bold text-site-text ">
+        <div className="-mt-9 flex size-18 items-center justify-center overflow-hidden rounded-full border-[3px] border-site-border bg-site-surface text-xl font-semibold text-site-text ">
           {image ? (
             <img
               src={image}
@@ -36,7 +32,7 @@ export function EditorPreview({
             (name[0] || 'U').toUpperCase()
           )}
         </div>
-        <p className="mt-3 truncate text-lg font-bold text-site-text">
+        <p className="mt-3 truncate text-lg font-semibold text-site-text">
           {name || t('display-name-placeholder', { defaultValue: 'Your display name' })}
         </p>
         <p className="truncate text-xs text-site-text-muted">

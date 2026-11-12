@@ -218,7 +218,7 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
           loading="lazy"
         />
       ) : (
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site-sm bg-site-surface text-xs uppercase text-site-text-muted">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site-sm bg-site-surface text-xs text-site-text-muted">
           {save.entityType.slice(0, 4)}
         </span>
       )}

@@ -562,7 +562,7 @@ function Library() {
               )}
 
               {shows('playlists') && (
-                <section className="lib__section lib__section--catalog lib__section--playlists glass-fill lib-section-shell">
+                <section className="lib__section lib__section--catalog lib__section--playlists relative lib-section-shell">
                   <div className="lib__section-head">
                     <h2 className="lib__section-title">
                       {t('section-playlists', { defaultValue: 'Playlists' })}
@@ -726,7 +726,7 @@ function Section({
       : undefined;
 
   return (
-    <section className="lib__section lib__section--catalog glass-fill lib-section-shell">
+    <section className="lib__section lib__section--catalog relative lib-section-shell">
       <div className="lib__section-head">
         <h2 className="lib__section-title">{title}</h2>
         <span className="lib__section-count">
@@ -822,7 +822,7 @@ function BookSpine({
       <Link
         to="/library/$slug"
         params={{ slug: book.slug }}
-        className="lib-book glass-fill glass-interactive lib-orbit-card"
+        className="lib-book surface-press lib-orbit-card"
         data-library-orbit=""
         style={style}
         draggable={dnd?.draggable ? false : undefined}

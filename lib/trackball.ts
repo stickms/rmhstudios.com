@@ -1,5 +1,5 @@
 /**
- * Free-trackball rotation for the liquid globe (`components/radial/LiquidGlobe`).
+ * Free-trackball rotation for the chrome globe (`lib/globe`).
  *
  * The globe used to be posed by two Euler angles, `Rx(pitch)·Ry(yaw)`. That can
  * only ever turn about the screen's x axis and the globe's own polar axis, so it

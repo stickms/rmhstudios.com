@@ -86,13 +86,13 @@ export default function ShelvesPanel() {
         return (
           <section
             key={shelf}
-            className="glass-fill rounded-site p-5"
+            className="rounded-site p-5"
             aria-labelledby={`rf-shelf-${shelf}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2
                 id={`rf-shelf-${shelf}`}
-                className="font-display text-lg font-semibold text-site-text"
+                className="text-lg font-semibold text-site-text"
               >
                 {labels[shelf]} <span className="text-site-text-muted">({items.length})</span>
               </h2>

@@ -98,7 +98,7 @@ export function AddDebtForm({ onAdded, disabled }: AddDebtFormProps) {
 
   if (!isPending && !signedIn) {
     return (
-      <div className="glass-pane flex flex-col items-start gap-3 rounded-site p-5">
+      <div className="surface-panel flex flex-col items-start gap-3 rounded-site p-5">
         <h2 className="font-display text-lg font-semibold text-site-text">
           {t('add.title', { defaultValue: 'Put something on his tab' })}
         </h2>
@@ -119,7 +119,7 @@ export function AddDebtForm({ onAdded, disabled }: AddDebtFormProps) {
   }
 
   return (
-    <form onSubmit={submit} className="glass-pane flex flex-col gap-3 rounded-site p-5">
+    <form onSubmit={submit} className="surface-panel flex flex-col gap-3 rounded-site p-5">
       <div>
         <h2 className="font-display text-lg font-semibold text-site-text">
           {t('add.title', { defaultValue: 'Put something on his tab' })}

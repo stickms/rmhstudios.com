@@ -43,7 +43,7 @@ function LeaderboardTable({ entries, loading }: { entries: LeaderboardEntry[]; l
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm" data-jelly-group="off">
+      <table className="w-full text-sm">
         <thead>
           <tr className="text-app-text-muted border-b border-app-border">
             <th className="text-left py-2 pr-3 font-medium">{t("col-rank", { defaultValue: "#" })}</th>
@@ -172,9 +172,9 @@ export default function RmhTypeLanding() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6" data-jelly-group>
+          <div className="grid md:grid-cols-2 gap-6">
             <Link to="/rmhtype/solo"
-              className="rounded-app glass-fill p-6 text-left transition-colors hover:border-app-accent hover:bg-app-surface-hover"
+              className="rounded-app surface-card p-6 text-left transition-colors hover:border-app-accent hover:bg-app-surface-hover"
             >
               <User className="h-8 w-8 mb-4 text-app-accent" />
               <h3 className="text-xl font-semibold mb-2">{t("solo-title", { defaultValue: "Solo Practice" })}</h3>
@@ -184,7 +184,7 @@ export default function RmhTypeLanding() {
             </Link>
 
             <Link to="/rmhtype/multiplayer"
-              className="rounded-app glass-fill p-6 text-left transition-colors hover:border-app-accent hover:bg-app-surface-hover"
+              className="rounded-app surface-card p-6 text-left transition-colors hover:border-app-accent hover:bg-app-surface-hover"
             >
               <Users className="h-8 w-8 mb-4 text-app-accent" />
               <h3 className="text-xl font-semibold mb-2">{t("multiplayer-title", { defaultValue: "Multiplayer Race" })}</h3>

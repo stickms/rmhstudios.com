@@ -718,7 +718,7 @@ html.ios-webkit .kd-atmos {
   }
 }
 
-/* The readout that follows the pointer. It rides `.glass-overlay` (the L4 tier)
+/* The readout that follows the pointer. It rides `.surface-overlay` (the L4 tier)
    in the markup — floating UI below L4 has no blur to sit on and ghosts over
    whatever it covers, which CI enforces. This only positions it. */
 .kd-readout {

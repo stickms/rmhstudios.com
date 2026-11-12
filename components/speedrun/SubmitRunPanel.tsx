@@ -104,7 +104,7 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
   return (
     <Card pane className="px-5 sm:px-6">
       <div className="flex flex-col gap-3">
-        <h2 className="font-display text-lg font-medium text-site-text">
+        <h2 className="text-lg font-medium text-site-text">
           {t('speedrun-submit-title', { defaultValue: 'Submit a run' })}
         </h2>
 
@@ -132,7 +132,7 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
                     onClick={() => setSelected(isSelected ? null : replay.id)}
                     aria-pressed={isSelected}
                     className={cn(
-                      'glass-fill flex min-h-11 w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-site px-3 py-2 text-left transition-colors',
+'flex min-h-11 w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-site px-3 py-2 text-left transition-colors',
                       isSelected && 'ring-1 ring-site-accent',
                       !boardOpen && 'opacity-60',
                     )}

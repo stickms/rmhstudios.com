@@ -187,7 +187,7 @@ const MessageRow = memo(function MessageRow({
               <button
                 key={emoji}
                 onClick={() => onReact(msg.id, emoji)}
-                className={`inline-flex items-center gap-1 rounded-full glass-fill px-1.5 py-0.5 text-xs transition-colors ${
+                className={`inline-flex items-center gap-1 rounded-full surface-card px-1.5 py-0.5 text-xs transition-colors ${
                   hasReacted
                     ? 'border-app-accent bg-app-accent/10 text-app-accent'
                     : 'text-app-text-muted hover:border-app-text-muted'
@@ -524,7 +524,7 @@ export default function ChatPanel() {
         {!isPinned && entries.length > 0 && (
           <button
             onClick={() => scrollToBottom('smooth')}
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full glass-fill px-3 py-1 text-xs font-medium text-app-text transition-colors hover:bg-app-surface-hover"
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full surface-card px-3 py-1 text-xs font-medium text-app-text transition-colors hover:bg-app-surface-hover"
           >
             <ArrowDown className="h-3 w-3" aria-hidden />
             {t('jump-to-latest', { defaultValue: 'Jump to latest' })}

@@ -294,7 +294,7 @@ export function MainMenu({ hasSave, onPlay }: MainMenuProps) {
   const inDelay = (ms: number) => ({ "--haw-d": ms }) as React.CSSProperties;
 
   return (
-    <div ref={rootRef} className="haw-menu" data-jelly="off" data-jelly-scope="off">
+    <div ref={rootRef} className="haw-menu">
       <div className="haw-stage" data-active={active ?? undefined}>
         <div className="haw-ground" aria-hidden="true" />
 

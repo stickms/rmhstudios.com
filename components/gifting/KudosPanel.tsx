@@ -86,7 +86,7 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
   return (
     <div className="space-y-3 p-4">
       {page.canGive ? (
-        <div className="glass-pane space-y-2 p-3">
+        <div className="space-y-2 p-3">
           <Textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, KUDOS_REASON_MAX))}
@@ -121,7 +121,7 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
       ) : (
         <ul className="space-y-2">
           {page.kudos.map((k) => (
-            <li key={k.id} className="glass-fill flex items-start gap-3 rounded-site-sm p-3">
+            <li key={k.id} className="flex items-start gap-3 rounded-site-sm p-3">
               <UserAvatar
                 src={k.from.image}
                 alt={k.from.name ?? k.from.handle ?? ''}

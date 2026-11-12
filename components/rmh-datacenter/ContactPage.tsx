@@ -88,7 +88,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
       <DatacenterTabs active="/rmh-datacenter/contact" />
 
       <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="glass-pane rounded-site p-5 sm:p-6">
+        <section className="rounded-site p-5 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('con-lede', {
               defaultValue:
@@ -140,10 +140,10 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
 
         {sent ? (
           <section
-            className="glass-pane rounded-site border border-site-accent p-5 sm:p-6"
+            className="rounded-site border border-site-accent p-5 sm:p-6"
             role="status"
           >
-            <h2 className="font-display text-xl font-semibold text-site-text">
+            <h2 className="text-xl font-semibold text-site-text">
               {t('con-sent-heading', { defaultValue: 'Handed to your mail client' })}
             </h2>
             <p className="mt-3 max-w-prose text-site-text-muted">
@@ -155,7 +155,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
           </section>
         ) : null}
 
-        <section className="glass-pane rounded-site p-5 sm:p-6">
+        <section className="rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('con-form-kicker', { defaultValue: 'Capacity request' })}
             heading={t('con-form-heading', { defaultValue: 'Tell us the shape of the load' })}
@@ -274,7 +274,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
               ],
             ].map(([q, a]) => (
               <Card key={q} className="flex flex-col gap-2 p-4">
-                <h3 className="font-display text-lg font-semibold text-site-text">{q}</h3>
+                <h3 className="text-lg font-semibold text-site-text">{q}</h3>
                 <p className="text-sm text-site-text-muted">{a}</p>
               </Card>
             ))}

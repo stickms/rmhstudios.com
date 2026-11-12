@@ -125,7 +125,7 @@ export function ArcadeHub({
       {!hideHeader && (
         <div className="flex items-center gap-2 border-b border-site-border px-5 py-4 max-md:sr-only max-md:border-b-0">
           <Gamepad2 className="h-5 w-5 text-site-accent" aria-hidden />
-          <h1 className="font-display text-2xl font-semibold tracking-[-0.022em] text-site-text">
+          <h1 className="text-2xl font-semibold tracking-[-0.022em] text-site-text">
             {t('arcade-title', { defaultValue: 'Arcade Pass' })}
           </h1>
         </div>
@@ -133,13 +133,13 @@ export function ArcadeHub({
 
       <div className="space-y-4 px-4 py-4">
         {/* Streak + reset countdown */}
-        <div className="flex flex-wrap items-center justify-between gap-4 glass-fill rounded-site px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-site px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
               <Flame className="h-6 w-6" aria-hidden />
             </div>
             <div>
-              <p className="text-2xl font-bold leading-none text-site-text">
+              <p className="text-2xl font-semibold leading-none text-site-text">
                 {streak.current}
                 <span className="ml-2 text-sm font-medium text-site-text-muted">
                   {t('arcade-day-streak', { defaultValue: 'day streak' })}
@@ -175,7 +175,7 @@ export function ArcadeHub({
         </div>
 
         {/* How it works */}
-        <div className="glass-fill rounded-site px-4 py-3">
+        <div className="rounded-site px-4 py-3">
           <h2 className="site-section-label mb-2">
             {t('arcade-how-title', { defaultValue: 'How it works' })}
           </h2>
@@ -214,7 +214,7 @@ function ChallengeCard({
     // reactivity is retired site-wide (see the §5.1 note in app/globals.css);
     // what stays is the part that answers a real gesture, the press spring.
     <motion.div
-      className="flex flex-col items-stretch gap-3 glass-fill glass-interactive rounded-site px-4 py-3 sm:flex-row"
+      className="flex flex-col items-stretch gap-3 surface-press rounded-site px-4 py-3 sm:flex-row"
       whileHover={{ scale: 1.008 }}
       whileTap={{ scale: 0.994 }}
       transition={APPLE_SPRING.press}

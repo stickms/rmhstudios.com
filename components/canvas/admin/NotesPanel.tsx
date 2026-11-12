@@ -56,7 +56,7 @@ export default function NotesPanel() {
       ) : (
         <ul className="space-y-3">
           {q.data?.notes.map((n) => (
-            <li key={n.id} className="glass-fill space-y-2 rounded-site px-4 py-3">
+            <li key={n.id} className="space-y-2 rounded-site px-4 py-3">
               <p className="text-sm text-site-text">{n.body}</p>
               <p className="line-clamp-2 text-xs text-site-text-muted">
                 {t('notes-on-post', { defaultValue: 'On: {{post}}', post: n.postExcerpt })}

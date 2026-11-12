@@ -37,8 +37,8 @@ html [data-sonner-toast] {
    clear of an edge.
 
    Steel draws no full-viewport fixed decoration at all (the page ground is the document's own background). Page-level headers and banners that were pinned flush to the top edge (the call banners,
-   the Kaikai ledger bar, the Rebar masthead) are inset from it the same way the shell's top capsule is. The sticky top
-   capsule and the orb and compose button already sit well off the edges (radial.css). Content then runs
+   the Kaikai ledger bar, the Rebar masthead) are inset from it the same way the shell's chrome is. The globe already sits well
+   off the edges (components/shell/globe-nav.css). Content then runs
    under both bars with Safari's own soft edge, not a flat band. */
 /* Theme-aware raster maps (RMHHomes). The tint is applied to the tile canvas
    only — the coloured price pins live in a separate MapLibre marker overlay
@@ -281,7 +281,7 @@ html.readable-font body {
      `bg-slice-input-bg` / `border-slice-input-border` in the game compiled to
      nothing — nine of them, across the AI search bar, the setlist panel, the
      lobby and the song details panel. The visible result was the worst kind:
-     the fields fell through to `glass-inset`'s own light background and kept
+     the fields fell through to `surface-field`'s own light background and kept
      the game's light-on-dark ink, so the AI search box rendered #f0f0f0 text
      on rgba(255,255,255,.9) — a contrast ratio of about 1.1:1, i.e. typing
      into an invisible field. Binding them fixes all nine at the source. */
@@ -380,8 +380,7 @@ html.readable-font body {
    * never scrolls, and mobile Safari only collapses its address/tab bars for
    * document scroll. The bars stayed at full height for the whole page, so every
    * one of these screens ran ~110px shorter than the feed, which gives that
-   * space back on the first swipe. (The feed's own note is in
-   * `components/radial/radial.css` §The feed.)
+   * space back on the first swipe.
    *
    * So: no fixed height, and no inner scroller. `svh` — the SMALLEST viewport —
    * is the floor, so a screen shorter than the window still fills it with the
@@ -649,8 +648,8 @@ html.readable-font body {
      (positive) or below the visible bottom: adding it to `bottom` keeps the element on the visible area, resolved by
      layout every frame with no script reading or writing anything. (An earlier JS correction measured the same gap
      from a 1px probe once per frame on the main thread, which is never faster than the main thread and competed with
-     the page's own scroll work. It is gone: the hub orb, the open menu and the docked globe follow the same way, the
-     globe's pose being a CSS function of `dvh`; components/radial/radial.css.)
+     the page's own scroll work. It is gone: the docked globe follows the same way, its pose being a CSS function of
+     `dvh`; components/shell/globe-nav.css.)
      Only iOS WebKit has the lag; `0px` everywhere else, so nothing changes there. */
   :root {
     --vv-follow: 0px;
@@ -726,8 +725,7 @@ html.readable-font body {
 
      This used to be gated to `max-width: 767.98px` on the theory that desktop
      members carried their own `md:bottom-*`. That holds for the bottom-RIGHT
-     lane (mini-player, back-to-top — coordinated against the compose FAB by
-     radial.css §A.1 at md+), but not for the cookie bar: it is a centred
+     lane (mini-player, back-to-top), but not for the cookie bar: it is a centred
      max-w-2xl card, so it shares the orb's bottom-CENTRE lane at every width
      and the orb sat on its copy and its "Learn more" link on every _site page
      ≥768px. So the stack is width-independent now and the cookie bar dropped

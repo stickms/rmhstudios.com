@@ -147,7 +147,7 @@ export default function CalendarSettings() {
             {feed?.slots.map((s) => (
               <li
                 key={s.id}
-                className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3"
+                className="flex items-center justify-between gap-3 rounded-site px-4 py-3"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-site-text">
@@ -184,7 +184,7 @@ export default function CalendarSettings() {
       >
         <Link
           to="/when"
-          className="glass-fill flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+          className="flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
         >
           <CalendarCheck className="size-5 text-site-accent" aria-hidden />
           <span className="text-sm font-semibold text-site-text">
@@ -193,7 +193,7 @@ export default function CalendarSettings() {
         </Link>
         <Link
           to="/office-hours"
-          className="glass-fill flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+          className="flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
         >
           <CalendarClock className="size-5 text-site-accent" aria-hidden />
           <span className="text-sm font-semibold text-site-text">

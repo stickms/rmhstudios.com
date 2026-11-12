@@ -21,7 +21,6 @@ import { Check, ArrowUpRight, ArrowRight, X } from 'lucide-react';
 import type { Tier } from '@/lib/entitlements';
 import { useMembershipActions } from '@/components/membership/useMembershipActions';
 import { PinnedHero } from '@/components/feed/PinnedHero';
-import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -150,8 +149,6 @@ export function MembershipPanel({
     // container and break the pinned hero's position:sticky. The hero clips
     // its own glow internally.
     <section className="relative isolate">
-      <PricingStyles />
-
       {/* ── Signature pinned hero ────────────────────────────── */}
       <PinnedHero
         as={headingLevel}
@@ -167,7 +164,6 @@ export function MembershipPanel({
           defaultValue:
             'Four tiers, one studio. Unlock the full toolset, the RMH API, and a verified badge — or scale the whole thing to your company.',
         })}
-        scrollCue={t('scroll-to-compare', { defaultValue: 'Compare tiers' })}
         actions={
           <>
             {!signedOut && tier !== 'free' && (
@@ -203,11 +199,11 @@ export function MembershipPanel({
         <div className="relative pb-12 pt-8 sm:pt-12 md:px-4">
           {/* ── Status banner ──────────────────────────────────── */}
           {status && (
-            <Reveal
+            <div
               className={`mb-6 flex items-center justify-between gap-3 rounded-site border px-4 py-3 text-sm ${
                 status === 'success'
                   ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
-                  : 'glass-pane text-site-text-muted'
+                  : 'surface-panel text-site-text-muted'
               }`}
             >
               <span>
@@ -227,7 +223,7 @@ export function MembershipPanel({
               >
                 <X className="h-4 w-4" aria-hidden />
               </button>
-            </Reveal>
+            </div>
           )}
 
           {/* ── Plan grid ──────────────────────────────────────────
@@ -240,7 +236,7 @@ export function MembershipPanel({
             actually exists: two up in the centre column, four only when a host
             genuinely has room for them. */}
           <div className="@container">
-            <RevealGroup className="grid items-stretch gap-4 @md:grid-cols-2 @5xl:grid-cols-4">
+            <div className="grid items-stretch gap-4 @md:grid-cols-2 @5xl:grid-cols-4">
               {PLANS.map((plan) => {
                 const isCurrent = !signedOut && tier === plan.tier;
                 const owned = !signedOut && RANK[tier] > RANK[plan.tier];
@@ -250,24 +246,16 @@ export function MembershipPanel({
                     ? t('upgrade', { defaultValue: 'Upgrade' })
                     : t('subscribe', { defaultValue: 'Subscribe' });
                 return (
-                  <RevealItem key={plan.tier} className="flex">
+                  <div key={plan.tier} className="flex">
                     {/* Card is a plain <article> so its CSS hover/featured
                       transforms aren't clobbered by the RevealItem motion node's
                       inline transform. */}
                     <article
-                      // Floating L2 slabs (§8.4): .glass-pane owns the frost/tint/
-                      // border/ring; the featured tier additionally takes the page's
-                      // one prism refract slot + ambient sheen + per-element lens.
-                      data-glass-lens={plan.featured ? '' : undefined}
-                      className={cn(
-                        'pricing-card group relative flex w-full flex-col glass-pane rounded-site p-5',
-                        // Clearance for the ribbon that straddles the top edge.
-                        plan.featured &&
-                          'pricing-card--featured glass-refract glass-refract--prism glass-liquid pt-7',
-                      )}
+                      // A plan is a column under a rule, not a box (R3). The featured one says so in words.
+                      className="pricing-card group relative flex w-full flex-col border-t border-site-border pt-5 pb-2"
                     >
                       {plan.featured && (
-                        <span className="pricing-ribbon">
+                        <span className="t-label text-site-text">
                           {t('most-popular', { defaultValue: 'Most popular' })}
                         </span>
                       )}
@@ -285,10 +273,7 @@ export function MembershipPanel({
                           {copy.name}
                         </h3>
                         {isCurrent && (
-                          <Badge
-                            variant="default"
-                            className="mt-1"
-                          >
+                          <Badge variant="default" className="mt-1">
                             {t('current-badge', { defaultValue: 'Current' })}
                           </Badge>
                         )}
@@ -312,7 +297,7 @@ export function MembershipPanel({
                         )}
                       </p>
 
-                      <div className="my-5 h-px w-full bg-gradient-to-r from-site-border to-transparent" />
+                      <div className="my-5 h-px w-full bg-site-border" />
 
                       <ul className="flex flex-1 flex-col gap-2.5">
                         {copy.features.map((f) => (
@@ -398,10 +383,10 @@ export function MembershipPanel({
                         )}
                       </div>
                     </article>
-                  </RevealItem>
+                  </div>
                 );
               })}
-            </RevealGroup>
+            </div>
           </div>
 
           {/* ── What a membership unlocks ──────────────────────── */}
@@ -414,60 +399,13 @@ export function MembershipPanel({
           />
 
           {/* ── Footnote ───────────────────────────────────────── */}
-          <Reveal as="p" className="mt-8 text-center font-mono text-xs text-site-text-muted">
+          <p className="mt-8 text-center font-mono text-xs text-site-text-muted">
             {t('billing-footnote', {
               defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe',
             })}
-          </Reveal>
+          </p>
         </div>
       </DeferOnNavigate>
     </section>
-  );
-}
-
-/** Scoped styles + keyframes for the membership panel. */
-function PricingStyles() {
-  return (
-    <style>{`
-      /* The pricing panel sits directly on the aurora canvas — no opaque slab
-         (the old panel background was deleted with the glass redesign).
-
-         Type comes from the token contract now (--site-font-display /
-         --site-font-mono via the font utilities), not from local
-         .pricing-display/.pricing-price rules that named --font-playfair and
-         --font-jetbrains-mono directly and so ignored any theme that re-points
-         those tokens. Card hover is likewise the shared .glass-* behaviour.
-         What is left here is the one thing the system has no token for: the
-         featured tier's gold ring and glow. */
-
-      .pricing-card--featured {
-        box-shadow:
-          0 0 0 1px color-mix(in srgb, var(--site-warning) 45%, transparent),
-          0 24px 60px -20px color-mix(in srgb, var(--site-warning) 35%, transparent);
-      }
-
-
-      /* Straddles the card's top edge. The max-width keeps a long translation
-         inside the card rather than out over its neighbour.
-
-         Because it deliberately overflows, the featured card has to opt out of
-         the sheen layer's hard clip (.glass-liquid sets overflow:clip, so the
-         travelling band cannot be seen outside the pane). --glass-sheen-bleed is
-         that opt-out: it buys the ribbon room to hang over the edge, and the only
-         cost is that the sheen's soft tail is allowed the same room — which on an
-         alpha ramp is not visible. Keep it just big enough for half the ribbon. */
-      .pricing-card--featured {
-        --glass-sheen-bleed: 16px;
-      }
-      .pricing-ribbon {
-        position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
-        border-radius: 9999px; padding: 4px 12px; max-width: calc(100% - 1.5rem);
-        font-size: 0.75rem; font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden; text-overflow: ellipsis;
-        color: var(--site-warning-fg); background: var(--site-warning);
-        box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--site-warning) 60%, transparent);
-      }
-    `}</style>
   );
 }

@@ -159,7 +159,7 @@ export function ContractDock() {
         data-floating="feature-overlay"
         variant="default"
         size="sm"
-        className="glass-overlay fixed end-[calc(0.75rem+var(--safe-right))] bottom-24 z-30"
+        className="surface-overlay fixed end-[calc(0.75rem+var(--safe-right))] bottom-24 z-30"
         onClick={() => setOpen(true)}
       >
         <ScrollText aria-hidden />
@@ -195,7 +195,7 @@ export function ContractDock() {
           ) : (
             <ul className="max-h-[50dvh] space-y-2 overflow-y-auto">
               {board.map((c) => (
-                <li key={c.id} className="glass-fill flex items-center gap-3 rounded-site p-4">
+                <li key={c.id} className="surface-card flex items-center gap-3 rounded-site p-4">
                   <div className="min-w-0 grow">
                     <p className="font-mono text-sm font-bold text-site-text">
                       {fmt(c.bestSeconds)}

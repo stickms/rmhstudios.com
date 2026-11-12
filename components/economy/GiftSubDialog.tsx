@@ -75,7 +75,6 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
                   type="button"
                   onClick={() => setTier(tierOpt)}
                   disabled={submitting}
-                  data-jelly
                   className={`rounded-site border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
                     tier === tierOpt ? 'border-site-accent bg-site-accent/10 text-site-text' : 'border-site-border text-site-text-muted hover:text-site-text'
                   }`}
@@ -98,7 +97,6 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
                   type="button"
                   onClick={() => setMonths(m)}
                   disabled={submitting}
-                  data-jelly
                   className={`flex-1 rounded-site-sm border px-2 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
                     months === m ? 'border-site-accent bg-site-accent/10 text-site-text' : 'border-site-border text-site-text-muted hover:text-site-text'
                   }`}

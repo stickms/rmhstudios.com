@@ -82,7 +82,7 @@ export default function AdminGlossary() {
   return (
     <div className="space-y-6">
       <form
-        className="glass-pane space-y-3 rounded-site p-5"
+        className="space-y-3 rounded-site p-5"
         onSubmit={(e) => {
           e.preventDefault();
           save.mutate(draft);
@@ -165,7 +165,7 @@ export default function AdminGlossary() {
           })}
         />
       ) : (
-        <ul className="glass-fill divide-y divide-site-border rounded-site">
+        <ul className="divide-y divide-site-border rounded-site">
           {terms.map((term) => (
             <li key={term.id} className="flex items-start gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">

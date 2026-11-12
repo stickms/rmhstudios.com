@@ -25,11 +25,11 @@ interface KpiProps {
 export function Kpi({ label, value, tone = 'none', hint }: KpiProps) {
   const { t } = useTranslation('f-perf');
   return (
-    <div className="glass-fill rounded-site p-5">
+    <div className="rounded-site p-5">
       <p className="text-xs text-site-text-muted">{label}</p>
       <p
         className={cn(
-          'mt-1 flex items-center gap-1.5 text-2xl font-bold tabular-nums',
+          'mt-1 flex items-center gap-1.5 text-2xl font-semibold tabular-nums',
           toneClass(tone),
         )}
       >

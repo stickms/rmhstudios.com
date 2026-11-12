@@ -122,7 +122,7 @@ export function LocationSearch({
 
       {/* The suggestion list PORTALS, and on this screen that is a functional
           fix rather than a tidy-up. It used to be `absolute z-30` inside the
-          page, i.e. inside `.radial-frame`'s stacking context (pinned at 1),
+          page, i.e. inside the page frame's stacking context (pinned at 1),
           with no collision flip and no viewport fit — so on a short viewport
           the list ran down into the bottom 76px where the hub orb lives at
           z-80, and a tap on an address behind the orb's accent disc did not
@@ -150,7 +150,6 @@ export function LocationSearch({
             onClick={() => choose(r)}
             data-evert=""
             data-row-glow=""
-            data-jelly="off"
             className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2.5 px-4 py-2 text-left text-sm text-site-text transition-colors duration-site"
           >
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />

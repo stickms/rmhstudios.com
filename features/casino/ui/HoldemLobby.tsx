@@ -73,7 +73,7 @@ export function HoldemLobby({ coins }: Props) {
           value={joinCodeInput}
           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
           maxLength={5}
-          className="glass-inset border flex-1 rounded-site-sm px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+          className="surface-field border flex-1 rounded-site-sm px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
         />
         <Button
           onClick={handleJoinByCode}
@@ -85,14 +85,14 @@ export function HoldemLobby({ coins }: Props) {
       </div>
 
       {showCreate ? (
-        <div className="glass-fill flex flex-col gap-2 p-3 rounded-site-sm">
+        <div className="surface-card flex flex-col gap-2 p-3 rounded-site-sm">
           <input
             type="text"
             placeholder={t("table-name-placeholder", { defaultValue: "Table name (optional)" })}
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             maxLength={30}
-            className="glass-inset border w-full rounded-site-sm px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+            className="surface-field border w-full rounded-site-sm px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
@@ -110,7 +110,7 @@ export function HoldemLobby({ coins }: Props) {
             <div className="flex flex-col gap-1">
               <label className="text-xs text-site-text-muted">{t("buy-in", { defaultValue: "Buy-in" })}</label>
               <input type="number" min={smallBlind * 2} value={buyIn} onChange={(e) => setBuyIn(Number(e.target.value))}
-                className="glass-inset border px-2 py-1 text-site-text text-sm" />
+                className="surface-field border px-2 py-1 text-site-text text-sm" />
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-site-text-muted">{t("privacy", { defaultValue: "Privacy" })}</label>
@@ -155,7 +155,7 @@ export function HoldemLobby({ coins }: Props) {
           {roomList.map((room) => (
             <button key={room.roomId} onClick={() => handleJoin(room.roomId)}
               disabled={room.playerCount >= room.maxPlayers}
-              className="glass-fill glass-interactive flex items-center justify-between p-3 rounded-site-sm transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed">
+              className="surface-card surface-press flex items-center justify-between p-3 rounded-site-sm transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>
                 <span className="text-xs text-site-text-muted">

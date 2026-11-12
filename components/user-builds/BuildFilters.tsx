@@ -52,7 +52,7 @@ export function BuildFilters({
   // Staying mounted for the close, the outside press, Escape, focus return and
   // the arrow keys all live in AnchoredMenu now. Both panels used to be in-place
   // `absolute top-full … z-50` divs with a `fixed inset-0` click-catcher under
-  // them — measured inside `.radial-frame`'s stacking context (pinned at
+  // them — measured inside the page frame's stacking context (pinned at
   // z-index 1), so they painted under the shell's top bar. They portal now, and
   // AnchoredMenu caps each panel to the room its side actually has, which is
   // what the category menu's `max-h-64` was approximating.

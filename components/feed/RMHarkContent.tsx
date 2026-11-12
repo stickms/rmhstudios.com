@@ -86,7 +86,7 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode {
  }
  const key = `${keyPrefix}-m${i}`;
  if (m[2] !== undefined) {
- nodes.push(<strong key={key} className="font-bold">{renderInline(m[2], key)}</strong>);
+ nodes.push(<strong key={key} className="font-semibold">{renderInline(m[2], key)}</strong>);
  } else if (m[3] !== undefined) {
  nodes.push(<del key={key}>{renderInline(m[3], key)}</del>);
  } else {

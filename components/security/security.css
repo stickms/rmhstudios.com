@@ -57,10 +57,10 @@
   height: 56px;
   animation: sec-fade-down 700ms var(--sec-ease) both;
 }
-/* Material comes from the `.glass-chrome` class on the element (L3, no
+/* Material comes from the `.surface-chrome` class on the element (L3, no
    backdrop-filter of our own). This bar is full-bleed, so square it off and keep
    only the bottom hairline; the extra type selector outranks the role class. */
-nav.glass-chrome.sec-nav {
+nav.surface-chrome.sec-nav {
   border-radius: 0;
   border-width: 0 0 1px;
 }
@@ -467,7 +467,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   padding: clamp(22px, 3vw, 30px);
 }
 /* The "critical" tier is featured with the store's gold (--site-warning) rim. */
-.glass-fill.sec-tier[data-sev="critical"] {
+.surface-card.sec-tier[data-sev="critical"] {
   border-color: color-mix(in srgb, var(--site-warning) 60%, transparent);
 }
 .sec-tier__head {

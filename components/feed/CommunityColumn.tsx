@@ -13,7 +13,6 @@ import {
 } from'lucide-react';
 import { formatDistanceToNow } from'date-fns';
 import { CommunityPlusBody } from'@/components/communities/CommunityPlusBody';
-import { Reveal } from'@/components/motion';
 import { VoiceRoomBanner } from'@/components/groupcall/VoiceRoomBanner';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -178,7 +177,7 @@ export function CommunityColumn({
 
  return (
  <div>
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link
  to="/communities"
  className="text-site-text-muted hover:text-site-text"
@@ -186,10 +185,10 @@ export function CommunityColumn({
  >
  <ArrowLeft className="h-5 w-5"/>
  </Link>
- <h1 className="truncate text-lg font-bold text-site-text">{community.name}</h1>
+ <h1 className="truncate text-lg font-semibold text-site-text">{community.name}</h1>
  </header>
 
- <Reveal className="border-b border-site-border p-4">
+ <div className="border-b border-site-border p-4">
  <div className="flex items-start gap-3">
  <div
  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-2xl"
@@ -198,7 +197,7 @@ export function CommunityColumn({
  {community.icon ||'👥'}
  </div>
  <div className="min-w-0 flex-1">
- <h2 className="text-xl font-bold text-site-text">{community.name}</h2>
+ <h2 className="text-xl font-semibold text-site-text">{community.name}</h2>
  <div className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-site-text-muted">
  <span className="inline-flex items-center gap-1">
  <Users className="h-3.5 w-3.5"/>{''}
@@ -245,7 +244,7 @@ export function CommunityColumn({
  {community.description && (
  <p className="mt-2 text-sm text-site-text-muted">{community.description}</p>
  )}
- </Reveal>
+ </div>
 
  {community.joined && (
  <VoiceRoomBanner
@@ -257,7 +256,7 @@ export function CommunityColumn({
 
  {/* Pinned announcements */}
  {(community.announcements.length > 0 || isMod) && (
- <Reveal delay={0.06} className="border-b border-site-border bg-site-bg-subtle/30 p-4">
+ <div className="border-b border-site-border bg-site-bg-subtle/30 p-4">
  <div className="mb-2 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Megaphone className="h-4 w-4 text-site-accent"/>{''}
@@ -278,7 +277,7 @@ export function CommunityColumn({
  {community.announcements.map((a) => (
  <li
  key={a.id}
- className="rounded-site glass-fill p-4"
+ className="rounded-site relative p-4"
  >
  <div className="flex items-start gap-2">
  <UserAvatar
@@ -320,7 +319,7 @@ export function CommunityColumn({
  ))}
  </ul>
  )}
- </Reveal>
+ </div>
  )}
 
  {/* Composer, tabs (posts · hall of fame · challenge · census · top · mod tools) */}
@@ -391,7 +390,7 @@ function AnnounceDialog({
  placeholder={t('announcement-placeholder', {
  defaultValue:'Share an update with the community…',
  })}
- className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
+ className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
  />
  <div className="flex justify-end gap-2">
  <Button variant="ghost"onClick={onClose} disabled={submitting}>

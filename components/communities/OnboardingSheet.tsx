@@ -65,7 +65,7 @@ export function OnboardingSheet({
                 {q.options.map((o) => (
                   <label
                     key={o.id}
-                    className="glass-fill flex cursor-pointer items-center gap-3 rounded-site px-3 py-2.5 text-sm text-site-text has-[:checked]:ring-2 has-[:checked]:ring-site-accent"
+                    className="flex cursor-pointer items-center gap-3 rounded-site px-3 py-2.5 text-sm text-site-text has-[:checked]:ring-2 has-[:checked]:ring-site-accent"
                   >
                     <input
                       type="radio"

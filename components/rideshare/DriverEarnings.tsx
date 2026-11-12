@@ -21,7 +21,7 @@ export function DriverEarnings() {
 
   if (loading) {
     return (
-      <div className="flex justify-center glass-fill rounded-site py-10">
+      <div className="flex justify-center rounded-site py-10">
         <Spinner size={20} className="text-site-text-muted" />
       </div>
     );
@@ -53,13 +53,13 @@ export function DriverEarnings() {
       <h2 className="site-section-label">{tr("earnings", { defaultValue: "Earnings" })}</h2>
 
       {/* Earnings headline */}
-      <div className="flex items-center justify-between glass-fill rounded-site p-5">
+      <div className="flex items-center justify-between rounded-site p-5">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-site bg-site-success/15 text-site-success">
             <Wallet className="h-5 w-5" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-site-text">{formatUsd(data.earningsCents)}</div>
+            <div className="text-2xl font-semibold text-site-text">{formatUsd(data.earningsCents)}</div>
             <div className="text-xs text-site-text-muted">{tr("total-take-home", { defaultValue: "Total take-home" })}</div>
           </div>
         </div>
@@ -70,7 +70,7 @@ export function DriverEarnings() {
       </div>
 
       {/* Payout breakdown */}
-      <div className="glass-fill rounded-site p-5">
+      <div className="rounded-site p-5">
         <h3 className="mb-3 text-sm font-semibold text-site-text">{tr("how-your-pay-adds-up", { defaultValue: "How your pay adds up" })}</h3>
         <dl className="space-y-2">
           {breakdown.map((r) => (
@@ -83,17 +83,17 @@ export function DriverEarnings() {
           ))}
         </dl>
         <div className="mt-3 flex items-center justify-between border-t border-site-border pt-3">
-          <span className="text-base font-bold text-site-text">{tr("take-home", { defaultValue: "Take-home" })}</span>
-          <span className="text-lg font-bold text-site-success">{formatUsd(data.earningsCents)}</span>
+          <span className="text-base font-semibold text-site-text">{tr("take-home", { defaultValue: "Take-home" })}</span>
+          <span className="text-lg font-semibold text-site-success">{formatUsd(data.earningsCents)}</span>
         </div>
       </div>
 
       {/* Stat grid */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="glass-fill rounded-site p-5">
+          <div key={s.label} className="rounded-site p-5">
             <s.icon className="h-4 w-4 text-site-accent" />
-            <div className="mt-2 text-lg font-bold text-site-text">{s.value}</div>
+            <div className="mt-2 text-lg font-semibold text-site-text">{s.value}</div>
             <div className="text-xs text-site-text-muted">{s.label}</div>
             <div className="text-xs text-site-text-muted">{s.sub}</div>
           </div>
@@ -106,7 +106,7 @@ export function DriverEarnings() {
           <h3 className="mb-2 text-sm font-semibold text-site-text">{tr("recent-trips", { defaultValue: "Recent trips" })}</h3>
           <ul className="space-y-2">
             {data.recent.map((t) => (
-              <li key={t.id} className="flex items-center justify-between gap-3 glass-fill rounded-site p-4">
+              <li key={t.id} className="flex items-center justify-between gap-3 rounded-site p-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-sm font-medium text-site-text">
                     {rideClassName(t.rideClass)}

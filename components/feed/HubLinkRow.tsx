@@ -28,14 +28,14 @@ export function HubLinkRow({
   description: string;
 }) {
   const className =
-    'glass-fill glass-interactive group flex items-start gap-4 rounded-site p-5';
+'surface-press group flex items-start gap-4 rounded-site p-5';
   const body = (
     <>
-      <span className="glass-fill flex size-11 shrink-0 items-center justify-center rounded-site-sm text-site-accent">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-site-sm text-site-accent">
         <Icon className="size-5" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-display text-lg font-semibold tracking-[-0.015em] text-site-text">
+        <span className="block text-lg font-semibold tracking-[-0.015em] text-site-text">
           {title}
         </span>
         <span className="mt-1 block text-sm text-site-text-muted">{description}</span>

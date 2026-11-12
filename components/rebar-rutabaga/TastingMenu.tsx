@@ -70,7 +70,7 @@ export function TastingMenu() {
         <div className="mt-16 grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-20">
           {/* The one raised plane on the page, and the only liquid glass. */}
           <Reveal delay={0.12}>
-            <div className="glass-pane rounded-none p-5 sm:p-7">
+            <div className="surface-panel rounded-none p-5 sm:p-7">
               <MenuGlobe selected={selected} onSelect={setSelected} />
             </div>
             <p className="mt-4 font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">

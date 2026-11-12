@@ -2,9 +2,9 @@
 /**
  * audit-pages: the real-browser half of the design guards.
  *
- *   pnpm audit:pages                      every static _site route, phone width, Midnight, iPhone Safari UA
+ *   pnpm audit:pages                      every static _site route, phone width, Night, iPhone Safari UA
  *   pnpm audit:pages --routes /games,/create
- *   pnpm audit:pages --full               also desktop width and Daylight
+ *   pnpm audit:pages --full               also desktop width and Day
  *   pnpm audit:pages --first-visit        audit as a new visitor (cookie banner showing)
  *   pnpm audit:pages --strict             exit 1 on any finding not in docs/page-audit-allowlist.json
  *   pnpm audit:pages --base-url http://127.0.0.1:7005
@@ -46,6 +46,10 @@ const FIRST_VISIT = flag('first-visit');
 const OUT = opt('out', '');
 const UA =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1';
+/** The current release's seen-key (lib/whats-new.ts), so a "returning visitor" has no announcement dialog open. */
+const RELEASE_ID = /CURRENT_RELEASE: Release = \{\s*id: '([^']+)'/.exec(
+  readFileSync(join(ROOT, 'lib/whats-new.ts'), 'utf8'),
+)?.[1];
 const ALLOW_PATH = join(ROOT, 'docs/page-audit-allowlist.json');
 const allow = existsSync(ALLOW_PATH)
   ? JSON.parse(readFileSync(ALLOW_PATH, 'utf8'))
@@ -118,28 +122,26 @@ function inPage() {
     return { l: Math.round(r.left), r: Math.round(r.right), w: Math.round(r.width) };
   };
   const heading = q('.page-heading');
-  // Page-level controls only: a tab strip or search inside a card, pane, overlay or dialog is a local control with its
-  // own layout, not part of the page frame. A `glass-chrome` header is page-level, so a custom title+search bar counts.
-  const pageLevel = (el) =>
-    !el.closest('.glass-fill, .glass-pane, .glass-overlay, [role=dialog], dialog');
+  // Page-level controls only: a tab strip or search inside an overlay, a dialog or a spine is a local control with its own
+  // layout, not part of the page frame (a spine hangs its content 20px in from the column, by design). A
+  // `surface-chrome` header is page-level, so a custom title+search bar counts.
+  const pageLevel = (el) => !el.closest('.surface-overlay, [role=dialog], dialog, .spine');
   const first = (sel) =>
     [...document.querySelectorAll(sel)].find(
       (el) => pageLevel(el) && el.getBoundingClientRect().width > 0,
     ) || null;
   const tabs = first("[data-slot='liquid-tabs-sheet']");
   const search = first("[data-slot='search-field']");
-  const card = q('.glass-fill');
-  // The first page-level card, at least 60% of the screen wide so a chip or a small tile never counts. Its left edge
-  // against the heading's is the double-gutter signature: the frame insets the page once (`--rad-gutter`) and the title
-  // sits on it, so a card that starts further in has had a second gutter added by a wrapper (docs/archive/2026/ui-audit-2026-10-31.md).
-  const surface = [...document.querySelectorAll('.glass-fill, .glass-pane')].find((el) => {
-    if (
-      el.parentElement?.closest('.glass-fill, .glass-pane, .glass-overlay, [role=dialog], dialog')
-    )
-      return false;
+  // The first page-level row (a spine item or a settings row), at least 60% of the screen wide so a chip or a small
+  // tile never counts. Its left edge against the heading's is the double-gutter signature: the shell insets the page once
+  // and the title sits on it, so a row that starts further in has had a second gutter added by a wrapper. A row on the
+  // spine sits 20px in by design (the line's own indent), so the spine's items are measured from their spine.
+  const surface = [...document.querySelectorAll('.spine-item, .settings-row')].find((el) => {
+    if (el.closest('.surface-overlay, [role=dialog], dialog')) return false;
     const r = el.getBoundingClientRect();
     return r.width >= W * 0.6 && r.top < 2400 && !!el.closest('main');
   });
+  const spine = surface?.closest('.spine');
   return {
     ios: document.documentElement.classList.contains('ios-webkit'),
     edges,
@@ -148,9 +150,8 @@ function inPage() {
       heading: heading ? box(heading.querySelector('h1, h2') || heading) : null,
       tabs: box(tabs),
       search: box(search),
-      surface: box(surface),
+      surface: box(spine ?? surface),
       tabAppearance: q("[data-slot='liquid-tabs']")?.getAttribute('data-tab-appearance') ?? null,
-      cardRadius: card ? getComputedStyle(card).borderTopLeftRadius : null,
     },
   };
 }
@@ -171,14 +172,14 @@ function anatomyFindings(a, width) {
       if (max - min > tol + 16)
         out.push(`left edges differ: ${lefts.map(([k, v]) => `${k}=${v}`).join(' ')}`);
     }
-    // A card more than a few px inside the heading's left edge: a second page gutter. The right edge is checked too,
-    // so a card that is merely narrower than the column on one side is reported as what it is.
+    // A spine (or row) more than a few px inside the heading's left edge: a second page gutter. The right edge is checked
+    // too, so a block that is merely narrower than the column on one side is reported as what it is.
     if (a.heading && a.surface) {
       const inL = a.surface.l - a.heading.l;
       const inR = width - a.surface.r - a.heading.l;
       if (inL > tol + 6 && inR > tol + 6)
         out.push(
-          `first card is inset ${inL}px from the heading (double page gutter: a wrapper adds px-* inside the frame)`,
+          `first row is inset ${inL}px from the heading (double page gutter: a wrapper adds px-* inside the frame)`,
         );
     }
     if (
@@ -205,17 +206,23 @@ for (const pass of passes) {
     ...(pass.ios ? { userAgent: UA, hasTouch: true, isMobile: true } : {}),
   });
   await ctx.addInitScript(
-    ([theme, consented]) => {
+    ([theme, consented, releaseId]) => {
       try {
         window.localStorage.setItem('rmh-style', theme);
         // A returning visitor: the consent banner is a transient fixed panel near the bottom of every page for a first
-        // visit, and would drown the report. `--first-visit` audits it instead.
-        if (consented) window.localStorage.setItem('rmh-cookie-consent', 'essential');
+        // visit, and the first-run language, welcome and what's-new dialogs are full-viewport scrims; all would drown the report.
+        // `--first-visit` audits them instead.
+        if (consented) {
+          window.localStorage.setItem('rmh-cookie-consent', 'essential');
+          window.localStorage.setItem('rmh-lang-picked-v1', '1');
+          window.localStorage.setItem('rmh-welcome-seen-v1', '1');
+          if (releaseId) window.localStorage.setItem(`rmh-whatsnew-seen-${releaseId}-v1`, '1');
+        }
       } catch {
         /* private mode */
       }
     },
-    [pass.theme, !FIRST_VISIT],
+    [pass.theme, !FIRST_VISIT, RELEASE_ID],
   );
   for (const path of routes) {
     const label = `${path} @${pass.width}/${pass.theme}`;

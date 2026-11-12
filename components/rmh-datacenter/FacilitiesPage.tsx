@@ -84,7 +84,7 @@ export default function FacilitiesPage() {
       <DatacenterTabs active="/rmh-datacenter/facilities" />
 
       <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="glass-pane rounded-site p-5 sm:p-6">
+        <section className="rounded-site p-5 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('fac-lede', {
               defaultValue:
@@ -120,7 +120,7 @@ export default function FacilitiesPage() {
         {CAMPUSES.map((c) => {
           const copy = prose[c.id];
           return (
-            <section key={c.id} id={c.id} className="glass-pane rounded-site p-5 sm:p-6">
+            <section key={c.id} id={c.id} className="rounded-site p-5 sm:p-6">
               <SectionHeading kicker={`${c.code} · ${c.region}`} heading={names[c.id]} />
               <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_minmax(0,18rem)]">
                 <div className="min-w-0">
@@ -215,14 +215,14 @@ export default function FacilitiesPage() {
                 <span className="text-xs font-medium text-site-accent">
                   {code}
                 </span>
-                <h3 className="font-display text-lg font-semibold text-site-text">{name}</h3>
+                <h3 className="text-lg font-semibold text-site-text">{name}</h3>
                 <p className="text-sm text-site-text-muted">{desc}</p>
               </Card>
             ))}
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-5 sm:p-6">
+        <section className="rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('fac-cta-kicker', { defaultValue: 'Site tour' })}
             heading={t('fac-cta-heading', { defaultValue: 'Walk the hall before you sign for it' })}

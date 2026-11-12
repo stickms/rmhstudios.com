@@ -119,7 +119,7 @@ function AskTheFeed() {
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && ask()}
           placeholder={t('ask-placeholder', { defaultValue: "What's everyone talking about?" })}
-          className="glass-inset w-full min-w-0 flex-1 rounded-site px-3 text-sm text-site-text placeholder:text-site-text-muted"
+          className="surface-field w-full min-w-0 flex-1 rounded-site px-3 text-sm text-site-text placeholder:text-site-text-muted"
           style={{ minHeight: 40 }}
         />
         <Button

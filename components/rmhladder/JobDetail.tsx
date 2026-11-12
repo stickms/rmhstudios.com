@@ -89,7 +89,7 @@ export function JobDetail({
         <CardContent className="space-y-6">
           <section
             aria-labelledby="ladder-match-heading"
-            className="glass-inset rounded-site-sm p-4"
+            className="surface-field rounded-site-sm p-4"
           >
             <h2 id="ladder-match-heading" className="site-section-label">
               {t('ladder.roleRelevance', { defaultValue: 'Role relevance' })}

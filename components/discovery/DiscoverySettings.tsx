@@ -120,7 +120,7 @@ export function DiscoverySettings() {
             {alerts.map((a) => (
               <li
                 key={a.id}
-                className="glass-fill flex items-center justify-between gap-2 rounded-site px-3 py-2 text-sm text-site-text"
+                className="flex items-center justify-between gap-2 rounded-site px-3 py-2 text-sm text-site-text"
               >
                 <span className="min-w-0 truncate">{a.query}</span>
                 <IconButton

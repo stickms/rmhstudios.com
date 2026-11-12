@@ -293,7 +293,7 @@ export function BaccaratTable() {
               return (
                 <div
                   key={p.userId}
-                  className={`glass-fill flex flex-col gap-1 p-2 rounded-site-sm ${
+                  className={`surface-card flex flex-col gap-1 p-2 rounded-site-sm ${
                     isMe ? 'bg-site-bg-subtle border-site-accent/30' : ''
                   }`}
                 >

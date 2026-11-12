@@ -190,7 +190,7 @@ function HistoryRow({ item, onRemove }: { item: HistoryView; onRemove: () => voi
           loading="lazy"
         />
       ) : (
-        <span className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-surface text-xs uppercase text-site-text-muted">
+        <span className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-surface text-xs text-site-text-muted">
           {item.entityType.slice(0, 4)}
         </span>
       )}

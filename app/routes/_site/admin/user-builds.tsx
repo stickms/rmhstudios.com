@@ -109,7 +109,7 @@ function AdminUserBuildsPage() {
           aria-label={t("search-builds-label", { defaultValue: "Search builds" })}
         />
 
-        <div className="glass-fill overflow-hidden rounded-site">
+        <div className="overflow-hidden rounded-site">
           {loading && builds.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16 text-site-text-muted">
               <Spinner />

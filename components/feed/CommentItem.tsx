@@ -194,7 +194,7 @@ export function CommentItem({
   // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
   // close animation all live in AnchoredMenu now. This file used to carry its own
   // outside-click listener — and, because the panel was an in-place
-  // `absolute top-full … z-50`, it was measured inside `.radial-frame`'s stacking
+  // `absolute top-full … z-50`, it was measured inside the page frame's stacking
   // context (pinned at z-index 1), so a comment near the top of the column had its
   // menu painted UNDER the top bar. AnchoredMenu portals to <body>.
 
@@ -516,7 +516,7 @@ export function CommentItem({
               })}
               rows={2}
               maxLength={MAX_COMMENT_LENGTH}
-              className="glass-inset t-body w-full resize-none px-3 py-2 text-site-text outline-none placeholder:text-site-text-muted"
+              className="surface-field t-body w-full resize-none px-3 py-2 text-site-text outline-none placeholder:text-site-text-muted"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   handleSubmitReply();

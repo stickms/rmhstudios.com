@@ -645,7 +645,7 @@ function GlobeLedger({
     <div
       className={cn(
         'mt-4 flex flex-wrap items-center justify-center gap-3',
-        onGlass && 'glass-overlay mx-auto w-fit rounded-site px-3 py-1.5',
+        onGlass && 'surface-overlay mx-auto w-fit rounded-site px-3 py-1.5',
       )}
     >
       <button

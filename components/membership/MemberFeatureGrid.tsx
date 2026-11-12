@@ -41,7 +41,6 @@ import {
 } from '@/lib/entitlements/features';
 import type { Tier } from '@/lib/entitlements/tiers';
 import { cn } from '@/lib/utils';
-import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 
 interface Props {
   /** The viewer's tier — drives the unlocked/locked treatment per card. */
@@ -192,26 +191,26 @@ export function MemberFeatureGrid({ tier, highlight, signedOut }: Props) {
 
   return (
     <div className="mt-12">
-      <Reveal as="h3" className="text-center font-display text-2xl font-semibold text-site-text">
+      <h3 className="text-center font-display text-2xl font-semibold text-site-text">
         {t('membership-features-title', { defaultValue: 'What a membership unlocks' })}
-      </Reveal>
-      <Reveal as="p" className="mx-auto mt-3 max-w-2xl text-center text-sm text-site-text-muted">
+      </h3>
+      <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-site-text-muted">
         {t('membership-features-subtitle', {
           defaultValue:
             'Everything below is included from the tier shown on each card. Packs made by members can be installed and used by anyone, free accounts included.',
         })}
-      </Reveal>
+      </p>
 
-      <RevealGroup className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((feature) => {
           const unlocked = !signedOut && canUse(effectiveTier, feature.id);
           const isHighlight = feature.id === highlight;
           return (
-            <RevealItem key={feature.id} className="flex">
+            <div key={feature.id} className="flex">
               <article
-                // `.glass-fill` is the repeated-card tier per the design language.
+                // `.surface-card` is the repeated-card tier per the design language.
                 className={cn(
-                  'glass-fill flex w-full flex-col gap-3 rounded-site p-5',
+                  'surface-card flex w-full flex-col gap-3 rounded-site p-5',
                   isHighlight && 'ring-2 ring-site-accent',
                 )}
                 aria-current={isHighlight ? 'true' : undefined}
@@ -247,10 +246,10 @@ export function MemberFeatureGrid({ tier, highlight, signedOut }: Props) {
                   {copy[feature.id].blurb}
                 </p>
               </article>
-            </RevealItem>
+            </div>
           );
         })}
-      </RevealGroup>
+      </div>
     </div>
   );
 }

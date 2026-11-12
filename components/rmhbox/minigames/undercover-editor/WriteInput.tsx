@@ -74,7 +74,7 @@ export default function WriteInput({
       </div>
 
       {/* Story so far — prompt shown as first sentence, full height */}
-      <div className="glass-fill rounded-app-sm p-3">
+      <div className="surface-card rounded-app-sm p-3">
         <p className="mb-2 text-[10px] uppercase tracking-wider text-app-text-muted">
           {t("story-so-far", { defaultValue: "Story {{storyNumber}} so far", storyNumber })}
         </p>
@@ -101,7 +101,7 @@ export default function WriteInput({
           disabled={submitted}
           placeholder={t("continue-placeholder", { defaultValue: "Continue the story with a sentence…" })}
           rows={3}
-          className="glass-inset w-full resize-none rounded-app-sm border border-app-border px-4 py-3 text-sm text-app-text placeholder:text-app-text-muted focus:outline-none focus:ring-2 focus:ring-app-accent disabled:opacity-50"
+          className="surface-field w-full resize-none rounded-app-sm border border-app-border px-4 py-3 text-sm text-app-text placeholder:text-app-text-muted focus:outline-none focus:ring-2 focus:ring-app-accent disabled:opacity-50"
         />
         {/* Character counter */}
         <span

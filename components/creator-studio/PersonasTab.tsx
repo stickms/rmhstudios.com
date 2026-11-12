@@ -176,7 +176,7 @@ export function PersonasTab({ seed }: { seed: number }) {
       )}
 
       {showForm && (
-        <div className="glass-pane mb-6 space-y-3 rounded-site p-5">
+        <div className="mb-6 space-y-3 rounded-site p-5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="site-section-label">
               {t('new-persona', { defaultValue: 'New persona' })}
@@ -291,7 +291,7 @@ export function PersonasTab({ seed }: { seed: number }) {
                     navigate({ to: `/personas/${p.id}` } as never),
                   );
                 }}
-                className="glass-fill glass-interactive flex items-start gap-3 rounded-site px-3 py-3"
+                className="surface-press flex items-start gap-3 rounded-site px-3 py-3"
               >
                 <div
                   data-persona-avatar

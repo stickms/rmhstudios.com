@@ -195,7 +195,7 @@ function ReviewPage() {
           }
         />
       ) : tab === 'resolved' ? (
-        <ul className="glass-fill divide-y divide-site-border overflow-hidden rounded-site">
+        <ul className="divide-y divide-site-border overflow-hidden rounded-site">
           {visible.map((task) => (
             <li key={task.id as string} className="flex flex-col gap-1 px-4 py-3">
               <span className="font-semibold text-site-text">{taskTitle(task)}</span>
@@ -216,7 +216,7 @@ function ReviewPage() {
             <h2 className="site-section-label">
               {REASON_LABELS[reason] ?? reason} · {groupTasks.length}
             </h2>
-            <ul className="glass-fill divide-y divide-site-border overflow-hidden rounded-site">
+            <ul className="divide-y divide-site-border overflow-hidden rounded-site">
               {groupTasks.map((task) => {
                 const isSourceTask = !task.jobId;
                 const resolutions = isSourceTask ? SOURCE_RESOLUTIONS : JOB_RESOLUTIONS;

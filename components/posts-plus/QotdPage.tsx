@@ -120,14 +120,14 @@ export function QotdPage({ day }: { day?: string }) {
         {!archive || !selected ? (
           <Skeleton className="h-28 w-full rounded-site" />
         ) : (
-          <section className="glass-pane rounded-site p-5">
+          <section className="rounded-site p-5">
             <p className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
               <MessageCircleQuestion className="h-4 w-4 text-site-accent" aria-hidden />
               {isToday
                 ? t('qotd-today', { defaultValue: 'Today' })
                 : formatDay(selected.dayKey, i18n.language)}
             </p>
-            <h2 className="mt-1 font-display text-xl font-medium text-site-text">
+            <h2 className="mt-1 text-xl font-medium text-site-text">
               {selected.text}
             </h2>
             <p className="mt-1 text-sm text-site-text-muted">
@@ -216,7 +216,7 @@ export function QotdPage({ day }: { day?: string }) {
                     search={{ day: d.dayKey }}
                     aria-current={selected?.dayKey === d.dayKey ? 'true' : undefined}
                     className={cn(
-                      'glass-fill glass-interactive flex items-baseline gap-3 rounded-site px-4 py-3',
+'surface-press flex items-baseline gap-3 rounded-site px-4 py-3',
                       selected?.dayKey === d.dayKey && 'border-site-accent',
                     )}
                   >

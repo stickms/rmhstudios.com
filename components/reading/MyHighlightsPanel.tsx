@@ -78,7 +78,7 @@ export default function MyHighlightsPanel() {
     <div className="space-y-3">
       <ul className="space-y-3">
         {items.map((row) => (
-          <li key={row.id} className="glass-fill rounded-site p-5">
+          <li key={row.id} className="rounded-site p-5">
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-xs font-semiboldr text-site-text-muted">

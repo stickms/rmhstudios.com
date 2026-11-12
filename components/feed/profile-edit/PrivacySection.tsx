@@ -18,7 +18,7 @@ export function PrivacySection({
   const { t } = useTranslation('feed');
   return (
     <div role="tabpanel" className="space-y-4">
-      <section className="glass-fill rounded-site p-5">
+      <section className="rounded-site p-5">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-start gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
@@ -44,7 +44,7 @@ export function PrivacySection({
         </div>
       </section>
 
-      <section className="glass-fill rounded-site p-5">
+      <section className="rounded-site p-5">
         <div className="mb-4 flex items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
             <LockKeyhole className="size-4" aria-hidden />

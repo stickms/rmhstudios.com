@@ -19,7 +19,7 @@ export function GifAttachment({
 }) {
   const { t } = useTranslation('feed');
   return (
-    <div className="glass-fill mt-2 rounded-site px-4 py-3">
+    <div className="relative mt-2 rounded-site px-4 py-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-semibold text-site-text-muted">
           {t('gif-heading', { defaultValue: 'GIF' })}

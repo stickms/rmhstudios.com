@@ -186,7 +186,6 @@ export function HUD({ engine, margins = false }: HUDProps) {
     return (
       <div
         className="absolute top-0 left-0 right-0 pointer-events-none z-40 px-3 pt-2 sm:px-6 sm:pt-3"
-        data-jelly-zone="hud"
       >
         <div className="relative">
           <div className={`absolute top-0 text-center ${COMBO_ANCHOR[comboPosition]}`}>
@@ -206,7 +205,6 @@ export function HUD({ engine, margins = false }: HUDProps) {
   return (
     <div
       className="absolute top-0 left-0 right-0 pointer-events-none z-40 px-3 pt-2 sm:px-6 sm:pt-3 flex flex-col gap-2"
-      data-jelly-zone="hud"
     >
       {/* Song progress: the groove, with a needle where the record is. A normal
           child of the HUD column, not `absolute bottom-0 translate-y-full`:

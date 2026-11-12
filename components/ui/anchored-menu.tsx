@@ -3,7 +3,7 @@
  *
  * Two things it does that `absolute bottom-full right-0 z-30` cannot:
  *
- * 1. **It portals to `<body>`.** Page content renders inside `.radial-frame`,
+ * 1. **It portals to `<body>`.** Page content renders inside the page frame,
  *    which is `position: relative; z-index: var(--z-content)` — a stacking
  *    context pinned at 1 (globals.css §5.6). Every z-index inside it is then
  *    measured INSIDE that context, so a menu left where its trigger lives can
@@ -447,7 +447,7 @@ export function AnchoredMenu({
             // `py-1.5`, no side padding: the rows are plain text with a hover
             // glow (components/ui/menu.tsx), and this panel (`overflow-y: auto`,
             // anchored-menu.css) supplies the only curve.
-            className={cn('anchored-menu glass-overlay py-1.5', className)}
+            className={cn('anchored-menu surface-overlay py-1.5', className)}
             style={style}
           >
             {children}

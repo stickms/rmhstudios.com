@@ -139,7 +139,6 @@ export function GiftCoinsButton({
                 type="button"
                 onClick={() => setAmount(a)}
                 aria-pressed={amount === a}
-                data-jelly
                 className={`rounded-site-sm border px-3 py-1.5 text-sm font-semibold transition-colors ${
                   amount === a
                     ? 'border-site-accent bg-site-bg-subtle text-site-text'

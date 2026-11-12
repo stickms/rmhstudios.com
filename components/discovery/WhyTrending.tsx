@@ -62,7 +62,7 @@ export function WhyTrending({ tag }: { tag: string }) {
           {why && (
             <div className="space-y-4 pt-3">
               <dl className="grid grid-cols-3 gap-2 text-center">
-                <div className="glass-fill rounded-site p-2">
+                <div className="rounded-site p-2">
                   <dt className="text-xs text-site-text-muted">
                     {t('why-first-seen', { defaultValue: 'First seen' })}
                   </dt>
@@ -70,13 +70,13 @@ export function WhyTrending({ tag }: { tag: string }) {
                     {new Date(why.firstSeen).toLocaleDateString()}
                   </dd>
                 </div>
-                <div className="glass-fill rounded-site p-2">
+                <div className="rounded-site p-2">
                   <dt className="text-xs text-site-text-muted">
                     {t('why-last-day', { defaultValue: 'Last 24h' })}
                   </dt>
                   <dd className="text-sm font-semibold text-site-text">{why.last24h}</dd>
                 </div>
-                <div className="glass-fill rounded-site p-2">
+                <div className="rounded-site p-2">
                   <dt className="text-xs text-site-text-muted">
                     {t('why-growth', { defaultValue: 'Vs usual' })}
                   </dt>
@@ -102,7 +102,7 @@ export function WhyTrending({ tag }: { tag: string }) {
                         <Link
                           to={p.href}
                           onClick={() => setOpen(false)}
-                          className="glass-fill block rounded-site p-4 hover:bg-site-surface-hover"
+                          className="block rounded-site p-4 hover:bg-site-surface-hover"
                         >
                           <p className="text-sm text-site-text">{p.snippet}</p>
                           <p className="mt-1 text-xs text-site-text-muted">{p.author}</p>

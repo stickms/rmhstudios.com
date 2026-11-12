@@ -216,7 +216,7 @@ function CompaniesPage() {
         </span>
       </div>
 
-      <table className="rl-jobs-table rl-companies-table glass-fill rounded-site">
+      <table className="rl-jobs-table rl-companies-table rounded-site">
         <thead>
           <tr>
             <th scope="col">{t('ladder.companies.company', { defaultValue: 'Company' })}</th>

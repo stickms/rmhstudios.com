@@ -55,7 +55,7 @@ export function RequestCard({
   }
 
   return (
-    <article className="glass-fill rounded-site px-4 py-3">
+    <article className="rounded-site px-4 py-3">
       <div className="flex items-start gap-3">
         <Button
           variant={request.hasVoted ? 'default' : 'default'}
@@ -77,7 +77,7 @@ export function RequestCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="min-w-0 font-display text-base font-semibold text-site-text">
+            <h3 className="min-w-0 text-base font-semibold text-site-text">
               {request.title}
             </h3>
             <RequestStatusBadge status={request.status} />
@@ -98,7 +98,7 @@ export function RequestCard({
           ) : null}
 
           {request.officialNote ? (
-            <div className="glass-inset mt-3 rounded-site p-4">
+            <div className="surface-field mt-3 rounded-site p-4">
               <p className="mb-1 flex items-center gap-2 text-xs font-semibold text-site-accent">
                 <Megaphone className="size-3.5 shrink-0" aria-hidden />
                 {t('request-official-reply', { defaultValue: 'Official reply' })}

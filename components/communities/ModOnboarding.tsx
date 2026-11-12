@@ -107,7 +107,7 @@ export function ModOnboarding({
         })}
       </p>
       {draft.map((q, i) => (
-        <fieldset key={i} className="glass-pane flex flex-col gap-3 p-4">
+        <fieldset key={i} className="flex flex-col gap-3 p-4">
           <div className="flex items-center gap-2">
             <Input
               value={q.prompt}
@@ -127,7 +127,7 @@ export function ModOnboarding({
             </Button>
           </div>
           {q.options.map((o, k) => (
-            <div key={k} className="glass-inset flex flex-col gap-2 rounded-site p-4">
+            <div key={k} className="surface-field flex flex-col gap-2 rounded-site p-4">
               <div className="flex items-center gap-2">
                 <Input
                   value={o.label}

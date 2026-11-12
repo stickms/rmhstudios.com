@@ -29,7 +29,7 @@ export function StarRating({ value, onChange, readOnly, size = 24 }: StarRatingP
                   onMouseLeave: () => setHover(0),
                   'aria-label': `${n} star${n > 1 ? 's' : ''}`,
                 })}
-            className={readOnly ? 'inline-flex' : 'inline-flex cursor-pointer transition-transform hover:scale-110'}
+            className={readOnly ? 'inline-flex' : 'inline-flex cursor-pointer transition-transform'}
           >
             <Star
               style={{ width: size, height: size }}

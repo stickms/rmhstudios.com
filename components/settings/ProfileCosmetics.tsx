@@ -59,7 +59,7 @@ function Preview({ item }: { item: CosmeticItem }) {
   if (kind === 'NAME_COLOR') {
     return (
       <div
-        className="flex h-12 items-center justify-center rounded-site-sm px-3 text-sm font-bold"
+        className="flex h-12 items-center justify-center rounded-site-sm px-3 text-sm font-semibold"
         style={data.gradient ? { background: data.gradient, color: '#fff' } : { color: data.color }}
       >
         {t('name-preview', { defaultValue: 'Name' })}
@@ -192,7 +192,7 @@ export function ProfileCosmetics() {
               return (
                 <div
                   key={item.id}
-                  className="glass-fill glass-interactive flex items-center gap-3 rounded-site p-4"
+                  className="surface-press flex items-center gap-3 rounded-site p-4"
                   // Rarity communicates value through the rim colour, matching
                   // the shop grid.
                   style={{
@@ -205,7 +205,7 @@ export function ProfileCosmetics() {
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
                       <span
-                        className="text-xs font-semibold uppercase"
+                        className="text-xs font-semibold"
                         style={{ color: RARITY_COLORS[item.rarity] }}
                       >
                         {item.rarity}

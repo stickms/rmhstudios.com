@@ -211,7 +211,7 @@ export default function StampSettings({ userId }: { userId: string }) {
         {mine.length > 0 ? (
           <ul className="flex flex-wrap gap-3">
             {mine.map((s) => (
-              <li key={s.id} className="glass-fill flex items-center gap-2 rounded-site-sm p-2">
+              <li key={s.id} className="relative flex items-center gap-2 rounded-site-sm p-2">
                 <StampImage stamp={s} />
                 <span className="max-w-28 truncate text-xs text-site-text-muted">{s.name}</span>
                 <Button
@@ -254,7 +254,7 @@ export default function StampSettings({ userId }: { userId: string }) {
                     name: s.name,
                     defaultValue: 'Remove {{name}} from my wall',
                   })}
-                  className="glass-overlay absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+                  className="surface-overlay absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
                 >
                   <X className="size-3" aria-hidden />
                 </button>
@@ -286,7 +286,7 @@ export default function StampSettings({ userId }: { userId: string }) {
             {gallery.map((s) => (
               <li
                 key={s.id}
-                className="glass-fill flex flex-col items-center gap-2 rounded-site-sm p-2"
+                className="relative flex flex-col items-center gap-2 rounded-site-sm p-2"
               >
                 <StampImage stamp={s} />
                 <span className="w-full truncate text-center text-xs text-site-text-muted">

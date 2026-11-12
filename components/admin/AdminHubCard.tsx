@@ -24,10 +24,10 @@ export function AdminHubCard({
   return (
     <Link
       to={to}
-      className="glass-fill glass-interactive group flex min-w-0 items-start gap-3 rounded-site px-4 py-3"
+      className="surface-press group flex min-w-0 items-start gap-3 rounded-site px-4 py-3"
     >
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2 font-display text-base font-semibold text-site-text transition-colors duration-site-fast group-hover:text-site-accent">
+        <span className="flex items-center gap-2 text-base font-semibold text-site-text transition-colors duration-site-fast group-hover:text-site-accent">
           <span className="min-w-0">{title}</span>
           {badge}
         </span>

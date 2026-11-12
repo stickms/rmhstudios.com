@@ -97,7 +97,7 @@ export default function NotebookTab() {
               setDirty(false);
             }
           }}
-          className="glass-inset h-9 rounded-site-sm px-2 text-sm text-site-text"
+          className="surface-field h-9 rounded-site-sm px-2 text-sm text-site-text"
         >
           {!nb.id && (
             <option value="">{t('calc-unsaved', { defaultValue: 'Unsaved notebook' })}</option>
@@ -114,7 +114,7 @@ export default function NotebookTab() {
           maxLength={120}
           aria-label={t('calc-title', { defaultValue: 'Notebook title' })}
           placeholder={t('calc-title', { defaultValue: 'Notebook title' })}
-          className="glass-inset h-9 min-w-0 flex-1 rounded-site-sm px-3 text-sm text-site-text"
+          className="surface-field h-9 min-w-0 flex-1 rounded-site-sm px-3 text-sm text-site-text"
         />
         <Button
           variant="default"
@@ -142,7 +142,7 @@ export default function NotebookTab() {
         )}
       </div>
 
-      <div className="glass-pane grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-0 overflow-hidden rounded-site font-mono text-sm leading-6" data-jelly-group="off">
+      <div className="surface-panel grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-0 overflow-hidden rounded-site font-mono text-sm leading-6">
         <textarea
           value={nb.body}
           onChange={(e) => edit({ body: e.target.value })}

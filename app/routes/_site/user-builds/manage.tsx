@@ -13,8 +13,6 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import type { Build } from '@/lib/user-builds-types';
 import { useTranslation } from 'react-i18next';
-import { Reveal } from '@/components/motion';
-import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { api } from '@/lib/contract/client';
@@ -137,11 +135,11 @@ function ManageContent() {
             }
           />
         ) : (
-          <Reveal className="space-y-3">
+          <div className="space-y-3">
             {builds.map((build) => (
               <div
                 key={build.id}
-                className={`flex items-center gap-3 rounded-site px-4 py-3 glass-fill ${LIFT_CARD}`}
+                className={`flex items-center gap-3 rounded-site px-4 py-3`}
               >
                 {build.thumbnailUrl ? (
                   <img
@@ -150,7 +148,7 @@ function ManageContent() {
                     className="h-14 w-20 shrink-0 rounded-site-sm object-cover"
                   />
                 ) : (
-                  <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-site-sm bg-site-bg-subtle text-lg font-bold text-site-accent">
+                  <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-site-sm bg-site-bg-subtle text-lg font-semibold text-site-accent">
                     {build.title[0]?.toUpperCase()}
                   </div>
                 )}
@@ -217,7 +215,7 @@ function ManageContent() {
                 </div>
               </div>
             ))}
-          </Reveal>
+          </div>
         )}
       </div>
     </PageLayout>

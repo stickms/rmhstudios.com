@@ -12,7 +12,7 @@ import './sheet.css';
  * `docs/plans/2026-07-20-parity-qol-customization-design.md`. It is a Radix
  * Dialog (focus-trapped, Escape/backdrop close, portalled) that renders as a
  * **bottom sheet on mobile** (< 768px) and a **centered dialog on desktop**,
- * both on the Steel S5 `.glass-overlay` surface over a `.glass-scrim` backdrop, the
+ * both on the Steel S5 `.surface-overlay` surface over a `.glass-scrim` backdrop, the
  * same overlay Dialog uses. On mobile it also gets a drag handle and
  * swipe-down-to-dismiss, and pads the iOS home-indicator safe area.
  *
@@ -85,9 +85,9 @@ const SheetContent = React.forwardRef<
  data-mobile-fullscreen={mobileFullscreen || undefined}
  style={dragY ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
  className={cn(
- // Steel S5 `.glass-overlay` for both layouts: surface fill, 1px border, 8px radius, the T4
+ // Steel S5 `.surface-overlay` for both layouts: surface fill, 1px border, 8px radius, the T4
  // shadow, no blur, exactly as for Dialog.
- 'glass-overlay fixed z-50 flex flex-col text-site-text',
+ 'surface-overlay fixed z-50 flex flex-col text-site-text',
  // Mobile: a horizontally-centered floating bottom sheet by default;
  // complex editors can opt into the full visual viewport instead.
  mobileFullscreen

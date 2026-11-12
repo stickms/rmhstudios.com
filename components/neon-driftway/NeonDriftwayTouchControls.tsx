@@ -72,7 +72,6 @@ export function NeonDriftwayTouchControls({
       <button
         type="button"
         className="absolute inset-0 z-20 bg-transparent"
-        data-jelly="off"
         style={{ touchAction: 'none' }}
         aria-label={t('boost', { defaultValue: 'BOOST' })}
         onPointerDown={(e) => {
@@ -139,7 +138,6 @@ export function NeonDriftwayTouchControls({
       {/* Driving pad */}
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-30"
-        data-jelly-scope="off"
         style={{
           touchAction: 'none',
           paddingBottom: 'calc(var(--safe-bottom) + 0.75rem)',

@@ -65,8 +65,6 @@ export interface TabRenderProps {
   id: string;
   /** `'page'` on the active item — link mode marks the current route this way. */
   'aria-current': 'page' | undefined;
-  /** App tier only (games/apps): route tabs press like button tabs. Absent on the site. */
-  'data-fluid-press'?: string;
   /** Class string matching a tablist-mode tab (pad + accent-on-active). */
   className: string;
   /** Hover tooltip — set to the label in `iconOnly` mode; spread it onto the link. */
@@ -406,7 +404,6 @@ export function Tabs({
             active,
             id: tabId(tab.id),
             'aria-current': active ? 'page' : undefined,
-            'data-fluid-press': appTier ? '' : undefined,
             className: cn(siteItem(active), 'flex-1'),
             title: appTier && tab.icon ? tab.label : undefined,
             children: content(tab),
@@ -431,7 +428,6 @@ export function Tabs({
         title={appTier && tab.icon ? tab.label : undefined}
         data-has-icon={appTier && tab.icon ? '' : undefined}
         data-tab-active={active ? 'true' : 'false'}
-        data-fluid-press={appTier ? '' : undefined}
         className={appTier ? itemClass(active) : cn(steelItem(active), ruleClass(active))}
       >
         {capsule(active)}
@@ -478,7 +474,7 @@ export function Tabs({
       data-slot="liquid-tabs-sheet"
       className={cn(
         // The app tier's track: always full width, the field tier surface the raised thumb sits on.
-        'glass-inset w-full min-w-0 max-w-full rounded-[var(--site-control-radius)]',
+        'surface-field w-full min-w-0 max-w-full rounded-[var(--site-control-radius)]',
         className,
       )}
     >

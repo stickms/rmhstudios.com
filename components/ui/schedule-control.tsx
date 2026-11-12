@@ -86,7 +86,7 @@ export function ScheduleControl({
   return (
     <div
       data-slot="schedule-control"
-      className={cn('glass-inset flex flex-wrap items-center gap-2 px-3 py-2', className)}
+      className={cn('surface-field flex flex-wrap items-center gap-2 px-3 py-2', className)}
     >
       <CalendarClock className="size-4 shrink-0 text-site-text-muted" aria-hidden />
       <label htmlFor={id} className="text-xs text-site-text-muted">
@@ -98,7 +98,7 @@ export function ScheduleControl({
         value={value}
         min={min || undefined}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-site-sm glass-inset px-2 py-1 text-xs text-site-text outline-none transition-colors focus:border-site-accent"
+        className="rounded-site-sm surface-field px-2 py-1 text-xs text-site-text outline-none transition-colors focus:border-site-accent"
       />
       {zone && (
         <span className="text-xs text-site-text-muted" title={zone}>

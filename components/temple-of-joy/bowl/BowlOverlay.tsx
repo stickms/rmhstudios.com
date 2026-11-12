@@ -486,7 +486,6 @@ function Alley() {
             hideClose
             container={host}
             aria-describedby="toj-bowl-status"
-            data-jelly="off"
             data-liquid-material="off"
             data-dialog-shell="bare"
             overlayClassName="toj-bowl-scrim"

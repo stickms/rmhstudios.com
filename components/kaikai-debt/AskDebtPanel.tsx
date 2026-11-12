@@ -113,7 +113,7 @@ export function AskDebtPanel({ disabled }: { disabled?: boolean }) {
 
   if (!isPending && !signedIn) {
     return (
-      <div className="glass-pane flex flex-col items-start gap-3 rounded-site p-5">
+      <div className="surface-panel flex flex-col items-start gap-3 rounded-site p-5">
         <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-site-text">
           <MessageCircleQuestion className="size-5 text-site-accent" aria-hidden />
           {t('ask.title', { defaultValue: 'Ask about the debt' })}
@@ -135,7 +135,7 @@ export function AskDebtPanel({ disabled }: { disabled?: boolean }) {
   }
 
   return (
-    <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
+    <div className="surface-panel flex flex-col gap-3 rounded-site p-5">
       <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-site-text">
         <MessageCircleQuestion className="size-5 text-site-accent" aria-hidden />
         {t('ask.title', { defaultValue: 'Ask about the debt' })}
@@ -166,7 +166,7 @@ export function AskDebtPanel({ disabled }: { disabled?: boolean }) {
       {(answer || error || streaming) && (
         // `polite` and not `assertive`: the answer should be announced when the
         // reader is idle, never by interrupting them mid-sentence.
-        <div className="glass-inset rounded-site-sm p-4 text-sm leading-relaxed" aria-live="polite">
+        <div className="surface-field rounded-site-sm p-4 text-sm leading-relaxed" aria-live="polite">
           {error ? (
             <p className="text-site-danger">{error}</p>
           ) : answer ? (

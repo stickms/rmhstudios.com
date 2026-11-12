@@ -72,7 +72,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   // now. This file carried its own usePopPresence + useMenuViewportFit and
   // nothing else — the panel had no Escape and no outside-press, so once open
   // the only way out was the X in its own header. It also rendered in place, so
-  // it was measured inside `.radial-frame`'s stacking context (pinned at
+  // it was measured inside the page frame's stacking context (pinned at
   // z-index 1) and painted under the shell's chrome. AnchoredMenu portals to
   // <body>.
 
@@ -167,7 +167,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
     // rather than in the JSX: a `{/* … */}` immediately before a `t()` call
     // makes i18next-parser skip that key.)
     return (
-      <section className="glass-fill rounded-site px-4 py-3">
+      <section className="relative rounded-site px-4 py-3">
         <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-2">
           <Users className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
           <h2 className="site-section-label">
@@ -186,7 +186,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
 
   return (
     <div className="pointer-events-none bottom-above-dock fixed inset-x-0 z-40 flex justify-center px-3 md:bottom-4">
-      <div className="pointer-events-auto glass-chrome flex items-center gap-2 rounded-full px-3 py-2">
+      <div className="pointer-events-auto surface-chrome flex items-center gap-2 rounded-full px-3 py-2">
         {core}
       </div>
     </div>

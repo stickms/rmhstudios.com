@@ -58,7 +58,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
     (filters.petsAllowed ? 1 : 0);
 
   return (
-    <div className="glass-fill rounded-site p-5">
+    <div className="rounded-site p-5">
       <div className="flex flex-wrap items-center gap-2">
         <Tabs
           size="sm"
@@ -206,7 +206,6 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                     key={t}
                     type="button"
                     onClick={() => togglePropertyType(t)}
-                    data-jelly
                     className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
                       active
                         ? 'border-site-accent bg-site-bg-subtle text-site-accent'

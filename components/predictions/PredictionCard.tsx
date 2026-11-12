@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import type { Market } from './types';
-import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { MarketExtras } from '@/components/forecasting/MarketExtras';
 import { api } from '@/lib/contract/client';
@@ -84,7 +83,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
   const hasPos = pos && (pos.yesShares > 0.5 || pos.noShares > 0.5);
 
   return (
-    <div className={`rounded-site glass-fill p-5 flex flex-col gap-3 ${LIFT_CARD}`}>
+    <div className={`rounded-site p-5 flex flex-col gap-3`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -126,7 +125,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
         </div>
         {/* Big probability */}
         <div className="text-right shrink-0">
-          <div className="text-2xl font-bold text-site-success tabular-nums">{yes}%</div>
+          <div className="text-2xl font-semibold text-site-success tabular-nums">{yes}%</div>
           <div className="text-xs text-site-text-muted">
             {t('chance-yes', { defaultValue: 'chance' })}
           </div>

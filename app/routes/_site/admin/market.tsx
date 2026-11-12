@@ -121,7 +121,7 @@ function AdminMarketPage() {
             {rows.map((r) => {
               const name = r.item?.name ?? r.itemId;
               return (
-                <div key={r.id} className="glass-fill space-y-3 rounded-site p-5">
+                <div key={r.id} className="space-y-3 rounded-site p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate text-base font-medium text-site-text">{name}</div>

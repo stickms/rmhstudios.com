@@ -68,7 +68,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  // the preview is still deferred; the skeleton also reserves layout (no CLS).
  return (
  <div ref={ref} className={`rounded-site overflow-hidden ${className}`}>
- <div className="w-full h-24 bg-site-surface animate-pulse"/>
+ <div className="w-full h-24 bg-site-surface"/>
  </div>
  );
  }

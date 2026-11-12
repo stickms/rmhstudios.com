@@ -52,7 +52,7 @@ export function ItemPicker({
 
   if (picked) {
     return (
-      <div className="glass-inset flex items-center justify-between gap-3 rounded-site-sm px-3 py-2">
+      <div className="surface-field flex items-center justify-between gap-3 rounded-site-sm px-3 py-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-site-text">{picked.name}</p>
           <p className="flex items-center gap-1 text-xs text-site-text-muted">
@@ -96,7 +96,7 @@ export function ItemPicker({
         </p>
       ) : null}
       {rows.length > 0 ? (
-        <ul className="glass-fill divide-y divide-site-border overflow-hidden rounded-site-sm">
+        <ul className="relative divide-y divide-site-border overflow-hidden rounded-site-sm">
           {rows.map((row) => (
             <li key={row.id}>
               <button

@@ -123,7 +123,7 @@ export function GlobeSetRace({ shapes, view, attitudeRef, gyroActive }: GlobeSet
 /* ── Shell ─────────────────────────────────────────────────────────────────── */
 
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="mt-4 glass-pane rounded-site p-5">{children}</div>;
+  return <div className="mt-4 surface-panel rounded-site p-5">{children}</div>;
 }
 
 /* ── Before a room ─────────────────────────────────────────────────────────── */
@@ -211,7 +211,7 @@ function RoomPicker() {
                 <button
                   type="button"
                   onClick={() => joinRoom(room.code)}
-                  className="glass-fill flex w-full items-center justify-between rounded-site px-3 py-2 text-left transition-colors hover:border-site-accent"
+                  className="surface-card flex w-full items-center justify-between rounded-site px-3 py-2 text-left transition-colors hover:border-site-accent"
                 >
                   <span className="font-mono text-sm font-semibold tracking-widest text-site-text">
                     {room.code}
@@ -284,7 +284,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
         {lobby.players.map((player) => (
           <li
             key={player.socketId}
-            className="glass-fill flex items-center justify-between rounded-site px-3 py-2"
+            className="surface-card flex items-center justify-between rounded-site px-3 py-2"
           >
             <span className="flex items-center gap-2 text-sm font-medium text-site-text">
               {player.isHost && <Crown className="h-4 w-4 text-site-warning" aria-hidden />}
@@ -447,7 +447,7 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
 
   return (
     <div className="mt-5 space-y-4">
-      <div className="glass-pane flex flex-wrap items-center justify-between gap-4 rounded-site p-5">
+      <div className="surface-panel flex flex-wrap items-center justify-between gap-4 rounded-site p-5">
         <div>
           <p className="text-xs font-medium text-site-text-muted">
             {counting
@@ -481,7 +481,7 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
         {standings.map((row) => (
           <li
             key={row.socketId}
-            className={`glass-fill flex items-center justify-between rounded-site px-3 py-2 text-sm ${
+            className={`surface-card flex items-center justify-between rounded-site px-3 py-2 text-sm ${
               row.socketId === selfId ? 'border-site-accent' : ''
             }`}
           >
@@ -500,7 +500,7 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
       </ul>
 
       {finishedAt !== null ? (
-        <div className="glass-pane rounded-site p-6 text-center">
+        <div className="surface-panel rounded-site p-6 text-center">
           <p className="text-sm text-site-text-muted">
             {t('globeset-race-waiting-others', {
               defaultValue: 'Finished — waiting for the rest of the room.',
@@ -588,7 +588,7 @@ function RaceResults() {
         {results.map((row) => (
           <li
             key={row.socketId}
-            className={`glass-fill flex items-center justify-between rounded-site px-3 py-2 ${
+            className={`surface-card flex items-center justify-between rounded-site px-3 py-2 ${
               row.socketId === selfId ? 'border-site-accent' : ''
             }`}
           >
@@ -611,7 +611,7 @@ function RaceResults() {
         ))}
       </ol>
       {record && record.racesPlayed > 0 && (
-        <dl className="glass-fill mt-4 grid grid-cols-3 gap-3 rounded-site p-4 text-center">
+        <dl className="surface-card mt-4 grid grid-cols-3 gap-3 rounded-site p-4 text-center">
           <RecordFigure
             label={t('globeset-record-races', { defaultValue: 'Races' })}
             value={String(record.racesPlayed)}

@@ -236,7 +236,7 @@ function RMHboxLanding() {
         <button
           type="button"
           onClick={() => navigate({ to: '/rmhbox/minigames' })}
-          className="glass-fill flex w-full items-center justify-center gap-2 rounded-app px-4 py-3 font-semibold text-app-text transition-colors hover:bg-app-surface-hover hover:text-app-accent"
+          className="surface-card flex w-full items-center justify-center gap-2 rounded-app px-4 py-3 font-semibold text-app-text transition-colors hover:bg-app-surface-hover hover:text-app-accent"
           data-testid="view-minigames-btn"
         >
           <Gamepad2 className="h-5 w-5" aria-hidden />
@@ -250,7 +250,7 @@ function RMHboxLanding() {
         <button
           type="button"
           onClick={quit}
-          className="glass-fill flex w-full items-center justify-center gap-2 rounded-app px-4 py-3 font-semibold text-app-text-muted transition-colors hover:bg-app-surface-hover hover:text-app-text"
+          className="surface-card flex w-full items-center justify-center gap-2 rounded-app px-4 py-3 font-semibold text-app-text-muted transition-colors hover:bg-app-surface-hover hover:text-app-text"
           data-testid="quit-btn"
         >
           <LogOut className="h-5 w-5" aria-hidden />

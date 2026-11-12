@@ -61,7 +61,7 @@ export default function JamPanel({
             <Button variant="default" disabled={busy} onClick={() => void run(startJam)}>
               {t('jam-start', { defaultValue: 'Start a jam from this project' })}
             </Button>
-            <div className="glass-pane space-y-2 rounded-app p-4">
+            <div className="surface-panel space-y-2 rounded-app p-4">
               <p className="text-xs text-app-text-muted">
                 {t('jam-join-hint', {
                   defaultValue:
@@ -70,7 +70,7 @@ export default function JamPanel({
               </p>
               <div className="flex gap-2">
                 <Input
-                  className="glass-inset font-mono uppercase"
+                  className="surface-field font-mono uppercase"
                   maxLength={10}
                   placeholder={t('jam-code', { defaultValue: 'Room code' })}
                   value={code}

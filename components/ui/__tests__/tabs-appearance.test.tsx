@@ -30,14 +30,13 @@ describe('Tabs (Steel K5)', () => {
     expect(html).toContain('after:bg-site-text');
   });
 
-  it('keeps the raised thumb, and its pressable tabs, on a game/app route (L8)', () => {
+  it('keeps the raised thumb on a game/app route (L8)', () => {
     const html = renderToStaticMarkup(
       <AppTierContext.Provider value={true}>
         <Tabs tabs={tabs} value="a" aria-label="t" />
       </AppTierContext.Provider>,
     );
     expect(html).toContain('data-tab-appearance="thumb"');
-    expect(html.match(/data-fluid-press=""/g)).toHaveLength(2);
     expect(html).toContain('data-tab-capsule');
     expect(html).toContain('liquid-tabs-sheet');
   });

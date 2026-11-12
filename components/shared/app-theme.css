@@ -716,7 +716,7 @@
    use data-liquid-surface directly. Zero added backdrop samplers on lists.
 
    Plasmatic Jelly (04 §1, "App tier cards"): these are the app tier's repeated
-   content, so they take the CARD role — the `.glass-fill` knobs of
+   content, so they take the CARD role — the `.surface-card` knobs of
    app/jelly-material.css §1, in the app palette — with the static haze floor
    in their background stack and a static CSS rim. No per-file edit: every
    `bg-app-surface` card in an app or game picks this up. */
@@ -775,7 +775,7 @@
     position: relative;
   }
 }
-/* Site roles in the app palette. `.glass-fill` / `-pane` / `-chrome` / `-overlay` / `-inset` and the `Switch`
+/* Site roles in the app palette. `.surface-card` / `-pane` / `-chrome` / `-overlay` / `-inset` and the `Switch`
    primitive are written against the `--site-*` contract. On the site tier Steel remaps the role classes to flat
    surfaces (app/styles/steel-surfaces.css: no background, no border). An app is a full-screen tier that keeps its own
    look (L8) and its panels are those roles, so here they stay panels in the app palette: the tier's translucent
@@ -789,11 +789,11 @@
 @layer components {
   .app-theme
     :is(
-      .glass-fill,
-      .glass-pane,
-      .glass-chrome,
-      .glass-overlay,
-      .glass-inset,
+      .surface-card,
+      .surface-panel,
+      .surface-chrome,
+      .surface-overlay,
+      .surface-field,
       [data-slot='switch'],
       [data-slot='resizable-handle']
     ) {
@@ -807,18 +807,18 @@
     --site-accent: var(--app-accent);
     --site-accent-fg: var(--app-accent-fg);
   }
-  .app-theme :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay) {
+  .app-theme :is(.surface-card, .surface-panel, .surface-chrome, .surface-overlay) {
     background-color: var(--app-glass-bg);
     border: 1px solid var(--app-border);
     border-radius: var(--app-radius-lg);
     box-shadow: none;
   }
-  .app-theme :is(.glass-inset, [data-slot='input'], [data-slot='textarea']) {
+  .app-theme :is(.surface-field, [data-slot='input'], [data-slot='textarea']) {
     background-color: color-mix(in srgb, var(--app-text) 3%, transparent);
     border: 1px solid var(--app-border);
     border-radius: var(--app-radius);
   }
-  .app-theme .glass-chrome--aside {
+  .app-theme .surface-chrome--aside {
     background: color-mix(in srgb, var(--app-bg) 30%, transparent);
     border-color: var(--app-border);
   }
@@ -967,7 +967,7 @@
 
 /* ── The shared Dialog inside the app tier ────────────────────────────────
    A `DialogContent` given the app root as its `container` lands inside
-   `.app-theme`. Its surface is a `.glass-overlay`, so the site-roles adapter
+   `.app-theme`. Its surface is a `.surface-overlay`, so the site-roles adapter
    above already gives it (and its close button) the app's ink, accent and
    hover. Two pieces stay outside that adapter:
    - the scrim is `.glass-scrim`, not a role, so it kept the Daylight

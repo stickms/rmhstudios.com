@@ -385,7 +385,7 @@ export function AlbumViewer({ album }: { album: Album }) {
 
   // PORTALLED. `.av` is `position: fixed; inset: 0; z-index: 60`, and 60 was
   // chosen to sit just above the shell's top bar — but it was measured inside
-  // `.radial-frame`'s stacking context (pinned at 1), so it never got there. A
+  // the page frame's stacking context (pinned at 1), so it never got there. A
   // full-screen album viewer with the site's top bar and hub orb painted over it
   // is not a viewer, and z-60 is precisely the number that makes it look like
   // someone already thought about this.

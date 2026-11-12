@@ -208,7 +208,7 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
                                     initial={{ opacity: 0, x: -12 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                                    className={`glass-fill flex items-center gap-3 rounded-site border px-3 py-2 transition-colors duration-site-fast ${
+                                    className={`surface-card flex items-center gap-3 rounded-site border px-3 py-2 transition-colors duration-site-fast ${
                                         showResults && itemScore
                                             ? itemScore.score === 2
                                                 ? TONE_TINT.success

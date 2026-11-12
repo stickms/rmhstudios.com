@@ -217,7 +217,7 @@ function ManageAlbumPage() {
     >
       <AdminBody width="narrow">
         {/* Album details — a singular editing panel gets the L2 glass pane. */}
-        <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
+        <div className="relative flex flex-col gap-3 rounded-site p-5">
           <Input
             type="text"
             value={title}
@@ -265,7 +265,7 @@ function ManageAlbumPage() {
               {slides.map((slide, index) => (
                 <div
                   key={slide.id}
-                  className={`group glass-fill relative aspect-square overflow-hidden rounded-site-sm ${
+                  className={`group relative aspect-square overflow-hidden rounded-site-sm ${
                     dragIndex === index ? 'opacity-50 ring-2 ring-site-accent' : ''
                   }`}
                   draggable

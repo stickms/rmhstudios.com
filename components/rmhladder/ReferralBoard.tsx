@@ -135,7 +135,7 @@ export function ReferralBoard() {
                 {t('rb-mine', { defaultValue: 'Your offers' })}
               </h2>
               {data.mine.map((o) => (
-                <Card key={o.id} className="glass-fill gap-3 py-4">
+                <Card key={o.id} className="gap-3 py-4">
                   <CardHeader className="flex-row items-center justify-between gap-2 px-5">
                     <CardTitle className="text-base">
                       {o.companyName}{' '}
@@ -168,7 +168,7 @@ export function ReferralBoard() {
                       </p>
                     ) : (
                       o.requests.map((r) => (
-                        <div key={r.id} className="glass-inset rounded-site-sm p-3 text-sm">
+                        <div key={r.id} className="surface-field rounded-site-sm p-3 text-sm">
                           <div className="flex flex-wrap items-center gap-2">
                             <PersonLink p={r.applicant} />
                             <Badge variant="default">
@@ -220,7 +220,7 @@ export function ReferralBoard() {
                 {data.sent.map((r) => (
                   <li
                     key={r.id}
-                    className="glass-fill flex flex-wrap items-center gap-2 rounded-site-sm p-3 text-sm"
+                    className="flex flex-wrap items-center gap-2 rounded-site-sm p-3 text-sm"
                   >
                     <span className="font-medium text-site-text">{r.companyName}</span>
                     <span className="text-site-text-muted">{r.roles}</span>
@@ -277,7 +277,7 @@ export function ReferralBoard() {
             ) : (
               <ul className="space-y-3">
                 {data.offers.map((o) => (
-                  <li key={o.id} className="glass-fill rounded-site p-5">
+                  <li key={o.id} className="rounded-site p-5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-site-text">{o.companyName}</span>
                       <span className="text-sm text-site-text-muted">{o.roles}</span>
@@ -355,7 +355,7 @@ function OfferForm({ onDone }: { onDone: () => void }) {
   });
   return (
     <form
-      className="glass-pane mt-3 space-y-3 rounded-site p-5"
+      className="mt-3 space-y-3 rounded-site p-5"
       onSubmit={(e) => {
         e.preventDefault();
         create.mutate();

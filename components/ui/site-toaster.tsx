@@ -36,7 +36,7 @@ export function SiteToaster({ theme }: { theme: 'light' | 'dark' }) {
         right: '0.75rem',
       }}
       toastOptions={{
-        // Steel S5: a toast is an overlay. It gets `.glass-overlay`'s fill, border, radius and T4 shadow inline,
+        // Steel S5: a toast is an overlay. It gets `.surface-overlay`'s fill, border, radius and T4 shadow inline,
         // because that class also sets position, max sizes and overflow, all of which sonner owns for its own
         // stacking. No blur. Its 160 ms fade (M5) is app/styles/steel-overlay.css.
         style: {

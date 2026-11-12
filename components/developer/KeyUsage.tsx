@@ -78,7 +78,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
       : 0;
 
   return (
-    <div className="glass-inset mt-3 rounded-site px-3 py-3">
+    <div className="surface-field mt-3 rounded-site px-3 py-3">
       <div className="mb-2 flex items-center gap-2">
         <Activity className="size-3.5 text-site-accent" aria-hidden />
         <span className="text-xs font-semibold text-site-text">

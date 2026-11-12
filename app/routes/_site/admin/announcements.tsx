@@ -213,7 +213,7 @@ function AdminAnnouncementsPage() {
   // MentionTextarea is the only raw field left; it takes the same inset material
   // as `Input`/`Textarea` through its className.
   const textareaCls =
-    'glass-inset w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted';
+    'surface-field w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted';
 
   return (
     <PageLayout
@@ -227,7 +227,7 @@ function AdminAnnouncementsPage() {
     >
       <AdminBody width="narrow">
         {/* Create form — a singular composer panel gets the L2 pane. */}
-        <div className="glass-pane space-y-3 rounded-site p-5">
+        <div className="space-y-3 rounded-site p-5">
           <div className="relative">
             <Input
               className="pr-12"
@@ -276,7 +276,7 @@ function AdminAnnouncementsPage() {
 
           {/* Poll creator */}
           {attachment === 'poll' && (
-            <div className="glass-fill space-y-2 rounded-site p-4">
+            <div className="relative space-y-2 rounded-site p-4">
               <div className="flex items-center justify-between gap-2">
                 <span className="site-section-label">
                   {t('poll-button', { defaultValue: 'Poll' })}
@@ -379,7 +379,7 @@ function AdminAnnouncementsPage() {
 
           {/* GIF input */}
           {attachment === 'gif' && (
-            <div className="glass-fill space-y-2 rounded-site p-4">
+            <div className="relative space-y-2 rounded-site p-4">
               <div className="flex items-center justify-between gap-2">
                 <span className="site-section-label">
                   {t('image-gif-label', { defaultValue: 'Image / GIF' })}
@@ -545,7 +545,7 @@ function AdminAnnouncementsPage() {
         ) : (
           <ul className="space-y-3">
             {list.map((a) => (
-              <li key={a.id} className="glass-fill rounded-site px-4 py-3">
+              <li key={a.id} className="relative rounded-site px-4 py-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 basis-48 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">

@@ -23,7 +23,7 @@ export default function ProfileSongEmbed({
   if (!TRACK_ID.test(spotifyId)) return null;
   return (
     <aside
-      className="glass-overlay fixed inset-x-3 bottom-24 z-40 mx-auto max-w-sm rounded-site p-2 sm:right-4 sm:left-auto sm:mx-0"
+      className="surface-overlay fixed inset-x-3 bottom-24 z-40 mx-auto max-w-sm rounded-site p-2 sm:right-4 sm:left-auto sm:mx-0"
       aria-label={t('song-embed-label', { defaultValue: 'Profile song player' })}
     >
       <div className="mb-1 flex items-center justify-between gap-2 px-1">

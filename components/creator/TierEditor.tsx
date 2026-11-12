@@ -192,7 +192,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
       </div>
 
       {drafts.length === 0 && (
-        <div className="rounded-site glass-fill p-6 text-center text-sm text-site-text-muted">
+        <div className="rounded-site p-6 text-center text-sm text-site-text-muted">
           {t('no-tiers-yet', {
             defaultValue: 'No tiers yet. Add your first tier to start earning from supporters.',
           })}
@@ -204,7 +204,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
           const nameInvalid = !d.name.trim();
           const priceInvalid = d.priceCoins < TIER_PRICE_MIN || d.priceCoins > TIER_PRICE_MAX;
           return (
-            <div key={d.key} className="rounded-site glass-fill p-5 space-y-4">
+            <div key={d.key} className="rounded-site p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium text-site-text-muted">
                   {t('tier-n', { defaultValue: 'Tier {{n}}', n: i + 1 })}

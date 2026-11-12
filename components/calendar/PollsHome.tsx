@@ -89,7 +89,7 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
                 <Link
                   to="/when/$id"
                   params={{ id: p.id }}
-                  className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+                  className="flex items-center justify-between gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-site-text">
@@ -180,8 +180,8 @@ function CreatePollForm({ attach, onCancel }: { attach: WhenSearch; onCancel: ()
   };
 
   return (
-    <form onSubmit={submit} className="glass-pane space-y-4 rounded-site p-5">
-      <h2 className="font-display text-lg font-medium text-site-text">
+    <form onSubmit={submit} className="space-y-4 rounded-site p-5">
+      <h2 className="text-lg font-medium text-site-text">
         {t('form-title', { defaultValue: 'New availability poll' })}
       </h2>
       {(attach.communityId || attach.groupChatId) && (

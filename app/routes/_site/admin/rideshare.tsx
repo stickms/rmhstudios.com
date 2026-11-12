@@ -245,7 +245,7 @@ function AdminRidesharePage() {
         ) : (
           <ul className="space-y-3">
             {items.map((app) => (
-              <li key={app.id} className="glass-fill rounded-site p-5">
+              <li key={app.id} className="rounded-site p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={app.user.image} alt={app.user.name ?? t('user-alt', { defaultValue: 'User' })} size={40} />
@@ -263,7 +263,7 @@ function AdminRidesharePage() {
 
                 <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                   {/* Vehicle */}
-                  <div className="glass-inset rounded-site-sm p-4">
+                  <div className="surface-field rounded-site-sm p-4">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
                       <Car className="size-4 text-site-accent" aria-hidden /> {t('vehicle-section', { defaultValue: 'Vehicle' })}
                     </div>
@@ -277,7 +277,7 @@ function AdminRidesharePage() {
                   </div>
 
                   {/* License */}
-                  <div className="glass-inset rounded-site-sm p-4">
+                  <div className="surface-field rounded-site-sm p-4">
                     <div className="text-sm font-semibold text-site-text">{t('drivers-license-section', { defaultValue: "Driver's license" })}</div>
                     <dl className="mt-2 space-y-2 text-sm">
                       <Row label={t('license-number-label', { defaultValue: 'License #' })} value={app.licenseNumber || '—'} />
@@ -393,7 +393,7 @@ function RideHistory({
         <ul className="space-y-3">
           {rides.map((ride) => {
                         return (
-              <li key={ride.id} className="glass-fill rounded-site p-5">
+              <li key={ride.id} className="rounded-site p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={ride.rider?.image ?? null} alt={ride.rider?.name ?? t('rider-alt', { defaultValue: 'Rider' })} size={36} />

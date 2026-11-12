@@ -55,7 +55,7 @@ export function FriendsOnlineWidget({ onSettled }: { onSettled?: () => void } = 
  if (!session?.user || !friends || friends.length === 0) return null;
 
  return (
- <section className="rad-live__card glass-fill">
+ <section className="rad-live__card surface-card">
  <h2>
  <Users aria-hidden />
  {t('friends-online', { defaultValue:'Friends online'})}

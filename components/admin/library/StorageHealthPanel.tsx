@@ -119,7 +119,7 @@ export function StorageHealthPanel({
         <div className="flex items-center gap-2 text-sm text-site-text-muted">
           <HardDrive className="size-4 shrink-0 text-site-text-muted" aria-hidden />
           <span>{t('bucket-label-inline', { defaultValue: 'Bucket' })}</span>
-          <code className="glass-inset rounded-site-sm px-2 py-0.5 font-mono text-xs text-site-text">
+          <code className="surface-field rounded-site-sm px-2 py-0.5 font-mono text-xs text-site-text">
             {health.bucket}
           </code>
         </div>
@@ -166,7 +166,7 @@ export function StorageHealthPanel({
         ) : (
           <ul className="flex flex-col gap-2">
             {health.missing.map((m) => (
-              <li key={m.slug} className="glass-fill flex flex-col gap-1 rounded-site px-4 py-3">
+              <li key={m.slug} className="flex flex-col gap-1 rounded-site px-4 py-3">
                 <p className="text-sm font-medium text-site-text">{m.title}</p>
                 <p className="truncate font-mono text-xs text-site-text-muted">{m.key}</p>
               </li>

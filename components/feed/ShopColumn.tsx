@@ -17,7 +17,6 @@ import { getPremiumTheme } from '@/lib/shop/themes';
 import { PinnedHero } from './PinnedHero';
 import { ColumnHeader } from './ColumnHeader';
 import { Tabs } from '@/components/ui/tabs';
-import { Reveal } from '@/components/motion';
 import { ShopWishButton } from '@/components/economy-plus/ShopWishButton';
 import { getShopApi, purchaseShopItemApi, equipShopItemApi } from '@/lib/shop/shop.contract';
 import { api } from '@/lib/contract/client';
@@ -63,7 +62,7 @@ export function Preview({ item }: { item: ShopItemView }) {
     // the colour of a name.
     return (
       <div
-        className="flex h-12 items-center justify-center rounded-site-sm bg-site-media-scrim-strong px-3 text-sm font-bold"
+        className="flex h-12 items-center justify-center rounded-site-sm bg-site-media-scrim-strong px-3 text-sm font-semibold"
         style={
           data.gradient
             ? {
@@ -206,16 +205,11 @@ export function ShopColumn({
     <div>
       {showHero && (
         <PinnedHero
-          /* 1.2 screens, not the 2.6 default: at 2.6 the catalog started three
- viewport-heights below the fold and no product was visible on the
- first screen at any size. */
-          screens={1.2}
           title={t('shop-title', { defaultValue: 'Shop' })}
           subtitle={t('shop-hero-sub', {
             defaultValue:
               'Spend your coins on name colors, badges, avatar frames and more — then equip them across the studio.',
           })}
-          scrollCue={t('shop-scroll-cue', { defaultValue: 'Browse the shop' })}
         />
       )}
       <ColumnHeader
@@ -251,13 +245,13 @@ export function ShopColumn({
           <Spinner />
         </div>
       ) : (
-        <Reveal className="grid grid-cols-1 gap-4 py-4 md:px-4 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 py-4 md:px-4 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((item) => (
             <div
               key={item.id}
-              // L1 .glass-fill + .glass-interactive together light the hover glint
+              // L1 . + .surface-press together light the hover glint
               // ring (the ring selector needs BOTH classes) and the pointer light.
-              className="glass-fill glass-interactive flex min-w-0 flex-col items-stretch gap-4 rounded-site p-5"
+              className="surface-press flex min-w-0 flex-col items-stretch gap-4 rounded-site p-5"
               // Rarity communicates value through the rim colour (§9.4): a tinted
               // border + a matching inner specular hairline over the base rim.
               style={{
@@ -265,7 +259,7 @@ export function ShopColumn({
                 boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55`,
               }}
             >
-              <div className="glass-inset flex min-h-32 items-center justify-center rounded-site-sm p-4">
+              <div className="surface-field flex min-h-32 items-center justify-center rounded-site-sm p-4">
                 <Preview item={item} />
               </div>
               <div className="min-w-0 flex-1">
@@ -278,7 +272,7 @@ export function ShopColumn({
                       "legendary" at a glance) and the word takes the surface's own
                       ink. Same fix as the achievement tier chips. */}
                   <span
-                    className="shrink-0 rounded-site-sm border px-2 py-0.5 text-xs font-bold uppercase text-site-text"
+                    className="shrink-0 rounded-site-sm border px-2 py-0.5 text-xs font-semibold text-site-text"
                     style={{
                       background: `${RARITY_COLORS[item.rarity]}2e`,
                       borderColor: `${RARITY_COLORS[item.rarity]}99`,
@@ -291,7 +285,7 @@ export function ShopColumn({
                   {item.description}
                 </p>
                 {item.requiresTier && (
-                  <p className="text-xs uppercase text-site-accent">
+                  <p className="text-xs text-site-accent">
                     {t('requires-tier-plan', {
                       tier: item.requiresTier,
                       defaultValue: '{{tier}} plan',
@@ -340,7 +334,7 @@ export function ShopColumn({
               </div>
             </div>
           ))}
-        </Reveal>
+        </div>
       )}
     </div>
   );

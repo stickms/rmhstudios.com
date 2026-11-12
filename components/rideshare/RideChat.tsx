@@ -44,7 +44,7 @@ export function RideChat({ messages, currentUserId, onSend, disabled, otherName 
   }
 
   return (
-    <div className="flex flex-col glass-fill rounded-site">
+    <div className="flex flex-col rounded-site">
       <div className="flex items-center gap-2 border-b border-site-border px-4 py-2.5">
         <MessageCircle className="h-4 w-4 text-site-accent" />
         <span className="text-sm font-semibold text-site-text">

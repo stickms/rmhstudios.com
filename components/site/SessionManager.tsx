@@ -134,7 +134,7 @@ export function SessionManager() {
 
   const otherCount = sessions.filter((s) => s.token !== currentToken).length;
 
-  // `.glass-pane` — the singular-panel tier, and what the three siblings
+  //`.`— the singular-panel tier, and what the three siblings
   // stacked directly under this one in /settings/security already use. This
   // was `bg-site-surface/40`, which is also the alpha-stacking bug:
   // `--site-surface` is already rgba (0.065 on ultra) and Tailwind v4's
@@ -157,7 +157,7 @@ export function SessionManager() {
           {t('sessions-empty', { defaultValue: 'No active sessions found.' })}
         </p>
       ) : (
-        <div className="glass-fill rounded-site-sm">
+        <div className="rounded-site-sm">
           <ul className="divide-y divide-site-border">
             {sessions.map((s) => {
               const { label, kind } = describeDevice(s.userAgent);

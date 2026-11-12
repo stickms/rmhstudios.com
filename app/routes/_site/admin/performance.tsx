@@ -94,7 +94,7 @@ function PerformancePage() {
         ) : loading && !data ? (
           <Spinner />
         ) : !data ? (
-          <div className="glass-fill rounded-site">
+          <div className="rounded-site">
             <EmptyState
               title={t('load-failed', { defaultValue: 'Could not load performance data.' })}
             />

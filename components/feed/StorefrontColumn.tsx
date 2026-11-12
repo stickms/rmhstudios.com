@@ -12,7 +12,6 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { UserAvatar } from'./UserAvatar';
 import { PinnedHero } from'./PinnedHero';
 import { ColumnHeader } from'./ColumnHeader';
-import { Reveal } from'@/components/motion';
 import { api } from'@/lib/contract/client';
 import { HttpError, serverError } from'@/lib/http';
 import {
@@ -194,7 +193,6 @@ export function StorefrontColumn({
  return (
  <div>
  <PinnedHero
- screens={2}
  eyebrow={
  creator.handle
  ? `@${creator.handle}`
@@ -204,7 +202,6 @@ export function StorefrontColumn({
  subtitle={t('storefront-hero-sub', {
  defaultValue:'Coin-purchasable drops, straight from the creator.',
  })}
- scrollCue={t('storefront-scroll-cue', { defaultValue:'View products'})}
  />
  <ColumnHeader
  title={t('creators-store', {
@@ -224,7 +221,7 @@ export function StorefrontColumn({
  }
  />
 
- <div className="mx-4 mt-4 flex items-center gap-3 rounded-site glass-fill px-4 py-3">
+ <div className="mx-4 mt-4 flex items-center gap-3 rounded-site px-4 py-3">
  <UserAvatar user={creator} />
  <div className="min-w-0">
  <p className="truncate text-sm font-semibold text-site-text">
@@ -237,7 +234,7 @@ export function StorefrontColumn({
  </div>
 
  {showForm && (
- <div className="mx-4 mt-4 rounded-site glass-pane p-5">
+ <div className="mx-4 mt-4 rounded-site p-5">
  <div className="flex items-center justify-between">
  <h2 className="text-sm font-semibold text-site-text">
  {t('new-product', { defaultValue:'New product'})}
@@ -303,7 +300,7 @@ export function StorefrontColumn({
  </div>
  )}
 
- <Reveal className="space-y-3 px-4 pt-4 pb-12">
+ <div className="space-y-3 px-4 pt-4 pb-12">
  {products.length === 0 ? (
  <EmptyState
  description={
@@ -316,7 +313,7 @@ export function StorefrontColumn({
  products.map((p) => (
  <div
  key={p.id}
- className={`rounded-site glass-fill p-5 ${p.active ?'':'opacity-70'}`}
+ className={`rounded-site p-5 ${p.active ?'':'opacity-70'}`}
  >
  <div className="flex items-start justify-between gap-3">
  <div className="min-w-0">
@@ -333,7 +330,7 @@ export function StorefrontColumn({
  {!p.active ? t('hidden-suffix', { defaultValue:'· hidden'}) :''}
  </p>
  </div>
- <span className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-site-text">
+ <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-site-text">
  <CoinIcon className="h-4 w-4"/> {fmt(p.price)}
  </span>
  </div>
@@ -400,7 +397,7 @@ export function StorefrontColumn({
  </div>
  ))
  )}
- </Reveal>
+ </div>
  </div>
  );
 }

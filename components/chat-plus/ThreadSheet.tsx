@@ -190,7 +190,7 @@ export default function ThreadSheet({
               rows={1}
               maxLength={2000}
               placeholder={t('thread-reply-placeholder', { defaultValue: 'Reply in thread…' })}
-              className="glass-inset max-h-28 min-h-11 flex-1 resize-none rounded-site px-3 py-2.5 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+              className="surface-field max-h-28 min-h-11 flex-1 resize-none rounded-site px-3 py-2.5 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
             />
             <Button
               type="submit"

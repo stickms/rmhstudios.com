@@ -163,7 +163,7 @@ function AdminAppealsPage() {
         ) : (
           <ul className="space-y-3">
             {items.map((a) => (
-              <li key={a.id} className="glass-fill rounded-site px-4 py-3">
+              <li key={a.id} className="rounded-site px-4 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="danger">
                     {t('strike', { defaultValue: 'Strike' })}
@@ -219,7 +219,7 @@ function AdminAppealsPage() {
                 </div>
 
                 {a.appealText && (
-                  <div className="mt-3 glass-inset rounded-site-sm px-3 py-2">
+                  <div className="mt-3 surface-field rounded-site-sm px-3 py-2">
                     <p className="text-xs font-semibold text-site-text-muted">
                       {t('user-appeal', { defaultValue: "User's appeal" })}
                     </p>
@@ -230,7 +230,7 @@ function AdminAppealsPage() {
                 )}
 
                 {a.appealNote && view !== 'PENDING' && (
-                  <div className="mt-3 glass-inset rounded-site-sm px-3 py-2">
+                  <div className="mt-3 surface-field rounded-site-sm px-3 py-2">
                     <p className="text-xs font-semibold text-site-text-muted">
                       {t('decision-note', { defaultValue: 'Decision note' })}
                     </p>

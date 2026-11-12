@@ -48,7 +48,7 @@ function VersionDiff({
   const isCurrent = index === total - 1;
 
   return (
-    <li className="glass-inset rounded-site px-4 py-3">
+    <li className="surface-field rounded-site px-4 py-3">
       <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-site-text-muted">
         <span className="font-semibold text-site-text">
           {previous

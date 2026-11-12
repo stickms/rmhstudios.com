@@ -240,7 +240,7 @@ export default function RmhStudyFlashcards() {
               type="button"
               onClick={() => setRevealed(true)}
               aria-keyshortcuts="Space"
-              className="w-full min-h-44 rounded-app glass-fill p-6 flex flex-col items-center justify-center gap-3 text-center transition-colors hover:border-app-accent"
+              className="w-full min-h-44 rounded-app surface-card p-6 flex flex-col items-center justify-center gap-3 text-center transition-colors hover:border-app-accent"
             >
               <span className="text-lg font-medium whitespace-pre-wrap">{card?.front}</span>
               {revealed ? (
@@ -260,7 +260,7 @@ export default function RmhStudyFlashcards() {
             </p>
 
             {revealed && (
-              <div className="grid grid-cols-4 gap-2" data-jelly-group>
+              <div className="grid grid-cols-4 gap-2">
                 {GRADES.map((g) => (
                   <button
                     key={g.grade}
@@ -284,7 +284,7 @@ export default function RmhStudyFlashcards() {
   const DeckButton = ({ deck, subtitle }: { deck: DeckRow; subtitle?: string }) => (
     <button
       onClick={() => startReview(deck)}
-      className="w-full flex items-center gap-3 rounded-app-sm glass-fill p-3 text-left transition-colors hover:border-app-accent"
+      className="w-full flex items-center gap-3 rounded-app-sm surface-card p-3 text-left transition-colors hover:border-app-accent"
     >
       <Layers className="h-4 w-4 shrink-0 text-app-accent" />
       <div className="min-w-0 flex-1">

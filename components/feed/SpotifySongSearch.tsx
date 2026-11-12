@@ -70,7 +70,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  return (
  <div className="space-y-2">
  <label className="block text-xs font-medium text-site-text-muted">{t("profile-song", { defaultValue:"Profile Song"})}</label>
- <div className="glass-fill flex items-center gap-3 p-3">
+ <div className="relative flex items-center gap-3 p-3">
  {selected.albumArt ? (
  <img src={selected.albumArt} alt={selected.title} className="w-10 h-10 rounded object-cover shrink-0"/>
  ) : (
@@ -140,7 +140,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  onChange={(e) => handleQueryChange(e.target.value)}
  placeholder={t("search-for-a-song", { defaultValue:"Search for a song..."})}
  autoFocus
- className="glass-inset border w-full text-site-text placeholder:text-site-text-muted text-sm pl-9 pr-3 py-2.5 outline-none focus:border-site-accent transition-colors"
+ className="surface-field border w-full text-site-text placeholder:text-site-text-muted text-sm pl-9 pr-3 py-2.5 outline-none focus:border-site-accent transition-colors"
  />
  </div>
 
@@ -150,7 +150,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  )}
 
  {!loading && results.length > 0 && (
- <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-site glass-fill">
+ <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-site relative">
  {results.map((track) => {
  const isSelected = selected?.id === track.id;
  return (

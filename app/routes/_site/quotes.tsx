@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Clock, Quote } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Reveal } from '@/components/motion';
 
 export const Route = createFileRoute('/_site/quotes')({
   head: definePage({
@@ -154,7 +153,7 @@ function QuoteCard({ quote, index }: { quote: (typeof quotes)[number]; index: nu
   return (
     <div className="group relative border-s-2 border-site-border py-6 ps-8 transition-colors duration-site-slow hover:border-site-accent">
       {/* Quote number badge */}
-      <div className="absolute -start-3 top-6 flex size-6 items-center justify-center rounded-full glass-fill">
+      <div className="absolute -start-3 top-6 flex size-6 items-center justify-center rounded-full">
         <span className="font-mono text-xs text-site-text-muted transition-colors duration-site-slow group-hover:text-site-accent">
           {index + 1}
         </span>
@@ -162,7 +161,7 @@ function QuoteCard({ quote, index }: { quote: (typeof quotes)[number]; index: nu
 
       {/* Quote text */}
       <blockquote className="mb-4">
-        <p className="text-site-text text-lg leading-relaxed font-display italic">
+        <p className="text-site-text text-lg leading-relaxed italic">
           &ldquo;{quote.text}&rdquo;
         </p>
       </blockquote>
@@ -185,8 +184,8 @@ function QuotesPage() {
     <PageLayout title={t('steve-jobs-quotes-title', { defaultValue: 'Steve Jobs Quotes' })}>
       <div className="px-4 pt-4 pb-12">
         {/* Hero section */}
-        <Reveal className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-site glass-fill">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-site relative">
             <Quote aria-hidden className="size-9 text-site-accent" strokeWidth={1.5} />
           </div>
           <p className="mx-auto max-w-lg text-sm leading-relaxed text-site-text-muted">
@@ -195,7 +194,7 @@ function QuotesPage() {
                 'A curated collection of the most memorable words from Steve Jobs — co-founder of Apple, visionary, and one of the most influential thinkers of the modern era.',
             })}
           </p>
-        </Reveal>
+        </div>
 
         {/* Category filter chips */}
         <div className="mb-6 flex flex-wrap justify-center gap-2">
@@ -221,9 +220,9 @@ function QuotesPage() {
         {/* Quote list — each entry reveals once as it scrolls into view. */}
         <div className="divide-y divide-site-border">
           {quotes.map((quote, index) => (
-            <Reveal key={index} y={12}>
+            <div key={index}>
               <QuoteCard quote={quote} index={index} />
-            </Reveal>
+            </div>
           ))}
         </div>
 

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { BellOff, BellPlus, Pencil, Trash2 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { RMHarkCard } from '@/components/feed/RMHarkCard';
+import { Spine, SpineItem } from '@/components/ui/spine';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -72,7 +73,7 @@ export function FeedPage({ id }: { id: string }) {
   if (missing) {
     return (
       <PageLayout title={t('feed-title', { defaultValue: 'Feed' })} backTo="/feeds">
-        <div className="px-4 pt-4 pb-12">
+        <div className="pb-12">
           <EmptyState
             title={t('feed-missing', { defaultValue: 'This feed does not exist or is private' })}
           />
@@ -83,7 +84,7 @@ export function FeedPage({ id }: { id: string }) {
   if (!view) {
     return (
       <PageLayout title={t('feed-title', { defaultValue: 'Feed' })} backTo="/feeds">
-        <div className="px-4 pt-4 pb-12">
+        <div className="pb-12">
           <Skeleton className="h-40 w-full" />
         </div>
       </PageLayout>
@@ -106,8 +107,8 @@ export function FeedPage({ id }: { id: string }) {
       backTo="/feeds"
       description={feed.description ?? undefined}
     >
-      <div className="space-y-4 pt-4 pb-12 md:px-4">
-        <section className="glass-pane flex flex-wrap items-center gap-3 rounded-site p-5">
+      <Spine className="pb-12">
+        <SpineItem dot={false} className="flex flex-wrap items-center gap-3">
           <p className="min-w-0 flex-1 text-sm text-site-text-muted">
             {[...feed.tags.map((x) => `#${x}`), ...feed.keywords].join(' · ')}
             {feed.peopleCount
@@ -161,42 +162,38 @@ export function FeedPage({ id }: { id: string }) {
               </Button>
             </div>
           )}
-        </section>
+        </SpineItem>
 
         {editing && feed.isOwner && (
-          <FeedForm
-            initial={initial}
-            busy={busy}
-            submitLabel={t('feed-save', { defaultValue: 'Save' })}
-            onCancel={() => setEditing(false)}
-            onSubmit={async (v) => {
-              if (await send(`/api/feeds/${id}`, 'PATCH', feedBody(v))) {
-                setEditing(false);
-                void load();
-              }
-            }}
-          />
+          <SpineItem dot={false}>
+            <FeedForm
+              initial={initial}
+              busy={busy}
+              submitLabel={t('feed-save', { defaultValue: 'Save' })}
+              onCancel={() => setEditing(false)}
+              onSubmit={async (v) => {
+                if (await send(`/api/feeds/${id}`, 'PATCH', feedBody(v))) {
+                  setEditing(false);
+                  void load();
+                }
+              }}
+            />
+          </SpineItem>
         )}
 
         {items.length === 0 ? (
           <EmptyState title={t('feed-empty', { defaultValue: 'No matching posts yet' })} />
         ) : (
-          <ul className="space-y-3">
-            {items.map((item) => (
-              <li key={item.id}>
-                <RMHarkCard item={item} />
-              </li>
-            ))}
-          </ul>
+          items.map((item) => <RMHarkCard key={item.id} item={item} />)
         )}
         {view.nextCursor && (
-          <div className="flex justify-center">
+          <SpineItem dot={false} className="flex justify-center border-b-0">
             <Button variant="default" size="sm" onClick={() => void load(view.nextCursor!)}>
               {t('feed-more', { defaultValue: 'Load more' })}
             </Button>
-          </div>
+          </SpineItem>
         )}
-      </div>
+      </Spine>
     </PageLayout>
   );
 }

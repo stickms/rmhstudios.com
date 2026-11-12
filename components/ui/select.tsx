@@ -176,7 +176,7 @@ const TIER_CLASSES = {
     // focus ring is the global K10 outline.
     trigger:
       'rounded-site border border-site-border bg-site-surface text-site-text text-base sm:text-sm aria-invalid:border-site-danger',
-    content: 'glass-overlay text-site-text',
+    content: 'surface-overlay text-site-text',
     item: 'rounded-none text-sm text-site-text data-[highlighted]:bg-site-bg-subtle data-[state=checked]:font-semibold',
     label: 'text-site-text-muted',
     scrollButton: 'text-site-text-muted',
@@ -326,7 +326,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
               sideOffset={6}
               className={cn(
                 // The whole point of the rewrite: the list is one of OUR surfaces,
-                // in the theme's own material. `glass-overlay` is the shared
+                // in the theme's own material. `surface-overlay` is the shared
                 // floating-panel tier (globals.css §5.1). z-60 clears the z-50
                 // dialogs a select can be opened from inside.
                 'z-topbar max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden py-1.5',

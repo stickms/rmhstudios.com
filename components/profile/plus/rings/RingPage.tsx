@@ -80,7 +80,7 @@ export default function RingPage({ slug }: { slug: string }) {
   return (
     <div className="mx-auto max-w-2xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <header className="space-y-2">
-        <h2 className="font-display text-2xl font-bold text-site-text">{ring.name}</h2>
+        <h2 className="text-2xl font-semibold text-site-text">{ring.name}</h2>
         {ring.description ? (
           <p className="whitespace-pre-wrap break-words text-sm text-site-text-muted">
             {ring.description}
@@ -151,7 +151,7 @@ export default function RingPage({ slug }: { slug: string }) {
               <li key={m.id}>
                 <Link
                   to={`/u/${m.handle ?? m.id}` as string}
-                  className="glass-fill glass-interactive flex items-center gap-3 rounded-site px-4 py-3"
+                  className="surface-press flex items-center gap-3 rounded-site px-4 py-3"
                 >
                   <span className="w-6 text-sm tabular-nums text-site-text-muted">{i + 1}</span>
                   <UserAvatar src={m.image} alt="" size={32} fallbackName={m.name ?? undefined} />

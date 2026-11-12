@@ -105,7 +105,7 @@ export function NightrailTrickBoard({
         ) : (
           <ul className="space-y-2">
             {data.tricks.map((trick) => (
-              <li key={trick.id} className="glass-fill flex items-center gap-3 rounded-site px-4 py-3">
+              <li key={trick.id} className="surface-card flex items-center gap-3 rounded-site px-4 py-3">
                 <TrickLine trick={trick} />
                 <Button
                   size="sm"

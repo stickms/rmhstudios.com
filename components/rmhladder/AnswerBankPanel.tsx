@@ -5,8 +5,8 @@
  * ATS asks; the essays are the free-text answers that repeat verbatim; the STAR
  * stories are what the interview prep sheet matches against a posting.
  *
- * The panel is L2 `.glass-pane` (one per page). Each essay and story is a
- * repeated row and therefore L1 `.glass-fill` — zero backdrop blur, because a
+ * The panel is L2 `.surface-panel` (one per page). Each essay and story is a
+ * repeated row and therefore L1 `.surface-card` — zero backdrop blur, because a
  * user with twenty stories would otherwise be compositing twenty blurred
  * surfaces on one screen.
  *
@@ -108,14 +108,14 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
 
   if (loading) {
     return (
-      <section className="glass-pane flex min-h-32 items-center justify-center p-5">
+      <section className="surface-panel flex min-h-32 items-center justify-center p-5">
         <Spinner size={20} className="text-site-text-muted" label={t('ladder.answersLoading', { defaultValue: 'Loading…' })} />
       </section>
     );
   }
 
   return (
-    <section className="glass-pane p-4 sm:p-5" aria-labelledby="ladder-answers-heading">
+    <section className="surface-panel p-4 sm:p-5" aria-labelledby="ladder-answers-heading">
       <div className="flex flex-wrap items-center gap-2">
         <h2 id="ladder-answers-heading" className="site-section-label">
           {t('ladder.answersTitle', { defaultValue: 'Answer bank' })}
@@ -226,7 +226,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
 
         <div className="mt-3 grid gap-3">
           {bank.essays.map((essay, i) => (
-            <div key={`essay-${i}`} className="glass-fill p-3">
+            <div key={`essay-${i}`} className="surface-card p-3">
               <div className="flex items-start gap-2">
                 <Input
                   aria-label={t('ladder.answersEssayQuestion', { defaultValue: 'Question' })}
@@ -307,7 +307,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
 
         <div className="mt-3 grid gap-3">
           {bank.stories.map((story, i) => (
-            <div key={`story-${i}`} className="glass-fill p-3">
+            <div key={`story-${i}`} className="surface-card p-3">
               <div className="flex items-start gap-2">
                 <Input
                   aria-label={t('ladder.answersStoryTitle', { defaultValue: 'Story title' })}

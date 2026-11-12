@@ -36,7 +36,7 @@ export function MarketItemPreview({
   if (kind === 'NAME_COLOR') {
     return (
       <div
-        className="flex h-12 items-center justify-center rounded-site-sm px-3 text-sm font-bold"
+        className="flex h-12 items-center justify-center rounded-site-sm px-3 text-sm font-semibold"
         style={data.gradient ? { background: data.gradient, color: '#fff' } : { color: data.color }}
       >
         {t('market-name-preview', { defaultValue: 'Name' })}
@@ -116,13 +116,13 @@ export function ListingCard({
 
   return (
     <div
-      className="glass-fill glass-interactive flex min-w-0 flex-col items-stretch gap-4 rounded-site p-5"
+      className="surface-press flex min-w-0 flex-col items-stretch gap-4 rounded-site p-5"
       style={{
         borderColor: `${RARITY_COLORS[rarity]}55`,
         boxShadow: `inset 0 1px 0 ${RARITY_COLORS[rarity]}55`,
       }}
     >
-      <div className="glass-inset flex min-h-32 items-center justify-center rounded-site-sm p-4">
+      <div className="surface-field flex min-h-32 items-center justify-center rounded-site-sm p-4">
         {listing.item ? (
           <MarketItemPreview kind={listing.item.kind} data={listing.item.data} />
         ) : (
@@ -133,7 +133,7 @@ export function ListingCard({
         <div className="flex flex-wrap items-center gap-2">
           <p className="break-words text-sm font-semibold text-site-text">{name}</p>
           <span
-            className="text-xs font-semibold uppercase"
+            className="text-xs font-semibold"
             style={{ color: RARITY_COLORS[rarity] }}
           >
             {rarity}

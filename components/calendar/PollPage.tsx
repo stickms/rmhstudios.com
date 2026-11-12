@@ -283,7 +283,7 @@ export default function PollPage({ id }: { id: string }) {
   return (
     <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <header className="space-y-1">
-        <h2 className="font-display text-xl font-medium text-site-text">{poll.title}</h2>
+        <h2 className="text-xl font-medium text-site-text">{poll.title}</h2>
         {poll.description && (
           <p className="whitespace-pre-wrap text-sm text-site-text-muted">{poll.description}</p>
         )}
@@ -302,13 +302,13 @@ export default function PollPage({ id }: { id: string }) {
       </header>
 
       {locked && (
-        <section className="glass-pane flex flex-wrap items-center justify-between gap-3 rounded-site p-5">
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-site p-5">
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-xs font-medium text-site-text-muted">
               <Lock className="size-3.5" aria-hidden />
               {t('locked-label', { defaultValue: 'Locked in' })}
             </p>
-            <p className="mt-1 text-base font-bold text-site-text">
+            <p className="mt-1 text-base font-semibold text-site-text">
               {fmtRange(poll.lockedStartMin as number, poll.lockedEndMin as number)}
             </p>
           </div>
@@ -351,7 +351,7 @@ export default function PollPage({ id }: { id: string }) {
       </div>
 
       {tab === 'mine' && !locked && (
-        <div className="glass-fill flex flex-wrap items-center gap-x-5 gap-y-3 rounded-site p-4">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-site p-4">
           <Tabs
             tabs={[
               { id: '1', label: t('brush-yes', { defaultValue: 'Available' }), icon: Check },
@@ -405,7 +405,7 @@ export default function PollPage({ id }: { id: string }) {
       />
 
       {tab === 'group' && selected != null && (
-        <section className="glass-fill rounded-site p-4" aria-live="polite">
+        <section className="rounded-site p-4"aria-live="polite">
           <h3 className="site-section-label">
             {new Intl.DateTimeFormat(i18n.language, {
               weekday: 'long',
@@ -453,7 +453,7 @@ export default function PollPage({ id }: { id: string }) {
             {ranked.runs.map((run, i) => (
               <li
                 key={run.startMin}
-                className="glass-fill flex flex-wrap items-center justify-between gap-3 rounded-site p-4"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-site p-4"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-site-text">
@@ -494,7 +494,7 @@ export default function PollPage({ id }: { id: string }) {
           {people.map((r) => (
             <li
               key={r.user.id}
-              className="glass-fill flex items-center gap-1.5 rounded-full py-1 pl-1 pr-3 text-sm text-site-text"
+              className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-3 text-sm text-site-text"
             >
               <UserAvatar src={r.user.image} alt="" size={22} />
               {r.user.name ?? r.user.handle}

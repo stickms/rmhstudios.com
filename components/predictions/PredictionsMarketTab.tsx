@@ -10,7 +10,6 @@ import { CreatePredictionModal } from './CreatePredictionModal';
 import type { Market } from './types';
 import { api } from '@/lib/contract/client';
 import { listPredictionsApi } from '@/lib/predictions/predictions.contract';
-import { Reveal } from '@/components/motion';
 import { EmptyState } from '@/components/ui/empty-state';
 
 interface Props {
@@ -94,7 +93,7 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
           <Spinner />
         </div>
       ) : markets.length === 0 ? (
-        <Reveal>
+        <div>
           <EmptyState
             icon={TrendingUp}
             title={
@@ -105,9 +104,9 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
                   : t('empty-open', { defaultValue: 'No open markets right now. Create the first one!' })
             }
           />
-        </Reveal>
+        </div>
       ) : (
-        <Reveal className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {markets.map((m) => (
             <PredictionCard
               key={m.id}
@@ -118,7 +117,7 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
               signedIn={signedIn}
             />
           ))}
-        </Reveal>
+        </div>
       )}
 
       <CreatePredictionModal

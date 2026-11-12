@@ -75,12 +75,12 @@ export default function AdventCalendar() {
                       ? t('advent-door-open', { defaultValue: 'Open door {{door}}', door })
                       : t('advent-door-shut', { defaultValue: 'Door {{door}}, shut', door })
                 }
-                className={`flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-site-sm font-display text-lg font-semibold transition-colors ${
+                className={`flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-site-sm text-lg font-semibold transition-colors ${
                   isToday && !done
-                    ? 'glass-pane text-site-accent hover:text-site-accent-hover'
+                    ?'text-site-accent hover:text-site-accent-hover'
                     : done
-                      ? 'glass-inset text-site-success'
-                      : 'glass-fill text-site-text-muted'
+                      ? 'surface-field text-site-success'
+                      :'text-site-text-muted'
                 } ${past && !done ? 'opacity-60' : ''}`}
               >
                 {door}

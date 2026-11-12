@@ -53,7 +53,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
   return (
     <li
       className={cn(
-        'glass-fill flex flex-col gap-3 rounded-site px-4 py-4',
+'flex flex-col gap-3 rounded-site px-4 py-4',
         canceled && 'opacity-60',
         className,
       )}
@@ -77,7 +77,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
               <Badge variant="danger">{t('event-canceled', { defaultValue: 'Canceled' })}</Badge>
             )}
           </div>
-          <h3 className="mt-2 truncate text-base font-bold text-site-text">{event.title}</h3>
+          <h3 className="mt-2 truncate text-base font-semibold text-site-text">{event.title}</h3>
           {/* Always the viewer's zone, always labelled — plus the organiser's
               in parentheses when the two clocks differ (B24). */}
           <p className="mt-1 flex items-center gap-2 text-sm text-site-text-muted">

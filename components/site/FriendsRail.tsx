@@ -35,7 +35,7 @@ export function FriendsRail() {
   if (friends === null) return null;
 
   return (
-    <section className="rounded-site glass-fill p-5">
+    <section className="rounded-site surface-card p-5">
       <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-site-text">
         <Users className="h-5 w-5 text-site-accent" aria-hidden />
         {t('friends-rail-title', { defaultValue: 'Friends' })}
@@ -101,7 +101,7 @@ const FriendRailRow = memo(
         {joinable && activity ? (
           <Link
             to={joinable.href}
-            className="glass-interactive shrink-0 rounded-full bg-site-bg-subtle px-2.5 py-1 text-caption font-semibold text-site-accent"
+            className="surface-press shrink-0 rounded-full bg-site-bg-subtle px-2.5 py-1 text-caption font-semibold text-site-accent"
           >
             {t(`presence-context-${activity.kind}`, { defaultValue: contextVerb(activity.kind) })}
           </Link>

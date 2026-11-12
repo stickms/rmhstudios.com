@@ -116,11 +116,11 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
 
  <div className="space-y-6 pt-4 pb-12">
  {/* Level card */}
- <section className="rounded-site glass-fill p-5">
+ <section className="rounded-site p-5">
  <div className="flex items-center justify-between gap-3">
  <div className="flex items-center gap-3">
  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
- <span className="text-lg font-extrabold">{lvl.level}</span>
+ <span className="text-lg font-semibold">{lvl.level}</span>
  </div>
  <div>
  <p className="text-sm font-semibold text-site-text">
@@ -182,7 +182,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
  <div className="flex items-center gap-2">
  <Trophy className="h-4 w-4 text-site-accent"/>
- <h2 className="text-sm font-bold text-site-text">{pass.season.name}</h2>
+ <h2 className="text-sm font-semibold text-site-text">{pass.season.name}</h2>
  </div>
  {pass.premium ? (
  <span className="inline-flex items-center gap-1 rounded-full bg-site-warning/15 px-3 py-1 text-xs font-semibold text-site-warning">
@@ -265,7 +265,7 @@ function QuestSection({
  return (
  <div
  key={q.id}
- className="flex items-start gap-3 rounded-site glass-fill px-4 py-3"
+ className="flex items-start gap-3 rounded-site px-4 py-3"
  >
  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm bg-site-accent/12 text-site-accent">
  <Target className="h-4 w-4"/>
@@ -356,12 +356,12 @@ function TierRow({
  const { t } = useTranslation('feed');
  return (
  <div
- className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-site glass-fill px-4 py-3 ${
+ className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-site px-4 py-3 ${
  reached ?'':'opacity-70'
  }`}
  >
  <div
- className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm text-sm font-bold ${
+ className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm text-sm font-semibold ${
  reached ?'bg-site-accent/15 text-site-accent':'bg-site-surface text-site-text-muted'
  }`}
  >

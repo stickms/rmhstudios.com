@@ -60,13 +60,13 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
         }}
         className="block h-full"
       >
-        {/* L1 material (§5.1): `.glass-fill .glass-interactive` is the card tier —
+        {/* L1 material (§5.1):`. .surface-press`is the card tier —
             it carries the tint, the micro-noise and the rim glint that lifts on
             hover. This used to be the box-model lookalike (`bg-site-surface` +
             border + radius) with a cursor-tracked sheen layer painted over it;
             the tier gives the same read with no per-frame work and degrades
             centrally. */}
-        <div className="group relative glass-fill glass-interactive rounded-site overflow-hidden flex flex-col h-full">
+        <div className="group relative surface-press rounded-site overflow-hidden flex flex-col h-full">
         {/* Thumbnail */}
         <div ref={thumbRef} className="relative">
           {build.thumbnailUrl ? (
@@ -83,8 +83,8 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
               />
             </div>
           ) : (
-            <div className="aspect-video w-full bg-gradient-to-br from-site-accent/20 to-site-bg-subtle flex items-center justify-center">
-              <div className="text-4xl font-bold text-site-accent/50">
+            <div className="aspect-video w-full bg-site-bg-subtle flex items-center justify-center">
+              <div className="text-4xl font-semibold text-site-accent/50">
                 {build.title[0]?.toUpperCase()}
               </div>
             </div>

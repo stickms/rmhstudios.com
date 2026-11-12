@@ -318,7 +318,7 @@ export function PlaylistsColumn({
                     key={pl.id}
                     className={
                       embedded
-                        ? 'glass-fill glass-interactive lib-orbit-card'
+                        ?'surface-press lib-orbit-card'
                         : 'rounded-site border border-site-border bg-site-surface'
                     }
                     data-library-orbit={embedded ? '' : undefined}

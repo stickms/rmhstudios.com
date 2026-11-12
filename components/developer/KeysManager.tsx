@@ -142,7 +142,7 @@ export function KeysManager() {
 
   if (!hasAccess) {
     return (
-      <section className="glass-pane rounded-site px-4 py-6 text-center">
+      <section className="rounded-site px-4 py-6 text-center">
         <ShieldCheck className="mx-auto mb-2 size-7 text-site-accent" aria-hidden />
         <p className="font-semibold text-site-text">
           {t('keys-subscription-title', { defaultValue: 'A subscription is required' })}
@@ -183,7 +183,7 @@ export function KeysManager() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <code className="glass-inset min-w-0 flex-1 truncate rounded-site-sm px-3 py-2 text-xs text-site-text">
+            <code className="surface-field min-w-0 flex-1 truncate rounded-site-sm px-3 py-2 text-xs text-site-text">
               {newKey}
             </code>
             <CopyButton
@@ -197,7 +197,7 @@ export function KeysManager() {
       )}
 
       {/* Create form */}
-      <div className="glass-fill space-y-3 rounded-site px-4 py-3">
+      <div className="space-y-3 rounded-site px-4 py-3">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -301,7 +301,7 @@ export function KeysManager() {
           {keys.map((k) => {
             const expired = k.expiresAt && new Date(k.expiresAt).getTime() < Date.now();
             return (
-              <div key={k.id} className="glass-fill rounded-site px-4 py-3">
+              <div key={k.id} className="rounded-site px-4 py-3">
                 <div className="flex items-center gap-3">
                   <KeyRound className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                   <div className="min-w-0 flex-1">

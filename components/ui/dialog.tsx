@@ -143,7 +143,7 @@ const DialogContent = React.forwardRef<
         data-slot="dialog-content"
         data-mobile-fullscreen={mobileFullscreen || undefined}
         className={cn(
-          'glass-overlay fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-var(--site-page-gutter)-var(--site-page-gutter))] w-[calc(100dvw-var(--site-page-gutter)-var(--site-page-gutter))] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-5 overflow-y-auto rounded-site p-5 text-site-text sm:w-full sm:gap-6 sm:p-6',
+          'surface-overlay fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-var(--site-page-gutter)-var(--site-page-gutter))] w-[calc(100dvw-var(--site-page-gutter)-var(--site-page-gutter))] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-5 overflow-y-auto rounded-site p-5 text-site-text sm:w-full sm:gap-6 sm:p-6',
           mobileFullscreen &&
             'inset-0 left-0 top-0 h-dvh max-h-none w-dvw max-w-none translate-x-0 translate-y-0 content-start rounded-none px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[85dvh] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:content-normal sm:rounded-site sm:p-6',
           className,

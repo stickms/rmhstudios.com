@@ -212,7 +212,7 @@ function SettingsPage() {
   const cities = ((prefs.preferredCities as string[]) ?? []).join(', ');
   const programTypes = (prefs.preferredProgramTypes as string[]) ?? [];
 
-  const sectionCls = 'glass-fill flex flex-col gap-4 rounded-site p-5 sm:p-5';
+  const sectionCls ='flex flex-col gap-4 rounded-site p-5 sm:p-5';
   const fieldCls = 'flex flex-col gap-2 border-0 p-0 m-0';
   const labelCls = 'text-sm font-medium text-site-text';
   const hintCls = 'text-sm text-site-text-muted';
@@ -621,7 +621,7 @@ function SettingsPage() {
               {savedSearches.map((search) => (
                 <li
                   key={search.id as string}
-                  className="glass-inset flex min-h-14 flex-wrap items-center gap-2 rounded-site-sm px-3 py-2"
+                  className="surface-field flex min-h-14 flex-wrap items-center gap-2 rounded-site-sm px-3 py-2"
                 >
                   <span className="mr-auto font-medium">{search.name as string}</span>
                   <Button

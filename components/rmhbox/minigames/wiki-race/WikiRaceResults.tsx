@@ -80,7 +80,7 @@ export default function WikiRaceResults({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.12 }}
-              className={`glass-fill rounded-app border p-4 ${
+              className={`surface-card rounded-app border p-4 ${
                 isMe
                   ? 'border-app-accent/50 bg-app-accent/5'
                   : 'border-app-border'

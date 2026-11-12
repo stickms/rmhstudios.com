@@ -141,7 +141,7 @@ export function AchievementsColumn({
  return (
  <div
  key={a.id}
- className={`glass-fill flex items-start gap-3 rounded-site px-4 py-3 transition-colors ${
+ className={`flex items-start gap-3 rounded-site px-4 py-3 transition-colors ${
  a.unlocked ?'':'opacity-70'
  }`}
  >
@@ -174,7 +174,7 @@ export function AchievementsColumn({
  fill and border, where it carries the tier perfectly well; the word
  takes the surface's own ink so it is actually readable. */}
  <span
- className="rounded-site-sm border px-2 py-0.5 text-xs font-bold uppercase text-site-text"
+ className="rounded-site-sm border px-2 py-0.5 text-xs font-semibold text-site-text"
  style={{
  background: `${TIER_COLORS[a.tier]}2e`,
  borderColor: `${TIER_COLORS[a.tier]}99`,

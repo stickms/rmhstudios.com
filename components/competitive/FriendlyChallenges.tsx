@@ -63,7 +63,7 @@ export default function FriendlyChallenges() {
     );
 
   return (
-    <section className="glass-pane rounded-site p-5 space-y-3" aria-labelledby="friendly-heading">
+    <section className="rounded-site p-5 space-y-3"aria-labelledby="friendly-heading">
       <div>
         <h2 id="friendly-heading" className="site-section-label">
           {t('fr-title', { defaultValue: 'Friendly challenge' })}
@@ -129,7 +129,7 @@ export default function FriendlyChallenges() {
       {rows.length > 0 && (
         <ul className="space-y-2">
           {rows.map((r) => (
-            <li key={r.id} className="glass-fill rounded-site px-4 py-3 space-y-2 text-sm">
+            <li key={r.id} className="rounded-site px-4 py-3 space-y-2 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span>
                   <strong>{gameName(r.game)}</strong> · {r.other.name}

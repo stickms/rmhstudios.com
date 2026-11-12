@@ -13,7 +13,7 @@ function Block({ title, items }: { title: string; items: DigestLink[] }) {
           <li key={it.href}>
             <Link
               to={it.href}
-              className="glass-fill block rounded-site px-4 py-3 hover:bg-site-surface-hover"
+              className="block rounded-site px-4 py-3 hover:bg-site-surface-hover"
             >
               <p className="text-sm text-site-text">{it.title}</p>
               {it.meta && <p className="mt-0.5 text-xs text-site-text-muted">{it.meta}</p>}

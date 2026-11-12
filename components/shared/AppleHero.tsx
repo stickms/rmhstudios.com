@@ -20,7 +20,7 @@ interface AppleHeroProps {
 /**
  * A reusable Apple-style parallax hero. Big SF display type, a lead line, and
  * two drifting monochrome auras for depth. Motion is 100% CSS
- * (`u-parallax-hero` + `u-reveal`, native scroll-driven timelines) so it is
+ * (`u-parallax-hero`, a native scroll-driven timeline) so it is
  * scroller-agnostic and freezes to its finished state under reduced motion —
  * nothing ever stays hidden.
  */
@@ -45,7 +45,7 @@ export function AppleHero({
     >
       <span className="apple-hero__aura apple-hero__aura--a u-parallax-hero" aria-hidden />
       <span className="apple-hero__aura apple-hero__aura--b u-parallax-hero" aria-hidden />
-      <div className="apple-hero__inner u-reveal">
+      <div className="apple-hero__inner">
         {eyebrow ? <p className="apple-hero__eyebrow">{eyebrow}</p> : null}
         <h1 className="apple-hero__title display-hero">{title}</h1>
         {subtitle ? <p className="apple-hero__sub text-pretty">{subtitle}</p> : null}

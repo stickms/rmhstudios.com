@@ -46,7 +46,7 @@ export function TechBadges({ technologies, size = 'md', limit }: TechBadgesProps
         </span>
       ))}
       {remaining > 0 && (
-        <span className={`${sizeClasses} glass-inset text-site-text-muted`}>+{remaining}</span>
+        <span className={`${sizeClasses} surface-field text-site-text-muted`}>+{remaining}</span>
       )}
     </div>
   );

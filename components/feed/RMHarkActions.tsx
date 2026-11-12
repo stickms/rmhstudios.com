@@ -64,7 +64,7 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
   // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
   // close animation all live in AnchoredMenu now. This file used to carry its own
   // copy of the first three — and, because the panel was an in-place
-  // `absolute left-0 top-full … z-50`, it was measured inside `.radial-frame`'s
+  // `absolute left-0 top-full … z-50`, it was measured inside the page frame's
   // stacking context (pinned at z-index 1), so on a post near the top of the
   // column it painted UNDER the top bar. AnchoredMenu portals to <body>.
 

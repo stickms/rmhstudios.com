@@ -4,8 +4,6 @@ import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useTranslation } from'react-i18next';
-import { Reveal, RevealGroup, RevealItem } from'@/components/motion';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from '@/lib/contract/client';
 import { getStreakApi } from '@/lib/streak.contract';
 import { ColumnHeader } from'./ColumnHeader';
@@ -73,7 +71,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  <ColumnHeader>
  <div className="flex items-center gap-2">
  <Flame className="h-5 w-5 text-site-warning"/>
- <h1 className="text-lg font-bold text-site-text">
+ <h1 className="text-lg font-semibold text-site-text">
  {t('streak-title', { defaultValue:'Streak'})}
  </h1>
  </div>
@@ -82,13 +80,13 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
 
  <div className="space-y-8 p-4">
  {/* Current streak hero */}
- <Reveal>
- <section className="flex flex-col items-center gap-3 rounded-site glass-fill p-6 text-center">
+ <div>
+ <section className="flex flex-col items-center gap-3 rounded-site p-6 text-center">
  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-site-warning/15">
  <Flame className="h-10 w-10 fill-site-warning/30 text-site-warning"/>
  </div>
  <div>
- <p className="text-4xl font-extrabold text-site-text">{streak.current}</p>
+ <p className="text-4xl font-semibold text-site-text">{streak.current}</p>
  <p className="text-sm text-site-text-muted">
  {streak.current === 1
  ? t('streak-day-in-a-row', { defaultValue:'day in a row'})
@@ -107,48 +105,48 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  </span>
  )}
  </section>
- </Reveal>
+ </div>
 
  {/* Stats */}
- <Reveal>
- <RevealGroup as="div"className="grid grid-cols-2 gap-3">
- <RevealItem>
+ <div>
+ <div className="grid grid-cols-2 gap-3">
+ <div>
  <div
- className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
+ className={`rounded-site p-5`}
  >
  <div className="flex items-center gap-1.5 site-section-label">
  <Trophy className="h-3.5 w-3.5"/>{''}
  {t('longest-label', { defaultValue:'Longest'})}
  </div>
- <p className="mt-1 text-2xl font-bold text-site-text">{streak.longest}</p>
+ <p className="mt-1 text-2xl font-semibold text-site-text">{streak.longest}</p>
  <p className="text-xs text-site-text-muted">
  {streak.longest === 1
  ? t('day-unit', { defaultValue:'day'})
  : t('days-unit', { defaultValue:'days'})}
  </p>
  </div>
- </RevealItem>
- <RevealItem>
+ </div>
+ <div>
  <div
- className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
+ className={`rounded-site p-5`}
  >
  <div className="flex items-center gap-1.5 site-section-label">
  <CalendarCheck className="h-3.5 w-3.5"/>{''}
  {t('total-check-ins-label', { defaultValue:'Total check-ins'})}
  </div>
- <p className="mt-1 text-2xl font-bold text-site-text">{streak.totalCheckIns}</p>
+ <p className="mt-1 text-2xl font-semibold text-site-text">{streak.totalCheckIns}</p>
  <p className="text-xs text-site-text-muted">
  {t('all-time', { defaultValue:'all time'})}
  </p>
  </div>
- </RevealItem>
- </RevealGroup>
- </Reveal>
+ </div>
+ </div>
+ </div>
 
  {/* Next milestone */}
  {next && (
- <Reveal>
- <section className="rounded-site glass-fill p-5">
+ <div>
+ <section className="rounded-site p-5">
  <div className="mb-2 flex items-center justify-between">
  <h2 className="text-sm font-semibold text-site-text">
  {t('next-milestone', { defaultValue:'Next milestone'})}
@@ -177,11 +175,11 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  })}
  </p>
  </section>
- </Reveal>
+ </div>
  )}
 
  {/* Milestones list */}
- <Reveal>
+ <div>
  <section>
  <h2 className="site-section-label mb-2">
  {t('milestones-heading', { defaultValue:'Milestones'})}
@@ -192,7 +190,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  return (
  <div
  key={m.day}
- className={`glass-fill flex items-center gap-3 p-3 transition-[border-color] duration-site ${
+ className={`flex items-center gap-3 p-3 transition-[border-color] duration-site ${
  reached
  ?''
  :'border-site-border/60 opacity-70'
@@ -222,7 +220,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  })}
  </div>
  </section>
- </Reveal>
+ </div>
 
  <p className="flex items-center justify-center gap-1.5 text-center text-xs text-site-text-muted">
  <CoinIcon className="h-3.5 w-3.5"/>{''}

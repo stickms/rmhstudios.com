@@ -16,7 +16,7 @@ export function NotFound() {
 
  return (
  <div className="error-page flex min-h-dvh w-full flex-col items-center justify-center bg-site-bg px-6 py-16 text-center">
- <div className="glass-pane flex w-full max-w-2xl flex-col items-center gap-8 p-8 sm:p-12">
+ <div className="surface-panel flex w-full max-w-2xl flex-col items-center gap-8 p-8 sm:p-12">
  <div className="space-y-3">
  <p
  aria-hidden="true"

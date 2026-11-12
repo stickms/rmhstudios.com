@@ -77,7 +77,7 @@ function AlertsPage() {
           description={t('ladder.noAlertsDescription', { defaultValue: 'New matches and application reminders will appear here.' })}
         />
       ) : (
-        <ul className="divide-y divide-site-border overflow-hidden rounded-site glass-fill">
+        <ul className="divide-y divide-site-border overflow-hidden rounded-site">
           {rows.map((alert) => {
             const job = alert.job as AnyRow | undefined;
             const payload = (alert.payload as AnyRow | undefined) ?? {};

@@ -37,7 +37,7 @@ function Tile({ entry }: { entry: TopFourEntry }) {
       </div>
     </>
   );
-  const cls = 'glass-fill glass-interactive block rounded-site p-2';
+  const cls ='surface-press block rounded-site p-2';
   return entry.href.startsWith('/') ? (
     <Link to={entry.href as string} className={cls}>
       {body}

@@ -328,7 +328,7 @@ export function SecurityPage() {
           {SECURITY_ENGINEERING.map((feature) => {
             const Icon = feature.icon;
             return (
-              <article key={feature.title} className="glass-fill sec-card">
+              <article key={feature.title} className="surface-card sec-card">
                 <span className="sec-card__icon">
                   <Icon aria-hidden="true" />
                 </span>
@@ -343,7 +343,7 @@ export function SecurityPage() {
       {/* ─── Trust bar ────────────────────────────────────────────────── */}
       <section className="sec-stats" aria-label="Security at a glance">
         {STATS.map((s) => (
-          <div key={s.label} className="glass-fill sec-stat">
+          <div key={s.label} className="surface-card sec-stat">
             <p className="sec-stat__num">{s.num}</p>
             <p className="sec-stat__label">{s.label}</p>
           </div>
@@ -373,7 +373,7 @@ export function SecurityPage() {
           {PILLARS.map((p) => {
             const Icon = p.icon;
             return (
-              <article key={p.title} className="glass-fill sec-card">
+              <article key={p.title} className="surface-card sec-card">
                 <span className="sec-card__icon">
                   <Icon aria-hidden="true" />
                 </span>
@@ -420,7 +420,7 @@ export function SecurityPage() {
           something an attacker can steal.
         </p>
 
-        <div className="glass-fill sec-spec">
+        <div className="surface-card sec-spec">
           {SIGN_IN_SPECS.map((s) => (
             <div className="sec-spec__row" key={s.term}>
               <div className="sec-spec__term">{s.term}</div>
@@ -438,7 +438,7 @@ export function SecurityPage() {
           a threat and your data on every request.
         </p>
 
-        <div className="glass-fill sec-spec">
+        <div className="surface-card sec-spec">
           {DEFENSE_SPECS.map((s) => (
             <div className="sec-spec__row" key={s.term}>
               <div className="sec-spec__term">{s.term}</div>
@@ -488,7 +488,7 @@ export function SecurityPage() {
         {/* Reward tiers */}
         <div className="sec-tiers">
           {REWARD_TIERS.map((tier) => (
-            <article key={tier.severity} className="glass-fill sec-tier" data-sev={tier.severity}>
+            <article key={tier.severity} className="surface-card sec-tier" data-sev={tier.severity}>
               <div className="sec-tier__head">
                 <span className="sec-tier__sev">{tier.label}</span>
                 <span className="sec-tier__reward">{tier.reward}</span>
@@ -501,7 +501,7 @@ export function SecurityPage() {
 
         {/* Category requirements */}
         <div
-          className="glass-fill sec-bounty-table-wrap"
+          className="surface-card sec-bounty-table-wrap"
           role="region"
           aria-labelledby="sec-bounty-cats"
           tabIndex={0}
@@ -534,7 +534,7 @@ export function SecurityPage() {
 
         {/* Program rules */}
         <div className="sec-rules">
-          <div className="glass-fill sec-rule">
+          <div className="surface-card sec-rule">
             <h3 className="sec-rule__title">
               <span className="sec-rule__icon">
                 <CheckCircle2 aria-hidden="true" />
@@ -547,7 +547,7 @@ export function SecurityPage() {
               <li>Authentication, payments, and how we handle your data</li>
             </ul>
           </div>
-          <div className="glass-fill sec-rule">
+          <div className="surface-card sec-rule">
             <h3 className="sec-rule__title">
               <span className="sec-rule__icon">
                 <XCircle aria-hidden="true" />
@@ -561,7 +561,7 @@ export function SecurityPage() {
               <li>Issues in third parties (Stripe, Discord, cloud providers)</li>
             </ul>
           </div>
-          <div className="glass-fill sec-rule">
+          <div className="surface-card sec-rule">
             <h3 className="sec-rule__title">
               <span className="sec-rule__icon">
                 <Scale aria-hidden="true" />
@@ -585,7 +585,7 @@ export function SecurityPage() {
 
         <ol className="sec-steps">
           {REPORT_STEPS.map((s, i) => (
-            <li className="glass-fill sec-step" key={s.title}>
+            <li className="surface-card sec-step" key={s.title}>
               <span className="sec-step__num">{i + 1}</span>
               <div>
                 <h3 className="sec-step__title">{s.title}</h3>
@@ -601,7 +601,7 @@ export function SecurityPage() {
         id="sec-disclosure"
         aria-labelledby="sec-disclosure-title"
       >
-        <div className="glass-pane sec-disclosure">
+        <div className="surface-panel sec-disclosure">
           <div className="sec-disclosure__inner">
             <h2 id="sec-disclosure-title">
               Found a weakness? Tell us.
@@ -628,7 +628,7 @@ export function SecurityPage() {
 
         <div className="sec-faq">
           {SECURITY_FAQ.map((f) => (
-            <details className="glass-fill sec-faq__item" key={f.q}>
+            <details className="surface-card sec-faq__item" key={f.q}>
               <summary className="sec-faq__q">{f.q}</summary>
               <p className="sec-faq__a">{f.a}</p>
             </details>

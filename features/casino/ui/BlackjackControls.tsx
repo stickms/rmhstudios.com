@@ -124,7 +124,7 @@ export function BlackjackControls({ coins }: Props) {
                   max={coins}
                   value={betInput}
                   onChange={(e) => setBetInput(e.target.value)}
-                  className="glass-inset border w-full rounded-site-sm px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+                  className="surface-field border w-full rounded-site-sm px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
                 />
                 <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
               </div>

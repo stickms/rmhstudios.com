@@ -239,7 +239,7 @@ export function BulkCleanupPanel() {
     return (
       <section aria-labelledby="bulk-heading" className="flex flex-col gap-4">
         {heading}
-        <div className="glass-pane rounded-site p-5">
+        <div className="rounded-site p-5">
           <p className="text-sm text-site-text">
             {t('bulk-upgrade-body', {
               tier: listGate.requiredTierLabel ?? 'Pro',
@@ -264,7 +264,7 @@ export function BulkCleanupPanel() {
       {heading}
 
       {upsell ? (
-        <div className="glass-pane rounded-site p-5">
+        <div className="rounded-site p-5">
           <p className="text-sm text-site-text">
             {t('bulk-upgrade-body', {
               tier: upsell.requiredTierLabel ?? 'Pro',
@@ -282,7 +282,7 @@ export function BulkCleanupPanel() {
         </div>
       ) : null}
 
-      <div className="glass-pane flex flex-col gap-4 rounded-site p-5">
+      <div className="flex flex-col gap-4 rounded-site p-5">
         <div className="flex flex-col gap-2">
           <Label htmlFor="bulk-kind">
             {t('bulk-kind-label', { defaultValue: 'What to clean' })}
@@ -394,7 +394,7 @@ export function BulkCleanupPanel() {
       </div>
 
       {preview ? (
-        <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
+        <div className="flex flex-col gap-3 rounded-site p-5">
           <p className="text-sm font-semibold text-site-text">
             {t('bulk-preview-count', {
               count: preview.total,
@@ -413,7 +413,7 @@ export function BulkCleanupPanel() {
           {preview.sample.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {preview.sample.map((row) => (
-                <li key={row.id} className="glass-fill rounded-site-sm px-3 py-2">
+                <li key={row.id} className="rounded-site-sm px-3 py-2">
                   <p className="truncate text-sm text-site-text">{row.label}</p>
                   {row.detail ? <p className="text-xs text-site-text-muted">{row.detail}</p> : null}
                 </li>
@@ -434,7 +434,7 @@ export function BulkCleanupPanel() {
       ) : null}
 
       {active ? (
-        <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
+        <div className="flex flex-col gap-3 rounded-site p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-site-text">{kinds[active.kind].label}</p>
             <Badge variant="default">
@@ -483,7 +483,7 @@ export function BulkCleanupPanel() {
             {history.map((op) => (
               <li
                 key={op.id}
-                className="glass-fill flex flex-wrap items-center justify-between gap-2 rounded-site px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-site px-3 py-2"
               >
                 <span className="text-sm text-site-text">{kinds[op.kind].label}</span>
                 <span className="flex items-center gap-2">

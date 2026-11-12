@@ -155,7 +155,7 @@ export function PersonaChatColumn({
 
  return (
  <div className="flex h-screen flex-col">
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link to="/personas"className="text-site-text-muted hover:text-site-text">
  <ArrowLeft className="h-5 w-5"/>
  </Link>
@@ -171,7 +171,7 @@ export function PersonaChatColumn({
  )}
  </div>
  <div className="min-w-0 flex-1">
- <p className="truncate text-sm font-bold text-site-text">{persona.name}</p>
+ <p className="truncate text-sm font-semibold text-site-text">{persona.name}</p>
  {persona.tagline && (
  <p className="truncate text-xs text-site-text-muted">{persona.tagline}</p>
  )}
@@ -227,7 +227,7 @@ export function PersonaChatColumn({
  })}
  rows={1}
  maxLength={1000}
- className="max-h-32 flex-1 resize-none rounded-site glass-inset px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="max-h-32 flex-1 resize-none rounded-site surface-field px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <Button
  variant="default"

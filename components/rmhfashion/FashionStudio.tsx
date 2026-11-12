@@ -175,7 +175,7 @@ export function FashionStudio() {
         <section aria-label={t('stage-label', { defaultValue: 'Figure viewer' })}>
           <Suspense
             fallback={
-              <div className="rmhfash-stage glass-pane glass-bevel-sm rounded-site flex items-center justify-center">
+              <div className="rmhfash-stage rounded-site flex items-center justify-center">
                 <p className="px-6 text-center text-xs text-site-text-muted">
                   {t('loading', { defaultValue: 'Preparing the fitting room…' })}
                 </p>
@@ -216,7 +216,7 @@ export function FashionStudio() {
           </section>
 
           {/* ── The figure ──────────────────────────────────────────────── */}
-          <section className="glass-fill rounded-site flex flex-col gap-4 p-5">
+          <section className="rounded-site flex flex-col gap-4 p-5">
             <SectionHeading icon={User}>
               {t('figure-heading', { defaultValue: 'Your figure' })}
             </SectionHeading>
@@ -269,7 +269,7 @@ export function FashionStudio() {
             ) : (
               <ul className="flex flex-col gap-2">
                 {worn.map(({ item, garment }) => (
-                  <li key={garment.id} className="glass-fill flex flex-col gap-2 rounded-site px-4 py-3">
+                  <li key={garment.id} className="flex flex-col gap-2 rounded-site px-4 py-3">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-semibold text-site-text">
                         {garments[garment.id] ?? garment.id}
@@ -326,11 +326,10 @@ export function FashionStudio() {
                         type="button"
                         onClick={() => setOutfit((o) => wear(o, garment.id))}
                         aria-pressed={on}
-                        data-fluid-press=""
                         // Worn is marked twice — an accent tint AND a heavier
                         // outline — so the state does not depend on hue under
                         // the colour-vision modes (§13).
-                        className={`glass-fill min-h-11 rounded-site px-3 py-2 text-xs transition-colors ${
+                        className={`min-h-11 rounded-site px-3 py-2 text-xs transition-colors ${
                           on
                             ? 'text-site-accent ring-2 ring-site-accent'
                             : 'text-site-text-muted hover:text-site-text'

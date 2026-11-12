@@ -201,7 +201,7 @@ function RosterRow({
       <li className={cn('relative -ms-2 first:ms-0', speaking && 'z-10', ringing && 'opacity-70')}>
         {avatar}
         {BadgeIcon && (
-          <span className="glass-fill absolute -bottom-0.5 -end-0.5 inline-flex rounded-full p-0.5">
+          <span className="surface-card absolute -bottom-0.5 -end-0.5 inline-flex rounded-full p-0.5">
             <BadgeIcon className={cn('h-2.5 w-2.5', badgeTone)} aria-hidden />
           </span>
         )}
@@ -218,7 +218,7 @@ function RosterRow({
   return (
     <li
       className={cn(
-        'glass-fill flex items-center gap-2.5 rounded-site px-2.5 py-1.5',
+        'surface-card flex items-center gap-2.5 rounded-site px-2.5 py-1.5',
         ringing && 'opacity-70',
       )}
     >
@@ -359,7 +359,7 @@ export function GroupCallRoster({
           <PeerRow key={userId} userId={userId} layout={layout} reducedMotion={reducedMotion} />
         ))}
         {overflow > 0 && (
-          <li className="glass-fill -ms-2 inline-flex h-[26px] min-w-[26px] items-center justify-center rounded-full px-1.5 text-rem-65 font-semibold text-site-text-muted">
+          <li className="surface-card -ms-2 inline-flex h-[26px] min-w-[26px] items-center justify-center rounded-full px-1.5 text-rem-65 font-semibold text-site-text-muted">
             <span aria-hidden>+{overflow}</span>
             <span className="sr-only">
               {t('more-people', { count: overflow, defaultValue: '{{count}} more' })}

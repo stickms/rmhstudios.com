@@ -216,7 +216,7 @@ export function MutedWordsPanel() {
         <ul className="flex flex-wrap gap-2">
           {words.map((w) => (
             <li key={w}>
-              <span className="inline-flex items-center gap-2 rounded-full glass-fill px-3 py-1 text-sm text-site-text">
+              <span className="inline-flex items-center gap-2 rounded-full relative px-3 py-1 text-sm text-site-text">
                 {w}
                 {expiries[w] ? (
                   <span className="font-mono text-xs text-site-text-muted">{timeLeft(expiries[w], Date.now())}</span>

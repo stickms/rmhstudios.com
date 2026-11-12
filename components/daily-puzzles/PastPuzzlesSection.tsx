@@ -85,7 +85,7 @@ export function PastPuzzlesSection({
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                     >
-                        <ul className="glass-fill flex flex-col gap-2 rounded-site p-4">
+                        <ul className="surface-card flex flex-col gap-2 rounded-site p-4">
                             {pastDates.map((p) => {
                                 const result = completedMap[p.dateKey];
                                 const isSelected = p.dateKey === selectedDateKey;

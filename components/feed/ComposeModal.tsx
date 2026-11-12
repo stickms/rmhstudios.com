@@ -299,7 +299,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  data-state={menuState}
  role="menu"
  aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
- className="absolute top-full right-0 mt-1 w-52 origin-top-right glass-overlay overflow-hidden py-1.5 z-50"
+ className="absolute top-full right-0 mt-1 w-52 origin-top-right surface-overlay overflow-hidden py-1.5 z-50"
  >
  <MenuItem
  icon={BarChart3}
@@ -370,7 +370,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* Quoted post preview */}
  {quoteItem && (
- <div className="glass-fill mt-2 rounded-site px-4 py-3">
+ <div className="surface-card mt-2 rounded-site px-4 py-3">
  <p className="text-xs font-semibold text-site-text">
  {quoteItem.user?.name || quoteItem.user?.handle ||'Someone'}
  </p>
@@ -382,7 +382,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* Poll creator */}
  {attachment ==='poll'&& (
- <div className="glass-fill mt-2 rounded-site px-4 py-3">
+ <div className="surface-card mt-2 rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
  <span className="site-section-label">
  Poll
@@ -406,7 +406,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Ask a question…',
  })}
  maxLength={MAX_POLL_QUESTION_LENGTH}
- className="w-full glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
+ className="w-full surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
  />
 
  <div className="space-y-2">
@@ -425,7 +425,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Option {{index}}',
  })}
  maxLength={MAX_POLL_OPTION_LENGTH}
- className="flex-1 glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
+ className="flex-1 surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
  />
  {poll.options.length > MIN_POLL_OPTIONS && (
  <button
@@ -469,7 +469,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* GIF picker */}
  {attachment ==='gif'&& (
- <div className="glass-fill mt-2 rounded-site px-4 py-3">
+ <div className="surface-card mt-2 rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
  <span className="site-section-label">
  {t('gif-heading', { defaultValue:'GIF'})}
@@ -628,7 +628,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  placeholder={t('alt-text-placeholder', {
  defaultValue:'e.g. A golden retriever running on a beach at sunset',
  })}
- className="w-full resize-none rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted outline-none focus:border-site-accent transition-colors"
+ className="w-full resize-none rounded-site-sm surface-field px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted outline-none focus:border-site-accent transition-colors"
  />
  <div className="mt-3 flex items-center justify-between">
  <span className="text-xs font-mono text-site-text-muted">

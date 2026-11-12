@@ -102,9 +102,8 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
             // clear of the mini-player / cookie bar when either is present, and
             // `.floating-fab-lane` seats it in the compose FAB's row.
             data-floating="backtotop"
-            // A FAB-like disc (04 §1, tier C): `.glass-overlay` alone resolves to a
+            // A FAB-like disc (04 §1, tier C): `.surface-overlay` alone resolves to a
             // pane-mode body, which never moves; this one presses like a control.
-            data-jelly="control"
             aria-label={t('back-to-top', { defaultValue: 'Back to top' })}
             title={t('back-to-top', { defaultValue: 'Back to top' })}
             initial={{ opacity: 0, scale: 0.8, y: 8 }}
@@ -118,12 +117,9 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
               // this still clears the home indicator and iOS Safari's tab bar.
               'floating-fab-lane fixed z-40',
               'flex size-11 items-center justify-center rounded-full',
-              // Floating L4 glass disc; the always-on optics-ring glint comes free
-              // from .glass-overlay, and .glass-bevel-sm thins the ring (6px) so it
-              // fits this small disc instead of the 12px pane default.
-              'glass-overlay glass-bevel-sm text-site-text',
+              // A floating disc: the overlay surface (fill, 1px border, shadow).
+              'surface-overlay text-site-text',
               'hover:border-site-accent',
-              'active:scale-95',
             )}
           >
             <ArrowUp className="h-5 w-5" aria-hidden />

@@ -59,7 +59,7 @@ export default function StatementPanel() {
 
   return (
     <div className="space-y-3 px-3 pb-12">
-      <div className="glass-pane flex flex-wrap items-end justify-between gap-3 p-4">
+      <div className="flex flex-wrap items-end justify-between gap-3 p-4">
         <div className="min-w-0 space-y-1">
           <label htmlFor="stmt-month" className="site-section-label block">
             {t('stmt-month', { defaultValue: 'Statement month' })}
@@ -93,7 +93,7 @@ export default function StatementPanel() {
       ) : (
         <>
           <dl className="grid grid-cols-2 gap-3">
-            <div className="glass-fill p-4">
+            <div className="p-4">
               <dt className="text-xs text-site-text-muted">
                 {t('stmt-opening', { defaultValue: 'Opening balance' })}
               </dt>
@@ -101,7 +101,7 @@ export default function StatementPanel() {
                 <CoinIcon className="size-4" /> {n(data.openingBalance)}
               </dd>
             </div>
-            <div className="glass-fill p-4">
+            <div className="p-4">
               <dt className="text-xs text-site-text-muted">
                 {t('stmt-closing', { defaultValue: 'Closing balance' })}
               </dt>
@@ -111,7 +111,7 @@ export default function StatementPanel() {
             </div>
           </dl>
 
-          <div className="glass-fill overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="w-full min-w-[22rem] text-sm">
               <caption className="sr-only">
                 {t('stmt-table-caption', { defaultValue: 'Coin movement by category' })}

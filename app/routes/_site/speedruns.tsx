@@ -241,7 +241,7 @@ function SpeedrunsPage() {
           {selected && (
             <Card pane className="px-5 sm:px-6">
               <div className="flex flex-col gap-2">
-                <h2 className="font-display text-lg font-medium text-site-text">{selected.name}</h2>
+                <h2 className="text-lg font-medium text-site-text">{selected.name}</h2>
                 <p className="text-sm text-site-text-muted">{selected.rules}</p>
                 <TierNote tier={selected.tier} />
               </div>

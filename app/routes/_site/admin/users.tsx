@@ -238,7 +238,7 @@ function AdminUsersPage() {
           aria-label={t("search-label", { defaultValue: "Search users" })}
         />
 
-        <div className="glass-fill overflow-hidden rounded-site">
+        <div className="overflow-hidden rounded-site">
           {/* From `sm` this is a 4-column table; below `sm` each row wraps into a
               stacked card, so there is no column header (and no min-width that
               would hide most of a row behind a sideways swipe). */}

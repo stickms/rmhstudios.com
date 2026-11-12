@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { ArrowDown, ArrowUp, BellOff, BellPlus, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { RMHarkCard } from '@/components/feed/RMHarkCard';
+import { Spine, SpineItem, SpineStation } from '@/components/ui/spine';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
@@ -113,7 +114,7 @@ export function SeriesPage({ id }: { id: string }) {
   if (!view) {
     return (
       <PageLayout title={t('series-page-title', { defaultValue: 'Series' })}>
-        <div className="space-y-3 px-4 pt-4">
+        <div className="space-y-3">
           <Skeleton className="h-20 w-full rounded-site" />
           <Skeleton className="h-32 w-full rounded-site" />
         </div>
@@ -184,8 +185,8 @@ export function SeriesPage({ id }: { id: string }) {
       backTo={owner ? '/series' : undefined}
       description={series.description ?? undefined}
     >
-      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
-        <section className="glass-pane flex flex-wrap items-center gap-3 rounded-site px-4 py-3">
+      <Spine className="pb-12">
+        <SpineItem dot={false} className="flex flex-wrap items-center gap-3">
           <p className="min-w-0 flex-1 text-sm text-site-text-muted">
             {t('series-by', { defaultValue: 'A series by' })}{' '}
             <Link
@@ -273,7 +274,7 @@ export function SeriesPage({ id }: { id: string }) {
               </Button>
             </div>
           )}
-        </section>
+        </SpineItem>
 
         {items.length === 0 ? (
           <EmptyState
@@ -290,42 +291,40 @@ export function SeriesPage({ id }: { id: string }) {
             }
           />
         ) : (
-          <ol className="space-y-[var(--site-section-gap)]">
-            {items.map((item, i) => (
-              <li key={item.id}>
-                <div className="mb-2 flex items-center gap-2 px-1">
-                  <span className="text-xs font-semibold text-site-text-muted">
-                    {t('series-part-label', { defaultValue: 'Part {{k}}', k: i + 1 })}
+          items.map((item, i) => (
+            <div key={item.id}>
+              <div className="flex items-center gap-2">
+                <SpineStation>
+                  {t('series-part-label', { defaultValue: 'Part {{k}}', k: i + 1 })}
+                </SpineStation>
+                {owner && (
+                  <span className="ms-auto flex items-center gap-2">
+                    <IconButton
+                      icon={ArrowUp}
+                      label={t('series-move-up', { defaultValue: 'Move earlier' })}
+                      disabled={i === 0 || busy}
+                      onClick={() => void move(item.id, 'up')}
+                    />
+                    <IconButton
+                      icon={ArrowDown}
+                      label={t('series-move-down', { defaultValue: 'Move later' })}
+                      disabled={i === items.length - 1 || busy}
+                      onClick={() => void move(item.id, 'down')}
+                    />
+                    <IconButton
+                      icon={X}
+                      label={t('series-remove', { defaultValue: 'Take out of the series' })}
+                      disabled={busy}
+                      onClick={() => void take(item.id)}
+                    />
                   </span>
-                  {owner && (
-                    <span className="ms-auto flex items-center gap-2">
-                      <IconButton
-                        icon={ArrowUp}
-                        label={t('series-move-up', { defaultValue: 'Move earlier' })}
-                        disabled={i === 0 || busy}
-                        onClick={() => void move(item.id, 'up')}
-                      />
-                      <IconButton
-                        icon={ArrowDown}
-                        label={t('series-move-down', { defaultValue: 'Move later' })}
-                        disabled={i === items.length - 1 || busy}
-                        onClick={() => void move(item.id, 'down')}
-                      />
-                      <IconButton
-                        icon={X}
-                        label={t('series-remove', { defaultValue: 'Take out of the series' })}
-                        disabled={busy}
-                        onClick={() => void take(item.id)}
-                      />
-                    </span>
-                  )}
-                </div>
-                <RMHarkCard item={item} />
-              </li>
-            ))}
-          </ol>
+                )}
+              </div>
+              <RMHarkCard item={item} />
+            </div>
+          ))
         )}
-      </div>
+      </Spine>
 
       {adding && (
         <Suspense fallback={null}>

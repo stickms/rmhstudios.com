@@ -31,21 +31,18 @@ feature lives in that feature's directory; genuinely shared primitives live in
   with `cn()` from `@/lib/utils`. No hardcoded colors, radii, or fonts —
   the theme system depends on it, and raw palette classes plus
   `rounded-lg`/`-xl`/`-2xl` fail CI on the site tier.
-- **Surfaces take a glass elevation class by role**, not an equivalent box:
-  `.glass-fill` for repeated content (cards, rows, tiles), `.glass-pane` for singular
-  panels, `.glass-chrome` for sticky chrome, `.glass-overlay` for anything floating
-  (dialogs, popovers, menus, toasts — CI-enforced: floating UI below L4 ghosts),
-  `.glass-inset` for fields. `bg-site-surface border border-site-border
-rounded-site shadow-site-sm` renders the same _box_ and none of the
-  _material_ — no haze, no rim, no soft body, and nothing for
-  print or the app tier's high contrast to switch off. **No box-shadow on any UI surface** — shadow tokens are
-  zero; the soft molded rim is the depth.
-- **Steel, not Plasmatic Jelly.** The glass, jelly and arc material (`app/glass-roles.css`,
-  `app/jelly-material.css`, `lib/jelly/`, the click arcs, the soft body) was deleted in
-  Steel phase 6. The role classes above and the `data-jelly*` attributes still in
-  components are dead names that render a flat surface or nothing; do not add new uses.
-  Polished chrome is the globe and the toggle and slider thumbs only (R2); see
-  [`design.md`](../design.md) and the Steel plan.
+- **Content has no surface; only floating UI and fields do.** On a `_site` page content sits
+  on the page and a list is rows on 1px rules (S1, S2, R3): no card, no box, no
+  `surface-card`. The roles in `app/styles/steel-surfaces.css` are `.surface-overlay` for
+  anything floating (dialogs, popovers, menus, toasts: CI-enforced, floating UI below the
+  overlay tier fails), `.surface-field` for fields, `.surface-chrome` for a bar and
+  `.surface-press` for a pressable host. `surface-card` and `surface-panel` exist only for
+  full-screen games and apps (L8), where `app-theme.css` draws them. **No box-shadow on any UI
+  surface** except an overlay's (T4).
+- **Steel, not Plasmatic Jelly.** The glass, jelly and arc material was deleted in Steel phase 6
+  and its leftover names in phase 7 (`data-jelly*` other than `data-jelly-motion`, the `Reveal`
+  wrappers, the `glass-*` classes). Polished chrome is the globe and the toggle and slider
+  thumbs only (R2); see [`design.md`](../design.md) and the Steel plan.
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`
   attribute on new primitives — themes restyle components through
@@ -116,12 +113,10 @@ cannot see, and it is the half that decides whether the change looks native:
 - [ ] **A primitive, not a second copy of one.** A duplicated button, modal,
       spinner, empty state or copy button is this repo's most common defect
       (design-language.md §0.3). Check `ui/` before writing anything.
-- [ ] **Elevation by role, not by eye** — `.glass-fill` repeated content ·
-      `.glass-pane` singular panels · `.glass-chrome` sticky chrome ·
-      `.glass-overlay` anything floating · `.glass-inset` fields. Never a
-      hand-rolled `bg-site-surface border rounded-site` box: it paints the box
-      and none of the material, and the degradation tiers have nothing to
-      switch off.
+- [ ] **Rows on rules, not boxes** — a group of content is rows with a 1px rule between
+      them, hung on the spine where the recipe says so. `.surface-overlay` is for anything
+      floating, `.surface-field` for fields. Never a hand-rolled
+      `bg-site-surface border rounded-site` box around content (R3).
 - [ ] **Ink tracks its surface** (`bg-site-accent` → `text-site-accent-fg`),
       never `text-white`/`text-black` on a themed surface.
 - [ ] **A switcher is a tab strip** even without `role="tablist"` — an accent

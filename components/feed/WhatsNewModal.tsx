@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useCookieConsentAnswered } from '@/components/site/CookieConsent';
-import { ArrowUpRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -9,8 +8,6 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import type { TFunction } from 'i18next';
 import {
   CURRENT_RELEASE,
-  gridClassFor,
-  itemNumber,
   markSeen,
   storageKeyFor,
   WHATS_NEW_OPEN_EVENT,
@@ -77,9 +74,8 @@ export function WhatsNewModal() {
   const consentAnswered = useCookieConsentAnswered();
   const [open, setOpen] = useState(false);
   const copy = releaseCopy(t);
-  const changes = CURRENT_RELEASE.items.map((id, index) => ({
+  const changes = CURRENT_RELEASE.items.map((id) => ({
     key: id,
-    number: itemNumber(index),
     title: copy[id].title,
     copy: copy[id].copy,
   }));
@@ -129,50 +125,42 @@ export function WhatsNewModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {/* No `overflow-hidden` here: the sheet is taller than a phone and has to
-          scroll. The clipping the class name implies is `.spatial-whats-new`'s
-          job (overflow-x + a rounded scroll container), so the utility only ever
-          overrode the primitive's `overflow-y-auto` and stranded the cards. */}
-      <DialogContent className="spatial-whats-new max-w-[58rem] gap-0 p-0">
-        <div className="spatial-whats-new__intro">
-          <div className="spatial-whats-new__meta">
-            <span>{t('whats-new', { defaultValue: 'What’s new' })}</span>
-            <span>{CURRENT_RELEASE.version}</span>
-          </div>
-          <div>
-            <DialogTitle className="spatial-whats-new__title">
-              {t('whatsnew-title-calls', { defaultValue: 'Now you can talk.' })}
-            </DialogTitle>
-            <DialogDescription className="spatial-whats-new__description">
-              {t('whatsnew-subtitle-calls', {
-                defaultValue:
-                  'Voice calls between any two people, lighter and more private uploads, and thirteen more corners of the site in your own language.',
-              })}
-            </DialogDescription>
-          </div>
-          <div className="spatial-whats-new__art" aria-hidden>
-            <span />
-          </div>
+      {/* The release as a short page of rows on rules (R3): a title, one line, a row per change, the changelog link and
+          one primary. No `overflow-hidden` here: the sheet can be taller than a phone and has to scroll, and the
+          primitive's `overflow-y-auto` is what lets it. */}
+      <DialogContent className="max-w-xl gap-0 p-0">
+        <div className="px-5 pt-6 sm:px-6">
+          <p className="t-meta pe-10">
+            {t('whats-new', { defaultValue: 'What’s new' })} · {CURRENT_RELEASE.version}
+          </p>
+          <DialogTitle className="t-title mt-2">
+            {t('whatsnew-title-calls', { defaultValue: 'Now you can talk.' })}
+          </DialogTitle>
+          <DialogDescription className="t-body mt-2 text-site-text-muted">
+            {t('whatsnew-subtitle-calls', {
+              defaultValue:
+                'Voice calls between any two people, lighter and more private uploads, and thirteen more corners of the site in your own language.',
+            })}
+          </DialogDescription>
         </div>
 
-        <div className={`spatial-whats-new__changes grid ${gridClassFor(changes.length)}`}>
+        <ol className="mt-5 border-t border-site-border">
           {changes.map((change) => (
-            <article key={change.key}>
-              <span>{change.number}</span>
-              <div>
-                <h3>{change.title}</h3>
-                <p>{change.copy}</p>
-              </div>
-            </article>
+            <li key={change.key} className="border-b border-site-border px-5 py-4 sm:px-6">
+              <h3 className="t-heading">{change.title}</h3>
+              <p className="t-body mt-1 text-site-text-muted">{change.copy}</p>
+            </li>
           ))}
-        </div>
+        </ol>
 
-        <div className="spatial-whats-new__footer">
-          <span>{t('designed-for-community', { defaultValue: 'Designed for community.' })}</span>
+        <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:px-6">
           <ChangelogLink />
-          <Button className="w-full sm:ml-auto sm:w-auto" onClick={() => setOpen(false)}>
+          <Button
+            variant="primary"
+            className="w-full sm:ml-auto sm:w-auto"
+            onClick={() => setOpen(false)}
+          >
             {t('whatsnew-dismiss', { defaultValue: 'Got it' })}
-            <ArrowUpRight aria-hidden />
           </Button>
         </div>
       </DialogContent>

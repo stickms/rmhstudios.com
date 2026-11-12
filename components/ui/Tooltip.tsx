@@ -168,7 +168,7 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
         className={cn(
           'px-2.5 py-1 text-xs font-medium text-site-text',
           // Steel S5: the one raised surface (`--site-surface`, 1px border, 8px radius, the T4 shadow).
-          'glass-overlay',
+          'surface-overlay',
           className,
         )}
       >
@@ -176,7 +176,7 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
         {/* Arrow: a border triangle in the BORDER colour with a second, 1px-inset
  triangle in the bubble's own fill over it, so it reads as the bubble's
  hairline-outlined tail. The fill is `--site-surface`, the same colour
- `.glass-overlay` paints with (Steel S5: an overlay is the one raised
+ `.surface-overlay` paints with (Steel S5: an overlay is the one raised
  surface, opaque). */}
         <span
           aria-hidden

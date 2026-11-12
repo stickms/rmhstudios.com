@@ -525,24 +525,16 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
             data-motion="fade"
             className="fixed inset-0 z-hub-overlay glass-scrim"
           />
-          {/* Plain `glass-overlay` — no `glass-refract`/`--prism` here any more.
-              The displacement lens those classes exist to carry is PARKED (see
-              the note in globals.css §3.3–3.6), so all they contributed was
-              `.glass-refract::before`: a 12px frosted bevel band inset around the
-              whole panel. With nothing bending through it, that band rendered as
-              a thick pale ring around the palette — the chunkiest border on the
-              site, on its most-used surface. The prism budget is better left
-              unspent than spent on an artifact. */}
           <DialogPrimitive.Content
             data-motion="rise"
-            className="glass-overlay fixed left-1/2 top-[12dvh] z-palette w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden"
+            className="surface-overlay fixed left-1/2 top-[12dvh] z-palette w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden"
             aria-describedby={undefined}
           >
             <DialogPrimitive.Title className="sr-only">
               {t('palette-title', { defaultValue: 'Command palette' })}
             </DialogPrimitive.Title>
             {/* The search row is the panel's HEADER, not a field floating on it.
-                It used to be a `.glass-inset` well with its own margin, radius
+                It used to be a `.surface-field` well with its own margin, radius
                 and dark inset shadow — a light box sitting on a darker sheet,
                 which is why the palette read as two mismatched surfaces stacked
                 rather than one. Flush to the edges with a single hairline under
@@ -607,7 +599,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                         onMouseMove={() => setActiveIndex(index)}
                         onClick={() => runCommand(cmd)}
                         className={cn(
-                          'glass-interactive flex w-full items-center gap-3 rounded-site-sm px-3 py-2 text-left text-sm',
+                          'surface-press flex w-full items-center gap-3 rounded-site-sm px-3 py-2 text-left text-sm',
                           active ? 'bg-site-bg-subtle text-site-accent' : 'text-site-text-muted',
                         )}
                       >

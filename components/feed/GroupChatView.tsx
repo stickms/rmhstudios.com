@@ -33,7 +33,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
 
   // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
   // close animation all live in AnchoredMenu now (it portals to <body>, so the
-  // attach menu is not measured inside `.radial-frame`'s stacking context).
+  // attach menu is not measured inside the page frame's stacking context).
   const thread = useGroupThread(id, currentUserId, chatRef);
   const { group, loading, notFound, appendMessages } = thread;
   const composer = useGroupComposer({ id, chatRef, appendMessages });

@@ -14,7 +14,7 @@ export function AltChip({ alt }: { alt: string | undefined }) {
     <span
       aria-hidden
       title={alt}
-      className="pointer-events-auto absolute bottom-1.5 left-1.5 z-10 rounded-full bg-site-media-scrim-strong px-1.5 py-0.5 text-micro font-bold uppercase leading-none text-site-media-ink"
+      className="pointer-events-auto absolute bottom-1.5 left-1.5 z-10 rounded-full bg-site-media-scrim-strong px-1.5 py-0.5 text-micro font-semibold leading-none text-site-media-ink"
     >
       {t('alt-chip', { defaultValue: 'ALT' })}
     </span>

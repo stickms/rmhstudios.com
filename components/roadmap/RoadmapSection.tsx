@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { PinnedHero } from "@/components/feed/PinnedHero";
-import { Reveal } from "@/components/motion";
 import { roadmap } from "./roadmap-data";
 import { EraSection } from "./EraSection";
 import { RoadmapStyles } from "./RoadmapStyles";
@@ -30,7 +29,6 @@ export function RoadmapSection() {
           defaultValue:
             "We're an indie studio building rhythm games, deckbuilders, narrative horror, and more. Our roadmap isn't tied to one title—we're growing the catalog, Discord, and new worlds in parallel. Timelines are guides, not promises.",
         })}
-        scrollCue={t("hero-scroll-cue", { defaultValue: "Where we're going" })}
       />
 
       {/* ── Timeline ──────────────────────────────────────────
@@ -44,12 +42,9 @@ export function RoadmapSection() {
           ))}
         </div>
 
-        <Reveal
-          as="p"
-          className="mt-10 text-center font-mono text-xs text-site-text-muted"
-        >
+        <p className="mt-10 text-center font-mono text-xs text-site-text-muted">
           {t("update-note", { defaultValue: "We'll update this as we ship." })}
-        </Reveal>
+        </p>
       </div>
     </div>
   );

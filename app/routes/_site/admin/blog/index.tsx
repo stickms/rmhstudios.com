@@ -59,7 +59,7 @@ function AdminBlogDashboard() {
             description={t('no-blog-posts-hint', { defaultValue: 'Create one to get started!' })}
           />
         ) : (
-          <div className="glass-fill rounded-site divide-y divide-site-border overflow-hidden">
+          <div className="rounded-site divide-y divide-site-border overflow-hidden">
             {posts.map((post) => (
               <div
                 key={post.slug as string}

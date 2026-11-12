@@ -196,7 +196,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
         if (foundFakes.includes(puzzle.statements[index].text)) return `${TONE_TINT.danger} opacity-70 cursor-not-allowed`;
         if (confirmedReal.has(index)) return 'border-site-border opacity-50 cursor-not-allowed';
         if (selectedStatements.has(index)) return 'border-site-accent bg-site-bg-subtle';
-        return 'glass-interactive cursor-pointer border-transparent';
+        return 'surface-press cursor-pointer border-transparent';
     };
 
     return (
@@ -251,7 +251,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                             onClick={() => toggleStatement(i)}
                             disabled={completed || confirmedReal.has(i) || foundFakes.includes(puzzle.statements[i].text)}
                             aria-pressed={!completed ? selectedStatements.has(i) : undefined}
-                            className={`glass-fill flex w-full items-start gap-3 rounded-site border px-4 py-3 text-left transition-colors duration-site-fast ${getCardClasses(i)}`}
+                            className={`surface-card flex w-full items-start gap-3 rounded-site border px-4 py-3 text-left transition-colors duration-site-fast ${getCardClasses(i)}`}
                         >
                             <span className="mt-0.5 shrink-0 font-mono text-xs text-site-text-muted">{i + 1}.</span>
                             <div className="min-w-0 flex-1">

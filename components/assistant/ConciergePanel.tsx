@@ -184,7 +184,7 @@ export function ConciergePanel({ className }: { className?: string }) {
                     'max-w-[85%] rounded-site px-4 py-3 text-sm leading-relaxed',
                     m.role === 'user'
                       ? 'bg-site-accent text-site-accent-fg'
-                      : 'glass-fill text-site-text',
+                      :'text-site-text',
                   )}
                 >
                   {m.content}
@@ -195,7 +195,7 @@ export function ConciergePanel({ className }: { className?: string }) {
                       <Link
                         key={l.to}
                         to={l.to as string}
-                        className="glass-fill glass-interactive inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-site-accent"
+                        className="surface-press inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-site-accent"
                       >
                         {l.label}
                         <ArrowRight className="size-3" aria-hidden />
@@ -228,7 +228,7 @@ export function ConciergePanel({ className }: { className?: string }) {
                 type="button"
                 disabled={loading}
                 onClick={() => void ask(t(s.key, { defaultValue: s.text }))}
-                className="glass-fill glass-interactive inline-flex min-h-11 items-center rounded-full px-4 py-2 text-xs text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text disabled:opacity-50"
+                className="surface-press inline-flex min-h-11 items-center rounded-full px-4 py-2 text-xs text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text disabled:opacity-50"
               >
                 {t(s.key, { defaultValue: s.text })}
               </button>

@@ -39,7 +39,7 @@ export function AvatarField({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="glass-fill glass-interactive group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-site-text"
+          className="surface-press group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl font-semibold text-site-text"
           aria-label={t('change-avatar', { defaultValue: 'Change profile photo' })}
         >
           {preview ? (

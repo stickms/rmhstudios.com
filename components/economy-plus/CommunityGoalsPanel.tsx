@@ -205,7 +205,7 @@ function GoalCard({
   const valid = Number.isInteger(amount) && amount >= 1 && amount <= remaining;
 
   return (
-    <li className="glass-fill space-y-3 p-4">
+    <li className="space-y-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-site-text">{g.title}</h3>
@@ -225,7 +225,7 @@ function GoalCard({
           aria-valuemax={g.targetCoins}
           aria-valuenow={Math.min(g.raisedCoins, g.targetCoins)}
           aria-label={g.title}
-          className="glass-inset h-2.5 overflow-hidden rounded-full"
+          className="surface-field h-2.5 overflow-hidden rounded-full"
         >
           <div className="h-full rounded-full bg-site-accent" style={{ width: `${pct}%` }} />
         </div>

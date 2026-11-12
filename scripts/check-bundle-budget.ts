@@ -222,13 +222,13 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  // Steel phase 6 (2026-11-12): lowered to the measured values after the old shell, material and runtime were
-  // deleted, plus ~2% for build-to-build variance (the plan's ledger, section 17, has the numbers). Measured:
-  // site CSS 32,190 B brotli; entry 442,305 B raw; critical path 1,093,213 B raw and 309,620 B brotli.
-  siteCssBrotli: 33_000,
-  entryRaw: 451_000,
-  criticalPathRaw: 1_115_000,
-  criticalPathBrotli: 316_000,
+  // Steel phase 7 (2026-11-12): lowered to the measured values plus ~2% for build-to-build variance (the plan's
+  // ledger, section 17, has the numbers). Measured: site CSS 31,941 B brotli; entry 441,074 B raw; critical path
+  // 1,091,976 B raw and 309,564 B brotli. (Phase 6 had measured 32,190, 442,305, 1,093,213 and 309,620.)
+  siteCssBrotli: 32_600,
+  entryRaw: 450_000,
+  criticalPathRaw: 1_114_000,
+  criticalPathBrotli: 315_700,
 };
 
 /**

@@ -143,8 +143,8 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
         aria-hidden
       />
 
-      <div className="app-hud flex flex-col justify-between p-4" data-jelly-zone="hud">
-        <div className="glass-overlay flex items-center justify-between gap-4 rounded-site px-4 py-2">
+      <div className="app-hud flex flex-col justify-between p-4">
+        <div className="surface-overlay flex items-center justify-between gap-4 rounded-site px-4 py-2">
           <dl className="flex items-center gap-5 text-site-text">
             <Figure label={t('globeset-stat-time', { defaultValue: 'Time' })}>
               {formatDuration(props.elapsedSeconds)}
@@ -181,7 +181,7 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
         {/* Says what this mode actually does. An iPhone cannot anchor the globe
             to the room, and a player who walks around it expecting the back of
             it deserves to have been told, not to conclude it is broken. */}
-        <p className="glass-overlay mx-auto rounded-site px-4 py-2 text-center text-sm text-site-text">
+        <p className="surface-overlay mx-auto rounded-site px-4 py-2 text-center text-sm text-site-text">
           {props.tiltLive ? (
             <span className="inline-flex items-center gap-1.5">
               <Compass className="h-4 w-4 shrink-0" aria-hidden />

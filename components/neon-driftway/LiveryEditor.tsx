@@ -132,7 +132,7 @@ export function LiveryEditorButton() {
             tabs={STRIPES.map((s) => ({ id: s, label: stripeLabel[s] }))}
           />
           <div className="flex items-center gap-2">
-            <code className="glass-inset flex-1 truncate rounded-site px-2 py-1.5 text-xs">
+            <code className="surface-field flex-1 truncate rounded-site px-2 py-1.5 text-xs">
               {encodeLivery(l)}
             </code>
             <Button

@@ -81,26 +81,3 @@ export function markSeen(release: Release, storage: SeenStorage | null | undefin
     return false;
   }
 }
-
-/** Two-digit card numbers, so the copy doesn't have to carry them. */
-export function itemNumber(index: number): string {
-  return String(index + 1).padStart(2, '0');
-}
-
-/**
- * Grid columns for a card count.
- *
- * Spelled out rather than interpolated: Tailwind scans source statically, so a
- * computed `sm:grid-cols-${n}` produces a class that is never generated and the
- * cards silently stack.
- */
-export function gridClassFor(count: number): string {
-  switch (count) {
-    case 2:
-      return 'grid-cols-1 sm:grid-cols-2';
-    case 4:
-      return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
-    default:
-      return 'grid-cols-1 sm:grid-cols-3';
-  }
-}

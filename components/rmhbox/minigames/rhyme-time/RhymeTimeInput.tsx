@@ -121,7 +121,7 @@ export default function RhymeTimeInput({
             onKeyDown={handleKeyDown}
             disabled={atLimit}
             placeholder={atLimit ? t("max-submissions-reached", { defaultValue: "Max submissions reached" }) : t("type-a-rhyming-word", { defaultValue: "Type a rhyming word..." })}
-            className="glass-inset flex-1 rounded-app-sm border border-app-border px-4 py-2 text-sm text-app-text placeholder:text-app-text-muted focus:outline-none focus:ring-2 focus:ring-app-accent disabled:opacity-50"
+            className="surface-field flex-1 rounded-app-sm border border-app-border px-4 py-2 text-sm text-app-text placeholder:text-app-text-muted focus:outline-none focus:ring-2 focus:ring-app-accent disabled:opacity-50"
           />
           <button
             onClick={handleSubmit}

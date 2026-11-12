@@ -138,7 +138,7 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
       bodyClassName="space-y-0"
     >
       {backLink ? (
-        <div className="glass-inset mb-4 rounded-site-sm p-3">
+        <div className="surface-field mb-4 rounded-site-sm p-3">
           <p className="text-xs text-site-text-muted">
             {t('links-backlink-hint', { defaultValue: 'Put this on your own page:' })}
           </p>
@@ -163,7 +163,7 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
             return (
               <li
                 key={link.id}
-                className="glass-fill flex flex-wrap items-center gap-2 rounded-site-sm p-3"
+                className="flex flex-wrap items-center gap-2 rounded-site-sm p-3"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">

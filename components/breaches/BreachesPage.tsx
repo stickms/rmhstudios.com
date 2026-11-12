@@ -291,7 +291,7 @@ page.setAttribute('data-animate', '');
       </a>
 
       <header>
-        <nav className="glass-chrome sec-nav" aria-label="Breaches">
+        <nav className="surface-chrome sec-nav" aria-label="Breaches">
           <div className="sec-nav__inner">
             <a className="sec-nav__back" href="/">
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />
@@ -319,7 +319,6 @@ page.setAttribute('data-animate', '');
             </>
           }
           subtitle="In March 2026 a Discord webhook URL was committed to this repository in plain text and stayed at the tip of the default branch for nine days. No user data was ever reachable through it. Here is exactly how it got there, why nobody caught it, and why deleting the line did not undo it."
-          scrollCue="Read the post-mortem"
           actions={
             <>
               <Button asChild variant="default" size="lg">
@@ -343,7 +342,7 @@ page.setAttribute('data-animate', '');
           {STATS.map((s, i) => (
             <div
               key={s.label}
-              className="glass-fill sec-stat sec-reveal"
+              className="surface-card sec-stat sec-reveal"
               style={{ '--sec-delay': `${i * 70}ms` } as CSSProperties}
             >
               <p className="sec-stat__num">{s.num}</p>
@@ -380,7 +379,7 @@ page.setAttribute('data-animate', '');
                 of this repository&apos;s own history before it was written here.
               </p>
             </div>
-            <div className="glass-fill sec-spec sec-reveal">
+            <div className="surface-card sec-spec sec-reveal">
               {WHAT_HAPPENED.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -407,7 +406,7 @@ page.setAttribute('data-animate', '');
             <ol className="sec-steps">
               {TIMELINE.map((s, i) => (
                 <li
-                  className="glass-fill sec-step sec-reveal"
+                  className="surface-card sec-step sec-reveal"
                   key={s.title}
                   style={{ '--sec-delay': `${(i % 2) * 80}ms` } as CSSProperties}
                 >
@@ -442,7 +441,7 @@ page.setAttribute('data-animate', '');
                 return (
                   <article
                     key={c.title}
-                    className="glass-fill sec-card sec-reveal"
+                    className="surface-card sec-card sec-reveal"
                     style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}
                   >
                     <span className="sec-card__icon">
@@ -472,7 +471,7 @@ page.setAttribute('data-animate', '');
               </p>
             </div>
             <div className="sec-rules">
-              <div className="glass-fill sec-rule sec-reveal">
+              <div className="surface-card sec-rule sec-reveal">
                 <h3 className="sec-rule__title">
                   <span className="sec-rule__icon">
                     <XCircle aria-hidden="true" />
@@ -486,7 +485,7 @@ page.setAttribute('data-animate', '');
                 </ul>
               </div>
               <div
-                className="glass-fill sec-rule sec-reveal"
+                className="surface-card sec-rule sec-reveal"
                 style={{ '--sec-delay': '80ms' } as CSSProperties}
               >
                 <h3 className="sec-rule__title">
@@ -502,7 +501,7 @@ page.setAttribute('data-animate', '');
                 </ul>
               </div>
               <div
-                className="glass-fill sec-rule sec-reveal"
+                className="surface-card sec-rule sec-reveal"
                 style={{ '--sec-delay': '160ms' } as CSSProperties}
               >
                 <h3 className="sec-rule__title">
@@ -534,7 +533,7 @@ page.setAttribute('data-animate', '');
                 mistake, so it gets its own section rather than a footnote.
               </p>
             </div>
-            <div className="glass-fill sec-spec sec-reveal">
+            <div className="surface-card sec-spec sec-reveal">
               {PERSISTENCE.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -580,7 +579,7 @@ page.setAttribute('data-animate', '');
           aria-labelledby="brc-takeaway-title"
         >
           <div className="sec-shell">
-            <div className="glass-pane sec-disclosure sec-reveal">
+            <div className="surface-panel sec-disclosure sec-reveal">
               <div className="sec-disclosure__glow" aria-hidden="true" />
               <div className="sec-disclosure__inner">
                 <p className="sec-eyebrow">If you take one thing away</p>
@@ -619,7 +618,7 @@ page.setAttribute('data-animate', '');
             </div>
             <div className="sec-faq sec-reveal">
               {FAQ.map((f) => (
-                <details className="glass-fill sec-faq__item" key={f.q}>
+                <details className="surface-card sec-faq__item" key={f.q}>
                   <summary className="sec-faq__q">{f.q}</summary>
                   <p className="sec-faq__a">{f.a}</p>
                 </details>

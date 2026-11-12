@@ -33,7 +33,7 @@
  * the page — the site has sixteen themes and this surface answered to none of
  * them. Every value below now comes from the theme, so it does.
  */
-/* The composer takes `.glass-pane` in the markup (L2 — a singular panel) and
+/* The composer takes `.surface-panel` in the markup (L2 — a singular panel) and
    this rule is layout only.
 
    It used to hand-roll the surface here: `background` + `backdrop-filter` +
@@ -685,7 +685,7 @@
 }
 
 /* Popover opens upward — both usages sit near the bottom of the viewport. */
-/* Surface comes from `.glass-overlay` (globals.css §L4) — the one material every
+/* Surface comes from `.surface-overlay` (globals.css §L4) — the one material every
    dialog, popover and menu on the site shares. This used to hand-roll it: a
    0.5px border, a hardcoded `rgba(0,0,0,0.5)` drop shadow that only ever suited
    a dark theme, and its own blur. Only placement is this menu's own business.

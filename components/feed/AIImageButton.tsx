@@ -98,15 +98,15 @@ export function AIImageButton({
  {locked && showUpgrade && (
  <Dialog open onOpenChange={(o) => !o && setShowUpgrade(false)}>
  <DialogContent className="w-full max-w-sm gap-0 p-0 text-center sm:p-0">
-{/* Decorative gradient header */}
- <div className="relative bg-linear-to-br from-site-accent/30 via-site-accent/10 to-transparent px-6 pb-6 pt-8">
+{/* The dialog's header: the icon on a plain ground */}
+ <div className="relative px-6 pb-6 pt-8">
   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site border border-site-accent/30 bg-site-bg-subtle">
  <Wand2 className="h-7 w-7 text-site-accent"/>
  </div>
  </div>
 
  <div className="px-6 pb-6">
- <DialogTitle className="inline-flex items-center gap-2 text-xl font-bold text-site-text">
+ <DialogTitle className="inline-flex items-center gap-2 text-xl font-semibold text-site-text">
  <Sparkles className="h-5 w-5 text-site-accent"/>
  {t('ai-image-upgrade-title', { defaultValue:'Unlock AI image generation'})}
  </DialogTitle>

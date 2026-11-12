@@ -57,7 +57,7 @@ const js = await bundle({
                   <Button id="disabled" disabled>Unavailable</Button>
                   <button id="legacy" className="rounded-site">Like</button>
                 </div>
-                <textarea id="field" className="glass-inset rounded-site" aria-label="Reply" />
+                <textarea id="field" className="surface-field rounded-site" aria-label="Reply" />
               </Card>
             </section>
             <Tabs tabs={tabs.slice(0,3)} value="latest" aria-label="Sections"

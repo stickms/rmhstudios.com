@@ -45,7 +45,7 @@ export function LiveNowRail({ className }: { className?: string }) {
     <AsyncReveal
       show={spaces.length > 0}
       as="section"
-      className={cn('glass-fill mx-3 mt-3 rounded-site p-4', className)}
+      className={cn('surface-card mx-3 mt-3 rounded-site p-4', className)}
       aria-label={t('live-now', { defaultValue: 'Live now' })}
     >
       <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-site-danger">
@@ -62,7 +62,7 @@ export function LiveNowRail({ className }: { className?: string }) {
             to="/spaces/$id"
             params={{ id: s.id }}
             className={cn(
-              'glass-fill glass-interactive flex w-56 shrink-0 flex-col gap-1 p-3 transition-colors hover:border-site-text',
+              'surface-card surface-press flex w-56 shrink-0 flex-col gap-1 p-3 transition-colors hover:border-site-text',
               enteringSpaces.has(s.id) && 'content-item-enter',
             )}
           >

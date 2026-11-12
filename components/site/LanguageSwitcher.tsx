@@ -134,7 +134,7 @@ export function LanguageSwitcher() {
         aria-label={label}
         title={label}
         className={cn(
-          "glass-inset inline-flex items-center gap-2 rounded-site-sm px-2.5 py-1.5",
+          "surface-field inline-flex items-center gap-2 rounded-site-sm px-2.5 py-1.5",
           "text-sm text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:ring-offset-1 focus-visible:ring-offset-site-bg",
           open && "bg-site-surface-hover text-site-text",
@@ -173,7 +173,7 @@ export function LanguageSwitcher() {
               maxHeight: rect.maxHeight,
               "--motion-origin": rect.openUp ? "bottom center" : "top center",
             } as CSSProperties}
-            className="z-popover overflow-y-auto overscroll-contain glass-overlay py-1.5"
+            className="z-popover overflow-y-auto overscroll-contain surface-overlay py-1.5"
           >
             {LOCALES.map((l) => {
               const active = l === locale;
@@ -187,7 +187,6 @@ export function LanguageSwitcher() {
                   onClick={() => choose(l)}
                   data-evert=""
                   data-row-glow=""
-                  data-jelly="off"
                   className={cn(
                     "flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition-colors",
                     "focus:outline-none",

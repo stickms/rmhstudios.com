@@ -127,7 +127,7 @@ function FlagsPage() {
   return (
     <PageLayout title={t('flags-title', { defaultValue: 'Feature flags' })} wide backTo="/admin">
       <AdminBody width="narrow">
-        <div className="glass-fill mb-6 grid gap-2 rounded-site p-4 sm:grid-cols-[1fr_1fr_auto]">
+        <div className="mb-6 grid gap-2 rounded-site p-4 sm:grid-cols-[1fr_1fr_auto]">
           <div>
             <Input
               value={newKey}
@@ -164,7 +164,7 @@ function FlagsPage() {
         ) : flags.length === 0 ? (
           <EmptyState description={t('flags-empty', { defaultValue: 'No flags yet.' })} />
         ) : (
-          <ul className="glass-fill divide-y divide-site-border overflow-hidden rounded-site">
+          <ul className="divide-y divide-site-border overflow-hidden rounded-site">
             {flags.map((f) => (
               <FlagRow
                 key={f.key}

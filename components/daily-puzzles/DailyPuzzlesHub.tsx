@@ -348,7 +348,7 @@ export function DailyPuzzlesHub() {
             initial={reduced ? false : { opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15 }}
-            className="glass-fill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm"
+            className="surface-card inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm"
           >
             <Clock className="size-4 text-site-accent" aria-hidden />
             <span className="text-site-text-muted">
@@ -523,7 +523,7 @@ function StatTile({
 }) {
   return (
     <div
-      className={`glass-fill flex flex-col gap-1 rounded-site border px-4 py-3 transition-colors duration-site-fast ${
+      className={`surface-card flex flex-col gap-1 rounded-site border px-4 py-3 transition-colors duration-site-fast ${
         highlight ? 'border-site-accent/50' : 'border-transparent'
       }`}
     >
@@ -603,7 +603,7 @@ function PuzzleCard({
     <button
       type="button"
       onClick={onOpen}
-      className="glass-fill glass-interactive group relative flex h-full w-full flex-col gap-2 overflow-hidden rounded-site px-4 py-4 text-left"
+      className="surface-card surface-press group relative flex h-full w-full flex-col gap-2 overflow-hidden rounded-site px-4 py-4 text-left"
       aria-label={`${title} — ${done ? ctaView : ctaPlay}`}
     >
       {/* Accent top edge — decoration only; the per-mode accent is data. */}

@@ -235,7 +235,7 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
                                 const isCorrectPick = isSelected && isOutcast;
                                 const isWrongPick = isSelected && !isOutcast;
 
-                                let cardClass = 'glass-interactive border-transparent';
+                                let cardClass = 'surface-press border-transparent';
                                 if (roundRevealed) {
                                     if (isCorrectPick) cardClass = TONE_TINT.success;
                                     else if (isWrongPick) cardClass = TONE_TINT.danger;
@@ -249,7 +249,7 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
                                         type="button"
                                         onClick={() => handleItemTap(item.name)}
                                         disabled={roundRevealed}
-                                        className={`glass-fill flex min-h-24 flex-col items-center justify-center gap-2 rounded-site border px-3 py-3 transition-colors duration-site-fast disabled:cursor-default ${cardClass}`}
+                                        className={`surface-card flex min-h-24 flex-col items-center justify-center gap-2 rounded-site border px-3 py-3 transition-colors duration-site-fast disabled:cursor-default ${cardClass}`}
                                     >
                                         <span aria-hidden className="text-3xl">{item.emoji}</span>
                                         <span className="text-sm font-medium text-site-text">{item.name}</span>

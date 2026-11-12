@@ -14,7 +14,7 @@
  *   4. `max-w-md py-20` + a DEFAULT-variant Button, untranslated
  *      (homes/manage, homes/submit)
  *   5. an icon + `<h2>` + a raw `<a>` styled as a button, with a
- *      `transition-transform hover:scale-105` nothing else on the site does
+ *      `transition-transform` nothing else on the site does
  *      (rideshare/drive, rideshare/ride)
  *   6. a full-bleed `min-h-screen bg-site-bg` bordered card
  *      (user-builds/submit, user-builds/manage)

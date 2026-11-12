@@ -32,7 +32,7 @@ export function FriendsStrip({ className }: { className?: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`glass-fill flex h-14 w-full items-center gap-3 rounded-site px-3 text-start ${className ?? ''}`}
+        className={`surface-card flex h-14 w-full items-center gap-3 rounded-site px-3 text-start ${className ?? ''}`}
         aria-label={t('friends-strip-label', {
           defaultValue: '{{count}} friends online',
           count: friends.length,
@@ -143,7 +143,7 @@ const FriendSheetRow = memo(
             <Link
               to={joinable.href}
               onClick={onNavigate}
-              className="glass-interactive shrink-0 rounded-full bg-site-bg-subtle px-3 py-1.5 text-xs font-semibold text-site-accent"
+              className="surface-press shrink-0 rounded-full bg-site-bg-subtle px-3 py-1.5 text-xs font-semibold text-site-accent"
             >
               {t(`presence-context-${activity.kind}`, { defaultValue: contextVerb(activity.kind) })}
             </Link>

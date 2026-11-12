@@ -194,7 +194,7 @@ body {
         [role='switch'],
         input,
         select,
-        .glass-interactive
+        .surface-press
       ),
     /* The toast library injects `border-radius: 50%` on its close button with no corner-shape. */
     html.app-route [data-sonner-toast] [data-close-button] {
@@ -292,7 +292,7 @@ body {
    44px without breaking the line it lives in. The answer the top bar already
    uses is a transparent, centred `::after` that extends what the finger can
    land on while every painted pixel stays put — but it was written out longhand
-   in `radial.css` per element, so nothing outside that file could reuse it and
+   per element in the old shell stylesheet, so nothing outside that file could reuse it and
    the profile hero's links measured 89×21 to 89×38 on a phone.
 
    This is that technique as one class (`.hit-slop`; `.touch-target` is the

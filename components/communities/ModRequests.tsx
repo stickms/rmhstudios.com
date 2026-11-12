@@ -65,7 +65,7 @@ export function ModRequests({ slug }: { slug: string }) {
       {requests.map((r) => {
         const name = r.user.name || r.user.handle || t('someone', { defaultValue: 'Someone' });
         return (
-          <li key={r.id} className="glass-fill flex flex-col gap-2 p-3">
+          <li key={r.id} className="flex flex-col gap-2 p-3">
             <div className="flex flex-wrap items-center gap-3">
               <UserAvatar src={r.user.image} alt="" size={36} fallbackName={name} />
               <div className="min-w-32 flex-1">

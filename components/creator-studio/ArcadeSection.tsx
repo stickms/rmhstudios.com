@@ -87,10 +87,10 @@ export function ArcadeSection({
   ];
 
   return (
-    <section className="glass-pane rounded-site" aria-labelledby="cstudio-arcade-title">
+    <section className="rounded-site"aria-labelledby="cstudio-arcade-title">
       <div className="flex items-center gap-3 px-4 py-3">
         <span
-          className="glass-inset flex size-9 shrink-0 items-center justify-center rounded-site-sm text-site-accent"
+          className="surface-field flex size-9 shrink-0 items-center justify-center rounded-site-sm text-site-accent"
           aria-hidden="true"
         >
           <Gamepad2 className="size-4" />

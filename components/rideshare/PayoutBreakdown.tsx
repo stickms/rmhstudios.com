@@ -25,7 +25,7 @@ export function PayoutBreakdown({ fareCents, tipCents, estimate }: PayoutBreakdo
   }
 
   return (
-    <div className="glass-fill rounded-site p-5">
+    <div className="rounded-site p-5">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-sm font-semibold text-site-text">
           {estimate ? 'Estimated pay' : 'Your earnings'}
@@ -51,11 +51,11 @@ export function PayoutBreakdown({ fareCents, tipCents, estimate }: PayoutBreakdo
       <div className="mt-3 flex items-center justify-between border-t border-site-border pt-3">
         <div className="flex items-center gap-2">
           <Wallet className="h-4 w-4 text-site-success" />
-          <span className="text-base font-bold text-site-text">
+          <span className="text-base font-semibold text-site-text">
             {estimate ? 'You earn' : 'Take-home'}
           </span>
         </div>
-        <div className="text-lg font-bold text-site-success">{formatUsd(p.driverEarningsCents)}</div>
+        <div className="text-lg font-semibold text-site-success">{formatUsd(p.driverEarningsCents)}</div>
       </div>
     </div>
   );

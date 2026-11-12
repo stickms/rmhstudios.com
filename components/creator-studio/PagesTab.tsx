@@ -183,7 +183,7 @@ export function PagesTab({
   );
 
   // The shared page toolbar (the one /games and /create/builds use): the search takes the row at the page gutter, the
-  // admin backfill button sits after it. It used to be a `glass-chrome` title bar ("Pages" + search), which started the
+  // admin backfill button sits after it. It used to be a `surface-chrome` title bar ("Pages" + search), which started the
   // search at x=76 on a phone while the heading and tab strip started at 16 — the tab already says "Pages".
   const toolbar = (
     <div data-slot="page-controls" className="builds-toolbar">
@@ -224,7 +224,7 @@ export function PagesTab({
           {t('prompt-heading', { defaultValue: 'Describe a page to generate' })}
         </h2>
         <div className="mt-6 flex w-full justify-center">
-          <div className="glass-pane vibe-dock vibe-dock--area vibe-rise-soft">
+          <div className="vibe-dock vibe-dock--area vibe-rise-soft">
             <textarea
               ref={inputRef}
               name="prompt"

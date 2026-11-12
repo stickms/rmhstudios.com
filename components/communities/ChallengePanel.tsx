@@ -53,7 +53,7 @@ function CreateChallenge({ slug, onCreated }: { slug: string; onCreated: () => v
 
   return (
     <form
-      className="glass-pane m-3 flex flex-col gap-3 p-4"
+      className="m-3 flex flex-col gap-3 p-4"
       onSubmit={(e) => {
         e.preventDefault();
         void save();
@@ -197,9 +197,9 @@ export default function ChallengePanel({
 
   return (
     <div className="flex flex-col gap-3 px-3 py-3">
-      <section className="glass-pane p-4">
+      <section className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-base font-bold text-site-text">{challenge.title}</h3>
+          <h3 className="text-base font-semibold text-site-text">{challenge.title}</h3>
           <span className="rounded-full border border-site-accent/30 bg-site-bg-subtle px-2.5 py-0.5 text-xs font-semibold text-site-accent">
             {phaseLabel}
           </span>
@@ -236,7 +236,7 @@ export default function ChallengePanel({
       </section>
 
       {entering && challenge.phase === 'submit' && (
-        <section className="glass-pane overflow-hidden">
+        <section className="overflow-hidden">
           <p className="px-4 pt-3 text-xs text-site-text-muted">
             {t('challenge-enter-hint', {
               defaultValue: 'Your post is your entry. Attach any image or media and post it here.',
@@ -267,7 +267,7 @@ export default function ChallengePanel({
               e.author?.name || e.author?.handle || t('someone', { defaultValue: 'Someone' });
             const voted = challenge.myVoteEntryId === e.id;
             return (
-              <li key={e.id} className="glass-fill flex flex-col gap-2 p-3">
+              <li key={e.id} className="flex flex-col gap-2 p-3">
                 <div className="flex items-center gap-2">
                   <UserAvatar src={e.author?.image} alt={name} size={28} fallbackName={name} />
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold text-site-text">

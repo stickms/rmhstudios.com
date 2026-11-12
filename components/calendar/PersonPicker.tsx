@@ -66,14 +66,13 @@ export function PersonPicker({
         />
       </label>
       {shown.length > 0 && (
-        <ul className="glass-overlay overflow-hidden rounded-site py-1.5">
+        <ul className="surface-overlay overflow-hidden rounded-site py-1.5">
           {shown.map((u) => (
             <li key={u.id}>
               <button
                 type="button"
                 data-evert=""
                 data-row-glow=""
-                data-jelly="off"
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
                 onClick={() => {
                   onChange([
@@ -97,7 +96,7 @@ export function PersonPicker({
           {value.map((p) => (
             <li
               key={p.id}
-              className="glass-fill flex items-center gap-1.5 rounded-full py-1 pl-1 pr-1.5 text-sm text-site-text"
+              className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-1.5 text-sm text-site-text"
             >
               <UserAvatar src={p.image} alt="" size={22} />
               {p.name ?? p.handle}

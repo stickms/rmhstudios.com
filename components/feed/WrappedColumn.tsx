@@ -19,8 +19,6 @@ import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
 import { PinnedHero } from'@/components/feed/PinnedHero';
-import { Reveal, RevealGroup, RevealItem } from'@/components/motion';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from'@/lib/contract/client';
 import { getWrappedApi } from'@/lib/wrapped/wrapped.contract';
 
@@ -110,89 +108,87 @@ export function WrappedColumn({
  </Button>
  </Link>
  }
- scrollCue={t('wrapped-scroll-cue', { defaultValue:'Scroll to explore'})}
- screens={2.6}
  />
 
  <div className="space-y-6 pt-4 pb-12">
  {/* Level badge — leads the below-fold content. */}
- <Reveal>
- <div className="flex items-center gap-3 rounded-site glass-fill px-4 py-3">
+ <div>
+ <div className="flex items-center gap-3 rounded-site px-4 py-3">
  <Star className="h-5 w-5 text-site-accent"/>
  <span className="text-sm font-semibold text-site-text">
  {t('level-value', { level: data.level, defaultValue:'Level {{level}}'})}
  </span>
  </div>
- </Reveal>
+ </div>
 
  {/* Stat tiles */}
- <Reveal>
+ <div>
  <h2 className="site-section-label mb-3">
  {t('wrapped-stats-heading', { defaultValue:'Your year in numbers'})}
  </h2>
- <RevealGroup as="div"className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+ <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
  {tiles.map((tile) => (
- <RevealItem key={tile.label}>
- <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
+ <div key={tile.label}>
+ <div className={`rounded-site p-5`}>
  <tile.icon className="h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{tile.value}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{tile.value}</p>
  <p className="text-xs text-site-text-muted">{tile.label}</p>
  </div>
- </RevealItem>
+ </div>
  ))}
- <RevealItem>
- <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
+ <div>
+ <div className={`rounded-site p-5`}>
  <CoinIcon className="h-5 w-5"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.coinsEarned)}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{fmt(data.coinsEarned)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-coins-earned', { defaultValue:'Coins earned'})}</p>
  </div>
- </RevealItem>
+ </div>
  {data.play ? (
  <>
- <RevealItem>
- <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
+ <div>
+ <div className={`rounded-site p-5`}>
  <Gamepad2 className="h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{hours(data.play.seconds)}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{hours(data.play.seconds)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-time-played', { defaultValue:'Time played'})}</p>
  </div>
- </RevealItem>
- <RevealItem>
- <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
+ </div>
+ <div>
+ <div className={`rounded-site p-5`}>
  <Layers className="h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.play.cardDrops)}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{fmt(data.play.cardDrops)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-cards-dropped', { defaultValue:'Cards dropped'})}</p>
  </div>
- </RevealItem>
- <RevealItem>
- <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
+ </div>
+ <div>
+ <div className={`rounded-site p-5`}>
  <Award className="h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.play.badges)}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{fmt(data.play.badges)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-badges-crafted', { defaultValue:'Badges crafted'})}</p>
  </div>
- </RevealItem>
+ </div>
  </>
  ) : null}
  {data.busiestMonth && (
- <RevealItem>
- <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
+ <div>
+ <div className={`rounded-site p-5`}>
  <CalendarDays className="h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-extrabold text-site-text">{data.busiestMonth}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{data.busiestMonth}</p>
  <p className="text-xs text-site-text-muted">{t('tile-busiest-month', { defaultValue:'Busiest month'})}</p>
  </div>
- </RevealItem>
+ </div>
  )}
- </RevealGroup>
- </Reveal>
+ </div>
+ </div>
 
  {/* Top post */}
  {data.play && data.play.top.length > 0 && (
- <Reveal>
+ <div>
  <h2 className="site-section-label mb-3">
  {t('wrapped-top-games', { defaultValue:'Most played'})}
  </h2>
  <ol className="space-y-2">
  {data.play.top.map((g, i) => (
- <li key={g.gameId} className="flex items-center justify-between gap-3 rounded-site glass-fill px-4 py-3">
+ <li key={g.gameId} className="flex items-center justify-between gap-3 rounded-site px-4 py-3">
  <Link to="/games/$gameId" params={{ gameId: g.gameId }} className="text-site-text">
  {i + 1}. {g.title}
  </Link>
@@ -200,16 +196,16 @@ export function WrappedColumn({
  </li>
  ))}
  </ol>
- </Reveal>
+ </div>
  )}
  {data.topPost && (
- <Reveal>
+ <div>
  <h2 className="site-section-label mb-3">
  {t('your-top-post', { defaultValue:'Your top post'})}
  </h2>
  <Link
  to={`/u/me/post/${data.topPost.id}`as string}
- className={`block rounded-site glass-fill p-5 ${LIFT_CARD}`}
+ className={`block rounded-site p-5`}
  >
  <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-site-text">
  {data.topPost.content || t('media-post-fallback', { defaultValue:'(media post)'})}
@@ -218,7 +214,7 @@ export function WrappedColumn({
  <Heart className="h-3.5 w-3.5 text-site-accent"/> {t('top-post-likes', { count: data.topPost.likeCount, formattedCount: fmt(data.topPost.likeCount), defaultValue:'{{formattedCount}} likes'})}
  </p>
  </Link>
- </Reveal>
+ </div>
  )}
  </div>
  </div>

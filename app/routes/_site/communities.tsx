@@ -70,7 +70,7 @@ function CommunitiesShell({ children }: { children: React.ReactNode }) {
 /**
  * Top-of-page section switcher between the three surfaces. §16.2: this is the
  * shared `Tabs` sheet+capsule grammar (was a bare tab row buried in a
- * `glass-chrome border-b` header — the §5.45 "never in header chrome" violation
+ * `surface-chrome border-b` header — the §5.45 "never in header chrome" violation
  * the owner flagged). It sits BELOW the page title, on its own floating pill,
  * exactly like /store and /services. The title itself comes from `PageLayout`
  * now rather than a capsule this page drew for itself. `?tab=` mirroring + the

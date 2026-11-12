@@ -240,7 +240,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-xs font-bold text-site-accent">
                 {n}
             </span>
-            <div className="glass-fill flex flex-1 items-baseline gap-2 rounded-site-sm border border-site-accent/40 px-4 py-3">
+            <div className="surface-card flex flex-1 items-baseline gap-2 rounded-site-sm border border-site-accent/40 px-4 py-3">
                 <span className="text-lg font-bold tracking-wide text-site-text">{word}</span>
                 <span className="text-xs text-site-text-muted">{label}</span>
             </div>

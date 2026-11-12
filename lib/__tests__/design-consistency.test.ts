@@ -235,8 +235,8 @@ function scanAll(): {
   const edgeAnchored =
     /(?<![\w-])(?:top-full|bottom-full|mt-\d|mb-\d|left-0|right-0|inset-x-0)(?![\w-])/;
   const lowerTier =
-    /(?<![\w-])(?:glass-(?:fill|pane|chrome))(?![\w-])|(?<![\w-])bg-site-surface(?![\w-])/;
-  const l4Tier = /(?<![\w-])glass-(?:overlay|scrim)(?![\w-])/;
+    /(?<![\w-])(?:surface-(?:card|panel|chrome))(?![\w-])|(?<![\w-])bg-site-surface(?![\w-])/;
+  const l4Tier = /(?<![\w-])(?:surface-overlay|glass-scrim)(?![\w-])/;
   for (const file of SITE_FILES) {
     const src = readFileSync(join(ROOT, file), 'utf8');
     classAttr.lastIndex = 0;
@@ -355,11 +355,11 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
       floatingTier,
       report('Floating surface below L4', floatingTier).replace(
         POINTER,
-        'A dropdown / popover / menu / autocomplete is `.glass-overlay` ' +
-          '(design-language.md §5.1). L1 `.glass-fill` is the tier for repeated ' +
+        'A dropdown / popover / menu / autocomplete is `.surface-overlay` ' +
+          '(design-language.md §5.1). L1 `.surface-card` is the tier for repeated ' +
           'CARDS: a lighter tint and a moving jelly haze, so a menu built on it ' +
           'sits translucent over whatever it opened on top of and the labels ghost. ' +
-          '`.glass-overlay` carries the ≥78% opaque legibility floor shared by every ' +
+          '`.surface-overlay` carries the ≥78% opaque legibility floor shared by every ' +
           'user, and is first in line for the calm haze (docs/plasmatic-jelly-system.md).',
       ),
     ).toEqual([]);
@@ -758,7 +758,7 @@ describe('design consistency — section headings (minimalism audit 2026-10-09)'
  * reference object. A dark INNER shadow reads the other way, as a slot carved
  * into the page, and before the 2026-10-09 navigation/deboss audit that is what
  * every field, search box, segmented-control track and slider track looked like:
- * `.glass-inset` was a "recessed well" with `inset 0 1px 2px rgb(0 0 0 / .35)`.
+ * `.surface-field` was a "recessed well" with `inset 0 1px 2px rgb(0 0 0 / .35)`.
  * The tier is a flush fill now (globals.css), and this keeps a hand-written
  * deboss from coming back one className at a time.
  *
@@ -784,7 +784,7 @@ describe('design consistency — no debossed surfaces (audit 2026-10-09)', () =>
     expect(
       offenders,
       report(
-        'Debossed surface — fields are a flush `.glass-inset` fill; glass is lit from ' +
+        'Debossed surface — fields are a flush `.surface-field` fill; glass is lit from ' +
           'above and never carved into the page (design.md §3, "Nothing is debossed")',
         offenders,
       ),

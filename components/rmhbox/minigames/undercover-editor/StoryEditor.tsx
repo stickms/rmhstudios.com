@@ -153,14 +153,14 @@ export default function StoryEditor({
       </p>
 
       {/* Story prompt */}
-      <div className="glass-fill rounded-app p-3">
+      <div className="surface-card rounded-app p-3">
         <p className="text-[10px] uppercase tracking-wider text-app-text-muted mb-1">{t("prompt-label-story-editor", { defaultValue: "Prompt" })}</p>
         <p className="text-sm italic text-app-accent">&ldquo;{editableStory.prompt}&rdquo;</p>
       </div>
 
       {/* Story context (previous sentences — read only) */}
       {editableStory.sentences.length > 1 && (
-        <div className="glass-fill rounded-app p-3 opacity-60">
+        <div className="surface-card rounded-app p-3 opacity-60">
           <p className="mb-1 text-[10px] uppercase tracking-wider text-app-text-muted">
             {t("previous-sentences", { defaultValue: "Previous sentences" })}
           </p>
@@ -173,7 +173,7 @@ export default function StoryEditor({
       )}
 
       {/* Editable sentence — word-level tokens */}
-      <div className="glass-fill rounded-app border border-app-rare/30 p-4">
+      <div className="surface-card rounded-app border border-app-rare/30 p-4">
         <p className="mb-2 text-[10px] text-app-text-muted">
           {t("latest-sentence-by", { defaultValue: "Latest sentence — by {{author}}", author: editableSentence.authorName })}
         </p>
@@ -194,7 +194,7 @@ export default function StoryEditor({
                     }
                     onKeyDown={handleKeyDown}
                     autoFocus
-                    className="glass-inset w-24 rounded border border-app-rare/50 px-1.5 py-0.5 text-sm text-app-text focus:outline-none focus:ring-1 focus:ring-app-rare"
+                    className="surface-field w-24 rounded border border-app-rare/50 px-1.5 py-0.5 text-sm text-app-text focus:outline-none focus:ring-1 focus:ring-app-rare"
                   />
                   <button
                     onClick={handleConfirmWord}

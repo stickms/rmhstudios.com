@@ -94,12 +94,12 @@ export function RMHCoinsPage() {
   return (
     <div className="flex w-full flex-col gap-4">
       {/* Balance bar — a balance once you have one, the offer of one before. */}
-      <div className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3">
+      <div className="flex items-center justify-between gap-3 rounded-site px-4 py-3">
         {signedIn ? (
           <>
             <div className="flex items-center gap-2">
               <CoinIcon className="size-6" />
-              <span className="font-bold text-2xl text-site-warning">{coins}</span>
+              <span className="font-semibold text-2xl text-site-warning">{coins}</span>
               <span className="text-sm text-site-text-muted">{t("rmh-coins", { defaultValue: "RMH Coins" })}</span>
             </div>
             {coins < 10 && (

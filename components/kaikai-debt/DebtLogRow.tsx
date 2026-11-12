@@ -61,7 +61,7 @@ interface DebtLogRowProps {
  * One line of the debt log: what he owes, why, what it was worth then, and what
  * it is worth now.
  *
- * `.glass-fill` and not `.glass-pane` — L1, no backdrop blur. This is a repeated
+ * `.surface-card` and not `.surface-panel` — L1, no backdrop blur. This is a repeated
  * list item on an infinite list, and the budget for blurred surfaces is **zero**
  * on repeated content (components/CLAUDE.md). A hundred blurred rows is a
  * hundred backdrop samples per frame while the reader is actively scrolling,
@@ -91,7 +91,7 @@ export function DebtLogRow({ entry, nowMs, fresh }: DebtLogRowProps) {
   const grown = nowCents > entry.amountCents * 1.01;
 
   return (
-    <li className={cn('glass-fill flex items-start gap-3 rounded-site p-5', fresh && 'kd-flash')}>
+    <li className={cn('surface-card flex items-start gap-3 rounded-site p-5', fresh && 'kd-flash')}>
       <span className="text-xl leading-none" aria-hidden>
         {CATEGORY_GLYPH[entry.category]}
       </span>

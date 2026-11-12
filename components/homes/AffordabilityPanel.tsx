@@ -1,7 +1,7 @@
 /**
  * RMHHomes — "can I afford it?".
  *
- * A singular panel (L2 `.glass-pane`), not a repeated card: there is one of
+ * A singular panel (L2 `.surface-panel`), not a repeated card: there is one of
  * these per page, above the results.
  *
  * The income figure lives in `localStorage` and nowhere else — no request
@@ -127,7 +127,7 @@ export function AffordabilityPanel({
 
   return (
     <section
-      className="glass-pane p-4 sm:p-5"
+      className="surface-panel p-4 sm:p-5"
       aria-labelledby="homes-afford-heading"
       data-slot="affordability-panel"
     >

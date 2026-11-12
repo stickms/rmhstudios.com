@@ -25,7 +25,7 @@ export function UnlockPriceDialog({
         variants={fade}
         initial="initial"
         animate="animate"
-        className="relative w-full max-w-xs p-4 glass-overlay"
+        className="relative w-full max-w-xs p-4 surface-overlay"
       >
         <div className="mb-3 flex items-center justify-between">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
@@ -46,7 +46,7 @@ export function UnlockPriceDialog({
             defaultValue: 'Charge coins to unlock this post. Leave empty to keep it free.',
           })}
         </p>
-        <div className="flex items-center gap-2 rounded-site glass-fill px-3 py-2">
+        <div className="flex items-center gap-2 rounded-site px-3 py-2">
           <Coins className="h-4 w-4 text-site-text-muted" />
           <input
             type="number"
@@ -94,7 +94,7 @@ export function CheatSheetDialog({ onClose }: { onClose: () => void }) {
         variants={fade}
         initial="initial"
         animate="animate"
-        className="relative w-full max-w-sm p-4 glass-overlay"
+        className="relative w-full max-w-sm p-4 surface-overlay"
       >
         <div className="mb-3 flex items-center justify-between">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
@@ -126,7 +126,7 @@ export function CheatSheetDialog({ onClose }: { onClose: () => void }) {
               {
                 code: '**bold**',
                 node: (
-                  <strong className="font-bold">
+                  <strong className="font-semibold">
                     {t('cheatsheet-bold', { defaultValue: 'bold' })}
                   </strong>
                 ),
@@ -187,7 +187,7 @@ export function AltTextDialog({
         variants={fade}
         initial="initial"
         animate="animate"
-        className="relative w-full max-w-md p-4 glass-overlay"
+        className="relative w-full max-w-md p-4 surface-overlay"
       >
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-site-text">
@@ -229,7 +229,7 @@ export function AltTextDialog({
           placeholder={t('alt-text-placeholder', {
             defaultValue: 'e.g. A golden retriever running on a beach at sunset',
           })}
-          className="w-full resize-none rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted outline-none focus:border-site-accent transition-colors"
+          className="w-full resize-none rounded-site-sm surface-field px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted outline-none focus:border-site-accent transition-colors"
         />
         <div className="mt-3 flex items-center justify-between">
           <span className="text-xs font-mono text-site-text-muted">

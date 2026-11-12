@@ -72,7 +72,7 @@ export default function VotingPhase({
               whileTap={{ scale: 0.98 }}
               onClick={() => onVote(matchup.playerA)}
               disabled={myVote !== null}
-              className={`glass-fill rounded-app border-2 p-5 text-left transition-colors ${
+              className={`surface-card rounded-app border-2 p-5 text-left transition-colors ${
                 myVote === matchup.playerA
                   ? 'border-app-accent bg-app-accent/10'
                   : myVote !== null
@@ -90,7 +90,7 @@ export default function VotingPhase({
               whileTap={{ scale: 0.98 }}
               onClick={() => onVote(matchup.playerB)}
               disabled={myVote !== null}
-              className={`glass-fill rounded-app border-2 p-5 text-left transition-colors ${
+              className={`surface-card rounded-app border-2 p-5 text-left transition-colors ${
                 myVote === matchup.playerB
                   ? 'border-app-accent bg-app-accent/10'
                   : myVote !== null

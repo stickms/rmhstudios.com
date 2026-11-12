@@ -314,7 +314,7 @@ function saveError(e: unknown, t: (k: string, o?: { defaultValue: string }) => s
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <details open className="glass-fill rounded-site">
+    <details open className="relative rounded-site">
       <summary className="flex min-h-11 cursor-pointer list-none items-center px-4 py-3 text-sm font-semibold text-site-text select-none">
         {title}
       </summary>

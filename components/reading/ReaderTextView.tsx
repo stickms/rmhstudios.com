@@ -128,7 +128,7 @@ export default function ReaderTextView({
         defaultValue: 'Text view of {{title}}',
       })}
     >
-      <div className="glass-chrome flex flex-wrap items-center gap-2 px-3 py-2">
+      <div className="surface-chrome flex flex-wrap items-center gap-2 px-3 py-2">
         <Button type="button" variant="ghost" size="sm" onClick={onClose}>
           <ArrowLeft aria-hidden />
           {t('back-to-book', { defaultValue: 'Back to the book' })}
@@ -200,7 +200,7 @@ export default function ReaderTextView({
                 </p>
               ) : null}
               {noText ? (
-                <div className="glass-fill rounded-site p-5 text-site-text-muted" role="note">
+                <div className="surface-card rounded-site p-5 text-site-text-muted" role="note">
                   <p className="font-semibold text-site-text">
                     {t('no-text-layer', { defaultValue: 'No selectable text here' })}
                   </p>

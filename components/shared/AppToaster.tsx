@@ -61,7 +61,6 @@ export default function AppToaster() {
     <div
       className="pointer-events-none fixed inset-x-0 top-0 z-100 flex flex-col items-center gap-2 px-3 pt-[calc(var(--app-safe-top)+1rem)]"
       role="region"
-      data-jelly-arcs="off"
       aria-label={t('notifications', { defaultValue: 'Notifications' })}
     >
       {toasts.map((toast) => (

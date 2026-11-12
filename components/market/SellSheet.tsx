@@ -138,13 +138,13 @@ export function SellSheet({
             {sorted.map((item) => (
               <div
                 key={item.id}
-                className="glass-fill flex items-center gap-3 rounded-site p-4"
+                className="relative flex items-center gap-3 rounded-site p-4"
               >
                 <MarketItemPreview kind={item.kind} data={item.data} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
                   <span
-                    className="text-xs font-semibold uppercase"
+                    className="text-xs font-semibold"
                     style={{ color: RARITY_COLORS[item.rarity] }}
                   >
                     {item.rarity}

@@ -163,7 +163,7 @@ export function BlurImage({
  {/* Skeleton behind everything so there's always a placeholder holding the
  space — even for non-optimizable images with no blur preview. */}
  {!loaded && (
- <span aria-hidden="true" className="absolute inset-0 animate-pulse bg-site-surface" />
+ <span aria-hidden="true" className="absolute inset-0 bg-site-surface" />
  )}
  {placeholderSrc && !loaded && (
  <img

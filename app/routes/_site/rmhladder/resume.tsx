@@ -198,7 +198,7 @@ function ResumeCard({
             <h3 className="site-section-label">{t('ladder.resume.matches', { defaultValue: 'Best role matches' })}</h3>
             <div className="grid gap-3 md:grid-cols-2">
               {version.matches.slice(0, 12).map((match) => (
-                <Link key={match.id} to="/rmhladder/jobs/$jobId" params={{ jobId: match.jobId }} className="glass-fill rounded-site-sm p-4 transition-colors hover:bg-site-surface-hover">
+                <Link key={match.id} to="/rmhladder/jobs/$jobId"params={{ jobId: match.jobId }} className="rounded-site-sm p-4 transition-colors hover:bg-site-surface-hover">
                   <div className="flex items-start justify-between gap-3">
                     <div><p className="font-medium">{match.job?.title ?? t('ladder.resume.role', { defaultValue: 'Role' })}</p><p className="text-sm text-site-text-muted">{match.job?.company?.name}</p></div>
                     <span className="font-mono text-lg text-site-accent">{match.score}</span>
@@ -218,7 +218,7 @@ function ReviewPanel({ review }: { review: Record<string, unknown> }) {
   const strengths = Array.isArray(review.strengths) ? review.strengths as string[] : [];
   const issues = Array.isArray(review.issues) ? review.issues as Array<{ severity: string; message: string; suggestion: string }> : [];
   return (
-    <section className="grid gap-4 glass-inset rounded-site-sm p-4 md:grid-cols-[auto_1fr]">
+    <section className="grid gap-4 surface-field rounded-site-sm p-4 md:grid-cols-[auto_1fr]">
       <div className="flex size-20 items-center justify-center rounded-full border-4 border-site-accent font-mono text-2xl">{Number(review.overallScore ?? 0)}</div>
       <div className="space-y-3"><p>{String(review.summary ?? '')}</p>{strengths.length > 0 && <ul className="list-disc space-y-1 pl-5 text-sm text-site-text-muted">{strengths.map((item) => <li key={item}>{item}</li>)}</ul>}{issues.slice(0, 5).map((issue, index) => <div key={`${issue.message}-${index}`} className="border-l-2 border-site-warning pl-3 text-sm"><p className="font-medium">{issue.message}</p><p className="text-site-text-muted">{issue.suggestion}</p></div>)}</div>
     </section>
@@ -242,7 +242,7 @@ function ProfileConfirmation({ resume, version, initial, onRefresh }: { resume: 
     finally { setSaving(false); }
   }
   return (
-    <section className="glass-inset space-y-4 rounded-site-sm border border-site-accent/40 p-4">
+    <section className="surface-field space-y-4 rounded-site-sm border border-site-accent/40 p-4">
       <div><h3 className="site-section-label">{t('ladder.resume.confirmTitle', { defaultValue: 'Confirm the extracted profile' })}</h3><p className="text-sm text-site-text-muted">{t('ladder.resume.confirmDescription', { defaultValue: 'Correct anything the model got wrong. Matching stays off until you confirm.' })}</p></div>
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-2 text-sm"><span>{t('ladder.resume.headline', { defaultValue: 'Headline' })}</span><Input value={profile.headline} onChange={(event) => setProfile((value) => ({ ...value, headline: event.target.value }))} /></label>

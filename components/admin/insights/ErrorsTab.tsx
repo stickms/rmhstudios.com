@@ -44,7 +44,7 @@ export function ErrorsTab() {
   return (
     <ul className="space-y-3">
       {groups.map((g) => (
-        <li key={g.id} className="glass-fill space-y-2 rounded-site px-4 py-3">
+        <li key={g.id} className="space-y-2 rounded-site px-4 py-3">
           <div className="flex flex-wrap items-center gap-2">
             {g.regressed && (
               <Badge variant="danger">{t('errors-regressed', { defaultValue: 'Regressed' })}</Badge>

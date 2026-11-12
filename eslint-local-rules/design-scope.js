@@ -188,7 +188,6 @@ export const STEEL_PALETTE_BASELINE = {
   'app/routes/_site/library/index.tsx': 'phase 5: catalogue recipe (book-spine radius)',
   'components/news/NewsHero.tsx': 'phase 5: article recipe (blob radius)',
   // Phase 7 (long tail): pages with no recipe yet, and the app-tier kit that moves under L8.
-  'components/homes/ListingCard.tsx': 'phase 7: long tail',
   'components/party/PhoneControllerHost.tsx': 'phase 7: long tail',
   'components/rideshare/RideMap.tsx': 'phase 7: long tail',
   'components/rideshare/RideChat.tsx': 'phase 7: long tail (rounded-br-sm bubble tails)',

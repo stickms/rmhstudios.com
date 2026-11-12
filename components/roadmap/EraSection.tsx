@@ -1,12 +1,11 @@
-import { RevealGroup, RevealItem } from "@/components/motion";
 import type { YearSection } from "./roadmap-types";
 import { eraColorFor } from "./roadmap-model";
 
-/** One milestone → an L2 glass pane (`.glass-pane`). Accent-tinted title,
+/** One milestone → an L2 glass pane (`.`). Accent-tinted title,
  *  muted body, a subtle reduced-motion-safe lift on hover. */
 function MilestoneCard({ title, body }: { title: string; body: string }) {
   return (
-    <div data-slot="card" className="roadmap-card glass-pane rounded-site px-4 py-3">
+    <div data-slot="card"className="roadmap-card rounded-site px-4 py-3">
       <h3 className="site-section-label mb-2 text-site-accent!">
         {title}
       </h3>
@@ -48,13 +47,13 @@ export function EraSection({ section }: { section: YearSection }) {
       </header>
 
       {/* Milestone grid — staggered into view via the shared motion primitives. */}
-      <RevealGroup className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {section.milestones.map((milestone, i) => (
-          <RevealItem key={`${section.year}-${i}`} className="flex">
+          <div key={`${section.year}-${i}`} className="flex">
             <MilestoneCard title={milestone.title} body={milestone.body} />
-          </RevealItem>
+          </div>
         ))}
-      </RevealGroup>
+      </div>
     </section>
   );
 }

@@ -44,12 +44,12 @@ describe('rarityTier', () => {
     expect(rarityTier(Number.POSITIVE_INFINITY)).toBe('common');
   });
 
-  it('returns only glass elevation classes, never a raw colour', () => {
+  it('returns only surface role classes, never a raw colour', () => {
     // The design test rejects raw palette values in components; keeping the
     // rarity treatment on the glass tiers is what keeps this renderable in the
     // light and high-contrast themes too.
     for (const pct of [0.9, 0.2, 0.05, 0.01, 0.0001]) {
-      expect(rarityClass(rarityTier(pct))).toMatch(/^glass-(fill|pane|overlay)$/);
+      expect(rarityClass(rarityTier(pct))).toMatch(/^surface-(card|panel|overlay)$/);
     }
   });
 });

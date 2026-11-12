@@ -86,7 +86,7 @@ export function PhotoPage() {
     >
       <div className="max-w-3xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
         {yesterday && (
-          <section className="glass-pane space-y-3 rounded-site px-4 py-3" aria-labelledby="potd-winner">
+          <section className="space-y-3 rounded-site px-4 py-3"aria-labelledby="potd-winner">
             <h2 id="potd-winner" className="site-section-label">
               {t('potd-winner', { defaultValue: 'Yesterday’s winner' })}
             </h2>
@@ -100,7 +100,7 @@ export function PhotoPage() {
 
         {session && d && !d.nominations.some((n) => n.mine) && (
           <form
-            className="glass-pane space-y-3 rounded-site px-4 py-3"
+            className="space-y-3 rounded-site px-4 py-3"
             onSubmit={(e) => {
               e.preventDefault();
               upload();
@@ -146,7 +146,7 @@ export function PhotoPage() {
           ) : (
             <ul className="grid gap-3 sm:grid-cols-2">
               {d.nominations.map((n) => (
-                <li key={n.id} className="glass-fill space-y-3 rounded-site p-4">
+                <li key={n.id} className="space-y-3 rounded-site p-4">
                   <img
                     src={n.imageUrl}
                     alt={n.caption}
@@ -208,7 +208,7 @@ export function PhotoPage() {
             </h2>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {older.map((w) => (
-                <li key={w.id} className="glass-fill space-y-2 rounded-site p-4">
+                <li key={w.id} className="space-y-2 rounded-site p-4">
                   <img
                     src={w.imageUrl}
                     alt={w.caption}

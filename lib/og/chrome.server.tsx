@@ -282,7 +282,7 @@ interface PaneOptions {
 }
 
 /**
- * A glass pane (`.glass-pane`, L2 — the singular-panel tier): translucent fill
+ * A glass pane (`.surface-panel`, L2 — the singular-panel tier): translucent fill
  * over whatever the canvas is drawing, a hairline rim, and the specular top
  * edge every tier carries. `flex: 1` is deliberately NOT set — callers decide
  * whether the pane fills the card or hugs its content.
@@ -307,7 +307,7 @@ export function pane({ style, children }: PaneOptions): React.ReactElement {
 }
 
 /**
- * A recessed well (`.glass-inset`) — the tier the site uses for fields and, on
+ * A recessed well (`.surface-field`) — the tier the site uses for fields and, on
  * a card, for a quoted or embedded fragment of the page's own content.
  */
 export function inset({ style, children }: PaneOptions): React.ReactElement {

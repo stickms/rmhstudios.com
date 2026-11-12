@@ -89,7 +89,7 @@ export function WidgetStack({ className }: { className?: string }) {
               <Link
                 to={link.href}
                 aria-label={t('open-widget', { defaultValue: 'Open {{name}}', name: label })}
-                className="glass-interactive flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium text-site-accent"
+                className="surface-press flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium text-site-accent"
               >
                 {t('open', { defaultValue: 'Open' })}
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden />

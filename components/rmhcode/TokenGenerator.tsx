@@ -97,7 +97,7 @@ export default function TokenGenerator() {
             placeholder={t("token-name-placeholder", { defaultValue: "Token name (optional)" })}
             value={tokenName}
             onChange={(e) => setTokenName(e.target.value)}
-            className="min-w-0 flex-1 basis-48 px-3 py-2 glass-inset rounded-site-sm text-site-text text-base sm:text-sm outline-none focus:border-site-text transition-colors"
+            className="min-w-0 flex-1 basis-48 px-3 py-2 surface-field rounded-site-sm text-site-text text-base sm:text-sm outline-none focus:border-site-text transition-colors"
             maxLength={100}
           />
           <Button
@@ -133,7 +133,7 @@ export default function TokenGenerator() {
             {t("token-generated-notice", { defaultValue: "Token generated! Copy it now - it won't be shown again." })}
           </div>
           <div className="flex items-center gap-2">
-            <code className="glass-inset flex-1 rounded-site-sm p-2 text-sm font-mono text-site-text break-all">
+            <code className="surface-field flex-1 rounded-site-sm p-2 text-sm font-mono text-site-text break-all">
               {newToken}
             </code>
             <CopyButton value={newToken} label={t("copy-token-label", { defaultValue: "Copy token" })} variant="default" className="shrink-0" />
@@ -162,7 +162,7 @@ export default function TokenGenerator() {
             {tokens.map((token) => (
               <div
                 key={token.id}
-                className={`glass-fill flex items-center justify-between p-3 rounded-site-sm ${
+                className={`surface-card flex items-center justify-between p-3 rounded-site-sm ${
                   isExpired(token.expiresAt)
                     ? 'bg-site-danger/10 border-site-danger/30'
                     : ''

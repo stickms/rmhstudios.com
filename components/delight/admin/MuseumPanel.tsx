@@ -71,7 +71,7 @@ export default function MuseumPanel() {
   return (
     <div className="space-y-[var(--site-section-gap)]">
       <form
-        className="glass-pane space-y-3 rounded-site p-5"
+        className="space-y-3 rounded-site p-5"
         onSubmit={(e) => {
           e.preventDefault();
           void save();
@@ -133,7 +133,7 @@ export default function MuseumPanel() {
       </form>
       <ul className="space-y-3">
         {q.data?.eras.map((e) => (
-          <li key={e.id} className="glass-fill flex items-center gap-3 rounded-site px-4 py-3">
+          <li key={e.id} className="flex items-center gap-3 rounded-site px-4 py-3">
             <span className="w-24 shrink-0 text-xs text-site-text-muted">{e.eraDate}</span>
             <span className="min-w-0 flex-1 truncate text-sm text-site-text">{e.title}</span>
             <IconButton

@@ -107,7 +107,7 @@ export default function GameVoting({ candidates, durationSeconds, endsAt, onVote
             <button
               key={c.minigameId}
               onClick={() => handleVote(c.minigameId)}
-              className={`glass-fill relative overflow-hidden rounded-app border p-4 text-left transition-colors ${
+              className={`surface-card relative overflow-hidden rounded-app border p-4 text-left transition-colors ${
                 isSelected
                   ? 'border-app-accent bg-app-accent/10 ring-2 ring-app-accent'
                   : 'border-app-border hover:bg-app-surface-hover'

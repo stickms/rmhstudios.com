@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 362 routes. 198 render inside the standard site shell (sidebar, nav, context rail); 164 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 362 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 163 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -120,6 +120,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/museum` | Site museum | public | `app/routes/_site/museum.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
+| `/news/:slug` | — | public | `app/routes/_site/news/$slug.tsx` |
 | `/news/stories/:slug` | — | public | `app/routes/_site/news/stories/$slug.tsx` |
 | `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
 | `/office-hours` | Office hours | public | `app/routes/_site/office-hours/index.tsx` |
@@ -290,7 +291,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/lights-out` | redirects to `/daily/lights-out` | public | `app/routes/lights-out.tsx` |
 | `/login` | Login \| RMH | public | `app/routes/login.tsx` |
 | `/neon-driftway` | — | public | `app/routes/neon-driftway.tsx` |
-| `/news/:slug` | — | public | `app/routes/news.$slug.tsx` |
 | `/news/rss.xml` | RMH Studios — News | public | `app/routes/news.rss[.]xml.ts` |
 | `/nightrail` | — | public | `app/routes/nightrail.tsx` |
 | `/offline` | Offline | public | `app/routes/offline.tsx` |

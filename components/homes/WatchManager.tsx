@@ -99,7 +99,7 @@ export function WatchManager() {
       {watches.map((w) => (
         <div
           key={w.id}
-          className={`flex items-center justify-between gap-3 glass-fill rounded-site p-3 transition-colors ${
+          className={`flex items-center justify-between gap-3 rounded-site p-3 transition-colors ${
             w.active ? '' : 'opacity-60'
           }`}
         >

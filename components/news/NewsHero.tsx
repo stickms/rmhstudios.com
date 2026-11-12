@@ -109,7 +109,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
         <div className="flex">
           {articles.map((article) => (
             <div key={article.slug} className="min-w-0 flex-[0_0_100%] px-3">
-              <article className="glass-pane site-inverse relative flex min-h-64 flex-col justify-end overflow-hidden p-5 sm:min-h-80 sm:p-8 md:p-12">
+              <article className="site-inverse relative flex min-h-64 flex-col justify-end overflow-hidden p-5 sm:min-h-80 sm:p-8 md:p-12">
                 <div
                   aria-hidden
                   className="absolute -right-20 -top-36 size-96 rounded-[44%_56%_62%_38%] bg-site-text opacity-8"
@@ -119,7 +119,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                     <Calendar className="size-3.5" aria-hidden />
                     {article.date}
                   </span>
-                  <h2 className="mb-6 font-display text-2xl font-medium leading-tight text-site-text md:text-4xl">
+                  <h2 className="t-heading mb-6">
                     {article.title}
                   </h2>
                   <Link
@@ -142,7 +142,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
           <button
             onClick={scrollPrev}
             data-slot="news-hero-control"
-            className="glass-fill glass-interactive inline-flex size-11 shrink-0 touch-manipulation items-center justify-center text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg active:bg-site-surface-active"
+            className="surface-press inline-flex size-11 shrink-0 touch-manipulation items-center justify-center text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg active:bg-site-surface-active"
             aria-label={t('prev-featured-article', {
               defaultValue: 'Previous featured article',
             })}
@@ -186,7 +186,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
           <button
             onClick={scrollNext}
             data-slot="news-hero-control"
-            className="glass-fill glass-interactive inline-flex size-11 shrink-0 touch-manipulation items-center justify-center text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg active:bg-site-surface-active"
+            className="surface-press inline-flex size-11 shrink-0 touch-manipulation items-center justify-center text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg active:bg-site-surface-active"
             aria-label={t('next-featured-article', { defaultValue: 'Next featured article' })}
           >
             <ChevronRight className="size-4" aria-hidden />

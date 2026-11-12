@@ -317,7 +317,7 @@ function LoginPage() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               aria-label={t('choose-avatar', { defaultValue: 'Choose a profile picture' })}
-              className="glass-inset relative flex size-20 items-center justify-center rounded-full border-dashed hover:border-site-text transition-colors"
+              className="surface-field relative flex size-20 items-center justify-center rounded-full border-dashed hover:border-site-text transition-colors"
             >
               <img
                 src={avatarPreview || '/images/social/default_avatar.png'}
@@ -424,21 +424,16 @@ function LoginPage() {
     // <main> because /login renders outside the _site shell, which is where the
     // site's landmark and skip link live; a deep-linked visit had neither.
     <main className="flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8">
-      {/* Flagship: a singular L2 pane with hero edge-refraction + prism rim
-          (1 of ≤2/page). data-glass-lens opts it into the per-element lens
-          filter; .glass-liquid adds the ambient sheen (1 of ≤3/page). Only the
-          card width takes the slab: on a phone the same markup would be a
-          full-viewport glass body, its rim drawn at the screen edges. */}
+      {/* The sign-in form: a plain block, full-viewport on a phone and a narrow column from the sm breakpoint. */}
       <div
-        data-glass-lens={isCard ? '' : undefined}
         className={cn(
           'relative flex min-h-dvh w-full max-w-none flex-col justify-center rounded-none px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:min-h-0 sm:max-w-sm sm:rounded-site sm:p-8',
-          isCard && 'glass-pane glass-liquid glass-refract glass-refract--prism',
+          isCard && 'surface-panel',
         )}
       >
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-site">
+          <div className="surface-field mb-3 flex size-12 items-center justify-center rounded-site">
             <span className="font-display text-lg font-bold tracking-tight text-site-text">R</span>
           </div>
           <p className="site-kicker">RMH Studios</p>
