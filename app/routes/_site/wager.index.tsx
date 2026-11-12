@@ -40,12 +40,16 @@ function WagerPage() {
   const listOptions = wagersQuery(tab);
   const list = useQuery({ ...listOptions, retry: false });
   const loading = list.isPending;
-  const wagers = list.data ?? [];
+  // A failed fetch (signed out on "mine", a 5xx) shows the empty state, as it always has.
+  const wagers = list.data?.wagers ?? [];
 
   const onCardChange = (id: string) => (next: SerializedWager | null) => {
-    queryClient.setQueryData<SerializedWager[]>(listOptions.queryKey, (prev = []) =>
-      next ? prev.map((w) => (w.id === id ? next : w)) : prev.filter((w) => w.id !== id),
-    );
+    queryClient.setQueryData(listOptions.queryKey, (prev) => {
+      const rows = prev?.wagers ?? [];
+      return {
+        wagers: next ? rows.map((w) => (w.id === id ? next : w)) : rows.filter((w) => w.id !== id),
+      };
+    });
   };
 
   return (
