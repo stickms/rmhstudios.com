@@ -8,19 +8,17 @@
  *
  * ```ts
  * // feature.queries.ts
- * export const thingsQuery = () => queryOptions({
- *   queryKey: ['things'],
- *   queryFn: routeQueryFn(() => fetchThingsOnServer(), () => api(listThingsApi)),
- *   staleTime: 30_000,
- * });
+ * export const thingsQuery = () =>
+ *   contractQuery(['things'], listThingsApi, undefined, { staleTime: 30_000 });
  * // route
  * loader: ({ context }) => prefetchRouteQuery(context.queryClient, thingsQuery()),
  * // component
  * const { data, isPending } = useQuery(thingsQuery());
  * ```
  *
- * Client-safe: the server half is a `createServerFn` stub that only the SSR
- * loader ever calls.
+ * Client-safe: the server half is behind `createIsomorphicFn`, so the in-process
+ * dispatcher never reaches the browser bundle. A `*.queries.ts` holds no
+ * `createServerFn` (`lib/__tests__/queries-server-fn-ratchet.test.ts`).
  */
 import {
   queryOptions,
@@ -33,25 +31,6 @@ import { api, apiUrl, type ApiInput } from '@/lib/contract/client';
 import type { Endpoint, ResOf } from '@/lib/contract/endpoint';
 
 const ON_SERVER = typeof window === 'undefined';
-
-/**
- * A `queryFn` with two transports for one result. On the server (the SSR
- * loader) it calls `onServer`, a `createServerFn` that runs the same server
- * logic the API route does and reads the request's own session cookie; in the
- * browser it calls `onClient`, the existing typed contract call, so client
- * behaviour (rate limit, cache headers, retries) is exactly what it was. The
- * server result is round-tripped through JSON so Dates and the like have the
- * wire shape the client branch returns.
- */
-export function routeQueryFn<T>(
-  onServer: () => Promise<unknown>,
-  onClient: () => Promise<T>,
-): () => Promise<T> {
-  return async () => {
-    if (!ON_SERVER) return onClient();
-    return JSON.parse(JSON.stringify(await onServer())) as T;
-  };
-}
 
 /**
  * Await a query into the cache from a route loader. Unlike `ensureQueryData`
@@ -102,7 +81,7 @@ export function contractQuery<E extends Endpoint, const TKey extends QueryKey>(
   queryKey: TKey,
   contract: E,
   input?: Pick<ApiInput<E>, 'params' | 'query'> & { retries?: number; timeoutMs?: number },
-  options?: { staleTime?: number; enabled?: boolean },
+  options?: { staleTime?: number; enabled?: boolean; retry?: boolean | number },
 ) {
   const { params, query, ...transport } = (input ?? {}) as {
     params?: Record<string, string>;

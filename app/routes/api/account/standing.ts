@@ -8,16 +8,14 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { withRateLimit } from '@/lib/rate-limit';
 import { getAccountStanding } from '@/lib/moderation/standing.server';
 
 export const Route = createFileRoute('/api/account/standing')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ request, session }) => {
-        const limited = withRateLimit(request, 'read', { scope: session.user.id });
-        if (limited) return limited;
-
+      // Per user and IP, as before; declared here (not called in the body) so the page
+      // loader's in-process read of this route is not charged against the visitor.
+      GET: defineHandler({ rateLimit: { policy: 'read', scope: 'user' } }, async ({ session }) => {
         const standing = await getAccountStanding(session.user.id);
         return Response.json(standing, {
           // A moderation record is per-user and changes the moment a

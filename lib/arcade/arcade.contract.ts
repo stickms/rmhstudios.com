@@ -4,6 +4,7 @@
  */
 import { endpoint } from '@/lib/contract/endpoint';
 import type { PlayStatus } from '@/lib/arcade/backlog';
+import type { DailyMutator } from '@/lib/arcade/seeded';
 import type { ArcadeState } from '@/lib/quests/arcade';
 
 export interface BacklogView {
@@ -131,6 +132,23 @@ export const finishBasketApi = endpoint<{
   };
   res: { counted: boolean };
 }>()({ method: 'POST', path: '/api/arcade/basket/finish' });
+
+/** Today's daily mutator, its board, and the caller's own attempt (null when signed out). */
+export interface DailyData {
+  mutator: DailyMutator;
+  board: {
+    rank: number;
+    score: number;
+    isMe: boolean;
+    user: { name?: string | null; handle?: string | null };
+  }[];
+  mine: { score: number | null; finishedAt: string | null } | null;
+}
+
+export const getDailyMutatorApi = endpoint<{ res: DailyData }>()({
+  method: 'GET',
+  path: '/api/arcade/daily',
+});
 
 /** Claim today's one counted daily-mutator attempt. */
 export const startDailyRunApi = endpoint<{
