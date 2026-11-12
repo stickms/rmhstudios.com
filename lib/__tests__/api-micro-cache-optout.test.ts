@@ -45,7 +45,7 @@ describe('micro-cache opt-out', () => {
 
   it('visibility-flippable and write-then-read routes opt out', () => {
     for (const f of [
-      'app/routes/api/users/$id.wishlist.ts',
+      'lib/wishlist/api/users.$id.wishlist.server.ts',
       'lib/tournaments/api/tournaments.server.ts',
       'lib/achievements/api/achievements.$userId.server.ts',
     ])

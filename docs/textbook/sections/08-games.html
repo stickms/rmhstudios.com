@@ -300,7 +300,7 @@ server treats it as a value to hold for that user, not a structure to query.</di
   @@map("temple_of_joy_save")
 }</code></pre>
 
-<p>The save handler (<code>app/routes/api/temple-of-joy/save.ts</code>) is a textbook
+<p>The save handler (<code>lib/temple-of-joy/api/temple-of-joy.save.server.ts</code>) is a textbook
 upsert-per-user: authenticate, rate-limit, reject a non-object body, cap the payload at 500&nbsp;KB
 (<code>bodyStr.length &gt; 500_000</code>), then <code>prisma.templeOfJoySave.upsert</code> keyed on
 <code>userId</code> — one save row per player, last write wins. Signal Forge's

@@ -804,36 +804,85 @@ import { route as r795 } from '@/lib/study/api/study.decks.$id.clone.server';
 import { route as r796 } from '@/lib/study/api/study.decks.$id.review.server';
 import { route as r797 } from '@/lib/study/api/study.marketplace.server';
 import { route as r798 } from '@/lib/study/api/study.tutor.server';
-import { route as r799 } from '@/lib/temple-of-joy/api/temple-of-joy.efficiency.server';
-import { route as r800 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.download.server';
-import { route as r801 } from '@/lib/tf2-loadout/api/tf2-loadout.models.server';
-import { route as r802 } from '@/lib/themes/api/themes.server';
-import { route as r803 } from '@/lib/themes/api/themes.$id.buy.server';
-import { route as r804 } from '@/lib/themes/api/themes.$id.publish.server';
-import { route as r805 } from '@/lib/discovery/api/tips.leaderboard.server';
-import { route as r806 } from '@/lib/tournaments/api/tournaments.server';
-import { route as r807 } from '@/lib/tournaments/api/tournaments.$id.server';
-import { route as r808 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.report.server';
-import { route as r809 } from '@/lib/competitive/api/tournaments.$id.pickem.server';
-import { route as r810 } from '@/lib/api/routes/user-builds.server';
-import { route as r811 } from '@/lib/api/routes/user-builds.$id.server';
-import { route as r812 } from '@/lib/api/routes/user-builds.$id.comments.server';
-import { route as r813 } from '@/lib/api/routes/user-builds.$id.like.server';
-import { route as r814 } from '@/lib/api/routes/user-builds.categories.server';
-import { route as r815 } from '@/lib/api/routes/user-builds.featured.server';
-import { route as r816 } from '@/lib/discovery/api/users.search.server';
-import { route as r817 } from '@/lib/game/api/vega.leaderboard.server';
-import { route as r818 } from '@/features/vega/api/vega.score.server';
-import { route as r819 } from '@/lib/versecraft/api/versecraft.progress.server';
-import { route as r820 } from '@/lib/versecraft/api/versecraft.save.server';
-import { route as r821 } from '@/lib/versecraft/api/versecraft.seeds.fork.server';
-import { route as r822 } from '@/lib/game/api/void-breaker.leaderboard.server';
-import { route as r823 } from '@/lib/game/api/void-breaker.score.server';
-import { route as r824 } from '@/lib/wager/api/wager.server';
-import { route as r825 } from '@/lib/wager/api/wager.$id.server';
-import { route as r826 } from '@/lib/profile/api/webrings.$slug.membership.server';
-import { route as r827 } from '@/lib/wheel/api/wheel.server';
-import { route as r828 } from '@/lib/wheel/api/wheel.spin.server';
+import { route as r799 } from '@/lib/api/routes/tags.$tag.server';
+import { route as r800 } from '@/lib/temple-of-joy/api/temple-of-joy.efficiency.server';
+import { route as r801 } from '@/lib/temple-of-joy/api/temple-of-joy.save.server';
+import { route as r802 } from '@/lib/tf2-hud/api/tf2-hud.ai.server';
+import { route as r803 } from '@/lib/tf2-hud/api/tf2-hud.blobs.$sha1.server';
+import { route as r804 } from '@/lib/tf2-hud/api/tf2-hud.blobs.check.server';
+import { route as r805 } from '@/lib/tf2-hud/api/tf2-hud.huds.server';
+import { route as r806 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.server';
+import { route as r807 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.download.server';
+import { route as r808 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.file.server';
+import { route as r809 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.fork.server';
+import { route as r810 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.like.server';
+import { route as r811 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.share.server';
+import { route as r812 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.versions.server';
+import { route as r813 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.versions.$n.server';
+import { route as r814 } from '@/lib/tf2-hud/api/tf2-hud.share.$token.server';
+import { route as r815 } from '@/lib/tf2-hud/api/tf2-hud.share.$token.file.server';
+import { route as r816 } from '@/lib/tf2-loadout/api/tf2-loadout.ai.server';
+import { route as r817 } from '@/lib/tf2-loadout/api/tf2-loadout.catalog.server';
+import { route as r818 } from '@/lib/tf2-loadout/api/tf2-loadout.icons.$id.server';
+import { route as r819 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.server';
+import { route as r820 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.$id.server';
+import { route as r821 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.$id.fork.server';
+import { route as r822 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.$id.like.server';
+import { route as r823 } from '@/lib/tf2-loadout/api/tf2-loadout.models.server';
+import { route as r824 } from '@/lib/tf2-loadout/api/tf2-loadout.models.$id.server';
+import { route as r825 } from '@/lib/themes/api/themes.server';
+import { route as r826 } from '@/lib/themes/api/themes.$id.server';
+import { route as r827 } from '@/lib/themes/api/themes.$id.buy.server';
+import { route as r828 } from '@/lib/themes/api/themes.$id.publish.server';
+import { route as r829 } from '@/lib/themes/api/themes.shop.server';
+import { route as r830 } from '@/lib/discovery/api/tips.leaderboard.server';
+import { route as r831 } from '@/lib/quests/api/today.server';
+import { route as r832 } from '@/lib/tournaments/api/tournaments.server';
+import { route as r833 } from '@/lib/tournaments/api/tournaments.$id.server';
+import { route as r834 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.report.server';
+import { route as r835 } from '@/lib/competitive/api/tournaments.$id.pickem.server';
+import { route as r836 } from '@/lib/delight/api/translate.server';
+import { route as r837 } from '@/lib/delight/api/translate.suggest.server';
+import { route as r838 } from '@/lib/delight/api/translate.vote.server';
+import { route as r839 } from '@/lib/trash/api/trash.server';
+import { route as r840 } from '@/lib/trash/api/trash.$kind.$id.server';
+import { route as r841 } from '@/lib/trash/api/trash.restore.server';
+import { route as r842 } from '@/lib/unfurl/api/unfurl.server';
+import { route as r843 } from '@/lib/api/routes/user-builds.server';
+import { route as r844 } from '@/lib/api/routes/user-builds.$id.server';
+import { route as r845 } from '@/lib/api/routes/user-builds.$id.comments.server';
+import { route as r846 } from '@/lib/api/routes/user-builds.$id.like.server';
+import { route as r847 } from '@/lib/api/routes/user-builds.categories.server';
+import { route as r848 } from '@/lib/api/routes/user-builds.featured.server';
+import { route as r849 } from '@/lib/wishlist/api/users.$id.wishlist.server';
+import { route as r850 } from '@/lib/discovery/api/users.search.server';
+import { route as r851 } from '@/lib/game/api/vega.leaderboard.server';
+import { route as r852 } from '@/features/vega/api/vega.score.server';
+import { route as r853 } from '@/lib/velum2099/api/velum2099.contracts.server';
+import { route as r854 } from '@/lib/versecraft/api/versecraft.chapter.server';
+import { route as r855 } from '@/lib/versecraft/api/versecraft.outline.server';
+import { route as r856 } from '@/lib/versecraft/api/versecraft.progress.server';
+import { route as r857 } from '@/lib/versecraft/api/versecraft.save.server';
+import { route as r858 } from '@/lib/versecraft/api/versecraft.seeds.server';
+import { route as r859 } from '@/lib/versecraft/api/versecraft.seeds.fork.server';
+import { route as r860 } from '@/lib/versecraft/api/versecraft.seeds.rate.server';
+import { route as r861 } from '@/lib/game/api/void-breaker.leaderboard.server';
+import { route as r862 } from '@/lib/game/api/void-breaker.score.server';
+import { route as r863 } from '@/lib/wager/api/wager.server';
+import { route as r864 } from '@/lib/wager/api/wager.$id.server';
+import { route as r865 } from '@/lib/profile/api/webrings.server';
+import { route as r866 } from '@/lib/profile/api/webrings.$slug.server';
+import { route as r867 } from '@/lib/profile/api/webrings.$slug.hop.server';
+import { route as r868 } from '@/lib/profile/api/webrings.$slug.membership.server';
+import { route as r869 } from '@/lib/wheel/api/wheel.server';
+import { route as r870 } from '@/lib/wheel/api/wheel.spin.server';
+import { route as r871 } from '@/lib/calendar/api/when.server';
+import { route as r872 } from '@/lib/calendar/api/when.$id.server';
+import { route as r873 } from '@/lib/calendar/api/when.$id.ics.server';
+import { route as r874 } from '@/lib/calendar/api/when.$id.lock.server';
+import { route as r875 } from '@/lib/calendar/api/when.$id.respond.server';
+import { route as r876 } from '@/lib/wishlist/api/wishlist.server';
+import { route as r877 } from '@/lib/wrapped/api/wrapped.server';
 
 export const API_ROUTES: readonly ApiRoute[] = [
   r0, // /api/account/delete
@@ -1635,34 +1684,83 @@ export const API_ROUTES: readonly ApiRoute[] = [
   r796, // /api/study/decks/$id/review
   r797, // /api/study/marketplace
   r798, // /api/study/tutor
-  r799, // /api/temple-of-joy/efficiency
-  r800, // /api/tf2-hud/huds/$id/download
-  r801, // /api/tf2-loadout/models
-  r802, // /api/themes
-  r803, // /api/themes/$id/buy
-  r804, // /api/themes/$id/publish
-  r805, // /api/tips/leaderboard
-  r806, // /api/tournaments
-  r807, // /api/tournaments/$id
-  r808, // /api/tournaments/$id/matches/$matchId/report
-  r809, // /api/tournaments/$id/pickem
-  r810, // /api/user-builds
-  r811, // /api/user-builds/$id
-  r812, // /api/user-builds/$id/comments
-  r813, // /api/user-builds/$id/like
-  r814, // /api/user-builds/categories
-  r815, // /api/user-builds/featured
-  r816, // /api/users/search
-  r817, // /api/vega/leaderboard
-  r818, // /api/vega/score
-  r819, // /api/versecraft/progress
-  r820, // /api/versecraft/save
-  r821, // /api/versecraft/seeds/fork
-  r822, // /api/void-breaker/leaderboard
-  r823, // /api/void-breaker/score
-  r824, // /api/wager
-  r825, // /api/wager/$id
-  r826, // /api/webrings/$slug/membership
-  r827, // /api/wheel
-  r828, // /api/wheel/spin
+  r799, // /api/tags/$tag
+  r800, // /api/temple-of-joy/efficiency
+  r801, // /api/temple-of-joy/save
+  r802, // /api/tf2-hud/ai
+  r803, // /api/tf2-hud/blobs/$sha1
+  r804, // /api/tf2-hud/blobs/check
+  r805, // /api/tf2-hud/huds
+  r806, // /api/tf2-hud/huds/$id
+  r807, // /api/tf2-hud/huds/$id/download
+  r808, // /api/tf2-hud/huds/$id/file
+  r809, // /api/tf2-hud/huds/$id/fork
+  r810, // /api/tf2-hud/huds/$id/like
+  r811, // /api/tf2-hud/huds/$id/share
+  r812, // /api/tf2-hud/huds/$id/versions
+  r813, // /api/tf2-hud/huds/$id/versions/$n
+  r814, // /api/tf2-hud/share/$token
+  r815, // /api/tf2-hud/share/$token/file
+  r816, // /api/tf2-loadout/ai
+  r817, // /api/tf2-loadout/catalog
+  r818, // /api/tf2-loadout/icons/$id
+  r819, // /api/tf2-loadout/loadouts
+  r820, // /api/tf2-loadout/loadouts/$id
+  r821, // /api/tf2-loadout/loadouts/$id/fork
+  r822, // /api/tf2-loadout/loadouts/$id/like
+  r823, // /api/tf2-loadout/models
+  r824, // /api/tf2-loadout/models/$id
+  r825, // /api/themes
+  r826, // /api/themes/$id
+  r827, // /api/themes/$id/buy
+  r828, // /api/themes/$id/publish
+  r829, // /api/themes/shop
+  r830, // /api/tips/leaderboard
+  r831, // /api/today
+  r832, // /api/tournaments
+  r833, // /api/tournaments/$id
+  r834, // /api/tournaments/$id/matches/$matchId/report
+  r835, // /api/tournaments/$id/pickem
+  r836, // /api/translate
+  r837, // /api/translate/suggest
+  r838, // /api/translate/vote
+  r839, // /api/trash
+  r840, // /api/trash/$kind/$id
+  r841, // /api/trash/restore
+  r842, // /api/unfurl
+  r843, // /api/user-builds
+  r844, // /api/user-builds/$id
+  r845, // /api/user-builds/$id/comments
+  r846, // /api/user-builds/$id/like
+  r847, // /api/user-builds/categories
+  r848, // /api/user-builds/featured
+  r849, // /api/users/$id/wishlist
+  r850, // /api/users/search
+  r851, // /api/vega/leaderboard
+  r852, // /api/vega/score
+  r853, // /api/velum2099/contracts
+  r854, // /api/versecraft/chapter
+  r855, // /api/versecraft/outline
+  r856, // /api/versecraft/progress
+  r857, // /api/versecraft/save
+  r858, // /api/versecraft/seeds
+  r859, // /api/versecraft/seeds/fork
+  r860, // /api/versecraft/seeds/rate
+  r861, // /api/void-breaker/leaderboard
+  r862, // /api/void-breaker/score
+  r863, // /api/wager
+  r864, // /api/wager/$id
+  r865, // /api/webrings
+  r866, // /api/webrings/$slug
+  r867, // /api/webrings/$slug/hop
+  r868, // /api/webrings/$slug/membership
+  r869, // /api/wheel
+  r870, // /api/wheel/spin
+  r871, // /api/when
+  r872, // /api/when/$id
+  r873, // /api/when/$id/ics
+  r874, // /api/when/$id/lock
+  r875, // /api/when/$id/respond
+  r876, // /api/wishlist
+  r877, // /api/wrapped
 ];
