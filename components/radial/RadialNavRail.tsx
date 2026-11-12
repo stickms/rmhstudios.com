@@ -16,7 +16,7 @@
 
 import { memo, useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
-import { usePathname } from './shell-router-state';
+import { usePathname } from '@/components/shell/shell-router-state';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { useUnreadCount } from '@/lib/useUnreadCount';

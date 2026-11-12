@@ -1,0 +1,276 @@
+/* The phone navigator (docs/plans/2026-11-11-steel-design-implementation.md section 8.1, G1 to G8).
+
+   This is one of the two stylesheets allowed a gradient (R2, B2; lib/__tests__/steel-flat.test.ts): the globe's dots
+   (G1) are a radial gradient. The globe's chrome comes from app/styles/steel-chrome.css (.chrome-globe, 4.2) and, once
+   it has drawn, from the shared renderer (lib/chrome). Nothing here animates anything but `transform` and `opacity`
+   (G6): the globe is SCALED, never resized, so nothing lays out during the move.
+
+   STATE is the `data-open` attribute on .globe-nav. Nothing reads it but this file.
+
+   GEOMETRY. The dock is 64px, 18px above the bottom edge plus the safe-area inset, and rides `--vv-follow` (app/globals.css)
+   so it follows iOS Safari's toolbar in CSS with no script, as the old dock did. Open, the same element travels to the
+   middle of the VISIBLE area and scales 4.5x to 288px. The centre of the visible area is `50dvh` from the container's
+   top; the dock's centre is 18px + 32px + inset up from the bottom, and `--vv-follow` cancels, so the travel is
+   `50dvh - 50px - inset`. Pins are offsets from that centre (G3 gives them for a 390 x 844 viewport; the globe is 288px at
+   every size, so they are fixed lengths).
+
+   iOS (CLAUDE.md "iOS Safari bars"): the docked globe floats 18px off the edge; the page-fade under it is hidden on
+   html.ios-webkit (a flat layer at the bottom edge is what Safari fills its tab bar strip from); the veil paints out
+   past the edges with a NEGATIVE inset and is `visibility: hidden` at rest. */
+
+.globe-nav {
+  --globe-d: 64px;
+  --globe-open-d: 288px;
+  --globe-bottom: calc(18px + env(safe-area-inset-bottom, 0px) + var(--vv-follow, 0px));
+  --globe-travel: calc(50dvh - 50px - env(safe-area-inset-bottom, 0px));
+  /* M4: 360 ms on cubic-bezier(.2,0,0,1), the one curve token (steel-chrome.css). */
+  --globe-ease: var(--m4-curve);
+}
+
+/* Desktop navigates with the sidebar (G9). */
+@media (min-width: 1024px) {
+  .globe-nav {
+    display: none;
+  }
+}
+
+/* G1: the page fades into the ground over the last 130px so content never meets the globe. */
+.globe-nav__fade {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: calc(130px + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-rail);
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--site-bg));
+}
+html.ios-webkit .globe-nav__fade {
+  display: none;
+}
+
+/* The veil: --site-bg at 96%, flat, no blur (G2). */
+.globe-nav__veil {
+  position: fixed;
+  inset: -2rem;
+  z-index: var(--z-hub-overlay);
+  background: var(--site-bg);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    visibility 0s linear 0.2s;
+}
+.globe-nav[data-open] .globe-nav__veil {
+  opacity: 0.96;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 0.2s ease,
+    visibility 0s;
+}
+
+/* The dock: a fixed 64px box that never transforms. The globe inside it does. */
+.globe-nav__dock {
+  position: fixed;
+  inset-inline-start: 50%;
+  inset-block-end: var(--globe-bottom);
+  inline-size: var(--globe-d);
+  block-size: var(--globe-d);
+  translate: -50% 0;
+  z-index: var(--z-floating);
+}
+[dir='rtl'] .globe-nav__dock {
+  translate: 50% 0;
+}
+.globe-nav[data-open] .globe-nav__dock {
+  z-index: var(--z-hub-orb-open);
+}
+
+/* A control, so the doubled class: the base layer's button rules and the unlayered `:is(button, [role=button]) { border-radius }`
+   in the site sheet come later in the cascade and would otherwise square the ball. */
+.globe-nav .globe-nav__globe {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  cursor: pointer;
+  overflow: hidden;
+  /* The reference globe's shadows: the molded rim, a hairline, and the contact shadow beneath. */
+  box-shadow:
+    inset 0 0 8px 1px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 14px 14px -8px rgba(0, 0, 0, 0.35);
+  transform-origin: 50% 50%;
+  transition: transform 0.36s var(--globe-ease);
+}
+/* G1: a grid of small dots (13px pitch) signals "sections". It fades out in 200 ms on open (G2). */
+.globe-nav .globe-nav__globe::after {
+  content: '';
+  position: absolute;
+  inset: 13px;
+  border-radius: 50%;
+  corner-shape: round;
+  pointer-events: none;
+  background: radial-gradient(circle, rgb(255 255 255) 0 1.6px, rgba(0, 0, 0, 0.55) 2px 3px, transparent 3.5px) 0 0 / 13px
+    13px;
+  transition: opacity 0.2s ease;
+}
+.globe-nav[data-open] .globe-nav__globe {
+  transform: translateY(calc(-1 * var(--globe-travel))) scale(4.5);
+}
+.globe-nav[data-open] .globe-nav__globe::after {
+  opacity: 0;
+}
+
+/* G8: 8px danger dot at the docked globe's upper right; the number lives on the pin once open. */
+.globe-nav__dot {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 2px;
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--site-danger);
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.globe-nav[data-open] .globe-nav__dot {
+  opacity: 0;
+}
+
+/* G7: with scripting off the globe is a link to /sections. The anchor lies over the button. */
+.globe-nav__fallback {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+  text-indent: -999px;
+  white-space: nowrap;
+}
+
+/* The pins: a 0 x 0 anchor at the centre of the visible area. Each pin is placed from it. */
+.globe-nav__pins {
+  position: fixed;
+  inset-inline-start: 50%;
+  inset-block-start: calc(50% - var(--vv-follow, 0px) / 2);
+  inline-size: 0;
+  block-size: 0;
+  z-index: calc(var(--z-hub-orb-open) + 1);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.1s ease,
+    visibility 0s linear 0.1s;
+}
+/* G3: pins fade in 180 ms after a 160 ms delay. */
+.globe-nav[data-open] .globe-nav__pins {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 0.18s ease 0.16s,
+    visibility 0s;
+}
+
+.globe-nav__pin,
+.globe-nav__write,
+.globe-nav__more {
+  --dx: 0px;
+  --dy: 0px;
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  translate: calc(-50% + var(--dx)) calc(-50% + var(--dy));
+  white-space: nowrap;
+}
+[dir='rtl'] .globe-nav__pin,
+[dir='rtl'] .globe-nav__write,
+[dir='rtl'] .globe-nav__more {
+  translate: calc(50% - var(--dx)) calc(-50% + var(--dy));
+}
+
+.globe-nav__pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  block-size: 36px;
+  padding-inline: 16px;
+  border-radius: var(--site-radius);
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.globe-nav__pin[data-slot-pos='c'] {
+  block-size: 44px;
+  padding-inline: 20px;
+  background: var(--site-bg);
+  color: var(--site-text);
+  font-weight: 600;
+}
+/* G3's offsets from the centre: (+-77, +-84) for the four, (0, +184) for the write link. */
+.globe-nav__pin[data-slot-pos='ul'] {
+  --dx: -77px;
+  --dy: -84px;
+}
+.globe-nav__pin[data-slot-pos='ur'] {
+  --dx: 77px;
+  --dy: -84px;
+}
+.globe-nav__pin[data-slot-pos='ll'] {
+  --dx: -77px;
+  --dy: 84px;
+}
+.globe-nav__pin[data-slot-pos='lr'] {
+  --dx: 77px;
+  --dy: 84px;
+}
+
+.globe-nav__count {
+  font-family: var(--site-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--site-danger);
+  background: var(--site-bg);
+  border-radius: var(--site-radius-sm);
+  padding: 0 4px;
+}
+
+/* G3: "Write a post" is an underlined text link below the globe. */
+.globe-nav__write {
+  --dy: 184px;
+  color: var(--site-text);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* The one link added beside the plan's list (reported to the owner): the destinations the five words do not name. */
+.globe-nav__more {
+  --dy: 216px;
+  color: var(--site-text-muted);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* M7: reduced motion turns the move into an instant change. The globe still opens. */
+@media (prefers-reduced-motion: reduce) {
+  .globe-nav__globe,
+  .globe-nav__globe::after,
+  .globe-nav__veil,
+  .globe-nav__pins,
+  .globe-nav__dot {
+    transition: none;
+  }
+}

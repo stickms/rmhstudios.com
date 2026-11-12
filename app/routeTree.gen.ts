@@ -115,6 +115,7 @@ import { Route as SiteRmhladderRouteImport } from './routes/_site/rmhladder'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteScheduleRouteImport } from './routes/_site/schedule'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
+import { Route as SiteSectionsRouteImport } from './routes/_site/sections'
 import { Route as SiteServicesRouteImport } from './routes/_site/services'
 import { Route as SiteShareRouteImport } from './routes/_site/share'
 import { Route as SiteShopRouteImport } from './routes/_site/shop'
@@ -1920,6 +1921,11 @@ const SiteScheduleRoute = SiteScheduleRouteImport.update({
 const SiteSearchRoute = SiteSearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSectionsRoute = SiteSectionsRouteImport.update({
+  id: '/sections',
+  path: '/sections',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteServicesRoute = SiteServicesRouteImport.update({
@@ -8649,6 +8655,7 @@ export interface FileRoutesByFullPath {
   '/roadmap': typeof SiteRoadmapRoute
   '/schedule': typeof SiteScheduleRoute
   '/search': typeof SiteSearchRoute
+  '/sections': typeof SiteSectionsRoute
   '/services': typeof SiteServicesRouteWithChildren
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
@@ -10007,6 +10014,7 @@ export interface FileRoutesByTo {
   '/roadmap': typeof SiteRoadmapRoute
   '/schedule': typeof SiteScheduleRoute
   '/search': typeof SiteSearchRoute
+  '/sections': typeof SiteSectionsRoute
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/speedruns': typeof SiteSpeedrunsRoute
@@ -11386,6 +11394,7 @@ export interface FileRoutesById {
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/schedule': typeof SiteScheduleRoute
   '/_site/search': typeof SiteSearchRoute
+  '/_site/sections': typeof SiteSectionsRoute
   '/_site/services': typeof SiteServicesRouteWithChildren
   '/_site/share': typeof SiteShareRoute
   '/_site/shop': typeof SiteShopRoute
@@ -12771,6 +12780,7 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/schedule'
     | '/search'
+    | '/sections'
     | '/services'
     | '/share'
     | '/shop'
@@ -14129,6 +14139,7 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/schedule'
     | '/search'
+    | '/sections'
     | '/share'
     | '/shop'
     | '/speedruns'
@@ -15507,6 +15518,7 @@ export interface FileRouteTypes {
     | '/_site/roadmap'
     | '/_site/schedule'
     | '/_site/search'
+    | '/_site/sections'
     | '/_site/services'
     | '/_site/share'
     | '/_site/shop'
@@ -18388,6 +18400,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SiteSearchRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/sections': {
+      id: '/_site/sections'
+      path: '/sections'
+      fullPath: '/sections'
+      preLoaderRoute: typeof SiteSectionsRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/services': {
@@ -27536,6 +27555,7 @@ interface SiteRouteChildren {
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteScheduleRoute: typeof SiteScheduleRoute
   SiteSearchRoute: typeof SiteSearchRoute
+  SiteSectionsRoute: typeof SiteSectionsRoute
   SiteServicesRoute: typeof SiteServicesRouteWithChildren
   SiteShareRoute: typeof SiteShareRoute
   SiteShopRoute: typeof SiteShopRoute
@@ -27683,6 +27703,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteScheduleRoute: SiteScheduleRoute,
   SiteSearchRoute: SiteSearchRoute,
+  SiteSectionsRoute: SiteSectionsRoute,
   SiteServicesRoute: SiteServicesRouteWithChildren,
   SiteShareRoute: SiteShareRoute,
   SiteShopRoute: SiteShopRoute,

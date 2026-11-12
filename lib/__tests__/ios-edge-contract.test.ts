@@ -9,9 +9,8 @@
  * lived only in comments; this file is where it is enforced.
  *
  *  1. INVARIANTS: the pieces the contract is made of still exist (viewport-fit=cover, no theme-color on iOS in any of its
- *     three writers, the fixed decoration hidden on iOS, the root carrying the canvas, the top capsule floating — and, below
- *     640px, the one deliberate exception: a full-bleed, inset-aware top bar; plus the root tint that carries the open
- *     globe menu's colour behind the bars).
+ *     three writers, the fixed decoration hidden on iOS, the root carrying the canvas, the shell with no top bar, the docked
+ *     globe floated off the bottom edge with its page fade hidden on iOS, and a veil that is the ground colour).
  *  2. RATCHET: a site-tier rule or class that pins a fixed/sticky layer flush to the top or bottom edge is counted per
  *     file and frozen in `ios-edge.baseline.json`. A new one fails ("float it off the edge, or hide it on
  *     `html.ios-webkit`, then…"); a file UNDER its frozen count also fails ("lower it"), so the list only goes down.
@@ -85,40 +84,47 @@ describe('iOS edge contract: invariants', () => {
     expect(globals).not.toMatch(/html\.ios-webkit:not\(\.app-route\) \{\s*background-image/);
   });
 
-  it('the top capsule floats clear of the edge on screens wide enough to hold a capsule', () => {
-    const m = /\.radial-topbar \{[^}]*?\btop:\s*([\d.]+)rem/.exec(radial);
-    expect(m, '.radial-topbar declares a rem offset from the top').toBeTruthy();
-    expect(Number(m![1])).toBeGreaterThanOrEqual(0.5);
+  // Steel phase 3 (docs/plans/2026-11-11-steel-design-implementation.md section 9 L1, 8.1 G1): the top bar, the capsule and
+  // the old hub orb are gone. The phone shell has NO fixed header at all (the page title scrolls) and the docked globe is
+  // the only fixed layer, floated 18px off the bottom edge. These pin that, so none of them quietly comes back.
+  const shell = read('components/shell/site-shell.css');
+  const globe = read('components/shell/globe-nav.css');
+
+  it('the shell has no top bar: nothing in it is fixed or sticky flush to the top, and it renders no <header>', () => {
+    expect(shell).not.toMatch(/position:\s*fixed/);
+    expect(cssFindings(shell)).toEqual([]);
+    expect(read('components/shell/SiteShell.tsx')).not.toMatch(/<header|radial-topbar/);
+    expect(read('components/shell/Sidebar.tsx')).not.toMatch(/<header/);
   });
 
-  // The one deliberate exception (2026-10-29, owner's call): below 640px the capsule gives way to a full-bleed bar that
-  // IS the strip behind the status bar, tinted by the same glass as the page, instead of a pill whose margins and curve
-  // spend a phone's width. It carries the status-bar inset in its own height so its content clears the clock whether
-  // Safari keeps its bar outside the page (inset 0) or the page runs under it. What this pins is that the exception
-  // stays exactly that: one bar, narrow screens only, inset-aware — not a licence for other flush layers (the ratchet
-  // below still counts those).
-  it('below 640px the top bar is a full-bleed, inset-aware bar (the one flush top layer, by design)', () => {
-    const m =
-      /@media \(max-width: 639\.98px\) \{\s*:root \{[^}]*--rad-topbar-h:[^;]*safe-area-inset-top[^;]*;[^}]*\}\s*\.radial-topbar\.glass-chrome \{([^}]*)\}/.exec(
-        radial,
-      );
-    expect(
-      m,
-      'a narrow-screen block that adds the inset to --rad-topbar-h and restyles the bar',
-    ).toBeTruthy();
-    const rule = m![1];
-    expect(rule).toMatch(/\btop:\s*0\b/);
-    expect(rule).toMatch(/\bmargin:\s*0\b/);
-    expect(rule).toMatch(/\bborder-radius:\s*0\b/);
-    expect(rule).toMatch(/padding-top:\s*env\(safe-area-inset-top/);
+  it('the desktop sidebar sticks 16px off the top edge, not at it', () => {
+    expect(shell).toMatch(/\.site-sidebar__inner \{[^}]*position:\s*sticky;[^}]*inset-block-start:\s*16px/);
   });
 
-  it('while the globe menu is open the root needs no tint: the veil and the ground are the same flat colour', () => {
+  it('the docked globe floats 18px above the bottom plus the inset, and follows Safari\'s toolbar in CSS', () => {
+    expect(globe).toMatch(
+      /--globe-bottom:\s*calc\(18px \+ env\(safe-area-inset-bottom, 0px\) \+ var\(--vv-follow, 0px\)\)/,
+    );
+    expect(globe).toMatch(/\.globe-nav__dock \{[^}]*inset-block-end:\s*var\(--globe-bottom\)/);
+    expect(cssFindings(globe, hiddenOnIos(globe))).toEqual([]);
+  });
+
+  it('the page fade under the globe is hidden on iOS: a flat layer at the bottom edge is what Safari tints its strip from', () => {
+    expect(globe).toMatch(/html\.ios-webkit \.globe-nav__fade \{\s*display:\s*none;/);
+    expect(hiddenOnIos(globe).has('globe-nav__fade')).toBe(true);
+  });
+
+  it('the veil paints past every edge (negative inset), takes nothing while closed, and is the ground colour', () => {
+    expect(globe).toMatch(/\.globe-nav__veil \{[^}]*inset:\s*-2rem;[^}]*background:\s*var\(--site-bg\);[^}]*visibility:\s*hidden;[^}]*pointer-events:\s*none/);
+  });
+
+  it('while the globe is open the root needs no tint: the veil and the ground are the same flat colour', () => {
     // The old design mirrored the veil's tint onto the root's canvas so the strips behind the bars matched the menu.
     // With a flat `--site-bg` ground and a `--site-bg` veil there is nothing to mirror, and no rule may bring a root
     // background-image back (it is the band).
     expect(radial).not.toMatch(/html\.ios-webkit:not\(\.app-route\):has\(\.radial-hub/);
     expect(radial).not.toContain('--site-canvas');
+    for (const css of [shell, globe]) expect(css).not.toMatch(/html\.ios-webkit[^{]*:has\(|--site-canvas/);
   });
 });
 

@@ -23,7 +23,7 @@ import { RadialNavRail } from './RadialNavRail';
 import { RadialGlobeDock } from './RadialGlobeDock';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
-import { usePathname, useRenderedHref, useRenderedPathname } from './shell-router-state';
+import { usePathname, useRenderedHref, useRenderedPathname } from '@/components/shell/shell-router-state';
 import type { SceneFeed } from '@/lib/liquid/glass/scene-feed';
 import { settleSoftRender } from '@/lib/low-end';
 import { TabBadge } from '@/components/site/TabBadge';

@@ -69,11 +69,12 @@ describe('syncNativeMaterialClass', () => {
 describe('wiring', () => {
   const read = (f: string) => readCss(join(process.cwd(), f));
 
-  it('Providers keeps the class in step with the pathname, next to useJellyPointer', () => {
+  it('Providers keeps the class in step with the pathname (Steel phase 3: it no longer mounts the jelly pointer)', () => {
     const src = read('components/Providers.tsx');
     expect(src).toMatch(
-      /useJellyPointer\(!isNativeMaterialRoute\(pathname\)\);[\s\S]{0,400}useEffect\(\(\) => syncNativeMaterialClass\(document\.documentElement, pathname\), \[pathname\]\);/,
+      /useEffect\(\(\) => syncNativeMaterialClass\(document\.documentElement, pathname\), \[pathname\]\);/,
     );
+    expect(src).not.toContain('useJellyPointer');
   });
 
   it('the theme script stamps it before first paint, from the same route list', () => {
