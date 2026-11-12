@@ -1,6 +1,6 @@
 {
   "app/globals/loader-print-access.css": 1,
-  "app/globals/page-motion.css": 2,
+  "app/globals/page-motion.css": 1,
   "app/routes/_site/admin/blog/$slug/edit.tsx": 1,
   "app/routes/_site/admin/blog/new.tsx": 1,
   "components/admin/MDXEditor.tsx": 2,
