@@ -217,7 +217,7 @@ describe('a deploy during an open blackjack round', () => {
 
     ledger.shoe = WRONG_SHOE;
     const second = await boot(store);
-    expect(second.restored).toEqual({ restored: 1, unreadable: 0, returnedStakes: 0 });
+    expect(second.restored).toEqual({ restored: 1, unreadable: 0, returnedStakes: 0, settledRounds: 0 });
     const a2 = second.connect('user-a');
     const b2 = second.connect('user-b');
     call(a2, 'bj:join_room', { roomId });
@@ -379,19 +379,33 @@ describe('a save and a payment that race the restart', () => {
     expect(ledger.credits).toHaveLength(2);
   });
 
-  it('restored from a save older than the payout (a crash): the round plays again and pays nothing twice', async () => {
+  it('restored from a save older than the payout (a crash): the paid round is not played again and takes no new stake', async () => {
     const store = new MemoryCasinoTableStore();
     const first = await boot(store);
     const { a, b, roomId } = await playToBsTurn(first);
-    await vi.advanceTimersByTimeAsync(600); // the coalesced save
+    await vi.advanceTimersByTimeAsync(600); // the coalesced save: B to act, 20 on the seat
     const stale = store.entries.get(`blackjack:${roomId}`)!;
     await finishWithBsDouble(b, a);
     expect(balances()).toEqual({ a: START - 10 + 20, b: START - 40 + 80 });
+    const debits = ledger.debits.length;
 
     // No shutdown: the process is gone and the store holds the older save.
     store.entries.set(`blackjack:${roomId}`, stale);
-    await boot(store);
-    await vi.advanceTimersByTimeAsync(40_000); // nobody returns; the stale round plays out
+    const second = await boot(store);
+    expect(second.restored).toEqual({ restored: 1, unreadable: 0, returnedStakes: 0, settledRounds: 1 });
+    const a2 = second.connect('user-a');
+    const b2 = second.connect('user-b');
+    call(a2, 'bj:join_room', { roomId });
+    call(b2, 'bj:join_room', { roomId });
+    // The stored copy says it is B's turn with a hand to double. The ledger says the round paid.
+    expect(last<TableState>(b2, 'bj:table_state')!.phase).not.toBe('player_turns');
+    call(b2, 'bj:double_down');
+    await flush();
+    expect(ledger.debits).toHaveLength(debits); // B is not debited for a second double
+    await vi.advanceTimersByTimeAsync(3_000);
+    await flush();
+    expect(last<TableState>(b2, 'bj:table_state')).toMatchObject({ phase: 'betting', roundNumber: 2 });
+    await vi.advanceTimersByTimeAsync(40_000);
     await flush();
     expect(balances()).toEqual({ a: START - 10 + 20, b: START - 40 + 80 });
     expect(ledger.credits).toHaveLength(2);
@@ -423,7 +437,7 @@ describe('a save and a payment that race the restart', () => {
     // Redis is back and still holds the older save, stakes and all.
     failing = false;
     const second = await boot(store);
-    expect(second.restored).toEqual({ restored: 1, unreadable: 0, returnedStakes: 2 });
+    expect(second.restored).toEqual({ restored: 1, unreadable: 0, returnedStakes: 2, settledRounds: 0 });
     await vi.advanceTimersByTimeAsync(60_000);
     await flush();
     expect(balances()).toEqual({ a: START, b: START });
@@ -463,7 +477,7 @@ describe('a save and a payment that race the restart', () => {
     store.entries.set('blackjack:WRONG', JSON.stringify({ v: 999, roomId: 'WRONG' }));
     store.entries.set('blackjack:BROKEN', '{not json');
     const p = await boot(store);
-    expect(p.restored).toEqual({ restored: 0, unreadable: 2, returnedStakes: 0 });
+    expect(p.restored).toEqual({ restored: 0, unreadable: 2, returnedStakes: 0, settledRounds: 0 });
     expect([...store.entries.keys()].sort()).toEqual(['blackjack:BROKEN', 'blackjack:WRONG']);
   });
 });

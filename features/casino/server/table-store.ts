@@ -1,11 +1,11 @@
 /**
- * Casino — durable table store (third-pass audit OP3, first slice).
+ * Casino — durable table store (third-pass audit OP3).
  *
  * Lets a deploy (SIGTERM, then a new process) keep a casino table that holds
  * coins: the seats, the bets, the hands, the dealer's cards and the shoe. The
  * hub writes each table here as it changes and once more at shutdown, and the
- * next process reads them back before it listens. Blackjack is the only game
- * on it so far; the other three still refund at shutdown (`casino-shutdown.ts`).
+ * next process reads them back before it listens. Blackjack, roulette and
+ * baccarat are on it; Hold'em still cashes out at shutdown (`casino-shutdown.ts`).
  *
  * OFF by default. `openCasinoTableStore()` constructs a store only when
  * `CASINO_DURABLE_TABLES=1` AND `REDIS_STATE_URL` (the durable, AOF, noeviction
@@ -25,7 +25,8 @@
  * read by the next boot, which plays the round out and then removes it.
  */
 
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
+import { connectStateRedis } from '../../../server/shared/redis-state';
 import type { CasinoGame } from './casino-shutdown';
 
 export const TABLE_KEY_PREFIX = 'casino:table:';
@@ -142,8 +143,6 @@ interface StoreLogger {
   warn(entry: Record<string, unknown>): void;
 }
 
-const CONNECT_TIMEOUT_MS = 3_000;
-
 /**
  * Open the durable table store, or return `null` (feature off). Never throws.
  * With `CASINO_DURABLE_TABLES` unset this returns before constructing anything
@@ -160,37 +159,19 @@ export async function openCasinoTableStore(
     return null;
   }
 
-  const redis = new Redis(url, {
-    lazyConnect: true,
-    connectTimeout: CONNECT_TIMEOUT_MS,
-    // Boot only: give up quickly instead of retrying forever if Redis is down.
-    retryStrategy: () => null,
-    // A write that cannot be sent fails instead of waiting: the callers bound
-    // every save and decide what a failed one means for the coins.
-    maxRetriesPerRequest: 1,
-  });
-  // Errors after boot must never crash the hub; a failed save is handled by its caller.
-  redis.on('error', (err: Error) => logger.warn({ event: 'casino_durable_tables_redis_error', error: err.message }));
-
-  try {
-    await Promise.race([
-      redis.connect(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('connect timeout')), CONNECT_TIMEOUT_MS + 500).unref(),
-      ),
-    ]);
-  } catch (err) {
+  const connection = await connectStateRedis(url, (err) =>
+    // Errors after boot must never crash the hub; a failed save is handled by its caller.
+    logger.warn({ event: 'casino_durable_tables_redis_error', error: err.message }),
+  );
+  if ('error' in connection) {
     logger.warn({
       event: 'casino_durable_tables_unavailable',
-      error: err instanceof Error ? err.message : String(err),
+      error: connection.error,
       running: 'in-memory tables, stakes refunded at shutdown',
     });
-    redis.disconnect();
     return null;
   }
 
-  // Connected: allow normal reconnects from here on.
-  redis.options.retryStrategy = (times) => Math.min(times * 200, 5_000);
   logger.info({ event: 'casino_durable_tables_enabled' });
-  return new RedisCasinoTableStore(redis);
+  return new RedisCasinoTableStore(connection.redis);
 }

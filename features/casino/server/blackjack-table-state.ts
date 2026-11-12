@@ -12,8 +12,11 @@
 
 import { z } from 'zod';
 import type { StakeClaim } from './casino-shutdown';
+import { stakeKeys } from './stake-keys';
 
 export const BLACKJACK_TABLE_VERSION = 1;
+
+const KEYS = stakeKeys('bj');
 
 const CardSchema = z.object({
   suit: z.enum(['H', 'D', 'C', 'S']),
@@ -117,7 +120,7 @@ const UNSETTLED: ReadonlySet<StoredBlackjackTable['phase']> = new Set(['betting'
 
 /** The ledger key under which one seat's stake for one round is paid out. */
 export function payoutKey(stakeId: string): string {
-  return `bj-payout:${stakeId}`;
+  return KEYS.payout(stakeId);
 }
 
 /**
@@ -126,7 +129,7 @@ export function payoutKey(stakeId: string): string {
  * row is a table the old process refunded after its last successful save.
  */
 export function returnKey(stakeId: string): string {
-  return `bj-return:${stakeId}`;
+  return KEYS.returned(stakeId);
 }
 
 /**
