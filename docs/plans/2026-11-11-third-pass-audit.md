@@ -714,7 +714,7 @@ AR2: in-progress (contractQuery + in-process GET dispatch; lib/admin/admin-ops.q
 AR3: open
 AR4: open
 AR5: open
-RT1: open
+RT1: in-progress (2026-11-12: sonner on first toast, auth client out of the shell (lib/session/live-session.ts), confirm dialog on first use, framer `m`/AnimatePresence off the path. Entry 441,074 -> 408,401 B raw; critical path 1,091,976 -> 945,407 B raw, 309,564 -> 263,171 B brotli, 73 -> 54 chunks. sonner, better-auth, @simplewebauthn/browser, @radix-ui/react-dialog forbidden in the entry closure; framer-motion and motion-dom forbidden with caps for what <LazyMotion> in Providers still costs (27 KB). Not done: the LazyMotion provider, English without i18next, tailwind-merge (Button and Skeleton are in the closure and need it). The 350,000 B entry target is not reachable by these cuts: the listed packages sit in other critical-path chunks, and the entry chunk itself is route modules, the route tree and the import map)
 RT2: open
 RT3: in-progress (phase 33: the cache plugin refuses to share a response whose enforced policy names a nonce, so enforcement cannot ship a shared nonce; the hash-only policy that restores the edge cache after cutover is open)
 RT4: open
