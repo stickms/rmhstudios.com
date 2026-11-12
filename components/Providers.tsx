@@ -12,10 +12,10 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { useLocation, useRouter, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
 import { ToastHost } from '@/components/ui/toast-host';
-import { authClient } from '@/lib/auth-client';
 import {
   SessionCtx,
   useEffectiveSession,
+  useLiveSession,
   type CachedSessionUser,
 } from '@/components/session/session-context';
 import {
@@ -167,7 +167,7 @@ export function Providers({
   // The router's QueryClient (lib/query/make-query-client.ts): built once per SSR request and once
   // per page load in getRouter(), so route loaders seed the same cache the components read.
   const queryClient = useRouter().options.context.queryClient;
-  const session = authClient.useSession();
+  const session = useLiveSession();
   const style = useThemeStore((s) => s.style);
   const preview = useThemeStore((s) => s.preview);
   const accent = useThemeStore((s) => s.accent);

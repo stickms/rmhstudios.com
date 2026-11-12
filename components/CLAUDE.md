@@ -59,7 +59,11 @@ feature lives in that feature's directory; genuinely shared primitives live in
   (eslint fails on it). The first toast loads sonner and its themed `<Toaster>`
   through `<ToastHost>` in `Providers.tsx`; toasts raised meanwhile are queued.
 - **Session:** client components read auth via `useSession()` from
-  `@/components/Providers` — don't fetch `/api/auth` manually.
+  `@/components/Providers` — don't fetch `/api/auth` manually. Shell and
+  globally mounted components never import `@/lib/auth-client` statically
+  (it would put Better Auth's client back on every page): load it with
+  `await import('@/lib/auth-client')` at the click, and use `readSession()`
+  from `@/lib/session/live-session` for a socket token.
 - **Multiplayer lobbies hand out a link, not just a code.** Every lobby has a
   copy-the-invite-link control built on `hooks/useLobbyLink`, and every
   multiplayer entry point consumes `?lobby=CODE` through `useLobbyInviteJoin`

@@ -67,6 +67,9 @@ const FORBIDDEN: Record<string, string> = {
   'maplibre-gl': 'map routes only',
   // Third-pass audit RT1 (2026-11-12): each of these left the entry closure in the commit that listed it.
   sonner: 'loads on the first toast: import `toast` from @/lib/toast, never from sonner',
+  'better-auth':
+    'the shell reads the session from lib/session/live-session.ts; import @/lib/auth-client only from a page that signs in or manages an account, or dynamically at the action',
+  '@simplewebauthn/browser': 'passkeys: comes in with @/lib/auth-client, see better-auth',
 };
 
 /**

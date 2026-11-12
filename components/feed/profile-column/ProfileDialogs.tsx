@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
-import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { useUserDisplayStore } from '@/stores/userDisplayStore';
 import type { ProfileData } from '@/components/profile/profile-types';
@@ -66,7 +65,10 @@ export function ProfileDialogs({
     // Sync display name into the better-auth session
     // (avatar is handled by useResolvedUser via UserProfile.customImage)
     if (data.displayName !== undefined && data.displayName !== null) {
-      authClient.updateUser({ name: data.displayName });
+      // Loaded on the save: a profile page is preloaded from every signed-in page's sidebar, and the auth client
+      // should not ride along (third-pass audit RT1).
+      const name = data.displayName;
+      void import('@/lib/auth-client').then(({ authClient }) => authClient.updateUser({ name }));
     }
     refreshResolvedUser();
 

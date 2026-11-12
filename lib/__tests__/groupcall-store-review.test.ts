@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => {
     emits,
     meshes,
     options: null as null | { onConnect?: (socket: unknown, info: { isReconnect: boolean }) => void },
-    getSession: vi.fn(async () => ({ data: { user: { id: 'self' } } })),
+    readSession: vi.fn(async () => ({ user: { id: 'self' }, session: {} })),
     openMicrophone: vi.fn(async () => {}),
     client: {
       socket: {
@@ -35,9 +35,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/lib/auth-client', () => ({
-  authClient: { getSession: mocks.getSession },
-}));
+vi.mock('@/lib/session/live-session', () => ({ readSession: mocks.readSession }));
 
 vi.mock('@/lib/shared/realtime/client', () => ({
   createRealtimeClient: (options: typeof mocks.options) => {
@@ -76,7 +74,7 @@ describe('group-call review regressions', () => {
     mocks.handlers.clear();
     mocks.emits.length = 0;
     mocks.meshes.length = 0;
-    mocks.getSession.mockClear();
+    mocks.readSession.mockClear();
     mocks.openMicrophone.mockReset().mockResolvedValue(undefined);
     mocks.client.socket.on.mockClear();
     mocks.client.emit.mockClear();

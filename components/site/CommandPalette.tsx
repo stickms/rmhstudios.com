@@ -70,7 +70,6 @@ import { SITE_DESTINATIONS } from '@/lib/search/catalog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SITE_STYLES, useThemeStore, type SiteStyle } from '@/stores/themeStore';
 import { useSession } from '@/components/Providers';
-import { authClient } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
 import { CURRENT_RELEASE, isUnseen, WHATS_NEW_OPEN_EVENT } from '@/lib/whats-new';
 
@@ -369,6 +368,8 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
         icon: LogOut,
         run: async () => {
           setOpen(false);
+          // Loaded on the command, not with the palette (third-pass audit RT1).
+          const { authClient } = await import('@/lib/auth-client');
           await authClient.signOut();
           window.location.href = '/';
         },

@@ -1,7 +1,6 @@
 import { useCallback, useRef, type RefObject } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { authClient } from '@/lib/auth-client';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 
@@ -24,16 +23,23 @@ export function AccountMenu({ open, onClose, anchorRef, profileHref }: AccountMe
   const signOut = useCallback(async () => {
     if (signingOut.current) return;
     signingOut.current = true;
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          onClose();
-          void navigate({ to: '/' });
-          window.location.reload();
+    // Loaded on the click: the auth client (and its passkey and Stripe plugins) stays off every page that only reads
+    // who is signed in (third-pass audit RT1).
+    try {
+      const { authClient } = await import('@/lib/auth-client');
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            onClose();
+            void navigate({ to: '/' });
+            window.location.reload();
+          },
         },
-      },
-    });
-    signingOut.current = false;
+      });
+    } finally {
+      // Also when the chunk could not be fetched: the next click tries again.
+      signingOut.current = false;
+    }
   }, [navigate, onClose]);
 
   return (
