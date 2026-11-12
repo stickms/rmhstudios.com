@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { PhoneMissed } from 'lucide-react';
+
 import { toast } from 'sonner';
 
 import { SettingsSection } from '@/components/settings/SettingsSection';
@@ -86,7 +86,6 @@ export function CallAnswerControls() {
 
   return (
     <SettingsSection
-      icon={PhoneMissed}
       title={t('call-answer-title', { defaultValue: 'Answering calls' })}
       description={t('call-answer-subtitle', {
         defaultValue:

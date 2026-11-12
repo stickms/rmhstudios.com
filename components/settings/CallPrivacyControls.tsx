@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Phone } from 'lucide-react';
+
 import { toast } from 'sonner';
 
 import { SettingsSection } from '@/components/settings/SettingsSection';
@@ -80,7 +80,6 @@ export function CallPrivacyControls() {
 
   return (
     <SettingsSection
-      icon={Phone}
       title={t('call-privacy-title', { defaultValue: 'Calls' })}
       description={t('call-privacy-subtitle', {
         defaultValue: 'Choose who can ring you. People you have blocked can never call.',

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Gamepad2 } from 'lucide-react';
+
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -29,9 +29,9 @@ export function PlaytimePrivacyControls() {
     const previous = value;
     setValue(next);
     api(setPlaytimePrivacyApi, { body: { playtimePrivacy: next } }).catch(() => {
-        setValue(previous);
-        toast.error(t('playtime-privacy-save-error', { defaultValue: 'Could not save' }));
-      });
+      setValue(previous);
+      toast.error(t('playtime-privacy-save-error', { defaultValue: 'Could not save' }));
+    });
   }
 
   const LABEL: Record<PlaytimePrivacy, { title: string; hint: string }> = {
@@ -57,7 +57,6 @@ export function PlaytimePrivacyControls() {
 
   return (
     <SettingsSection
-      icon={Gamepad2}
       title={t('playtime-privacy-title', { defaultValue: 'Playtime' })}
       description={t('playtime-privacy-subtitle', {
         defaultValue: 'Choose who can see how long you have played each game and app.',

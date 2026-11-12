@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bot } from 'lucide-react';
+
 import { Switch } from '@/components/ui/switch';
 import { setHideBots, useHideBots } from '@/lib/devplatform/hide-bots';
 import { SettingsSection } from '@/components/settings/SettingsSection';
@@ -13,8 +13,6 @@ export function HideBotsSetting() {
   const on = useHideBots();
   return (
     <SettingsSection
-      surface="fill"
-      icon={Bot}
       title={t('hideBots-title', { defaultValue: 'Hide automated accounts' })}
       titleId={labelId}
       description={t('hideBots-hint', {

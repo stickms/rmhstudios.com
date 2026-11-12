@@ -222,7 +222,6 @@ function TabBadgeToggle() {
   useEffect(() => setOn(readTabBadgePref()), []);
   return (
     <SettingsSection
-      surface="fill"
       title={t('tab-badge', { defaultValue: 'Unread count in browser tab' })}
       titleId="tab-badge-label"
       description={t('tab-badge-desc', {

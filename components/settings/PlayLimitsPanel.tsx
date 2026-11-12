@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ShieldCheck } from 'lucide-react';
+
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -49,12 +49,17 @@ export function PlayLimitsPanel() {
   const [saved, setSaved] = useState<PlayLimitsView | null>(null);
   const view = saved ?? data ?? null;
   const [capDraft, setCapDraft] = useState<string | null>(null);
-  const capInput = capDraft ?? (view && view.dailyCoinCap !== null ? String(view.dailyCoinCap) : '');
+  const capInput =
+    capDraft ?? (view && view.dailyCoinCap !== null ? String(view.dailyCoinCap) : '');
   const setCapInput = setCapDraft;
   const [saving, setSaving] = useState(false);
 
   const save = useCallback(
-    async (body: { dailyCoinCap?: number | null; excludeForDays?: number; coolOffForDays?: number }) => {
+    async (body: {
+      dailyCoinCap?: number | null;
+      excludeForDays?: number;
+      coolOffForDays?: number;
+    }) => {
       setSaving(true);
       try {
         const next = await api(setPlayLimitsApi, { body });
@@ -85,12 +90,14 @@ export function PlayLimitsPanel() {
   const coolingUntil = when(view.coolOffUntil);
   const parsedCap = capInput.trim() === '' ? null : Number(capInput);
   const capIsValid =
-    parsedCap === null || (Number.isInteger(parsedCap) && parsedCap >= 1 && parsedCap <= MAX_DAILY_CAP);
+    parsedCap === null ||
+    (Number.isInteger(parsedCap) && parsedCap >= 1 && parsedCap <= MAX_DAILY_CAP);
   const capChanged = parsedCap !== view.dailyCoinCap;
   // Naming the direction before the click is the whole point: a member should
   // never discover the 24-hour wait by having already committed to it.
   const wouldDefer =
-    capChanged && (parsedCap === null || view.dailyCoinCap === null
+    capChanged &&
+    (parsedCap === null || view.dailyCoinCap === null
       ? view.dailyCoinCap !== null
       : parsedCap > view.dailyCoinCap);
 
@@ -112,14 +119,12 @@ export function PlayLimitsPanel() {
 
   return (
     <SettingsSection
-      icon={ShieldCheck}
       title={t('play-limits-title', { defaultValue: 'Staking limits' })}
       description={t('play-limits-subtitle', {
         defaultValue:
           'Limits you set on wagers, predictions and the casino tables. Tightening one applies at once; loosening one waits a day.',
       })}
     >
-
       {excludedUntil && (
         <p className="glass-inset rounded-site p-4 text-sm text-site-text">
           {t('play-limits-excluded-until', {

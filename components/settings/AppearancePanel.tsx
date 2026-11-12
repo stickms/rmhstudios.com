@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
+import { Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -31,9 +32,11 @@ import {
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
 import { Tabs } from '@/components/ui/tabs';
-import { JellyGroup } from '@/components/ui/jelly-group';
 import { SettingsSection } from '@/components/settings/SettingsSection';
-import { setAppearancePrefsApi, type AppearancePrefsInput } from '@/lib/preferences/preferences.contract';
+import {
+  setAppearancePrefsApi,
+  type AppearancePrefsInput,
+} from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
 
 async function persist(body: AppearancePrefsInput) {
@@ -198,44 +201,41 @@ export function AppearancePanel() {
             'Retint success, warning and danger colours so they stay distinguishable. Status labels also carry their own icon, so nothing depends on colour alone.',
         })}
       >
-        <JellyGroup
-          role="radiogroup"
-          aria-label={t('color-vision', { defaultValue: 'Colour vision' })}
-          orientation="vertical"
-          className="w-full"
-        >
+        <div role="radiogroup" aria-label={t('color-vision', { defaultValue: 'Colour vision' })}>
           {COLOR_VISION_MODES.map((mode) => (
-            <JellyGroup.Item
+            <button
               key={mode}
+              type="button"
               role="radio"
               aria-checked={store.colorVision === mode}
-              // A radio, not a toggle: its state is `aria-checked`.
-              aria-pressed={undefined}
-              selected={store.colorVision === mode}
               onClick={() => setColorVision(mode)}
+              className="settings-row settings-choice"
             >
-              <span className="flex flex-col whitespace-normal text-start">
-                <span className="text-sm font-medium text-site-text">
+              <span className="settings-row__text">
+                <span className="settings-row__name block">
                   {t(`color-vision-${mode}`, { defaultValue: COLOR_VISION_LABELS[mode] })}
                 </span>
-                <span className="text-xs text-site-text-muted">
+                <span className="settings-row__hint block">
                   {t(`color-vision-${mode}-hint`, { defaultValue: COLOR_VISION_HINTS[mode] })}
                 </span>
               </span>
-            </JellyGroup.Item>
+              {store.colorVision === mode ? (
+                <Check className="settings-choice__mark" aria-hidden />
+              ) : null}
+            </button>
           ))}
-        </JellyGroup>
+        </div>
 
         {/* A live swatch row: the three semantic colours as they will actually
             render, so the choice can be judged instead of guessed. */}
-        <div className="flex flex-wrap gap-2" aria-hidden>
-          <span className="rounded-site-sm border border-site-success/20 bg-site-success/10 px-3 py-1 text-xs font-semibold text-site-success">
+        <div className="flex flex-wrap gap-4" aria-hidden>
+          <span className="text-xs font-semibold text-site-success">
             ✓ {t('color-vision-sample-success', { defaultValue: 'Success' })}
           </span>
-          <span className="rounded-site-sm border border-site-warning/20 bg-site-warning/10 px-3 py-1 text-xs font-semibold text-site-warning">
+          <span className="text-xs font-semibold text-site-warning">
             ⚠ {t('color-vision-sample-warning', { defaultValue: 'Warning' })}
           </span>
-          <span className="rounded-site-sm border border-site-danger/20 bg-site-danger/10 px-3 py-1 text-xs font-semibold text-site-danger">
+          <span className="text-xs font-semibold text-site-danger">
             ✕ {t('color-vision-sample-danger', { defaultValue: 'Danger' })}
           </span>
         </div>
@@ -252,7 +252,7 @@ export function AppearancePanel() {
           onChange={setReadableFont}
         />
         <NavTransitionRow value={store.navTransition} onChange={setNavTransition} />
-        <p className="py-3 text-sm leading-relaxed text-site-text-muted">
+        <p className="settings-row__hint">
           {t('globe-navigation-only-hint', {
             defaultValue:
               'The liquid globe flattens and turns inside out when you choose a destination. Other links open immediately.',
@@ -278,16 +278,12 @@ export function AppearancePanel() {
             if (isJellyMotion(id)) setJellyMotion(id);
           }}
         />
-        {/* Live preview: an ordinary glass card, so it shows exactly what the
-            chosen level does to every surface. Hover or press it. */}
-        <div className="glass-fill rounded-site p-4 text-center" data-testid="jelly-motion-preview">
-          <p className="text-sm text-site-text">
-            {t('jelly-motion-preview', {
-              defaultValue: 'Preview: hover or press this card to see how it moves.',
-            })}
-          </p>
-          <p className="mt-1 font-mono text-xs text-site-text-muted">{jellyMotionLabels[store.jellyMotion]}</p>
-        </div>
+        <p className="settings-row__hint" data-testid="jelly-motion-preview">
+          {t('jelly-motion-preview', {
+            defaultValue: 'Preview: hover or press this card to see how it moves.',
+          })}{' '}
+          <span className="t-meta">{jellyMotionLabels[store.jellyMotion]}</span>
+        </p>
       </Section>
 
       <Section
@@ -366,12 +362,10 @@ export function ToggleRow({
   disabled?: boolean;
 }) {
   return (
-    <label className="chrome-row flex items-center justify-between gap-4 py-2.5">
-      <span className="min-w-0">
-        <span className="block text-sm text-site-text">{label}</span>
-        {description ? (
-          <span className="block text-xs text-site-text-muted">{description}</span>
-        ) : null}
+    <label className="chrome-row settings-row">
+      <span className="settings-row__text">
+        <span className="settings-row__name block">{label}</span>
+        {description ? <span className="settings-row__hint block">{description}</span> : null}
       </span>
       <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
     </label>
@@ -443,9 +437,9 @@ function NavTransitionRow({
   if (!enabled) return null;
 
   return (
-    <div className="py-2.5">
-      <div className="flex items-center justify-between gap-4">
-        <Label htmlFor="nav-transition" className="min-w-0 text-sm text-site-text">
+    <div className="settings-row chrome-row flex-wrap">
+      <div className="flex w-full items-center justify-between gap-4">
+        <Label htmlFor="nav-transition" className="settings-row__name min-w-0">
           {t('nav-transition', { defaultValue: 'Navigation transition' })}
         </Label>
         <Select
@@ -464,7 +458,7 @@ function NavTransitionRow({
           ))}
         </Select>
       </div>
-      <p id="nav-transition-hint" className="mt-1 text-xs text-site-text-muted">
+      <p id="nav-transition-hint" className="settings-row__hint">
         {descriptions[value]}
       </p>
       {enabled ? (

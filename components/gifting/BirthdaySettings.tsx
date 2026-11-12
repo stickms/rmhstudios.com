@@ -1,7 +1,7 @@
 /** Opt-in birthday (G1) for Settings → Profile. Month and day only. */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Cake } from 'lucide-react';
+
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
@@ -67,7 +67,6 @@ export default function BirthdaySettings() {
 
   return (
     <SettingsSection
-      icon={Cake}
       title={t('birthday-title', { defaultValue: 'Birthday' })}
       description={t('birthday-desc', {
         defaultValue:

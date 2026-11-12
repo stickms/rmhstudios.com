@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { TriangleAlert } from 'lucide-react';
+
 import { authClient } from '@/lib/auth-client';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
@@ -56,7 +56,6 @@ export function DeleteAccountPanel() {
   return (
     <SettingsSection
       tone="danger"
-      icon={TriangleAlert}
       title={t('delete-title', { defaultValue: 'Delete account' })}
       description={t('delete-description', {
         defaultValue:

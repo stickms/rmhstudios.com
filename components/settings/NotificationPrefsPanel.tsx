@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { setNotificationTogglesApi } from '@/lib/preferences/preferences.contract';
 import { notificationTogglesQuery } from '@/lib/settings/prefs.queries';
 import { api } from '@/lib/contract/client';
+import '@/components/settings/settings.css';
 
 const PREF_KEYS = ['likes', 'comments', 'follows', 'mentions', 'reposts', 'system'] as const;
 type PrefKey = (typeof PREF_KEYS)[number];
@@ -68,20 +69,17 @@ export function NotificationPrefsPanel() {
   }
 
   return (
-    <ul className="divide-y divide-site-border">
+    <ul>
       {PREF_KEYS.map((key) => {
         const labelId = `notif-pref-${key}-label`;
         const hintId = `notif-pref-${key}-hint`;
         return (
-          <li
-            key={key}
-            className="chrome-row flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
-          >
-            <div className="min-w-0">
-              <p id={labelId} className="text-sm font-medium text-site-text">
+          <li key={key} className="chrome-row settings-row">
+            <div className="settings-row__text">
+              <p id={labelId} className="settings-row__name">
                 {t(`settings-notif-${key}`, { defaultValue: COPY[key].label })}
               </p>
-              <p id={hintId} className="text-xs text-site-text-muted">
+              <p id={hintId} className="settings-row__hint">
                 {t(`settings-notif-${key}-hint`, { defaultValue: COPY[key].hint })}
               </p>
             </div>

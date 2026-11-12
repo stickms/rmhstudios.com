@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { BellRing, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -85,7 +85,6 @@ export function DiscoverySettings() {
   return (
     <>
       <SettingsSection
-        icon={BellRing}
         title={t('alerts-title', { defaultValue: 'Keyword alerts' })}
         description={t('alerts-desc', {
           max: MAX_ALERTS,

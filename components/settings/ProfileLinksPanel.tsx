@@ -16,7 +16,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { BadgeCheck, ExternalLink, Link2, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { BadgeCheck, ExternalLink, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -130,7 +130,6 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
 
   return (
     <SettingsSection
-      icon={Link2}
       title={t('links-title', { defaultValue: 'Profile links' })}
       description={t('links-description', {
         defaultValue:
