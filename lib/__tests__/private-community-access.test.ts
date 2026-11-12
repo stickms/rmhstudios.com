@@ -233,7 +233,7 @@ describe('members / announcements / join / pages routes', () => {
   });
 
   it('pages index + revisions: 404 for a non-member of a private community', async () => {
-    const LIST = await routeHandlers('@/app/routes/api/community-pages/index', 'GET');
+    const LIST = await routeHandlers('@/lib/communities/api/community-pages.server', 'GET');
     expect(
       (await LIST({ query: { communitySlug: 's' }, userId: 'stranger', isAdmin: false })).status,
     ).toBe(404);
@@ -247,7 +247,7 @@ describe('members / announcements / join / pages routes', () => {
 
     h.member.findUnique.mockResolvedValue(null);
     h.page.findUnique.mockResolvedValue({ communityId: 'c1', community: { isPrivate: true } });
-    const REV = await routeHandlers('@/app/routes/api/community-pages/$id.revisions', 'GET');
+    const REV = await routeHandlers('@/lib/communities/api/community-pages.$id.revisions.server', 'GET');
     expect((await REV({ params: { id: 'p1' }, userId: 'stranger' })).status).toBe(404);
   });
 });
@@ -327,7 +327,7 @@ describe('events of a private community are members-only', () => {
 
   it('GET /api/events?scope=community: no event data for an anonymous viewer', async () => {
     privateCommunity(false);
-    const GET = await routeHandlers('@/app/routes/api/events/index', 'GET');
+    const GET = await routeHandlers('@/lib/calendar/api/events.server', 'GET');
     const res = await GET({
       request: new Request('http://x/api/events?scope=community&communityId=c1'),
       session: null,

@@ -23,19 +23,10 @@ vi.mock('@/lib/prisma.server', () => ({
   prisma: { rMHarkComment: { findUnique: async () => h.comment } },
 }));
 
-import { Route } from '../../../app/routes/api/comments/$commentId/translate';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
+import { route as Route } from '@/lib/ai/api/comments.$commentId.translate.server';
 
-const GET = (
-  Route as unknown as {
-    options: {
-      server: {
-        handlers: {
-          GET: (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
-        };
-      };
-    };
-  }
-).options.server.handlers.GET;
+const GET = handlersOf(Route).GET!;
 
 const get = () =>
   GET({

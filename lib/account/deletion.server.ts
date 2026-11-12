@@ -181,7 +181,7 @@ export async function finalizeDueDeletions(
 
 /**
  * The erasure itself — the anonymize-in-place path from
- * `app/routes/api/account/delete.ts`, reused rather than reimplemented.
+ * `lib/account/api/account.delete.server.ts`, reused rather than reimplemented.
  *
  * The user row is NOT dropped: foreign keys from ~250 models point at it, so a
  * hard delete either fails or cascades away other people's content (their

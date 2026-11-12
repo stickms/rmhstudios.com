@@ -159,7 +159,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     sessionMinutes: [20, 60],
     engine: 'webgl',
     demanding: true,
-    // AltairMetaProgress, written by app/routes/api/altair/meta.ts.
+    // AltairMetaProgress, written by features/altair/api/altair.meta.server.ts.
     save: 'own-table',
     accessibility: [],
   },

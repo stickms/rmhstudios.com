@@ -7,9 +7,9 @@ export default defineFeature({
   basePath: '/gabriels-horn',
   delivery: 'island',
   routes: [
-    'app/routes/api/gabriels-horn/house-rule.ts',
-    'app/routes/api/gabriels-horn/leaderboard.ts',
-    'app/routes/api/gabriels-horn/table-read.ts',
+    'features/gabriels-horn/api/gabriels-horn.house-rule.server.ts',
+    'features/gabriels-horn/api/gabriels-horn.leaderboard.server.ts',
+    'features/gabriels-horn/api/gabriels-horn.table-read.server.ts',
     'app/routes/gabriels-horn.tsx',
   ],
   namespaces: ['c-gabriels-horn'],

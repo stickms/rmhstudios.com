@@ -191,7 +191,7 @@ leaderboard. The client's number is a claim; the server decides what is true.</d
 
 <p>rmhstudios.com cannot fully re-simulate a play on the server (it never received the keystrokes), so
 it does the next best thing: it treats every submission as hostile and gates it through a fixed
-sequence of checks. Reading <code>app/routes/api/slice-it/score.ts</code> top to bottom, the gates are:
+sequence of checks. Reading <code>features/slice-it/api/slice-it.score.server.ts</code> top to bottom, the gates are:
 <b>(1) rate-limit by IP</b>, <b>(2) shape and bound the payload</b>, <b>(3) authenticate the session</b>,
 then <b>(4) persist</b> only what survived. The order matters — the cheapest, most abusable check runs
 first:</p>
@@ -300,7 +300,7 @@ server treats it as a value to hold for that user, not a structure to query.</di
   @@map("temple_of_joy_save")
 }</code></pre>
 
-<p>The save handler (<code>app/routes/api/temple-of-joy/save.ts</code>) is a textbook
+<p>The save handler (<code>lib/temple-of-joy/api/temple-of-joy.save.server.ts</code>) is a textbook
 upsert-per-user: authenticate, rate-limit, reject a non-object body, cap the payload at 500&nbsp;KB
 (<code>bodyStr.length &gt; 500_000</code>), then <code>prisma.templeOfJoySave.upsert</code> keyed on
 <code>userId</code> — one save row per player, last write wins. Signal Forge's
@@ -448,7 +448,7 @@ Realtime sync is for <i>presence</i>; the leaderboard is for <i>truth</i>.</div>
 
   <div class="exercise"><span class="qid">8.2</span>
     <span class="tag trace">trace</span><span class="tag medium">medium</span>
-    Trace a single score POST through <code>app/routes/api/slice-it/score.ts</code> from the first line
+    Trace a single score POST through <code>features/slice-it/api/slice-it.score.server.ts</code> from the first line
     of the handler to the database write. List, in order, every gate the request must pass and the HTTP
     status code returned if it fails each one.</div>
 

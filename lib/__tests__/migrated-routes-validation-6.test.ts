@@ -50,11 +50,11 @@ async function handler(mod: string, method: string): Promise<Handler> {
   return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
-const EVENTS = '@/app/routes/api/events/index';
-const RSVP = '@/app/routes/api/events/$id/rsvp';
-const LISTINGS = '@/app/routes/api/market/listings/index';
-const TIERS = '@/app/routes/api/studio/tiers';
-const SCORE = '@/app/routes/api/dream-rift/score';
+const EVENTS = '@/lib/calendar/api/events.server';
+const RSVP = '@/lib/api/routes/events.$id.rsvp.server';
+const LISTINGS = '@/lib/market/api/market.listings.server';
+const TIERS = '@/lib/studio/api/studio.tiers.server';
+const SCORE = '@features/dream-rift/api/dream-rift.score.server';
 
 function req(method: string, body?: unknown, cookie = true): Request {
   return new Request('https://rmhstudios.com/api/x', {

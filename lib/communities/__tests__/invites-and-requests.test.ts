@@ -275,12 +275,12 @@ describe('only the owner and moderators manage invites and requests', () => {
     });
 
   const calls: [string, string, Record<string, unknown>][] = [
-    ['@/app/routes/api/communities/$slug/invites', 'GET', {}],
-    ['@/app/routes/api/communities/$slug/invites', 'POST', { body: {} }],
-    ['@/app/routes/api/communities/$slug/invites/$id', 'DELETE', { params: { slug: 's', id: '1' } }],
-    ['@/app/routes/api/communities/$slug/join-requests', 'GET', {}],
+    ['@/lib/communities/api/communities.$slug.invites.server', 'GET', {}],
+    ['@/lib/communities/api/communities.$slug.invites.server', 'POST', { body: {} }],
+    ['@/lib/communities/api/communities.$slug.invites.$id.server', 'DELETE', { params: { slug: 's', id: '1' } }],
+    ['@/lib/communities/api/communities.$slug.join-requests.server', 'GET', {}],
     [
-      '@/app/routes/api/communities/$slug/join-requests/$id',
+      '@/lib/communities/api/communities.$slug.join-requests.$id.server',
       'POST',
       { params: { slug: 's', id: '1' }, body: { decision: 'approve' } },
     ],
@@ -343,7 +343,7 @@ describe('only the owner and moderators manage invites and requests', () => {
       isPrivate: false,
       members: [{ role: 'ADMIN' }],
     });
-    const fn = await route('@/app/routes/api/communities/$slug/invites', 'POST');
+    const fn = await route('@/lib/communities/api/communities.$slug.invites.server', 'POST');
     expect((await fn({ params: { slug: 's' }, userId: 'u', body: {} })).status).toBe(400);
   });
 });

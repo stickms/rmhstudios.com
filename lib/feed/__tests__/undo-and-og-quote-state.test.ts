@@ -6,6 +6,7 @@
  * Plus the quote placeholder, which named the author of a members-only post.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 import { mapQuotedOriginal, withholdQuotedOriginal } from '../quoted-original';
 
 const h = vi.hoisted(() => ({
@@ -76,12 +77,12 @@ vi.mock('@/lib/prisma.server', () => {
 });
 
 import { setPostLike } from '@/lib/social/engagement.server';
-import { Route as VoteRoute } from '../../../app/routes/api/rmharks/$id/vote';
-import { Route as OgRoute } from '../../../app/routes/api/og/post/$id';
+import { route as VoteRoute } from '@/lib/feed/api/rmharks.$id.vote.server';
+import { route as OgRoute } from '@/lib/og/api/og.post.$id.server';
 
 type H = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 const handler = (r: unknown, m: 'GET' | 'POST') =>
-  (r as { options: { server: { handlers: Record<string, H> } } }).options.server.handlers[m];
+  handlersOf<H>(r)[m];
 
 beforeEach(() => {
   h.readable = true;

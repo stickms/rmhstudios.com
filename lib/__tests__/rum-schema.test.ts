@@ -15,7 +15,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 
-// `@/app/routes/api/rum` pulls in `defineHandler`, which imports Better Auth at
+// `@/lib/api/routes/rum.server` pulls in `defineHandler`, which imports Better Auth at
 // module scope. The schema under test needs none of it.
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: vi.fn() } } }));
 
@@ -25,7 +25,7 @@ import {
   normalizeScript,
   normalizeReasons,
   normalizeEffectiveType,
-} from '@/app/routes/api/rum';
+} from '@/lib/api/routes/rum.server';
 
 /** Exactly what `lib/rum.ts` sent before OPT-35 landed. */
 const OLD_SHAPE = {

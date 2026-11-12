@@ -81,23 +81,14 @@ vi.mock('@features/slice-it/engine/run-token.server', () => ({
   verifyRunToken: () => ({ ok: false, reason: 'expired' as const }),
 }));
 
-import { Route } from '../../../../app/routes/api/slice-it/score';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
+import { route } from '@features/slice-it/api/slice-it.score.server';
 import { DEFAULT_MODIFIERS } from '../modifiers';
 import type { Modifiers } from '../types';
 
 /* ─── Harness ────────────────────────────────────────────────────────────── */
 
-const handlers = (
-  Route as unknown as {
-    options: {
-      server: {
-        handlers: {
-          POST: (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
-        };
-      };
-    };
-  }
-).options.server.handlers;
+const handlers = handlersOf(route);
 
 interface Body {
   songId?: string;

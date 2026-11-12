@@ -35,21 +35,34 @@ export const SITE_SHEET_ROUTES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * The API dispatcher (`app/routes/api/$.ts`). When no endpoint answers an `/api` path it
- * is the matched route under the root's 404, which is the page such a path rendered before
- * the splat existed (root-only), so it keeps that page's sheet.
+ * The API dispatcher (`app/routes/api/$.ts`), the matched route for every `/api` path no
+ * route file answers. Two documents can come out of it, and each keeps the sheet it had
+ * before the dispatcher existed:
+ *
+ *  - no endpoint answers the path: the root's 404, a root-only page, on the site sheet;
+ *  - a registered endpoint answers the path but not the method (a browser GET of a
+ *    POST-only endpoint): the empty render of a top-level route, which is what the
+ *    endpoint's own route file produced, on the app sheet.
  */
 const API_SPLAT_ROUTE = '/api/$';
 
 /**
  * The tier for a match list (root first). `appSheetLoaded` is whether the
- * document already holds the app sheet; pass `false` on the server.
+ * document already holds the app sheet; pass `false` on the server. `rootNotFound` is
+ * whether the root is rendering its 404 for this match list; only the API dispatcher's
+ * tier depends on it, and a caller that cannot know (a preload, which never renders an
+ * `/api` path) leaves it out.
  */
-export function styleTierFor(routeIds: readonly string[], appSheetLoaded: boolean): StyleTier {
+export function styleTierFor(
+  routeIds: readonly string[],
+  appSheetLoaded: boolean,
+  rootNotFound = true,
+): StyleTier {
   if (appSheetLoaded) return 'app';
   const top = routeIds[1];
   // Root-only: the global 404, rendered by the root's own components.
-  if (top === undefined || top === '/_site' || top === API_SPLAT_ROUTE) return 'site';
+  if (top === undefined || top === '/_site') return 'site';
+  if (top === API_SPLAT_ROUTE) return rootNotFound ? 'site' : 'app';
   return SITE_SHEET_ROUTES.has(top) ? 'site' : 'app';
 }
 

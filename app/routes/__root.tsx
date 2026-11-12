@@ -298,6 +298,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       styleTierFor(
         (ctx.matches ?? []).map((m) => m.routeId),
         hasStylesheet(appTierCss),
+        globalNotFound,
       ) === 'app'
         ? appTierCss
         : siteTierCss;

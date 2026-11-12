@@ -3,7 +3,7 @@
  *
  * One module, imported by both the route (`app/routes/slice-it/index.tsx`,
  * for `validateSearch`) and the components (`SongLibrary.tsx`, `SongTable.tsx`)
- * and the API route (`app/routes/api/slice-it/songs.ts`), so the three cannot
+ * and the API route (`features/slice-it/api/slice-it.songs.server.ts`), so the three cannot
  * drift into three different ideas of what a "sort" value is.
  *
  * Client-safe (no server imports) — same rule as `api-schemas.ts`.
@@ -51,7 +51,7 @@ const BooleanFlagZ = z
  * `?q=&sort=&dir=&cursor=&limit=&mine=` for the paged list branch, plus the
  * `random=1` branch's constraints and the `shelf=recent` branch's flag — all on
  * one schema because `defineHandler` validates one `query` shape per route, and
- * this route (`app/routes/api/slice-it/songs.ts`) now serves three request
+ * this route (`features/slice-it/api/slice-it.songs.server.ts`) now serves three request
  * shapes. Fields only one branch reads are simply ignored by the others.
  */
 export const LibrarySongsQueryZ = z

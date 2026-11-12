@@ -78,7 +78,7 @@ This bloats every clone, the Docker build context, and image layers.
 **Actions (in priority order):**
 - Move large binary media (`library`, `music`, `models`, large `sprites`) to object storage
   (S3/R2/Spaces) or Git LFS and serve via CDN. The app already has an image proxy
-  (`app/routes/api/image-proxy.ts`) and `lib/image-optimize.ts` to build on.
+  (`lib/api/routes/image-proxy.server.ts`) and `lib/image-optimize.ts` to build on.
 - Audit `public/library` (488 MB) for orphaned/superseded covers and PDFs against
   `data/library-metadata.json`; delete anything not referenced.
 - Confirm `.dockerignore` excludes whatever moves to CDN so the build context shrinks.

@@ -48,7 +48,7 @@ const OVERSCAN = 10;
  * score, and play count. Rows are virtualized (`@tanstack/react-virtual`, the
  * same library `components/feed/FeedList.tsx` uses for the timeline) rather
  * than paged, because a table exists to be scanned — see the module doc on
- * `app/routes/api/slice-it/songs.ts` for why sorting itself still happens on
+ * `features/slice-it/api/slice-it.songs.server.ts` for why sorting itself still happens on
  * the server and never touches the loaded page.
  *
  * Virtualization keeps real `<table>`/`<tr>`/`<td>` markup — no `display:

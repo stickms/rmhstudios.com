@@ -4,6 +4,7 @@
  * must hand the renderer `null` for it.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({ findUnique: vi.fn(), render: vi.fn() }));
 
@@ -17,7 +18,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 import { postCardCommunityName } from '@/lib/og/post-visibility';
-import { Route } from '@/app/routes/api/og/post/$id';
+import { route as Route } from '@/lib/og/api/og.post.$id.server';
 
 const post = (community: { name: string; isPrivate: boolean } | null) => ({
   id: 'p1',
@@ -41,9 +42,7 @@ const post = (community: { name: string; isPrivate: boolean } | null) => ({
 
 async function card(community: { name: string; isPrivate: boolean } | null) {
   h.findUnique.mockResolvedValue(post(community));
-  const handler = (Route as unknown as {
-    options: { server: { handlers: { GET: (c: unknown) => Promise<Response> } } };
-  }).options.server.handlers.GET;
+  const handler = handlersOf<(c: unknown) => Promise<Response>>(Route).GET;
   await handler({ params: { id: 'p1' } });
   return h.render.mock.calls[0][0] as { community: string | null; revision: string };
 }

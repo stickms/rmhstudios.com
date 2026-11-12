@@ -276,7 +276,7 @@ export function bestLamp(a: Lamp, b: Lamp): Lamp {
  * The viewer-scoped joins a song read needs to answer "how did *I* do?".
  *
  * The likes/plays half of this was previously written inline at each call site
- * (`app/routes/api/slice-it/songs.ts` and `songs/$id.ts`), which is why the
+ * (`features/slice-it/api/slice-it.songs.server.ts` and `songs/$id.ts`), which is why the
  * lamp join could not simply be added to `songSelect`: `songSelect` is a static
  * object and every one of these clauses has to name the viewer. Bundling them
  * here means a caller adds one spread rather than three, and a fourth

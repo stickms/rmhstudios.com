@@ -1,0 +1,32 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { defineHandler } from '@/lib/api/handler.server';
+import { normalizeTag } from '@/lib/feed/signals';
+import { feedSignalSchema } from '@/lib/feed/signals-schema';
+import { recordSignal, removeSignal, getSignals } from '@/lib/feed/signals.server';
+
+/**
+ * GET    /api/feed/signal — the caller's feed signals (for the settings surface).
+ * POST   /api/feed/signal { kind, targetId } — record a signal (idempotent).
+ * DELETE /api/feed/signal { kind, targetId } — remove a signal (idempotent).
+ */
+export const route = apiRoute('/api/feed/signal', {
+  GET: defineHandler({}, async ({ session }) => {
+    return Response.json(await getSignals(session.user.id));
+  }),
+  POST: defineHandler(
+    {
+      rateLimit: { limit: 60, windowMs: 60_000, prefix: 'feed-signal' },
+      body: feedSignalSchema,
+    },
+    async ({ session, body }) => {
+      const targetId = body.kind === 'less_author' ? body.targetId : normalizeTag(body.targetId);
+      await recordSignal(session.user.id, body.kind, targetId);
+      return Response.json({ ok: true });
+    },
+  ),
+  DELETE: defineHandler({ body: feedSignalSchema }, async ({ session, body }) => {
+    const targetId = body.kind === 'less_author' ? body.targetId : normalizeTag(body.targetId);
+    await removeSignal(session.user.id, body.kind, targetId);
+    return Response.json({ ok: true });
+  }),
+});

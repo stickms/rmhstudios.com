@@ -1,0 +1,55 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { defineHandler } from '@/lib/api/handler.server';
+import { prisma } from '@/lib/prisma.server';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { z } from 'zod';
+import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
+
+const schema = z.object({ optionIdx: z.number().int().min(0).max(5) });
+
+/** POST /api/group-chats/$id/messages/$messageId/vote — cast/replace a poll vote. */
+export const route = apiRoute('/api/group-chats/$id/messages/$messageId/vote', {
+  POST: defineHandler({}, async ({ request, params, session }) => {
+    const userId = session.user.id;
+
+    const ip = getClientIp(request);
+    const { allowed } = rateLimit(ip, {
+      limit: 60,
+      windowMs: 60_000,
+      prefix: 'group-poll-vote',
+    });
+    if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+
+    const membership = await prisma.groupChatMember.findUnique({
+      where: { groupId_userId: { groupId: params.id, userId } },
+      select: { id: true },
+    });
+    if (!membership) return Response.json({ error: 'Not found' }, { status: 404 });
+
+    const parsed = schema.safeParse(await request.json().catch(() => ({})));
+    if (!parsed.success) return Response.json({ error: 'Invalid vote' }, { status: 400 });
+
+    const message = await prisma.groupMessage.findFirst({
+      where: { id: params.messageId, groupId: params.id },
+      select: { id: true, pollOptions: true, pollQuestion: true },
+    });
+    if (!message || !message.pollQuestion)
+      return Response.json({ error: 'No such poll' }, { status: 404 });
+    if (parsed.data.optionIdx >= message.pollOptions.length) {
+      return Response.json({ error: 'Invalid option' }, { status: 400 });
+    }
+
+    await prisma.groupPollVote.upsert({
+      where: { messageId_userId: { messageId: message.id, userId } },
+      create: { messageId: message.id, userId, optionIdx: parsed.data.optionIdx },
+      update: { optionIdx: parsed.data.optionIdx },
+    });
+
+    const fresh = await prisma.groupMessage.findUnique({
+      where: { id: message.id },
+      select: groupMessageSelect,
+    });
+    const [payload] = await serializeGroupMessages(fresh ? [fresh] : [], userId);
+    return Response.json({ poll: payload?.poll ?? null });
+  }),
+});

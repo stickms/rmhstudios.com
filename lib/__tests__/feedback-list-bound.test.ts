@@ -3,6 +3,7 @@
  * `take`). It is now newest-100 with a column select.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 const { findMany } = vi.hoisted(() => ({ findMany: vi.fn() }));
 
@@ -14,7 +15,7 @@ vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (config: unknown) => ({ options: config }),
 }));
 
-import { Route } from '@/app/routes/api/feedback';
+import { route as Route } from '@/lib/api/routes/feedback.server';
 
 const ADMIN = { user: { id: 'a1', name: 'Root', isAdmin: true } };
 beforeEach(() => {
@@ -24,7 +25,7 @@ beforeEach(() => {
 
 type Get = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 const getHandler = () =>
-  (Route as unknown as { options: { server: { handlers: { GET: Get } } } }).options.server.handlers
+  handlersOf<Get>(Route)
     .GET;
 const call = () =>
   getHandler()({

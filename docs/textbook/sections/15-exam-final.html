@@ -16,7 +16,7 @@ In the Slice-It engine, <code>GameEngine.update()</code> reads <code>this.audioM
 </ol></div>
 
 <div class="exam-q"><span class="qid">B2</span><span class="pts">3 pts</span>
-A determined player edits the browser JavaScript and POSTs a score of 480,000 &mdash; in range, at speed 1.0, from a real logged-in session &mdash; directly to <code>app/routes/api/slice-it/score.ts</code>. What does the chapter say happens?
+A determined player edits the browser JavaScript and POSTs a score of 480,000 &mdash; in range, at speed 1.0, from a real logged-in session &mdash; directly to <code>features/slice-it/api/slice-it.score.server.ts</code>. What does the chapter say happens?
 <ol class="choices">
   <li>The rate limiter blocks it because forged scores are detected by IP.</li>
   <li>The <code>0 … 1_000_000_000</code> range check rejects it as impossible.</li>
@@ -102,7 +102,7 @@ Why does the production Helm chart pin every realtime service (<code>socket</cod
 <p>Six questions, 5 points each. Two to four sentences each; cite real identifiers where relevant.</p>
 
 <div class="exam-q"><span class="qid">B11</span><span class="pts">5 pts</span>
-Reading <code>app/routes/api/slice-it/score.ts</code> top to bottom, list in order the four kinds of gate a score POST must pass before the database is touched, and explain why the cheapest, most-abusable gate (the IP rate limit) is placed first.</div>
+Reading <code>features/slice-it/api/slice-it.score.server.ts</code> top to bottom, list in order the four kinds of gate a score POST must pass before the database is touched, and explain why the cheapest, most-abusable gate (the IP rate limit) is placed first.</div>
 
 <div class="exam-q"><span class="qid">B12</span><span class="pts">5 pts</span>
 Signal Forge persists both an opaque <code>savedRunState Json?</code> blob and the derived columns <code>highScore</code> and <code>floorReached</code>. State one task each representation can do that the other cannot, and explain why the leaderboard query reads the columns rather than the blob.</div>

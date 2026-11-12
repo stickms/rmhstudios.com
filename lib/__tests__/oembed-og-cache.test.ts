@@ -23,15 +23,11 @@ vi.mock('@/lib/unfurl/unfurl.server', async () => {
     .catch(() => null);
   return { readCapped: actual?.readCapped };
 });
-vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (config: unknown) => ({ options: config }),
-}));
-
-import { Route } from '@/app/routes/api/oembed';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
+import { route as Route } from '@/lib/api/routes/oembed.server';
 
 type Get = (ctx: { request: Request }) => Promise<Response>;
-const GET = (Route as unknown as { options: { server: { handlers: { GET: Get } } } }).options.server
-  .handlers.GET;
+const GET = handlersOf<Get>(Route).GET!;
 const call = (url: string) =>
   GET({ request: new Request(`https://x.test/api/oembed?type=og&url=${encodeURIComponent(url)}`) });
 

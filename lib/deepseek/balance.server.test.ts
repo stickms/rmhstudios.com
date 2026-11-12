@@ -4,6 +4,7 @@
  * sent as a bearer header but never appears in a response.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 const getSession = vi.fn();
 vi.mock('@/lib/auth', () => ({
@@ -33,9 +34,9 @@ import {
   fetchDeepseekBalance,
   runDeepseekBalanceJob,
 } from '@/lib/deepseek/balance.server';
-import { Route as BalanceRoute } from '@/app/routes/api/admin/deepseek/balance';
-import { Route as RefreshRoute } from '@/app/routes/api/admin/deepseek/refresh';
-import { Route as HistoryRoute } from '@/app/routes/api/admin/deepseek/history';
+import { route as BalanceRoute } from '@/lib/deepseek/api/admin.deepseek.balance.server';
+import { route as RefreshRoute } from '@/lib/deepseek/api/admin.deepseek.refresh.server';
+import { route as HistoryRoute } from '@/lib/deepseek/api/admin.deepseek.history.server';
 
 const KEY = 'sk-test-secret-key';
 const OK_BODY = {
@@ -52,7 +53,7 @@ const OK_BODY = {
 
 type Handler = (ctx: { params: object; request: Request }) => Promise<Response>;
 const handlerOf = (route: unknown, method: 'GET' | 'POST'): Handler =>
-  (route as { options: { server: { handlers: Record<string, Handler> } } }).options.server.handlers[
+  handlersOf<Handler>(route)[
     method
   ];
 

@@ -51,19 +51,10 @@ vi.mock('@/lib/prisma.server', () => {
   return { prisma };
 });
 
-import { Route } from '../../../app/routes/api/rmharks/$id/repost';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
+import { route as Route } from '@/lib/feed/api/rmharks.$id.repost.server';
 
-const POST = (
-  Route as unknown as {
-    options: {
-      server: {
-        handlers: {
-          POST: (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
-        };
-      };
-    };
-  }
-).options.server.handlers.POST;
+const POST = handlersOf(Route).POST!;
 
 async function repost(id: string) {
   const request = new Request(`https://x.test/api/rmharks/${id}/repost`, {

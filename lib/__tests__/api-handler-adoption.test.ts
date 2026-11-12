@@ -186,18 +186,15 @@ const KNOWN_UNWRAPPED: readonly string[] = [
  */
 const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
   'app/routes/api/ai/transform.ts',
-  'app/routes/api/doctrine/puzzles/replay.ts',
   'app/routes/api/events/$id/index.ts',
   'app/routes/api/homes/listings.ts',
-  'app/routes/api/library/collection/$id.ts',
-  'app/routes/api/library/collection/$id/items.ts',
-  'app/routes/api/library/collections.ts',
   'app/routes/api/replays/$id.ts',
   'app/routes/api/rmhcalculator/compute.ts',
   'app/routes/api/rmhcalculator/graph.ts',
   'app/routes/api/rmhladder/resume/index.ts',
-  'app/routes/api/signal-forge/save.ts',
+  'features/doctrine/api/doctrine.puzzles.replay.server.ts',
   'features/doctrine/api/doctrine.sahur.status.server.ts',
+  'features/signal-forge/api/signal-forge.save.server.ts',
   'lib/ai/api/rmharks.$id.translate.server.ts',
   'lib/api/routes/user-builds.$id.comments.server.ts',
   'lib/api/routes/user-builds.$id.like.server.ts',
@@ -205,6 +202,9 @@ const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
   'lib/api/routes/user-builds.server.ts',
   'lib/feed/api/rmharks.$id.summary.server.ts',
   'lib/library/api/library.collection.$id.cover.server.ts',
+  'lib/library/api/library.collection.$id.items.server.ts',
+  'lib/library/api/library.collection.$id.server.ts',
+  'lib/library/api/library.collections.server.ts',
 ];
 
 const POINTER =

@@ -5,9 +5,10 @@ import { isRegisteredApiPath, resolveApiRoute } from '@/lib/api/route-dispatch.s
 /**
  * /api/** — the registered API endpoints (third-pass audit AR3).
  *
- * An endpoint that only binds contracts is not a file in this directory: it is a module
- * next to its contract that exports `route = apiRoute('/api/…', { GET: implement(…) })`,
- * listed in `lib/api/route-table.server.ts`. This splat is where they are served. The
+ * An endpoint whose handlers are `implement()` or `defineHandler()` calls is not a file in
+ * this directory: it is a module in its domain's `api/` folder that exports
+ * `route = apiRoute('/api/…', { GET: implement(…) })`, listed in
+ * `lib/api/route-table.server.ts`. This splat is where they are served. The
  * router still prefers every route file that remains here (a splat is its last choice),
  * and `lib/api/__tests__/route-table.test.ts` proves no route file can answer a
  * registered path.

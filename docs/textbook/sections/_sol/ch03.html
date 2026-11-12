@@ -28,7 +28,7 @@ and state. The page is now interactive. (Matches Figure 3.1.)</div>
   nested inside the <code>_site</code> layout.</li>
   <li><code>app/routes/blog.$slug.tsx</code> &rarr; <code>/blog/&lt;slug&gt;</code>, a <b>page route</b>
   with a dynamic <code>$slug</code> parameter.</li>
-  <li><code>app/routes/api/search.ts</code> &rarr; <code>/api/search</code>, a <b>server route</b>.</li>
+  <li><code>lib/search/api/search.server.ts</code> &rarr; <code>/api/search</code>, a <b>server route</b>.</li>
 </ul>
 You can tell <code>search.ts</code> is not a page route two ways: its extension is <code>.ts</code>
 (no JSX, so no React component), and it exports a <code>server.handlers</code> object (a <code>GET</code>

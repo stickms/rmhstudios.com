@@ -37,13 +37,13 @@ interface Case {
   error: string;
 }
 
-const VEGA = '@/features/vega/api/vega.score.server';
-const LAUNDRY = '@/features/laundry-sort/api/laundry-sort.score.server';
-const FORGE = '@/features/signal-forge/api/signal-forge.score.server';
-const ALTAIR_SCORE = '@/app/routes/api/altair/score';
-const ALTAIR_META = '@/app/routes/api/altair/meta';
+const VEGA = '@features/vega/api/vega.score.server';
+const LAUNDRY = '@features/laundry-sort/api/laundry-sort.score.server';
+const FORGE = '@features/signal-forge/api/signal-forge.score.server';
+const ALTAIR_SCORE = '@features/altair/api/altair.score.server';
+const ALTAIR_META = '@features/altair/api/altair.meta.server';
 const BET = '@/lib/api/routes/coins.bet.server';
-const PURCHASE = '@/app/routes/api/coins/purchase';
+const PURCHASE = '@/lib/economy/api/coins.purchase.server';
 const VERSECRAFT = '@/lib/versecraft/api/versecraft.save.server';
 const PASS_CLAIM = '@/lib/battlepass/api/battlepass.claim.server';
 const PASS_UNLOCK = '@/lib/battlepass/api/battlepass.unlock.server';
@@ -255,7 +255,7 @@ const POSTS = [
   BET,
   PURCHASE,
   '@/lib/api/routes/coins.claim.server',
-  '@/features/signal-forge/api/signal-forge.abandon.server',
+  '@features/signal-forge/api/signal-forge.abandon.server',
   VERSECRAFT,
   PASS_CLAIM,
   PASS_UNLOCK,
