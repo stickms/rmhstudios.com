@@ -46,6 +46,12 @@ export interface StakeClaim {
   round: number;
   /** The phase the room was in and what the amount is made of. */
   detail: string;
+  /**
+   * Set by a durable table (`blackjack-table-state.ts`): the key names the
+   * stake, not this shutdown, so a restore can find the refund. Unset = one
+   * key per claim per shutdown, as before.
+   */
+  idempotencyKey?: string;
 }
 
 export interface ShutdownRefundSummary {
@@ -56,6 +62,8 @@ export interface ShutdownRefundSummary {
   failed: number;
   /** Still awaiting the database when the deadline passed: may or may not have landed. */
   unconfirmed: number;
+  /** Durable tables only: tables written to the store instead of refunded. */
+  saved?: number;
 }
 
 /**
@@ -89,6 +97,7 @@ export class InFlight {
 
 /** One key per claim: a retry (or a hand re-run) of the same refund is a no-op. */
 function idempotencyKeyFor(claim: StakeClaim, shutdownId: string): string {
+  if (claim.idempotencyKey) return claim.idempotencyKey;
   const key = `casino-shutdown:${claim.game}:${claim.roomId}:${claim.userId}:${shutdownId}`;
   // coin_transaction.idempotency_key is VARCHAR(128); user ids are not length-capped.
   if (key.length <= 128) return key;
