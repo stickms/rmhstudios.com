@@ -97,7 +97,7 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     id: 'daily-wheel',
     kind: 'faucet',
     surface: '/wallet — the daily spin',
-    source: 'app/routes/api/wheel/spin.ts',
+    source: 'lib/wheel/api/wheel.spin.server.ts',
     bounded: true,
     note: 'One spin per UTC day (DailyWheelSpin). Bounded per day, unbounded over a lifetime.',
   },

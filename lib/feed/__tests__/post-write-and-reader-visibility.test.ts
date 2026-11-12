@@ -156,7 +156,7 @@ import { route as ReactRoute } from '@/lib/feed/api/rmharks.$id.react.server';
 import { route as BookmarkRoute } from '@/lib/feed/api/rmharks.$id.bookmark.server';
 import { Route as VoteRoute } from '../../../app/routes/api/rmharks/$id/vote';
 import { Route as UnlockRoute } from '../../../app/routes/api/rmharks/$id/unlock';
-import { Route as SavesRoute } from '../../../app/routes/api/saves/index';
+import { route as SavesRoute } from '@/lib/saves/api/saves.server';
 import { Route as V1Post } from '../../../app/routes/api/v1/posts/$id';
 import { Route as V1Bookmarks } from '../../../app/routes/api/v1/me/bookmarks';
 import { notifyMentions } from '../notify-mentions.server';

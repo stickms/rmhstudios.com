@@ -61,9 +61,9 @@ async function handler(mod: string, method: string): Promise<Handler> {
 const TIP = '@/lib/economy/api/coins.tip.server';
 const GIFT = '@/lib/gifting/api/gift-sub.server';
 const JOIN = '@/lib/creator/api/creators.$id.join.server';
-const WAGER = '@/app/routes/api/wager/index';
-const TOURNEY = '@/app/routes/api/tournaments/index';
-const T_REPORT = '@/app/routes/api/tournaments/$id/matches/$matchId/report';
+const WAGER = '@/lib/wager/api/wager.server';
+const TOURNEY = '@/lib/tournaments/api/tournaments.server';
+const T_REPORT = '@/lib/tournaments/api/tournaments.$id.matches.$matchId.report.server';
 const FEEDBACK = '@/app/routes/api/feedback';
 const SEARCHES = '@/lib/rmhladder/api/rmhladder.searches.server';
 const GEOCODE = '@/lib/homes/api/homes.geocode.server';

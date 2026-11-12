@@ -37,14 +37,14 @@ interface Case {
   error: string;
 }
 
-const VEGA = '@/app/routes/api/vega/score';
+const VEGA = '@/features/vega/api/vega.score.server';
 const LAUNDRY = '@/features/laundry-sort/api/laundry-sort.score.server';
-const FORGE = '@/app/routes/api/signal-forge/score';
+const FORGE = '@/features/signal-forge/api/signal-forge.score.server';
 const ALTAIR_SCORE = '@/app/routes/api/altair/score';
 const ALTAIR_META = '@/app/routes/api/altair/meta';
 const BET = '@/lib/api/routes/coins.bet.server';
 const PURCHASE = '@/app/routes/api/coins/purchase';
-const VERSECRAFT = '@/app/routes/api/versecraft/save';
+const VERSECRAFT = '@/lib/versecraft/api/versecraft.save.server';
 const PASS_CLAIM = '@/lib/battlepass/api/battlepass.claim.server';
 const PASS_UNLOCK = '@/lib/battlepass/api/battlepass.unlock.server';
 
@@ -255,7 +255,7 @@ const POSTS = [
   BET,
   PURCHASE,
   '@/lib/api/routes/coins.claim.server',
-  '@/app/routes/api/signal-forge/abandon',
+  '@/features/signal-forge/api/signal-forge.abandon.server',
   VERSECRAFT,
   PASS_CLAIM,
   PASS_UNLOCK,

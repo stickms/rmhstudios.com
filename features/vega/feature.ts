@@ -7,8 +7,8 @@ export default defineFeature({
   basePath: '/secret/vega',
   delivery: 'island',
   routes: [
-    'app/routes/api/vega/leaderboard.ts',
-    'app/routes/api/vega/score.ts',
+    'lib/game/api/vega.leaderboard.server.ts',
+    'features/vega/api/vega.score.server.ts',
     'app/routes/secret/vega.tsx',
   ],
   // The game's strings, and the Vault's (`r-secret`: the way back to /secret) the page frame renders.

@@ -116,7 +116,7 @@ const CASES: Case[] = [
   },
   {
     name: 'card review: grade out of range',
-    mod: '@/app/routes/api/study/cards/$id/review',
+    mod: '@/lib/study/api/study.cards.$id.review.server',
     method: 'POST',
     body: { grade: 9 },
     params: { id: 'k1' },
@@ -124,7 +124,7 @@ const CASES: Case[] = [
   },
   {
     name: 'card review: grade is a string',
-    mod: '@/app/routes/api/study/cards/$id/review',
+    mod: '@/lib/study/api/study.cards.$id.review.server',
     method: 'POST',
     body: { grade: '2' },
     params: { id: 'k1' },

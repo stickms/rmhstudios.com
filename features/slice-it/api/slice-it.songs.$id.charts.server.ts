@@ -1,0 +1,34 @@
+import { apiRoute } from '@/lib/api/route.server';
+
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@features/slice-it/engine/slice-it.contract';
+import { prisma } from '@/lib/prisma.server';
+import { chartsForSong } from '@features/slice-it/engine/charts.server';
+
+/**
+ * C2 — the charts on a song.
+ *
+ * Separate from the song read on purpose: the picker is opened by a fraction of
+ * the people who open a song, and folding this into `songs/$id` would add a
+ * second query and an author join to the request that is already on the
+ * critical path to starting a run.
+ */
+export const route = apiRoute('/api/slice-it/songs/$id/charts', {
+  GET: implement(
+    C.listSongChartsApi,
+    { auth: 'optional', rateLimit: 'read' },
+    async ({ params, userId }) => {
+      // Visibility is checked on the SONG, not just the charts: a private
+      // song's public chart is still a private song, and listing its charts
+      // would confirm it exists to anyone who guessed the id.
+      const song = await prisma.song.findUnique({
+        where: { id: params.id },
+        select: { id: true, isPublic: true, uploadedBy: true },
+      });
+      if (!song || (!song.isPublic && userId !== song.uploadedBy)) {
+        return Response.json({ error: 'Song not found' }, { status: 404 });
+      }
+      return Response.json({ charts: await chartsForSong(params.id, userId) });
+    },
+  ),
+});

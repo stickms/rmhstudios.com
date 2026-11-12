@@ -90,7 +90,7 @@ const MOMENTS = '@/lib/api/routes/moments.server';
 const GIFT = '@/lib/gifting/api/coins.gift.server';
 const TRADE = '@/lib/predictions/api/predictions.$id.trade.server';
 const BACKFILL = '@/lib/rmhvibe/api/admin.vibe.backfill-thumbs.server';
-const VB_SCORE = '@/app/routes/api/void-breaker/score';
+const VB_SCORE = '@/lib/game/api/void-breaker.score.server';
 const DISCORD = '@/lib/api/routes/discord.token.server';
 
 function req(method: string, body?: unknown, cookie = true): Request {

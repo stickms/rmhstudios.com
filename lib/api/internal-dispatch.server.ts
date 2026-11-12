@@ -10,8 +10,8 @@
  *
  * The handler is found from the contract's path template. A registered endpoint
  * (`lib/api/route.server.ts`, third-pass audit AR3) declares that template itself; for an
- * endpoint that is still a route file it is the file's path (`/api/series/$id` is
- * `app/routes/api/series/$id.ts` or `.../$id/index.ts`).
+ * endpoint that is still a route file it is the file's path (`/api/x/$id` is
+ * `app/routes/api/x/$id.ts` or `.../x/$id/index.ts`).
  */
 import { getRequest } from '@tanstack/react-start/server';
 import { HttpError } from '@/lib/http';
