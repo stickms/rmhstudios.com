@@ -5,9 +5,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { RightSidebar } from '@/components/feed/RightSidebar';
 import { PostDetail } from '@/components/feed/PostDetail';
-import { getSidebarData } from '@/lib/sidebar-data';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
@@ -99,10 +97,6 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
     };
   });
 
-const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
-  return getSidebarData();
-});
-
 export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
   // `PostDetail` reads the post body and comments itself; start them here, at
   // the navigation, so they run alongside the loader and the chunk instead of
@@ -113,11 +107,8 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
     if (!preload) prefetchPostDetail(params.postid);
   },
   loader: async ({ params }) => {
-    const [meta, sidebar] = await Promise.all([
-      fetchPostMeta({ data: params.postid }),
-      fetchSidebarData(),
-    ]);
-    return { meta, sidebar };
+    const meta = await fetchPostMeta({ data: params.postid });
+    return { meta };
   },
   head: ({ loaderData, params }) => {
     const meta = loaderData?.meta;
@@ -187,19 +178,8 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
 
 function PostPage() {
   const { postid } = Route.useParams();
-  const { sidebar } = Route.useLoaderData();
-
   return (
-    <PageFrame
-      rightSidebar={
-        <RightSidebar
-          officialBuilds={sidebar.officialBuilds}
-          userBuilds={sidebar.userBuilds}
-          recommendedUsers={sidebar.recommendedUsers}
-          blogPosts={sidebar.blogPosts}
-        />
-      }
-    >
+    <PageFrame>
       <PostDetail postId={postid} />
     </PageFrame>
   );

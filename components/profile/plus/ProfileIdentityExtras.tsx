@@ -49,11 +49,7 @@ export function ProfileIdentityExtras({ profile, name }: { profile: ProfileData;
   return (
     <>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        {profile.pronouns ? (
-          <span className="rounded-full bg-site-surface-hover px-2 py-0.5 text-xs font-medium text-site-text-muted">
-            {profile.pronouns}
-          </span>
-        ) : null}
+        {profile.pronouns ? <span className="t-meta">{profile.pronouns}</span> : null}
         {clipUrl ? (
           <Button
             variant="ghost"

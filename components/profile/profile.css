@@ -1,0 +1,20 @@
+/* The profile header (docs/plans/2026-11-11-steel-design-implementation.md section 10, Profile): flat, on the page, with
+   no box. The person's history is the spine below it. */
+.profile-head {
+  padding-block-end: 8px;
+}
+.profile-head__banner {
+  block-size: 96px;
+  margin-block-end: 16px;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background-color: var(--site-bg-subtle);
+  background-size: cover;
+  background-position: center;
+}
+/* Membership and tip goal: a heading and a line under a rule, not a card. */
+.profile-head__block {
+  margin-block-start: 16px;
+  padding-block-start: 14px;
+  border-block-start: 1px solid var(--site-border);
+}

@@ -25,7 +25,7 @@ export function ProfileTabBar({
   const showLikesTab = canSeeLikesTab(profile);
   const showGuestbookTab = canSeeGuestbookTab(profile);
   return (
-    <div className="px-4 py-3">
+    <div className="py-3">
       <Tabs
         tabs={[
           {

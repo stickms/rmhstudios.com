@@ -190,3 +190,46 @@ export function buildEditInitial(
     profileSongAlbumArt: profile.profileSongAlbumArt,
   };
 }
+
+/** A run of posts under one heading on the profile's spine. `key` is stable; `label` is resolved by the caller. */
+export interface PostPeriod {
+  key: string;
+  /** `this-week` and `last-week` are translated by the caller; any other period carries its month and year. */
+  kind: 'this-week' | 'last-week' | 'month';
+  /** For `month`: the heading, already formatted. */
+  text?: string;
+  items: FeedItem[];
+}
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Groups a newest-first list into the periods the profile's spine is divided by (section 10, Profile): "This week",
+ * "Last week", then one heading per month. Consecutive posts share a period, so the order is never changed; a month that
+ * reappears after a gap (a pinned or reposted item out of order) gets its own heading rather than reordering the list.
+ */
+export function groupPostsByPeriod(items: FeedItem[], now: Date = new Date()): PostPeriod[] {
+  const out: PostPeriod[] = [];
+  for (const item of items) {
+    const at = new Date(item.createdAt);
+    const age = now.getTime() - at.getTime();
+    let kind: PostPeriod['kind'];
+    let key: string;
+    let text: string | undefined;
+    if (age < WEEK_MS) {
+      kind = 'this-week';
+      key = 'this-week';
+    } else if (age < 2 * WEEK_MS) {
+      kind = 'last-week';
+      key = 'last-week';
+    } else {
+      kind = 'month';
+      key = `m-${at.getFullYear()}-${at.getMonth()}`;
+      text = at.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+    const last = out[out.length - 1];
+    if (last && last.key === key) last.items.push(item);
+    else out.push({ key, kind, ...(text ? { text } : {}), items: [item] });
+  }
+  return out;
+}

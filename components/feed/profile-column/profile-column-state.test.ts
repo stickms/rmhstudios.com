@@ -9,6 +9,7 @@ import {
   canSeeGuestbookTab,
   canSeeLikesTab,
   collectFeedUsers,
+  groupPostsByPeriod,
   initialTabForHash,
   profileDisplayUser,
   profileThemeStyle,
@@ -160,5 +161,29 @@ describe('buildEditInitial', () => {
       image: '/c.png',
       handleCooldownMs: 5,
     });
+  });
+});
+
+describe('groupPostsByPeriod', () => {
+  const now = new Date('2026-11-12T12:00:00Z');
+  const at = (days: number) =>
+    ({
+      id: `p${days}`,
+      createdAt: new Date(now.getTime() - days * 86_400_000).toISOString(),
+    }) as FeedItem;
+
+  it('divides a newest-first list into this week, last week, then one heading per month, never reordering', () => {
+    const groups = groupPostsByPeriod([at(0), at(3), at(9), at(30), at(33), at(70)], now);
+    expect(groups.map((g) => [g.kind, g.items.map((i) => i.id)])).toEqual([
+      ['this-week', ['p0', 'p3']],
+      ['last-week', ['p9']],
+      ['month', ['p30', 'p33']],
+      ['month', ['p70']],
+    ]);
+    expect(groups[2]?.text).toBe('October 2026');
+  });
+
+  it('is empty for no posts', () => {
+    expect(groupPostsByPeriod([], now)).toEqual([]);
   });
 });

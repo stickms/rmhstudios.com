@@ -41,7 +41,10 @@ export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
   if (!data || data.total === 0) return null;
 
   return (
-    <section className="glass-fill rounded-site p-4" aria-label={t('activity-title', { defaultValue: 'Posting activity' })}>
+    <section
+      className="border-t border-site-border pt-4"
+      aria-label={t('activity-title', { defaultValue: 'Posting activity' })}
+    >
       <p className="mb-1 font-mono text-xs text-site-text-muted">
         {t('activity-summary', {
           defaultValue: 'Posts in the last {{weeks}} weeks: {{total}}',

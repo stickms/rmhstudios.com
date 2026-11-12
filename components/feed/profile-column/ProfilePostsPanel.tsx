@@ -1,7 +1,10 @@
+import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
 import type { ProfileData } from '@/components/profile/profile-types';
-import { VirtualPostList } from '../VirtualPostList';
+import { Spine, SpineStation } from '@/components/ui/spine';
+import { MemoRMHarkCard } from '../VirtualPostList';
+import { groupPostsByPeriod } from './profile-column-state';
 import type { PostList } from './useProfilePosts';
 
 /** The RMHarks or Likes tab body: the post list, its loading/empty/end states and the scroll sentinel. */
@@ -19,7 +22,25 @@ export function ProfilePostsPanel({
   const isRMHarks = kind === 'rmharks';
   return (
     <div>
-      <VirtualPostList items={items} />
+      {/* The person's history is the spine: stations by period, posts hanging under them. */}
+      {items.length > 0 && (
+        <Spine>
+          {groupPostsByPeriod(items).map((period) => (
+            <Fragment key={period.key}>
+              <SpineStation>
+                {period.kind === 'this-week'
+                  ? t('profile-period-this-week', { defaultValue: 'This week' })
+                  : period.kind === 'last-week'
+                    ? t('profile-period-last-week', { defaultValue: 'Last week' })
+                    : period.text}
+              </SpineStation>
+              {period.items.map((item) => (
+                <MemoRMHarkCard key={item.id} item={item} />
+              ))}
+            </Fragment>
+          ))}
+        </Spine>
+      )}
 
       {loadingItems && (
         <div className="flex items-center justify-center py-8">
@@ -28,13 +49,13 @@ export function ProfilePostsPanel({
       )}
 
       {!loadingItems && items.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-          <p className="text-lg font-medium text-site-text mb-2">
+        <div className="py-8">
+          <p className="t-heading mb-1">
             {isRMHarks
               ? t('no-rmharks-yet', { defaultValue: 'No RMHarks yet' })
               : t('no-likes-yet', { defaultValue: 'No likes yet' })}
           </p>
-          <p className="text-sm text-site-text-muted">
+          <p className="t-body text-site-text-muted">
             {isRMHarks
               ? profile.isOwnProfile
                 ? t('no-rmharks-own', { defaultValue: "You haven't posted any RMHarks yet." })
@@ -53,7 +74,7 @@ export function ProfilePostsPanel({
       )}
 
       {!hasMore && items.length > 0 && (
-        <div className="py-8 text-center text-sm text-site-text-muted">
+        <div className="t-meta py-6">
           {t('reached-the-end', { defaultValue: "You've reached the end" })}
         </div>
       )}

@@ -12,7 +12,6 @@ import { useShelvesTab } from '@/components/reading/useShelvesTab';
 import { useKudosTabLabel } from '@/components/gifting/useKudosTabLabel';
 import { ProfileDialogs } from './profile-column/ProfileDialogs';
 import type { SocialModalKind } from './profile-column/ProfileDialogs';
-import { ProfileIdentityBar } from './profile-column/ProfileIdentityBar';
 import { ProfilePostsPanel } from './profile-column/ProfilePostsPanel';
 import { ProfileTabBar } from './profile-column/ProfileTabBar';
 import { ProfileTabPanels } from './profile-column/ProfileTabPanels';
@@ -76,7 +75,7 @@ export function ProfileColumn({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center px-4 pt-4 pb-12">
+      <div className="flex items-center justify-center py-12">
         <Spinner size={32} />
       </div>
     );
@@ -84,26 +83,20 @@ export function ProfileColumn({
 
   if (notFound || !profile) {
     return (
-      <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
-        <p className="text-lg font-medium text-site-text mb-2">
-          {t('user-not-found', { defaultValue: 'User not found' })}
-        </p>
-        <p className="text-sm text-site-text-muted mb-4">
+      <div className="flex flex-col items-start gap-2 py-8">
+        <h1 className="t-title">{t('user-not-found', { defaultValue: 'User not found' })}</h1>
+        <p className="t-body text-site-text-muted">
           {t('user-not-found-desc', { defaultValue: "This user doesn't exist." })}
         </p>
-        <Link to="/">
-          <Button variant="default" size="sm">
-            {t('go-home', { defaultValue: 'Go Home' })}
-          </Button>
-        </Link>
+        <Button asChild className="mt-2">
+          <Link to="/">{t('go-home', { defaultValue: 'Go Home' })}</Link>
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col" style={profileThemeStyle(profile)}>
-      <ProfileIdentityBar profile={profile} displayName={displayName} />
-
       <ProfileHero
         profile={profile}
         displayName={displayName}
@@ -133,7 +126,7 @@ export function ProfileColumn({
         </Suspense>
       )}
 
-      <div className="px-4 pt-4">
+      <div className="pt-4">
         <ProfileShowcase
           modules={profile.modules ?? []}
           isOwner={profile.isOwnProfile}
@@ -147,7 +140,7 @@ export function ProfileColumn({
         />
       </div>
 
-      <div className="px-4 pt-4">
+      <div className="pt-4">
         <Suspense fallback={null}>
           <ProfileActivityHeatmap userId={profile.id} />
         </Suspense>

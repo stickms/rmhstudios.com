@@ -105,7 +105,7 @@ vi.mock('@/components/profile/ProfileShowcase', () => ({
 }));
 vi.mock('@/components/profile/ProfileHero', () => ({ ProfileHero: marker('ProfileHero') }));
 vi.mock('@/components/ui/tabs', () => ({ Tabs: marker('Tabs') }));
-vi.mock('../VirtualPostList', () => ({ VirtualPostList: marker('VirtualPostList') }));
+vi.mock('../VirtualPostList', () => ({ MemoRMHarkCard: marker('MemoRMHarkCard') }));
 vi.mock('../AchievementsColumn', () => ({ AchievementsColumn: marker('AchievementsColumn') }));
 vi.mock('../ProfileEditModal', () => ({ ProfileEditModal: marker('ProfileEditModal') }));
 vi.mock('../SocialListModal', () => ({ SocialListModal: marker('SocialListModal') }));
