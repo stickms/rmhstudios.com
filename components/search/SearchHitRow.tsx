@@ -23,8 +23,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { UserAvatar } from '@/components/ui/UserAvatar';
-import { cn } from '@/lib/utils';
+import { SpineItem, SpineStation } from '@/components/ui/spine';
 import type { SearchHit, SearchKind } from '@/lib/search/types';
 
 export const KIND_ICON: Record<SearchKind, LucideIcon> = {
@@ -103,53 +102,41 @@ export function useKindHeading(): (kind: SearchKind) => string {
 /** Kinds identified by a face rather than a glyph. */
 export const AVATAR_KINDS: ReadonlySet<SearchKind> = new Set<SearchKind>(['person', 'post']);
 
-const ROW_CLASS =
-  'flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-site-surface-hover';
+const ROW_CLASS = 'block text-start';
 
+/**
+ * One result: a title, its kind in `t-meta`, a line and a snippet, as a row on the spine (Steel section 10, Explore).
+ * No avatar and no icon disc: what it is, is said in words.
+ */
 export function SearchHitRow({ hit, showKind = true }: { hit: SearchHit; showKind?: boolean }) {
   const kindLabel = useKindLabel();
-  const Icon = KIND_ICON[hit.kind];
   const external = Boolean(hit.meta?.external) || /^https?:\/\//.test(hit.href);
 
   const body = (
     <>
-      {AVATAR_KINDS.has(hit.kind) ? (
-        <UserAvatar src={hit.image} alt="" size={40} fallbackName={hit.title || 'U'} />
-      ) : (
-        // Etched medallion, matching EmptyState's treatment of an icon.
-        <div className="glass-fill flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
-          <Icon className="h-4 w-4 text-site-text-muted" aria-hidden />
-        </div>
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
-          <p className="truncate text-sm font-semibold text-site-text">{hit.title}</p>
-          {showKind && (
-            <span className="shrink-0 text-xs text-site-text-muted">
-              {kindLabel(hit.kind)}
-            </span>
-          )}
-        </div>
-        {hit.subtitle && <p className="truncate text-xs text-site-text-muted">{hit.subtitle}</p>}
-        {hit.snippet && (
-          <p className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">{hit.snippet}</p>
-        )}
+      <div className="flex items-baseline gap-2">
+        <p className="t-body truncate font-semibold">{hit.title}</p>
+        {showKind && <span className="t-meta shrink-0">{kindLabel(hit.kind)}</span>}
       </div>
+      {hit.subtitle && <p className="t-meta truncate">{hit.subtitle}</p>}
+      {hit.snippet && (
+        <p className="t-body mt-0.5 line-clamp-2 text-site-text-muted">{hit.snippet}</p>
+      )}
     </>
   );
 
-  if (external) {
-    return (
-      <a href={hit.href} target="_blank" rel="noopener noreferrer" className={ROW_CLASS}>
-        {body}
-      </a>
-    );
-  }
-
   return (
-    <Link to={hit.href as string} className={ROW_CLASS}>
-      {body}
-    </Link>
+    <SpineItem>
+      {external ? (
+        <a href={hit.href} target="_blank" rel="noopener noreferrer" className={ROW_CLASS}>
+          {body}
+        </a>
+      ) : (
+        <Link to={hit.href as string} className={ROW_CLASS}>
+          {body}
+        </Link>
+      )}
+    </SpineItem>
   );
 }
 
@@ -170,10 +157,8 @@ export function SearchHitSection({
 }) {
   if (hits.length === 0) return null;
   return (
-    <section className={cn('py-2', className)}>
-      {heading && (
-        <h2 className="site-section-label px-4 py-1">{heading}</h2>
-      )}
+    <section className={className}>
+      {heading && <SpineStation>{heading}</SpineStation>}
       {hits.map((hit) => (
         <SearchHitRow key={hit.key} hit={hit} showKind={showKind} />
       ))}

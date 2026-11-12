@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Fingerprint, KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
+import { KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
@@ -130,7 +130,6 @@ export function PasskeyManager() {
   // column, two materials, and two of them nearly invisible.
   return (
     <SettingsSection
-      icon={Fingerprint}
       title={t('passkeys-title', { defaultValue: 'Passkeys' })}
       description={t('passkeys-description', {
         defaultValue:

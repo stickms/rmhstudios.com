@@ -59,7 +59,9 @@ export function MessagePlusItems({
       });
       void qc.invalidateQueries({ queryKey: chatMetaKey(chat) });
     } catch (err) {
-      toast.error(serverError(err) || t('pin-failed', { defaultValue: 'Could not update the pin' }));
+      toast.error(
+        serverError(err) || t('pin-failed', { defaultValue: 'Could not update the pin' }),
+      );
     }
   };
 

@@ -46,7 +46,6 @@ export function DataExportPanel() {
 
   return (
     <SettingsSection
-      icon={Download}
       title={t('export-title', { defaultValue: 'Download your data' })}
       description={t('export-description', {
         defaultValue:

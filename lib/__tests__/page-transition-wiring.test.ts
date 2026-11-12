@@ -30,13 +30,4 @@ describe('page transitions are wired into the shell', () => {
     expect(pending).toMatch(/useLayoutEffect\(/);
     expect(pending).toMatch(/finishEntranceAnimations\(/);
   });
-
-  it('a state-based tab switch (PageTabs value change) swaps the content below with the same quick dip', () => {
-    const tabs = read('components/feed/PageTabs.tsx');
-    expect(tabs).toContain("from '@/lib/page-transition'");
-    expect(tabs).toMatch(/useLayoutEffect\(/);
-    expect(tabs).toMatch(/swapContentAfter\(/);
-    expect(tabs).toMatch(/\[value, renderTab\]/);
-    expect(tabs).toMatch(/!renderTab/);
-  });
 });

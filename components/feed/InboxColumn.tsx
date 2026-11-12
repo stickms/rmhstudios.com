@@ -1,4 +1,3 @@
-import { MessageCircle, Users, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { PageTabs } from './PageTabs';
@@ -42,18 +41,16 @@ export function InboxColumn({
   const unreadMessages = useUnreadCount(!!session);
   const { count: unreadNotifications } = useNotificationCount(!!session);
 
-  const tabs: { id: InboxTab; label: string; icon: typeof MessageCircle; badge?: number }[] = [
+  const tabs: { id: InboxTab; label: string; badge?: number }[] = [
     {
       id: 'messages',
       label: t('inbox-tab-messages', { defaultValue: 'Messages' }),
-      icon: MessageCircle,
       badge: unreadMessages,
     },
-    { id: 'groups', label: t('inbox-tab-groups', { defaultValue: 'Groups' }), icon: Users },
+    { id: 'groups', label: t('inbox-tab-groups', { defaultValue: 'Groups' }) },
     {
       id: 'notifications',
       label: t('inbox-tab-notifications', { defaultValue: 'Notifications' }),
-      icon: Bell,
       badge: unreadNotifications,
     },
   ];

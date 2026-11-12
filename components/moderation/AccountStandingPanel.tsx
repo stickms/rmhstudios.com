@@ -13,7 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
-import { ShieldCheck, ShieldAlert, ShieldX, Gavel, ExternalLink } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, ShieldX, ExternalLink } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
@@ -153,8 +153,6 @@ export function AccountStandingPanel() {
     <>
       {/* Standing summary */}
       <SettingsSection
-        icon={LevelIcon}
-        iconClassName={levelTone}
         title={levelCopy[standing.level].label}
         description={levelCopy[standing.level].description}
       >
@@ -213,7 +211,6 @@ export function AccountStandingPanel() {
 
       {/* Strike history */}
       <SettingsSection
-        icon={Gavel}
         title={t('standing-history', { defaultValue: 'Moderation history' })}
         description={t('standing-history-desc', {
           defaultValue:

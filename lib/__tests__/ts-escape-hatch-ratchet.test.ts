@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 /** Lower these when you remove escape hatches. Never raise them. */
 const BASELINE = {
   colonAny: 129,
-  asAny: 69,
+  asAny: 68,
   tsIgnore: 1,
   tsExpectError: 3,
   tsNocheck: 26,

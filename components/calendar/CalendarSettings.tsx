@@ -36,7 +36,6 @@ export default function CalendarSettings() {
   if (!signedIn) {
     return (
       <SignedOutPrompt
-        icon={CalendarCheck}
         title={t('feed-signed-out', { defaultValue: 'Sign in to get your calendar feed' })}
         callbackURL="/settings/calendar"
       />
@@ -84,7 +83,6 @@ export default function CalendarSettings() {
   return (
     <>
       <SettingsSection
-        icon={CalendarCheck}
         title={t('feed-title', { defaultValue: 'Calendar feed' })}
         description={t('feed-intro', {
           defaultValue:

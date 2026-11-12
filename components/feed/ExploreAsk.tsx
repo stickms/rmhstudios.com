@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -29,7 +28,7 @@ export function ExploreAsk({ query }: { query: string }) {
 
 /** Shared shell so the two forms are visibly one feature in one place. */
 function AskShell({ children }: { children: React.ReactNode }) {
-  return <div className="border-b border-site-border px-4 py-3">{children}</div>;
+  return <div className="pb-4">{children}</div>;
 }
 
 /** Shared answer body: the heading, the spinner, the error and the prose. */
@@ -49,11 +48,8 @@ function Answer({
   const { t } = useTranslation('feed');
 
   return (
-    <div className="glass-fill rounded-site px-4 py-3">
-      <div className="site-section-label mb-2 flex items-center gap-2">
-        <Sparkles className="h-3.5 w-3.5 text-site-accent" aria-hidden />
-        {t('ai-answer', { defaultValue: 'AI answer' })}
-      </div>
+    <div className="border-t border-site-border pt-3">
+      <div className="t-label mb-2">{t('ai-answer', { defaultValue: 'AI answer' })}</div>
       {loading ? (
         <div className="flex items-center gap-2 py-1 text-sm text-site-text-muted">
           <Spinner size={14} /> {t('ai-thinking', { defaultValue: 'Reading the results…' })}
@@ -108,11 +104,7 @@ function AskTheFeed() {
 
   return (
     <AskShell>
-      <label
-        htmlFor="ask-feed"
-        className="site-section-label mb-3 flex items-center gap-2"
-      >
-        <Sparkles className="h-3.5 w-3.5 text-site-accent" aria-hidden />
+      <label htmlFor="ask-feed" className="t-label mb-2 block">
         {t('ask-the-feed', { defaultValue: 'Ask the feed' })}
       </label>
       {/* `min-w-0` on the input and `shrink-0` on the button: a flex child's
@@ -127,14 +119,15 @@ function AskTheFeed() {
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && ask()}
           placeholder={t('ask-placeholder', { defaultValue: "What's everyone talking about?" })}
-          className="glass-inset w-full min-w-0 flex-1 rounded-full px-4 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50"
+          className="glass-inset w-full min-w-0 flex-1 rounded-site px-3 text-sm text-site-text placeholder:text-site-text-muted"
+          style={{ minHeight: 40 }}
         />
         <Button
           variant="default"
           onClick={ask}
           loading={loading}
           disabled={question.trim().length < 3}
-          className="shrink-0 rounded-full px-5"
+          className="shrink-0"
         >
           {t('ask-button', { defaultValue: 'Ask' })}
         </Button>
@@ -181,7 +174,11 @@ function AskAboutQuery({ query }: { query: string }) {
     setLoading(true);
     setError(false);
     try {
-      const data = await api(aiSearchApi, { body: { q: query }, signal: abort.signal, timeoutMs: AI_TIMEOUT_MS });
+      const data = await api(aiSearchApi, {
+        body: { q: query },
+        signal: abort.signal,
+        timeoutMs: AI_TIMEOUT_MS,
+      });
       if (abort.signal.aborted) return;
       setAnswer(typeof data.answer === 'string' ? data.answer : '');
       setSourceCount(typeof data.sourceCount === 'number' ? data.sourceCount : 0);
@@ -202,9 +199,8 @@ function AskAboutQuery({ query }: { query: string }) {
       {answer === null && !loading && !error ? (
         <button
           onClick={ask}
-          className="glass-fill flex w-full items-center gap-2 rounded-site px-3 py-2 text-left text-sm font-medium text-site-text transition-colors duration-site hover:bg-site-surface-hover"
+          className="t-body flex w-full items-center gap-2 py-1 text-start font-medium underline"
         >
-          <Sparkles className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
           <span className="truncate">
             {t('ask-ai-about', { query, defaultValue: 'Ask AI about “{{query}}”' })}
           </span>

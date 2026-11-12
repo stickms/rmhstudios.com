@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Radio } from 'lucide-react';
+
 import { toast } from 'sonner';
 
 import { Switch } from '@/components/ui/switch';
@@ -49,7 +49,6 @@ export function PresencePrivacyControls() {
 
   return (
     <SettingsSection
-      icon={Radio}
       title={t('presence-title', { defaultValue: 'Activity & presence' })}
       description={t('presence-subtitle', {
         defaultValue: 'Control who sees when you are online and what you are doing.',

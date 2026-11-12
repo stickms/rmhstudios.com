@@ -14,7 +14,8 @@ import { ReadabilityMeter } from '@/components/reading/ReadabilityMeter';
 // The published article's own element map — importing it (rather than
 // re-listing a subset here, which is what this file used to do and which had
 // already fallen behind by six elements) is what makes this pane a preview.
-import { markdownComponents } from '@/components/blog/MDXAnimations';
+import { markdownComponents } from '@/components/blog/markdown-components';
+import '@/components/ui/spine.css';
 import { toast } from 'sonner';
 
 import { api } from '@/lib/contract/client';
@@ -371,7 +372,9 @@ export function MDXEditor({
                       {formData.description}
                     </p>
                   )}
-                  <ReactMarkdown components={markdownComponents}>{previewContent}</ReactMarkdown>
+                  <div className="spine">
+                    <ReactMarkdown components={markdownComponents}>{previewContent}</ReactMarkdown>
+                  </div>
                 </>
               ) : (
                 <div className="text-center text-site-text-muted mt-16 flex flex-col items-center gap-3">

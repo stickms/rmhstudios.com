@@ -154,9 +154,9 @@ export default function GuestbookPanel({
   const viewerId = session?.user.id ?? null;
 
   return (
-    <div className="space-y-3 px-3 pb-8">
+    <div className="space-y-3 pb-8">
       {page.isOwner ? (
-        <div className="glass-pane flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-site-border pb-3">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-site-text">
               {t('guestbook-who', { defaultValue: 'Who can sign your guestbook' })}
@@ -188,7 +188,7 @@ export default function GuestbookPanel({
 
       {page.canSign ? (
         <form
-          className="glass-pane space-y-2 p-4"
+          className="space-y-2 border-b border-site-border pb-3"
           onSubmit={(e) => {
             e.preventDefault();
             void sign();
@@ -205,13 +205,7 @@ export default function GuestbookPanel({
             <span className="text-xs tabular-nums text-site-text-muted">
               {draft.length}/{GUESTBOOK_BODY_MAX}
             </span>
-            <Button
-              type="submit"
-              variant="default"
-              size="sm"
-              loading={sending}
-              disabled={!draft.trim()}
-            >
+            <Button type="submit" variant="default" loading={sending} disabled={!draft.trim()}>
               {t('guestbook-sign', { defaultValue: 'Sign' })}
             </Button>
           </div>
@@ -235,7 +229,7 @@ export default function GuestbookPanel({
           }
         />
       ) : (
-        <ul className="glass-fill divide-y divide-site-border overflow-hidden">
+        <ul className="divide-y divide-site-border">
           {page.entries.map((entry) => {
             const name =
               entry.author.name || entry.author.handle || t('someone', { defaultValue: 'Someone' });
@@ -243,7 +237,7 @@ export default function GuestbookPanel({
             return (
               <li
                 key={entry.id}
-                className={`flex items-start gap-3 px-4 py-3 ${entry.hidden ? 'opacity-60' : ''}`}
+                className={`flex items-start gap-3 py-3 ${entry.hidden ? 'opacity-60' : ''}`}
               >
                 <Link to={href} className="shrink-0">
                   <UserAvatar src={entry.author.image} alt={name} size={36} fallbackName={name} />

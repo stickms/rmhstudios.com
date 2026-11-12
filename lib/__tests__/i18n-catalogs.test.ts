@@ -669,6 +669,15 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // Steel phase 5 (2026-11-12): the settings hub's stations. English-only until the translate pipeline runs on build; remove with it.
+    'conversation-send',
+    'explore-from-studio',
+    'explore-talked-about',
+    'profile-period-last-week',
+    'profile-period-this-week',
+    'rmh-coins-label',
+    'settings-alerts',
+    'settings-look',
     // Steel phase 4 (2026-11-12): the K8 action words, the home title and the reply/repost lines. English-only until the translate pipeline runs on build; remove with it.
     'action-more',
     'action-repost',

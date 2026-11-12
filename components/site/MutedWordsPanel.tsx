@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { VolumeX, Plus, X, Download, Upload } from 'lucide-react';
+import { Plus, X, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -146,7 +146,6 @@ export function MutedWordsPanel() {
 
   return (
     <SettingsSection
-      icon={VolumeX}
       title={t('muted-title', { defaultValue: 'Muted words' })}
       description={t('muted-description', {
         defaultValue:

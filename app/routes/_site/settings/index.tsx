@@ -9,17 +9,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { notificationTogglesQuery } from '@/lib/settings/prefs.queries';
-import type { TFunction } from 'i18next';
-import {
-  Palette,
-  Languages,
-  Bell,
-  User,
-  ChevronRight,
-  Sparkles,
-  LayoutDashboard,
-  type LucideIcon,
-} from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
 import { ThemeGallery } from '@/components/settings/ThemeGallery';
@@ -38,66 +28,20 @@ export const Route = createFileRoute('/_site/settings/')({
   component: SettingsPage,
 });
 
-function SectionCard({
-  id,
-  icon,
-  title,
-  subtitle,
-  children,
-}: {
-  id: string;
-  icon: LucideIcon;
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-}) {
+/** A destination: name and one line on the left, a chevron at the end, on a rule. */
+function DestinationRow({ to, label, hint }: { to: string; label: string; hint: string }) {
   return (
-    <SettingsSection
-      id={id}
-      icon={icon}
-      title={title}
-      titleId={`${id}-heading`}
-      description={subtitle}
-      bodyClassName="space-y-4"
-    >
-      {children}
-    </SettingsSection>
-  );
-}
-
-function AccountLink({
-  to,
-  icon: Icon,
-  label,
-  hint,
-}: {
-  to: string;
-  icon: LucideIcon;
-  label: string;
-  hint: string;
-}) {
-  return (
-    <Link
-      to={to}
-      className="flex min-h-11 items-center gap-3 rounded-site px-3 py-2 text-sm transition-colors hover:bg-site-surface-hover"
-    >
-      <Icon className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
-      <span className="min-w-0 flex-1">
-        <span className="block font-medium text-site-text">{label}</span>
-        <span className="block text-xs text-site-text-muted">{hint}</span>
+    <Link to={to} className="settings-row">
+      <span className="settings-row__text">
+        <span className="settings-row__name block">{label}</span>
+        <span className="settings-row__hint block">{hint}</span>
       </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
+      <ChevronRight className="settings-choice__mark rtl:-scale-x-100" aria-hidden />
     </Link>
   );
 }
 
 const GROUP_ORDER: SettingsGroup[] = ['personalization', 'content', 'account'];
-
-const GROUP_LABELS: Record<SettingsGroup, (t: TFunction) => string> = {
-  personalization: (t) => t('settings-group-personalization', { defaultValue: 'Personalization' }),
-  content: (t) => t('settings-group-content', { defaultValue: 'Content & audience' }),
-  account: (t) => t('settings-group-account', { defaultValue: 'Account' }),
-};
 
 function SettingsPage() {
   const { t } = useTranslation('feed');
@@ -119,147 +63,134 @@ function SettingsPage() {
 
   const signInPrompt = (
     <p className="text-sm text-site-text-muted">
-      <Link
-        to="/login"
-        search={{ callbackURL: '/settings' }}
-        className="text-site-accent hover:underline"
-      >
+      <Link to="/login" search={{ callbackURL: '/settings' }} className="underline">
         {t('settings-sign-in', { defaultValue: 'Sign in' })}
       </Link>{' '}
       {t('settings-sign-in-rest', { defaultValue: 'to manage this section.' })}
     </p>
   );
 
+  const lookItems = groups.find((g) => g.group === 'personalization')?.items ?? [];
+  const accountItems = groups.filter((g) => g.group !== 'personalization').flatMap((g) => g.items);
+  const row = (d: (typeof lookItems)[number]) => (
+    <DestinationRow
+      key={d.id}
+      to={d.to}
+      label={t(`settings-nav-${d.id}`, { defaultValue: d.label })}
+      hint={t(`settings-nav-${d.id}-hint`, { defaultValue: d.hint })}
+    />
+  );
+
+  // Steel section 10, Settings: stations "Look", "Alerts", "Account"; each setting is a row. The page is the two-column
+  // frame at every width (L3). The search filters the destination rows only.
   return (
-    // PageLayout rather than a hand-rolled header: it supplies the back arrow
-    // and the mobile drawer button, and matches the sibling settings pages
-    // (privacy, security), which already use it. Settings is reached from the
-    // sidebar gear on every page, so "back" targets the feed rather than a
-    // parent. The subtitle moves into the content as the first <p>, which is
-    // how privacy/security do it — keeping the sticky header compact.
     <PageLayout
       title={t('settings-title', { defaultValue: 'Settings' })}
       description={t('settings-subtitle', {
         defaultValue: 'Appearance, language, notifications, and your account.',
       })}
       wide
-      backTo="/"
-      backLabel={t('settings-back', { defaultValue: 'Back' })}
     >
+      <div data-slot="page-controls" className="mb-2 max-w-md">
+        <SearchField
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t('settings-search-placeholder', {
+            defaultValue: 'Search settings — try "dark mode" or "export"',
+          })}
+          aria-label={t('settings-search-label', { defaultValue: 'Search settings' })}
+        />
+      </div>
+
       <SettingsPageBody>
-        <SectionCard
-          id="appearance"
-          icon={Palette}
-          title={t('settings-appearance', { defaultValue: 'Appearance' })}
-          subtitle={t('settings-appearance-hint', {
-            defaultValue:
-              "Theme and accent apply instantly — and follow you across devices when you're signed in.",
-          })}
-        >
-          <ThemeGallery />
+        {(!query || lookItems.length > 0) && (
+          <SettingsSection
+            id="appearance"
+            title={t('settings-look', { defaultValue: 'Look' })}
+            description={
+              query
+                ? undefined
+                : t('settings-appearance-hint', {
+                    defaultValue:
+                      "Theme and accent apply instantly — and follow you across devices when you're signed in.",
+                  })
+            }
+          >
+            {!query && (
+              <>
+                <ThemeGallery />
+                <div id="accent">
+                  <h3 className="t-label mb-2">
+                    {t('settings-accent-title', { defaultValue: 'Accent color' })}
+                  </h3>
+                  <p className="settings-row__hint mb-3">
+                    {t('settings-accent-hint', {
+                      defaultValue:
+                        'Recolor highlights on top of any theme, or keep the theme default.',
+                    })}
+                  </p>
+                  <AccentPicker />
+                </div>
+                <p className="settings-row__hint">
+                  {t('settings-premium-themes', {
+                    defaultValue: 'Looking for more? Premium profile themes are in the shop.',
+                  })}{' '}
+                  <Link to="/store" search={{ tab: 'shop' }} className="underline">
+                    {t('settings-premium-themes-link', { defaultValue: 'Browse the shop' })}
+                  </Link>{' '}
+                  {t('settings-premium-themes-or', { defaultValue: 'or' })}{' '}
+                  <Link to="/settings/profile" className="underline">
+                    {t('settings-premium-themes-equip-link', {
+                      defaultValue: 'equip what you own',
+                    })}
+                  </Link>
+                </p>
+                <div id="language">
+                  <h3 className="t-label mb-2">
+                    {t('settings-language', { defaultValue: 'Language' })}
+                  </h3>
+                  <p className="settings-row__hint mb-3">
+                    {t('settings-language-hint', {
+                      defaultValue: 'RMH Studios is available in 32 languages.',
+                    })}
+                  </p>
+                  <LanguageSwitcher />
+                </div>
+              </>
+            )}
+            {lookItems.length > 0 && <div>{lookItems.map(row)}</div>}
+          </SettingsSection>
+        )}
 
-          <div className="border-t border-site-border pt-4">
-            <h3 className="site-section-label mb-2">
-              {t('settings-accent-title', { defaultValue: 'Accent color' })}
-            </h3>
-            <p className="mb-3 text-xs text-site-text-muted">
-              {t('settings-accent-hint', {
-                defaultValue: 'Recolor highlights on top of any theme, or keep the theme default.',
-              })}
-            </p>
-            <AccentPicker />
-          </div>
-          <div className="glass-inset flex items-center gap-2 rounded-site px-3 py-2">
-            <Sparkles className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
-            <p className="text-xs text-site-text-muted">
-              {t('settings-premium-themes', {
-                defaultValue: 'Looking for more? Premium profile themes are in the shop.',
-              })}{' '}
-              <Link
-                to="/store"
-                search={{ tab: 'shop' }}
-                className="text-site-accent hover:underline"
-              >
-                {t('settings-premium-themes-link', { defaultValue: 'Browse the shop' })}
-              </Link>{' '}
-              {t('settings-premium-themes-or', { defaultValue: 'or' })}{' '}
-              <Link to="/settings/profile" className="text-site-accent hover:underline">
-                {t('settings-premium-themes-equip-link', {
-                  defaultValue: 'equip what you own',
-                })}
-              </Link>
-            </p>
-          </div>
-        </SectionCard>
+        {!query && (
+          <SettingsSection
+            id="notifications"
+            title={t('settings-alerts', { defaultValue: 'Alerts' })}
+            description={t('settings-notifications-hint', {
+              defaultValue: 'Choose which activity creates a notification.',
+            })}
+          >
+            {!isPending && !signedIn ? signInPrompt : <NotificationPrefsPanel />}
+          </SettingsSection>
+        )}
 
-        <SectionCard
-          id="language"
-          icon={Languages}
-          title={t('settings-language', { defaultValue: 'Language' })}
-          subtitle={t('settings-language-hint', {
-            defaultValue: 'RMH Studios is available in 32 languages.',
-          })}
-        >
-          <LanguageSwitcher />
-        </SectionCard>
-
-        {/* Every settings destination, from one catalog (`lib/settings-nav.ts`)
-            and filterable. The hub used to hand-list six of the eleven
-            destinations, so appearance, content preferences, close friends and
-            the theme studio were reachable only by knowing the URL — a new
-            settings page was a route, and updating this page was a separate
-            step someone had to remember. */}
-        <SectionCard
+        <SettingsSection
           id="all-settings"
-          icon={LayoutDashboard}
-          title={t('settings-all', { defaultValue: 'All settings' })}
-          subtitle={t('settings-all-hint', {
-            defaultValue: 'Everything you can change, in one list.',
-          })}
+          title={t('settings-group-account', { defaultValue: 'Account' })}
         >
-          <div data-slot="page-controls">
-            <SearchField
-              value={query}
-              onValueChange={setQuery}
-              placeholder={t('settings-search-placeholder', {
-                defaultValue: 'Search settings — try "dark mode" or "export"',
-              })}
-              aria-label={t('settings-search-label', { defaultValue: 'Search settings' })}
-            />
-          </div>
-
           {!isPending && !signedIn && signInPrompt}
-
-          {groups.map(({ group, items }) => (
-            <div key={group} className="mt-4">
-              <h3 className="site-section-label mb-1">{GROUP_LABELS[group](t)}</h3>
-              <div className="-mx-3 flex flex-col">
-                {items.map((d) => (
-                  <AccountLink
-                    key={d.id}
-                    to={d.to}
-                    icon={d.icon}
-                    label={t(`settings-nav-${d.id}`, { defaultValue: d.label })}
-                    hint={t(`settings-nav-${d.id}-hint`, { defaultValue: d.hint })}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {signedIn && handle && !query && (
-            <div className="-mx-3 border-t border-site-border pt-2">
-              <AccountLink
+          <div>
+            {accountItems.map(row)}
+            {signedIn && handle && !query && (
+              <DestinationRow
                 to={`/u/${handle}`}
-                icon={User}
                 label={t('settings-account-profile', { defaultValue: 'View your profile' })}
                 hint={t('settings-account-profile-hint', {
                   defaultValue: 'Your public page and posts',
                 })}
               />
-            </div>
-          )}
-
+            )}
+          </div>
           {groups.length === 0 && (
             <p className="text-sm text-site-text-muted">
               {t('settings-search-empty', {
@@ -268,18 +199,7 @@ function SettingsPage() {
               })}
             </p>
           )}
-        </SectionCard>
-
-        <SectionCard
-          id="notifications"
-          icon={Bell}
-          title={t('settings-notifications', { defaultValue: 'Notifications' })}
-          subtitle={t('settings-notifications-hint', {
-            defaultValue: 'Choose which activity creates a notification.',
-          })}
-        >
-          {!isPending && !signedIn ? signInPrompt : <NotificationPrefsPanel />}
-        </SectionCard>
+        </SettingsSection>
       </SettingsPageBody>
     </PageLayout>
   );

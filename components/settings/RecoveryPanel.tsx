@@ -15,7 +15,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { AlertTriangle, KeyRound, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -175,7 +175,6 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
 
   return (
     <SettingsSection
-      icon={KeyRound}
       title={t('recovery-title', { defaultValue: 'Account recovery' })}
       description={t('recovery-description', {
         defaultValue:

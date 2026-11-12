@@ -63,7 +63,7 @@ export function ColumnHeader({
       <header data-slot="page-header" className={cn('page-heading', className)}>
         <div className="page-heading__content">
           <div className="min-w-0">
-            <h1 className="site-display-3">
+            <h1 className="t-title">
               <span className="block min-w-0 break-words">{title}</span>
             </h1>
           </div>

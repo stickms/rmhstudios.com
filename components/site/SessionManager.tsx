@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Laptop, LogOut, Monitor, Smartphone, Tablet } from 'lucide-react';
+import { Laptop, LogOut, Smartphone, Tablet } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
@@ -142,7 +142,6 @@ export function SessionManager() {
   // column, two materials, and two of them nearly invisible.
   return (
     <SettingsSection
-      icon={Monitor}
       title={t('sessions-title', { defaultValue: 'Active sessions' })}
       description={t('sessions-description', {
         defaultValue:

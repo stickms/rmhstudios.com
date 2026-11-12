@@ -68,7 +68,6 @@ export function CookieConsentControls() {
 
   return (
     <SettingsSection
-      icon={Cookie}
       title={t('cookie-controls-title', { defaultValue: 'Cookies & advertising' })}
       description={
         ADSENSE_CLIENT_ID

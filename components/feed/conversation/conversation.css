@@ -1,0 +1,63 @@
+/* A conversation (docs/plans/2026-11-11-steel-design-implementation.md section 10, Conversation).
+
+   The thread is one spine: each message from the other person hangs on it with a dot, each day is a station, and your own
+   messages are right aligned with an ink fill and no dot. The column is exactly as tall as the window leaves it, so the
+   list is the one scroller and the message field is the bottom of the column: on a phone that is above the globe, because
+   `.site-main` reserves its bottom padding for the docked globe (site-shell.css). The numbers below are that padding. */
+
+.conversation {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  /* Phone: 16px top padding and 130px bottom padding of `.site-main`, each with its safe-area inset. */
+  block-size: calc(
+    100svh - 16px - env(safe-area-inset-top, 0px) - 130px - env(safe-area-inset-bottom, 0px)
+  );
+}
+@media (min-width: 1024px) {
+  /* Desktop: 26px above the title and 64px below, no globe to clear. */
+  .conversation {
+    block-size: calc(100svh - 26px - 64px);
+  }
+}
+
+.conversation__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block-end: 12px;
+  border-block-end: 1px solid var(--site-border);
+}
+
+.conversation__thread {
+  flex: 1;
+  min-block-size: 0;
+  overflow-y: auto;
+  padding-block-end: 8px;
+}
+
+/* Your message: right aligned, ink fill, no dot (P3). The time sits under it in `t-meta`. */
+.conversation__mine {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.conversation__bubble {
+  max-inline-size: 80%;
+  padding: 8px 12px;
+  border-radius: var(--site-radius);
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  overflow-wrap: anywhere;
+}
+.conversation__theirs {
+  max-inline-size: 90%;
+  overflow-wrap: anywhere;
+}
+
+.conversation__composer {
+  flex: none;
+  padding-block-start: 12px;
+  border-block-start: 1px solid var(--site-border);
+  background: var(--site-bg);
+}

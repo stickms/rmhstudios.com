@@ -152,12 +152,7 @@ export function PageLayout({
 
           <div className="page-heading__content">
             <div className="min-w-0">
-              {/* The shared display scale (audit SPA-006) — `.site-display-3`
-                  carries size, weight, leading and tracking together, so no page
-                  re-types a clamp and every title matches /design's section-head
-                  scale. `truncate` keeps a long title on one line inside the
-                  header's flex row. */}
-              <h1 className="site-display-3">
+              <h1 className="t-title">
                 <span
                   className={
                     wrapTitle === false ? 'block min-w-0 truncate' : 'block min-w-0 break-words'
@@ -167,7 +162,7 @@ export function PageLayout({
                 </span>
               </h1>
               {description && (
-                <p id={descriptionId} data-slot="page-description" className="site-lede">
+                <p id={descriptionId} data-slot="page-description" className="t-body">
                   {description}
                 </p>
               )}

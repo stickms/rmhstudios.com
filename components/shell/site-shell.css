@@ -16,10 +16,6 @@
   min-block-size: 100dvh;
   background: var(--site-bg);
   color: var(--site-text);
-
-  /* The conversation views (messages, group chats) size themselves with `var(--rad-topbar-h, 3.5rem)`. The shell has no top
-     bar, so the answer is 0. Delete this with the conversation recipe (phase 5). */
-  --rad-topbar-h: 0px;
 }
 
 .site-skip {

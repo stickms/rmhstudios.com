@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Users } from 'lucide-react';
+import { NoMargin } from '@/components/shell/NoMargin';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { GroupChatView } from '@/components/feed/GroupChatView';
 import { useSession } from '@/components/Providers';
@@ -19,6 +20,7 @@ function GroupChatPage() {
 
   return (
     <PageFrame noDockPadding>
+      <NoMargin />
       {isPending ? (
         <div className="flex justify-center py-20">
           <Spinner />

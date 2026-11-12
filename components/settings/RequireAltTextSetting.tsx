@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ImageOff } from 'lucide-react';
+
 import { Switch } from '@/components/ui/switch';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { api } from '@/lib/contract/client';
@@ -44,8 +44,6 @@ export function RequireAltTextSetting() {
 
   return (
     <SettingsSection
-      surface="fill"
-      icon={ImageOff}
       title={t('alt-setting-title', { defaultValue: 'Require alt text' })}
       titleId={labelId}
       description={t('alt-setting-hint', {

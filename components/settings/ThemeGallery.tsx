@@ -88,7 +88,7 @@ export function ThemeGallery() {
     <div className="space-y-5">
       {GROUPS.map((group) => (
         <div key={group}>
-          <h3 className="site-section-label mb-2">
+          <h3 className="t-label mb-2">
             {t(`settings-theme-group-${group.toLowerCase()}`, { defaultValue: group })}
           </h3>
           {/* Leaving a group's grid reverts any hover preview to the committed
@@ -126,11 +126,13 @@ export function ThemeGallery() {
                   )}
                 >
                   <ThemePreviewSwatch styleId={s.id} />
-                  <div className="flex items-center gap-1.5 bg-site-surface px-2.5 py-1.5">
-                    <span aria-hidden className="text-sm leading-none">
-                      {s.icon}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-site-text">
+                  <div className="flex items-center gap-1.5 px-2.5 py-2">
+                    <span
+                      className={cn(
+                        'min-w-0 flex-1 truncate text-xs text-site-text',
+                        active ? 'font-semibold' : 'font-medium',
+                      )}
+                    >
                       {s.label}
                     </span>
                     {active && (

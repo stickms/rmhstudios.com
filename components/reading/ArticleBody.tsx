@@ -15,7 +15,7 @@
 
 import { lazy, Suspense, useEffect, useMemo, useRef, type ComponentProps } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { markdownComponents, MarkdownA } from '@/components/blog/MDXAnimations';
+import { markdownComponents, MarkdownA } from '@/components/blog/markdown-components';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { extractFootnotes, FOOTNOTE_HREF } from '@/lib/reading/footnotes';
 import { buildGlossaryMatcher, rehypeGlossary } from '@/lib/reading/glossary';
@@ -27,6 +27,7 @@ import { ArticleOutline } from './ArticleOutline';
 import { ReadingToolbar } from './ReadingToolbar';
 import { FootnoteList, FootnoteRef, GlossaryContext, GlossaryTermLink } from './ArticleNotes';
 import './reading.css';
+import '@/components/ui/spine.css';
 
 const ArticleReading = lazy(() => import('./ArticleReading'));
 const ReadingRuler = lazy(() => import('./ReadingRuler'));
@@ -105,7 +106,7 @@ export function ArticleBody({
       <ArticleOutline items={outline} containerRef={ref} />
       <div
         ref={ref}
-        className="rf-article max-w-2xl break-words"
+        className="rf-article spine max-w-2xl break-words"
         data-rf-doc={`${kind}:${slug}`}
         data-sidenotes="off"
       >

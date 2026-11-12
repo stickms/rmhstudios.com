@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Accessibility } from 'lucide-react';
+
 import { toast } from 'sonner';
 
 import { Switch } from '@/components/ui/switch';
@@ -87,7 +87,6 @@ export function GameAssistPanel() {
 
   return (
     <SettingsSection
-      icon={Accessibility}
       title={t('assists-title', { defaultValue: 'Game assists' })}
       description={t('assists-subtitle', {
         defaultValue: 'Settings games apply so they stay playable.',

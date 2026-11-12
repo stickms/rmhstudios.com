@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Hourglass } from 'lucide-react';
 import { Select } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { AUTO_DELETE_MONTHS, type AutoDeleteMonths } from '@/lib/posts-plus/constants';
@@ -81,8 +80,6 @@ export function AutoDeleteSetting() {
 
   return (
     <SettingsSection
-      surface="fill"
-      icon={Hourglass}
       title={t('autodelete-title', { defaultValue: 'Auto-delete old posts' })}
       titleId={labelId}
       description={
