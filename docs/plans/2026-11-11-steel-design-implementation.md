@@ -136,20 +136,32 @@ box-shadow: 0 0 0 1px rgba(0,0,0,calc(.45 * var(--c))), 0 1px 2px rgba(0,0,0,cal
 ### 4.2 The globe's chrome
 
 The globe is always chrome; it never starts flat (decided, see section 18).
-Its first paint is one static CSS background, shown before the renderer in 4.3
-has drawn and wherever WebGL is unavailable. It adds one specular highlight on
-top of C1:
+Its first paint is static, shown before the renderer in 4.3 has drawn and
+wherever WebGL is unavailable.
+
+**Owner amendment, 2026-11-12.** The first paint is drawn to look like the
+body's first frame, and the body fades in over it: the swap in one frame is
+gone. The background is a mirror ball showing the page with the room as a soft
+disc, a window highlight and a thin limb; one rule serves both editions:
 
 ```css
-/* Day */
 background:
-  radial-gradient(ellipse 22% 14% at 33% 22%, #fff 0 40%, transparent 78%),
-  linear-gradient(180deg, #fff 0, #dfe5ea 30%, #8e99a6 49%, #1a2029 50.5%, #59636f 76%, #bcc5ce 100%);
-/* Night: highlight ellipse 20% 12%, #fff 0 30%; gradient uses the Night chrome stops */
-box-shadow: inset 0 0 calc(var(--d) * .12) calc(var(--d) * .02) rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.4);
+  radial-gradient(ellipse 14% 10% at 30% 24%, #fff 0 50%, rgba(255,255,255,0) 100%),
+  radial-gradient(circle at 50% 50%,
+    color-mix(in srgb, var(--chrome-2) 80%, var(--site-bg)) 0,
+    color-mix(in srgb, var(--chrome-2) 65%, var(--site-bg)) 36%,
+    var(--site-bg) 46%, var(--site-bg) 90%,
+    color-mix(in srgb, var(--chrome-flat) 40%, var(--site-bg)) 100%);
+box-shadow: inset 0 0 6px 0 rgba(0,0,0,.3), 0 0 0 1px rgba(0,0,0,.25);
 ```
 
-`--d` is the diameter. The inner shadow darkens the rim so the disc reads as a sphere.
+On it, `components/shell/GlobeFirstPaint.tsx` server-renders the cage
+(parallels every 20 degrees, meridians every 30) and one dot per destination
+at the engine's starting pose, with the shader's own sizes, so the dots are
+already where the body draws them. When the body's first frame is ready the
+canvas fades in over 280 ms and the first paint then leaves in 80 ms (360 ms
+in all). The canvas is transparent before that, so the flat program is never
+seen.
 
 ### 4.3 Ray-traced reflection (required for every chrome element)
 
@@ -301,7 +313,7 @@ current globe, re-skinned in chrome.
 
 | State | Spec |
 | --- | --- |
-| G1 Docked | 64px chrome globe, centred, 18px above the bottom edge plus `env(safe-area-inset-bottom)`, following Safari's toolbar with `var(--vv-follow, 0px)` as today. It shows a grid of small dots (13px pitch) to signal "sections". The page fades into `--site-bg` over the last 130px so content never collides with it. |
+| G1 Docked | 64px chrome globe, centred, 18px above the bottom edge plus `env(safe-area-inset-bottom)`, following Safari's toolbar with `var(--vv-follow, 0px)` as today. It shows its destinations as dots on the sphere, which turn with it; the icons appear only when it opens (owner, 2026-11-12, replacing the 13px dot grid and the icons that rode the docked ball). The page fades into `--site-bg` over the last 130px so content never collides with it. |
 | G2 Opening | On tap the same element translates to the vertical middle and scales to 288px (4.5×) in 360 ms, `cubic-bezier(.2,0,0,1)`. The dots fade out in 200 ms. The page behind is covered by `--site-bg` at 96% opacity (a flat veil, no blur). |
 | G3 Open | The five sections sit on the globe as pins: Front, Explore, Games, Inbox, You. The current section is in the centre, larger (44px high, `--site-bg` fill, ink text, 600); the other four sit around it (36px high, ink fill, `--site-accent-fg` text). "Write a post" is an underlined text link below the globe. Pins fade in 180 ms after a 160 ms delay. |
 | G4 Closing | Tapping the globe, the veil, or pressing Escape reverses G2. Choosing a pin navigates immediately and the globe returns to the dock while the next page renders. |

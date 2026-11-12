@@ -31,9 +31,8 @@ const OPEN_MS = 360;
 const ATTACH_RETRY_MS = 400;
 const ATTACH_TRIES = 40;
 /**
- * Dot size, dot strength and cage-line strength, docked and open. The dots are off at both sizes when the globe has
- * icon pins: the icons ride the ball docked as well as open, and a flat dot under each would be a second mark for the
- * same place. A globe with destinations but no pin elements keeps its dots while docked.
+ * Dot size, dot strength and cage-line strength, docked and open. Docked, the destinations are dots on the ball and
+ * turn with it; open, the dots give way to the icon pins, which are shown only then (owner, 2026-11-12).
  */
 const DOTS = { docked: [1.25, 1, 0.55], open: [0.5, 0, 1] } as const;
 
@@ -396,8 +395,7 @@ export class GlobeView {
     ball.soft = e.soft;
     const k = this.openness;
     ball.dots[0] = DOTS.docked[0] + (DOTS.open[0] - DOTS.docked[0]) * k;
-    const dockedDots = this.o.pins ? 0 : DOTS.docked[1];
-    ball.dots[1] = dockedDots + (DOTS.open[1] - dockedDots) * k;
+    ball.dots[1] = DOTS.docked[1] + (DOTS.open[1] - DOTS.docked[1]) * k;
     ball.dots[2] = DOTS.docked[2] + (DOTS.open[2] - DOTS.docked[2]) * k;
     if (this.chrome) {
       if (this.attached === null) {
