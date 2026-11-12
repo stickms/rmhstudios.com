@@ -1,5 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
-import { Loader2, Send, ImagePlus, ImagePlay, X, Plus } from 'lucide-react';
+import { Loader2, ImagePlus, ImagePlay, X, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
@@ -68,15 +68,15 @@ export function ComposerBar({
     <>
       {/* Error banner */}
       {error && (
-        <div className="px-4 py-2 bg-site-danger/10 border-t border-site-danger/20">
-          <p className="text-sm text-site-danger">{error}</p>
-        </div>
+        <p className="t-body border-t border-site-border py-2 text-site-danger" role="alert">
+          {error}
+        </p>
       )}
 
       {/* Input. `--safe-bottom` keeps the send row clear of the home indicator and
           iOS Safari's floating tab bar — this row is the bottom edge of the column
           now that the column stops at the viewport. */}
-      <div className="shrink-0 border-t border-site-border bg-site-bg px-4 pt-3 pb-[calc(0.75rem+var(--safe-bottom,0px))]">
+      <div className="conversation__composer">
         {showGifPicker && !voiceActive && (
           <GifPicker
             className="mx-2 mb-2"
@@ -146,13 +146,13 @@ export function ComposerBar({
           />
         )}
 
-        <div className="flex items-end gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           {/* While recording or reviewing, the voice composer IS the composer —
               a text field beside a live recording is a second thing to look at
               and does not fit at 360px anyway. */}
           {!voiceActive && (
             <>
-              <div className="relative flex-1">
+              <div className="relative min-w-full flex-1 sm:min-w-0">
                 <GhostTextArea
                   ref={inputRef}
                   value={input}
@@ -175,7 +175,7 @@ export function ComposerBar({
                   placeholder={t('type-a-message', { defaultValue: 'Type a message...' })}
                   rows={1}
                   maxLength={2000}
-                  className="glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site px-3 py-2 outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
+                  className="glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site px-3 py-2 resize-none max-h-32 overflow-y-auto"
                   style={{ minHeight: '42px' }}
                 />
                 {shortcodes.menu}
@@ -247,14 +247,12 @@ export function ComposerBar({
 
           {!voiceActive && (
             <Button
-              variant="default"
-              size="sm"
+              variant="primary"
               disabled={(!input.trim() && !gifUrl && imageUrls.length === 0) || sending}
               onClick={handleSend}
-              className="rounded-site h-[42px] px-3"
-              aria-label={t('send-message', { defaultValue: 'Send message' })}
+              className="h-[42px]"
             >
-              <Send className="w-4 h-4" aria-hidden />
+              {t('conversation-send', { defaultValue: 'Send' })}
             </Button>
           )}
         </div>

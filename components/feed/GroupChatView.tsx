@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { Spine } from '@/components/ui/spine';
+import './conversation/conversation.css';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { GifPicker } from './GifPicker';
@@ -21,7 +22,6 @@ import { useGroupThread } from './group-chat/useGroupThread';
 
 export function GroupChatView({ id, currentUserId }: { id: string; currentUserId: string }) {
   const { t } = useTranslation('feed');
-  const reducedMotion = useReducedMotion();
   // P04 — per-chat extras (see components/chat-plus).
   const chatRef = useMemo(() => ({ kind: 'group' as const, id }), [id]);
   const chatTheme = useChatTheme(chatRef);
@@ -55,7 +55,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
 
   if (loading) {
     return (
-      <div className="flex justify-center px-4 pt-4 pb-12">
+      <div className="flex justify-center py-12">
         <Spinner />
       </div>
     );
@@ -76,10 +76,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   }
 
   return (
-    <div
-      className="flex h-[calc(100svh-var(--rad-topbar-h,3.5rem)-var(--rad-top,0px)-var(--rad-bottom,0px))] flex-col"
-      style={chatTheme.rootStyle}
-    >
+    <div className="conversation" style={chatTheme.rootStyle}>
       <GroupHeader group={group} chatRef={chatRef} onLeave={leave} />
       <ChatPinnedBar
         chat={chatRef}
@@ -90,24 +87,26 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
       <div
         ref={thread.scrollRef}
         onScroll={thread.handleScroll}
-        className="flex-1 space-y-3 overflow-y-auto p-4"
+        className="conversation__thread"
         style={chatTheme.wallpaper}
       >
-        {shownMessages.map((m) => (
-          <GroupMessageRow
-            key={m.id}
-            message={m}
-            group={group}
-            chatRef={chatRef}
-            groupId={id}
-            currentUserId={currentUserId}
-            animateIn={!reducedMotion && !thread.historyIds.current.has(m.id)}
-            pinned={pinnedIds.has(m.id)}
-            reactionTriggerFor={reactionTriggerFor}
-            onVote={vote}
-            onToggleReaction={toggleReaction}
-          />
-        ))}
+        <Spine>
+          {shownMessages.map((m, i) => (
+            <GroupMessageRow
+              key={m.id}
+              message={m}
+              group={group}
+              chatRef={chatRef}
+              groupId={id}
+              currentUserId={currentUserId}
+              prevMessage={i > 0 ? (shownMessages[i - 1] ?? null) : null}
+              pinned={pinnedIds.has(m.id)}
+              reactionTriggerFor={reactionTriggerFor}
+              onVote={vote}
+              onToggleReaction={toggleReaction}
+            />
+          ))}
+        </Spine>
       </div>
 
       {/* GIF picker */}

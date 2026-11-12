@@ -3,8 +3,8 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { useSession, useResolvedUser } from '@/components/Providers';
+import { useSession } from '@/components/Providers';
+import { Spine, SpineItem } from '@/components/ui/spine';
 import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ChatPlusHost } from '@/components/chat-plus/ChatPlusHost';
 import {
@@ -22,6 +22,7 @@ import { useTypingIndicator } from './conversation/useTypingIndicator';
 import { useConversationThread } from './conversation/useConversationThread';
 import { useMessageActions } from './conversation/useMessageActions';
 import { useDmComposer } from './conversation/useDmComposer';
+import './conversation/conversation.css';
 import { lastOwnMessageId, replyTargetId, type OtherUser } from './conversation/conversation-state';
 
 export function ConversationView({
@@ -35,11 +36,9 @@ export function ConversationView({
 }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const reducedMotion = useReducedMotion();
 
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
-  const { resolved: resolvedUser } = useResolvedUser();
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -127,57 +126,36 @@ export function ConversationView({
 
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
-        <p className="text-lg font-medium text-site-text mb-2">
+      <div className="flex flex-col items-start gap-3 py-8">
+        <p className="t-heading">
           {t('sign-in-to-view-messages', { defaultValue: 'Sign in to view messages' })}
         </p>
-        <Link to="/login" search={{ callbackURL: undefined }}>
-          <Button variant="default" size="sm">
+        <Button asChild>
+          <Link to="/login" search={{ callbackURL: undefined }}>
             {t('sign-in', { defaultValue: 'Sign in' })}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
     );
   }
 
   if (notFound) {
     return (
-      <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
-        <p className="text-lg font-medium text-site-text mb-2">
+      <div className="flex flex-col items-start gap-3 py-8">
+        <p className="t-heading">
           {t('conversation-not-found', { defaultValue: 'Conversation not found' })}
         </p>
-        <Link to="/messages">
-          <Button variant="default" size="sm">
-            {t('back-to-messages', { defaultValue: 'Back to Messages' })}
-          </Button>
-        </Link>
+        <Button asChild>
+          <Link to="/messages">{t('back-to-messages', { defaultValue: 'Back to Messages' })}</Link>
+        </Button>
       </div>
     );
   }
 
-  // The space the shell actually leaves, NOT `h-screen`.
-  //
-  // `h-screen` is `100vh` — the LARGE viewport on a phone — and this column sits
-  // below the shell's 56px top bar inside a `<main>` that reserves `--rad-top` /
-  // `--rad-bottom` for the floating dock. So the thread came out ~900px tall in
-  // an 844px window: the document scrolled 242px WHILE the message list scrolled
-  // its own 842px. Two scroll contexts fighting over one gesture, a composer
-  // parked below the fold, and — because the page scrolls at all — no toolbar
-  // collapse in mobile Safari.
-  //
-  // Subtracting the shell's own tokens (rather than a magic number) leaves the
-  // page exactly viewport-height, so there is one scroller: the message list.
-  //
-  // `svh`, not `dvh`: the small viewport is the one with the browser toolbars
-  // SHOWN, so sizing to it cannot overflow. `dvh` tracks whichever state the
-  // toolbars are in, which means the column is briefly too tall every time they
-  // expand — and the document starts scrolling again exactly when the user is
-  // reaching for the composer.
+  // The column is exactly as tall as the window leaves it (`.conversation`, conversation.css), so there is one scroller:
+  // the message list. See that file for the numbers.
   return (
-    <div
-      className="flex flex-col h-[calc(100svh-var(--rad-topbar-h,3.5rem)-var(--rad-top,0px)-var(--rad-bottom,0px))]"
-      style={chatTheme.rootStyle}
-    >
+    <div className="conversation" style={chatTheme.rootStyle}>
       <ConversationHeader
         conversationId={conversationId}
         chatRef={chatRef}
@@ -186,40 +164,32 @@ export function ConversationView({
         viewerId={session.user.id}
       />
 
-      {/* Messages */}
-      <div
-        ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-4"
-        style={chatTheme.wallpaper}
-      >
+      {/* Messages: one spine. Their messages hang on it, yours are right aligned, days are stations. */}
+      <div ref={messagesContainerRef} className="conversation__thread" style={chatTheme.wallpaper}>
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Spinner size={32} />
           </div>
         ) : (
-          <>
+          <Spine>
             {hasOlder && (
-              <div className="flex justify-center mb-4">
-                <button
-                  onClick={handleLoadOlder}
-                  disabled={loadingOlder}
-                  className="text-sm text-site-accent hover:underline disabled:opacity-50"
-                >
+              <SpineItem dot={false} className="spine-item--tight">
+                <Button variant="ghost" onClick={handleLoadOlder} disabled={loadingOlder}>
                   {loadingOlder
                     ? t('loading', { defaultValue: 'Loading…' })
                     : t('load-older-messages', { defaultValue: 'Load older messages' })}
-                </button>
-              </div>
+                </Button>
+              </SpineItem>
             )}
 
             {shownMessages.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <p className="text-sm text-site-text-muted">
+              <SpineItem dot={false}>
+                <p className="t-body text-site-text-muted">
                   {t('no-messages-yet', {
                     defaultValue: 'No messages yet',
                   })}
                 </p>
-              </div>
+              </SpineItem>
             )}
 
             {shownMessages.map((msg, i) => (
@@ -227,17 +197,10 @@ export function ConversationView({
                 key={msg.id}
                 msg={msg}
                 prevMsg={i > 0 ? shownMessages[i - 1] : null}
-                nextMsg={i < shownMessages.length - 1 ? shownMessages[i + 1] : null}
                 viewerId={session.user.id}
-                selfAvatar={{
-                  image: resolvedUser?.image || session.user.image,
-                  name: resolvedUser?.name || session.user.name,
-                }}
                 otherUser={otherUser}
                 isSavedChat={isSavedChat}
                 isLastOwn={msg.id === lastOwnId}
-                // New (sent/received) messages rise in; history renders in place.
-                animateIn={!reducedMotion && !historyIds.current.has(msg.id)}
                 pinned={pinnedIds.has(msg.id)}
                 chatRef={chatRef}
                 isEditing={editingId === msg.id}
@@ -255,7 +218,7 @@ export function ConversationView({
             {otherTyping && <TypingBubble otherUser={otherUser} />}
 
             <div ref={messagesEndRef} />
-          </>
+          </Spine>
         )}
       </div>
 

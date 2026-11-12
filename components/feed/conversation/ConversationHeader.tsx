@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CallButton } from '@/components/call/CallButton';
 import { GroupCallButton } from '@/components/groupcall/GroupCallButton';
@@ -31,74 +32,68 @@ export function ConversationHeader({
   const { t } = useTranslation('feed');
   return (
     <>
-      {/* Header */}
-      <div className="glass-chrome site-sticky-chrome shrink-0">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <Link
-            to="/messages"
-            aria-label={t('back', { defaultValue: 'Back' })}
-            className="p-2 -ml-2 rounded-site-sm hover:bg-site-surface-hover transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-site-text" aria-hidden />
+      <div className="conversation__head">
+        <Button
+          asChild
+          variant="ghost"
+          size="icon"
+          aria-label={t('back', { defaultValue: 'Back' })}
+        >
+          <Link to="/messages">
+            <ArrowLeft className="rtl:-scale-x-100" aria-hidden />
           </Link>
-          {isSavedChat && <SavedMessagesHeader />}
-          {otherUser && !isSavedChat && (
-            <Link
-              to={
-                `/u/${(otherUser as { handle?: string | null }).handle || otherUser.id}` as string
-              }
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            >
-              <UserAvatar
-                src={otherUser.image ?? undefined}
-                alt={otherUser.name || 'User'}
-                size={32}
-                fallbackName={otherUser.name ?? undefined}
-                className="ring-2 ring-site-bg"
-              />
-              <div>
-                <p className="flex items-center gap-2 font-display font-bold text-sm text-site-text">
-                  {otherUser.name || 'Unknown'}
-                  {otherUser.isBot && <AutomatedBadge />}
-                </p>
-                {otherUser.username && (
-                  <p className="text-xs text-site-text-muted">@{otherUser.username}</p>
-                )}
-                <Suspense fallback={null}>
-                  <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />
-                </Suspense>
-              </div>
-            </Link>
-          )}
-          {/* Voice call. Renders nothing when a call can't be placed (signed out,
-              no WebRTC); the server is still the authority on whether this person
-              accepts calls from you. */}
-          {otherUser && !isSavedChat && (
-            <div className="ml-auto flex gap-2">
-              <CallButton
-                user={{
-                  id: otherUser.id,
-                  name: otherUser.name ?? null,
-                  image: otherUser.image ?? null,
-                  handle: (otherUser as { handle?: string | null }).handle ?? null,
-                }}
-                conversationId={conversationId}
-                viewerId={viewerId ?? null}
-              />
-              <GroupCallButton
-                conversationId={conversationId}
-                viewerId={viewerId ?? null}
-                seedUser={{
-                  id: otherUser.id,
-                  name: otherUser.name ?? null,
-                  handle: (otherUser as { handle?: string | null }).handle ?? null,
-                  image: otherUser.image ?? null,
-                }}
-              />
+        </Button>
+        {isSavedChat && <SavedMessagesHeader />}
+        {otherUser && !isSavedChat && (
+          <Link
+            to={`/u/${(otherUser as { handle?: string | null }).handle || otherUser.id}` as string}
+            className="flex min-w-0 items-center gap-2.5"
+          >
+            <UserAvatar
+              src={otherUser.image ?? undefined}
+              alt={otherUser.name || 'User'}
+              size={32}
+              fallbackName={otherUser.name ?? undefined}
+            />
+            <div className="min-w-0">
+              <p className="t-body flex items-center gap-2 font-semibold text-site-text">
+                {otherUser.name || 'Unknown'}
+                {otherUser.isBot && <AutomatedBadge />}
+              </p>
+              {otherUser.username && <p className="t-meta">@{otherUser.username}</p>}
+              <Suspense fallback={null}>
+                <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />
+              </Suspense>
             </div>
-          )}
-          <ChatHeaderPlus chat={chatRef} className={isSavedChat || !otherUser ? 'ml-auto' : ''} />
-        </div>
+          </Link>
+        )}
+        {/* Voice call. Renders nothing when a call can't be placed (signed out, no WebRTC); the server is still the
+            authority on whether this person accepts calls from you. */}
+        {otherUser && !isSavedChat && (
+          <div className="ms-auto flex gap-2">
+            <CallButton
+              user={{
+                id: otherUser.id,
+                name: otherUser.name ?? null,
+                image: otherUser.image ?? null,
+                handle: (otherUser as { handle?: string | null }).handle ?? null,
+              }}
+              conversationId={conversationId}
+              viewerId={viewerId ?? null}
+            />
+            <GroupCallButton
+              conversationId={conversationId}
+              viewerId={viewerId ?? null}
+              seedUser={{
+                id: otherUser.id,
+                name: otherUser.name ?? null,
+                handle: (otherUser as { handle?: string | null }).handle ?? null,
+                image: otherUser.image ?? null,
+              }}
+            />
+          </div>
+        )}
+        <ChatHeaderPlus chat={chatRef} className={isSavedChat || !otherUser ? 'ms-auto' : ''} />
       </div>
       <ChatPinnedBar
         chat={chatRef}

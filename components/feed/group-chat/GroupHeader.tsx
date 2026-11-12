@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, LogOut, Users } from 'lucide-react';
+import { ArrowLeft, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { FindATimeLink } from '@/components/calendar/FindATimeLink';
 import { ChatHeaderPlus } from '@/components/chat-plus/ChatHeaderPlus';
 import type { ChatRef } from '@/lib/chat-plus/types';
@@ -17,34 +18,29 @@ export function GroupHeader({
 }) {
   const { t } = useTranslation('feed');
   return (
-    <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
-      <Link
-        to="/messages"
-        search={{ tab: 'groups' }}
-        aria-label={t('back', { defaultValue: 'Back' })}
-        className="-ml-2 rounded-site-sm p-2 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
-      >
-        <ArrowLeft className="h-5 w-5" aria-hidden />
-      </Link>
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-site-accent/12 text-site-accent">
-        <Users className="h-4 w-4" />
-      </div>
+    <header className="conversation__head">
+      <Button asChild variant="ghost" size="icon" aria-label={t('back', { defaultValue: 'Back' })}>
+        <Link to="/messages" search={{ tab: 'groups' }}>
+          <ArrowLeft className="rtl:-scale-x-100" aria-hidden />
+        </Link>
+      </Button>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-site-text">{group.name}</p>
-        <p className="truncate text-xs text-site-text-muted">
+        <p className="t-body truncate font-semibold text-site-text">{group.name}</p>
+        <p className="t-meta truncate">
           {t('member-count', { count: group.members.length, defaultValue: '{{count}} members' })}
         </p>
       </div>
       <FindATimeLink groupChatId={group.id} />
       <ChatHeaderPlus chat={chatRef} />
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={onLeave}
-        className="text-site-text-muted hover:text-site-danger"
         title={t('leave-group', { defaultValue: 'Leave group' })}
         aria-label={t('leave-group', { defaultValue: 'Leave group' })}
       >
         <LogOut className="h-4 w-4" />
-      </button>
+      </Button>
     </header>
   );
 }

@@ -5,7 +5,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { MessagesRightSidebar } from '@/components/feed/MessagesRightSidebar';
+import { NoMargin } from '@/components/shell/NoMargin';
 import { ConversationView } from '@/components/feed/ConversationView';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getConversationOtherUser, type ConversationOtherUser } from '@/lib/conversation.server';
@@ -37,7 +37,8 @@ function ConversationPage() {
   const { otherUser } = Route.useLoaderData() as { otherUser: ConversationOtherUser | null };
 
   return (
-    <PageFrame rightSidebar={<MessagesRightSidebar />}>
+    <PageFrame noDockPadding>
+      <NoMargin />
       {/* Keyed so every per-conversation state (messages, cursors, the
           initial-fetch latch, drafts) starts fresh when the id changes, and
           a response for the previous thread lands on an unmounted view. */}

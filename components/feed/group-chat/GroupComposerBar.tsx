@@ -1,7 +1,7 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BarChart3, ImagePlay, ImagePlus, Loader2, Plus, Send } from 'lucide-react';
+import { BarChart3, ImagePlay, ImagePlus, Loader2, Plus } from 'lucide-react';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { Button } from '@/components/ui/button';
 import { MenuItem } from '@/components/ui/menu';
@@ -49,8 +49,8 @@ export function GroupComposerBar({
   // Chat members get priority in @-mention autocomplete.
   const suggestions = useMemo(() => memberSuggestions(group.members), [group.members]);
   return (
-    <div className="border-t border-site-border px-4 py-3">
-      <div className="flex items-end gap-2">
+    <div className="conversation__composer">
+      <div className="flex flex-wrap items-end gap-2">
         <input
           ref={imageInputRef}
           type="file"
@@ -126,7 +126,7 @@ export function GroupComposerBar({
           onPosted={(raw) => appendMessages([raw as Msg])}
           disabled={sending}
         />
-        <div className="flex-1 min-w-0">
+        <div className="order-first min-w-full flex-1 sm:order-none sm:min-w-0">
           {slash.popover}
           <MentionTextarea
             ref={inputRef}
@@ -146,12 +146,12 @@ export function GroupComposerBar({
             })}
             rows={1}
             maxLength={2000}
-            className="max-h-32 w-full resize-none rounded-site glass-inset px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+            className="max-h-32 w-full resize-none rounded-site glass-inset px-3 py-2 text-sm text-site-text"
           />
           <ComposerLengthCounter used={input.length} />
         </div>
-        <Button variant="default" size="sm" disabled={!canSend} onClick={send} className="h-9">
-          <Send className="h-4 w-4" />
+        <Button variant="primary" disabled={!canSend} onClick={send} className="h-9">
+          {t('conversation-send', { defaultValue: 'Send' })}
         </Button>
       </div>
     </div>
