@@ -19,15 +19,17 @@
  * is noise.
  */
 
-// `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
-// is the component that honours it — `motion` bundles its own full feature
-// implementation, which lands in the SHARED ENTRY CHUNK when the module is
-// reachable from a route's top level. Nine modules did this, together putting
-// ~36 KB of framer-motion on the critical path of every page.
-import { AnimatePresence, m as motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { EASE } from './motion';
+
+// This module is the route's `pendingComponent`, so the router imports it with
+// the route tree and everything it imports statically is on the critical path
+// of every page. The animated status line is the one part that needs
+// framer-motion, and it has nothing to show for the first 600 ms at the
+// earliest, so it loads when the first message exists.
+const StatusLineMotion = lazy(() =>
+  import('./StatusLineMotion').then((m) => ({ default: m.StatusLineMotion })),
+);
 
 export interface ProgressiveStep {
   /** Milliseconds after start at which this message takes over. */
@@ -110,22 +112,17 @@ export function useAssistantStatus(active: boolean): string | null {
 
 /** A polite, announced status line. Renders nothing until there is something to say. */
 export function StatusLine({ message }: { message: string | null }) {
+  // Once a message has been shown the animated line stays mounted, so the last
+  // message can animate out when it clears.
+  const [armed, setArmed] = useState(message !== null);
+  if (message !== null && !armed) setArmed(true);
   return (
     <div aria-live="polite" aria-atomic="true">
-      <AnimatePresence mode="wait">
-        {message && (
-          <motion.p
-            key={message}
-            className="pf2e-caption"
-            initial={{ opacity: 0, y: -3 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 3 }}
-            transition={{ duration: 0.18, ease: EASE }}
-          >
-            {message}
-          </motion.p>
-        )}
-      </AnimatePresence>
+      {armed && (
+        <Suspense fallback={null}>
+          <StatusLineMotion message={message} />
+        </Suspense>
+      )}
     </div>
   );
 }

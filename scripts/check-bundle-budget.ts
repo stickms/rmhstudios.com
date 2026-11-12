@@ -233,10 +233,12 @@ const BUDGETS = {
   //   entry is 408,202 -> 409,201 B (the session store that replaces it), so its line stays where it was.
   //   confirm dialog on first use: critical path 1,012,555 -> 961,788 B raw and 287,739 -> 270,249 B brotli, in 61
   //   chunks instead of 72; entry 409,201 -> 408,395 B.
+  //   framer's `m` and AnimatePresence off the critical path (the one static user was a route's pending
+  //   component): critical path 961,788 -> 945,407 B raw and 270,249 -> 263,171 B brotli, 54 chunks; entry 408,401 B.
   siteCssBrotli: 32_600,
   entryRaw: 416_400,
-  criticalPathRaw: 981_000,
-  criticalPathBrotli: 275_650,
+  criticalPathRaw: 964_300,
+  criticalPathBrotli: 268_400,
 };
 
 /**
