@@ -1,4 +1,9 @@
-import type { ComponentPropsWithoutRef, ElementType, ReactNode } from 'react';
+import type {
+  ComponentPropsWithoutRef,
+  ComponentPropsWithRef,
+  ElementType,
+  ReactNode,
+} from 'react';
 import { cn } from '@/lib/utils';
 import './spine.css';
 
@@ -39,7 +44,7 @@ export type SpineItemProps<T extends SpineItemTag = 'div'> = {
   dot?: boolean;
   /** The element: `article` for a post (so a `role="feed"` spine is a real feed), `div` otherwise. */
   as?: T;
-} & Omit<ComponentPropsWithoutRef<T>, 'as'>;
+} & Omit<ComponentPropsWithRef<T>, 'as'>;
 
 export function SpineItem<T extends SpineItemTag = 'div'>({
   dot = true,

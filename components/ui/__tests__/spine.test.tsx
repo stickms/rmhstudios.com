@@ -47,9 +47,8 @@ describe('Spine primitives (plan section 7)', () => {
   it('the component file has no hooks, effects or client-only imports (P1)', () => {
     const src = read('spine.tsx').replace(/\/\*[\s\S]*?\*\//g, '');
     expect(src).not.toMatch(/\buse[A-Z]\w*\s*\(/);
-    expect(src.match(/^import .* from 'react';$/gm)).toEqual([
-      "import type { ComponentPropsWithoutRef, ElementType, ReactNode } from 'react';",
-    ]);
+    expect(src).not.toMatch(/^import (?!type)[^;]*from 'react';/m);
+    expect(src).toMatch(/^import type [^;]*from 'react';/m);
     expect(src).not.toMatch(
       /useEffect|useLayoutEffect|useState|useRef|ResizeObserver|IntersectionObserver/,
     );

@@ -29,8 +29,9 @@
   padding-block: 14px;
   border-block-end: 1px solid var(--site-border);
 }
-/* The dot, with a gap cut in the line (P3: a discrete item has one). */
-.spine-item::before {
+/* The dot, with a gap cut in the line (P3: a discrete item has one). It exists only inside a `.spine`: an item on a page
+   that has not been given its spine yet is a plain row on a rule, never a dot floating off the column. */
+.spine .spine-item::before {
   content: '';
   position: absolute;
   inset-inline-start: -18.5px;
@@ -43,7 +44,7 @@
   box-shadow: 0 0 0 3px var(--site-bg);
 }
 /* An item with no dot: running prose, a form (P3). */
-.spine-item[data-dot='false']::before {
+.spine .spine-item[data-dot='false']::before {
   display: none;
 }
 
