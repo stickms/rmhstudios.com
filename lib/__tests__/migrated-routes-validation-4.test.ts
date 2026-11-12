@@ -79,7 +79,7 @@ const MARKET_CANCEL = '@/lib/market/api/market.listings.$id.server';
 const STORE_BUY = '@/lib/storefront/api/storefront.products.$id.buy.server';
 const QUOTA = '@/lib/library/api/admin.library.quota-requests.server';
 const HEALTH = '@/lib/library/api/admin.library.storage-health.server';
-const REDEEM = '@/app/routes/api/creator/redeem/index';
+const REDEEM = '@/lib/creator/api/creator.redeem.server';
 
 function req(
   method: string,

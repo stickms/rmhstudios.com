@@ -54,7 +54,7 @@ const EVENTS = '@/app/routes/api/events/index';
 const RSVP = '@/app/routes/api/events/$id/rsvp';
 const LISTINGS = '@/app/routes/api/market/listings/index';
 const TIERS = '@/app/routes/api/studio/tiers';
-const SCORE = '@/app/routes/api/dream-rift/score';
+const SCORE = '@/features/dream-rift/api/dream-rift.score.server';
 
 function req(method: string, body?: unknown, cookie = true): Request {
   return new Request('https://rmhstudios.com/api/x', {

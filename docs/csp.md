@@ -71,7 +71,7 @@ the anonymous edge cache for an enforced policy; say so in the cutover PR.
 
 ## Two-week rollout
 
-The report endpoint is `POST /api/csp-report` (`app/routes/api/csp-report.ts`): accepts
+The report endpoint is `POST /api/csp-report` (`lib/api/routes/csp-report.server.ts`): accepts
 `report-uri` and Reporting API payloads, rate limited to 60/min/IP, strictly validated,
 fields truncated, logged as `[csp-report]` and not stored.
 
