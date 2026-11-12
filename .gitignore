@@ -116,7 +116,4 @@ scripts/perf/.dataset.json
 scripts/perf/.*.tmp.*
 scripts/perf/out/
 
-# WebAssembly compiler outputs (rebuilt before dev, tests, and production builds)
-/lib/wasm/generated/
-/wasm/.generated/
 __pycache__/

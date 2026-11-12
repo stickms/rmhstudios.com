@@ -4,8 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { nitro } from 'nitro/vite';
-import { materialHover } from './lib/liquid/hover-css';
-import { buildWasm } from './scripts/build-wasm.mjs';
+import { hoverPolicy } from './lib/hover-css';
 // `.server` stubbing, the compile-time constants, the quiet logger and the rolldown
 // checks are shared with the island build (vite.islands.config.ts, redesign audit B1).
 import {
@@ -121,15 +120,8 @@ export default defineConfig({
   },
   // `__CDN_BASE__` / `__STATIC_ASSET_VERSIONS__` — see sharedDefine() in vite.shared.ts.
   define: sharedDefine(),
-  css: { postcss: { plugins: [materialHover()] } },
+  css: { postcss: { plugins: [hoverPolicy()] } },
   plugins: [
-    {
-      name: 'build-numeric-wasm',
-      // Also covers direct `vite dev/build` and Docker's pnpm exec invocation.
-      async config() {
-        await buildWasm();
-      },
-    },
     stubServerFiles(),
     tailwindcss(),
     tanstackStart({

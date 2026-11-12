@@ -350,8 +350,7 @@ RUN rm -rf .output \
     && pnpm exec vite build -c vite.islands.config.ts \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
-    && pnpm run check:bundle-budget \
-    && node scripts/check-wasm-output.mjs
+    && pnpm run check:bundle-budget
 
 # Validate, prune, and COPY straight from /app/.output. This stage has no cache
 # mounts at all, so `.output` is a plain layer dir and the runner stage can

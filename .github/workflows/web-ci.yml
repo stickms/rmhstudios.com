@@ -63,8 +63,6 @@ jobs:
             image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-
       - name: Build with Vite 8
         run: pnpm run build:frontend:sourcemap
-      - name: Validate WebAssembly assets
-        run: node scripts/check-wasm-output.mjs
       - name: Bundle budget
         run: pnpm run check:bundle-budget
       - name: Entry-chunk composition
