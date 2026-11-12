@@ -68,9 +68,16 @@ export interface Host {
   requestIdle: (fn: () => void) => void;
   createGlCanvas: () => HTMLCanvasElement | OffscreenCanvas;
   createEnvCanvas: () => HTMLCanvasElement | OffscreenCanvas;
+  /**
+   * False while the element must not be given a child yet. In the browser that is "React has not finished hydrating
+   * it": a canvas appended to server markup before hydration reaches it is a hydration mismatch (React error 418).
+   */
+  ready?: (el: Element) => boolean;
 }
 
 const MAX_DPR = 2;
+/** How many idle slices the renderer looks again for an element that is not ready, before it waits for the next change. */
+const READY_RETRIES = 20;
 /** The longest one idle slice of the environment paint may run, in ms. */
 const ENV_SLICE_MS = 6;
 const UNIFORMS = [
@@ -121,6 +128,8 @@ export class ChromeRenderer {
   /** V13: the last redraw and the last environment repaint, in ms (read by the budget check). */
   readonly timings = { draw: 0, environment: 0, longestSlice: 0 };
 
+  private readyTries = 0;
+
   constructor(private readonly host: Host) {}
 
   /** True when a frame is scheduled. The "nothing at rest" tests read this. */
@@ -166,6 +175,7 @@ export class ChromeRenderer {
   /** V8: the page's content changed (route, feed page appended, fonts, resize). */
   invalidate(): void {
     this.envDirty = true;
+    this.readyTries = 0;
     this.schedule();
   }
 
@@ -352,9 +362,14 @@ export class ChromeRenderer {
     const doc = this.host.document;
     const found = doc.querySelectorAll<HTMLElement>('[data-chrome]');
     const seen = new Set<Element>();
+    let waiting = false;
     for (const el of found) {
       seen.add(el);
       if (this.entries.has(el)) continue;
+      if (this.host.ready && !this.host.ready(el)) {
+        waiting = true;
+        continue;
+      }
       const canvas = doc.createElement('canvas');
       canvas.setAttribute('aria-hidden', 'true');
       canvas.setAttribute('data-chrome-canvas', '');
@@ -367,6 +382,8 @@ export class ChromeRenderer {
       el.appendChild(canvas);
       this.entries.set(el, { canvas, ctx, kind });
     }
+    // Not at rest yet: look again at idle, a bounded number of times, then leave it to the next invalidate().
+    if (waiting && this.readyTries++ < READY_RETRIES) this.host.requestIdle(() => this.schedule());
     for (const [el, entry] of this.entries) {
       if (seen.has(el)) continue;
       entry.canvas.remove();

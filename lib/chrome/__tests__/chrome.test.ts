@@ -245,3 +245,49 @@ describe('the chrome renderer', () => {
     expect(r.pending).toBe(false);
   });
 });
+
+describe('hydration (a canvas appended before React reaches the element is error 418)', () => {
+  it('gives an element no canvas until the host says it is ready, and stops asking after a bounded wait', () => {
+    const b = fakeBrowser([{ c: 1 }]);
+    let ready = false;
+    let appended = 0;
+    const el = (
+      b.host.document.querySelectorAll('[data-chrome]') as unknown as Array<{ appendChild: () => void }>
+    )[0]!;
+    el.appendChild = () => void appended++;
+    const r = new ChromeRenderer({ ...b.host, ready: () => ready });
+    r.start();
+    // Bounded: it looks again a fixed number of times and then rests with nothing pending.
+    expect(b.settle(200)).toBeLessThan(40);
+    expect(r.pending).toBe(false);
+    expect(appended).toBe(0);
+
+    ready = true;
+    r.invalidate();
+    b.settle();
+    expect(appended).toBe(1);
+    expect(r.pending).toBe(false);
+  });
+
+  it('reads "hydrated" from the last node inside the element', async () => {
+    const { hydrated } = await import('../index');
+    const node = (children: object[] = [], stamped = false, nodeType = 1) => {
+      const n: Record<string, unknown> = { nodeType };
+      children.forEach((c, i) => {
+        (c as Record<string, unknown>).previousSibling = children[i - 1] ?? null;
+      });
+      Object.defineProperty(n, 'lastChild', { value: children.at(-1) ?? null, enumerable: false });
+      if (stamped) n['__reactFiber$abc'] = {};
+      return n;
+    };
+    // A leaf React has reached.
+    expect(hydrated(node([], true) as unknown as Element)).toBe(true);
+    // Server markup React has not reached.
+    expect(hydrated(node() as unknown as Element)).toBe(false);
+    // Begun (the element is stamped) but its last child is not: still hydrating.
+    expect(hydrated(node([node([], true), node()], true) as unknown as Element)).toBe(false);
+    expect(hydrated(node([node(), node([], true)], true) as unknown as Element)).toBe(true);
+    // A trailing Suspense marker carries no fiber: the node before it decides.
+    expect(hydrated(node([node([], true), node([], false, 8)], true) as unknown as Element)).toBe(true);
+  });
+});
