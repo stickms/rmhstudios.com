@@ -33,6 +33,31 @@ interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 
 // Breakpoints for responsive srcSet
 const WIDTHS = [320, 480, 640, 800, 1024, 1280, 1600];
 
+/**
+ * Pictures this tab has already shown, by their resolved `src`.
+ *
+ * Going from the feed to a post and back unmounts and remounts every picture. The bytes are in the browser's cache, but
+ * a fresh `<img loading="lazy" decoding="async">` still paints at least one empty frame while the browser decides to
+ * load it and decodes it off the main thread, which is the "flash" (owner, 2026-11-12: "why do profile pics and such
+ * flash when I click on a post or open the feed again?"). A picture seen before is therefore mounted eager and decoded
+ * synchronously: it is cached and already decoded once, so it is in the first frame. First sight keeps the lazy, async
+ * defaults, so nothing new is fetched early.
+ *
+ * Module state, client only in effect: the server and the first client render both see an empty set, so hydration
+ * agrees. Bounded, so a very long session cannot grow it without limit.
+ */
+const SEEN_LIMIT = 2000;
+const seen = new Set<string>();
+/** Record that this tab has shown the picture at `url` (called from the image's `load` event). */
+export function markSeen(url: string): void {
+  if (seen.size >= SEEN_LIMIT) seen.clear();
+  seen.add(url);
+}
+/** Has this tab already shown the picture at `url`? Exported for the tests. */
+export function imageSeen(url: string): boolean {
+  return seen.has(url);
+}
+
 // Internal routes that resize/re-encode on demand via query params (w/h/q/f).
 const RESIZABLE_PREFIXES = [
  '/api/admin/curated-builds/image/',
@@ -181,6 +206,11 @@ function OptimizedImageImpl({
  // already failed once and degraded to its master.
  const avif = !degraded && !format ? avifSrcSet(src) : null;
 
+ // Shown before in this tab: skip the lazy gate and the async decode (see `seen`).
+ const again = seen.has(defaultSrc);
+ const eager = priority || again;
+ const { onLoad, ...imgRest } = rest;
+
  const img = (
  <img
  src={defaultSrc}
@@ -193,14 +223,18 @@ function OptimizedImageImpl({
  // an eager fetch that the browser still schedules at Low priority buys
  // nothing, so the three attributes move together or not at all.
  fetchPriority={priority ? 'high' : undefined}
- loading={priority ? 'eager' : loading}
- decoding={priority ? 'sync' : 'async'}
+ loading={eager ? 'eager' : loading}
+ decoding={eager ? 'sync' : 'async'}
+ onLoad={(e) => {
+ markSeen(defaultSrc);
+ onLoad?.(e);
+ }}
  className={className}
  onError={(e) => {
  if (!degraded) setFailedSrc(src);
  onError?.(e);
  }}
- {...rest}
+ {...imgRest}
  />
  );
 

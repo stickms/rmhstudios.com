@@ -69,8 +69,12 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
  width={size * 2}
  height={size * 2}
  quality={75}
+ // An avatar is tiny and is on screen the moment its row is: no lazy gate, no async decode, so a cached one is in
+ // the first frame instead of flashing in a frame later.
+ loading="eager"
+ decoding="sync"
  data-slot="avatar"
- className={`rounded-full shrink-0 object-cover ${className}`}
+ className={`rounded-full shrink-0 object-cover bg-site-bg-subtle ${className}`}
  style={{ width: size, height: size }}
  onError={() => setImgError(true)}
  />
