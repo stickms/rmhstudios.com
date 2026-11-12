@@ -36,15 +36,10 @@ html [data-sonner-toast] {
    fixed layer at the edges: their ground is the document's own background, and anything fixed sits well
    clear of an edge.
 
-   So on iOS WebKit the full-viewport fixed decoration is not rendered at all, on every page: the ring
-   backdrop and the arc canvas (Steel has no aurora: the page ground is the document's own background). Page-level headers and banners that were pinned flush to the top edge (the call banners,
+   Steel draws no full-viewport fixed decoration at all (the page ground is the document's own background). Page-level headers and banners that were pinned flush to the top edge (the call banners,
    the Kaikai ledger bar, the Rebar masthead) are inset from it the same way the shell's top capsule is. The sticky top
    capsule and the orb and compose button already sit well off the edges (radial.css). Content then runs
    under both bars with Safari's own soft edge, not a flat band. */
-html.ios-webkit :is(.radial-backdrop, .jelly-arc-layer) {
-  display: none;
-}
-
 /* Theme-aware raster maps (RMHHomes). The tint is applied to the tile canvas
    only — the coloured price pins live in a separate MapLibre marker overlay
    above the canvas, so they stay vivid. Dark themes invert the light OSM tiles

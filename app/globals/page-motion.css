@@ -663,80 +663,6 @@ input[type='number'] {
    Existing data-evert markers retain an opacity state layer for menus,
    selected navigation and cards. Controls never grow a second globe, invert,
    or animate a moving origin. No document listeners are needed for this layer. */
-:root {
-  --evert-in: 0.419s;
-  --evert-ease: linear(
-    0,
-    0.0322,
-    0.1102,
-    0.2123,
-    0.3234,
-    0.4335,
-    0.5364,
-    0.6287,
-    0.7088,
-    0.7764,
-    0.8322,
-    0.8772,
-    0.9128,
-    0.9403,
-    0.9612,
-    0.9766,
-    0.9876,
-    0.9953,
-    1.0004,
-    1.0036,
-    1.0053,
-    1.0061,
-    1.0063,
-    1.006,
-    1.0054,
-    1.0048,
-    1.0041,
-    1.0034,
-    1.0028,
-    1.0022,
-    1.0017,
-    1.0013,
-    1
-  );
-  --evert-pop-in: 0.524s;
-  --evert-ease-pop: linear(
-    0,
-    0.0444,
-    0.1515,
-    0.2898,
-    0.4367,
-    0.5767,
-    0.701,
-    0.8049,
-    0.8872,
-    0.949,
-    0.9926,
-    1.021,
-    1.0374,
-    1.0448,
-    1.0458,
-    1.0426,
-    1.0371,
-    1.0305,
-    1.0238,
-    1.0176,
-    1.0121,
-    1.0077,
-    1.0042,
-    1.0016,
-    0.9999,
-    0.9987,
-    0.9981,
-    0.9979,
-    0.9979,
-    0.9981,
-    0.9984,
-    0.9987,
-    1
-  );
-}
 @layer components {
   /* `relative` in this layer so a control's own `absolute`/`fixed` utility still wins. */
   [data-evert] {
@@ -788,77 +714,11 @@ input[type='number'] {
   }
 }
 
-/* The ghost of the layer (lib/evert-auto.ts): for a control that cannot hold its own `::before` (a text field, a
-   textarea, a select, an inline link, a control whose `::before` the site already uses), one shared body-level box
-   laid over the control in its own shape. `lib/evert-auto.ts` places it with an inline `translate` and size (re-placed
-   only on scroll and resize while it is up) and copies the control's radius; the hover ghost carries
-   `data-liquid-glass="lit"`, so the glass engine draws the shared optical response (tilt, light, rim) on it exactly
-   as on a control that holds its own slab.
-   Restored after a39a095e deleted these base rules with the old scale eversion while the script still creates the
-   ghost — without them it fell to the end of <body> as a static block and added page height (F2, 2026-10-23).
-   Adapted to the current layer and the jelly contract: it is fixed and out of flow, never takes the pointer, is an
-   overlay that is never a soft body (physics, the registry and the arcs exclude `.evert-ghost`), and its state is
-   an OPACITY change like `[data-evert]::before` above — no scale, no moving origin, no transform transition, no
-   filter or backdrop-filter. */
-.evert-ghost {
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: calc(var(--z-tooltip) - 1);
-  pointer-events: none;
-  contain: strict;
-  isolation: isolate;
-  background: var(--site-surface-hover);
-  opacity: 0;
-  transition: opacity var(--site-transition-speed) var(--ease-glass);
-}
-.evert-ghost[data-on] {
-  opacity: 0.8;
-}
-.evert-ghost[data-on][data-pressed] {
-  opacity: 1;
-}
-.evert-ghost[data-kind='focus'] {
-  background: color-mix(in srgb, var(--site-accent) 7%, transparent);
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--site-accent) 45%, transparent);
-}
-.evert-ghost[data-kind='focus'][data-on] {
-  opacity: 1;
-}
 @media (hover: hover) and (pointer: fine) {
   @layer components {
     [data-evert]:hover:not(:disabled, [aria-disabled='true'], [data-disabled])::before {
       opacity: 1;
     }
-  }
-}
-
-/* Legacy variant tint tokens remain for selected/pressed consumers. Hover uses
-   the shared coat/optical tilt; the CSS build policy removes hover colour swaps. */
-@layer components {
-  [data-slot='button']:is([data-variant='default'], [data-variant='ghost']),
-  [data-slot='menu-item'],
-  [data-slot='select-item'],
-  [data-slot='select'][data-evert],
-  [role='tab'][data-evert],
-  [data-tab-active][data-evert],
-  .rad-rail__item,
-  .radial-topbar__btn,
-  .cstudio-ranked__toggle,
-  .store-spot__link {
-    --evert-tint: var(--site-surface-hover);
-    --evert-rest-opacity: 1;
-  }
-  .radial-topbar__signin {
-    --evert-tint: var(--site-accent);
-    --evert-rest-opacity: 1;
-  }
-  .cstudio-ranked__link {
-    --evert-tint: color-mix(in srgb, var(--site-accent) 22%, transparent);
-    --evert-rest-opacity: 1;
-  }
-  [data-slot='menu-item'][data-tone='danger'] {
-    --evert-tint: color-mix(in srgb, var(--site-danger) 10%, transparent);
   }
 }
 
@@ -961,14 +821,11 @@ input[type='number'] {
    durations stay the springs' settle times, so the curves front-load the travel
    the way the springs do (their last third is sub-pixel); `snappy` and `pop`
    keep their overshoot through a y > 1 control point. Chromium and Gecko
-   accelerate `linear()` and keep the exact springs. After every token it
-   overrides (the evert springs are declared above). */
+   accelerate `linear()` and keep the exact springs. */
 @supports (font: -apple-system-body) {
   :root {
     --spring-smooth: var(--ease-smooth);
     --spring-snappy: var(--ease-pop);
     --spring-sheet: var(--ease-smooth);
-    --evert-ease: var(--ease-smooth);
-    --evert-ease-pop: var(--ease-pop);
   }
 }
