@@ -26,19 +26,16 @@ import { Route as DesignRouteImport } from './routes/design'
 import { Route as DreamRiftRouteImport } from './routes/dream-rift'
 import { Route as DunesdayRouteImport } from './routes/dunesday'
 import { Route as ElectionsRouteImport } from './routes/elections'
-import { Route as EversionLabRouteImport } from './routes/eversion-lab'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as HalfLife2RouteImport } from './routes/half-life-2'
 import { Route as HandleRouteImport } from './routes/handle'
 import { Route as HearthworksRouteImport } from './routes/hearthworks'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
-import { Route as JellyRouteImport } from './routes/jelly'
 import { Route as KaikaidebtcounterRouteImport } from './routes/kaikaidebtcounter'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
 import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
 import { Route as LightsOutRouteImport } from './routes/lights-out'
-import { Route as LiquidGlassRouteImport } from './routes/liquid-glass'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as NightrailRouteImport } from './routes/nightrail'
@@ -1476,11 +1473,6 @@ const ElectionsRoute = ElectionsRouteImport.update({
   path: '/elections',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EversionLabRoute = EversionLabRouteImport.update({
-  id: '/eversion-lab',
-  path: '/eversion-lab',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const GabrielsHornRoute = GabrielsHornRouteImport.update({
   id: '/gabriels-horn',
   path: '/gabriels-horn',
@@ -1511,11 +1503,6 @@ const HouseAlwaysWinsRoute = HouseAlwaysWinsRouteImport.update({
   path: '/house-always-wins',
   getParentRoute: () => rootRouteImport,
 } as any)
-const JellyRoute = JellyRouteImport.update({
-  id: '/jelly',
-  path: '/jelly',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const KaikaidebtcounterRoute = KaikaidebtcounterRouteImport.update({
   id: '/kaikaidebtcounter',
   path: '/kaikaidebtcounter',
@@ -1534,11 +1521,6 @@ const LaundrySortRoute = LaundrySortRouteImport.update({
 const LightsOutRoute = LightsOutRouteImport.update({
   id: '/lights-out',
   path: '/lights-out',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiquidGlassRoute = LiquidGlassRouteImport.update({
-  id: '/liquid-glass',
-  path: '/liquid-glass',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -8567,19 +8549,16 @@ export interface FileRoutesByFullPath {
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
   '/elections': typeof ElectionsRoute
-  '/eversion-lab': typeof EversionLabRoute
   '/gabriels-horn': typeof GabrielsHornRoute
   '/games': typeof GamesRouteWithChildren
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/hearthworks': typeof HearthworksRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
-  '/jelly': typeof JellyRoute
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
-  '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
@@ -9946,18 +9925,15 @@ export interface FileRoutesByTo {
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
   '/elections': typeof ElectionsRoute
-  '/eversion-lab': typeof EversionLabRoute
   '/gabriels-horn': typeof GabrielsHornRoute
   '/games': typeof GamesLibraryIndexRoute
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/hearthworks': typeof HearthworksRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
-  '/jelly': typeof JellyRoute
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
-  '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
@@ -11306,19 +11282,16 @@ export interface FileRoutesById {
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
   '/elections': typeof ElectionsRoute
-  '/eversion-lab': typeof EversionLabRoute
   '/gabriels-horn': typeof GabrielsHornRoute
   '/games': typeof GamesRouteWithChildren
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/hearthworks': typeof HearthworksRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
-  '/jelly': typeof JellyRoute
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
-  '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
@@ -12692,19 +12665,16 @@ export interface FileRouteTypes {
     | '/dream-rift'
     | '/dunesday'
     | '/elections'
-    | '/eversion-lab'
     | '/gabriels-horn'
     | '/games'
     | '/half-life-2'
     | '/handle'
     | '/hearthworks'
     | '/house-always-wins'
-    | '/jelly'
     | '/kaikaidebtcounter'
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
-    | '/liquid-glass'
     | '/login'
     | '/neon-driftway'
     | '/nightrail'
@@ -14071,18 +14041,15 @@ export interface FileRouteTypes {
     | '/dream-rift'
     | '/dunesday'
     | '/elections'
-    | '/eversion-lab'
     | '/gabriels-horn'
     | '/games'
     | '/half-life-2'
     | '/handle'
     | '/hearthworks'
     | '/house-always-wins'
-    | '/jelly'
     | '/kaikaidebtcounter'
     | '/laundry-sort'
     | '/lights-out'
-    | '/liquid-glass'
     | '/login'
     | '/neon-driftway'
     | '/nightrail'
@@ -15430,19 +15397,16 @@ export interface FileRouteTypes {
     | '/dream-rift'
     | '/dunesday'
     | '/elections'
-    | '/eversion-lab'
     | '/gabriels-horn'
     | '/games'
     | '/half-life-2'
     | '/handle'
     | '/hearthworks'
     | '/house-always-wins'
-    | '/jelly'
     | '/kaikaidebtcounter'
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
-    | '/liquid-glass'
     | '/login'
     | '/neon-driftway'
     | '/nightrail'
@@ -16815,19 +16779,16 @@ export interface RootRouteChildren {
   DreamRiftRoute: typeof DreamRiftRoute
   DunesdayRoute: typeof DunesdayRoute
   ElectionsRoute: typeof ElectionsRoute
-  EversionLabRoute: typeof EversionLabRoute
   GabrielsHornRoute: typeof GabrielsHornRoute
   GamesRoute: typeof GamesRouteWithChildren
   HalfLife2Route: typeof HalfLife2Route
   HandleRoute: typeof HandleRoute
   HearthworksRoute: typeof HearthworksRoute
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
-  JellyRoute: typeof JellyRoute
   KaikaidebtcounterRoute: typeof KaikaidebtcounterRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
   LaundrySortRoute: typeof LaundrySortRoute
   LightsOutRoute: typeof LightsOutRoute
-  LiquidGlassRoute: typeof LiquidGlassRoute
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   NightrailRoute: typeof NightrailRoute
@@ -17779,13 +17740,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ElectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/eversion-lab': {
-      id: '/eversion-lab'
-      path: '/eversion-lab'
-      fullPath: '/eversion-lab'
-      preLoaderRoute: typeof EversionLabRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/gabriels-horn': {
       id: '/gabriels-horn'
       path: '/gabriels-horn'
@@ -17828,13 +17782,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HouseAlwaysWinsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/jelly': {
-      id: '/jelly'
-      path: '/jelly'
-      fullPath: '/jelly'
-      preLoaderRoute: typeof JellyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/kaikaidebtcounter': {
       id: '/kaikaidebtcounter'
       path: '/kaikaidebtcounter'
@@ -17861,13 +17808,6 @@ declare module '@tanstack/react-router' {
       path: '/lights-out'
       fullPath: '/lights-out'
       preLoaderRoute: typeof LightsOutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/liquid-glass': {
-      id: '/liquid-glass'
-      path: '/liquid-glass'
-      fullPath: '/liquid-glass'
-      preLoaderRoute: typeof LiquidGlassRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -29643,19 +29583,16 @@ const rootRouteChildren: RootRouteChildren = {
   DreamRiftRoute: DreamRiftRoute,
   DunesdayRoute: DunesdayRoute,
   ElectionsRoute: ElectionsRoute,
-  EversionLabRoute: EversionLabRoute,
   GabrielsHornRoute: GabrielsHornRoute,
   GamesRoute: GamesRouteWithChildren,
   HalfLife2Route: HalfLife2Route,
   HandleRoute: HandleRoute,
   HearthworksRoute: HearthworksRoute,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
-  JellyRoute: JellyRoute,
   KaikaidebtcounterRoute: KaikaidebtcounterRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
   LaundrySortRoute: LaundrySortRoute,
   LightsOutRoute: LightsOutRoute,
-  LiquidGlassRoute: LiquidGlassRoute,
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   NightrailRoute: NightrailRoute,

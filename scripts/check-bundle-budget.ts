@@ -222,14 +222,13 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  // B5 (redesign audit): the July target of 40 KB, enforced. Measured 39.4 KB
-  // after fonts stopped being inlined into the sheet as base64 (vite.config.ts
-  // `assetsInlineLimit`); the 40 KB ceiling leaves ~0.6 KB of headroom.
-  // Existing required JavaScript budgets are unchanged.
-  siteCssBrotli: 40 * 1024,
-  entryRaw: 541_700,
-  criticalPathRaw: 1_156_000,
-  criticalPathBrotli: 328_000,
+  // Steel phase 6 (2026-11-12): lowered to the measured values after the old shell, material and runtime were
+  // deleted, plus ~2% for build-to-build variance (the plan's ledger, section 17, has the numbers). Measured:
+  // site CSS 32,190 B brotli; entry 442,305 B raw; critical path 1,093,213 B raw and 309,620 B brotli.
+  siteCssBrotli: 33_000,
+  entryRaw: 451_000,
+  criticalPathRaw: 1_115_000,
+  criticalPathBrotli: 316_000,
 };
 
 /**
@@ -264,10 +263,11 @@ const BUDGETS = {
  * moved it by < 0.2%).
  */
 export const ISLAND_BUDGETS: Readonly<Record<string, { jsBrotli: number; cssBrotli: number }>> = {
-  nightrail: { jsBrotli: 277_800, cssBrotli: 27_500 },
-  'signal-forge': { jsBrotli: 169_800, cssBrotli: 27_300 },
-  vega: { jsBrotli: 134_200, cssBrotli: 25_300 },
-  'void-breaker': { jsBrotli: 327_700, cssBrotli: 28_300 },
+  // Steel phase 6: re-measured + 3%.
+  nightrail: { jsBrotli: 273_000, cssBrotli: 20_000 },
+  'signal-forge': { jsBrotli: 163_800, cssBrotli: 19_900 },
+  vega: { jsBrotli: 128_700, cssBrotli: 18_200 },
+  'void-breaker': { jsBrotli: 322_000, cssBrotli: 20_900 },
 };
 
 const ISLANDS_DIR = path.join(ROOT, 'dist-islands');
