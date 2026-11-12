@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -20,14 +20,18 @@ import {
   type SessionUserShape,
 } from './compose/compose-state';
 
+/** Pictures, a GIF, a poll, audience, a schedule: the full composer, fetched the first time Options is pressed. */
+const ComposeModal = lazy(() => import('./ComposeModal').then((m) => ({ default: m.ComposeModal })));
+
 /**
  * The home feed's one-line composer (Steel section 10, Home): avatar, a borderless field and the page's one primary
  * button, Post. It is the first item on the spine and has no dot (P3: a form hangs dotless).
  *
  * It sends through the same submit path as the full composer (`useComposeSubmit`): the post appears at the top of the
  * feed at once in its dimmed "posting" state, and is reconciled or rolled back and restored into the field when the
- * server answers. Anything richer than a line of text (pictures, a poll, a GIF, a schedule) is the full composer behind
- * "Write a post". Phones do not show the row at all (the globe's "Write a post" is the way in), so the row is hidden
+ * server answers. Anything richer than a line of text (pictures, a poll, a GIF, a schedule) is the full composer, one
+ * press away behind "Options" in the row: it opens over the page carrying whatever has been typed (owner, 2026-11-12:
+ * "where are the post options for the feed?"). Phones do not show the row at all (the globe's "Write a post" is the way in), so the row is hidden
  * below 1024px, the width at which the sidebar appears.
  *
  * Signed out, the row is a one-line sign-in prompt in the same place and the same height (plan section 18, D6), and the
@@ -40,6 +44,8 @@ export function HomeComposer() {
   const { resolved } = useResolvedUser();
   const postsPlus = usePostsPlusCompose();
   const [content, setContent] = useState('');
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [optionsSeed, setOptionsSeed] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -154,12 +160,36 @@ export function HomeComposer() {
           placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
           aria-label={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
           autoComplete="off"
-          className="h-9 min-w-0 flex-1 border-0 bg-transparent px-0"
+          className="field-bare h-9 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0"
         />
+        <Button
+          type="button"
+          variant="ghost"
+          aria-haspopup="dialog"
+          onClick={() => {
+            setOptionsSeed(content);
+            setOptionsOpen(true);
+          }}
+        >
+          {t('compose-options', { defaultValue: 'Options' })}
+        </Button>
         <Button type="submit" variant="primary" disabled={!canSubmit}>
           {t('post-button', { defaultValue: 'Post' })}
         </Button>
       </form>
+      {optionsOpen && (
+        <Suspense fallback={null}>
+          <ComposeModal
+            open
+            initialContent={optionsSeed}
+            onClose={() => {
+              setOptionsOpen(false);
+              // The full composer took the words with it; whatever it did with them, the row starts clean.
+              setContent('');
+            }}
+          />
+        </Suspense>
+      )}
       {postsPlus.answering && (
         <p className="t-meta mt-2 flex items-center gap-3">
           <span className="min-w-0 flex-1 truncate">

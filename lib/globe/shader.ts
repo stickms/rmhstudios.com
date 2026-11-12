@@ -9,16 +9,20 @@
  *     outward bulges the silhouette, and the field's height tilts the normal, so the room's window and the page's
  *     reflection bend around every dent
  *   - ripples (lib/fluid rippleWave, the same Ricker wavelet) tilting the normal as the crest passes
- *   - the liquid globe's cage, fixed to the BODY: meridians every 30 degrees, parallels every 20 up to 60. A mirror ball
- *     looks the same at any rotation; the cage is what shows it turning. Docked it is dots at the cage's vertices
- *     (Steel's "grid of small dots", G1, now on the sphere instead of on the screen); open, the lines are engraved
- *     too, as hairlines, and the dots shrink.
+ *   - the liquid globe's cage, fixed to the BODY and engraved as hairlines: meridians every 30 degrees, parallels every
+ *     20 up to 60. A mirror ball looks the same at any rotation; the cage is what shows it turning.
+ *   - the DESTINATIONS as dots on the sphere (`u_pin`, body space): docked, the globe shows where its pages are as
+ *     dots that orbit with it, as the liquid globe did; open, the real icon pins (DOM links, lib/globe/view.ts) sit
+ *     over them and the dots fade.
  *
  * The canvas hangs outside the disc by BLEED of its diameter on every side so the silhouette has somewhere to go.
  */
 import { DOUGH_EXTENT, DOUGH_N } from '@/lib/dough';
 import { RIPPLE } from '@/lib/fluid';
 import { MAX_RIPPLES } from './engine';
+
+/** The most destinations the shader marks as dots on the sphere. */
+export const MAX_PINS = 24;
 
 /** How far the canvas hangs outside the disc, as a fraction of its diameter (the liquid globe's 11%). */
 export const BALL_BLEED = 0.11;
@@ -27,7 +31,7 @@ export const BALL_EXTENT = 1 + 2 * BALL_BLEED;
 
 const f = (n: number) => n.toFixed(4);
 
-export const BALL_UNIFORMS = ['u_field', 'u_soft', 'u_rot', 'u_rip', 'u_dots'] as const;
+export const BALL_UNIFORMS = ['u_field', 'u_soft', 'u_rot', 'u_rip', 'u_dots', 'u_pin', 'u_pins'] as const;
 
 /*
  * Notes (kept out of the shipped string):
@@ -35,7 +39,8 @@ export const BALL_UNIFORMS = ['u_field', 'u_soft', 'u_rot', 'u_rip', 'u_dots'] a
  *   uniform float u_soft;      // 1.0 while the field is deformed (skips three texture reads at rest)
  *   uniform mat3 u_rot;        // body -> view is the engine's drawM; uploaded row-major, so here it is view -> body
  *   uniform vec4 u_rip[n];     // view-space impact direction, age in seconds (negative: empty)
- *   uniform vec3 u_dots;       // dot size (1 = docked), dot strength, and the strength of the cage's lines (open)
+ *   uniform vec3 u_dots;       // dot size (1 = docked), dot strength, and the strength of the cage's lines
+ *   uniform vec3 u_pin[n]; uniform float u_pins; // the destinations, body space, and how many
  * u_hs is the half-size of the DISC in CSS px; the canvas is BALL_EXTENT times that.
  */
 export const BALL_FRAGMENT_SHADER = `
@@ -57,6 +62,8 @@ uniform float u_soft;
 uniform mat3 u_rot;
 uniform vec4 u_rip[${MAX_RIPPLES}];
 uniform vec3 u_dots;
+uniform vec3 u_pin[${MAX_PINS}];
+uniform float u_pins;
 vec3 page(vec2 pos) {
 vec2 uv = (pos - u_envOrigin) / u_envSize;
 if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return u_bg;
@@ -131,8 +138,12 @@ float lat = asin(clamp(-b.y, -1.0, 1.0));
 float lon = atan(b.x, b.z);
 float la = clamp(floor(lat / 0.349066 + 0.5), -3.0, 3.0) * 0.349066;
 float lo = floor(lon / 0.523599 + 0.5) * 0.523599;
-vec3 v = vec3(cos(la) * sin(lo), -sin(la), cos(la) * cos(lo));
-float dd = length(b - v) / u_dots.x;
+float dd = 9.0;
+for (int i = 0; i < ${MAX_PINS}; i++) {
+if (float(i) >= u_pins) break;
+dd = min(dd, length(b - u_pin[i]));
+}
+dd /= u_dots.x;
 float px = 1.0 / (r * u_dpr * u_dots.x);
 float face = smoothstep(0.05, 0.35, n0.z) * u_dots.y;
 float w1 = 1.0 / (r * u_dpr);

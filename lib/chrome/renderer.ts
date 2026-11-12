@@ -38,6 +38,9 @@ export interface BallState {
   soft: boolean;
   /** Dot size (1 = docked), dot strength, cage-line strength. */
   dots: [number, number, number];
+  /** The destinations as body-space directions (3 numbers each, a fixed-length array), and how many are set. */
+  pins: Float32Array;
+  pinCount: number;
   /** How far the canvas hangs outside the disc, as a fraction of its diameter. */
   bleed: number;
 }
@@ -85,7 +88,7 @@ const UNIFORMS = [
   'u_night',
 ] as const;
 /** The body program's own uniforms (lib/globe/shader.ts). */
-const BALL_UNIFORMS = ['u_field', 'u_soft', 'u_rot', 'u_rip', 'u_dots'] as const;
+const BALL_UNIFORMS = ['u_field', 'u_soft', 'u_rot', 'u_rip', 'u_dots', 'u_pin', 'u_pins'] as const;
 
 function parseColour(css: string): [number, number, number] {
   const m = /rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/.exec(css);
@@ -563,6 +566,8 @@ export class ChromeRenderer {
         gl.uniformMatrix3fv(u.u_rot ?? null, false, ball.rot);
         gl.uniform4fv(u.u_rip ?? null, ball.ripples);
         gl.uniform3f(u.u_dots ?? null, ball.dots[0], ball.dots[1], ball.dots[2]);
+        gl.uniform3fv(u.u_pin ?? null, ball.pins);
+        gl.uniform1f(u.u_pins ?? null, ball.pinCount);
         if (!(el as HTMLElement).hasAttribute('data-chrome-live')) {
           (el as HTMLElement).setAttribute('data-chrome-live', '');
         }

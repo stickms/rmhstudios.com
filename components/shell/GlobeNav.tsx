@@ -1,52 +1,61 @@
-import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { globeKeyAction } from './globe-nav-state';
-import { SECTIONS, WRITE_HREF, currentSection, viewerPathFor, type SectionId } from './sections';
+import { SIDEBAR_NAV, isNavGroup, isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
+import { WRITE_HREF } from './sections';
 import { usePathname } from './shell-router-state';
 import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
 import { useGlobeView } from './use-globe-view';
 import './globe-nav.css';
 
-/** Where the four pins that are not current sit around the centre one (G3), in section order. */
-const AROUND = ['ul', 'ur', 'll', 'lr'] as const;
+/** The open globe's diameter and the docked one's, px, phone and desktop (globe-nav.css holds the same numbers). */
+const OPEN_D = { phone: 288, desktop: 440 } as const;
+const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
 
 /**
- * The phone navigator (Steel 8.1, G1 to G8): a 64px chrome globe docked above the bottom edge that opens, by transform
- * alone, into a 288px globe carrying the five sections as pins.
+ * The navigator: the liquid globe, in chrome (owner, 2026-11-12: "basically keep the original liquid globe, just with
+ * the new material"). One component for phone and desktop.
  *
- *  - G5: markup and CSS. No canvas, worker or simulation here. The element carries `data-chrome="ball"` and
- *    `data-chrome-max="288"`, so the one shared renderer (lib/chrome, loaded at idle) draws its reflection and keeps it
- *    sharp when open. This file reaches the renderer only through a dynamic import, to tell it a 360 ms move began.
- *  - G7: a `<button aria-expanded aria-controls>`; the pins are a `<nav>` of real links; while open, Tab stays inside
- *    the nav and focus returns to the button on close. With scripting off the same place is a link to `/sections`
- *    (the `<noscript>` anchor lies over the button).
- *  - G4: tapping the globe, the veil or pressing Escape closes it; choosing a pin navigates and the globe comes home.
- *  - G8: Inbox unread shows as a danger number on its pin when open, and an 8px danger dot on the docked globe, each
- *    with a visually hidden equivalent.
- *
- * State is one `data-open` attribute on the root; the open and close move is CSS on that attribute (globe-nav.css).
- *
- * THE BODY (owner, 2026-11-12: "the chrome globe needs to have the same physics and rotation logic as the liquid
- * globe"). Once lib/globe has loaded (idle; `data-globe-live` on the root), the ball is the liquid globe's body in
- * chrome: the five sections are fixed on the sphere and projected each frame it moves; press anywhere on the open menu
- * and drag to turn it, release to coast; a destination inside the reticle is locked, a hold on it fills its bar, and
- * letting go with the bar full goes there; a press ripples and dents it; docked it turns with the page's scroll and
- * drifts until taken hold of. A plain tap on a pin is still a link, and Tab still turns the globe to each one. Before
- * the module lands, and with scripting off, the pins sit in the fixed G3 places.
+ *  - DOCKED it is a chrome ball carrying a dot for every destination; the dots orbit as it drifts and as the page
+ *    scrolls. On a phone it floats 64px above the bottom edge and is the only navigator; on desktop it is the larger
+ *    ball at the foot of the sidebar.
+ *  - A click or tap OPENS it: the same element travels to the middle of the screen and grows (transform only), over a
+ *    flat veil, and every destination becomes an icon pin on the sphere: every page the old globe carried
+ *    (lib/sidebar-nav), not five words.
+ *  - THE GESTURE is the liquid globe's (lib/globe): press anywhere and drag to turn it, release to coast; a pin inside
+ *    the reticle is locked and names itself; hold and its ring fills; let go with the ring full and you go there. A
+ *    plain tap on a pin is a link, and Tab turns the globe to each one. A press ripples and dents the ball.
+ *  - Accessibility (G7): a `<button aria-expanded aria-controls>`; the pins are a `<nav>` of real links; while open,
+ *    Tab stays inside and focus returns to the button on close; Escape, the veil or the globe closes it. With
+ *    scripting off the same place is a link to `/sections`.
+ *  - It has no canvas, worker or simulation of its own: the one shared renderer (lib/chrome) draws the ball, and the
+ *    physics is an idle chunk (`data-globe-live` on the root once it has landed; the pins wait for it).
  */
 export function GlobeNav() {
   const { t } = useTranslation('feed');
   const pathname = usePathname();
   const { data: session } = useSession();
-  const viewerPath = viewerPathFor(session?.user as { id: string; handle?: string | null } | undefined);
   const inbox = useInboxCount(Boolean(session));
-  const current = currentSection(pathname);
   const labels = useSectionLabels();
-  // Nothing of the five is current on, say, /library: Front takes the centre without claiming `aria-current`.
-  const centre: SectionId = current ?? 'front';
+  const isAdmin = Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
+  const signedIn = Boolean(session);
+
+  // Every destination, flattened, as the liquid globe had them. Placement on the sphere is deterministic from the
+  // list, so the same account always finds the same page in the same place.
+  const nodes = useMemo<NavLeaf[]>(() => {
+    const out: NavLeaf[] = [];
+    for (const item of SIDEBAR_NAV) {
+      if (isNavGroup(item)) out.push(...item.children);
+      else out.push(item);
+    }
+    return out.filter((leaf) => (!leaf.requiresAuth || signedIn) && (!leaf.requiresAdmin || isAdmin));
+  }, [signedIn, isAdmin]);
+  const active = nodes.findIndex((n) => isNavLeafActive(pathname, n));
+  // Nothing is current on, say, /terms: the first destination faces the viewer without claiming `aria-current`.
+  const centreIndex = Math.max(0, active);
 
   const navId = useId();
   const navigate = useNavigate();
@@ -58,30 +67,41 @@ export function GlobeNav() {
   const veilRef = useRef<HTMLDivElement | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
   const pinRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  const labelRefs = useRef<Array<HTMLElement | null>>([]);
   const wasOpen = useRef(false);
-  const viewerPathRef = useRef(viewerPath);
-  viewerPathRef.current = viewerPath;
-  const centreIndex = SECTIONS.findIndex((s) => s.id === centre);
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
+
+  const go = useCallback(
+    (leaf: NavLeaf | undefined) => {
+      if (!leaf) return;
+      if (leaf.external) window.location.assign(leaf.href);
+      else void navigate({ to: leaf.href });
+    },
+    [navigate],
+  );
 
   const globe = useGlobeView(
     () =>
       buttonRef.current
         ? {
             stage: buttonRef.current,
-            points: SECTIONS.length,
+            points: nodesRef.current.length,
             pins: pinRefs.current,
+            labels: labelRefs.current,
             reticle: navRef.current,
             surfaces: [veilRef.current, navRef.current],
-            pinRadius: 144,
+            pinRadius: () => (isDesktop() ? OPEN_D.desktop : OPEN_D.phone) / 2,
+            openSize: () => (isDesktop() ? OPEN_D.desktop : OPEN_D.phone),
             onLock: setLock,
             onGo: (i) => {
-              const section = SECTIONS[i];
-              if (section) void navigate({ to: section.href(viewerPathRef.current) });
+              go(nodesRef.current[i]);
               setOpen(false);
             },
           }
         : null,
     () => setLive(true),
+    nodes.length,
   );
   useEffect(() => {
     globe.current?.setOpen(open, centreIndex);
@@ -108,8 +128,7 @@ export function GlobeNav() {
   // Focus: into the nav on open, back to the button on close (G7).
   useEffect(() => {
     if (open) {
-      const first = rootRef.current?.querySelector<HTMLElement>('[data-pin="current"]');
-      first?.focus();
+      pinRefs.current[centreIndex]?.focus();
     } else if (wasOpen.current) {
       buttonRef.current?.focus();
     }
@@ -139,8 +158,6 @@ export function GlobeNav() {
     return () => document.removeEventListener('keydown', onKey);
   }, [open, setOpenAnd]);
 
-  const around = SECTIONS.filter((s) => s.id !== centre);
-
   const unreadText = t('shell-unread-count', {
     count: inbox,
     defaultValue_one: '{{count}} unread',
@@ -164,9 +181,8 @@ export function GlobeNav() {
           ref={buttonRef}
           type="button"
           className="globe-nav__globe chrome-globe"
-          style={{ '--d': '64px' } as CSSProperties}
+          style={{ '--d': 'var(--globe-d)' } as CSSProperties}
           data-chrome="ball"
-          data-chrome-max="288"
           data-globe-button=""
           aria-expanded={open}
           aria-controls={navId}
@@ -196,36 +212,60 @@ export function GlobeNav() {
         aria-label={t('shell-sections-label', { defaultValue: 'Sections' })}
       >
         <span className="globe-nav__reticle" aria-hidden />
-        {SECTIONS.map((section, i) => {
-          const isCentre = section.id === centre;
-          const slot = isCentre ? 'c' : AROUND[around.indexOf(section)];
-          const count = section.id === 'inbox' ? inbox : 0;
-          return (
-            <Link
-              key={section.id}
-              ref={(el: HTMLAnchorElement | null) => {
-                pinRefs.current[i] = el;
-              }}
-              to={section.href(viewerPath)}
-              className="globe-nav__pin"
-              data-pin={isCentre ? 'current' : ''}
-              data-slot-pos={slot}
-              draggable={false}
-              aria-current={current === section.id ? 'page' : undefined}
-              onClick={() => setOpenAnd(false)}
-            >
-              {labels[section.id]}
+        {nodes.map((node, i) => {
+          const Icon = node.icon;
+          const label = node.href === '/' ? labels.front : t(node.tKey, { defaultValue: node.label });
+          const count = node.badge === 'inbox' ? inbox : 0;
+          const shared = {
+            className: 'globe-nav__pin',
+            'data-pin': i === active ? 'current' : '',
+            draggable: false,
+            'aria-current': i === active ? ('page' as const) : undefined,
+            onClick: () => setOpenAnd(false),
+          };
+          const body = (
+            <>
+              <span className="globe-nav__pin-dot">
+                <Icon aria-hidden />
+                <svg className="globe-nav__pin-ring" viewBox="0 0 44 44" aria-hidden>
+                  <circle cx="22" cy="22" r="20.5" pathLength={1} />
+                </svg>
+              </span>
+              <span
+                className="globe-nav__pin-name"
+                ref={(el: HTMLElement | null) => {
+                  labelRefs.current[i] = el;
+                }}
+              >
+                {label}
+              </span>
               {count > 0 && (
                 <span className="globe-nav__count">
                   <span aria-hidden>{count > 99 ? '99+' : count}</span>
                   <span className="sr-only">{unreadText}</span>
                 </span>
               )}
+            </>
+          );
+          const setRef = (el: HTMLAnchorElement | null) => {
+            pinRefs.current[i] = el;
+          };
+          return node.external ? (
+            <a key={node.id} ref={setRef} href={node.href} {...shared}>
+              {body}
+            </a>
+          ) : (
+            <Link key={node.id} ref={setRef} to={node.href} {...shared}>
+              {body}
             </Link>
           );
         })}
         <span className="sr-only" aria-live="polite">
-          {open && lock >= 0 ? labels[SECTIONS[lock]!.id] : ''}
+          {open && lock >= 0 && nodes[lock]
+            ? nodes[lock].href === '/'
+              ? labels.front
+              : t(nodes[lock].tKey, { defaultValue: nodes[lock].label })
+            : ''}
         </span>
         <Link to={WRITE_HREF} className="globe-nav__write" data-pin="" onClick={() => setOpenAnd(false)}>
           {t('shell-write-post', { defaultValue: 'Write a post' })}

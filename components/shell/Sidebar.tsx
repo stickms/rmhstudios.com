@@ -1,4 +1,4 @@
-import { Suspense, lazy, useRef, useState, type CSSProperties } from 'react';
+import { Suspense, lazy, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useResolvedUser, useSession } from '@/components/Providers';
@@ -8,7 +8,10 @@ import { SECTIONS, WRITE_HREF, currentSection, pageOwnsPrimary, viewerPathFor } 
 import { usePathname } from './shell-router-state';
 import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
-import { useGlobeView } from './use-globe-view';
+import { SIDEBAR_NAV, isNavGroup, isNavLeafActive } from '@/lib/sidebar-nav';
+
+/** Destinations the five section words already lead to. */
+const SECTION_HREFS = new Set(['/', '/explore', '/games', '/messages']);
 
 /** The handle's menu is a lazy chunk: nothing in it is needed until it is opened. */
 const AccountMenu = lazy(() => import('./AccountMenu').then((m) => ({ default: m.AccountMenu })));
@@ -32,10 +35,20 @@ export function Sidebar() {
   const labels = useSectionLabels();
   const inbox = useInboxCount(Boolean(session));
 
-  // The brand globe is the same body as the phone's (lib/globe): it turns with a drag and with the page's scroll,
-  // ripples and dents under a press, and drifts until taken hold of. A plain click is still the link home.
-  const globeRef = useRef<HTMLAnchorElement | null>(null);
-  useGlobeView(() => (globeRef.current ? { stage: globeRef.current, points: 0 } : null));
+  // The places the five words do not name (owner, 2026-11-12: "add more links to the left sidebar on desktop"): every
+  // other destination the globe carries, as a second, quieter list of words.
+  const isAdmin = Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
+  const signedIn = Boolean(session);
+  const more = useMemo(
+    () =>
+      SIDEBAR_NAV.flatMap((item) => (isNavGroup(item) ? item.children : [item])).filter(
+        (leaf) =>
+          !SECTION_HREFS.has(leaf.href) &&
+          (!leaf.requiresAuth || signedIn) &&
+          (!leaf.requiresAdmin || isAdmin),
+      ),
+    [signedIn, isAdmin],
+  );
 
   const menuAnchor = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -51,7 +64,11 @@ export function Sidebar() {
   return (
     <aside className="site-sidebar">
       <div className="site-sidebar__inner">
-        <p className="site-sidebar__brand">{t('shell-brand', { defaultValue: 'RMH Studios' })}</p>
+        <p className="site-sidebar__brand">
+          <Link to="/" aria-label={t('shell-home-aria', { defaultValue: 'RMH Studios front page' })}>
+            {t('shell-brand', { defaultValue: 'RMH Studios' })}
+          </Link>
+        </p>
 
         <nav aria-label={t('shell-sections-label', { defaultValue: 'Sections' })}>
           <ul className="site-sidebar__list">
@@ -142,15 +159,32 @@ export function Sidebar() {
           </div>
         )}
 
-        <Link
-          ref={globeRef}
-          to="/"
-          draggable={false}
-          className="site-sidebar__globe chrome-globe"
-          style={{ '--d': '72px' } as CSSProperties}
-          data-chrome="ball"
-          aria-label={t('shell-home-aria', { defaultValue: 'RMH Studios front page' })}
-        />
+        {more.length > 0 && (
+          <nav aria-label={t('shell-sections-more', { defaultValue: 'More places' })}>
+            <ul className="site-sidebar__list site-sidebar__list--more">
+              {more.map((leaf) => (
+                <li key={leaf.id}>
+                  {leaf.external ? (
+                    <a href={leaf.href} className="site-sidebar__link">
+                      {t(leaf.tKey, { defaultValue: leaf.label })}
+                    </a>
+                  ) : (
+                    <Link
+                      to={leaf.href}
+                      className="site-sidebar__link"
+                      aria-current={isNavLeafActive(pathname, leaf) ? 'page' : undefined}
+                    >
+                      {t(leaf.tKey, { defaultValue: leaf.label })}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+
+        {/* The globe itself is GlobeNav's (one element for phone and desktop); this keeps its place at the foot. */}
+        <div className="site-sidebar__globe-space" aria-hidden />
       </div>
     </aside>
   );
