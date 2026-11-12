@@ -22,6 +22,7 @@ and deploy pipeline see [`architecture.md`](./architecture.md) §2–3 and
 
 ```bash
 pnpm check:consistency        # the commit gate (guard tests + lint + tsc + docs freshness)
+pnpm check:consistency --fast # what the hooks run: no tsc, no docs freshness (about 10 s, under 1 GB)
 pnpm test                     # main suite (vitest.config.ts); measure with `time pnpm test`
 pnpm test features/slice-it/engine        # one file or directory
 pnpm test:watch               # watch mode
@@ -45,6 +46,79 @@ FOUC contract and the test-discovery gate — plus eslint on the changed files,
 `git commit` by `.githooks/pre-commit` (`pnpm hooks:install`) and by
 `.claude/hooks/commit-gate.sh` in agent sessions. A new guard test belongs in
 the `GATE_TESTS` list in `scripts/check-consistency.sh`.
+
+### The commit gate's budget
+
+The fast gate (`pnpm check:consistency --fast`, what both hooks run) has a
+budget: **under 60 s and under 3 GB peak** on a 4-core / 15 GB cloud container.
+It was already inside it before audit OP1 touched it, which is the finding: the
+fast gate was never the step that ran out of memory. Measured 2026-11-12 on that box, wall time and peak
+resident memory summed over the step's whole process tree:
+
+| Staged change                 | Step                    | Before (time · peak) | After (time · peak) |
+| ----------------------------- | ----------------------- | -------------------- | ------------------- |
+| 3 components (`.tsx`)         | whole gate              | 10.2 s · 907 MB      | 10.2 s · 643 MB     |
+|                               | vitest, 28 gate files   | 7.9 s · 1010 MB      | 8.1 s · 656 MB      |
+|                               | eslint, cold cache      | 2.1 s · 464 MB       | 1.7 s · 395 MB      |
+|                               | eslint, warm cache      | 1.4 s · 334 MB       | 1.1 s · 227 MB      |
+| 1 stylesheet                  | whole gate              | 9.9 s · 916 MB       | 8.8 s · 742 MB      |
+|                               | vitest, 28 gate files   | 10.9 s · 985 MB      | 7.6 s · 664 MB      |
+|                               | eslint                  | not started          | not started         |
+| 40 files (`.tsx` and `.ts`)   | whole gate              | 13.1 s · 962 MB      | 11.4 s · 676 MB     |
+|                               | vitest, 28 gate files   | 7.1 s · 913 MB       | 7.1 s · 647 MB      |
+|                               | eslint, cold cache      | 3.8 s · 602 MB       | 3.4 s · 499 MB      |
+|                               | eslint, warm cache      | 1.5 s · 342 MB       | 1.1 s · 227 MB      |
+| 1 Markdown file               | whole gate              | 9.8 s · 1031 MB      | 8.2 s · 659 MB      |
+|                               | vitest, 28 gate files   | 8.9 s · 893 MB       | 8.6 s · 723 MB      |
+|                               | eslint                  | not started          | not started         |
+| any `.ts` (not in `--fast`)   | `tsc`, cold             | over 10 GB at 33 s   | unchanged           |
+|                               | `tsc`, warm buildinfo   | 9.9 s · 2942 MB      | unchanged           |
+
+"Before" is the gate as it stood at `a2892d634`, run back to back with "after" on
+the same staged change with no other heavy job on the box. The added-line scans
+(steps 1 to 3) are under half a second and are inside the whole-gate rows. Time
+did not need fixing and barely moved; the cap on workers took about 300 MB off
+the peak.
+
+Three things follow from the numbers.
+
+**Every gate runs on every commit; nothing is scoped to the staged paths.** The
+28 gate files cost the same 7–9 s whatever is staged, so a path-to-gate map would
+save a few seconds and add a hand-maintained list that must be right for every
+gate that reads the tree by glob. The fast path caps vitest at 3 workers
+(`FAST_GATE_WORKERS`) so the step's memory does not grow with the core count, and
+starts `node <bin>` instead of `pnpm exec <bin>`.
+
+**The step that does not fit is a cold `tsc`, and the fast gate never starts
+it.** The whole-repo typecheck is incremental, and what it costs depends on
+whether its `.tsbuildinfo` exists. Cold (a fresh clone, a new worktree, a new
+container), `pnpm run typecheck` was past 10 GB after 33 s when the measurement
+stopped it; single-threaded with `GOMEMLIMIT=4GiB GOGC=25` it finishes at a
+10.0 GB peak, which only fits if nothing else heavy is running. Warm, the same
+check is 10 to 13 s and 2.9 GB. So the full `pnpm check:consistency` is a pre-PR
+run on a box with nothing else going on, and its first run in a checkout is the
+expensive one; it is not a per-commit step here (audit AR1 is the fix).
+
+**A killed step says so.** `scripts/gate-step.sh` runs every tool and tells a
+rule failure from a step that never finished: exit 129–192 (`137` SIGKILL, `143`
+SIGTERM, `134` SIGABRT), the `Command was killed with SIG…` line `pnpm exec`
+prints while exiting 1, and a JavaScript heap-limit abort. The step gets a `☠`
+line with its name and the signal, and the gate exits **3** ("incomplete"), not 1
+— a killed step proves nothing about the change. Before this, an
+out-of-memory-killed `tsc` printed `✗ tsc --noEmit`, which read as "the gate
+cannot run here" and was skipped on every commit of five phases.
+
+The agent hook had its own reason for not gating: it ran the gate in
+`$CLAUDE_PROJECT_DIR` whatever the command said, so a commit made in a git
+worktree was checked against the main checkout's tree (usually clean: an instant
+pass) and `git -C <dir> commit` was not seen at all. `.claude/hooks/commit-gate-parse.mjs`
+now reads the command for where each commit happens, whether the command stages
+for itself (then the working tree is gated, untracked files included), and
+whether it carries `RMH_SKIP_COMMIT_GATE=1`. `lib/__tests__/commit-gate-hook.test.ts`
+pins the hook, the parser and the kill classification against a stub gate.
+
+To re-measure, stage a change and run `time pnpm check:consistency --fast`; each
+`✓` line carries its step's wall time.
 
 ## The suites
 
