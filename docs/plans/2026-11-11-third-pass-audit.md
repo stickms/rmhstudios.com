@@ -721,7 +721,7 @@ RT4: open
 DT1: open
 DT2: open
 DT3: open
-OP1: open
+OP1: done, pending the ten-commit count (2026-11-12: the fast gate was never the problem: 7-13 s and about 1 GB before, 8-11 s and about 0.7 GB after, for a docs-only, CSS-only, 3-file and 40-file staged change. Two real causes. The agent hook gated $CLAUDE_PROJECT_DIR whatever the command said, so a worktree commit was checked against the main checkout or, as `git -C dir commit`, not at all; and an out-of-memory-killed tsc in the full gate printed the same line as a type error, which was read as "the gate cannot run here". The hook now gates the checkout the commit happens in, a killed step is named with its signal and exits 3, vitest is capped at 3 workers, no gate is dropped. Not done: a cold whole-repo tsc still peaks near 10 GB (2.9 GB and 10 s once its .tsbuildinfo exists), so the first full `pnpm check:consistency` in a checkout does not fit beside another heavy job; that is AR1. Numbers in docs/testing.md)
 OP2: done (phase 33: up to three SP/MP pairs when only wall-clock time is over; each pair reported)
 OP3: open (first audit D2 in progress)
 OP4: open (owner call: box-local store or a vendor)

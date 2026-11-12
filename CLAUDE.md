@@ -105,15 +105,31 @@ It is wired to fire on its own, so "I forgot" is not a failure mode:
   blocks the commit and hands the reasons back to the agent to fix. (Both files
   are checked in on purpose — `.gitignore` keeps the rest of `.claude/` local.
   Claude Code asks you to trust project hooks the first time they run.)
+  It gates the checkout the commit happens in (`cd <worktree> && git commit`,
+  `git -C <worktree> commit`), with that checkout's own gate script. A command
+  that stages and commits in one call (`git add -A && git commit`, `git commit -a`)
+  is gated on the whole working tree, untracked files included, because nothing
+  is staged yet when the hook runs — stage first and commit separately to gate
+  exactly the commit.
 - **Humans:** `pnpm hooks:install` once per clone points `core.hooksPath` at
   `.githooks/`, whose `pre-commit` runs the same gate (skipping it if an agent
   already gated that exact staged tree).
+
+The fast gate both hooks run is about 10 s and under 1 GB on a 4-core / 15 GB box
+whatever is staged; the one step that does not fit there, a cold whole-repo
+`tsc` (about 10 GB; about 3 GB once its `.tsbuildinfo` exists), is not in it. A step that is killed (a signal, the out-of-memory
+killer) prints a `☠` line naming the step and the signal and the gate exits 3,
+"incomplete" — never the `✗` of a rule failure. Numbers and how to re-measure:
+[`docs/testing.md`](docs/testing.md) §"The commit gate's budget".
 
 Two rules about the gate itself:
 
 1. **A failing gate is fixed, not bypassed.** `--no-verify` and
    `RMH_SKIP_COMMIT_GATE=1` exist for emergencies and leave a trace — if you
-   use one, say why in the commit message.
+   use one, say why in the commit message. In an agent session the hatch is
+   written in the command (`RMH_SKIP_COMMIT_GATE=1 git commit …`); `--no-verify`
+   does not reach the agent hook. "The gate is too slow or runs out of memory" is
+   not a reason any more: if a `☠` line says so, name that step and signal.
 2. **If a rule is genuinely wrong for your change, change the rule** in the
    same commit (the allowlists in `lib/__tests__/design-consistency.test.ts` and
    `eslint-local-rules/design-scope.js` are documented and one-directional — entries come out, they do not go in),
