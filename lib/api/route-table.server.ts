@@ -5,28 +5,218 @@
  * these through `lib/api/route-dispatch.server.ts`.
  */
 import type { ApiRoute } from '@/lib/api/route.server';
-import { route as r0 } from '@/lib/predictions/api/admin.predictions.server';
-import { route as r1 } from '@/lib/predictions/api/admin.predictions.$id.moderate.server';
-import { route as r2 } from '@/lib/predictions/api/admin.predictions.$id.resolve.server';
-import { route as r3 } from '@/lib/lists/api/lists.server';
-import { route as r4 } from '@/lib/lists/api/lists.$id.server';
-import { route as r5 } from '@/lib/lists/api/lists.$id.feed.server';
-import { route as r6 } from '@/lib/lists/api/lists.$id.members.server';
-import { route as r7 } from '@/lib/predictions/api/predictions.server';
-import { route as r8 } from '@/lib/predictions/api/predictions.$id.comments.server';
-import { route as r9 } from '@/lib/predictions/api/predictions.$id.devils-advocate.server';
-import { route as r10 } from '@/lib/predictions/api/predictions.$id.trade.server';
+import { route as r0 } from '@/lib/recovery/api/account.recovery.codes.server';
+import { route as r1 } from '@/lib/recovery/api/account.recovery.complete.server';
+import { route as r2 } from '@/lib/recovery/api/account.recovery.contacts.server';
+import { route as r3 } from '@/lib/recovery/api/account.recovery.contacts.$id.server';
+import { route as r4 } from '@/lib/recovery/api/account.recovery.hold.server';
+import { route as r5 } from '@/lib/recovery/api/account.recovery.requests.server';
+import { route as r6 } from '@/lib/recovery/api/account.recovery.requests.$id.server';
+import { route as r7 } from '@/lib/admin/api/admin.albums.server';
+import { route as r8 } from '@/lib/admin/api/admin.albums.$id.server';
+import { route as r9 } from '@/lib/admin/api/admin.albums.$id.reorder.server';
+import { route as r10 } from '@/lib/admin/api/admin.albums.$id.slides.$slideId.server';
+import { route as r11 } from '@/lib/admin/api/admin.analytics.server';
+import { route as r12 } from '@/lib/admin/api/admin.announcements.server';
+import { route as r13 } from '@/lib/admin/api/admin.announcements.$id.server';
+import { route as r14 } from '@/lib/admin/api/admin.appeals.server';
+import { route as r15 } from '@/lib/admin/api/admin.appeals.$id.server';
+import { route as r16 } from '@/lib/admin/api/admin.bots.server';
+import { route as r17 } from '@/lib/admin/api/admin.census.server';
+import { route as r18 } from '@/lib/admin/api/admin.economy.server';
+import { route as r19 } from '@/lib/admin/api/admin.emoji-packs.server';
+import { route as r20 } from '@/lib/admin/api/admin.emoji-packs.$id.server';
+import { route as r21 } from '@/lib/admin/api/admin.flags.server';
+import { route as r22 } from '@/lib/admin/api/admin.forecasting.seasons.server';
+import { route as r23 } from '@/lib/library/api/admin.library.server';
+import { route as r24 } from '@/lib/library/api/admin.library.$id.server';
+import { route as r25 } from '@/lib/library/api/admin.library.migrate.server';
+import { route as r26 } from '@/lib/library/api/admin.library.quota-requests.server';
+import { route as r27 } from '@/lib/library/api/admin.library.reorder.server';
+import { route as r28 } from '@/lib/library/api/admin.library.storage-health.server';
+import { route as r29 } from '@/lib/admin/api/admin.link-rules.server';
+import { route as r30 } from '@/lib/admin/api/admin.market.server';
+import { route as r31 } from '@/lib/admin/api/admin.market.$id.server';
+import { route as r32 } from '@/lib/admin/api/admin.oncall.server';
+import { route as r33 } from '@/lib/admin/api/admin.oncall-rules.server';
+import { route as r34 } from '@/lib/admin/api/admin.oncall-series.server';
+import { route as r35 } from '@/lib/predictions/api/admin.predictions.server';
+import { route as r36 } from '@/lib/predictions/api/admin.predictions.$id.moderate.server';
+import { route as r37 } from '@/lib/predictions/api/admin.predictions.$id.resolve.server';
+import { route as r38 } from '@/lib/admin/api/admin.qotd.server';
+import { route as r39 } from '@/lib/admin/api/admin.qotd.$id.server';
+import { route as r40 } from '@/lib/admin/api/admin.redemptions.server';
+import { route as r41 } from '@/lib/admin/api/admin.redemptions.$id.server';
+import { route as r42 } from '@/lib/admin/api/admin.reports.server';
+import { route as r43 } from '@/lib/admin/api/admin.reports.$id.server';
+import { route as r44 } from '@/lib/admin/api/admin.review-counts.server';
+import { route as r45 } from '@/lib/rideshare/api/admin.rideshare.applications.server';
+import { route as r46 } from '@/lib/rideshare/api/admin.rideshare.rides.server';
+import { route as r47 } from '@/lib/creator/api/admin.studio-challenges.upload.server';
+import { route as r48 } from '@/lib/admin/api/admin.users.$id.ban.server';
+import { route as r49 } from '@/lib/admin/api/admin.users.$id.grant-membership.server';
+import { route as r50 } from '@/lib/admin/api/admin.users.$id.set-coins.server';
+import { route as r51 } from '@/lib/admin/api/admin.users.$id.strike.server';
+import { route as r52 } from '@/lib/rmhvibe/api/admin.vibe.backfill-thumbs.server';
+import { route as r53 } from '@/lib/admin/api/admin.view-as.server';
+import { route as r54 } from '@/lib/feed/api/ai.ask-feed.server';
+import { route as r55 } from '@/lib/feed/api/ai.search.server';
+import { route as r56 } from '@/lib/ai/api/ai.takeaways.server';
+import { route as r57 } from '@/features/altair/api/altair.heat.server';
+import { route as r58 } from '@/features/altair/api/altair.leaderboard.server';
+import { route as r59 } from '@/features/altair/api/altair.run.start.server';
+import { route as r60 } from '@/features/altair/api/altair.run.status.server';
+import { route as r61 } from '@/lib/api/routes/announcements.server';
+import { route as r62 } from '@/lib/arcade/api/arcade.backlog.server';
+import { route as r63 } from '@/lib/arcade/api/arcade.daily.server';
+import { route as r64 } from '@/lib/arcade/api/arcade.patch-notes.server';
+import { route as r65 } from '@/lib/arcade/api/arcade.rival.server';
+import { route as r66 } from '@/lib/arcade/api/arcade.tips.server';
+import { route as r67 } from '@/lib/assistant/api/assistant.server';
+import { route as r68 } from '@/lib/battlepass/api/battlepass.claim.server';
+import { route as r69 } from '@/lib/battlepass/api/battlepass.unlock.server';
+import { route as r70 } from '@/lib/call/api/calls.answer.server';
+import { route as r71 } from '@/lib/call/api/calls.ice.server';
+import { route as r72 } from '@/lib/call/api/calls.privacy.server';
+import { route as r73 } from '@/lib/api/routes/casino.rooms.server';
+import { route as r74 } from '@/lib/chat-plus/api/chats.$kind.$id.checklist.server';
+import { route as r75 } from '@/lib/chat-plus/api/chats.$kind.$id.command.server';
+import { route as r76 } from '@/lib/chat-plus/api/chats.$kind.$id.meta.server';
+import { route as r77 } from '@/lib/chat-plus/api/chats.$kind.$id.pin.server';
+import { route as r78 } from '@/lib/chat-plus/api/chats.$kind.$id.vote.server';
+import { route as r79 } from '@/lib/api/routes/coins.bet.server';
+import { route as r80 } from '@/lib/api/routes/coins.claim.server';
+import { route as r81 } from '@/lib/gifting/api/coins.gift.server';
+import { route as r82 } from '@/lib/economy/api/coins.tip.server';
+import { route as r83 } from '@/lib/social/api/comments.$commentId.react.server';
+import { route as r84 } from '@/lib/communities/api/communities.server';
+import { route as r85 } from '@/lib/communities/api/communities.$slug.server';
+import { route as r86 } from '@/lib/communities/api/communities.$slug.announcements.server';
+import { route as r87 } from '@/lib/communities/api/communities.$slug.announcements.$id.server';
+import { route as r88 } from '@/lib/communities/api/communities.$slug.feed.server';
+import { route as r89 } from '@/lib/communities/api/communities.$slug.join.server';
+import { route as r90 } from '@/lib/communities/api/communities.$slug.members.server';
+import { route as r91 } from '@/lib/communities/api/communities.$slug.members.$userId.server';
+import { route as r92 } from '@/lib/party/api/connections.grids.server';
+import { route as r93 } from '@/lib/party/api/connections.grids.$id.server';
+import { route as r94 } from '@/lib/party/api/connections.grids.$id.guess.server';
+import { route as r95 } from '@/lib/party/api/connections.grids.$id.rate.server';
+import { route as r96 } from '@/lib/party/api/connections.grids.$id.schedule.server';
+import { route as r97 } from '@/lib/creator/api/creators.$id.join.server';
+import { route as r98 } from '@/lib/lists/api/lists.server';
+import { route as r99 } from '@/lib/lists/api/lists.$id.server';
+import { route as r100 } from '@/lib/lists/api/lists.$id.feed.server';
+import { route as r101 } from '@/lib/lists/api/lists.$id.members.server';
+import { route as r102 } from '@/lib/predictions/api/predictions.server';
+import { route as r103 } from '@/lib/predictions/api/predictions.$id.comments.server';
+import { route as r104 } from '@/lib/predictions/api/predictions.$id.devils-advocate.server';
+import { route as r105 } from '@/lib/predictions/api/predictions.$id.trade.server';
 
 export const API_ROUTES: readonly ApiRoute[] = [
-  r0, // /api/admin/predictions
-  r1, // /api/admin/predictions/$id/moderate
-  r2, // /api/admin/predictions/$id/resolve
-  r3, // /api/lists
-  r4, // /api/lists/$id
-  r5, // /api/lists/$id/feed
-  r6, // /api/lists/$id/members
-  r7, // /api/predictions
-  r8, // /api/predictions/$id/comments
-  r9, // /api/predictions/$id/devils-advocate
-  r10, // /api/predictions/$id/trade
+  r0, // /api/account/recovery/codes
+  r1, // /api/account/recovery/complete
+  r2, // /api/account/recovery/contacts
+  r3, // /api/account/recovery/contacts/$id
+  r4, // /api/account/recovery/hold
+  r5, // /api/account/recovery/requests
+  r6, // /api/account/recovery/requests/$id
+  r7, // /api/admin/albums
+  r8, // /api/admin/albums/$id
+  r9, // /api/admin/albums/$id/reorder
+  r10, // /api/admin/albums/$id/slides/$slideId
+  r11, // /api/admin/analytics
+  r12, // /api/admin/announcements
+  r13, // /api/admin/announcements/$id
+  r14, // /api/admin/appeals
+  r15, // /api/admin/appeals/$id
+  r16, // /api/admin/bots
+  r17, // /api/admin/census
+  r18, // /api/admin/economy
+  r19, // /api/admin/emoji-packs
+  r20, // /api/admin/emoji-packs/$id
+  r21, // /api/admin/flags
+  r22, // /api/admin/forecasting/seasons
+  r23, // /api/admin/library
+  r24, // /api/admin/library/$id
+  r25, // /api/admin/library/migrate
+  r26, // /api/admin/library/quota-requests
+  r27, // /api/admin/library/reorder
+  r28, // /api/admin/library/storage-health
+  r29, // /api/admin/link-rules
+  r30, // /api/admin/market
+  r31, // /api/admin/market/$id
+  r32, // /api/admin/oncall
+  r33, // /api/admin/oncall-rules
+  r34, // /api/admin/oncall-series
+  r35, // /api/admin/predictions
+  r36, // /api/admin/predictions/$id/moderate
+  r37, // /api/admin/predictions/$id/resolve
+  r38, // /api/admin/qotd
+  r39, // /api/admin/qotd/$id
+  r40, // /api/admin/redemptions
+  r41, // /api/admin/redemptions/$id
+  r42, // /api/admin/reports
+  r43, // /api/admin/reports/$id
+  r44, // /api/admin/review-counts
+  r45, // /api/admin/rideshare/applications
+  r46, // /api/admin/rideshare/rides
+  r47, // /api/admin/studio-challenges/upload
+  r48, // /api/admin/users/$id/ban
+  r49, // /api/admin/users/$id/grant-membership
+  r50, // /api/admin/users/$id/set-coins
+  r51, // /api/admin/users/$id/strike
+  r52, // /api/admin/vibe/backfill-thumbs
+  r53, // /api/admin/view-as
+  r54, // /api/ai/ask-feed
+  r55, // /api/ai/search
+  r56, // /api/ai/takeaways
+  r57, // /api/altair/heat
+  r58, // /api/altair/leaderboard
+  r59, // /api/altair/run/start
+  r60, // /api/altair/run/status
+  r61, // /api/announcements
+  r62, // /api/arcade/backlog
+  r63, // /api/arcade/daily
+  r64, // /api/arcade/patch-notes
+  r65, // /api/arcade/rival
+  r66, // /api/arcade/tips
+  r67, // /api/assistant
+  r68, // /api/battlepass/claim
+  r69, // /api/battlepass/unlock
+  r70, // /api/calls/answer
+  r71, // /api/calls/ice
+  r72, // /api/calls/privacy
+  r73, // /api/casino/rooms
+  r74, // /api/chats/$kind/$id/checklist
+  r75, // /api/chats/$kind/$id/command
+  r76, // /api/chats/$kind/$id/meta
+  r77, // /api/chats/$kind/$id/pin
+  r78, // /api/chats/$kind/$id/vote
+  r79, // /api/coins/bet
+  r80, // /api/coins/claim
+  r81, // /api/coins/gift
+  r82, // /api/coins/tip
+  r83, // /api/comments/$commentId/react
+  r84, // /api/communities
+  r85, // /api/communities/$slug
+  r86, // /api/communities/$slug/announcements
+  r87, // /api/communities/$slug/announcements/$id
+  r88, // /api/communities/$slug/feed
+  r89, // /api/communities/$slug/join
+  r90, // /api/communities/$slug/members
+  r91, // /api/communities/$slug/members/$userId
+  r92, // /api/connections/grids
+  r93, // /api/connections/grids/$id
+  r94, // /api/connections/grids/$id/guess
+  r95, // /api/connections/grids/$id/rate
+  r96, // /api/connections/grids/$id/schedule
+  r97, // /api/creators/$id/join
+  r98, // /api/lists
+  r99, // /api/lists/$id
+  r100, // /api/lists/$id/feed
+  r101, // /api/lists/$id/members
+  r102, // /api/predictions
+  r103, // /api/predictions/$id/comments
+  r104, // /api/predictions/$id/devils-advocate
+  r105, // /api/predictions/$id/trade
 ];

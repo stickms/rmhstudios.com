@@ -6,6 +6,7 @@
  * toast. (The rideshare routes have their own table in lib/rideshare/__tests__.)
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({ getSession: vi.fn() }));
 
@@ -28,12 +29,7 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  // A route file exports `Route`; a registered endpoint (lib/api/route.server.ts) exports `route`.
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route?: { options: { server: { handlers: Record<string, Handler> } } };
-    route?: { handlers: Record<string, Handler> };
-  };
-  return (m.route?.handlers ?? m.Route!.options.server.handlers)[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
 interface Case {
@@ -104,7 +100,7 @@ const CASES: Case[] = [
   },
   {
     name: 'comment reaction: empty emoji',
-    mod: '@/app/routes/api/comments/$commentId/react',
+    mod: '@/lib/social/api/comments.$commentId.react.server',
     method: 'POST',
     body: { emoji: '' },
     params: { commentId: 'c1' },
@@ -112,7 +108,7 @@ const CASES: Case[] = [
   },
   {
     name: 'comment reaction: not an allowed reaction',
-    mod: '@/app/routes/api/comments/$commentId/react',
+    mod: '@/lib/social/api/comments.$commentId.react.server',
     method: 'POST',
     body: { emoji: 'definitely-not-an-emoji' },
     params: { commentId: 'c1' },

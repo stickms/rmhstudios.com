@@ -6,6 +6,7 @@
  * route handlers.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({
   getSession: vi.fn(),
@@ -49,19 +50,14 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  // A route file exports `Route`; a registered endpoint (lib/api/route.server.ts) exports `route`.
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route?: { options: { server: { handlers: Record<string, Handler> } } };
-    route?: { handlers: Record<string, Handler> };
-  };
-  return (m.route?.handlers ?? m.Route!.options.server.handlers)[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
-const ASK_FEED = '@/app/routes/api/ai/ask-feed';
-const AI_SEARCH = '@/app/routes/api/ai/search';
+const ASK_FEED = '@/lib/feed/api/ai.ask-feed.server';
+const AI_SEARCH = '@/lib/feed/api/ai.search.server';
 const MENTION = '@/app/routes/api/feed/mention-search';
 const QUOTA = '@/app/routes/api/library/quota';
-const REDEMPTION = '@/app/routes/api/admin/redemptions/$id';
+const REDEMPTION = '@/lib/admin/api/admin.redemptions.$id.server';
 const HOMES_AI = '@/app/routes/api/homes/ai-image';
 
 function req(method: string, body?: unknown, cookie = true, search = ''): Request {

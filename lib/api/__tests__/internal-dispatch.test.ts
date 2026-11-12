@@ -9,7 +9,7 @@ import { isInternalRequest, markInternalRequest } from '@/lib/api/internal-reque
 
 describe('in-process API reads', () => {
   it('maps a route file to its contract path template', () => {
-    expect(templateOfRouteFile('/app/routes/api/admin/flags.ts')).toBe('/api/admin/flags');
+    expect(templateOfRouteFile('/app/routes/api/health.ts')).toBe('/api/health');
     expect(templateOfRouteFile('/app/routes/api/series/$id/index.ts')).toBe('/api/series/$id');
     expect(templateOfRouteFile('/app/routes/api/tf2-hud/$id.download.ts')).toBe(
       '/api/tf2-hud/$id/download',

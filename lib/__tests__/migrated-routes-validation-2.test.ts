@@ -6,6 +6,7 @@
  * `migrated-routes-validation.test.ts`.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({ getSession: vi.fn() }));
 
@@ -26,12 +27,7 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  // A route file exports `Route`; a registered endpoint (lib/api/route.server.ts) exports `route`.
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route?: { options: { server: { handlers: Record<string, Handler> } } };
-    route?: { handlers: Record<string, Handler> };
-  };
-  return (m.route?.handlers ?? m.Route!.options.server.handlers)[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
 interface Case {
@@ -46,11 +42,11 @@ const LAUNDRY = '@/app/routes/api/laundry-sort/score';
 const FORGE = '@/app/routes/api/signal-forge/score';
 const ALTAIR_SCORE = '@/app/routes/api/altair/score';
 const ALTAIR_META = '@/app/routes/api/altair/meta';
-const BET = '@/app/routes/api/coins/bet';
+const BET = '@/lib/api/routes/coins.bet.server';
 const PURCHASE = '@/app/routes/api/coins/purchase';
 const VERSECRAFT = '@/app/routes/api/versecraft/save';
-const PASS_CLAIM = '@/app/routes/api/battlepass/claim';
-const PASS_UNLOCK = '@/app/routes/api/battlepass/unlock';
+const PASS_CLAIM = '@/lib/battlepass/api/battlepass.claim.server';
+const PASS_UNLOCK = '@/lib/battlepass/api/battlepass.unlock.server';
 
 const CASES: Case[] = [
   {
@@ -258,7 +254,7 @@ const POSTS = [
   ALTAIR_META,
   BET,
   PURCHASE,
-  '@/app/routes/api/coins/claim',
+  '@/lib/api/routes/coins.claim.server',
   '@/app/routes/api/signal-forge/abandon',
   VERSECRAFT,
   PASS_CLAIM,

@@ -6,6 +6,7 @@
  * route handlers.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => {
   class ReplayError extends Error {
@@ -81,19 +82,14 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  // A route file exports `Route`; a registered endpoint (lib/api/route.server.ts) exports `route`.
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route?: { options: { server: { handlers: Record<string, Handler> } } };
-    route?: { handlers: Record<string, Handler> };
-  };
-  return (m.route?.handlers ?? m.Route!.options.server.handlers)[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
 const REPLAYS = '@/app/routes/api/replays/index';
 const MOMENTS = '@/app/routes/api/moments/index';
-const GIFT = '@/app/routes/api/coins/gift';
+const GIFT = '@/lib/gifting/api/coins.gift.server';
 const TRADE = '@/lib/predictions/api/predictions.$id.trade.server';
-const BACKFILL = '@/app/routes/api/admin/vibe/backfill-thumbs';
+const BACKFILL = '@/lib/rmhvibe/api/admin.vibe.backfill-thumbs.server';
 const VB_SCORE = '@/app/routes/api/void-breaker/score';
 const DISCORD = '@/app/routes/api/discord/token';
 

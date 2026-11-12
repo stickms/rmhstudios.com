@@ -6,6 +6,7 @@
  * clients read. Drives the real route handlers.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({ getSession: vi.fn() }));
 
@@ -54,17 +55,12 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  // A route file exports `Route`; a registered endpoint (lib/api/route.server.ts) exports `route`.
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route?: { options: { server: { handlers: Record<string, Handler> } } };
-    route?: { handlers: Record<string, Handler> };
-  };
-  return (m.route?.handlers ?? m.Route!.options.server.handlers)[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
-const TIP = '@/app/routes/api/coins/tip';
+const TIP = '@/lib/economy/api/coins.tip.server';
 const GIFT = '@/app/routes/api/gift-sub';
-const JOIN = '@/app/routes/api/creators/$id/join';
+const JOIN = '@/lib/creator/api/creators.$id.join.server';
 const WAGER = '@/app/routes/api/wager/index';
 const TOURNEY = '@/app/routes/api/tournaments/index';
 const T_REPORT = '@/app/routes/api/tournaments/$id/matches/$matchId/report';

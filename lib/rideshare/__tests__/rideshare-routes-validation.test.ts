@@ -5,6 +5,7 @@
  * exact status and `{ error }` text the client has always shown.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({
   getSession: vi.fn(),
@@ -46,10 +47,7 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
-  };
-  return m.Route.options.server.handlers[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
 function call(
@@ -236,7 +234,7 @@ const CASES: Case[] = [
   },
   {
     name: 'admin decision: bad action',
-    mod: '@/app/routes/api/admin/rideshare/applications',
+    mod: '@/lib/rideshare/api/admin.rideshare.applications.server',
     method: 'PATCH',
     body: { id: 'd1', action: 'maybe' },
     status: 400,
@@ -247,7 +245,7 @@ const CASES: Case[] = [
 describe('rideshare routes keep their bespoke 400 messages', () => {
   for (const c of CASES) {
     it(c.name, async () => {
-      if (c.mod.endsWith('admin/rideshare/applications')) {
+      if (c.mod.includes('admin.rideshare.applications')) {
         h.getSession.mockResolvedValue({ user: { id: 'a1', isAdmin: true } });
       }
       const res = await call(await handler(c.mod, c.method), c.method, c.body);
