@@ -51,7 +51,7 @@ export default function HuntPanel() {
   return (
     <div className="space-y-[var(--site-section-gap)]">
       <form
-        className="space-y-3 rounded-site p-5"
+        className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
         onSubmit={(e) => {
           e.preventDefault();
           void run(async () => {
@@ -74,8 +74,8 @@ export default function HuntPanel() {
           aria-label={t('hunt-admin-name', { defaultValue: 'Hunt title' })}
         />
         {clues.map((c, i) => (
-          <fieldset key={i} className="surface-field space-y-2 rounded-site p-4">
-            <legend className="px-1 text-xs text-site-text-muted">
+          <fieldset key={i} className="min-w-0 space-y-2">
+            <legend className="t-label pb-2">
               {t('hunt-admin-clue', { defaultValue: 'Clue {{n}}', n: i + 1 })}
             </legend>
             <Input
@@ -153,15 +153,15 @@ export default function HuntPanel() {
         </div>
       </form>
 
-      <ul className="space-y-3">
+      <ul className="divide-y divide-site-border border-t border-site-border">
         {q.data?.hunts.map((h) => (
           <li
             key={h.id}
-            className="flex flex-wrap items-center gap-3 rounded-site px-4 py-3"
+            className="flex flex-wrap items-center gap-3 py-3"
           >
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-site-text">{h.title}</p>
-              <p className="text-xs text-site-text-muted">
+              <p className="t-body font-medium text-site-text">{h.title}</p>
+              <p className="t-body text-site-text-muted">
                 {t('hunt-admin-meta', {
                   defaultValue: '{{clues}} clues, {{done}} finishers',
                   clues: h.clues.length,

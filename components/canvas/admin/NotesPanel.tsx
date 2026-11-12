@@ -54,15 +54,15 @@ export default function NotesPanel() {
       {q.data && q.data.notes.length === 0 ? (
         <EmptyState title={t('notes-empty', { defaultValue: 'No notes here' })} />
       ) : (
-        <ul className="space-y-3">
+        <ul className="divide-y divide-site-border border-t border-site-border">
           {q.data?.notes.map((n) => (
-            <li key={n.id} className="space-y-2 rounded-site px-4 py-3">
-              <p className="text-sm text-site-text">{n.body}</p>
-              <p className="line-clamp-2 text-xs text-site-text-muted">
+            <li key={n.id} className="space-y-2 py-3">
+              <p className="t-body text-site-text">{n.body}</p>
+              <p className="line-clamp-2 t-body text-site-text-muted">
                 {t('notes-on-post', { defaultValue: 'On: {{post}}', post: n.postExcerpt })}
               </p>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-site-text-muted">
+                <span className="t-meta">
                   {t('notes-counts', {
                     defaultValue: '{{up}} helpful, {{down}} not helpful',
                     up: n.helpfulCount,

@@ -127,7 +127,7 @@ function FlagsPage() {
   return (
     <PageLayout title={t('flags-title', { defaultValue: 'Feature flags' })} wide backTo="/admin">
       <AdminBody width="narrow">
-        <div className="mb-6 grid gap-2 rounded-site p-4 sm:grid-cols-[1fr_1fr_auto]">
+        <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
           <div>
             <Input
               value={newKey}
@@ -137,7 +137,7 @@ function FlagsPage() {
               aria-invalid={newKey !== '' && !keyValid}
             />
             {newKey !== '' && !keyValid ? (
-              <p className="mt-1 text-xs text-site-danger">
+              <p className="t-body mt-1 text-site-danger">
                 {t('flags-key-invalid', {
                   defaultValue:
                     'Lowercase letters, digits, dots, dashes or underscores, starting with a letter.',
@@ -164,7 +164,7 @@ function FlagsPage() {
         ) : flags.length === 0 ? (
           <EmptyState description={t('flags-empty', { defaultValue: 'No flags yet.' })} />
         ) : (
-          <ul className="divide-y divide-site-border overflow-hidden rounded-site">
+          <ul className="divide-y divide-site-border border-t border-site-border">
             {flags.map((f) => (
               <FlagRow
                 key={f.key}
@@ -203,14 +203,16 @@ function FlagRow({
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-3 px-4 py-3">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
       <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">
-        <code className="break-all font-mono text-sm text-site-accent">{flag.key}</code>
+        <code className="t-body block break-all font-mono font-medium text-site-text">
+          {flag.key}
+        </code>
         {flag.description ? (
-          <p className="truncate text-xs text-site-text-muted">{flag.description}</p>
+          <p className="t-body mt-1 text-site-text-muted">{flag.description}</p>
         ) : null}
       </div>
-      <label className="flex items-center gap-2 text-xs text-site-text-muted">
+      <label className="t-body me-auto flex items-center gap-2 text-site-text-muted sm:me-0">
         {t('flags-rollout', { defaultValue: 'Rollout %' })}
         <Input
           type="number"
@@ -223,7 +225,7 @@ function FlagRow({
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
           disabled={busy}
-          className="h-9 w-20 px-2 py-1"
+          className="w-20"
         />
       </label>
       <Switch

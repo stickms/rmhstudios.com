@@ -19,7 +19,7 @@ export function ErrorsTab({ overview }: { overview: PerfOverview }) {
 
   if (errors.length === 0) {
     return (
-      <p className="rounded-site p-6 text-center text-sm text-site-text-muted">
+      <p className="t-body py-4 text-site-text-muted">
         {t('errors-empty', { defaultValue: 'No server errors since the processes started.' })}
       </p>
     );
@@ -27,30 +27,30 @@ export function ErrorsTab({ overview }: { overview: PerfOverview }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-site-text-muted">
+      <p className="t-body text-site-text-muted">
         {t('errors-note', {
           defaultValue:
             'The 50 most recent 5xx errors held in each process’s memory. They reset when a process restarts.',
         })}
       </p>
-      <ul className="space-y-3">
+      <ul className="divide-y divide-site-border border-t border-site-border">
         {errors.map((e) => (
           <li
             key={`${e.service}:${e.pid}:${e.at}:${e.message}`}
-            className="space-y-2 rounded-site p-5"
+            className="space-y-2 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
           >
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="danger">
                 {e.status}
               </Badge>
-              <span className="font-mono text-xs break-all text-site-text">{e.route}</span>
-              <span className="ml-auto text-xs text-site-text-muted">
+              <span className="t-meta text-site-text break-all">{e.route}</span>
+              <span className="ms-auto t-meta">
                 {fmtClock(e.at)} · {e.service}:{e.pid}
               </span>
             </div>
-            <p className="text-sm break-words text-site-text">{e.message}</p>
+            <p className="t-body break-words text-site-text">{e.message}</p>
             {e.traceId && (
-              <p className="font-mono text-xs break-all text-site-text-muted">
+              <p className="t-meta break-all">
                 {t('errors-trace', { defaultValue: 'trace {{id}}', id: e.traceId })}
               </p>
             )}

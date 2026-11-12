@@ -107,19 +107,19 @@ function AdminPredictionsPage() {
         ) : (
           <>
             {/* Pending approval */}
-            <section className="space-y-3">
-              <h2 className="site-section-label">
+            <section>
+              <h2 className="t-heading pb-3 text-site-text">
                 {t('pending-approval', { defaultValue: 'Pending approval' })} ({pending.length})
               </h2>
               {pending.length === 0 ? (
                 <EmptyState title={t('none-pending', { defaultValue: 'Nothing waiting for review.' })} />
               ) : (
                 pending.map((m) => (
-                  <div key={m.id} className="flex flex-col gap-3 rounded-site p-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div key={m.id} className="flex flex-col gap-3 border-t border-site-border py-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <h3 className="text-base font-semibold text-site-text">{m.title}</h3>
-                      {m.description && <p className="mt-1 text-sm text-site-text-muted">{m.description}</p>}
-                      <p className="mt-2 text-xs text-site-text-muted">
+                      <h3 className="t-heading text-site-text">{m.title}</h3>
+                      {m.description && <p className="mt-1 t-body text-site-text-muted">{m.description}</p>}
+                      <p className="mt-2 t-body text-site-text-muted">
                         {m.creator ? `@${m.creator.handle ?? m.creator.name ?? t('user-fallback', { defaultValue: 'user' })}` : t('system', { defaultValue: 'system' })}
                         {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: new Date(m.closesAt).toLocaleString() })}` : ''}
                       </p>
@@ -138,21 +138,21 @@ function AdminPredictionsPage() {
             </section>
 
             {/* Open markets — resolve */}
-            <section className="space-y-3">
-              <h2 className="site-section-label">
+            <section>
+              <h2 className="t-heading pb-3 text-site-text">
                 {t('open-markets', { defaultValue: 'Open markets' })} ({open.length})
               </h2>
               {open.length === 0 ? (
                 <EmptyState title={t('none-open', { defaultValue: 'No open markets.' })} />
               ) : (
                 open.map((m) => (
-                  <div key={m.id} className="flex flex-col gap-3 rounded-site p-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div key={m.id} className="flex flex-col gap-3 border-t border-site-border py-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <h3 className="flex items-center gap-2 text-base font-semibold text-site-text">
+                      <h3 className="flex items-center gap-2 t-heading text-site-text">
                         {m.title}
                         {m.isAiGenerated && <Sparkles className="size-4 shrink-0 text-site-accent" aria-label={t('ai-generated', { defaultValue: 'AI generated' })} role="img" />}
                       </h3>
-                      <p className="mt-1 text-xs text-site-text-muted">
+                      <p className="mt-1 t-body text-site-text-muted">
                         {t('market-stats', { defaultValue: '{{percent}}% YES · {{volume}} vol', percent: m.yesPercent, volume: m.volume })}
                         {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: new Date(m.closesAt).toLocaleString() })}` : ''}
                       </p>

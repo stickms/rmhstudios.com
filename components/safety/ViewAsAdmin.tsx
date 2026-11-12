@@ -52,21 +52,21 @@ export function ViewAsAdmin() {
   };
 
   const list = (title: string, users: Brief[]) => (
-    <section className="rounded-site p-5">
-      <h3 className="mb-2 text-sm font-semibold text-site-text">
+    <section className="min-w-0">
+      <h3 className="mb-2 t-body font-semibold text-site-text">
         {title} ({users.length})
       </h3>
       {users.length === 0 ? (
-        <p className="text-xs text-site-text-muted">{t('viewas-none', { defaultValue: 'None' })}</p>
+        <p className="t-body text-site-text-muted">{t('viewas-none', { defaultValue: 'None' })}</p>
       ) : (
-        <p className="break-words text-xs text-site-text-muted">{users.map(label).join(', ')}</p>
+        <p className="break-words t-body text-site-text-muted">{users.map(label).join(', ')}</p>
       )}
     </section>
   );
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-site-text-muted">
+      <p className="t-body text-site-text-muted">
         {t('viewas-intro', {
           defaultValue:
             'See a member’s mutes, blocks, plan and the top of their For You feed. Read-only, and every lookup is recorded in the audit log.',
@@ -94,12 +94,12 @@ export function ViewAsAdmin() {
           <Spinner />
         </div>
       )}
-      {error && <p className="text-sm text-site-danger">{error}</p>}
+      {error && <p className="t-body text-site-danger">{error}</p>}
       {data && (
         <div className="flex flex-col gap-3">
-          <section className="rounded-site p-5">
-            <h3 className="text-base font-semibold text-site-text">{label(data.member)}</h3>
-            <p className="text-xs text-site-text-muted">
+          <section className="min-w-0">
+            <h3 className="t-heading text-site-text">{label(data.member)}</h3>
+            <p className="t-body text-site-text-muted">
               {t('viewas-meta', {
                 defaultValue: 'Plan: {{tier}} · joined {{date}}',
                 tier: data.entitlements.tier,
@@ -112,21 +112,21 @@ export function ViewAsAdmin() {
           {list(t('viewas-mutes', { defaultValue: 'Muted accounts' }), data.mutes)}
           {list(t('viewas-blocks', { defaultValue: 'Blocked accounts' }), data.blocks)}
           {list(t('viewas-blocked-by', { defaultValue: 'Blocked by' }), data.blockedBy)}
-          <section className="rounded-site p-5">
-            <h3 className="mb-2 text-sm font-semibold text-site-text">
+          <section className="min-w-0">
+            <h3 className="mb-2 t-body font-semibold text-site-text">
               {t('viewas-words', { defaultValue: 'Muted words' })} ({data.mutedWords.length})
             </h3>
-            <p className="break-words text-xs text-site-text-muted">
+            <p className="break-words t-body text-site-text-muted">
               {data.mutedWords.join(', ') || '—'}
             </p>
           </section>
-          <section className="rounded-site p-5">
-            <h3 className="mb-2 text-sm font-semibold text-site-text">
+          <section className="min-w-0">
+            <h3 className="mb-2 t-body font-semibold text-site-text">
               {t('viewas-feed', { defaultValue: 'Top of their For You feed' })}
             </h3>
             <ol className="flex flex-col gap-2">
               {data.feed.map((i) => (
-                <li key={i.id} className="text-xs text-site-text-muted">
+                <li key={i.id} className="t-meta">
                   <span className="font-semibold text-site-text">{i.author ?? i.type}</span>{' '}
                   {i.text || `(${i.type})`}
                 </li>

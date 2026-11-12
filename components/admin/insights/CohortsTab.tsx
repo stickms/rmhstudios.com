@@ -34,7 +34,7 @@ export function CohortsTab() {
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-site-text-muted">
+        <p className="t-body text-site-text-muted">
           {t('cohorts-intro', {
             defaultValue:
               'Share of each weekly signup cohort that signed in or acted in each week after joining. Recomputed daily.',
@@ -62,10 +62,10 @@ export function CohortsTab() {
         />
       ) : (
         <div className="overflow-x-auto rounded-site p-4">
-          <table className="w-full min-w-[40rem] border-separate border-spacing-1 text-center text-xs">
+          <table className="w-full min-w-[40rem] border-separate border-spacing-1 text-center t-meta">
             <thead>
               <tr className="text-site-text-muted">
-                <th scope="col" className="px-2 text-left font-mono">
+                <th scope="col" className="px-2 text-start font-mono">
                   {t('cohorts-col-cohort', { defaultValue: 'Cohort' })}
                 </th>
                 <th scope="col" className="font-mono">
@@ -81,7 +81,7 @@ export function CohortsTab() {
             <tbody>
               {data.cohorts.map((c) => (
                 <tr key={c.cohortWeek}>
-                  <th scope="row" className="px-2 text-left font-mono font-normal text-site-text">
+                  <th scope="row" className="px-2 text-start font-mono font-normal text-site-text">
                     {c.cohortWeek}
                   </th>
                   <td className="text-site-text-muted">{c.size}</td>

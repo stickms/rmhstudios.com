@@ -57,15 +57,15 @@ export function DataTable<T>({
 
   if (rows.length === 0) {
     return (
-      <p className="rounded-site p-6 text-center text-sm text-site-text-muted">
+      <p className="t-body py-4 text-site-text-muted">
         {empty}
       </p>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-site">
-      <table className="w-full min-w-max text-sm">
+    <div className="-mx-[var(--site-page-gutter)] overflow-x-auto px-[var(--site-page-gutter)]">
+      <table className="t-body w-full min-w-max">
         <thead>
           <tr>
             {columns.map((c) => {
@@ -76,8 +76,8 @@ export function DataTable<T>({
                   scope="col"
                   aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
                   className={cn(
-                    'px-3 py-2 text-xs font-semibold text-site-text-muted',
-                    c.align === 'right' ? 'text-right' : 'text-left',
+                    'py-2 pe-4 last:pe-0 t-label',
+                    c.align === 'right' ? 'text-end' : 'text-start',
                   )}
                 >
                   {c.sortValue ? (
@@ -119,8 +119,8 @@ export function DataTable<T>({
                 <td
                   key={c.id}
                   className={cn(
-                    'px-3 py-2 tabular-nums text-site-text',
-                    c.align === 'right' ? 'text-right' : 'text-left',
+                    'py-2 pe-4 last:pe-0 tabular-nums text-site-text',
+                    c.align === 'right' ? 'text-end' : 'text-start',
                     c.cellClass?.(row),
                   )}
                 >

@@ -62,21 +62,21 @@ function AlarmCard({ alarm }: { alarm: AlarmView }) {
     resolved: t('phase-resolved', { defaultValue: 'Resolved' }),
   };
   return (
-    <li className="rounded-site p-5">
+    <li className="py-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant={alarm.sev <= 2 ? 'danger' : 'warning'} icon={false}>
           {t('sev', { defaultValue: 'SEV{{sev}}', sev: alarm.sev })}
         </Badge>
         <Badge variant={PHASE_VARIANT[phase]}>{phaseLabel[phase]}</Badge>
-        <span className="font-mono text-xs text-site-text-muted">{alarm.key}</span>
+        <span className="font-mono t-meta">{alarm.key}</span>
       </div>
       <h3 className="mt-2 font-semibold text-site-text">{alarm.title}</h3>
       {alarm.detail && (
-        <p className="mt-1 whitespace-pre-line break-words text-sm text-site-text-muted">
+        <p className="mt-1 whitespace-pre-line break-words t-body text-site-text-muted">
           {alarm.detail}
         </p>
       )}
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-site-text-muted sm:grid-cols-4">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 t-meta sm:grid-cols-4">
         <div>
           <dt className="text-site-text-muted">{t('since', { defaultValue: 'Since' })}</dt>
           <dd>{formatRelativeTime(alarm.firedAt)}</dd>
@@ -113,7 +113,7 @@ function AlarmCard({ alarm }: { alarm: AlarmView }) {
           href={href}
           target="_blank"
           rel="noreferrer"
-          className="mt-3 inline-flex items-center gap-1 text-sm text-site-accent hover:underline"
+          className="mt-3 inline-flex items-center gap-1 t-body text-site-accent hover:underline"
         >
           <BookOpen className="size-4" aria-hidden />
           {t('runbook', { defaultValue: 'Runbook' })}
@@ -131,13 +131,13 @@ export function AlarmsPanel() {
 
   if (!data.ok) {
     return (
-      <section className="rounded-site p-5">
-        <h2 className="site-section-label">
+      <section className="min-w-0">
+        <h2 className="t-heading text-site-text">
           {data.error === 'not_configured'
             ? t('not-configured-title', { defaultValue: 'On-call watchdog not configured' })
             : t('unreachable-title', { defaultValue: 'Watchdog unreachable' })}
         </h2>
-        <p className="mt-2 text-sm text-site-text-muted">
+        <p className="mt-2 t-body text-site-text-muted">
           {data.error === 'not_configured'
             ? t('not-configured-body', {
                 defaultValue:
@@ -166,7 +166,7 @@ export function AlarmsPanel() {
   return (
     <div className="space-y-[var(--site-section-gap)]">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-site-text-muted">
+        <p className="t-body text-site-text-muted">
           {t('refreshed', {
             defaultValue: 'Updated {{when}} · refreshes every 30s',
             when: formatRelativeTime(data.now),
@@ -204,11 +204,11 @@ export function AlarmsPanel() {
         />
       </div>
 
-      <section className="rounded-site p-5">
-        <h2 className="site-section-label">
+      <section className="min-w-0">
+        <h2 className="t-heading text-site-text">
           {t('heartbeats-title', { defaultValue: 'Check-ins' })}
         </h2>
-        <p className="mt-1 text-sm text-site-text-muted">
+        <p className="mt-1 t-body text-site-text-muted">
           {t('heartbeats-body', {
             defaultValue:
               'Senders on the VPS check in with the watchdog; silence past the limit pages.',
@@ -220,9 +220,9 @@ export function AlarmsPanel() {
           {data.heartbeats.map((h) => {
             const health = heartbeatHealth(h, data.now);
             return (
-              <li key={h.name} className="min-w-0 rounded-site px-4 py-3">
+              <li key={h.name} className="min-w-0 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                  <span className="min-w-0 break-words font-mono text-sm text-site-text">
+                  <span className="min-w-0 break-words font-mono t-body text-site-text">
                     {h.name}
                   </span>
                   <Badge
@@ -236,7 +236,7 @@ export function AlarmsPanel() {
                         : t('hb-waiting', { defaultValue: 'Not reporting yet' })}
                   </Badge>
                 </div>
-                <p className="mt-1 text-xs text-site-text-muted">
+                <p className="mt-1 t-body text-site-text-muted">
                   {h.lastSeen === null
                     ? t('hb-never', {
                         defaultValue: 'No check-in yet — not watched until the first one.',
@@ -258,17 +258,17 @@ export function AlarmsPanel() {
       <AlarmRules />
 
       <section>
-        <h2 className="site-section-label mb-3">
+        <h2 className="t-heading text-site-text mb-3">
           {t('open-title', { defaultValue: 'Open alarms' })}
         </h2>
         {open.length ? (
-          <ul className="space-y-3">
+          <ul className="divide-y divide-site-border border-t border-site-border">
             {open.map((a) => (
               <AlarmCard key={a.key} alarm={a} />
             ))}
           </ul>
         ) : (
-          <p className="rounded-site p-5 text-sm text-site-text-muted">
+          <p className="t-body text-site-text-muted">
             {t('open-empty', { defaultValue: 'Nothing firing.' })}
           </p>
         )}
@@ -276,10 +276,10 @@ export function AlarmsPanel() {
 
       {resolved.length > 0 && (
         <section>
-          <h2 className="site-section-label mb-3">
+          <h2 className="t-heading text-site-text mb-3">
             {t('resolved-title', { defaultValue: 'Resolved in the last 24 hours' })}
           </h2>
-          <ul className="space-y-3">
+          <ul className="divide-y divide-site-border border-t border-site-border">
             {resolved.map((a) => (
               <AlarmCard key={a.key} alarm={a} />
             ))}

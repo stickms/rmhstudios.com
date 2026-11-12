@@ -66,7 +66,7 @@ export function AdminChallengePage() {
   };
 
   const dateField = (label: string, value: string, set: (v: string) => void) => (
-    <label className="block text-xs font-medium text-site-text-muted">
+    <label className="block t-label">
       {label}
       <Input
         type="datetime-local"
@@ -88,7 +88,7 @@ export function AdminChallengePage() {
       backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
     >
       <AdminBody width="narrow">
-        <div className="space-y-3 rounded-site p-5">
+        <div className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
           <Input
             placeholder={t('admin-title', { defaultValue: 'Challenge title' })}
             maxLength={120}
@@ -101,12 +101,12 @@ export function AdminChallengePage() {
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
           />
-          <label className="block text-xs font-medium text-site-text-muted">
+          <label className="block t-label">
             {t('admin-sample', { defaultValue: 'Sample audio (WAV or MP3, up to 8 MB)' })}
             <input
               type="file"
               accept="audio/*"
-              className="mt-2 block text-sm"
+              className="mt-2 block t-body"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
           </label>

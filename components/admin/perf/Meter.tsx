@@ -17,7 +17,7 @@ export function Meter({ label, value, max, text, tone = 'none' }: MeterProps) {
   const pct = max ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-2 text-xs">
+      <div className="flex items-baseline justify-between gap-2 t-meta">
         <span className="text-site-text-muted">{label}</span>
         <span className="tabular-nums text-site-text">{text}</span>
       </div>

@@ -155,15 +155,15 @@ function AdminReportsPage() {
         ) : reports.length === 0 ? (
           <EmptyState icon={Flag} title={t('queue-empty', { defaultValue: 'Nothing here. The queue is clear.' })} />
         ) : (
-          <ul className="space-y-3">
+          <ul className="divide-y divide-site-border">
             {reports.map((r) => {
               const link = entityLink(r);
               return (
-                <li key={r.id} className="space-y-3 rounded-site p-5">
+                <li key={r.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="danger">{r.reason.replace('_', ' ')}</Badge>
                     <Badge variant="default">{r.entityType}</Badge>
-                    <span className="text-xs text-site-text-muted">
+                    <span className="t-meta">
                       {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
                     </span>
                     {link && (
@@ -171,24 +171,24 @@ function AdminReportsPage() {
                         href={link}
                         target="_blank"
                         rel="noreferrer"
-                        className="ml-auto inline-flex items-center gap-1 text-xs text-site-accent hover:underline"
+                        className="t-body ms-auto inline-flex items-center gap-1 text-site-text underline"
                       >
                         {t('view-content', { defaultValue: 'View content' })} <ExternalLink className="size-3" aria-hidden />
                       </a>
                     )}
                   </div>
 
-                  {r.details && <p className="text-sm text-site-text">{r.details}</p>}
+                  {r.details && <p className="t-body text-site-text">{r.details}</p>}
 
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-site-text-muted">
+                  <div className="t-body flex flex-wrap items-center gap-x-4 gap-y-2 text-site-text-muted">
                     <span className="inline-flex items-center gap-2">
                       <UserAvatar src={r.reporter.image} alt={r.reporter.name || t('reporter', { defaultValue: 'Reporter' })} size={20} fallbackName={r.reporter.name || 'R'} />
-                      {t('reported-by', { defaultValue: 'reported by' })} <strong className="text-site-text">{r.reporter.name || r.reporter.handle}</strong>
+                      {t('reported-by', { defaultValue: 'reported by' })} <strong className="font-semibold text-site-text">{r.reporter.name || r.reporter.handle}</strong>
                     </span>
                     {r.targetUser && (
                       <span className="inline-flex items-center gap-2">
                         <UserAvatar src={r.targetUser.image} alt={r.targetUser.name || t('user', { defaultValue: 'User' })} size={20} fallbackName={r.targetUser.name || 'U'} />
-                        {t('against', { defaultValue: 'against' })} <strong className="text-site-text">{r.targetUser.name || r.targetUser.handle}</strong>
+                        {t('against', { defaultValue: 'against' })} <strong className="font-semibold text-site-text">{r.targetUser.name || r.targetUser.handle}</strong>
                       </span>
                     )}
                   </div>
@@ -219,15 +219,15 @@ function AdminReportsPage() {
                           {t('resolve-and-remove-content', { defaultValue: 'Resolve & remove content' })}
                         </Button>
                       )}
-                      <Button size="sm" variant="ghost" disabled={busyId === r.id} onClick={() => act(r.id, 'dismiss')}>
+                      <Button size="sm" variant="default" disabled={busyId === r.id} onClick={() => act(r.id, 'dismiss')}>
                         {t('dismiss', { defaultValue: 'Dismiss' })}
                       </Button>
                       {r.targetUser && (
                         <>
-                          <Button size="sm" variant="ghost" onClick={() => moderateUser(r.targetUser!.id, 'strike')}>
+                          <Button size="sm" variant="default" onClick={() => moderateUser(r.targetUser!.id, 'strike')}>
                             {t('strike-author', { defaultValue: 'Strike author' })}
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-site-danger" onClick={() => moderateUser(r.targetUser!.id, 'ban')}>
+                          <Button size="sm" variant="danger" onClick={() => moderateUser(r.targetUser!.id, 'ban')}>
                             {t('ban-author', { defaultValue: 'Ban author' })}
                           </Button>
                         </>

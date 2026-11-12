@@ -117,15 +117,15 @@ function AdminMarketPage() {
             title={t('market-review-empty', { defaultValue: 'No listings are held for review.' })}
           />
         ) : (
-          <div className="space-y-3">
+          <div className="divide-y divide-site-border">
             {rows.map((r) => {
               const name = r.item?.name ?? r.itemId;
               return (
-                <div key={r.id} className="space-y-3 rounded-site p-5">
+                <div key={r.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="truncate text-base font-medium text-site-text">{name}</div>
-                      <div className="text-sm text-site-text-muted">
+                      <div className="t-heading break-words text-site-text">{name}</div>
+                      <div className="t-body text-site-text-muted">
                         @{r.seller.handle ?? r.seller.name ?? r.seller.id.slice(0, 6)}
                         {' · '}
                         {t('market-review-listed', {
@@ -141,7 +141,7 @@ function AdminMarketPage() {
                       {r.priceCoins.toLocaleString()}
                     </Badge>
                   </div>
-                  <p className="font-mono text-sm text-site-text-muted">
+                  <p className="t-body text-site-text-muted break-words">
                     {r.medianCoins == null
                       ? t('market-review-no-median', {
                           defaultValue: 'No sales of this item in the last 30 days',

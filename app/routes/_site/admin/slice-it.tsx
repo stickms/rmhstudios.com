@@ -177,7 +177,7 @@ function AdminSliceItRankingPage() {
             title={t('admin-rank-empty', { defaultValue: 'No charts in this state.' })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className="divide-y divide-site-border">
             {rows.map((row) => (
               <ChartRow
                 key={row.id}
@@ -207,15 +207,15 @@ function ChartRow({
   const clearRate = evidence.clearRate;
 
   return (
-    <li className="rounded-site p-5">
+    <li className="py-4 first:pt-0 last:pb-0">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate text-base font-semibold text-site-text">{row.songTitle}</span>
-            <span className="text-sm text-site-text-muted">{row.songArtist}</span>
+            <span className="truncate t-heading text-site-text">{row.songTitle}</span>
+            <span className="t-body text-site-text-muted">{row.songArtist}</span>
             <StateBadge state={row.rankStatus} />
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-site-text-muted">
+          <div className="mt-1 flex flex-wrap items-center gap-2 t-body text-site-text-muted">
             <span className="font-medium text-site-text-muted">{row.name}</span>
             <span aria-hidden="true">&bull;</span>
             <span className="capitalize">{row.difficulty}</span>
@@ -259,7 +259,7 @@ function ChartRow({
         </div>
       </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 sm:grid-cols-3 sm:gap-x-6 xl:grid-cols-5">
         <Gate
           icon={Eye}
           label={t('admin-rank-gate-visibility', { defaultValue: 'Visibility' })}
@@ -311,7 +311,7 @@ function ChartRow({
       </dl>
 
       {evidence.blockers.length > 0 && (
-        <p className="mt-3 text-sm text-site-text-muted">
+        <p className="mt-3 t-body text-site-text-muted">
           <span className="font-semibold text-site-warning">
             {t('admin-rank-blockers', { defaultValue: 'Blocked by:' })}
           </span>{' '}
@@ -320,7 +320,7 @@ function ChartRow({
       )}
 
       {row.rankStatus === 'ranked' && !evidence.eligible && (
-        <p className="mt-3 text-sm text-site-warning">
+        <p className="t-body mt-3 text-site-warning">
           {t('admin-rank-slipped', {
             defaultValue:
               'This chart no longer meets the automatic gate. Nothing demotes it on its own — a rating built on it stays until a human decides.',
@@ -345,22 +345,16 @@ function Gate({
   passed: boolean;
 }) {
   return (
-    <div className="surface-field rounded-site-sm p-3">
-      <dt className="flex items-center gap-2 text-xs text-site-text-muted">
-        <Icon className="size-3.5" aria-hidden="true" />
+    <div className="min-w-0 border-t border-site-border py-3">
+      <dt className="t-label flex items-center gap-2">
+        <Icon className="size-3.5 shrink-0" aria-hidden="true" />
         {label}
       </dt>
-      <dd className="mt-1 flex items-baseline gap-2">
-        <span
-          className={
-            passed
-              ? 'text-base font-semibold text-site-text'
-              : 'text-base font-semibold text-site-warning'
-          }
-        >
+      <dd className="mt-1 flex flex-wrap items-baseline gap-x-2">
+        <span className={passed ? 't-heading text-site-text' : 't-heading text-site-warning'}>
           {value}
         </span>
-        <span className="text-xs text-site-text-muted">{target}</span>
+        <span className="t-meta">{target}</span>
         {passed ? (
           <Check className="size-3.5 shrink-0 text-site-success" aria-hidden="true" />
         ) : (

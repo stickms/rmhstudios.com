@@ -24,7 +24,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
 
   if (points.length < 2) {
     return (
-      <p className="rounded-site px-4 py-6 text-center text-sm text-site-text-muted">
+      <p className="py-4 t-body text-site-text-muted">
         {t('chart-empty', {
           defaultValue: 'Not enough samples in this window yet. One is recorded every hour.',
         })}
@@ -75,8 +75,8 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
   });
 
   return (
-    <div className="rounded-site p-5">
-      <div className="mb-2 flex min-h-5 flex-wrap items-center justify-between gap-2 text-xs text-site-text-muted">
+    <div className="min-w-0">
+      <div className="mb-2 flex min-h-5 flex-wrap items-center justify-between gap-2 t-meta">
         <span>{t('chart-title', { defaultValue: 'Total balance per hour' })}</span>
         {cur && (
           <span className="tabular-nums text-site-text">

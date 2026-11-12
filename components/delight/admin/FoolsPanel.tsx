@@ -25,12 +25,12 @@ export default function FoolsPanel() {
     }
   };
   return (
-    <section className="flex items-center justify-between gap-4 rounded-site p-5">
+    <section className="flex items-center justify-between gap-4">
       <div>
         <h2 className="font-semibold text-site-text" id="fools-label">
           {t('fools-admin-title', { defaultValue: 'April Fools mode' })}
         </h2>
-        <p className="text-sm text-site-text-muted">
+        <p className="t-body text-site-text-muted">
           {t('fools-admin-desc', {
             defaultValue:
               'Cosmetic emoji and logo swaps for everyone. Each member sees an off switch. Visitors pick it up within about ten minutes.',

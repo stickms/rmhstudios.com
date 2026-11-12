@@ -82,20 +82,20 @@ export default function AdminGlossary() {
   return (
     <div className="space-y-6">
       <form
-        className="space-y-3 rounded-site p-5"
+        className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
         onSubmit={(e) => {
           e.preventDefault();
           save.mutate(draft);
         }}
       >
-        <h2 className="site-section-label">
+        <h2 className="t-heading text-site-text">
           {draft.id
             ? t('glossary-edit', { defaultValue: 'Edit term' })
             : t('glossary-add', { defaultValue: 'Add a term' })}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
-            <label htmlFor="gl-term" className="text-sm text-site-text-muted">
+            <label htmlFor="gl-term" className="t-body text-site-text-muted">
               {t('glossary-term-label', { defaultValue: 'Term' })}
             </label>
             <Input
@@ -108,7 +108,7 @@ export default function AdminGlossary() {
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="gl-aliases" className="text-sm text-site-text-muted">
+            <label htmlFor="gl-aliases" className="t-body text-site-text-muted">
               {t('glossary-aliases-label', { defaultValue: 'Aliases (comma separated)' })}
             </label>
             <Input
@@ -119,7 +119,7 @@ export default function AdminGlossary() {
           </div>
         </div>
         <div className="space-y-2">
-          <label htmlFor="gl-def" className="text-sm text-site-text-muted">
+          <label htmlFor="gl-def" className="t-body text-site-text-muted">
             {t('glossary-definition-label', { defaultValue: 'Short definition' })}
           </label>
           <Textarea
@@ -132,7 +132,7 @@ export default function AdminGlossary() {
           />
         </div>
         <div className="space-y-2">
-          <label htmlFor="gl-link" className="text-sm text-site-text-muted">
+          <label htmlFor="gl-link" className="t-body text-site-text-muted">
             {t('glossary-link-label', { defaultValue: 'Link (optional, https:// or a site path)' })}
           </label>
           <Input
@@ -167,13 +167,13 @@ export default function AdminGlossary() {
       ) : (
         <ul className="divide-y divide-site-border rounded-site">
           {terms.map((term) => (
-            <li key={term.id} className="flex items-start gap-3 px-4 py-3">
+            <li key={term.id} className="flex items-start gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-site-text">{term.term}</p>
                 {term.aliases.length > 0 ? (
-                  <p className="text-xs text-site-text-muted">{term.aliases.join(', ')}</p>
+                  <p className="t-body text-site-text-muted">{term.aliases.join(', ')}</p>
                 ) : null}
-                <p className="mt-1 text-sm text-site-text-muted">{term.definition}</p>
+                <p className="mt-1 t-body text-site-text-muted">{term.definition}</p>
               </div>
               <Button
                 type="button"

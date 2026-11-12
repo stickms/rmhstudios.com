@@ -66,7 +66,7 @@ function AuditLogPage() {
   return (
     <PageLayout title={t('audit-log', { defaultValue: 'Audit Log' })} wide backTo="/admin">
       <AdminBody width="narrow">
-        <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           <Input
             value={action}
             onChange={(e) => setAction(e.target.value)}
@@ -81,18 +81,20 @@ function AuditLogPage() {
           />
           <Input
             type="date"
+            className="min-w-0"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
             aria-label={t('audit-filter-from', { defaultValue: 'From' })}
           />
           <Input
             type="date"
+            className="min-w-0"
             value={to}
             onChange={(e) => setTo(e.target.value)}
             aria-label={t('audit-filter-to', { defaultValue: 'To' })}
           />
         </div>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="default" size="sm" className="gap-2">
             <a href={`/api/admin/audit-log?format=csv${query ? `&${query}` : ''}`} download>
               <Download className="h-4 w-4" aria-hidden />
@@ -127,9 +129,9 @@ function AuditLogPage() {
             }
           />
         ) : (
-          <ul className="divide-y divide-site-border rounded-site overflow-hidden">
+          <ul className="divide-y divide-site-border border-t border-site-border">
             {items.map((e) => (
-              <li key={e.id} className="flex items-center gap-3 px-4 py-3">
+              <li key={e.id} className="flex items-start gap-3 py-3">
                 <UserAvatar
                   src={e.admin.image}
                   alt={e.admin.name || t('audit-admin-fallback', { defaultValue: 'Admin' })}
@@ -137,20 +139,22 @@ function AuditLogPage() {
                   fallbackName={e.admin.name || 'A'}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-site-text">
-                    <span className="font-semibold">{e.admin.name || e.admin.handle}</span>{' '}
-                    <code className="surface-field rounded-site-sm px-2 py-0.5 font-mono text-xs text-site-accent">
-                      {e.action}
-                    </code>
-                    {e.targetType && (
-                      <span className="text-site-text-muted"> · {e.targetType}</span>
-                    )}
+                  <p className="flex items-baseline justify-between gap-3">
+                    <span className="t-body min-w-0 truncate font-semibold text-site-text">
+                      {e.admin.name || e.admin.handle}
+                    </span>
+                    <span className="t-meta shrink-0">
+                      {formatDistanceToNow(new Date(e.createdAt), { addSuffix: true })}
+                    </span>
                   </p>
-                  {e.detail && <p className="truncate text-xs text-site-text-muted">{e.detail}</p>}
+                  <p className="t-body text-site-text-muted mt-1 break-words">
+                    <code className="text-site-text">{e.action}</code>
+                    {e.targetType && <span> · {e.targetType}</span>}
+                  </p>
+                  {e.detail && (
+                    <p className="t-body mt-1 break-words text-site-text-muted">{e.detail}</p>
+                  )}
                 </div>
-                <span className="shrink-0 text-xs text-site-text-muted">
-                  {formatDistanceToNow(new Date(e.createdAt), { addSuffix: true })}
-                </span>
               </li>
             ))}
           </ul>

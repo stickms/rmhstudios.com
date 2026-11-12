@@ -238,16 +238,17 @@ function AdminUsersPage() {
           aria-label={t("search-label", { defaultValue: "Search users" })}
         />
 
-        <div className="overflow-hidden rounded-site">
-          {/* From `sm` this is a 4-column table; below `sm` each row wraps into a
-              stacked card, so there is no column header (and no min-width that
-              would hide most of a row behind a sideways swipe). */}
-          <div className="hidden border-b border-site-border px-4 py-3 sm:block">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-xs font-semibold text-site-text-muted">
+        <div>
+          {/* From `sm` this is a 4-column table; below `sm` each row is two
+              lines (who, then the counts and the actions), so there is no
+              column header and no min-width that would hide most of a row
+              behind a sideways swipe. */}
+          <div className="hidden border-b border-site-border py-2 sm:block">
+            <div className="t-label grid grid-cols-[1fr_auto_auto_auto] gap-4">
               <div>{t("col-user", { defaultValue: "User" })}</div>
               <div className="w-20 text-center">{t("col-verified", { defaultValue: "Verified" })}</div>
               <div className="w-32 text-center">{t("col-actions", { defaultValue: "Actions" })}</div>
-              <div className="w-24 text-right">{t("col-activity", { defaultValue: "Activity" })}</div>
+              <div className="w-24 text-end">{t("col-activity", { defaultValue: "Activity" })}</div>
             </div>
           </div>
 
@@ -272,12 +273,12 @@ function AdminUsersPage() {
                 const secondaryLine =
                   user.email ?? (user.isBot ? t("bot-no-email", { defaultValue: "Automated account" }) : null);
                 return (
-                  <div key={user.id} ref={isLast ? lastUserElementRef : null} className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 transition-colors hover:bg-site-surface-hover">
+                  <div key={user.id} ref={isLast ? lastUserElementRef : null} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
                     <div className="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-auto">
                       <UserAvatar src={user.image} alt={user.name || user.handle || user.username} size={40} fallbackName={user.name || user.handle || 'U'} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <Link to={`/u/${user.handle || user.id}` as string} className="truncate font-semibold text-site-text hover:text-site-accent">{user.name || user.handle || user.username}</Link>
+                          <Link to={`/u/${user.handle || user.id}` as string} className="t-body truncate font-semibold text-site-text hover:underline">{user.name || user.handle || user.username}</Link>
                           {user.isVerified && <CheckCircle className="size-4 shrink-0 text-site-accent" role="img" aria-label={t("title-verified", { defaultValue: "Verified" })} />}
                           {user.isAdmin && <Shield className="size-4 shrink-0 text-site-danger" role="img" aria-label={t("title-admin", { defaultValue: "Admin" })} />}
                           {user.isBot && (
@@ -286,7 +287,7 @@ function AdminUsersPage() {
                             </Badge>
                           )}
                         </div>
-                        <div className="flex flex-col text-sm text-site-text-muted sm:flex-row sm:items-center sm:gap-2">
+                        <div className="t-body flex flex-col text-site-text-muted sm:flex-row sm:items-center sm:gap-2">
                           {isEditingThis ? (
                             <div className="flex flex-wrap items-center gap-2">
                               <span>@</span>
@@ -302,7 +303,7 @@ function AdminUsersPage() {
                               />
                               <IconButton icon={Check} size="icon-xs" variant="default" label={t("save-handle", { defaultValue: "Save handle" })} onClick={() => saveHandle(user.id)} disabled={busy} />
                               <IconButton icon={X} size="icon-xs" variant="ghost" label={t("cancel-handle", { defaultValue: "Cancel" })} onClick={cancelEditHandle} />
-                              {handleError && <span className="text-xs text-site-danger">{handleError}</span>}
+                              {handleError && <span className="t-meta text-site-danger">{handleError}</span>}
                             </div>
                           ) : (
                             <span className="flex items-center gap-2 truncate">
@@ -321,7 +322,12 @@ function AdminUsersPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex w-20 shrink-0 justify-center">
+                    <div className="t-meta flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1 sm:order-last sm:w-24 sm:flex-none sm:flex-col sm:items-end">
+                      <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
+                      <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
+                      <span className="flex items-center gap-1"><Coins className="size-3" aria-hidden />{(user.profile?.coins ?? 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex shrink-0 justify-center sm:w-20">
                       <IconButton
                         icon={CheckCircle}
                         size="icon-sm"
@@ -332,24 +338,19 @@ function AdminUsersPage() {
                         label={user.isVerified ? t("title-remove-verification", { defaultValue: "Remove Verification" }) : t("title-verify-user", { defaultValue: "Verify User" })}
                       />
                     </div>
-                    <div className="flex w-32 shrink-0 justify-center gap-2">
+                    <div className="flex shrink-0 justify-center gap-2 sm:w-32">
                       <IconButton icon={Coins} size="icon-sm" variant="default" disabled={busy} onClick={() => setCoins(user)} label={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })} />
                       <IconButton icon={Crown} size="icon-sm" variant="default" disabled={busy} onClick={() => grantMembership(user.id)} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
                       <IconButton
                         icon={Shield}
                         size="icon-sm"
                         variant="default"
-                        className={user.isAdmin ? 'border-site-danger/40 text-site-danger' : undefined}
+                        className={user.isAdmin ? 'border-site-danger text-site-danger' : undefined}
                         disabled={busy}
                         onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)}
                         aria-pressed={user.isAdmin}
                         label={user.isAdmin ? t("title-remove-admin", { defaultValue: "Remove Admin" }) : t("title-make-admin", { defaultValue: "Make Admin" })}
                       />
-                    </div>
-                    <div className="flex w-24 shrink-0 flex-col items-end text-xs text-site-text-muted">
-                      <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
-                      <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
-                      <span className="flex items-center gap-1 text-site-warning"><Coins className="size-3" aria-hidden />{(user.profile?.coins ?? 0).toLocaleString()}</span>
                     </div>
                   </div>
                 );
@@ -358,7 +359,7 @@ function AdminUsersPage() {
           )}
 
           {loadingMore && (
-            <div className="flex justify-center p-4 text-site-text-muted"><Spinner /></div>
+            <div className="flex justify-center py-4 text-site-text-muted"><Spinner /></div>
           )}
         </div>
       </AdminBody>

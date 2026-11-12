@@ -155,7 +155,7 @@ function AdminSecurityReportsPage() {
             title={t('security-queue-empty', { defaultValue: 'Nothing here. This queue is clear.' })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className="divide-y divide-site-border">
             {items.map((r) => (
               <ReportCard
                 key={r.id}
@@ -190,7 +190,7 @@ function ReportCard({
   const [notes, setNotes] = useState(report.adminNotes ?? '');
 
   return (
-    <li className="space-y-3 rounded-site p-5">
+    <li className="space-y-3 py-4 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -199,29 +199,29 @@ function ReportCard({
             </Badge>
             <Badge variant="default">{securityCategoryLabel(report.category)}</Badge>
           </div>
-          <h3 className="text-base font-semibold text-site-text break-words">{report.title}</h3>
+          <h3 className="t-heading text-site-text break-words">{report.title}</h3>
         </div>
-        <span className="text-xs text-site-text-muted whitespace-nowrap">
+        <span className="t-meta whitespace-nowrap">
           {formatDistanceToNow(new Date(report.createdAt), { addSuffix: true })}
         </span>
       </div>
 
       {report.affectedArea ? (
-        <p className="text-xs text-site-text-muted break-words">
+        <p className="t-body break-words text-site-text">
           <span className="text-site-text-muted">{t('affected-label', { defaultValue: 'Affected:' })}</span> {report.affectedArea}
         </p>
       ) : null}
 
-      <p className="whitespace-pre-wrap break-words text-sm text-site-text">{report.description}</p>
+      <p className="whitespace-pre-wrap break-words t-body text-site-text">{report.description}</p>
 
       {report.reporterName || report.reporterEmail || report.userId ? (
-        <p className="text-xs text-site-text-muted">
+        <p className="t-body break-words text-site-text">
           <span className="text-site-text-muted">{t('reporter-label', { defaultValue: 'Reporter:' })}</span>{' '}
           {report.reporterName || t('anonymous', { defaultValue: 'Anonymous' })}
           {report.reporterEmail ? (
             <>
               {' · '}
-              <a className="text-site-accent hover:underline" href={`mailto:${report.reporterEmail}`}>
+              <a className="underline" href={`mailto:${report.reporterEmail}`}>
                 {report.reporterEmail}
               </a>
             </>
@@ -262,7 +262,7 @@ function ReportCard({
           size="icon-sm"
           onClick={() => onDelete(report.id)}
           disabled={busy}
-          className="ml-auto text-site-danger hover:bg-site-danger/10"
+          className="ms-auto text-site-danger"
           aria-label={t('delete-report', { defaultValue: 'Delete report' })}
         >
           <Trash2 aria-hidden />

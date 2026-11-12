@@ -115,15 +115,15 @@ export function QuotaAppealsPanel() {
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="divide-y divide-site-border">
       {requests.map((req) => {
         const who = req.user.handle ? `@${req.user.handle}` : (req.user.name ?? req.user.id);
         return (
-          <li key={req.id} className="rounded-site p-5">
+          <li key={req.id} className="py-4 first:pt-0 last:pb-0">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-semibold text-site-text">{who}</p>
-                <p className="mt-1 text-sm text-site-text-muted">
+                <p className="t-heading text-site-text">{who}</p>
+                <p className="mt-1 t-body text-site-text-muted">
                   {t('quota-summary', {
                     used: req.user.used,
                     current: req.user.currentQuota,
@@ -133,9 +133,9 @@ export function QuotaAppealsPanel() {
                   })}
                 </p>
                 {req.reason && (
-                  <p className="mt-2 text-sm whitespace-pre-wrap text-site-text">{req.reason}</p>
+                  <p className="t-body mt-2 whitespace-pre-wrap text-site-text">{req.reason}</p>
                 )}
-                <p className="mt-2 text-xs text-site-text-muted">
+                <p className="mt-2 t-body text-site-text-muted">
                   {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}
                 </p>
               </div>

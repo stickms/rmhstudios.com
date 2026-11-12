@@ -46,7 +46,7 @@ function AdminDashboardPage() {
       backTo="/"
     >
       <AdminBody>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 border-t border-site-border md:grid-cols-2 md:gap-x-8">
           <AdminHubCard
             to="/admin/users"
             title={t('users-title', { defaultValue: 'Users' })}

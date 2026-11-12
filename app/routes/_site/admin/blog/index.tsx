@@ -59,15 +59,15 @@ function AdminBlogDashboard() {
             description={t('no-blog-posts-hint', { defaultValue: 'Create one to get started!' })}
           />
         ) : (
-          <div className="rounded-site divide-y divide-site-border overflow-hidden">
+          <div className="divide-y divide-site-border">
             {posts.map((post) => (
               <div
                 key={post.slug as string}
-                className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-site-surface-hover"
+                className="flex items-start justify-between gap-3 py-3"
               >
                 <div className="min-w-0">
-                  <h3 className="truncate font-semibold text-site-text">{post.title as string}</h3>
-                  <p className="text-sm text-site-text-muted truncate">
+                  <h3 className="t-heading break-words text-site-text">{post.title as string}</h3>
+                  <p className="t-meta mt-1 break-all">
                     {post.date as string} · /{post.slug as string}
                   </p>
                 </div>

@@ -113,12 +113,11 @@ export function ContentDashboard() {
           />
         ) : (
           <>
-            <section className="surface-card space-y-3 rounded-site p-5">
-              <h2 className="site-section-label flex items-center gap-2">
-                <HardDrive className="size-4" aria-hidden />
+            <section className="min-w-0 space-y-3">
+              <h2 className="t-heading text-site-text">
                 {t('admin-content-storage', { defaultValue: 'Storage' })}
               </h2>
-              <p className="text-site-text-muted">
+              <p className="t-body text-site-text-muted">
                 {gib(dashboard.storage.usedBytes)} / {gib(dashboard.storage.limitBytes)} —{' '}
                 {(dashboard.storage.headroom * 100).toFixed(1)}%{' '}
                 {t('admin-content-headroom', { defaultValue: 'free' })}
@@ -128,7 +127,7 @@ export function ContentDashboard() {
                   is a floor. Hiding that would make the headroom read as more
                   precise than it is. */}
               {dashboard.storage.unmeasured > 0 && (
-                <p className="text-sm text-site-text-muted">
+                <p className="t-body text-site-text-muted">
                   {t('admin-content-unmeasured', { defaultValue_one: "{{count}} song has no recorded size, so the total above is a floor.",
                     defaultValue:
                       '{{count}} songs have no recorded size, so the total above is a floor.',
@@ -136,7 +135,7 @@ export function ContentDashboard() {
                   })}
                 </p>
               )}
-              <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              <dl className="grid grid-cols-2 gap-x-4 sm:grid-cols-4 sm:gap-x-6">
                 <Stat
                   label={t('admin-content-songs', { defaultValue: 'Songs' })}
                   value={formatCount(dashboard.totals.songs)}
@@ -156,50 +155,48 @@ export function ContentDashboard() {
               </dl>
             </section>
 
-            <section className="surface-card space-y-3 rounded-site p-5">
-              <h2 className="site-section-label flex items-center gap-2">
-                <TrendingUp className="size-4" aria-hidden />
+            <section className="min-w-0 space-y-3">
+              <h2 className="t-heading text-site-text">
                 {t('admin-content-uploads', { defaultValue: 'Uploads per day' })}
               </h2>
               {dashboard.uploadRate.length === 0 ? (
-                <p className="text-site-text-muted">
+                <p className="t-body text-site-text-muted">
                   {t('admin-content-no-uploads', { defaultValue: 'Nothing in this window.' })}
                 </p>
               ) : (
-                <ul className="flex flex-wrap gap-2 text-xs">
+                <ul className="t-meta flex flex-wrap gap-x-4 gap-y-2">
                   {dashboard.uploadRate.map((day) => (
-                    <li key={day.day} className="surface-field rounded-site px-3 py-2 tabular-nums">
-                      <span className="text-site-text-muted">{day.day.slice(5)}</span>{' '}
-                      <span className="text-site-text font-medium">{day.count}</span>
+                    <li key={day.day} className="tabular-nums">
+                      <span>{day.day.slice(5)}</span>{' '}
+                      <span className="text-site-text">{day.count}</span>
                     </li>
                   ))}
                 </ul>
               )}
             </section>
 
-            <section className="surface-card space-y-3 rounded-site p-5">
-              <h2 className="site-section-label flex items-center gap-2">
-                <AlertTriangle className="size-4" aria-hidden />
+            <section className="min-w-0 space-y-3">
+              <h2 className="t-heading text-site-text">
                 {t('admin-content-broken', { defaultValue: 'Charts that look broken' })}
               </h2>
               {!broken || broken.length === 0 ? (
-                <p className="text-site-text-muted">
+                <p className="t-body text-site-text-muted">
                   {t('admin-content-no-broken', {
                     defaultValue: 'Nothing flagged in the recently updated charts.',
                   })}
                 </p>
               ) : (
-                <ul className="space-y-3">
+                <ul className="divide-y divide-site-border border-t border-site-border">
                   {broken.map((chart) => (
                     <li
                       key={chart.chartId}
-                      className="surface-field flex flex-wrap items-baseline gap-x-3 gap-y-2 rounded-site px-4 py-3"
+                      className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-3"
                     >
-                      <span className="font-medium text-site-text">{chart.title}</span>
-                      <span className="text-sm text-site-text-muted">
+                      <span className="t-body font-semibold text-site-text">{chart.title}</span>
+                      <span className="t-body text-site-text-muted">
                         {chart.reasons.join(', ')}
                       </span>
-                      <span className="text-xs text-site-text-muted tabular-nums ml-auto">
+                      <span className="t-meta ms-auto tabular-nums">
                         {t('admin-content-evidence', {
                           defaultValue:
                             'clear {{clear}}% · dip {{dip}} · {{spikes}} spikes · n={{n}}',
@@ -215,12 +212,11 @@ export function ContentDashboard() {
               )}
             </section>
 
-            <section className="surface-card space-y-3 rounded-site p-5">
-              <h2 className="site-section-label flex items-center gap-2">
-                <Trash2 className="size-4" aria-hidden />
+            <section className="min-w-0 space-y-3">
+              <h2 className="t-heading text-site-text">
                 {t('admin-content-orphans', { defaultValue: 'Orphaned storage objects' })}
               </h2>
-              <p className="text-sm text-site-text-muted">
+              <p className="t-body text-site-text-muted">
                 {t('admin-content-orphans-note', {
                   defaultValue:
                     'Listed, never deleted. A listing can race an upload in flight, so this is a candidate list for a person to look at.',
@@ -232,7 +228,7 @@ export function ContentDashboard() {
                   : t('admin-content-scan', { defaultValue: 'Scan storage' })}
               </Button>
               {orphans !== null && (
-                <p className="text-sm text-site-text-muted">
+                <p className="t-body text-site-text-muted">
                   {t('admin-content-orphan-count', { defaultValue_one: '{{count}} object with no song pointing at it.',
                     defaultValue: '{{count}} objects with no song pointing at them.',
                     count: orphans.length,
@@ -249,9 +245,9 @@ export function ContentDashboard() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="surface-field rounded-site px-4 py-3">
-      <dt className="text-xs text-site-text-muted">{label}</dt>
-      <dd className="text-site-text font-medium tabular-nums">{value}</dd>
+    <div className="min-w-0 border-t border-site-border py-3">
+      <dt className="t-label">{label}</dt>
+      <dd className="t-heading mt-1 tabular-nums text-site-text">{value}</dd>
     </div>
   );
 }

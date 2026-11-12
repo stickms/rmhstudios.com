@@ -72,17 +72,14 @@ export function ProfilerTab() {
     {
       id: 'fn',
       header: t('col-function', { defaultValue: 'Function' }),
-      render: (r) => <span className="font-mono text-xs break-all">{r.functionName}</span>,
+      render: (r) => <span className="t-meta text-site-text break-all">{r.functionName}</span>,
     },
     {
       id: 'loc',
       header: t('col-location', { defaultValue: 'Location' }),
       render: (r) =>
         r.url ? (
-          <span
-            className="font-mono text-xs break-all text-site-text-muted"
-            title={`${r.url}:${r.line}:${r.column}`}
-          >
+          <span className="t-meta break-all" title={`${r.url}:${r.line}:${r.column}`}>
             {shortUrl(r.url)}:{r.line}:{r.column}
           </span>
         ) : (
@@ -114,15 +111,15 @@ export function ProfilerTab() {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-3 rounded-site p-5">
-        <p className="text-sm text-site-text-muted">
+      <section className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
+        <p className="t-body text-site-text-muted">
           {t('profile-intro', {
             defaultValue:
               'Samples the JavaScript call stack of ONE web worker (whichever the cluster routes this request to; its pid is shown with the result) at 1 ms intervals. Users are not affected beyond a few percent of that worker’s CPU while it runs.',
           })}
         </p>
         <div className="flex flex-wrap items-end gap-3">
-          <label className="space-y-1 text-xs text-site-text-muted">
+          <label className="space-y-1 t-meta">
             <span>{t('profile-duration', { defaultValue: 'Duration' })}</span>
             <Select
               value={seconds}
@@ -149,14 +146,14 @@ export function ProfilerTab() {
             {t('profile-summarise', { defaultValue: 'Capture & summarise' })}
           </Button>
         </div>
-        <p className="text-xs text-site-text-muted">
+        <p className="t-body text-site-text-muted">
           {t('profile-hint', {
             defaultValue:
               'The downloaded .cpuprofile opens in Chrome DevTools: Performance tab, Load profile.',
           })}
         </p>
         {busy && (
-          <div className="flex items-center gap-2 text-sm text-site-text-muted" role="status">
+          <div className="flex items-center gap-2 t-body text-site-text-muted" role="status">
             <Spinner size={18} />
             {t('profile-running', {
               defaultValue: 'Profiling for {{count}} s…',
@@ -168,14 +165,14 @@ export function ProfilerTab() {
 
       {result && (
         <section className="space-y-3">
-          <h2 className="site-section-label">
+          <h2 className="t-heading text-site-text">
             {t('profile-result', {
               defaultValue: 'Top functions by self time (worker pid {{pid}}, {{count}} s)',
               pid: result.pid,
               count: result.seconds,
             })}
           </h2>
-          <p className="text-xs text-site-text-muted">
+          <p className="t-body text-site-text-muted">
             {t('profile-result-meta', {
               defaultValue: '{{samples}} samples; the worker was idle {{idle}}% of the time.',
               samples: fmtInt(result.sampleCount),

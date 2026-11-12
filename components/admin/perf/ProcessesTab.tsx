@@ -19,8 +19,8 @@ function Stat({
 }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs text-site-text-muted">{label}</dt>
-      <dd className={`truncate text-sm font-semibold tabular-nums ${toneClass(tone ?? 'none')}`}>
+      <dt className="t-meta">{label}</dt>
+      <dd className={`truncate t-body font-semibold tabular-nums ${toneClass(tone ?? 'none')}`}>
         {value}
       </dd>
     </div>
@@ -38,9 +38,9 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
     .slice(0, 12);
 
   return (
-    <article className="space-y-3 rounded-site p-5">
+    <article className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
       <header className="flex flex-wrap items-center gap-2">
-        <h3 className="text-base font-semibold text-site-text">{p.service}</h3>
+        <h3 className="t-heading text-site-text">{p.service}</h3>
         <Badge variant="default">
           {t('proc-pid', { defaultValue: 'pid {{pid}}', pid: p.pid })}
         </Badge>
@@ -49,8 +49,8 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
             {t('proc-worker', { defaultValue: 'worker {{id}}', id: String(p.clusterWorkerId) })}
           </Badge>
         )}
-        <span className="text-xs text-site-text-muted">{p.hostname}</span>
-        <span className="ml-auto text-xs text-site-text-muted">
+        <span className="t-meta">{p.hostname}</span>
+        <span className="ms-auto t-meta">
           {t('proc-uptime', { defaultValue: 'up {{uptime}}', uptime: fmtUptime(p.uptimeSec) })}
         </span>
       </header>
@@ -120,10 +120,8 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
         <div className="grid gap-3 sm:grid-cols-3">
           {gauges.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-site-text-muted">
-                {t('proc-gauges', { defaultValue: 'Gauges' })}
-              </p>
-              <ul className="mt-1 space-y-0.5 text-xs">
+              <p className="t-label">{t('proc-gauges', { defaultValue: 'Gauges' })}</p>
+              <ul className="mt-1 space-y-0.5 t-meta">
                 {gauges.map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
                     <span className="font-mono text-site-text-muted break-all">{k}</span>
@@ -135,10 +133,8 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
           )}
           {counters.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-site-text-muted">
-                {t('proc-counters', { defaultValue: 'Counters' })}
-              </p>
-              <ul className="mt-1 space-y-0.5 text-xs">
+              <p className="t-label">{t('proc-counters', { defaultValue: 'Counters' })}</p>
+              <ul className="mt-1 space-y-0.5 t-meta">
                 {counters.map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
                     <span className="font-mono text-site-text-muted break-all">{k}</span>
@@ -150,10 +146,8 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
           )}
           {handles.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-site-text-muted">
-                {t('proc-handles', { defaultValue: 'Active handles' })}
-              </p>
-              <ul className="mt-1 space-y-0.5 text-xs">
+              <p className="t-label">{t('proc-handles', { defaultValue: 'Active handles' })}</p>
+              <ul className="mt-1 space-y-0.5 t-meta">
                 {handles.map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
                     <span className="font-mono text-site-text-muted break-all">{k}</span>
@@ -182,10 +176,7 @@ export function ProcessesTab({ overview }: { overview: PerfOverview }) {
       {down.length > 0 && (
         <div className="space-y-2">
           {down.map((h) => (
-            <div
-              key={h.service}
-              className="flex items-center gap-2 rounded-site p-5 text-sm text-site-danger"
-            >
+            <div key={h.service} className="flex items-center gap-2 t-body text-site-danger">
               <OctagonAlert className="size-4 shrink-0" aria-hidden />
               <span>
                 {t('hub-unreachable', {

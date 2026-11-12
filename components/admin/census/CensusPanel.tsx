@@ -341,12 +341,12 @@ export function CensusPanel() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
         <Select
           value={source}
           onChange={(e) => setSource(e.target.value)}
           aria-label={t('census-source', { defaultValue: 'Census to show' })}
-          containerClassName="w-56"
+          containerClassName="w-full sm:w-56"
         >
           <option value={LIVE}>
             {t('census-source-live', { defaultValue: 'Live, as of now' })}
@@ -363,13 +363,13 @@ export function CensusPanel() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('census-search', { defaultValue: 'Filter by name' })}
           aria-label={t('census-search', { defaultValue: 'Filter by name' })}
-          className="w-56"
+          className="w-full sm:w-56"
         />
         <Select
           value={filter}
           onChange={(e) => setFilter(e.target.value as Filter)}
           aria-label={t('census-filter', { defaultValue: 'Rows to show' })}
-          containerClassName="w-56"
+          containerClassName="w-full sm:w-56"
         >
           <option value="all">{t('census-filter-all', { defaultValue: 'All' })}</option>
           <option value="quiet">
@@ -383,7 +383,7 @@ export function CensusPanel() {
           </option>
           <option value="active">{t('census-verdict-active', { defaultValue: 'Active' })}</option>
         </Select>
-        <Button variant="primary" loading={saving} onClick={takeSnapshot} className="ms-auto">
+        <Button variant="primary" loading={saving} onClick={takeSnapshot} className="sm:ms-auto">
           {t('census-take-snapshot', { defaultValue: 'Take snapshot now' })}
         </Button>
       </div>
@@ -403,13 +403,13 @@ export function CensusPanel() {
       ) : (
         <>
           <div className="space-y-1 border-b border-site-border pb-4">
-            <p className="pb-1 text-sm text-site-text">
+            <p className="pb-1 t-body text-site-text">
               {t('census-no-last-write', {
                 defaultValue:
                   'Postgres does not record when a table was last written. Every column here is an indirect sign of use; the notes under the list say what each one is.',
               })}
             </p>
-            <p className="t-meta">
+            <p className="t-body text-site-text-muted">
               {data.source === 'live'
                 ? t('census-taken-live', {
                     defaultValue: 'Live. Taken {{at}} UTC.',
@@ -433,7 +433,7 @@ export function CensusPanel() {
                     defaultValue: 'Counters were never reset, so their start is unknown.',
                   })}
             </p>
-            <p className="t-meta">
+            <p className="t-body text-site-text-muted">
               {baseline
                 ? t('census-baseline', {
                     defaultValue: 'Write counters are compared with the snapshot taken {{at}} UTC.',
@@ -445,7 +445,7 @@ export function CensusPanel() {
                     days: census.quietDays,
                   })}
             </p>
-            <p className="t-meta">
+            <p className="t-body text-site-text-muted">
               {t('census-summary-tables', {
                 defaultValue:
                   '{{tables}} tables: {{empty}} empty, {{quiet}} quiet, {{unknown}} unknown.',
@@ -481,11 +481,11 @@ export function CensusPanel() {
                 empty={t('census-no-tables', { defaultValue: 'No table matches.' })}
                 sortLabel={sortLabel}
               />
-              <section className="border-t border-site-border pt-4">
+              <section className="border-t border-site-border pt-4 first:border-t-0 first:pt-0">
                 <h2 className="t-heading text-site-text">
                   {t('census-notes-title', { defaultValue: 'What the columns mean' })}
                 </h2>
-                <ul className="mt-2 max-w-2xl space-y-2 text-sm text-site-text-muted">
+                <ul className="mt-2 max-w-2xl space-y-2 t-body text-site-text-muted">
                   <li>
                     {t('census-note-no-last-write', {
                       defaultValue:
@@ -543,11 +543,11 @@ export function CensusPanel() {
                 empty={t('census-no-products', { defaultValue: 'No product matches.' })}
                 sortLabel={sortLabel}
               />
-              <section className="border-t border-site-border pt-4">
+              <section className="border-t border-site-border pt-4 first:border-t-0 first:pt-0">
                 <h2 className="t-heading text-site-text">
                   {t('census-notes-title', { defaultValue: 'What the columns mean' })}
                 </h2>
-                <ul className="mt-2 max-w-2xl space-y-2 text-sm text-site-text-muted">
+                <ul className="mt-2 max-w-2xl space-y-2 t-body text-site-text-muted">
                   <li>
                     {t('census-note-actives', {
                       defaultValue:

@@ -25,14 +25,9 @@ interface KpiProps {
 export function Kpi({ label, value, tone = 'none', hint }: KpiProps) {
   const { t } = useTranslation('f-perf');
   return (
-    <div className="rounded-site p-5">
-      <p className="text-xs text-site-text-muted">{label}</p>
-      <p
-        className={cn(
-          'mt-1 flex items-center gap-1.5 text-2xl font-semibold tabular-nums',
-          toneClass(tone),
-        )}
-      >
+    <div className="min-w-0 border-t border-site-border py-3">
+      <p className="t-label">{label}</p>
+      <p className={cn('t-heading mt-1 flex items-center gap-1.5 tabular-nums', toneClass(tone))}>
         {value}
         {tone === 'warn' && (
           <>
@@ -47,7 +42,7 @@ export function Kpi({ label, value, tone = 'none', hint }: KpiProps) {
           </>
         )}
       </p>
-      {hint && <p className="mt-1 text-xs text-site-text-muted">{hint}</p>}
+      {hint && <p className="t-meta mt-1">{hint}</p>}
     </div>
   );
 }

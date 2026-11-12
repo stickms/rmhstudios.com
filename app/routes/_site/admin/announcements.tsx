@@ -213,7 +213,7 @@ function AdminAnnouncementsPage() {
   // MentionTextarea is the only raw field left; it takes the same inset material
   // as `Input`/`Textarea` through its className.
   const textareaCls =
-    'surface-field w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted';
+    'surface-field w-full rounded-site-sm px-3 py-2 t-body text-site-text placeholder:text-site-text-muted';
 
   return (
     <PageLayout
@@ -226,8 +226,8 @@ function AdminAnnouncementsPage() {
       wide
     >
       <AdminBody width="narrow">
-        {/* Create form — a singular composer panel gets the L2 pane. */}
-        <div className="space-y-3 rounded-site p-5">
+        {/* Create form: fields on the page gutter, no pane around them. */}
+        <div className="space-y-3">
           <div className="relative">
             <Input
               className="pr-12"
@@ -266,7 +266,7 @@ function AdminAnnouncementsPage() {
               />
             </div>
           </div>
-          <p className="text-xs text-site-text-muted">
+          <p className="t-body text-site-text-muted">
             {t('mention-tip-prefix', { defaultValue: 'Tip: type' })}{' '}
             <span className="font-mono">@</span>{' '}
             {t('mention-tip-middle', { defaultValue: 'to mention a user or' })}{' '}
@@ -276,9 +276,9 @@ function AdminAnnouncementsPage() {
 
           {/* Poll creator */}
           {attachment === 'poll' && (
-            <div className="relative space-y-2 rounded-site p-4">
+            <div className="relative space-y-2 border-y border-site-border py-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="site-section-label">
+                <span className="t-heading text-site-text">
                   {t('poll-button', { defaultValue: 'Poll' })}
                 </span>
                 <IconButton
@@ -353,12 +353,12 @@ function AdminAnnouncementsPage() {
                   onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
                   className="rounded border-site-border text-site-accent focus:ring-site-accent"
                 />
-                <span className="text-xs text-site-text-muted">
+                <span className="t-meta">
                   {t('allow-multiple-selections', { defaultValue: 'Allow multiple selections' })}
                 </span>
               </label>
               <label className="flex items-center gap-2">
-                <span className="text-xs text-site-text-muted">
+                <span className="t-meta">
                   {t('poll-length', { defaultValue: 'Poll length' })}
                 </span>
                 <Select
@@ -379,9 +379,9 @@ function AdminAnnouncementsPage() {
 
           {/* GIF input */}
           {attachment === 'gif' && (
-            <div className="relative space-y-2 rounded-site p-4">
+            <div className="relative space-y-2 border-y border-site-border py-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="site-section-label">
+                <span className="t-heading text-site-text">
                   {t('image-gif-label', { defaultValue: 'Image / GIF' })}
                 </span>
                 <IconButton
@@ -407,7 +407,7 @@ function AdminAnnouncementsPage() {
               />
               {gifUrl.trim() && isValidMediaUrl(gifUrl.trim()) && <GifEmbed url={gifUrl.trim()} />}
               {gifUrl.trim() && !isValidMediaUrl(gifUrl.trim()) && (
-                <p className="text-xs text-site-danger">
+                <p className="t-body text-site-danger">
                   {t('gif-url-invalid', {
                     defaultValue: 'Must be a direct image URL or Tenor/Giphy link',
                   })}
@@ -439,7 +439,7 @@ function AdminAnnouncementsPage() {
               ))}
             </div>
           )}
-          {imageError && <p className="text-xs text-site-danger">{imageError}</p>}
+          {imageError && <p className="t-body text-site-danger">{imageError}</p>}
 
           <input
             ref={imageInputRef}
@@ -521,7 +521,7 @@ function AdminAnnouncementsPage() {
 
           <div className="flex justify-end">
             <Button
-              variant="default"
+              variant="primary"
               onClick={create}
               loading={submitting}
               disabled={!title.trim() || !body.trim() || uploadingCount > 0}
@@ -543,11 +543,11 @@ function AdminAnnouncementsPage() {
             description={t('no-announcements', { defaultValue: 'No announcements yet.' })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className="divide-y divide-site-border border-t border-site-border">
             {list.map((a) => (
-              <li key={a.id} className="relative rounded-site px-4 py-3">
+              <li key={a.id} className="relative py-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 basis-48 space-y-1">
+                  <div className="min-w-0 flex-1 basis-64 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="default" className="capitalize">
                         {variantLabel[a.variant as (typeof VARIANTS)[number]] ?? a.variant}
@@ -576,8 +576,8 @@ function AdminAnnouncementsPage() {
                         </Badge>
                       )}
                     </div>
-                    <p className="truncate font-semibold text-site-text">{a.title}</p>
-                    <p className="line-clamp-2 text-sm text-site-text-muted">{a.body}</p>
+                    <p className="t-heading break-words text-site-text">{a.title}</p>
+                    <p className="line-clamp-2 t-body text-site-text-muted">{a.body}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <Button size="sm" variant="default" onClick={() => toggleActive(a)}>

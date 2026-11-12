@@ -45,7 +45,7 @@ export function AdminPatchNotes() {
       backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
     >
       <AdminBody width="narrow">
-        <div className="space-y-3 rounded-site p-5">
+        <div className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
           <Select
             value={gameId}
             onChange={(e) => setGameId(e.target.value)}

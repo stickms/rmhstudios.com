@@ -13,11 +13,12 @@ const WIDTHS = {
 /**
  * The inner column every admin page renders inside `PageLayout`.
  *
- * One spacing grammar for the whole admin area: `px-4 pt-4 pb-12` (the page
- * anatomy in docs/page-consistency.md §2) with sections spaced by
- * `--site-section-gap`. Admin pages used to write `p-4 md:p-8` + `space-y-6`
- * themselves, which stacked 32px of desktop padding on top of the shell's own
- * gutters and drifted page to page.
+ * One spacing grammar for the whole admin area: `pt-4 pb-12` with sections
+ * spaced by `--site-section-gap`, and NO inline padding. The shell frame
+ * supplies the page gutter and the page title sits on it
+ * (docs/page-consistency.md §2), so a `px-*` here indents every admin page a
+ * second time: on a 390px phone that was 32px of the column gone before a row
+ * added its own.
  */
 export function AdminBody({
   width = 'default',
@@ -31,7 +32,7 @@ export function AdminBody({
   return (
     <div
       className={cn(
-        'mx-auto w-full min-w-0 space-y-[var(--site-section-gap)] px-4 pt-4 pb-12',
+        'mx-auto w-full min-w-0 space-y-[var(--site-section-gap)] pt-4 pb-12',
         WIDTHS[width],
         className,
       )}

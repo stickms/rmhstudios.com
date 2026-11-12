@@ -133,11 +133,11 @@ function AdminEmojiPacksPage() {
             })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className="divide-y divide-site-border">
             {rows.map((p) => (
-              <li key={p.id} className="space-y-3 rounded-site p-5">
+              <li key={p.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="min-w-0 truncate text-base font-medium text-site-text">
+                  <h2 className="t-heading min-w-0 break-words text-site-text">
                     {p.name}
                   </h2>
                   <Badge variant="default">
@@ -150,7 +150,7 @@ function AdminEmojiPacksPage() {
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-site-text-muted">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 t-body text-site-text-muted">
                   <span className="inline-flex items-center gap-1.5">
                     <UserAvatar
                       src={p.owner.image}
@@ -179,9 +179,9 @@ function AdminEmojiPacksPage() {
                   </span>
                 </div>
 
-                {p.description && <p className="text-sm text-site-text-muted">{p.description}</p>}
+                {p.description && <p className="t-body text-site-text-muted">{p.description}</p>}
 
-                <ul className="surface-field flex flex-wrap gap-2 rounded-site-sm p-3">
+                <ul className="flex flex-wrap gap-2">
                   {p.items.map((item) => (
                     <li key={item.id} title={`:${item.name}:`}>
                       <img
@@ -195,7 +195,7 @@ function AdminEmojiPacksPage() {
                   ))}
                 </ul>
                 {p.itemCount > p.items.length && (
-                  <p className="text-xs text-site-text-muted">
+                  <p className="t-body text-site-text-muted">
                     {t('emoji-pack-more-items', {
                       defaultValue: 'Showing {{shown}} of {{count}} items.',
                       shown: p.items.length,

@@ -80,8 +80,8 @@ export function AdminReleaseNotes() {
 
   return (
     <AdminBody width="narrow">
-      <section className="space-y-3 rounded-site p-5">
-        <h2 className="site-section-label">
+      <section className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
+        <h2 className="t-heading text-site-text">
           {t('admin-pasteTitle', { defaultValue: 'Merged pull requests' })}
         </h2>
         <Textarea
@@ -105,8 +105,8 @@ export function AdminReleaseNotes() {
         </Button>
       </section>
 
-      <section className="space-y-3 rounded-site p-5">
-        <h2 className="site-section-label">
+      <section className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
+        <h2 className="t-heading text-site-text">
           {t('admin-editTitle', { defaultValue: 'Release note' })}
         </h2>
         <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
@@ -155,11 +155,11 @@ export function AdminReleaseNotes() {
         </div>
       </section>
 
-      <ul className="space-y-3">
+      <ul className="divide-y divide-site-border border-t border-site-border">
         {notes.map((n) => (
-          <li key={n.id} className="space-y-3 rounded-site p-5">
-            <div className="flex items-center gap-2">
-              <p className="min-w-0 flex-1 truncate text-sm font-semibold text-site-text">
+          <li key={n.id} className="space-y-3 py-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="t-heading min-w-0 flex-1 basis-full break-words text-site-text sm:basis-0">
                 {n.version} · {n.title}
               </p>
               <Badge variant={n.publishedAt ? 'success' : 'default'}>
@@ -167,7 +167,7 @@ export function AdminReleaseNotes() {
                   ? t('admin-live', { defaultValue: 'Live' })
                   : t('admin-draftLabel', { defaultValue: 'Draft' })}
               </Badge>
-              <Button variant="ghost" size="sm" onClick={() => toggle(n)}>
+              <Button variant="default" size="sm" className="ms-auto" onClick={() => toggle(n)}>
                 {n.publishedAt
                   ? t('admin-unpublish', { defaultValue: 'Unpublish' })
                   : t('admin-publish', { defaultValue: 'Publish' })}

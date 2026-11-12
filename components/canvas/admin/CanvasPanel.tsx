@@ -62,7 +62,7 @@ export default function CanvasPanel() {
   return (
     <div className="space-y-[var(--site-section-gap)]">
       <form
-        className="space-y-3 rounded-site p-5"
+        className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
         onSubmit={(e) => {
           e.preventDefault();
           void create();
@@ -85,7 +85,7 @@ export default function CanvasPanel() {
           tabs={CANVAS_SIZES.map((s) => ({ id: String(s), label: `${s} × ${s}` }))}
         />
         <div className="grid gap-3 sm:grid-cols-3">
-          <label className="space-y-1 text-sm text-site-text-muted">
+          <label className="space-y-1 t-body text-site-text-muted">
             {t('admin-cooldown', { defaultValue: 'Minutes between pixels' })}
             <Input
               type="number"
@@ -95,7 +95,7 @@ export default function CanvasPanel() {
               onChange={(e) => setMinutes(e.target.value)}
             />
           </label>
-          <label className="space-y-1 text-sm text-site-text-muted">
+          <label className="space-y-1 t-body text-site-text-muted">
             {t('admin-start', { defaultValue: 'Starts' })}
             <Input
               type="datetime-local"
@@ -103,7 +103,7 @@ export default function CanvasPanel() {
               onChange={(e) => setStartsAt(e.target.value)}
             />
           </label>
-          <label className="space-y-1 text-sm text-site-text-muted">
+          <label className="space-y-1 t-body text-site-text-muted">
             {t('admin-end', { defaultValue: 'Ends' })}
             <Input
               type="datetime-local"
@@ -116,15 +116,15 @@ export default function CanvasPanel() {
           {t('admin-create', { defaultValue: 'Schedule event' })}
         </Button>
       </form>
-      <ul className="space-y-3">
+      <ul className="divide-y divide-site-border border-t border-site-border">
         {q.data?.events.map((e) => (
           <li
             key={e.id}
-            className="flex items-center justify-between gap-3 rounded-site px-4 py-3"
+            className="flex items-center justify-between gap-3 py-3"
           >
             <div className="min-w-0">
               <p className="truncate font-medium text-site-text">{e.title}</p>
-              <p className="text-xs text-site-text-muted">
+              <p className="t-body text-site-text-muted">
                 {t('admin-row', {
                   defaultValue: '{{size}}px, {{phase}}, {{count}} pixels placed',
                   size: e.width,
