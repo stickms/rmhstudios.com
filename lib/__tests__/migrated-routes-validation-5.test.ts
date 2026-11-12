@@ -59,14 +59,14 @@ async function handler(mod: string, method: string): Promise<Handler> {
 }
 
 const TIP = '@/lib/economy/api/coins.tip.server';
-const GIFT = '@/app/routes/api/gift-sub';
+const GIFT = '@/lib/gifting/api/gift-sub.server';
 const JOIN = '@/lib/creator/api/creators.$id.join.server';
 const WAGER = '@/app/routes/api/wager/index';
 const TOURNEY = '@/app/routes/api/tournaments/index';
 const T_REPORT = '@/app/routes/api/tournaments/$id/matches/$matchId/report';
 const FEEDBACK = '@/app/routes/api/feedback';
 const SEARCHES = '@/app/routes/api/rmhladder/searches';
-const GEOCODE = '@/app/routes/api/homes/geocode';
+const GEOCODE = '@/lib/homes/api/homes.geocode.server';
 
 function req(
   method: string,

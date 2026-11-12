@@ -1,0 +1,23 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/discovery/discovery.contract';
+import { memoriesSchema } from '@/lib/discovery/schema';
+import { getMemoriesOptIn, setMemoriesOptIn } from '@/lib/discovery/memories.server';
+
+/** GET / PUT /api/discovery/memories — opt in or out of "On this day" notifications (A5). */
+export const route = apiRoute('/api/discovery/memories', {
+  GET: implement(C.getDiscoveryMemoriesApi, { rateLimit: 'read' }, async ({ userId }) =>
+    Response.json(
+      { enabled: await getMemoriesOptIn(userId) },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    ),
+  ),
+  PUT: implement(
+    C.setDiscoveryMemoriesApi,
+    { rateLimit: 'write', body: memoriesSchema },
+    async ({ userId, body }) => {
+      await setMemoriesOptIn(userId, body.enabled);
+      return Response.json({ enabled: body.enabled });
+    },
+  ),
+});

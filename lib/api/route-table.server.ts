@@ -103,14 +103,108 @@ import { route as r94 } from '@/lib/party/api/connections.grids.$id.guess.server
 import { route as r95 } from '@/lib/party/api/connections.grids.$id.rate.server';
 import { route as r96 } from '@/lib/party/api/connections.grids.$id.schedule.server';
 import { route as r97 } from '@/lib/creator/api/creators.$id.join.server';
-import { route as r98 } from '@/lib/lists/api/lists.server';
-import { route as r99 } from '@/lib/lists/api/lists.$id.server';
-import { route as r100 } from '@/lib/lists/api/lists.$id.feed.server';
-import { route as r101 } from '@/lib/lists/api/lists.$id.members.server';
-import { route as r102 } from '@/lib/predictions/api/predictions.server';
-import { route as r103 } from '@/lib/predictions/api/predictions.$id.comments.server';
-import { route as r104 } from '@/lib/predictions/api/predictions.$id.devils-advocate.server';
-import { route as r105 } from '@/lib/predictions/api/predictions.$id.trade.server';
+import { route as r98 } from '@/lib/daily-puzzles/api/daily-puzzles.leaderboard.server';
+import { route as r99 } from '@/lib/daily-puzzles/api/daily-puzzles.puzzle.server';
+import { route as r100 } from '@/lib/daily-puzzles/api/daily-puzzles.score.server';
+import { route as r101 } from '@/lib/devplatform/api/developer.keys.server';
+import { route as r102 } from '@/lib/devplatform/api/developer.keys.$id.server';
+import { route as r103 } from '@/lib/devplatform/api/developer.keys.$id.usage.server';
+import { route as r104 } from '@/lib/api/routes/discord.token.server';
+import { route as r105 } from '@/lib/discovery/api/discovery.alerts.server';
+import { route as r106 } from '@/lib/discovery/api/discovery.memories.server';
+import { route as r107 } from '@/lib/discovery/api/discovery.surprise.server';
+import { route as r108 } from '@/lib/discovery/api/discovery.watch.server';
+import { route as r109 } from '@/features/doctrine/api/doctrine.puzzles.leaderboard.server';
+import { route as r110 } from '@/features/doctrine/api/doctrine.puzzles.today.server';
+import { route as r111 } from '@/features/doctrine/api/doctrine.reputation.server';
+import { route as r112 } from '@/features/doctrine/api/doctrine.reputation.leaderboard.server';
+import { route as r113 } from '@/features/doctrine/api/doctrine.safehouse.content.server';
+import { route as r114 } from '@/features/doctrine/api/doctrine.safehouse.disclosures.server';
+import { route as r115 } from '@/features/doctrine/api/doctrine.sahur.status.server';
+import { route as r116 } from '@/lib/dunesday/api/dunesday.ask.server';
+import { route as r117 } from '@/lib/elections/api/elections.server';
+import { route as r118 } from '@/lib/elections/api/elections.ask.server';
+import { route as r119 } from '@/lib/elections/api/elections.calendar.server';
+import { route as r120 } from '@/lib/elections/api/elections.chat.server';
+import { route as r121 } from '@/lib/elections/api/elections.chat.react.server';
+import { route as r122 } from '@/lib/elections/api/elections.history.server';
+import { route as r123 } from '@/lib/elections/api/elections.markets.server';
+import { route as r124 } from '@/lib/elections/api/elections.measures.server';
+import { route as r125 } from '@/lib/elections/api/elections.news.server';
+import { route as r126 } from '@/lib/elections/api/elections.offices.server';
+import { route as r127 } from '@/lib/elections/api/elections.rooms.server';
+import { route as r128 } from '@/lib/elections/api/elections.rooms.$code.server';
+import { route as r129 } from '@/lib/elections/api/elections.streams.server';
+import { route as r130 } from '@/lib/elections/api/elections.summary.server';
+import { route as r131 } from '@/lib/elections/api/elections.swing.server';
+import { route as r132 } from '@/lib/emoji/api/emoji-packs.server';
+import { route as r133 } from '@/lib/emoji/api/emoji-packs.$slug.subscribe.server';
+import { route as r134 } from '@/lib/emoji/api/emoji-packs.$slug.upload.server';
+import { route as r135 } from '@/lib/discovery/api/explore.server';
+import { route as r136 } from '@/lib/feed/api/feed.mention-search.server';
+import { route as r137 } from '@/lib/competitive/api/game-night.server';
+import { route as r138 } from '@/lib/game/api/games.$id.leaderboard.server';
+import { route as r139 } from '@/lib/game/api/games.$id.score.server';
+import { route as r140 } from '@/lib/cards/api/games.cards.craft.server';
+import { route as r141 } from '@/lib/cards/api/games.customize.server';
+import { route as r142 } from '@/lib/cards/api/games.gems.unpack.server';
+import { route as r143 } from '@/lib/devplatform/api/games.how-to-play.server';
+import { route as r144 } from '@/lib/cards/api/games.hub.thread.server';
+import { route as r145 } from '@/lib/cards/api/games.market.list.server';
+import { route as r146 } from '@/lib/playtime/api/games.playtime.server';
+import { route as r147 } from '@/lib/cards/api/games.showcase.server';
+import { route as r148 } from '@/features/synapse-storm/api/games.synapse-storm.save.server';
+import { route as r149 } from '@/lib/game/api/games.synapse-storm.score.server';
+import { route as r150 } from '@/lib/cards/api/games.trades.accept.server';
+import { route as r151 } from '@/lib/cards/api/games.trades.cancel.server';
+import { route as r152 } from '@/lib/cards/api/games.trades.decline.server';
+import { route as r153 } from '@/lib/cards/api/games.trades.propose.server';
+import { route as r154 } from '@/lib/gifting/api/gift-sub.server';
+import { route as r155 } from '@/lib/group-chat/api/group-chats.$id.server';
+import { route as r156 } from '@/lib/group-chat/api/group-chats.$id.messages.server';
+import { route as r157 } from '@/lib/games/api/guides.server';
+import { route as r158 } from '@/lib/games/api/guides.$id.publish.server';
+import { route as r159 } from '@/lib/shop/api/history.server';
+import { route as r160 } from '@/lib/shop/api/history.$id.server';
+import { route as r161 } from '@/lib/history/api/history.beat.server';
+import { route as r162 } from '@/lib/homes/api/homes.ai-image.server';
+import { route as r163 } from '@/lib/homes/api/homes.geocode.server';
+import { route as r164 } from '@/lib/homes/api/homes.listings.$id.favorite.server';
+import { route as r165 } from '@/lib/homes/api/homes.watches.server';
+import { route as r166 } from '@/lib/competitive/api/jams.server';
+import { route as r167 } from '@/lib/competitive/api/jams.$slug.server';
+import { route as r168 } from '@/lib/competitive/api/jams.$slug.entry.server';
+import { route as r169 } from '@/lib/competitive/api/jams.$slug.rate.server';
+import { route as r170 } from '@/features/laundry-sort/api/laundry-sort.score.server';
+import { route as r171 } from '@/lib/library/api/library.collection.$id.cover.server';
+import { route as r172 } from '@/lib/lists/api/lists.server';
+import { route as r173 } from '@/lib/lists/api/lists.$id.server';
+import { route as r174 } from '@/lib/lists/api/lists.$id.feed.server';
+import { route as r175 } from '@/lib/lists/api/lists.$id.members.server';
+import { route as r176 } from '@/lib/market/api/market.listings.$id.server';
+import { route as r177 } from '@/lib/market/api/market.listings.$id.buy.server';
+import { route as r178 } from '@/lib/messages/api/messages.server';
+import { route as r179 } from '@/lib/messages/api/messages.$conversationId.edit.server';
+import { route as r180 } from '@/lib/messages/api/messages.$conversationId.hide.server';
+import { route as r181 } from '@/lib/messages/api/messages.$conversationId.mutations.server';
+import { route as r182 } from '@/lib/messages/api/messages.$conversationId.react.server';
+import { route as r183 } from '@/lib/messages/api/messages.$conversationId.read.server';
+import { route as r184 } from '@/lib/messages/api/messages.$conversationId.thread.server';
+import { route as r185 } from '@/lib/messages/api/messages.$conversationId.typing.server';
+import { route as r186 } from '@/lib/messages/api/messages.$conversationId.unsend.server';
+import { route as r187 } from '@/lib/messages/api/messages.$conversationId.voice.server';
+import { route as r188 } from '@/lib/moderation/api/moderation.block.server';
+import { route as r189 } from '@/lib/api/routes/moments.server';
+import { route as r190 } from '@/lib/game/api/neon-driftway.score.server';
+import { route as r191 } from '@/lib/trick-week/api/nightrail.tricks.server';
+import { route as r192 } from '@/lib/trick-week/api/nightrail.tricks.vote.server';
+import { route as r193 } from '@/lib/preferences/api/notifications.server';
+import { route as r194 } from '@/lib/preferences/api/notifications.preferences.server';
+import { route as r195 } from '@/lib/preferences/api/notifications.read.server';
+import { route as r196 } from '@/lib/predictions/api/predictions.server';
+import { route as r197 } from '@/lib/predictions/api/predictions.$id.comments.server';
+import { route as r198 } from '@/lib/predictions/api/predictions.$id.devils-advocate.server';
+import { route as r199 } from '@/lib/predictions/api/predictions.$id.trade.server';
 
 export const API_ROUTES: readonly ApiRoute[] = [
   r0, // /api/account/recovery/codes
@@ -211,12 +305,106 @@ export const API_ROUTES: readonly ApiRoute[] = [
   r95, // /api/connections/grids/$id/rate
   r96, // /api/connections/grids/$id/schedule
   r97, // /api/creators/$id/join
-  r98, // /api/lists
-  r99, // /api/lists/$id
-  r100, // /api/lists/$id/feed
-  r101, // /api/lists/$id/members
-  r102, // /api/predictions
-  r103, // /api/predictions/$id/comments
-  r104, // /api/predictions/$id/devils-advocate
-  r105, // /api/predictions/$id/trade
+  r98, // /api/daily-puzzles/leaderboard
+  r99, // /api/daily-puzzles/puzzle
+  r100, // /api/daily-puzzles/score
+  r101, // /api/developer/keys
+  r102, // /api/developer/keys/$id
+  r103, // /api/developer/keys/$id/usage
+  r104, // /api/discord/token
+  r105, // /api/discovery/alerts
+  r106, // /api/discovery/memories
+  r107, // /api/discovery/surprise
+  r108, // /api/discovery/watch
+  r109, // /api/doctrine/puzzles/leaderboard
+  r110, // /api/doctrine/puzzles/today
+  r111, // /api/doctrine/reputation
+  r112, // /api/doctrine/reputation/leaderboard
+  r113, // /api/doctrine/safehouse/content
+  r114, // /api/doctrine/safehouse/disclosures
+  r115, // /api/doctrine/sahur/status
+  r116, // /api/dunesday/ask
+  r117, // /api/elections
+  r118, // /api/elections/ask
+  r119, // /api/elections/calendar
+  r120, // /api/elections/chat
+  r121, // /api/elections/chat/react
+  r122, // /api/elections/history
+  r123, // /api/elections/markets
+  r124, // /api/elections/measures
+  r125, // /api/elections/news
+  r126, // /api/elections/offices
+  r127, // /api/elections/rooms
+  r128, // /api/elections/rooms/$code
+  r129, // /api/elections/streams
+  r130, // /api/elections/summary
+  r131, // /api/elections/swing
+  r132, // /api/emoji-packs
+  r133, // /api/emoji-packs/$slug/subscribe
+  r134, // /api/emoji-packs/$slug/upload
+  r135, // /api/explore
+  r136, // /api/feed/mention-search
+  r137, // /api/game-night
+  r138, // /api/games/$id/leaderboard
+  r139, // /api/games/$id/score
+  r140, // /api/games/cards/craft
+  r141, // /api/games/customize
+  r142, // /api/games/gems/unpack
+  r143, // /api/games/how-to-play
+  r144, // /api/games/hub/thread
+  r145, // /api/games/market/list
+  r146, // /api/games/playtime
+  r147, // /api/games/showcase
+  r148, // /api/games/synapse-storm/save
+  r149, // /api/games/synapse-storm/score
+  r150, // /api/games/trades/accept
+  r151, // /api/games/trades/cancel
+  r152, // /api/games/trades/decline
+  r153, // /api/games/trades/propose
+  r154, // /api/gift-sub
+  r155, // /api/group-chats/$id
+  r156, // /api/group-chats/$id/messages
+  r157, // /api/guides
+  r158, // /api/guides/$id/publish
+  r159, // /api/history
+  r160, // /api/history/$id
+  r161, // /api/history/beat
+  r162, // /api/homes/ai-image
+  r163, // /api/homes/geocode
+  r164, // /api/homes/listings/$id/favorite
+  r165, // /api/homes/watches
+  r166, // /api/jams
+  r167, // /api/jams/$slug
+  r168, // /api/jams/$slug/entry
+  r169, // /api/jams/$slug/rate
+  r170, // /api/laundry-sort/score
+  r171, // /api/library/collection/$id/cover
+  r172, // /api/lists
+  r173, // /api/lists/$id
+  r174, // /api/lists/$id/feed
+  r175, // /api/lists/$id/members
+  r176, // /api/market/listings/$id
+  r177, // /api/market/listings/$id/buy
+  r178, // /api/messages
+  r179, // /api/messages/$conversationId/edit
+  r180, // /api/messages/$conversationId/hide
+  r181, // /api/messages/$conversationId/mutations
+  r182, // /api/messages/$conversationId/react
+  r183, // /api/messages/$conversationId/read
+  r184, // /api/messages/$conversationId/thread
+  r185, // /api/messages/$conversationId/typing
+  r186, // /api/messages/$conversationId/unsend
+  r187, // /api/messages/$conversationId/voice
+  r188, // /api/moderation/block
+  r189, // /api/moments
+  r190, // /api/neon-driftway/score
+  r191, // /api/nightrail/tricks
+  r192, // /api/nightrail/tricks/vote
+  r193, // /api/notifications
+  r194, // /api/notifications/preferences
+  r195, // /api/notifications/read
+  r196, // /api/predictions
+  r197, // /api/predictions/$id/comments
+  r198, // /api/predictions/$id/devils-advocate
+  r199, // /api/predictions/$id/trade
 ];

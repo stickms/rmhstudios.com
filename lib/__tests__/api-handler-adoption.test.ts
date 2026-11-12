@@ -187,11 +187,9 @@ const KNOWN_UNWRAPPED: readonly string[] = [
 const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
   'app/routes/api/ai/transform.ts',
   'app/routes/api/doctrine/puzzles/replay.ts',
-  'app/routes/api/doctrine/sahur/status.ts',
   'app/routes/api/events/$id/index.ts',
   'app/routes/api/homes/listings.ts',
   'app/routes/api/library/collection/$id.ts',
-  'app/routes/api/library/collection/$id/cover.ts',
   'app/routes/api/library/collection/$id/items.ts',
   'app/routes/api/library/collections.ts',
   'app/routes/api/replays/$id.ts',
@@ -205,6 +203,8 @@ const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
   'app/routes/api/user-builds/$id.ts',
   'app/routes/api/user-builds/$id/comments.ts',
   'app/routes/api/user-builds/$id/like.ts',
+  'features/doctrine/api/doctrine.sahur.status.server.ts',
+  'lib/library/api/library.collection.$id.cover.server.ts',
 ];
 
 const POINTER =

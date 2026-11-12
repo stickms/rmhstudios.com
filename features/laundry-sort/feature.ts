@@ -8,7 +8,7 @@ export default defineFeature({
   delivery: 'island',
   routes: [
     'app/routes/api/laundry-sort/leaderboard.ts',
-    'app/routes/api/laundry-sort/score.ts',
+    'features/laundry-sort/api/laundry-sort.score.server.ts',
     'app/routes/laundry-sort.tsx',
   ],
   namespaces: ['c-laundry-sort'],

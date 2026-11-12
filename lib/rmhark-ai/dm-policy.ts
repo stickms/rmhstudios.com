@@ -35,7 +35,7 @@ export function needsReactiveReply(messages: PolicyMessage[], botId: string): bo
 
 /**
  * Whether a bot may send the FIRST message to a human, per the human's DM
- * privacy. Mirrors app/routes/api/messages.ts.
+ * privacy. Mirrors lib/messages/api/messages.server.ts.
  */
 export function canBotMessage(opts: { dmPrivacy: DmPrivacy; humanFollowsBot: boolean }): boolean {
   switch (opts.dmPrivacy) {

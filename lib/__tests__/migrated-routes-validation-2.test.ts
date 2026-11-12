@@ -38,7 +38,7 @@ interface Case {
 }
 
 const VEGA = '@/app/routes/api/vega/score';
-const LAUNDRY = '@/app/routes/api/laundry-sort/score';
+const LAUNDRY = '@/features/laundry-sort/api/laundry-sort.score.server';
 const FORGE = '@/app/routes/api/signal-forge/score';
 const ALTAIR_SCORE = '@/app/routes/api/altair/score';
 const ALTAIR_META = '@/app/routes/api/altair/meta';

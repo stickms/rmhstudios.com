@@ -55,10 +55,10 @@ async function handler(mod: string, method: string): Promise<Handler> {
 
 const ASK_FEED = '@/lib/feed/api/ai.ask-feed.server';
 const AI_SEARCH = '@/lib/feed/api/ai.search.server';
-const MENTION = '@/app/routes/api/feed/mention-search';
+const MENTION = '@/lib/feed/api/feed.mention-search.server';
 const QUOTA = '@/app/routes/api/library/quota';
 const REDEMPTION = '@/lib/admin/api/admin.redemptions.$id.server';
-const HOMES_AI = '@/app/routes/api/homes/ai-image';
+const HOMES_AI = '@/lib/homes/api/homes.ai-image.server';
 
 function req(method: string, body?: unknown, cookie = true, search = ''): Request {
   return new Request(`https://rmhstudios.com/api/x${search}`, {
