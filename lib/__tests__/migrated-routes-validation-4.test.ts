@@ -186,7 +186,7 @@ describe('admin library routes: 401 signed out, 403 non-admin', () => {
 describe('optional-session readers keep their quiet signed-out answers', () => {
   it('messages unread-count answers { count: 0 }', async () => {
     h.getSession.mockResolvedValue(null);
-    const fn = await handler('@/app/routes/api/messages/unread-count', 'GET');
+    const fn = await handler('@/lib/messages/api/messages.unread-count.server', 'GET');
     const res = await fn({ params: {}, request: req('GET', undefined, false) });
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ count: 0 });
@@ -194,7 +194,7 @@ describe('optional-session readers keep their quiet signed-out answers', () => {
 
   it('messages sidebar answers empty lists', async () => {
     h.getSession.mockResolvedValue(null);
-    const fn = await handler('@/app/routes/api/messages/sidebar', 'GET');
+    const fn = await handler('@/lib/messages/api/messages.sidebar.server', 'GET');
     const res = await fn({ params: {}, request: req('GET', undefined, false) });
     await expect(res.json()).resolves.toEqual({ recent: [], suggested: [] });
   });

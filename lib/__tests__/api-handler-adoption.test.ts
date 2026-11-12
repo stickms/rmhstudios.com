@@ -188,9 +188,6 @@ const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
   'app/routes/api/ai/transform.ts',
   'app/routes/api/events/$id/index.ts',
   'app/routes/api/homes/listings.ts',
-  'app/routes/api/library/collection/$id.ts',
-  'app/routes/api/library/collection/$id/items.ts',
-  'app/routes/api/library/collections.ts',
   'app/routes/api/replays/$id.ts',
   'app/routes/api/rmhcalculator/compute.ts',
   'app/routes/api/rmhcalculator/graph.ts',
@@ -205,6 +202,9 @@ const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
   'lib/api/routes/user-builds.server.ts',
   'lib/feed/api/rmharks.$id.summary.server.ts',
   'lib/library/api/library.collection.$id.cover.server.ts',
+  'lib/library/api/library.collection.$id.items.server.ts',
+  'lib/library/api/library.collection.$id.server.ts',
+  'lib/library/api/library.collections.server.ts',
 ];
 
 const POINTER =

@@ -20,15 +20,11 @@ vi.mock('@/lib/api/handler.server', () => ({
     return fn;
   },
 }));
-vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (config: unknown) => ({ options: config }),
-}));
-
-import { Route } from '@/app/routes/api/library/cover/$id';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
+import { route as Route } from '@/lib/library/api/library.cover.$id.server';
 
 type Handler = (ctx: { request: Request; params: { id: string } }) => Promise<Response>;
-const GET = (Route as unknown as { options: { server: { handlers: { GET: Handler } } } }).options
-  .server.handlers.GET;
+const GET = handlersOf<Handler>(Route).GET!;
 
 describe('library cover variants', () => {
   it('bounds distinct encodes for a sweep of widths to the ladder', async () => {

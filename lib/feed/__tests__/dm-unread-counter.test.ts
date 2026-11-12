@@ -31,7 +31,7 @@ vi.mock('@/lib/prisma.server', () => ({
   },
 }));
 
-import { Route as ReadAll } from '../../../app/routes/api/messages/read-all';
+import { route as ReadAll } from '@/lib/messages/api/messages.read-all.server';
 import { route as ReadOne } from '@/lib/messages/api/messages.$conversationId.read.server';
 
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;

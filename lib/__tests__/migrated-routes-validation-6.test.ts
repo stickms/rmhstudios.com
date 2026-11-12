@@ -52,7 +52,7 @@ async function handler(mod: string, method: string): Promise<Handler> {
 
 const EVENTS = '@/lib/calendar/api/events.server';
 const RSVP = '@/lib/api/routes/events.$id.rsvp.server';
-const LISTINGS = '@/app/routes/api/market/listings/index';
+const LISTINGS = '@/lib/market/api/market.listings.server';
 const TIERS = '@/app/routes/api/studio/tiers';
 const SCORE = '@features/dream-rift/api/dream-rift.score.server';
 

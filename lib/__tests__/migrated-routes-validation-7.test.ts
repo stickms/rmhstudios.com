@@ -56,7 +56,7 @@ async function handler(mod: string, method: string): Promise<Handler> {
 const ASK_FEED = '@/lib/feed/api/ai.ask-feed.server';
 const AI_SEARCH = '@/lib/feed/api/ai.search.server';
 const MENTION = '@/lib/feed/api/feed.mention-search.server';
-const QUOTA = '@/app/routes/api/library/quota';
+const QUOTA = '@/lib/library/api/library.quota.server';
 const REDEMPTION = '@/lib/admin/api/admin.redemptions.$id.server';
 const HOMES_AI = '@/lib/homes/api/homes.ai-image.server';
 

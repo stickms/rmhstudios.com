@@ -261,7 +261,7 @@ export function staticCardFor(path: string): StaticCard | null {
  *
  * Only `default` is a committed PNG now: the site-wide card has to exist as a plain file, because `__root.tsx`
  * advertises it, the legacy `/og.png` aliases it, and it is what every failure falls back to. Every other section
- * card is rendered on request by `/api/og/section/$file` (`app/routes/api/og/section/$file.ts`), so the figures on
+ * card is rendered on request by `/api/og/section/$file` (`lib/og/api/og.section.$file.server.ts`), so the figures on
  * it are read from the catalog when it is drawn and a new section is one entry here, with no PNG to regenerate and
  * commit. (The older section PNGs are still on disk: a link shared before this change still points at them.)
  */

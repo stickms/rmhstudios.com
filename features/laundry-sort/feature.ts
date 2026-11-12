@@ -7,7 +7,7 @@ export default defineFeature({
   basePath: '/laundry-sort',
   delivery: 'island',
   routes: [
-    'app/routes/api/laundry-sort/leaderboard.ts',
+    'features/laundry-sort/api/laundry-sort.leaderboard.server.ts',
     'features/laundry-sort/api/laundry-sort.score.server.ts',
     'app/routes/laundry-sort.tsx',
   ],
