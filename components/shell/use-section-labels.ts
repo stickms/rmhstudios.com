@@ -8,7 +8,7 @@ import type { SectionId } from './sections';
 export function useSectionLabels(): Record<SectionId, string> {
   const { t } = useTranslation('feed');
   return {
-    front: t('shell-section-front', { defaultValue: 'Front' }),
+    front: t('shell-section-feed', { defaultValue: 'Feed' }),
     explore: t('shell-section-explore', { defaultValue: 'Explore' }),
     games: t('shell-section-games', { defaultValue: 'Games' }),
     inbox: t('shell-section-inbox', { defaultValue: 'Inbox' }),

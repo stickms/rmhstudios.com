@@ -682,6 +682,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'settings-look',
     // Steel phase 4 (2026-11-12): the K8 action words, the home title and the reply/repost lines. English-only until the translate pipeline runs on build; remove with it.
     'action-more',
+    'compose-options',
     'action-repost',
     'action-reposted',
     'action-undo-repost',
@@ -699,7 +700,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'shell-home-aria',
     'shell-margin-label',
     'shell-section-explore',
-    'shell-section-front',
+    'shell-section-feed',
     'shell-section-games',
     'shell-section-inbox',
     'shell-section-you',

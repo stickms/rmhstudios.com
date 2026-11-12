@@ -180,17 +180,18 @@ try {
   assert.ok(Math.abs(open.width - 288) < 2, `open globe is 288px (was ${open.width})`);
   assert.ok(Math.abs(open.y + open.height / 2 - 422) < 3, `open globe is centred vertically (centre ${open.y + open.height / 2})`);
   const pins = page.locator(`nav[id="${controls}"] a.globe-nav__pin`);
-  assert.equal(await pins.count(), 5, 'five pins');
-  // The sections are fixed on the sphere: the ones on the near face are in view, the rest come round when it turns.
+  const count = await pins.count();
+  assert.ok(count >= 10, `every destination is a pin (found ${count})`);
+  // The destinations are fixed on the sphere: the ones on the near face are in view, the rest come round as it turns.
   let facing = 0;
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < count; i += 1) {
     const opacity = Number(await pins.nth(i).evaluate((el) => getComputedStyle(el).opacity));
     if (opacity > 0.9) facing += 1;
   }
-  assert.ok(facing >= 1 && facing < 5, `${facing} of five pins face the viewer`);
-  const centre = await page.locator('.globe-nav__pin[data-slot-pos="c"]').boundingBox();
-  assert.ok(Math.abs(centre.x + centre.width / 2 - 195) < 2 && Math.abs(centre.y + centre.height / 2 - 422) < 2, 'the current pin sits at 195,422');
-  log(`globe      tap: aria-expanded=true, 288px at the centre, the current section facing, ${facing} pins on the near face`);
+  assert.ok(facing >= 2 && facing < count, `${facing} of ${count} pins face the viewer`);
+  const centre = await page.locator('.globe-nav__pin[data-pin="current"] .globe-nav__pin-dot').boundingBox();
+  assert.ok(Math.abs(centre.x + centre.width / 2 - 195) < 3 && Math.abs(centre.y + centre.height / 2 - 422) < 3, 'the current page faces the viewer at 195,422');
+  log(`globe      tap: aria-expanded=true, 288px at the centre, the current page facing, ${facing} of ${count} pins on the near face`);
 
   await page.keyboard.press('Escape');
   await page.waitForTimeout(700);

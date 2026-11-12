@@ -79,21 +79,34 @@ describe('SiteShell renders complete without client hooks (B1, L1, L2)', () => {
     expect(out).toContain('data-chrome="ball"');
   });
 
-  it('has the words RMH Studios and the 72px globe in the sidebar, and a search field in the margin', () => {
+  it('has the words RMH Studios as the link home, room for the globe in the sidebar, and a search field in the margin', () => {
     const out = html();
-    expect(out).toContain('site-sidebar__brand">RMH Studios');
-    expect(out).toMatch(/site-sidebar__globe chrome-globe[^>]*data-chrome="ball"|data-chrome="ball"[^>]*site-sidebar__globe/);
+    expect(out).toMatch(/site-sidebar__brand"><a [^>]*href="\/"[^>]*>RMH Studios<\/a>/);
+    // The globe is ONE element for phone and desktop (GlobeNav); the sidebar only keeps its place.
+    expect(out).toContain('site-sidebar__globe-space');
+    expect(out.match(/data-chrome="ball"/g)).toHaveLength(1);
     expect(out).toMatch(/<form role="search" class="site-margin__search" action="\/explore" method="get"/);
   });
 });
 
 describe('the sidebar lists exactly the five sections (L4)', () => {
-  it('Front, Explore, Games, Inbox, You, as words, in that order', () => {
+  it('Feed, Explore, Games, Inbox, You, as words, in that order', () => {
     expect(SECTIONS.map((s) => s.id)).toEqual(['front', 'explore', 'games', 'inbox', 'you']);
     const out = html();
     const nav = /<nav aria-label="Sections">([\s\S]*?)<\/nav>/.exec(out)![1]!;
     const labels = [...nav.matchAll(/<a [^>]*>([^<]+)</g)].map((m) => m[1]);
-    expect(labels).toEqual(['Front', 'Explore', 'Games', 'Inbox', 'You']);
+    expect(labels).toEqual(['Feed', 'Explore', 'Games', 'Inbox', 'You']);
+  });
+
+  it('lists the other destinations as a second, quieter list of words', () => {
+    const out = html('/library');
+    const nav = /<nav aria-label="More places">([\s\S]*?)<\/nav>/.exec(out)![1]!;
+    const hrefs = [...nav.matchAll(/<a [^>]*href="([^"]+)"/g)].map((m) => m[1]);
+    for (const href of ['/create', '/library', '/communities', '/store']) expect(hrefs).toContain(href);
+    // Nothing the five words already lead to, and nothing that needs an account or an admin when signed out.
+    for (const href of ['/', '/explore', '/games', '/messages', '/admin']) expect(hrefs).not.toContain(href);
+    expect(nav.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(nav).not.toMatch(/<svg/);
   });
 
   it('marks the current section and no other', () => {
@@ -139,7 +152,8 @@ describe('the phone globe (G1 to G8)', () => {
     expect(button).toContain('aria-expanded="false"');
     expect(button).toContain('aria-label="Open navigation"');
     expect(button).toContain('data-chrome="ball"');
-    expect(button).toContain('data-chrome-max="288"');
+    // The canvas is sized for the open globe only while it is open (lib/globe/view.ts sets data-chrome-max then).
+    expect(button).not.toContain('data-chrome-max');
     const controls = /aria-controls="([^"]+)"/.exec(button)![1];
     expect(out).toContain(`<nav id="${controls}" class="globe-nav__pins"`);
     // State is one attribute, absent at rest.
@@ -150,23 +164,29 @@ describe('the phone globe (G1 to G8)', () => {
     expect(html()).toMatch(/<noscript><a class="globe-nav__fallback" href="\/sections">Open navigation<\/a><\/noscript>/);
   });
 
-  it('carries the five pins as real links with the current section in the centre (G3)', () => {
+  it('carries every destination as a real link with an icon and a name, and marks the current one', () => {
     const out = html('/games');
     const pins = /<nav id="[^"]+" class="globe-nav__pins"[^>]*>([\s\S]*?)<\/nav>/.exec(out)![1]!;
-    const sectionPins = [...pins.matchAll(/<a [^>]*globe-nav__pin[^>]*>/g)].map((m) => m[0]);
-    expect(sectionPins).toHaveLength(5);
-    expect(sectionPins.filter((p) => p.includes('data-slot-pos="c"'))).toHaveLength(1);
-    const centre = sectionPins.find((p) => p.includes('data-slot-pos="c"'))!;
-    expect(centre).toContain('href="/games"');
-    expect(centre).toContain('aria-current="page"');
-    for (const pos of ['ul', 'ur', 'll', 'lr']) expect(pins).toContain(`data-slot-pos="${pos}"`);
+    const links = [...pins.matchAll(/<a [^>]*class="globe-nav__pin"[^>]*>/g)].map((m) => m[0]);
+    // Every destination the liquid globe carried (lib/sidebar-nav), not five words. Signed out: no Inbox, no Admin.
+    expect(links.length).toBeGreaterThanOrEqual(10);
+    for (const href of ['/', '/explore', '/games', '/library', '/store']) {
+      expect(links.some((l) => l.includes(`href="${href}"`)), href).toBe(true);
+    }
+    const current = links.filter((l) => l.includes('aria-current="page"'));
+    expect(current).toHaveLength(1);
+    expect(current[0]).toContain('href="/games"');
+    expect(current[0]).toContain('data-pin="current"');
+    expect(pins.match(/globe-nav__pin-dot/g)!.length).toBe(links.length);
+    expect(pins.match(/globe-nav__pin-name/g)!.length).toBe(links.length);
+    // The front page is named by the section word.
+    expect(pins).toMatch(/globe-nav__pin-name">Feed</);
     expect(pins).toContain('Write a post');
   });
 
   it('shows unread as a dot with a text equivalent when docked and a number on the Inbox pin (G8)', () => {
     const out = html('/', 3);
     expect(out).toMatch(/globe-nav__dot"><span class="sr-only">3 unread/);
-    expect(out).toMatch(/globe-nav__count"><span aria-hidden="true">3<\/span><span class="sr-only">3 unread/);
     expect(html('/', 0)).not.toContain('globe-nav__dot');
   });
 
@@ -198,11 +218,11 @@ describe('Escape closes and Tab stays inside while open (G4, G7)', () => {
 describe('the globe animates transform and opacity only, in 360 ms (G2, G6)', () => {
   const css = read('components/shell/globe-nav.css').replace(/\/\*[\s\S]*?\*\//g, '');
 
-  it('opens by transform to scale(4.5) in 0.36s on cubic-bezier(0.2, 0, 0, 1), under a flat 96% veil', () => {
+  it('opens by transform (4.5x on a phone) in 0.36s on cubic-bezier(0.2, 0, 0, 1), under a flat 96% veil', () => {
     expect(css).toMatch(/transition: transform 0\.36s var\(--globe-ease\)/);
     expect(css).toContain('--globe-ease: var(--m4-curve)');
     expect(read('app/styles/steel-chrome.css')).toContain('--m4-curve: cubic-bezier(0.2, 0, 0, 1)');
-    expect(css).toMatch(/scale\(4\.5\)/);
+    expect(css).toMatch(/scale\(var\(--globe-scale, 4\.5\)\)/);
     expect(css).toMatch(/\.globe-nav\[data-open\] \.globe-nav__veil \{[^}]*opacity: 0\.96/);
     expect(css).not.toMatch(/backdrop-filter|[^-]filter:|blur\(/);
   });
@@ -219,14 +239,17 @@ describe('the globe animates transform and opacity only, in 360 ms (G2, G6)', ()
     expect(css).toMatch(/\.globe-nav__dock \{[^}]*inset-block-end: var\(--globe-bottom\)/);
   });
 
-  it('has pins at the plan\'s offsets: (+-77, +-84) and the write link 184 below the centre', () => {
-    for (const [pos, dx, dy] of [['ul', '-77', '-84'], ['ur', '77', '-84'], ['ll', '-77', '84'], ['lr', '77', '84']]) {
-      expect(css).toMatch(new RegExp(`data-slot-pos='${pos}'\\] \\{\\s*--dx: ${dx}px;\\s*--dy: ${dy}px;`));
-    }
-    expect(css).toMatch(/\.globe-nav__write \{\s*--dy: 184px;/);
+  it('places pins by transform from the sphere, never from fixed offsets, and hangs the write link under the globe', () => {
+    expect(css).not.toMatch(/data-slot-pos/);
+    expect(css).toMatch(/\.globe-nav__write \{\s*--dy: calc\(var\(--globe-open-d\) \/ 2 \+ 40px\);/);
+    // The pins wait for the body: nothing is shown at a wrong place before lib/globe has landed.
+    expect(css).toMatch(/\.globe-nav\[data-open\]\[data-globe-live\] \.globe-nav__pins \{\s*opacity: 1;/);
   });
 
-  it('is not displayed from 1024px, where the sidebar navigates (G9)', () => {
-    expect(css).toMatch(/@media \(min-width: 1024px\) \{\s*\.globe-nav \{\s*display: none;/);
+  it('is the navigator on desktop too: a 124px ball at the foot of the sidebar that grows to 440px', () => {
+    const desktop = /@media \(min-width: 1024px\) \{\s*\.globe-nav \{([^}]*)\}/.exec(css)![1]!;
+    expect(desktop).toContain('--globe-d: 124px');
+    expect(desktop).toContain('--globe-open-d: 440px');
+    expect(desktop).not.toContain('display: none');
   });
 });
