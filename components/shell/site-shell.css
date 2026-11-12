@@ -17,19 +17,9 @@
   background: var(--site-bg);
   color: var(--site-text);
 
-  /* The home feed still renders the old feed cards until phase 4 rebuilds it on the spine
-     (components/radial/radial/feed-cards-panels.css). Their spacing scale lived on the old
-     shell's root; without it the cards lose their padding and gaps. Delete this block with
-     that stylesheet. */
-  --rad-1: 0.25rem;
-  --rad-2: 0.5rem;
-  --rad-3: 0.75rem;
-  --rad-4: 1rem;
-  --rad-5: 1.5rem;
-  --rad-card-pad: clamp(1.25rem, 5vw, 1.75rem);
-  --rad-card-gap: clamp(1rem, 3vw, 1.5rem);
+  /* The conversation views (messages, group chats) size themselves with `var(--rad-topbar-h, 3.5rem)`. The shell has no top
+     bar, so the answer is 0. Delete this with the conversation recipe (phase 5). */
   --rad-topbar-h: 0px;
-  --rad-frame-gap: 0px;
 }
 
 .site-skip {

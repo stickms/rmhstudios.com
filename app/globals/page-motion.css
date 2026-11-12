@@ -357,25 +357,19 @@ html:not([data-navigated]) .page-root > * {
 }
 
 /* Same layout group (tabbed / sibling pages): the frame, the title and the tab strip, stays perfectly still and only the
-   content swaps. The column itself never animates; the swap is keyed to what is NOT the frame, on the two shapes the
-   shell renders (PageLayout's `page-content`, and the radial feed). Pages with another shape simply swap instantly. */
+   content swaps. The column itself never animates; the swap is keyed to what is NOT the frame, on the shape the
+   shell renders (PageLayout's `page-content`). Pages with another shape simply swap instantly. */
 html[data-nav-kind='sibling'] .page-root > * {
   animation: none;
 }
-html[data-nav-kind='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']),
-html[data-nav-kind='sibling']
-  .radial-feed
-  > :not([data-slot='page-controls'], h1, .radial-feed__compose) {
+html[data-nav-kind='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']) {
   animation: page-enter var(--swap-in) var(--ease-smooth) backwards;
   transition: opacity var(--swap-out) var(--ease-smooth);
 }
 html[data-page-leaving='sibling'] .page-root > * {
   opacity: 1;
 }
-html[data-page-leaving='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']),
-html[data-page-leaving='sibling']
-  .radial-feed
-  > :not([data-slot='page-controls'], h1, .radial-feed__compose) {
+html[data-page-leaving='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']) {
   opacity: var(--swap-dim);
 }
 
@@ -931,18 +925,13 @@ html.nav-pop .page-root > * {
   .rad-rail__item,
   .radial-topbar__btn,
   .cstudio-ranked__toggle,
-  .rmhark__link,
   .store-spot__link {
     --evert-tint: var(--site-surface-hover);
     --evert-rest-opacity: 1;
   }
-  .radial-topbar__signin,
-  .radial-feed__compose {
+  .radial-topbar__signin {
     --evert-tint: var(--site-accent);
     --evert-rest-opacity: 1;
-  }
-  .radial-feed__compose {
-    --evert-tint: var(--site-accent-hover);
   }
   .cstudio-ranked__link {
     --evert-tint: color-mix(in srgb, var(--site-accent) 22%, transparent);
