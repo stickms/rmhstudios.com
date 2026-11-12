@@ -14,18 +14,21 @@ rule and phase is
 [`docs/plans/2026-11-11-steel-design-implementation.md`](docs/plans/2026-11-11-steel-design-implementation.md)
 (the Steel plan). Where this file and the plan disagree, the plan wins and this file
 is the bug. Steel replaces Plasmatic Jelly and the Broadsheet brief; the documents
-that describe those ([`docs/design-language.md`](docs/design-language.md),
+that describe those ([`docs/plasmatic-jelly-design-language.md`](docs/plasmatic-jelly-design-language.md),
 [`docs/plasmatic-jelly-system.md`](docs/plasmatic-jelly-system.md)) are historical.
+[`docs/design-language.md`](docs/design-language.md) is the working reference: the definition of done and the gates.
 
-The plan is executed one phase at a time (its section 16). Phases 1 to 6 are in: the values and
+The plan is executed one phase at a time (its section 16). Phases 1 to 7 are in: the values and
 type classes below are real; every `_site` page sits in `components/shell/SiteShell.tsx` (a sidebar
 of the five sections on desktop, the docked globe on a phone, an optional margin; `/sections` is the
-no-script list); controls, overlays, the spine and the page recipes are built; and phase 6 deleted
+no-script list); controls, overlays, the spine and the page recipes are built; phase 6 deleted
 the old material and shell (`components/radial/`, `lib/jelly/`, `lib/liquid/`, `lib/eversion/`, the
-WebAssembly kernels, the glass, jelly and arc stylesheets, the page entrances). The role classes
-(`glass-fill`, `glass-pane`, `glass-chrome`, `glass-overlay`, `glass-inset`) and the `data-jelly*`
-attributes still in components are dead names that render flat surfaces
-(`app/styles/steel-surfaces.css`); phase 7 removes them.
+WebAssembly kernels, the glass, jelly and arc stylesheets, the page entrances); and phase 7 removed
+the dead names it left (`data-jelly*` other than `data-jelly-motion`, the `Reveal` wrappers) and
+renamed the `glass-*` role classes to the plan's S6 names. A `_site` page writes only
+`surface-overlay`, `surface-field`, `surface-chrome` and `surface-press`
+(`app/styles/steel-surfaces.css`); `surface-card` and `surface-panel` remain on full-screen games
+and apps only, where `components/shared/app-theme.css` draws them (L8).
 
 ## 1. The five rules
 

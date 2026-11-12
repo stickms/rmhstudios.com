@@ -163,18 +163,20 @@ _why_.
    or a picture. One ink primary button per view (R4). Type is the seven `t-*` classes
    (`t-title`, `t-heading`, `t-body`, `t-post`, `t-prose`, `t-label`, `t-meta`;
    `app/styles/steel-type.css`), weights 400/500/600, no letterspaced capitals. Use
-   `components/ui/` primitives, `PageLayout`, lucide icons, sonner toasts. The role classes
-   `glass-fill`/`glass-pane`/`glass-chrome`/`glass-overlay`/`glass-inset`/`glass-interactive`
-   still exist as NAMES and are remapped to flat surfaces (`app/styles/steel-surfaces.css`,
-   S6); do not add new uses, and do not rebuild the material (the old Plasmatic Jelly
-   stylesheets and tokens are deleted). **Before any UI commit** read
-   [`design.md`](design.md) and the plan's section 0 to 5; the rest of the plan (controls,
-   spine, globe, shell, recipes) arrives phase by phase (its section 16). Part of this is
+   `components/ui/` primitives, `PageLayout`, lucide icons, sonner toasts. Surface roles are
+   `surface-overlay` (the only raised surface), `surface-field`, `surface-chrome` and
+   `surface-press` (`app/styles/steel-surfaces.css`, S6); a `_site` page writes no
+   `surface-card` or `surface-panel` at all, because a group of content is rows on rules, and
+   those two names remain only on full-screen games and apps (L8), where
+   `components/shared/app-theme.css` draws them as the app tier's panels. **Before any UI
+   commit** read [`design.md`](design.md), [`docs/design-language.md`](docs/design-language.md) §0
+   and [`docs/page-consistency.md`](docs/page-consistency.md). Part of this is
    CI-enforced — `lib/__tests__/steel-tokens.test.ts`, `steel-flat.test.ts` and
    `design-consistency.test.ts` (hand-rolled tab strips, floating UI below the overlay tier)
    plus the eslint rules `local/no-transition-all` and `local/no-dead-animate-classes` — and
    `pnpm check:consistency` is how you find that out **before** you commit rather than in CI.
-   `docs/design-language.md` and `docs/plasmatic-jelly-system.md` are historical.
+   `docs/plasmatic-jelly-design-language.md` and `docs/plasmatic-jelly-system.md` describe the deleted
+   material and are historical.
 5. **i18n:** all user-facing strings through `t("key", { defaultValue })`;
    then `pnpm i18n:extract`. English is authoritative. Two silent failure modes
    to know: **(a)** `defaultValue` is only used when a key is MISSING, so
@@ -291,8 +293,9 @@ navigation mode) are gone. Do not bring them back, and do not add a consumer of 
 physics the chrome globe (`lib/globe/`, `lib/chrome/`, `components/shell/`) runs on. The globe's
 idle drift is the one ambient motion; the "Globe motion: On / Still" setting (Appearance) stamps
 `html[data-jelly-motion='still']`, which `lib/globe/view.ts` and the games' ambient canvases read
-(`motionStill()` in `lib/appearance/prefs.ts`). The `glass-*` class names and `data-jelly*`
-attributes still in components are dead names; phase 7 removes them. The user-theme and
+(`motionStill()` in `lib/appearance/prefs.ts`). Phase 7 removed the dead names (`data-jelly*`
+other than `data-jelly-motion`, `u-reveal`, the `Reveal` wrappers) and renamed the `glass-*` role
+classes to the S6 `surface-*` names. The user-theme and
 accent-preset systems (`lib/themes`, `lib/appearance.ts`) still write `--site-*` overrides;
 whether they survive two fixed editions is an owner decision.
 
