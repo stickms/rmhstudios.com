@@ -274,10 +274,13 @@ const BUDGETS = {
  */
 export const ISLAND_BUDGETS: Readonly<Record<string, { jsBrotli: number; cssBrotli: number }>> = {
   // Steel phase 6: re-measured + 3%.
-  nightrail: { jsBrotli: 273_000, cssBrotli: 20_000 },
-  'signal-forge': { jsBrotli: 163_800, cssBrotli: 19_900 },
-  vega: { jsBrotli: 128_700, cssBrotli: 18_200 },
-  'void-breaker': { jsBrotli: 322_000, cssBrotli: 20_900 },
+  // Third-pass audit RT1 (2026-11-12): an island's toaster now loads on its first toast too, so sonner left every
+  // island's first load. JS re-measured + 3%: nightrail 257,072, signal-forge 151,112, vega 117,079,
+  // void-breaker 304,606 B brotli. CSS unchanged.
+  nightrail: { jsBrotli: 264_800, cssBrotli: 20_000 },
+  'signal-forge': { jsBrotli: 155_650, cssBrotli: 19_900 },
+  vega: { jsBrotli: 120_600, cssBrotli: 18_200 },
+  'void-breaker': { jsBrotli: 313_750, cssBrotli: 20_900 },
 };
 
 const ISLANDS_DIR = path.join(ROOT, 'dist-islands');
