@@ -212,6 +212,23 @@
     0 16px 16px -9px rgba(0, 0, 0, 0.35);
 }
 
+/* The brand globe is a body too (lib/globe): see globe-nav.css "THE BODY". It can be turned, so it shows a grab hand,
+   and a drag on it must not select text or scroll. */
+.site-sidebar .site-sidebar__globe {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.site-sidebar .site-sidebar__globe[data-grabbing] {
+  cursor: grabbing;
+}
+.site-sidebar .site-sidebar__globe[data-chrome-live] {
+  overflow: visible;
+  background: none;
+  box-shadow: 0 16px 16px -9px rgba(0, 0, 0, 0.35);
+}
+
 /* The margin's contents (L6). */
 .site-margin__search {
   margin: 0;

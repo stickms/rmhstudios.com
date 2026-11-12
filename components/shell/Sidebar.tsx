@@ -8,6 +8,7 @@ import { SECTIONS, WRITE_HREF, currentSection, viewerPathFor } from './sections'
 import { usePathname } from './shell-router-state';
 import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
+import { useGlobeView } from './use-globe-view';
 
 /** The handle's menu is a lazy chunk: nothing in it is needed until it is opened. */
 const AccountMenu = lazy(() => import('./AccountMenu').then((m) => ({ default: m.AccountMenu })));
@@ -31,6 +32,11 @@ export function Sidebar() {
   const current = currentSection(pathname);
   const labels = useSectionLabels();
   const inbox = useInboxCount(Boolean(session));
+
+  // The brand globe is the same body as the phone's (lib/globe): it turns with a drag and with the page's scroll,
+  // ripples and dents under a press, and drifts until taken hold of. A plain click is still the link home.
+  const globeRef = useRef<HTMLAnchorElement | null>(null);
+  useGlobeView(() => (globeRef.current ? { stage: globeRef.current, points: 0 } : null));
 
   const menuAnchor = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -132,7 +138,9 @@ export function Sidebar() {
       )}
 
       <Link
+        ref={globeRef}
         to="/"
+        draggable={false}
         className="site-sidebar__globe chrome-globe"
         style={{ '--d': '72px' } as CSSProperties}
         data-chrome="ball"

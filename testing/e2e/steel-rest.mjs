@@ -100,7 +100,10 @@ const browser = await chromium.launch({
 try {
   // ── At rest, on three pages ────────────────────────────────────────────────
   for (const route of ROUTES) {
-    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    // ONE thing on a Steel page moves with nobody touching it: the globe's idle drift (lib/globe, the liquid globe's
+    // rotation logic, kept at the owner's request). It is a 15 Hz tick, and it stops under reduced motion, which is
+    // how this script measures everything ELSE at rest. The drift itself is bounded in its own block below.
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
     await context.addInitScript(instrument);
     const page = await context.newPage();
     await page.goto(BASE + route, { waitUntil: 'load' });
@@ -122,8 +125,24 @@ try {
     await context.close();
   }
 
+  // ── The drift is a low tick, not a frame loop ──────────────────────────────
+  {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    await context.addInitScript(instrument);
+    const page = await context.newPage();
+    await page.goto(BASE + '/', { waitUntil: 'load' });
+    await page.waitForTimeout(5000);
+    const drift = await sampleRest(page, WINDOW_MS);
+    const perSecond = drift.requested / (WINDOW_MS / 1000);
+    log(`drift      ${perSecond.toFixed(1)} requestAnimationFrame calls a second with motion allowed`);
+    // 15 ticks a second, each one frame of physics and one redraw of the ball.
+    assert.ok(perSecond <= 36, `the idle drift asked for ${perSecond.toFixed(1)} frames a second (limit 36)`);
+    await context.close();
+  }
+
   // ── The phone globe ────────────────────────────────────────────────────────
   const phone = await browser.newContext({
+    reducedMotion: 'reduce',
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
     isMobile: true,
@@ -153,7 +172,8 @@ try {
   log(`globe      docked 64px, ${Math.round(844 - (docked.y + docked.height))}px above the bottom, aria-expanded=false`);
 
   await globe.tap();
-  await page.waitForTimeout(700);
+  // The move is 360 ms; the globe then glides until the current section faces the viewer (a 0.62 s spring).
+  await page.waitForTimeout(1600);
   assert.equal(await globe.getAttribute('aria-expanded'), 'true', 'a tap opens the globe');
   assert.ok(await page.locator('.globe-nav[data-open]').count(), 'data-open is set');
   const open = await globe.boundingBox();
@@ -161,14 +181,16 @@ try {
   assert.ok(Math.abs(open.y + open.height / 2 - 422) < 3, `open globe is centred vertically (centre ${open.y + open.height / 2})`);
   const pins = page.locator(`nav[id="${controls}"] a.globe-nav__pin`);
   assert.equal(await pins.count(), 5, 'five pins');
+  // The sections are fixed on the sphere: the ones on the near face are in view, the rest come round when it turns.
+  let facing = 0;
   for (let i = 0; i < 5; i += 1) {
-    const box = await pins.nth(i).boundingBox();
-    assert.ok(box && box.x >= 0 && box.x + box.width <= 390, `pin ${i} is inside the viewport`);
-    assert.ok(await pins.nth(i).isVisible(), `pin ${i} is visible`);
+    const opacity = Number(await pins.nth(i).evaluate((el) => getComputedStyle(el).opacity));
+    if (opacity > 0.9) facing += 1;
   }
+  assert.ok(facing >= 1 && facing < 5, `${facing} of five pins face the viewer`);
   const centre = await page.locator('.globe-nav__pin[data-slot-pos="c"]').boundingBox();
   assert.ok(Math.abs(centre.x + centre.width / 2 - 195) < 2 && Math.abs(centre.y + centre.height / 2 - 422) < 2, 'the current pin sits at 195,422');
-  log('globe      tap: aria-expanded=true, 288px at the centre, five pins in view');
+  log(`globe      tap: aria-expanded=true, 288px at the centre, the current section facing, ${facing} pins on the near face`);
 
   await page.keyboard.press('Escape');
   await page.waitForTimeout(700);
