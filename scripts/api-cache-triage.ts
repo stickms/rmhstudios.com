@@ -489,7 +489,7 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-/** `lib/wishlist/api/users.$id.wishlist.server.ts` -> `/api/users/$id/wishlist` */
+/** `app/routes/api/balatro/pack.$file.ts` -> `/api/balatro/pack/$file` */
 function routeUrl(file: string): string {
   let rel = path
     .relative(path.join(ROOT, 'app/routes'), file)

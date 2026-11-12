@@ -128,8 +128,9 @@ stage (`go build ./cmd/...`), not Bazel; Bazel is the CI unit-test gate.
   or build regenerate the tree** (there is no standalone CLI wired). An API
   endpoint is one of two things: a route file,
   `createFileRoute('/api/...')({ server: { handlers: { GET, POST } } })`, or, when
-  it only binds typed contracts with `implement()`, a registered module beside its
-  contract (`route = apiRoute('/api/...', { GET: implement(...) })`, listed in the
+  every handler goes through `implement()` or `defineHandler()` (most of them), a
+  registered module in its domain's `api/` folder
+  (`route = apiRoute('/api/...', { GET: implement(...) })`, listed in the
   generated `lib/api/route-table.server.ts` and served by the one dispatcher route
   `app/routes/api/$.ts`; see `app/CLAUDE.md`).
 - **Server-only code:** `*.server.ts(x)` files are stubbed out of the client
