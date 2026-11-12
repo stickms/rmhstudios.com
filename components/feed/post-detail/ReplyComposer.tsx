@@ -84,7 +84,7 @@ export function ReplyComposer({
             placeholder={t('reply-placeholder', { defaultValue: 'Post your reply...' })}
             rows={2}
             maxLength={MAX_COMMENT_LENGTH}
-            className="t-post w-full resize-none border-0 bg-transparent p-0 text-site-text outline-none placeholder:text-site-text-muted"
+            className="field-bare t-post w-full resize-none rounded-none border-0 bg-transparent p-0 text-site-text placeholder:text-site-text-muted"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 handleSubmit();

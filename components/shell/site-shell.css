@@ -141,6 +141,16 @@
   font-weight: 400;
   text-decoration: none;
 }
+/* The second list: the places the five words do not name. Smaller and closer, so the five stay the headline. */
+.site-sidebar__list--more {
+  margin-block-start: 22px;
+  padding-block-start: 14px;
+  border-block-start: 1px solid var(--site-border);
+}
+.site-sidebar__list--more .site-sidebar__link {
+  padding-block: 5px;
+  font-size: 13px;
+}
 .site-sidebar__link:hover {
   color: var(--site-text);
 }
@@ -181,38 +191,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* G10: the 72px globe, pushed to the bottom, with its contact shadow. It links to the front page. */
-.site-sidebar .site-sidebar__globe {
-  position: relative;
-  display: block;
+/* The globe is GlobeNav's element (globe-nav.css "DESKTOP"): a fixed 124px ball at the foot of the sidebar. This
+   keeps its place in the column so the list above never runs under it. */
+.site-sidebar__globe-space {
   flex: none;
-  inline-size: 72px;
-  block-size: 72px;
+  block-size: 140px;
   margin-block-start: auto;
-  border-radius: 50%;
-  corner-shape: round;
-  overflow: hidden;
-  box-shadow:
-    inset 0 0 calc(var(--d) * 0.12) calc(var(--d) * 0.02) rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(0, 0, 0, 0.4),
-    0 16px 16px -9px rgba(0, 0, 0, 0.35);
 }
-
-/* The brand globe is a body too (lib/globe): see globe-nav.css "THE BODY". It can be turned, so it shows a grab hand,
-   and a drag on it must not select text or scroll. */
-.site-sidebar .site-sidebar__globe {
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.site-sidebar .site-sidebar__globe[data-grabbing] {
-  cursor: grabbing;
-}
-.site-sidebar .site-sidebar__globe[data-chrome-live] {
-  overflow: visible;
-  background: none;
-  box-shadow: 0 16px 16px -9px rgba(0, 0, 0, 0.35);
+.site-sidebar__brand a {
+  color: inherit;
+  text-decoration: none;
 }
 
 /* The margin's contents (L6). */

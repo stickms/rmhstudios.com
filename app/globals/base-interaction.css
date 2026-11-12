@@ -397,8 +397,8 @@ select:-webkit-autofill:focus {
  * Everything here is keyboard- or pointer-gated and respects the existing
  * prefers-reduced-motion guard further down this file. */
 
-/* Keyboard focus (K10): `outline: 2px solid var(--site-text); outline-offset: 2px` on every focusable element, text
-   fields included. The ring is the ink, so it holds 4.5:1 or better on the page and on every surface in both editions.
+/* Keyboard focus (K10): `outline: 2px solid var(--site-text); outline-offset: 2px` on every focusable element (text
+   fields carry it on their border, below). The ring is the ink, so it holds 4.5:1 or better on the page and on every surface in both editions.
    :focus-visible keeps it to keyboard / assistive-tech users (never on mouse/tap). */
 a:focus-visible,
 button:focus-visible,
@@ -415,6 +415,22 @@ summary:focus-visible,
 [tabindex]:not([tabindex='-1']):focus-visible {
   outline: 2px solid var(--site-text);
   outline-offset: 2px;
+}
+/* A text field already has a box, 12px of side padding and a 1px border. A ring standing 2px OUTSIDE that reads as a
+   second, heavier box round the text (owner, 2026-11-12: "the outline on selected text elements seems to be too thick
+   or the internal horizontal padding too small"). So on a text field the ring sits ON the border: the border becomes
+   2px of ink, the field keeps its size and its padding, and nothing outside it moves. Checkboxes, radios, ranges and
+   buttons keep the offset ring. */
+textarea:focus-visible,
+select:focus-visible,
+input:not([type='checkbox'], [type='radio'], [type='range'], [type='button'], [type='submit'], [type='reset'], [type='file'], [type='color'], [type='image']):focus-visible {
+  outline-offset: -1px;
+}
+/* A field with NO box (no border, no padding: the home composer, the reply field) has nothing for a ring to sit on, and
+   a ring would hug the words. Its focus mark is a 2px ink line under it: the same weight and colour as the ring. */
+:is(input, textarea).field-bare:focus-visible {
+  outline: none;
+  box-shadow: 0 2px 0 var(--site-text);
 }
 
 /* Firefox-specific native chrome that ignores our theme:

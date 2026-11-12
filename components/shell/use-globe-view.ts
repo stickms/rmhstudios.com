@@ -6,12 +6,14 @@ import type { GlobeView, GlobeViewOptions } from '@/lib/globe/view';
  * import so none of it is on the critical path. Until it arrives, and with scripting off, the ball is the static
  * chrome it always was and the menu's pins sit in their fixed places.
  *
- * `options` is read once, when the module lands; it returns null while its elements are not mounted. `onLive` runs
+ * `options` is read when the module lands (and again when `key` changes); it returns null while its elements are not mounted. `onLive` runs
  * when the view exists (the caller flips whatever CSS depends on it).
  */
 export function useGlobeView(
   options: () => GlobeViewOptions | null,
   onLive?: (view: GlobeView) => void,
+  /** The view is rebuilt when this changes (the number of destinations, which signing in or out changes). */
+  key: unknown = 0,
 ): RefObject<GlobeView | null> {
   const view = useRef<GlobeView | null>(null);
   const read = useRef(options);
@@ -39,7 +41,7 @@ export function useGlobeView(
       view.current?.dispose();
       view.current = null;
     };
-  }, []);
+  }, [key]);
 
   return view;
 }

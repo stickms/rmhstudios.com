@@ -27,10 +27,32 @@
   --globe-ease: var(--m4-curve);
 }
 
-/* Desktop navigates with the sidebar (G9). */
+/* DESKTOP (owner, 2026-11-12: the globe is the liquid globe on desktop too, larger, and it expands when clicked).
+   Docked it is a 124px ball at the foot of the sidebar: the frame is capped at 1240px and centred, the sidebar's
+   padding is 24px, so its left edge is that far in. Open it travels to the middle of the window and grows to 440px.
+   The sidebar's words still navigate (G9); the globe carries every destination. */
 @media (min-width: 1024px) {
   .globe-nav {
+    --globe-d: 124px;
+    --globe-open-d: 440px;
+    --globe-start: calc(max(0px, (100vw - 1240px) / 2) + 24px);
+    --globe-bottom: 26px;
+    --globe-shift: calc(50vw - var(--globe-start) - var(--globe-d) / 2);
+    --globe-travel: calc(50dvh - var(--globe-bottom) - var(--globe-d) / 2);
+    --globe-scale: 3.548;
+  }
+  .globe-nav .globe-nav__dock {
+    inset-inline-start: var(--globe-start);
+    translate: none;
+  }
+  [dir='rtl'] .globe-nav .globe-nav__dock {
+    translate: none;
+  }
+  .globe-nav .globe-nav__fade {
     display: none;
+  }
+  .globe-nav .globe-nav__pins {
+    inset-block-start: 50%;
   }
 }
 
@@ -121,7 +143,10 @@ html.ios-webkit .globe-nav__fade {
   transition: opacity 0.2s ease;
 }
 .globe-nav[data-open] .globe-nav__globe {
-  transform: translateY(calc(-1 * var(--globe-travel))) scale(4.5);
+  transform: translate(var(--globe-shift, 0px), calc(-1 * var(--globe-travel))) scale(var(--globe-scale, 4.5));
+}
+[dir='rtl'] .globe-nav[data-open] .globe-nav__globe {
+  transform: translate(calc(-1 * var(--globe-shift, 0px)), calc(-1 * var(--globe-travel))) scale(var(--globe-scale, 4.5));
 }
 .globe-nav[data-open] .globe-nav__globe::after {
   opacity: 0;
@@ -193,7 +218,7 @@ html.ios-webkit .globe-nav__fade {
     visibility 0s linear 0.1s;
 }
 /* G3: pins fade in 180 ms after a 160 ms delay. */
-.globe-nav[data-open] .globe-nav__pins {
+.globe-nav[data-open][data-globe-live] .globe-nav__pins {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -202,63 +227,123 @@ html.ios-webkit .globe-nav__fade {
     visibility 0s;
 }
 
+/* Everything in the nav is placed from the 0 x 0 anchor at the centre. The two text links sit under the globe. */
 .globe-nav__pin,
 .globe-nav__write,
 .globe-nav__more {
-  --dx: 0px;
   --dy: 0px;
   position: absolute;
   inset-inline-start: 0;
   inset-block-start: 0;
-  translate: calc(-50% + var(--dx)) calc(-50% + var(--dy));
+  translate: -50% calc(-50% + var(--dy));
   white-space: nowrap;
 }
 [dir='rtl'] .globe-nav__pin,
 [dir='rtl'] .globe-nav__write,
 [dir='rtl'] .globe-nav__more {
-  translate: calc(50% - var(--dx)) calc(-50% + var(--dy));
+  translate: 50% calc(-50% + var(--dy));
 }
 
+/* A PIN: a destination fixed on the sphere, placed by `transform` each frame the globe moves (lib/globe/view.ts). It is
+   a 0 x 0 point; its dot is centred on it and its name hangs beneath, so the dot sits exactly where the sphere says. */
 .globe-nav__pin {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  inline-size: 0;
+  block-size: 0;
+  color: var(--site-text);
+  text-decoration: none;
+  transform-origin: 0 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.globe-nav__pin-dot {
+  position: absolute;
+  inset-inline-start: -18px;
+  inset-block-start: -18px;
+  display: grid;
+  place-items: center;
+  inline-size: 36px;
   block-size: 36px;
-  padding-inline: 16px;
-  border-radius: var(--site-radius);
+  border-radius: 50%;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
 }
-.globe-nav__pin[data-slot-pos='c'] {
+.globe-nav__pin-dot > svg:first-child {
+  inline-size: 18px;
+  block-size: 18px;
+}
+/* The dwell ring: `--fill` (0 to 1, set on the nav by the view) is how far a hold on the locked pin has got. */
+.globe-nav__pin-ring {
+  position: absolute;
+  inset: -4px;
+  inline-size: 44px;
   block-size: 44px;
-  padding-inline: 20px;
+  rotate: -90deg;
+  fill: none;
+  stroke: var(--site-text);
+  stroke-width: 2.5;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+}
+.globe-nav__pin-name {
+  position: absolute;
+  inset-block-start: 24px;
+  inset-inline-start: 0;
+  translate: -50% 0;
+  padding: 1px 7px;
+  border-radius: var(--site-radius-sm);
   background: var(--site-bg);
   color: var(--site-text);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  /* `--near` (0 to 1) is how squarely the pin faces the viewer; the view writes it on this element. */
+  opacity: var(--near, 0);
+  pointer-events: none;
+}
+[dir='rtl'] .globe-nav__pin-name {
+  translate: 50% 0;
+}
+/* Focus: the pin itself has no box, so the ring goes on its dot. */
+.globe-nav__pin:focus-visible {
+  outline: none;
+}
+.globe-nav__pin:focus-visible .globe-nav__pin-dot {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+/* The page you are on: a ring round its dot. */
+.globe-nav__pin[data-pin='current'] .globe-nav__pin-dot {
+  box-shadow:
+    0 0 0 2px var(--site-bg),
+    0 0 0 3.5px var(--site-text);
+}
+/* THE LOCK: the pin inside the reticle. It inverts, its name is always shown, and its ring shows the hold. */
+.globe-nav__pin[data-locked] .globe-nav__pin-dot {
+  background: var(--site-bg);
+  color: var(--site-text);
+}
+.globe-nav__pin[data-locked] .globe-nav__pin-name {
+  opacity: 1;
   font-weight: 600;
 }
-/* G3's offsets from the centre: (+-77, +-84) for the four, (0, +184) for the write link. */
-.globe-nav__pin[data-slot-pos='ul'] {
-  --dx: -77px;
-  --dy: -84px;
+.globe-nav__pin[data-locked] .globe-nav__pin-ring {
+  opacity: 1;
+  stroke-dashoffset: calc(1 - var(--fill, 0));
 }
-.globe-nav__pin[data-slot-pos='ur'] {
-  --dx: 77px;
-  --dy: -84px;
-}
-.globe-nav__pin[data-slot-pos='ll'] {
-  --dx: -77px;
-  --dy: 84px;
-}
-.globe-nav__pin[data-slot-pos='lr'] {
-  --dx: 77px;
-  --dy: 84px;
+/* On a phone the globe is 288px and a dozen names would pile up: only the locked pin names itself. */
+@media (max-width: 1023.98px) {
+  .globe-nav__pin:not([data-locked]) .globe-nav__pin-name {
+    display: none;
+  }
 }
 
 .globe-nav__count {
+  position: absolute;
+  inset-block-start: -24px;
+  inset-inline-start: 8px;
   font-family: var(--site-font-mono);
   font-size: 12px;
   font-weight: 600;
@@ -270,7 +355,7 @@ html.ios-webkit .globe-nav__fade {
 
 /* G3: "Write a post" is an underlined text link below the globe. */
 .globe-nav__write {
-  --dy: 184px;
+  --dy: calc(var(--globe-open-d) / 2 + 40px);
   color: var(--site-text);
   font-size: 14px;
   font-weight: 500;
@@ -279,56 +364,21 @@ html.ios-webkit .globe-nav__fade {
 }
 /* The one link added beside the plan's list (reported to the owner): the destinations the five words do not name. */
 .globe-nav__more {
-  --dy: 216px;
+  --dy: calc(var(--globe-open-d) / 2 + 72px);
   color: var(--site-text-muted);
   font-size: 13px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-/* LIVE PINS (lib/globe/view.ts). The five sections are fixed on the sphere and placed by `transform` each frame the
-   globe moves, so the fixed G3 offsets are dropped. Every pin wears the ink pill; the one inside the reticle (the lock)
-   takes the page-coloured, larger look G3 gives the current section, and carries the dwell bar: `--fill` (0 to 1, set
-   on the nav by the view) is how far a hold has got. Letting go with it full goes there. */
-.globe-nav[data-globe-live] .globe-nav__pin {
-  --dx: 0px;
-  --dy: 0px;
-  block-size: 36px;
-  padding-inline: 16px;
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-  font-weight: 500;
-  transform-origin: 50% 50%;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-.globe-nav[data-globe-live] .globe-nav__pin[data-locked] {
-  block-size: 44px;
-  padding-inline: 20px;
-  background: var(--site-bg);
-  color: var(--site-text);
-  font-weight: 600;
-  overflow: hidden;
-}
-.globe-nav[data-globe-live] .globe-nav__pin[data-locked]::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 0;
-  block-size: 3px;
-  background: var(--site-text);
-  transform: scaleX(var(--fill, 0));
-  transform-origin: 0 50%;
-}
 /* The reticle: the circle a destination must be inside to lock, drawn at its true size (RETICLE_FRACTION of the open
    globe, 31% of 288px) and only while the globe is held. */
 .globe-nav__reticle {
   position: absolute;
   inset-inline-start: 0;
   inset-block-start: 0;
-  inline-size: 89px;
-  block-size: 89px;
+  inline-size: calc(var(--globe-open-d) * 0.31);
+  block-size: calc(var(--globe-open-d) * 0.31);
   translate: -50% -50%;
   border: 1px solid var(--site-text);
   border-radius: 50%;

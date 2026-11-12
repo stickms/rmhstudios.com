@@ -17,7 +17,7 @@ import { vibrate } from '@/lib/shared/platform';
 import { DOUGH_N } from '@/lib/dough';
 import { smoothstep } from '@/lib/fluid';
 import { GlobeEngine, MAX_RIPPLES, RETICLE_FRACTION, kAt, placePoints, type GlobePoint } from './engine';
-import { BALL_BLEED, BALL_FRAGMENT_SHADER } from './shader';
+import { BALL_BLEED, BALL_FRAGMENT_SHADER, MAX_PINS } from './shader';
 
 /** Total pointer travel (px) past which a release is a drag, not a click. */
 const DRAG_SLOP = 8;
@@ -27,11 +27,14 @@ const HOLD_MS = 350;
 const DRIFT_HZ = { fine: 15, coarse: 7 } as const;
 /** How long the dots take to change size when the globe opens or closes (the M4 move), ms. */
 const OPEN_MS = 360;
-/** Dot size, dot strength and cage-line strength, docked and open. */
+/**
+ * Destination-dot size, dot strength and cage-line strength, docked and open. Open, the real icon pins sit where the
+ * dots were, so the dots fade out under them.
+ */
 /** The chrome renderer starts at idle; until it is up, ask again this often, this many times. */
 const ATTACH_RETRY_MS = 400;
 const ATTACH_TRIES = 40;
-const DOTS = { docked: [1, 1, 0], open: [0.42, 0.7, 1] } as const;
+const DOTS = { docked: [1.25, 1, 0.55], open: [0.5, 0, 1] } as const;
 
 export { RETICLE_FRACTION };
 
@@ -46,8 +49,12 @@ export interface GlobeViewOptions {
   reticle?: HTMLElement | null;
   /** Elements beside the stage where a press also takes hold of the globe (the open menu's veil and pins). */
   surfaces?: ReadonlyArray<HTMLElement | null>;
-  /** The radius the pins are placed at, px (the open globe's). */
-  pinRadius?: number;
+  /** The radius the pins are placed at, px (the open globe's). Read each time the menu opens. */
+  pinRadius?: () => number;
+  /** The stage's open diameter, px: the renderer sizes its canvas for it while the menu is open. */
+  openSize?: () => number;
+  /** The label of each pin (same order): its opacity follows how squarely the pin faces the viewer. */
+  labels?: ReadonlyArray<HTMLElement | null>;
   /** A hold on a locked destination completed and was released: go there. */
   onGo?: (index: number) => void;
   /** The destination in the reticle changed (-1: none). */
@@ -74,7 +81,7 @@ export class GlobeView {
   private lockShown = -1;
   private fillShown = '';
   private readyShown = false;
-  private readonly painted: Array<{ transform: string; opacity: string; hit: boolean; z: number }> = [];
+  private readonly painted: Array<{ transform: string; opacity: string; hit: boolean; z: number; near: string }> = [];
   private readonly order: number[] = [];
   private readonly out = new Float64Array(2);
   /** The ball's drawn state, read by the chrome renderer (lib/chrome BallState). */
@@ -86,8 +93,12 @@ export class GlobeView {
     version: number;
     soft: boolean;
     dots: [number, number, number];
+    pins: Float32Array;
+    pinCount: number;
     bleed: number;
   };
+  private radius = 144;
+  private shrink: ReturnType<typeof setTimeout> | 0 = 0;
   /** null: not tried or the renderer is not up yet; true: attached; false: this machine cannot draw a body. */
   private attached: boolean | null = null;
   private attachTries = 0;
@@ -106,10 +117,13 @@ export class GlobeView {
       version: 0,
       soft: false,
       dots: [DOTS.docked[0], DOTS.docked[1], DOTS.docked[2]],
+      pins: new Float32Array(MAX_PINS * 3),
+      pinCount: Math.min(options.points, MAX_PINS),
       bleed: BALL_BLEED,
     };
+    this.points.slice(0, MAX_PINS).forEach((p, i) => this.ball.pins.set([p.bx, p.by, p.bz], i * 3));
     for (let i = 0; i < options.points; i++) {
-      this.painted.push({ transform: '', opacity: '', hit: true, z: -1 });
+      this.painted.push({ transform: '', opacity: '', hit: true, z: -1, near: '' });
       this.order.push(i);
     }
     this.listen();
@@ -128,6 +142,19 @@ export class GlobeView {
     this.openFrom = this.openness;
     this.openAt = performance.now();
     this.engine.ambient = !open;
+    // V2: the canvas is sized for the open globe only while it is open; docked it is the dock's own size.
+    if (this.shrink) clearTimeout(this.shrink);
+    this.shrink = 0;
+    if (open) {
+      this.radius = this.o.pinRadius?.() ?? 144;
+      const size = this.o.openSize?.();
+      if (size) this.o.stage.dataset.chromeMax = String(size);
+    } else {
+      this.shrink = setTimeout(() => {
+        delete this.o.stage.dataset.chromeMax;
+        this.chrome?.drawChrome();
+      }, OPEN_MS + 40);
+    }
     if (open) this.engine.face(centre);
     else {
       this.engine.drop();
@@ -149,6 +176,7 @@ export class GlobeView {
     for (const off of this.off.splice(0)) off();
     if (this.raf) cancelAnimationFrame(this.raf);
     if (this.timer) clearTimeout(this.timer);
+    if (this.shrink) clearTimeout(this.shrink);
     this.raf = 0;
     this.timer = 0;
     this.chrome?.detachChromeBall(this.o.stage);
@@ -383,7 +411,8 @@ export class GlobeView {
     const pins = this.o.pins;
     if (!pins) return;
     const e = this.engine;
-    const R = this.o.pinRadius ?? 144;
+    const R = this.radius;
+    const labels = this.o.labels;
     const m = e.drawM;
     const order = this.order;
     // Depth rank, not depth: it survives most frames untouched.
@@ -421,6 +450,13 @@ export class GlobeView {
       if (rank !== last.z) {
         last.z = rank;
         el.style.zIndex = String(rank + 1);
+      }
+      // A label shows only once its pin squarely faces the viewer, so a dozen names never pile up at the limb.
+      const near = smoothstep(0.34, 0.78, z).toFixed(2);
+      if (near !== last.near) {
+        last.near = near;
+        const label = labels?.[i];
+        if (label) label.style.setProperty('--near', near);
       }
       const hit = z > 0.02;
       if (hit !== last.hit) {
