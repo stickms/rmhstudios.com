@@ -165,6 +165,16 @@ _why_.
    the client with `api(contract, input)` from `@/lib/contract/client`. New code does not add raw
    `fetch('/api/…')` strings — `lib/__tests__/raw-api-fetch-ratchet.test.ts` only lets that count fall.
    Worked example: `lib/playtime/playtime.contract.ts`.
+   **Registered endpoints (third-pass audit AR3):** an endpoint whose handlers are all `implement()` bindings is
+   not a file under `app/routes/api`. It is a `*.server.ts` module next to its contract
+   (`lib/<domain>/api/<path.with.dots>.server.ts`, `features/<id>/api/…`, or `lib/api/routes/…` for a contract at the
+   top of `lib/`) that exports `route = apiRoute('/api/…', { GET: implement(…) })` from `@/lib/api/route.server`.
+   `pnpm api:routes` regenerates the static list `lib/api/route-table.server.ts`, and the one dispatcher
+   `app/routes/api/$.ts` serves it. Anything else (a `defineHandler` without a contract, a stream, a redirect, a file
+   response, a splat, `/api/auth/$`, `/api/v1/**`) stays a route file. A static path leaves the router only together
+   with the `$param` sibling that would otherwise answer it; `lib/api/__tests__/route-table.test.ts` holds that, and
+   holds that every contract resolves to exactly one handler. Tooling that needs "every API handler source" reads
+   `lib/api/route-sources.ts`, never a walk of `app/routes/api`.
 4. **Design language:** **Steel** — [`design.md`](design.md) is the short statement;
    the single source for every value and rule is
    [`docs/plans/2026-11-11-steel-design-implementation.md`](docs/plans/2026-11-11-steel-design-implementation.md)

@@ -16,7 +16,7 @@ app/
     __root.tsx       root document (see below)
     _site.tsx        pathless layout: sidebar/nav shell for standard pages
     _site/           standard site pages (feed, profiles, wallet, admin, …)
-    api/             server routes (~415 files)
+    api/             server routes that are files, and `$.ts`, the dispatcher for the registered ones (counts: docs/_generated/facts.json)
     <game>.tsx       full-screen games/apps (top level, no shell)
     sitemap[.]xml.ts /sitemap.xml ([.]= escaped literal dot)
   globals.css        theme tokens: base + curated themes as .style-* classes (see design.md)
@@ -24,7 +24,7 @@ app/
   site-tier.css      entry sheet for _site pages: Tailwind + globals.css, minus game/app-only sources
   app-tier.css       entry sheet for full-screen routes: the superset (lib/style-tier.ts picks)
   router.tsx         router config: intent preloading, pending component timings
-  routeTree.gen.ts   GENERATED (~487 KB) — never edit by hand
+  routeTree.gen.ts   GENERATED — never edit by hand
   icon.svg
 ```
 
@@ -82,7 +82,41 @@ path, image})` + `buildCanonical(path)` from `@/lib/seo` (see
 
 ## Adding an API route
 
-API routes are `.ts` files with `server.handlers` keyed by HTTP method
+**First decide where it lives (third-pass audit AR3).** An endpoint whose handlers
+are all `implement()` bindings of a typed contract is **not a file here**: it is a
+registered module next to its contract, served by the one dispatcher
+`app/routes/api/$.ts`.
+
+```ts
+// lib/widgets/api/widgets.$id.server.ts   (path /api/widgets/$id, slashes written as dots)
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import { getWidgetApi, updateWidgetApi } from '@/lib/widgets/widgets.contract';
+
+export const route = apiRoute('/api/widgets/$id', {
+  GET: implement(getWidgetApi, { auth: 'optional' }, async ({ params }) => loadWidget(params.id)),
+  PATCH: implement(updateWidgetApi, { rateLimit: 'write', body: widgetBody }, async ({ params, body }) => …),
+});
+```
+
+Then `pnpm api:routes` (regenerates `lib/api/route-table.server.ts`, the static list
+the dispatcher reads; `lib/api/__tests__/route-table.test.ts` fails if it is stale). No
+route tree change, nothing added to the client entry. A feature's handlers go in
+`features/<id>/api/`; a contract at the top of `lib/` uses `lib/api/routes/`.
+
+It **stays a route file** when it is anything else: a `defineHandler` with no
+contract, a stream or SSE, a redirect, a file or image response, a splat, a webhook,
+`/api/auth/$`, `/api/v1/**`. It also stays a file while a `$param` route file beside
+it would answer its path (`/api/messages/search` beside
+`/api/messages/$conversationId`): the router prefers any route file to the
+dispatcher's splat, so the two move together. The table test names the pair.
+
+The dispatcher keeps what a route file did: the handler gets `{ request, params }`;
+HEAD falls back to GET; a method the endpoint does not handle, and a path nothing
+answers, fall through to the app render exactly as before (an HTML shell, or the
+site 404).
+
+Route files are `.ts` files with `server.handlers` keyed by HTTP method
 (GET/POST/PUT/PATCH/DELETE/OPTIONS). Every handler goes through
 **`defineHandler`** from `@/lib/api/handler.server`, which runs the canonical
 auth → rate limit → validate → act order and catches anything that throws:
@@ -192,6 +226,8 @@ rest yourself:
       Studios" }]`; public pages use `buildMeta()` + `buildCanonical()` and let
       `buildMeta` own the whole `og:*` block; content pages add JSON-LD via
       `jsonLdScript()`.
+- [ ] **A contract-only endpoint is a registered module**, not a new file under
+      `app/routes/api` (see "Adding an API route"), and `pnpm api:routes` was run.
 - [ ] **Every handler is a `defineHandler`** with the right `auth` and a
       `rateLimit` wherever it writes, uploads or costs money — and never echoes
       a caught error to the caller. `/api/v1/**` uses `withDeveloperApi`.
