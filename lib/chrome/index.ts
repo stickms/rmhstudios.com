@@ -6,7 +6,7 @@
  * The page is complete without this module: the CSS gradients in app/styles/steel-chrome.css
  * are the first paint and the fallback (V11).
  */
-import { ChromeRenderer, type Host } from './renderer';
+import { ChromeRenderer, type BallState, type Host } from './renderer';
 
 let renderer: ChromeRenderer | null = null;
 
@@ -44,6 +44,23 @@ export function animateChrome(ms: number): void {
   renderer?.animate(ms);
 }
 
+/**
+ * Make a chrome ball a body (lib/globe). null: the renderer has not started yet (ask again); false: this machine
+ * cannot draw one (no WebGL or no float textures), so the ball stays flat chrome.
+ */
+export function attachChromeBall(el: Element, state: BallState, fragment: string): boolean | null {
+  return renderer ? renderer.attachBall(el, state, fragment) : null;
+}
+
+export function detachChromeBall(el: Element): void {
+  renderer?.detachBall(el);
+}
+
+/** A body's state changed: draw one frame. */
+export function drawChrome(): void {
+  renderer?.schedule();
+}
+
 /** V13 measurements of the running renderer, or null before it starts. */
 export function chromeTimings(): {
   draw: number;
@@ -59,3 +76,4 @@ export function stopChrome(): void {
 }
 
 export { ChromeRenderer } from './renderer';
+export type { BallState } from './renderer';

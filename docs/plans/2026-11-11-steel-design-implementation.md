@@ -325,6 +325,7 @@ button and a `data-open` attribute, see G7):
 [data-open] .veil { opacity: .96; pointer-events: auto; }
 ```
 
+- G5a. **Owner amendment, 2026-11-12: the chrome globe keeps the liquid globe's physics and rotation logic; only the material changed** (this also settles D1). `lib/globe/engine.ts` is those laws lifted out of `LiquidGlobe.tsx` unchanged (free trackball, drag to turn, release to coast on friction, the settle spring and magnet, the reticle lock and hold-to-go dwell, the scroll kick, the idle drift, the poke's ripple and wobble, the dough body), on the shared primitives `lib/trackball`, `lib/fluid` and `lib/dough`. `lib/globe/view.ts` binds them to the ball; `lib/globe/shader.ts` is the chrome reflection on a surface that turns, ripples and dents, drawn by the one shared renderer (still one context, no worker). The five sections are fixed on the sphere and projected; the cage is dots docked and engraved lines open. It loads at idle; before that, and with scripting off, G1 to G4 below are the whole globe. Consequences: the idle drift is the one ambient motion on a Steel page (a 15 Hz tick, 7 on handhelds; stopped when hidden, unfocused, off screen, `data-jelly-motion='still'` or reduced motion), so "nothing at rest" is measured with motion reduced and the drift is bounded separately (`testing/e2e/steel-rest.mjs`); and phase 6 must KEEP `lib/dough.ts`, `lib/fluid.ts` and `lib/trackball.ts`.
 - G5. The globe is markup and CSS at first paint and with scripting off. Its reflection comes from the shared chrome renderer (4.3); it has no context, worker, simulation or frame loop of its own. This replaces the current always-mounted `LiquidGlobe`.
 - G6. Animate `transform` and `opacity` only. The globe is scaled, never resized, so nothing lays out during the move.
 - G7. Accessibility: the globe is a `<button aria-expanded aria-controls>` labelled "Open navigation". The pins are a `<nav>` of real links. Open traps focus inside the nav and restores it to the button on close. With scripting off, the button is a link to a plain `/sections` page listing the same destinations.
@@ -457,7 +458,7 @@ against this document.
 ### 15.3 Delete (after the phase that removes the last use; confirm with a search first)
 
 - `components/radial/` in full, including `LiquidGlobe`, the eversion code, the globe worker and its protocol, `jelly-glass.ts`.
-- `lib/liquid/`, `lib/jelly/`, `lib/dough*` and the WebAssembly kernels they load, with their build steps and tests.
+- `lib/liquid/`, `lib/jelly/` and the WebAssembly kernels, with their build steps and tests. NOT `lib/dough.ts`, `lib/fluid.ts` or `lib/trackball.ts`: the chrome globe runs on them (G5a); only the dough's optional WebAssembly path goes.
 - `app/glass-roles.css`, `app/jelly-material.css`, `app/jelly-material/`, `app/jelly-arcs.css`, `app/jelly-coverage.css`, `components/ui/jelly-group.*`, `components/ui/glass-filter.tsx`.
 - `app/globals/page-motion.css`, `components-reveal.css` and `lib/page-transition*` where they only serve entrances and reveals.
 - `app/routes/jelly.tsx` and any other material demo routes.

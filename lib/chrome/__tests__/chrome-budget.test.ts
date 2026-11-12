@@ -5,7 +5,10 @@ import { globSync, readFileSync } from 'node:fs';
 import { build } from 'esbuild';
 
 describe('chrome renderer budgets (Steel V4, V13)', () => {
-  it('the module is under 6 kB gzip', async () => {
+  // The gate was 6 kB (V13). It is 6.5 kB since 2026-11-12: the owner asked for the chrome globe to keep the liquid
+  // globe's physics, and the renderer needs a second program and a field texture to draw a ball as a body. The physics
+  // itself (lib/globe) is a separate idle chunk and is not counted here.
+  it('the module is under 6.5 kB gzip', async () => {
     const out = await build({
       entryPoints: ['lib/chrome/index.ts'],
       bundle: true,
@@ -15,7 +18,7 @@ describe('chrome renderer budgets (Steel V4, V13)', () => {
       logLevel: 'silent',
     });
     const bytes = gzipSync(out.outputFiles[0].contents, { level: 9 }).length;
-    expect(bytes, `lib/chrome is ${bytes} B gzip`).toBeLessThan(6 * 1024);
+    expect(bytes, `lib/chrome is ${bytes} B gzip`).toBeLessThan(6.5 * 1024);
   });
 
   it('nothing imports the renderer statically: it loads at idle through lib/chrome/install.ts', () => {
