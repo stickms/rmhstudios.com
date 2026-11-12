@@ -281,25 +281,3 @@ export function dateSeparatorKind(
     text: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
   };
 }
-
-/**
- * Per-corner rounding for grouped bubbles. Fully rounded = rounded-site; the
- * tight side = rounded-site-sm. The "inner" side (facing own messages) gets
- * tightened when grouped.
- */
-export function bubbleRounding(isSelf: boolean, isFirstInGroup: boolean, isLastInGroup: boolean) {
-  if (isSelf) {
-    // Right-aligned: inner side is right
-    const tl = 'rounded-tl-site';
-    const bl = 'rounded-bl-site';
-    const tr = isFirstInGroup ? 'rounded-tr-site' : 'rounded-tr-site-sm';
-    const br = isLastInGroup ? 'rounded-br-site-sm' : 'rounded-br-site-sm';
-    return `${tl} ${tr} ${bl} ${br}`;
-  }
-  // Left-aligned: inner side is left
-  const tr = 'rounded-tr-site';
-  const br = 'rounded-br-site';
-  const tl = isFirstInGroup ? 'rounded-tl-site' : 'rounded-tl-site-sm';
-  const bl = isLastInGroup ? 'rounded-bl-site-sm' : 'rounded-bl-site-sm';
-  return `${tl} ${tr} ${bl} ${br}`;
-}

@@ -3,7 +3,6 @@ import {
   appendUnique,
   applyMutationTo,
   applySyncPatches,
-  bubbleRounding,
   dateSeparatorKind,
   fromStreamMessage,
   fromVoiceMessage,
@@ -202,22 +201,5 @@ describe('dates', () => {
     expect(shouldShowDateSeparator(a, null)).toBe(true);
     expect(shouldShowDateSeparator(b, a)).toBe(false);
     expect(shouldShowDateSeparator(c, b)).toBe(true);
-  });
-});
-
-describe('bubbleRounding', () => {
-  it('tightens the inner side of grouped bubbles', () => {
-    expect(bubbleRounding(true, true, true)).toBe(
-      'rounded-tl-site rounded-tr-site rounded-bl-site rounded-br-site-sm',
-    );
-    expect(bubbleRounding(true, false, false)).toBe(
-      'rounded-tl-site rounded-tr-site-sm rounded-bl-site rounded-br-site-sm',
-    );
-    expect(bubbleRounding(false, true, true)).toBe(
-      'rounded-tl-site rounded-tr-site rounded-bl-site-sm rounded-br-site',
-    );
-    expect(bubbleRounding(false, false, false)).toBe(
-      'rounded-tl-site-sm rounded-tr-site rounded-bl-site-sm rounded-br-site',
-    );
   });
 });
