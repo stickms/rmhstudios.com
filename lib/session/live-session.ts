@@ -78,7 +78,8 @@ function fetchSession(fresh = false): Promise<void> {
   const request = api(getSessionApi)
     .then(
       (data) => {
-        if (id === latest) publish({ ...current, data: data ?? null, error: null, isPending: false });
+        if (id === latest)
+          publish({ ...current, data: data ?? null, error: null, isPending: false });
       },
       (error: unknown) => {
         // A failed request says nothing about who is signed in: keep what is known.

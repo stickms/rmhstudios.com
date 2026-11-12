@@ -231,10 +231,12 @@ const BUDGETS = {
   //   309,564 -> 301,992 B brotli.
   //   auth client out of the shell: critical path 1,059,228 -> 1,012,555 B raw and 301,992 -> 287,739 B brotli. The
   //   entry is 408,202 -> 409,201 B (the session store that replaces it), so its line stays where it was.
+  //   confirm dialog on first use: critical path 1,012,555 -> 961,788 B raw and 287,739 -> 270,249 B brotli, in 61
+  //   chunks instead of 72; entry 409,201 -> 408,395 B.
   siteCssBrotli: 32_600,
   entryRaw: 416_400,
-  criticalPathRaw: 1_032_800,
-  criticalPathBrotli: 293_500,
+  criticalPathRaw: 981_000,
+  criticalPathBrotli: 275_650,
 };
 
 /**

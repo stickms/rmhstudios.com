@@ -70,6 +70,9 @@ const FORBIDDEN: Record<string, string> = {
   'better-auth':
     'the shell reads the session from lib/session/live-session.ts; import @/lib/auth-client only from a page that signs in or manages an account, or dynamically at the action',
   '@simplewebauthn/browser': 'passkeys: comes in with @/lib/auth-client, see better-auth',
+  '@radix-ui/react-dialog':
+    'a dialog opens behind an interaction: mount it lazily, as components/ui/confirm-dialog.tsx does its view',
+  'react-remove-scroll': 'the scroll lock under every Radix dialog and sheet: see @radix-ui/react-dialog',
 };
 
 /**

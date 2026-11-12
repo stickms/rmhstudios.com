@@ -585,6 +585,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // falls back to English per key. Remove once `pnpm i18n:translate &&
   // pnpm i18n:resources` has been run and the catalogs committed.
   'c-ui': [
+    // Third-pass audit RT1 (2026-11-12): the confirm dialog loads on first use; this is its failed-to-load toast.
+    'confirm-unavailable',
     // Extract backlog, 2026-09-15 — see the block at the end of this map.
     'cancel-scheduling',
     'clear-selection',

@@ -7,6 +7,7 @@
   "clear-selection": "Clear selection",
   "close": "Close",
   "confirm": "Confirm",
+  "confirm-unavailable": "Couldn't open the confirmation. Check your connection and try again.",
   "copied": "Copied",
   "copy": "Copy",
   "doc-body-label": "Page content",

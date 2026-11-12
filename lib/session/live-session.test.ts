@@ -119,7 +119,10 @@ describe('lib/session/live-session', () => {
 
     browser.fire('storage', { key: 'rmh-style', newValue: 'graphite' });
     browser.fire('storage', { key: 'better-auth.message', newValue: 'not json' });
-    browser.fire('storage', { key: 'better-auth.message', newValue: '{"event":"other","data":{}}' });
+    browser.fire('storage', {
+      key: 'better-auth.message',
+      newValue: '{"event":"other","data":{}}',
+    });
     expect(api).toHaveBeenCalledTimes(1);
 
     browser.fire('storage', {
