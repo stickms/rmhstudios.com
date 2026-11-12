@@ -27,17 +27,7 @@ import { startTransition, useEffect, useState, useSyncExternalStore, type ReactN
  *    offset that is usually INSIDE the deferred part; that offset has to exist
  *    when it is applied. This reads the router history's own record of the last
  *    navigation (`trackHistoryActions`, subscribed from the root route).
- *
- *    It used to read `<html>.nav-pop`, which `BackNavAnimation` sets from its
- *    own `popstate` listener — and that listener runs AFTER the router's: the
- *    router's handler notifies synchronously, React renders the restored page
- *    in the microtask between the two listeners, and only then is the class
- *    set. So every back/forward arrival deferred anyway and the router restored
- *    the scroll offset against a page that was still a placeholder short
- *    (`/games` from 1800px came back at 1335px; docs/archive/2026/performance-audit-2026-10-21.md
- *    §Navigation commit). History subscribers are notified inside the router's
- *    handler, before that microtask.
- *
+ * *
  * Use it only for content that is below the fold on arrival. `minHeight` is a
  * reservation so the page does not visibly end and then grow while the subtree
  * builds; it never shifts anything the reader can see, because nothing above a
@@ -74,7 +64,7 @@ function shouldDeferNow(): boolean {
   ) {
     return false;
   }
-  return !document.documentElement.classList.contains('nav-pop');
+  return true;
 }
 
 /**

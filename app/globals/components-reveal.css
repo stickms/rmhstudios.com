@@ -12,11 +12,6 @@
 ::view-transition-new(root) {
   animation: none;
 }
-/* While a transition is running, stand the per-page enter animation down so it
- * doesn't fight the morph (lib/view-transition.ts toggles this class). */
-html.vt-active .page-root > * {
-  animation: none !important;
-}
 /* §5.48 liquid open transitions: while a card→detail morph runs, runViewTransition
  * marks <html> with `.vt-liquid` (cleared with the same guarantee as `.vt-active`),
  * and the shared-element groups run a touch longer on the springy glass curve so a
@@ -672,94 +667,6 @@ body {
   text-wrap: balance;
   font-size: clamp(2.5rem, 7vw, 5.5rem);
 }
-
-/* ── Scroll-driven reveal (native, zero-JS) ──────────────────────────────────
-   Elements tagged `.u-reveal` fade + rise as they scroll into view, driven by
-   the CSS `view()` timeline. The base rule leaves them fully visible, so any
-   engine without scroll-driven animations shows the finished content. */
-@keyframes u-reveal-in {
-  from {
-    opacity: 0;
-    /* `--site-reveal-distance` is the site's one reveal offset (§ the token block
-       near the top of this file). `<Reveal y={…}>` overrides it per element via
-       `--u-reveal-y`; everything else inherits the shared curve. */
-    transform: translateY(var(--u-reveal-y, var(--site-reveal-distance)));
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@supports (animation-timeline: view()) {
-  html .u-reveal {
-    animation: u-reveal-in linear both;
-    animation-timeline: view();
-    /* A stagger on a scroll timeline is a RANGE SHIFT, not a delay: there is
-         no clock for `animation-delay` to delay against, so a delay set here is
-         silently ignored. `--u-reveal-shift` moves where in its own entry an
-         element starts, which is the same effect for siblings sharing a row. */
-    animation-range: entry var(--u-reveal-shift, 0%) entry calc(46% + var(--u-reveal-shift, 0%));
-  }
-  /* Optional per-item lift for staggered grids: parent sets nothing, each
-       child just enters on its own geometry — a natural cascade. */
-  html .u-reveal-soft {
-    animation: u-reveal-in linear both;
-    animation-timeline: view();
-    animation-range: entry 2% cover 12%;
-  }
-
-  /* ── `.u-reveal-group` — the staggered container (`<RevealGroup>`) ────────
-       Children cascade. The shift is assigned by `nth-child` rather than by an
-       index prop because the alternative is threading a number through every
-       item, and because it keeps working when children are conditional.
-
-       Past the 6th child the shift stops growing on purpose: a grid of 30 cards
-       whose stagger kept accumulating would leave the last row starting more
-       than a full entry late, i.e. visibly stuck. Six steps is enough to read as
-       a cascade in the row where a cascade is visible at all. */
-  html .u-reveal-group > * {
-    animation: u-reveal-in linear both;
-    animation-timeline: view();
-    animation-range: entry var(--u-reveal-shift, 0%) entry calc(46% + var(--u-reveal-shift, 0%));
-  }
-  html .u-reveal-group > *:nth-child(2) {
-    --u-reveal-shift: 5%;
-  }
-  html .u-reveal-group > *:nth-child(3) {
-    --u-reveal-shift: 10%;
-  }
-  html .u-reveal-group > *:nth-child(4) {
-    --u-reveal-shift: 15%;
-  }
-  html .u-reveal-group > *:nth-child(5) {
-    --u-reveal-shift: 20%;
-  }
-  html .u-reveal-group > *:nth-child(n + 6) {
-    --u-reveal-shift: 25%;
-  }
-}
-
-/* Element-anchored parallax: drifts as its OWN box travels through the nearest
-   scrollport, so it works no matter which ancestor scrolls (window on desktop,
-   the inner feed scroller on phones) — no JS, no scroller wiring. */
-@keyframes u-parallax-view {
-  from {
-    transform: translateY(calc(var(--u-parallax, 40px) * -1));
-  }
-  to {
-    transform: translateY(var(--u-parallax, 40px));
-  }
-}
-@supports (animation-timeline: view()) {
-  html .u-parallax-hero {
-    animation: u-parallax-view linear both;
-    animation-timeline: view();
-    animation-range: cover 0% cover 100%;
-    will-change: transform;
-  }
-}
-
-/* Reduced motion / account flag: freeze every utility above at its rest state. */
 
 /* ── AppleHero (components/shared/AppleHero.tsx) ─────────────────────────────
    A reusable marketing/index hero: big SF display type, drifting monochrome

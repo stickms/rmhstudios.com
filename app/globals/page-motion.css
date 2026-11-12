@@ -300,79 +300,6 @@ input[type='number'] {
   }
 }
 
-/* ─── Per-page content transition ────────────────────────────────────────
- * Only the content column(s) animate on navigation — the left nav rail lives
- * outside the content <main> (see app/routes/_site.tsx), so it never moves.
- * Route-to-route navigation remounts the content, replaying this enter
- * animation. `backwards` fill applies the start frame immediately (no flash)
- * and leaves NO lingering transform afterward (so `position: fixed`
- * descendants are unaffected once the animation settles).
- *
- * Deliberately NOT on the sampled spring (`--spring-smooth`, §7.1) like the
- * floating surfaces: while any transform is running on a page root, its
- * `position: fixed` descendants (the compose FAB, floating lanes) are laid out
- * against the page box instead of the viewport. 0.16s of that is invisible;
- * the spring's 0.64s settle would park the FAB at the bottom of the document
- * for over half a second on every navigation. */
-/* The page swap (docs/superpowers/specs/2026-10-27-smooth-transitions-design.md). OPACITY ONLY, and never blank: the old
-   page dims to --swap-dim while it leaves (html[data-page-leaving], set by lib/page-transition.ts) and the new one
-   enters from that same level, so a navigation reads as one quick dip instead of a blink. No transform on purpose: a
-   running transform on the page root makes its `position: fixed` descendants (the compose FAB, floating lanes) lay out
-   against the page box instead of the viewport. Every other one-shot entrance inside the page is finished at mount
-   (finishEntranceAnimations), so this is the only one that paints. */
-:root {
-  --swap-dim: 0.72;
-  --swap-out: 100ms;
-  --swap-in: 220ms;
-}
-@keyframes page-enter {
-  from {
-    opacity: var(--swap-dim);
-  }
-  to {
-    opacity: 1;
-  }
-}
-.page-root > * {
-  animation: page-enter var(--swap-in) var(--ease-smooth) backwards;
-  transition: opacity var(--swap-out) var(--ease-smooth);
-}
-html[data-page-leaving] .page-root > * {
-  opacity: var(--swap-dim);
-}
-/* The kind rides on the flag itself (a sibling leave dims only the content). */
-.page-root > [data-page-enter-complete],
-.page-root > [data-route-pending] {
-  animation: none !important;
-}
-/* Not on the document's own first paint. The enter is for ARRIVING by a
- * navigation; on a fresh load the server-rendered page is already there, and
- * fading it in from opacity 0 hid it at first contentful paint — an element
- * painted at opacity 0 is not an LCP candidate, so the home feed's first card
- * never counted (docs/archive/2026/performance-audit-2026-10-21.md §Home LCP).
- * `data-navigated` is set on the first client navigation (`app/routes/__root.tsx`),
- * which marks the page then on screen complete first so it never replays. */
-html:not([data-navigated]) .page-root > * {
-  animation: none;
-}
-
-/* Same layout group (tabbed / sibling pages): the frame, the title and the tab strip, stays perfectly still and only the
-   content swaps. The column itself never animates; the swap is keyed to what is NOT the frame, on the shape the
-   shell renders (PageLayout's `page-content`). Pages with another shape simply swap instantly. */
-html[data-nav-kind='sibling'] .page-root > * {
-  animation: none;
-}
-html[data-nav-kind='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']) {
-  animation: page-enter var(--swap-in) var(--ease-smooth) backwards;
-  transition: opacity var(--swap-out) var(--ease-smooth);
-}
-html[data-page-leaving='sibling'] .page-root > * {
-  opacity: 1;
-}
-html[data-page-leaving='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']) {
-  opacity: var(--swap-dim);
-}
-
 /* ══════════════════════════════════════════════════════════════════════════
    §7.1 — `data-motion`: the enter/exit vocabulary for floating surfaces
    ==========================================================================
@@ -730,13 +657,6 @@ html[data-page-leaving='sibling'] [data-slot='page-content'] > :not([data-slot='
   to {
     visibility: visible;
   }
-}
-
-/* Back/forward (history POP) navigations shouldn't replay the enter animation —
- * returning should feel like landing back where you were, not the page
- * re-animating. Toggled by components/ui/BackNavAnimation.tsx. */
-html.nav-pop .page-root > * {
-  animation: none !important;
 }
 
 /* Section 7.3 Eversion is reserved for globe navigation.

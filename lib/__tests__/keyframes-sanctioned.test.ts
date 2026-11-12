@@ -23,14 +23,9 @@ const ROOT = process.cwd();
 
 /** keyframe name -> why it exists (owner). */
 export const SANCTIONED: Record<string, string> = {
-  // --- the material -------------------------------------------------------------------------------
-
   // --- app/globals.css: site-wide ---------------------------------------------------------------
-  'page-enter': 'route content enter (.page-root); suppressed on history POP by html.nav-pop',
   'content-item-enter': 'staggered enter of feed/list items (.content-item)',
   'motion-presence': 'no-op presence animation so Radix keeps a [data-motion] node until its exit transition ends',
-  'u-reveal-in': 'scroll-driven reveal (animation-timeline: view()) for .u-reveal',
-  'u-parallax-view': 'scroll-driven parallax (animation-timeline: view()) for .u-parallax',
   'vinyl-spin': 'feed VinylRecord while playing (components/feed/VinylRecord.tsx)',
   'doctrine-shake': 'doctrine page: 0.15s error shake',
   // Game / arm effects whose classes live in the global sheet (owner is the game, not the site):
@@ -43,26 +38,6 @@ export const SANCTIONED: Record<string, string> = {
   // --- components/ui ----------------------------------------------------------------------------
   'ui-sheet-presence': 'no-op presence animation so Radix keeps a Sheet mounted through its exit transition',
   'ui-dialog-presence': 'no-op presence animation so Radix keeps a Dialog mounted through its exit transition',
-
-  // --- components/radial: the globe shell -------------------------------------------------------
-  'dock-globe-shimmer': 'globe dock shimmer',
-  'dock-globe-glint': 'globe dock glint',
-  'rad-live-reveal': 'radial live-region reveal',
-  'rmh-logo-bloom': 'RMH logo intro bloom',
-  'rmh-logo-draw': 'RMH logo intro stroke draw',
-  'globe-in': 'globe menu open',
-  'globe-out': 'globe menu close',
-  'globe-pin-in': 'globe pin enter',
-  'globe-current-halo': 'globe current-page halo',
-  'globe-armed': 'globe armed (long-press) state',
-  'globe-swell': 'eversion hand-over: hub globe swells',
-  'globe-dissolve': 'eversion hand-over: hub globe dissolves',
-  'radial-page-rise': 'radial page rise after eversion',
-  'evert-popup-in': 'eversion popup enter',
-  'evert-popup-turn': 'eversion popup slow turn',
-  'evert-popup-swell': 'eversion popup hand-over swell',
-  'evert-popup-dissolve': 'eversion popup hand-over dissolve',
-  'evert-popup-out': 'eversion popup exit',
 
   // --- feature pages (site tier) ----------------------------------------------------------------
   'lib-rise': 'library card rise',

@@ -1,5 +1,4 @@
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
-import { markPageEnterComplete } from '@/lib/motion';
 
 /**
  * WebKit detection. iOS Chrome/Edge/Firefox are WebKit too (their UAs carry
@@ -171,10 +170,6 @@ export function runViewTransition(
           /* already settled / unsupported */
         }
       }
-      // The native snapshot already performed the entrance. Mark the mounted
-      // destination before releasing `.vt-active`, otherwise its CSS page-enter
-      // animation can begin late and make the whole page appear to refresh.
-      if (!skipSnapshot) markPageEnterComplete();
       root.classList.remove('vt-active', 'vt-liquid');
       settle();
       if (finishActiveTransition === abort) finishActiveTransition = null;
