@@ -33,7 +33,14 @@ import {
   handleKowloonKnockoutDisconnect,
 } from './handlers/kowloon-knockout';
 import { registerStudioJamHandlers } from './handlers/studio-jam';
-import { initializeCasino, listCasinoRooms, CASINO_SHUTDOWN_REFUNDS, CASINO_SHUTDOWN_DEADLINE_MS } from '../../features/casino/server';
+import {
+  initializeCasino,
+  listCasinoRooms,
+  restoreCasinoTables,
+  closeCasinoTableStore,
+  CASINO_SHUTDOWN_REFUNDS,
+  CASINO_SHUTDOWN_DEADLINE_MS,
+} from '../../features/casino/server';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
 import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/globeset';
@@ -425,7 +432,8 @@ io.on('connection', (socket) => {
     // queue seats, lobby cleanup timers) are skipped — the process is going
     // away. Everything that persists state (calls, resumable games) still runs.
     // The casino handlers still run too, but find nothing: shutdown() refunded
-    // their stakes and emptied their tables before calling io.close().
+    // their stakes (or, for durable blackjack tables, saved them) and emptied
+    // their tables before calling io.close().
     if (!shuttingDown) handleMatchmakingDisconnect(socket);
     void handleCallDisconnect(io, socket);
     void handleGroupCallDisconnect(io, socket);
@@ -487,7 +495,11 @@ function shutdown(signal: string): void {
       return Promise.resolve();
     }
   };
-  const casinoRefunds = Promise.allSettled(CASINO_SHUTDOWN_REFUNDS.map(([game, run]) => refundCasino(game, run)));
+  // With CASINO_DURABLE_TABLES=1 blackjack's entry saves its tables to the store instead of refunding
+  // them; the store's connection closes once every entry has settled.
+  const casinoRefunds = Promise.allSettled(
+    CASINO_SHUTDOWN_REFUNDS.map(([game, run]) => refundCasino(game, run)),
+  ).then(() => closeCasinoTableStore());
 
   io.close(() => {
     logger.info({ event: 'sockets_closed' });
@@ -518,7 +530,9 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 // left behind from rooms this one opens while the sweep is still running.
 const bootedAt = new Date();
 
-void adapterReady.then(() => httpServer.listen(config.PORT, () => {
+// Durable casino tables (CASINO_DURABLE_TABLES=1) come back before the hub accepts a connection, so a
+// reconnecting player finds the seat already there. Off (the default) this resolves at once.
+void adapterReady.then(() => restoreCasinoTables(io)).then(() => httpServer.listen(config.PORT, () => {
   logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
   if (config.DATABASE_URL) void warmPrismaClient(getPrismaClient(), logger);
   initializeCasino(io);

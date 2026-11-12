@@ -6,6 +6,7 @@
  * 3:2 blackjack payout. 6-deck shoe, dealer hits soft 17.
  */
 
+import { randomUUID } from 'crypto';
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../../../server/socket-server/prisma-client';
 import {
@@ -17,11 +18,23 @@ import {
 import { checkRateLimit } from '../../../server/socket-server/rate-limit';
 import { logger } from '../../../server/socket-server/logger';
 import {
+  CASINO_SHUTDOWN_DEADLINE_MS,
   InFlight,
   settleShutdownClaims,
   type ShutdownRefundSummary,
   type StakeClaim,
 } from './casino-shutdown';
+import {
+  BLACKJACK_TABLE_VERSION,
+  parseStoredBlackjackTable,
+  payoutKey,
+  returnKey,
+  seatStake,
+  unsavedTableClaims,
+  type StoredBlackjackTable,
+} from './blackjack-table-state';
+import { TablePersistence } from './table-persistence';
+import type { CasinoTableStore } from './table-store';
 import {
   type Card,
   createShoe,
@@ -139,6 +152,10 @@ interface PlayerSeat {
   // is awaiting the DB, so a double-click can't pass the state check twice and
   // debit twice.
   inFlight?: boolean;
+  // Names this seat's stake for the current round: minted when the bet lands,
+  // cleared when the next betting phase opens. Durable tables key the round's
+  // payout and any return of the stake by it (blackjack-table-state.ts).
+  stakeId: string | null;
 }
 
 function makeHand(cards: Card[], bet: number): Hand {
@@ -184,6 +201,9 @@ interface BlackjackRoom {
   // them and a stray restart re-ran startBettingPhase over a live round.
   restartTimer: ReturnType<typeof setTimeout> | null;
   payoutTimer: ReturnType<typeof setTimeout> | null;
+  // Durable tables only: armed when a table is restored after a restart; when
+  // it fires, seats whose player has not come back leave under the usual rules.
+  reconnectTimer: ReturnType<typeof setTimeout> | null;
   roundNumber: number;
   bettingDeadline: number | null;
   turnDeadline: number | null;
@@ -208,6 +228,13 @@ const RESHUFFLE_THRESHOLD = 75;
 // Maximum number of hands a single seat can hold via splitting (the original
 // hand plus up to three splits — the standard casino limit of four hands).
 const MAX_HANDS = 4;
+// Restored tables (durable tables only). Every phase clock restarts at its
+// full length. A round that was waiting on the dealer's reveal pays after this
+// delay instead of the card-flip delay, so a reconnecting player sees it.
+const RESTORE_SETTLE_DELAY_MS = 10_000;
+// How long a restored seat is held for its player before the seat is treated
+// as a disconnect. One turn clock, so a round in progress is never cut short.
+const RESTORE_RECONNECT_MS = 30_000;
 
 // ── State ──────────────────────────────────────────────────────────
 
@@ -219,6 +246,9 @@ let ioRef: Server;
 let closing = false;
 // Debits, refunds and payout transactions still awaiting the database.
 const inFlight = new InFlight();
+// Set once by restoreBlackjackTables() when CASINO_DURABLE_TABLES is on; null
+// otherwise, and then every `durable?.` below does nothing.
+let durable: TablePersistence | null = null;
 
 // Socket.io room that lobby browsers join so room-list updates reach only the
 // clients currently viewing the lobby — not every connected socket on the
@@ -311,6 +341,8 @@ function serializeTableState(room: BlackjackRoom) {
 }
 
 function broadcastTableState(room: BlackjackRoom) {
+  // Every change a client can see goes out through here, so this is the save seam.
+  durable?.markDirty(room.roomId);
   ioRef.to(roomKey(room.roomId)).emit(S2C.TABLE_STATE, serializeTableState(room));
 }
 
@@ -365,6 +397,10 @@ function clearTimers(room: BlackjackRoom) {
     clearTimeout(room.payoutTimer);
     room.payoutTimer = null;
   }
+  if (room.reconnectTimer) {
+    clearTimeout(room.reconnectTimer);
+    room.reconnectTimer = null;
+  }
 }
 
 /** A hand is in progress: stakes are committed to the round (not refundable). */
@@ -385,11 +421,23 @@ function isLive(room: BlackjackRoom): boolean {
  * debit was in flight, the player left during betting, or the action became
  * illegal mid-await). Fire-and-forget safe: errors are logged.
  */
-function refundStake(room: BlackjackRoom, userId: string, amount: number, note: string) {
-  return inFlight.track(refundStakeNow(room, userId, amount, note));
+function refundStake(
+  room: BlackjackRoom,
+  userId: string,
+  amount: number,
+  note: string,
+  idempotencyKey?: string,
+) {
+  return inFlight.track(refundStakeNow(room, userId, amount, note, idempotencyKey));
 }
 
-async function refundStakeNow(room: BlackjackRoom, userId: string, amount: number, note: string) {
+async function refundStakeNow(
+  room: BlackjackRoom,
+  userId: string,
+  amount: number,
+  note: string,
+  idempotencyKey?: string,
+) {
   if (amount <= 0) return;
   try {
     const prisma = getPrismaClient();
@@ -400,6 +448,7 @@ async function refundStakeNow(room: BlackjackRoom, userId: string, amount: numbe
         entityType: 'blackjack',
         entityId: room.roomId,
         note,
+        ...(idempotencyKey ? { idempotencyKey } : {}),
       });
       return getBalanceOn(tx, userId);
     });
@@ -443,6 +492,7 @@ function startBettingPhase(room: BlackjackRoom) {
     p.insuranceBet = 0;
     p.insuranceDecision = 'pending';
     p.insuranceResult = null;
+    p.stakeId = null;
   }
 
   room.bettingDeadline = Date.now() + BETTING_DURATION_MS;
@@ -573,7 +623,10 @@ function offerInsurance(room: BlackjackRoom, bettors: PlayerSeat[]) {
   });
 
   broadcastTableState(room);
+  armInsuranceTimer(room);
+}
 
+function armInsuranceTimer(room: BlackjackRoom) {
   room.insuranceTimer = setTimeout(() => {
     if (room.phase !== 'insurance') return;
     for (const p of room.players.values()) {
@@ -833,6 +886,7 @@ async function resolvePayouts(room: BlackjackRoom) {
     amount: number;
     result: HandResult;
     insurancePayout: number;
+    idempotencyKey: string | undefined;
   }[] = [];
 
   // A split hand can never be a natural blackjack, so its 21 pays even money.
@@ -879,21 +933,30 @@ async function resolvePayouts(room: BlackjackRoom) {
     }
 
     p.payout = totalPayout + insurancePayout;
+    // `done` on the way in happens only on a restored table that was saved
+    // while this settlement was in flight: its stats are already counted.
+    const counted = p.status === 'done';
     p.status = 'done';
 
     // Update session stats
-    const totalBetForHand = totalBet + p.insuranceBet;
-    p.sessionStats.totalBet += totalBetForHand;
-    p.sessionStats.totalWon += totalPayout + insurancePayout;
-    p.sessionStats.handsPlayed++;
-    if (mainResult.result === 'win' || mainResult.result === 'blackjack') p.sessionStats.handsWon++;
-    if (mainResult.result === 'blackjack') p.sessionStats.blackjacks++;
+    if (!counted) {
+      const totalBetForHand = totalBet + p.insuranceBet;
+      p.sessionStats.totalBet += totalBetForHand;
+      p.sessionStats.totalWon += totalPayout + insurancePayout;
+      p.sessionStats.handsPlayed++;
+      if (mainResult.result === 'win' || mainResult.result === 'blackjack') p.sessionStats.handsWon++;
+      if (mainResult.result === 'blackjack') p.sessionStats.blackjacks++;
+    }
 
     payoutUpdates.push({
       userId: p.userId,
       amount: totalPayout + insurancePayout,
       result: p.result,
       insurancePayout,
+      // Durable tables: one key per stake, so a settlement that runs again
+      // after a restart (saved mid-payout, or restored from an older save)
+      // credits nothing a second time.
+      idempotencyKey: durable && p.stakeId ? payoutKey(p.stakeId) : undefined,
     });
   }
 
@@ -913,6 +976,7 @@ async function resolvePayouts(room: BlackjackRoom) {
             entityType: 'blackjack',
             entityId: room.roomId,
             note: 'Blackjack payout',
+            ...(update.idempotencyKey ? { idempotencyKey: update.idempotencyKey } : {}),
           });
         }
       }
@@ -1002,6 +1066,7 @@ function destroyRoom(roomId: string) {
   if (room) {
     clearTimers(room);
     rooms.delete(roomId);
+    durable?.remove(roomId);
     logger.info({ event: 'bj_room_destroyed', roomId });
     broadcastRoomList();
   }
@@ -1089,6 +1154,7 @@ function onCreateRoom(socket: Socket, payload: unknown) {
     insuranceTimer: null,
     restartTimer: null,
     payoutTimer: null,
+    reconnectTimer: null,
     roundNumber: 0,
     bettingDeadline: null,
     turnDeadline: null,
@@ -1196,9 +1262,11 @@ function joinRoom(room: BlackjackRoom, socket: Socket) {
     hands: [],
     activeHandIndex: 0,
     sessionStats: { totalBet: 0, totalWon: 0, handsPlayed: 0, handsWon: 0, blackjacks: 0 },
+    stakeId: null,
   };
 
   room.players.set(userId, player);
+  durable?.markDirty(room.roomId);
   socketToUserId.set(socket.id, userId);
   userToRoom.set(userId, room.roomId);
   socket.join(roomKey(room.roomId));
@@ -1275,6 +1343,7 @@ function leaveRoom(userId: string, socketId: string) {
       leavingSock.leave(roomKey(roomId));
       leavingSock.emit(S2C.ROOM_LEFT, { roomId });
     }
+    durable?.markDirty(roomId);
     logger.info({ event: 'bj_player_left_pending_payout', roomId, userId, seatIndex });
     // Don't let a departing player stall the insurance phase.
     if (room.phase === 'insurance' && player.insuranceDecision === 'pending') {
@@ -1288,7 +1357,15 @@ function leaveRoom(userId: string, socketId: string) {
   // (it used to vanish with the deleted seat).
   const uncommitted = room.phase === 'betting' ? player.bet : 0;
   player.bet = 0;
-  void refundStake(room, userId, uncommitted, 'Blackjack bet refund (left table)');
+  void refundStake(
+    room,
+    userId,
+    uncommitted,
+    'Blackjack bet refund (left table)',
+    // Keyed by the stake, so a restart that restores a save taken before this
+    // refund can see the stake was returned.
+    durable && player.stakeId ? returnKey(player.stakeId) : undefined,
+  );
 
   room.players.delete(userId);
   userToRoom.delete(userId);
@@ -1379,6 +1456,7 @@ function onUpdateRoom(socket: Socket, payload: unknown) {
     joinCode: room.joinCode,
   });
 
+  durable?.markDirty(roomId);
   broadcastRoomList();
 }
 
@@ -1458,6 +1536,7 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
 
     player.bet = amount;
     player.status = 'betting';
+    player.stakeId = randomUUID();
 
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
     broadcastTableState(room);
@@ -1472,6 +1551,8 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
     }
   } finally {
     player.inFlight = false;
+    // A stake moved: write the table now instead of waiting for the coalesced save.
+    durable?.saveNow(room.roomId);
   }
 }
 
@@ -1540,6 +1621,8 @@ async function onTakeInsurance(socket: Socket) {
     }
   } finally {
     player.inFlight = false;
+    // A stake moved: write the table now instead of waiting for the coalesced save.
+    durable?.saveNow(room.roomId);
   }
 }
 
@@ -1698,6 +1781,8 @@ async function onSplit(room: BlackjackRoom, socket: Socket, userId: string) {
     }
   } finally {
     player.inFlight = false;
+    // A stake moved: write the table now instead of waiting for the coalesced save.
+    durable?.saveNow(room.roomId);
   }
 }
 
@@ -1766,6 +1851,8 @@ async function onDoubleDown(room: BlackjackRoom, socket: Socket, userId: string)
     }
   } finally {
     player.inFlight = false;
+    // A stake moved: write the table now instead of waiting for the coalesced save.
+    durable?.saveNow(room.roomId);
   }
 }
 
@@ -1905,7 +1992,11 @@ const UNSETTLED_PHASES: ReadonlySet<TablePhase> = new Set<TablePhase>([
 ]);
 
 /**
- * Hub shutdown: refund every stake debited for a round that has not paid out —
+ * Hub shutdown. With durable tables on (`CASINO_DURABLE_TABLES=1`, see
+ * {@link saveBlackjackOnShutdown}) every table is written to the store and
+ * nothing is refunded. Otherwise:
+ *
+ * Refund every stake debited for a round that has not paid out —
  * the base bet (or, once dealt, every hand's bet, which already includes
  * doubles and splits) plus insurance — and kill every room.
  *
@@ -1917,6 +2008,7 @@ const UNSETTLED_PHASES: ReadonlySet<TablePhase> = new Set<TablePhase>([
  * returned promise waits for that too.
  */
 export function refundBlackjackOnShutdown(deadlineMs?: number): Promise<ShutdownRefundSummary> {
+  if (durable) return saveBlackjackOnShutdown(durable, deadlineMs ?? CASINO_SHUTDOWN_DEADLINE_MS);
   closing = true;
   const claims: StakeClaim[] = [];
   for (const room of rooms.values()) {
@@ -1945,4 +2037,322 @@ export function refundBlackjackOnShutdown(deadlineMs?: number): Promise<Shutdown
   userToRoom.clear();
   socketToUserId.clear();
   return settleShutdownClaims('blackjack', claims, inFlight, deadlineMs);
+}
+
+// ── Durable tables (CASINO_DURABLE_TABLES=1) ───────────────────────
+
+/** A live room as it is stored: no timers, deadlines, socket ids or in-flight locks. */
+function serializeRoom(room: BlackjackRoom): StoredBlackjackTable {
+  return {
+    v: BLACKJACK_TABLE_VERSION,
+    roomId: room.roomId,
+    name: room.name,
+    ownerId: room.ownerId,
+    ownerName: room.ownerName,
+    maxPlayers: room.maxPlayers,
+    privacy: room.privacy,
+    joinCode: room.joinCode,
+    // `dealing` is never observable between two turns of the event loop.
+    phase: room.phase as StoredBlackjackTable['phase'],
+    roundNumber: room.roundNumber,
+    players: Array.from(room.players.values(), (p) => ({
+      seatIndex: p.seatIndex,
+      userId: p.userId,
+      userName: p.userName,
+      avatarUrl: p.avatarUrl,
+      bet: p.bet,
+      status: p.status,
+      result: p.result,
+      payout: p.payout,
+      insuranceBet: p.insuranceBet,
+      insuranceDecision: p.insuranceDecision,
+      insuranceResult: p.insuranceResult,
+      hands: p.hands.map((h) => ({ ...h, cards: h.cards.map((c) => ({ ...c })) })),
+      activeHandIndex: p.activeHandIndex,
+      sessionStats: { ...p.sessionStats },
+      pendingRemoval: p.pendingRemoval === true,
+      stakeId: p.stakeId,
+    })),
+    dealerHand: room.dealerHand.map((c) => ({ ...c })),
+    dealerHoleRevealed: room.dealerHoleRevealed,
+    shoe: room.shoe.map((c) => ({ ...c })),
+    currentTurnUserId: room.currentTurnUserId,
+    turnOrder: [...room.turnOrder],
+    turnIndex: room.turnIndex,
+    savedAt: Date.now(),
+  };
+}
+
+/** A stored table as a room: every seat disconnected, no timer armed. */
+function roomFromStored(s: StoredBlackjackTable): BlackjackRoom {
+  const players = new Map<string, PlayerSeat>();
+  for (const p of s.players) {
+    const { pendingRemoval, ...seat } = p;
+    players.set(p.userId, { ...seat, socketId: '', ...(pendingRemoval ? { pendingRemoval: true } : {}) });
+  }
+  return {
+    roomId: s.roomId,
+    name: s.name,
+    ownerId: s.ownerId,
+    ownerName: s.ownerName,
+    maxPlayers: s.maxPlayers,
+    privacy: s.privacy,
+    joinCode: s.joinCode,
+    phase: s.phase,
+    players,
+    dealerHand: s.dealerHand,
+    dealerHoleRevealed: s.dealerHoleRevealed,
+    shoe: s.shoe,
+    currentTurnUserId: s.currentTurnUserId,
+    turnOrder: s.turnOrder,
+    turnIndex: s.turnIndex,
+    bettingTimer: null,
+    resultsTimer: null,
+    turnTimer: null,
+    insuranceTimer: null,
+    restartTimer: null,
+    payoutTimer: null,
+    reconnectTimer: null,
+    roundNumber: s.roundNumber,
+    bettingDeadline: null,
+    turnDeadline: null,
+  };
+}
+
+/**
+ * Hub shutdown with durable tables: save instead of refund.
+ *
+ * Synchronously, before anything awaits (and so before `io.close()` runs the
+ * disconnect fan-out, which would otherwise forfeit the player on turn and
+ * refund the betting phase): mark the module closed, stop every timer, take a
+ * snapshot of every table and empty the maps. From then on no handler, timer
+ * or disconnect can change a table or move its coins, so the snapshot is what
+ * the next process continues from.
+ *
+ * What is still in flight needs no claim:
+ *  - a debit that has not landed on a seat is not in the snapshot; its handler
+ *    sees the room is gone and refunds it itself;
+ *  - a settlement transaction is in the snapshot as phase `payout`; the next
+ *    process runs the settlement again and the per-stake keys make every
+ *    credit that already landed a no-op.
+ *
+ * A stake is saved or refunded, never both. If the store does not acknowledge
+ * the write (rejected, or no answer in half the deadline), every unsettled
+ * stake is refunded under its `bj-return:<stakeId>` key. The store may still
+ * hold the table (the write landed after all, or an older coalesced save is
+ * there): restore looks those keys up and zeroes any stake that has one.
+ */
+async function saveBlackjackOnShutdown(
+  tables: TablePersistence,
+  deadlineMs: number,
+): Promise<ShutdownRefundSummary> {
+  closing = true;
+  const stored: StoredBlackjackTable[] = [];
+  for (const room of rooms.values()) {
+    clearTimers(room);
+    if (room.players.size > 0) stored.push(serializeRoom(room));
+  }
+  rooms.clear();
+  userToRoom.clear();
+  socketToUserId.clear();
+
+  const startedAt = Date.now();
+  const outcome = await tables.saveAtShutdown(
+    stored.map((t) => ({ id: t.roomId, data: t })),
+    deadlineMs / 2,
+  );
+  const remainingMs = Math.max(0, deadlineMs - (Date.now() - startedAt));
+
+  if (outcome !== 'saved') {
+    const claims = stored.flatMap(unsavedTableClaims);
+    logger.error({ event: 'bj_tables_not_saved_refunding', outcome, tables: stored.length, claims: claims.length });
+    return settleShutdownClaims('blackjack', claims, inFlight, remainingMs);
+  }
+  // Nothing to refund; still wait (inside the deadline) for in-flight work.
+  const summary = await settleShutdownClaims('blackjack', [], inFlight, remainingMs);
+  return { ...summary, saved: stored.length };
+}
+
+/** A restored round is given this long, per phase, before its clock acts. See RESTORE_* above. */
+function resumeRoom(room: BlackjackRoom) {
+  switch (room.phase) {
+    case 'betting':
+      // Bets already placed stay on their seats; the window reopens in full.
+      room.bettingDeadline = Date.now() + BETTING_DURATION_MS;
+      room.bettingTimer = setTimeout(() => endBettingPhase(room), BETTING_DURATION_MS);
+      break;
+    case 'insurance':
+      armInsuranceTimer(room);
+      break;
+    case 'player_turns':
+      if (room.currentTurnUserId) armTurnTimer(room, room.currentTurnUserId);
+      else advanceToNextPlayer(room);
+      break;
+    case 'payout':
+      // Saved while the settlement transaction was in flight. Run it again:
+      // it is computed from the cards, and its credits are keyed per stake.
+      room.phase = 'dealer_turn';
+      schedulePayout(room, RESTORE_SETTLE_DELAY_MS);
+      break;
+    case 'dealer_turn':
+      // The dealer's hand is complete (it is drawn in one synchronous step);
+      // only the payout was pending.
+      schedulePayout(room, RESTORE_SETTLE_DELAY_MS);
+      break;
+    default:
+      // idle, results: nothing at stake. Seats that had already left go now
+      // (the results sweep that would have pruned them did not run), and the
+      // table opens betting the way it does after a round nobody bet on.
+      for (const [uid, p] of room.players) if (p.pendingRemoval) room.players.delete(uid);
+      room.phase = 'idle';
+      if (room.players.size === 0) {
+        destroyRoom(room.roomId);
+        return;
+      }
+      room.restartTimer = setTimeout(() => {
+        room.restartTimer = null;
+        startBettingPhase(room);
+      }, 2000);
+  }
+
+  room.reconnectTimer = setTimeout(() => {
+    room.reconnectTimer = null;
+    if (!isLive(room)) return;
+    // Mid-round, an absent seat is already handled: its turn clock stands it,
+    // its stake is settled by user id, and the results sweep prunes it.
+    if (roundInProgress(room)) return;
+    for (const p of [...room.players.values()]) {
+      const sock = p.socketId ? ioRef.sockets.sockets.get(p.socketId) : null;
+      // The disconnect rule outside a round: the seat leaves, and a bet placed
+      // during betting is refunded.
+      if (sock?.connected) continue;
+      // Not if the user has since sat down at another table: leaveRoom acts on
+      // the table the user maps to, and joining that one already left this one.
+      if (userToRoom.get(p.userId) === room.roomId) leaveRoom(p.userId, p.socketId);
+    }
+  }, RESTORE_RECONNECT_MS);
+}
+
+/**
+ * Stakes in `tables` that the previous process gave back after its last
+ * successful save: the stake ids that have a `bj-return:` row in the ledger.
+ */
+async function returnedStakeIds(tables: StoredBlackjackTable[]): Promise<Set<string>> {
+  const byKey = new Map<string, string>();
+  for (const t of tables) {
+    for (const seat of t.players) {
+      if (seat.stakeId && seatStake(seat) > 0) byKey.set(returnKey(seat.stakeId), seat.stakeId);
+    }
+  }
+  if (byKey.size === 0) return new Set();
+  const rows = await getPrismaClient().coinTransaction.findMany({
+    where: { idempotencyKey: { in: [...byKey.keys()] } },
+    select: { idempotencyKey: true },
+  });
+  return new Set(rows.map((r) => byKey.get(r.idempotencyKey ?? '')).filter((id): id is string => !!id));
+}
+
+export interface BlackjackRestoreSummary {
+  restored: number;
+  /** Entries that were not valid tables. Left in the store for a person to read. */
+  unreadable: number;
+  /** Stakes found already refunded by the previous process, and zeroed. */
+  returnedStakes: number;
+}
+
+/**
+ * Turn durable tables on for this process and bring back every table the
+ * previous one saved. Called once at boot, before the hub listens, and only
+ * when `openCasinoTableStore()` returned a store. Never throws.
+ *
+ * Every seat comes back disconnected; a player returns through the ordinary
+ * `bj:join_room` reconnect branch. Each phase clock restarts at its full
+ * length, so a round nobody returns to still plays out by the existing
+ * timeouts and pays by user id.
+ *
+ * An entry that does not parse is logged at error level and LEFT in the
+ * store: it may hold stakes, and deleting it would delete the only record.
+ * If the ledger cannot be read to check for returned stakes, no table with a
+ * stake is restored on this boot (they stay in the store for the next one):
+ * restoring one unchecked could pay a stake that was already refunded.
+ */
+export async function restoreBlackjackTables(
+  io: Server,
+  store: CasinoTableStore,
+): Promise<BlackjackRestoreSummary> {
+  ioRef = io;
+  durable = new TablePersistence(
+    store,
+    'blackjack',
+    (id) => {
+      const room = rooms.get(id);
+      return room ? serializeRoom(room) : null;
+    },
+    logger,
+  );
+  const summary: BlackjackRestoreSummary = { restored: 0, unreadable: 0, returnedStakes: 0 };
+
+  let entries;
+  try {
+    entries = await store.loadAll('blackjack');
+  } catch (err) {
+    logger.error({ event: 'bj_tables_load_failed', error: String(err) });
+    return summary;
+  }
+
+  const tables: StoredBlackjackTable[] = [];
+  for (const entry of entries) {
+    const table = parseStoredBlackjackTable(entry.data);
+    if (!table || table.roomId !== entry.id) {
+      summary.unreadable++;
+      logger.error({ event: 'bj_table_unreadable', roomId: entry.id });
+      continue;
+    }
+    if (table.players.length === 0) {
+      durable.remove(entry.id);
+      continue;
+    }
+    tables.push(table);
+  }
+
+  let returned: Set<string> | null;
+  try {
+    returned = await returnedStakeIds(tables);
+  } catch (err) {
+    returned = null;
+    logger.error({ event: 'bj_tables_ledger_check_failed', error: String(err) });
+  }
+
+  for (const table of tables) {
+    const staked = table.players.some((seat) => seatStake(seat) > 0);
+    if (staked && !returned) {
+      logger.error({ event: 'bj_table_not_restored', roomId: table.roomId, reason: 'ledger unreadable' });
+      continue;
+    }
+    for (const seat of table.players) {
+      if (!seat.stakeId || !returned?.has(seat.stakeId)) continue;
+      // Refunded by the previous process: the seat stays, with nothing on it.
+      summary.returnedStakes++;
+      logger.warn({ event: 'bj_stake_already_returned', roomId: table.roomId, userId: seat.userId, amount: seatStake(seat) });
+      seat.bet = 0;
+      seat.insuranceBet = 0;
+      for (const h of seat.hands) h.bet = 0;
+      if (seat.hands.length === 0) seat.status = 'waiting';
+    }
+
+    const room = roomFromStored(table);
+    rooms.set(room.roomId, room);
+    for (const p of room.players.values()) {
+      // As after a mid-round disconnect: the user still maps to the room, so
+      // joining another table leaves this one first.
+      if (!p.pendingRemoval) userToRoom.set(p.userId, room.roomId);
+    }
+    resumeRoom(room);
+    if (!rooms.has(room.roomId)) continue; // every seat had already left
+    durable.markDirty(room.roomId);
+    summary.restored++;
+  }
+
+  logger.info({ event: 'bj_tables_restored', ...summary });
+  return summary;
 }

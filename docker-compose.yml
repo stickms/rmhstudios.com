@@ -325,6 +325,10 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - SOCKET_PORT=${PORT_SOCKET:-7001}
+      # Durable blackjack tables (third-pass audit OP3, features/casino/server/table-store.ts): empty = off.
+      # Needs CASINO_DURABLE_TABLES=1 AND the redis-state service (profile-gated, below).
+      - CASINO_DURABLE_TABLES=${CASINO_DURABLE_TABLES:-}
+      - REDIS_STATE_URL=${REDIS_STATE_URL:-}
       # Pool sizes: see the connection budget on the web service.
       - SERVER_DB_POOL_SIZE=${SERVER_DB_POOL_SIZE:-5}
       - AUTH_DB_POOL_SIZE=${AUTH_DB_POOL_SIZE:-4}
