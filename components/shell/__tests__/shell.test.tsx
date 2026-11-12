@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { createElement, type ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { placePoints } from '@/lib/globe/points';
 
 const state = vi.hoisted(() => ({ pathname: '/', unread: 0 }));
 
@@ -259,6 +260,26 @@ describe('the globe animates transform and opacity only, in 360 ms (G2, G6)', ()
     expect(css).not.toMatch(/backdrop-filter|[^-]filter:|blur\(/);
   });
 
+  it('brings the drawn body in as a crossfade over the first paint, 360 ms in all', () => {
+    // The first paint is its own element under the canvas, so it can outlast the swap.
+    expect(html()).toMatch(/<button[^>]*globe-nav__globe[^>]*><span class="globe-nav__first chrome-globe" aria-hidden="true"><svg/);
+    // It draws one dot per destination on the near side, where the body's first frame has them (identity pose).
+    const first = /<span class="globe-nav__first[\s\S]*?<\/svg>/.exec(html())![0];
+    const count = (html().match(/class="globe-nav__pin"/g) ?? []).length;
+    expect(count).toBeGreaterThan(4);
+    const near = placePoints(count).filter((p) => p.bz > 0.05);
+    expect(first.match(/<circle r="3.25"/g)).toHaveLength(near.length);
+    expect(first).toContain(`translate(${(near[0]!.bx * 50).toFixed(2)} ${(near[0]!.by * 50).toFixed(2)})`);
+    // The canvas is transparent until the body's first frame, then fades in over 280 ms.
+    expect(css).toMatch(/\.globe-nav \.globe-nav__globe > canvas \{\s*opacity: 0;\s*transition: opacity 0\.28s ease;/);
+    expect(css).toMatch(/\.globe-nav__globe\[data-chrome-live\] > canvas \{\s*opacity: 1;/);
+    // The first paint leaves only after the body is opaque: an 80 ms fade delayed by those 280 ms.
+    expect(css).toMatch(/\.globe-nav \.globe-nav__first \{[^}]*transition: opacity 0\.08s linear 0\.28s;/);
+    expect(css).toMatch(/\.globe-nav__globe\[data-chrome-live\] \.globe-nav__first \{\s*opacity: 0;/);
+    // Nothing is switched off in one frame any more.
+    expect(css).not.toMatch(/data-chrome-live\][^{]*\{[^}]*(display: none|background: none)/);
+  });
+
   it('never transitions a layout property', () => {
     const props = [...css.matchAll(/transition:\s*([^;]+);/g)]
       .filter((m) => m[1]!.trim() !== 'none')
@@ -274,17 +295,19 @@ describe('the globe animates transform and opacity only, in 360 ms (G2, G6)', ()
   it('places pins by transform from the sphere, never from fixed offsets, and hangs the write link under the globe', () => {
     expect(css).not.toMatch(/data-slot-pos/);
     expect(css).toMatch(/\.globe-nav__write \{\s*--dy: calc\(var\(--globe-open-d\) \/ 2 \+ 40px\);/);
-    // The pins wait for the body: nothing is shown at a wrong place before lib/globe has landed.
-    expect(css).toMatch(/\.globe-nav\[data-globe-live\] \.globe-nav__pins \{\s*opacity: 1;/);
+    // The pins wait for the body AND for the menu: docked, the destinations are the dots the body draws on the sphere.
+    expect(css).toMatch(/\.globe-nav\[data-open\]\[data-globe-live\] \.globe-nav__pins \{\s*opacity: 1;/);
+    expect(css).not.toMatch(/\.globe-nav\[data-globe-live\] \.globe-nav__pins \{/);
+    expect(read('lib/globe/view.ts')).toContain('ball.dots[1] = DOTS.docked[1] + (DOTS.open[1] - DOTS.docked[1]) * k;');
   });
 
-  it('carries its icons docked too: the anchor sits at the ball and is scaled with it, and takes no pointer until open', () => {
+  it('keeps the pin anchor on the ball docked, scaled with it, so the icons arrive in place; they take no pointer until open', () => {
     const pins = /\n\.globe-nav__pins \{([^}]*)\}/.exec(css)![1]!;
     expect(pins).toContain('inset-block-end: calc(var(--globe-bottom) + var(--globe-d) / 2)');
     expect(pins).toContain('transform: scale(calc(1 / var(--globe-scale, 4.5)))');
     expect(pins).toContain('pointer-events: none');
-    expect(css).toMatch(/\.globe-nav\[data-open\]\[data-globe-live\] \.globe-nav__pins \{\s*pointer-events: auto;/);
-    // Docked the pins are a picture: the nav is inert until the menu opens.
+    expect(css).toMatch(/\.globe-nav\[data-open\]\[data-globe-live\] \.globe-nav__pins \{[^}]*pointer-events: auto;/);
+    // Docked the pins are not shown: the nav is inert until the menu opens.
     expect(html()).toMatch(/class="globe-nav__pins"[^>]* inert/);
   });
 

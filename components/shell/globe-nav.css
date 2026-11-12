@@ -1,7 +1,6 @@
 /* The phone navigator (docs/plans/2026-11-11-steel-design-implementation.md section 8.1, G1 to G8).
 
-   This is one of the two stylesheets allowed a gradient (R2, B2; lib/__tests__/steel-flat.test.ts): the globe's dots
-   (G1) are a radial gradient. The globe's chrome comes from app/styles/steel-chrome.css (.chrome-globe, 4.2) and, once
+   The globe's dots and cage before the body draws are an inline SVG (GlobeFirstPaint.tsx). The globe's chrome comes from app/styles/steel-chrome.css (.chrome-globe, 4.2) and, once
    it has drawn, from the shared renderer (lib/chrome). Nothing here animates anything but `transform` and `opacity`
    (G6): the globe is SCALED, never resized, so nothing lays out during the move.
 
@@ -123,24 +122,29 @@ html.ios-webkit .globe-nav__fade {
   corner-shape: round;
   cursor: pointer;
   overflow: hidden;
-  /* The reference globe's shadows: the molded rim, a hairline, and the contact shadow beneath. */
-  box-shadow:
-    inset 0 0 8px 1px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(0, 0, 0, 0.4),
-    0 14px 14px -8px rgba(0, 0, 0, 0.35);
+  /* The contact shadow beneath. The molded rim and the hairline belong to the first paint below. */
+  box-shadow: 0 14px 14px -8px rgba(0, 0, 0, 0.35);
   transform-origin: 50% 50%;
   transition: transform 0.36s var(--globe-ease);
 }
-/* G1: a grid of small dots (13px pitch) signals "sections". It fades out in 200 ms on open (G2). */
-.globe-nav .globe-nav__globe::after {
-  content: '';
+/* THE FIRST PAINT: the static chrome and its rim (.chrome-globe, 4.2) with the cage and the dots drawn on it. It is its own element so it can stay under the canvas while the drawn body fades in over it, and leave after. */
+.globe-nav .globe-nav__first {
   position: absolute;
-  inset: 13px;
+  inset: 0;
   border-radius: 50%;
   corner-shape: round;
   pointer-events: none;
-  background: radial-gradient(circle, rgb(255 255 255) 0 1.6px, rgba(0, 0, 0, 0.55) 2px 3px, transparent 3.5px) 0 0 / 13px
-    13px;
+  transition: opacity 0.08s linear 0.28s;
+}
+/* G1: the destinations as dots on the cage, drawn where the body will draw them (GlobeFirstPaint.tsx). Open, the
+   icons stand for them, so the dots fade out in 200 ms (G2). */
+.globe-nav .globe-nav__first > svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
   transition: opacity 0.2s ease;
 }
 .globe-nav[data-open] .globe-nav__globe {
@@ -149,26 +153,35 @@ html.ios-webkit .globe-nav__fade {
 [dir='rtl'] .globe-nav[data-open] .globe-nav__globe {
   transform: translate(calc(-1 * var(--globe-shift, 0px)), calc(-1 * var(--globe-travel))) scale(var(--globe-scale, 4.5));
 }
-.globe-nav[data-open] .globe-nav__globe::after {
+.globe-nav[data-open] .globe-nav__first > svg {
   opacity: 0;
 }
 
 /* THE BODY (lib/globe). Once the renderer draws the ball as a body it sets `data-chrome-live`: the canvas then hangs
-   outside the disc so a pushed limb can bulge past it, so the disc stops clipping, the rigid hairline and the static
-   first paint step aside (a dent would show them through), and the flat dot grid goes: the dots are on the sphere now
-   and turn with it. The contact shadow stays. A finger on the globe turns it, so it must not also scroll the page. */
+   outside the disc so a pushed limb can bulge past it, so the disc stops clipping. A finger on the globe turns it, so
+   it must not also scroll the page.
+
+   The body ARRIVES AS A CROSSFADE, not a swap (owner, 2026-11-12). The canvas is transparent until the body's first
+   frame, so the flat program the renderer draws before the body lands is never seen. Then the canvas fades in over the
+   first paint in 280 ms (the chrome activation time, section 11), and only after that does the first paint leave, in
+   80 ms: 360 ms in all. The first paint cannot stay, because a dent in the body would show it through. */
 .globe-nav .globe-nav__globe {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
+.globe-nav .globe-nav__globe > canvas {
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
 .globe-nav .globe-nav__globe[data-chrome-live] {
   overflow: visible;
-  background: none;
-  box-shadow: 0 14px 14px -8px rgba(0, 0, 0, 0.35);
 }
-.globe-nav .globe-nav__globe[data-chrome-live]::after {
-  display: none;
+.globe-nav .globe-nav__globe[data-chrome-live] > canvas {
+  opacity: 1;
+}
+.globe-nav .globe-nav__globe[data-chrome-live] .globe-nav__first {
+  opacity: 0;
 }
 .globe-nav[data-open] .globe-nav__veil,
 .globe-nav[data-open] .globe-nav__pins {
@@ -205,9 +218,9 @@ html.ios-webkit .globe-nav__fade {
 
 /* The pins: a 0 x 0 anchor at the CENTRE OF THE GLOBE, wherever the globe is. Each pin is placed from it at the open
    globe's radius (lib/globe/view.ts), and the anchor is scaled by the inverse of the globe's own scale while docked and
-   makes the globe's own move when it opens, so the icons ride the ball at both sizes and through the move between them
-   (owner, 2026-11-12: the icons orbit the small globe too, as they did on the liquid globe). Docked they are a picture:
-   the nav is `inert` and takes no pointer, so the ball under them is still the button. */
+   makes the globe's own move when it opens, so the icons stay on the ball through the move. They are SHOWN ONLY OPEN
+   (owner, 2026-11-12): docked, the destinations are the dots the body draws on the sphere, and the icons fade in over
+   them as the globe opens while the dots fade out (lib/globe/view.ts, DOTS). */
 .globe-nav__pins {
   position: fixed;
   inset-inline-start: 50%;
@@ -220,10 +233,7 @@ html.ios-webkit .globe-nav__fade {
   transform: scale(calc(1 / var(--globe-scale, 4.5)));
   transition:
     transform 0.36s var(--globe-ease),
-    opacity 0.18s ease;
-}
-.globe-nav[data-globe-live] .globe-nav__pins {
-  opacity: 1;
+    opacity 0.28s ease;
 }
 .globe-nav[data-open] .globe-nav__pins {
   z-index: calc(var(--z-hub-orb-open) + 1);
@@ -233,20 +243,9 @@ html.ios-webkit .globe-nav__fade {
   transform: translate(calc(-1 * var(--globe-shift, 0px)), calc(-1 * var(--globe-travel)));
 }
 .globe-nav[data-open][data-globe-live] .globe-nav__pins {
+  opacity: 1;
   pointer-events: auto;
 }
-/* Docked, an icon would be 8px (10px on desktop) at the globe's scale: it is drawn 1.7 times that so it still reads,
-   and it carries no name, ring or count. The links under the globe belong to the open menu only. */
-.globe-nav__pin-dot {
-  transition: transform 0.36s var(--globe-ease);
-}
-.globe-nav:not([data-open]) .globe-nav__pin-dot {
-  transform: scale(1.7);
-}
-.globe-nav:not([data-open]) :is(.globe-nav__pin-name, .globe-nav__pin-ring, .globe-nav__count, .globe-nav__write, .globe-nav__more) {
-  visibility: hidden;
-}
-
 /* Everything in the nav is placed from the 0 x 0 anchor at the centre. The two text links sit under the globe. */
 .globe-nav__pin,
 .globe-nav__write,
@@ -416,11 +415,12 @@ html.ios-webkit .globe-nav__fade {
 
 /* M7: reduced motion turns the move into an instant change. The globe still opens. */
 @media (prefers-reduced-motion: reduce) {
-  .globe-nav__globe,
-  .globe-nav__globe::after,
+  .globe-nav .globe-nav__globe,
+  .globe-nav .globe-nav__globe > canvas,
+  .globe-nav .globe-nav__first,
+  .globe-nav .globe-nav__first > svg,
   .globe-nav__veil,
   .globe-nav__pins,
-  .globe-nav__pin-dot,
   .globe-nav__dot {
     transition: none;
   }
