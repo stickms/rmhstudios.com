@@ -531,6 +531,21 @@ model DeepseekBalanceSnapshot {
   @@map("deepseek_balance_snapshot")
 }
 
+/// The monthly table and product census (third-pass audit DT1, lib/admin/census.server.ts):
+/// every `public` table with what Postgres records about it, and every catalogue product
+/// with its 30-day actives, as one JSON document. One row per UTC calendar month: the jobs
+/// worker (`ops.db-census`) writes a month's row if it has none, and "Take snapshot now" on
+/// /admin/census replaces the current month's. Read by /admin/census; never pruned (12 rows a year).
+model DbCensusSnapshot {
+  /// 'YYYY-MM' (UTC).
+  month   String   @id @db.Char(7)
+  takenAt DateTime
+  source  String   @db.VarChar(8) // "cron" | "manual"
+  data    Json
+
+  @@map("db_census_snapshot")
+}
+
 /// One-minute rollups of the app's own telemetry, for /admin/alarms graphs and
 /// threshold alarms (lib/ops/metrics-rollup.ts, written by the jobs worker).
 /// Append-only, ~30 rows a minute, pruned after 30 days — hence the identity key.

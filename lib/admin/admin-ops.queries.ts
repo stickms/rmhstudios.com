@@ -1,5 +1,5 @@
 /**
- * The admin dashboards' reads (analytics, coin economy, feature flags, redemptions, emoji packs) as
+ * The admin dashboards' reads (analytics, coin economy, feature flags, redemptions, emoji packs, the census) as
  * route-seeded queries (redesign audit B4). Each is its GET route, run in-process by the loader
  * (`contractQuery`, third-pass audit AR2), so `auth: 'admin'` on the route is the one admin check.
  */
@@ -10,6 +10,7 @@ import {
   listAdminFlagsApi,
   listAdminRedemptionsApi,
 } from '@/lib/admin/admin-ops.contract';
+import { getAdminCensusApi } from '@/lib/admin/census.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
 export const adminAnalyticsQuery = () =>
@@ -46,4 +47,13 @@ export const adminEmojiPacksQuery = () =>
     listAdminEmojiPacksApi,
     { retries: 0 },
     { staleTime: 15_000 },
+  );
+
+/** The census: live when `month` is null, else the stored snapshot for that 'YYYY-MM'. */
+export const adminCensusQuery = (month: string | null) =>
+  contractQuery(
+    ['admin', 'census', month ?? 'live'],
+    getAdminCensusApi,
+    { query: month ? { month } : {}, retries: 0 },
+    { staleTime: 30_000 },
   );

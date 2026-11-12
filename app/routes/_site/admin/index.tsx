@@ -99,6 +99,15 @@ function AdminDashboardPage() {
           />
 
           <AdminHubCard
+            to="/admin/census"
+            title={t('census-title', { defaultValue: 'Census' })}
+            description={t('census-card-description', {
+              defaultValue:
+                'Every table with its rows and signs of writes, and every game and app with its 30-day actives. Live, plus one stored snapshot a month.',
+            })}
+          />
+
+          <AdminHubCard
             to="/admin/appeals"
             title={t('appeals-title', { defaultValue: 'Strike Appeals' })}
             description={t('appeals-description', {

@@ -55,6 +55,7 @@ import { STREAK_REMINDER_QUEUE, registerStreakReminderCron } from '@/lib/streak-
 import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
 import { registerDoctrineJobs } from '@features/doctrine/engine/jobs.server';
 import { CLEANUP_QUEUE, registerCleanupCron } from '@/lib/cleanup-job.server';
+import { CENSUS_QUEUE, registerCensusCron } from '@/lib/admin/census.server';
 import { registerBotWorkerJobs } from '@/lib/rmhark-ai/bot-worker.server';
 import {
   VIBE_THUMB_QUEUE,
@@ -169,6 +170,9 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // D4: data-lifecycle cleanup (sessions, verifications, notifications, comment views), daily at 04:00 UTC.
   // Moved from a node-cron + worker-lease in the ladder worker; the `exclusive` policy is the lock now.
   { queue: CLEANUP_QUEUE, register: registerCleanupCron },
+  // Third-pass audit DT1: the monthly table and product census for /admin/census. Ticks nightly at
+  // 03:40 UTC and writes a month's row only when that month has none.
+  { queue: CENSUS_QUEUE, register: registerCensusCron },
   // M3 disappearing messages: expiry is enforced at read time; this only deletes the rows.
   { queue: CHAT_EXPIRY_QUEUE, register: registerChatExpiryCron },
   // F5: expire unmatched study-buddy requests and tell their owners.

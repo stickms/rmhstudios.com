@@ -240,6 +240,7 @@ import { Route as SiteAdminAppealsRouteImport } from './routes/_site/admin/appea
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminBotsRouteImport } from './routes/_site/admin/bots'
 import { Route as SiteAdminCanvasRouteImport } from './routes/_site/admin/canvas'
+import { Route as SiteAdminCensusRouteImport } from './routes/_site/admin/census'
 import { Route as SiteAdminDeepseekRouteImport } from './routes/_site/admin/deepseek'
 import { Route as SiteAdminDelightRouteImport } from './routes/_site/admin/delight'
 import { Route as SiteAdminEconomyRouteImport } from './routes/_site/admin/economy'
@@ -383,6 +384,7 @@ import { Route as ApiAdminAnnouncementsRouteImport } from './routes/api/admin/an
 import { Route as ApiAdminAppealsRouteImport } from './routes/api/admin/appeals'
 import { Route as ApiAdminAuditLogRouteImport } from './routes/api/admin/audit-log'
 import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
+import { Route as ApiAdminCensusRouteImport } from './routes/api/admin/census'
 import { Route as ApiAdminEconomyRouteImport } from './routes/api/admin/economy'
 import { Route as ApiAdminEmojiPacksRouteImport } from './routes/api/admin/emoji-packs'
 import { Route as ApiAdminFlagsRouteImport } from './routes/api/admin/flags'
@@ -2544,6 +2546,11 @@ const SiteAdminCanvasRoute = SiteAdminCanvasRouteImport.update({
   path: '/canvas',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminCensusRoute = SiteAdminCensusRouteImport.update({
+  id: '/census',
+  path: '/census',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminDeepseekRoute = SiteAdminDeepseekRouteImport.update({
   id: '/deepseek',
   path: '/deepseek',
@@ -3268,6 +3275,11 @@ const ApiAdminAuditLogRoute = ApiAdminAuditLogRouteImport.update({
 const ApiAdminBlogRoute = ApiAdminBlogRouteImport.update({
   id: '/api/admin/blog',
   path: '/api/admin/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminCensusRoute = ApiAdminCensusRouteImport.update({
+  id: '/api/admin/census',
+  path: '/api/admin/census',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminEconomyRoute = ApiAdminEconomyRouteImport.update({
@@ -8760,6 +8772,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/bots': typeof SiteAdminBotsRoute
   '/admin/canvas': typeof SiteAdminCanvasRoute
+  '/admin/census': typeof SiteAdminCensusRoute
   '/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
@@ -8866,6 +8879,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/appeals': typeof ApiAdminAppealsRouteWithChildren
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
+  '/api/admin/census': typeof ApiAdminCensusRoute
   '/api/admin/economy': typeof ApiAdminEconomyRoute
   '/api/admin/emoji-packs': typeof ApiAdminEmojiPacksRouteWithChildren
   '/api/admin/flags': typeof ApiAdminFlagsRoute
@@ -10114,6 +10128,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/bots': typeof SiteAdminBotsRoute
   '/admin/canvas': typeof SiteAdminCanvasRoute
+  '/admin/census': typeof SiteAdminCensusRoute
   '/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
@@ -10220,6 +10235,7 @@ export interface FileRoutesByTo {
   '/api/admin/appeals': typeof ApiAdminAppealsRouteWithChildren
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
+  '/api/admin/census': typeof ApiAdminCensusRoute
   '/api/admin/economy': typeof ApiAdminEconomyRoute
   '/api/admin/emoji-packs': typeof ApiAdminEmojiPacksRouteWithChildren
   '/api/admin/flags': typeof ApiAdminFlagsRoute
@@ -11495,6 +11511,7 @@ export interface FileRoutesById {
   '/_site/admin/audit': typeof SiteAdminAuditRoute
   '/_site/admin/bots': typeof SiteAdminBotsRoute
   '/_site/admin/canvas': typeof SiteAdminCanvasRoute
+  '/_site/admin/census': typeof SiteAdminCensusRoute
   '/_site/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/_site/admin/delight': typeof SiteAdminDelightRoute
   '/_site/admin/economy': typeof SiteAdminEconomyRoute
@@ -11601,6 +11618,7 @@ export interface FileRoutesById {
   '/api/admin/appeals': typeof ApiAdminAppealsRouteWithChildren
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
+  '/api/admin/census': typeof ApiAdminCensusRoute
   '/api/admin/economy': typeof ApiAdminEconomyRoute
   '/api/admin/emoji-packs': typeof ApiAdminEmojiPacksRouteWithChildren
   '/api/admin/flags': typeof ApiAdminFlagsRoute
@@ -12876,6 +12894,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bots'
     | '/admin/canvas'
+    | '/admin/census'
     | '/admin/deepseek'
     | '/admin/delight'
     | '/admin/economy'
@@ -12982,6 +13001,7 @@ export interface FileRouteTypes {
     | '/api/admin/appeals'
     | '/api/admin/audit-log'
     | '/api/admin/blog'
+    | '/api/admin/census'
     | '/api/admin/economy'
     | '/api/admin/emoji-packs'
     | '/api/admin/flags'
@@ -14230,6 +14250,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bots'
     | '/admin/canvas'
+    | '/admin/census'
     | '/admin/deepseek'
     | '/admin/delight'
     | '/admin/economy'
@@ -14336,6 +14357,7 @@ export interface FileRouteTypes {
     | '/api/admin/appeals'
     | '/api/admin/audit-log'
     | '/api/admin/blog'
+    | '/api/admin/census'
     | '/api/admin/economy'
     | '/api/admin/emoji-packs'
     | '/api/admin/flags'
@@ -15610,6 +15632,7 @@ export interface FileRouteTypes {
     | '/_site/admin/audit'
     | '/_site/admin/bots'
     | '/_site/admin/canvas'
+    | '/_site/admin/census'
     | '/_site/admin/deepseek'
     | '/_site/admin/delight'
     | '/_site/admin/economy'
@@ -15716,6 +15739,7 @@ export interface FileRouteTypes {
     | '/api/admin/appeals'
     | '/api/admin/audit-log'
     | '/api/admin/blog'
+    | '/api/admin/census'
     | '/api/admin/economy'
     | '/api/admin/emoji-packs'
     | '/api/admin/flags'
@@ -16877,6 +16901,7 @@ export interface RootRouteChildren {
   ApiAdminAppealsRoute: typeof ApiAdminAppealsRouteWithChildren
   ApiAdminAuditLogRoute: typeof ApiAdminAuditLogRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
+  ApiAdminCensusRoute: typeof ApiAdminCensusRoute
   ApiAdminEconomyRoute: typeof ApiAdminEconomyRoute
   ApiAdminEmojiPacksRoute: typeof ApiAdminEmojiPacksRouteWithChildren
   ApiAdminFlagsRoute: typeof ApiAdminFlagsRoute
@@ -19237,6 +19262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminCanvasRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/census': {
+      id: '/_site/admin/census'
+      path: '/census'
+      fullPath: '/admin/census'
+      preLoaderRoute: typeof SiteAdminCensusRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/deepseek': {
       id: '/_site/admin/deepseek'
       path: '/deepseek'
@@ -20236,6 +20268,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/blog'
       fullPath: '/api/admin/blog'
       preLoaderRoute: typeof ApiAdminBlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/census': {
+      id: '/api/admin/census'
+      path: '/api/admin/census'
+      fullPath: '/api/admin/census'
+      preLoaderRoute: typeof ApiAdminCensusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/economy': {
@@ -27284,6 +27323,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminAuditRoute: typeof SiteAdminAuditRoute
   SiteAdminBotsRoute: typeof SiteAdminBotsRoute
   SiteAdminCanvasRoute: typeof SiteAdminCanvasRoute
+  SiteAdminCensusRoute: typeof SiteAdminCensusRoute
   SiteAdminDeepseekRoute: typeof SiteAdminDeepseekRoute
   SiteAdminDelightRoute: typeof SiteAdminDelightRoute
   SiteAdminEconomyRoute: typeof SiteAdminEconomyRoute
@@ -27326,6 +27366,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminAuditRoute: SiteAdminAuditRoute,
   SiteAdminBotsRoute: SiteAdminBotsRoute,
   SiteAdminCanvasRoute: SiteAdminCanvasRoute,
+  SiteAdminCensusRoute: SiteAdminCensusRoute,
   SiteAdminDeepseekRoute: SiteAdminDeepseekRoute,
   SiteAdminDelightRoute: SiteAdminDelightRoute,
   SiteAdminEconomyRoute: SiteAdminEconomyRoute,
@@ -29683,6 +29724,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAppealsRoute: ApiAdminAppealsRouteWithChildren,
   ApiAdminAuditLogRoute: ApiAdminAuditLogRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
+  ApiAdminCensusRoute: ApiAdminCensusRoute,
   ApiAdminEconomyRoute: ApiAdminEconomyRoute,
   ApiAdminEmojiPacksRoute: ApiAdminEmojiPacksRouteWithChildren,
   ApiAdminFlagsRoute: ApiAdminFlagsRoute,
