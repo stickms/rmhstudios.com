@@ -20,7 +20,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Ban, MoreHorizontal, Phone, PhoneOff, Mic, MicOff, PhoneIncoming } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   useCallStore,
   acceptCall,

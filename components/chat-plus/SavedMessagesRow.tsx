@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { api } from '@/lib/contract/client';
 import { getSavedMessagesApi, openSavedMessagesApi } from '@/lib/messages/messages.contract';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { SpineItem } from '@/components/ui/spine';
 

@@ -65,6 +65,8 @@ const FORBIDDEN: Record<string, string> = {
   zod: 'validators belong in *-schema.ts split points, not the shell',
   'emoji-picker-react': 'composer-only',
   'maplibre-gl': 'map routes only',
+  // Third-pass audit RT1 (2026-11-12): each of these left the entry closure in the commit that listed it.
+  sonner: 'loads on the first toast: import `toast` from @/lib/toast, never from sonner',
 };
 
 /**

@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Radio, Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';

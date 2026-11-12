@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
 import { Car, Star, Navigation, Flag, CheckCircle2, XCircle, MapPin, Crosshair } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { RideMap } from './RideMap';
 import { RideChat, type RideChatMessage } from './RideChat';

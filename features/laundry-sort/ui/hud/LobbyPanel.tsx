@@ -8,7 +8,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { Check, Copy, Crown, Link2, LogOut, Play, RefreshCw, UserX } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
 import { UserAvatar } from '@/components/ui/UserAvatar';

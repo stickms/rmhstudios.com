@@ -3,7 +3,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Lock } from 'lucide-react';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';

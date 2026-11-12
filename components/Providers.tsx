@@ -11,7 +11,7 @@ import {
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useLocation, useRouter, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
-import { SiteToaster } from '@/components/ui/site-toaster';
+import { ToastHost } from '@/components/ui/toast-host';
 import { authClient } from '@/lib/auth-client';
 import {
   SessionCtx,
@@ -638,7 +638,7 @@ export function Providers({
                     </SilentErrorBoundary>
                   </ConfirmProvider>
                 </ResolvedUserCtx.Provider>
-                <SiteToaster theme={style === 'graphite' ? 'dark' : 'light'} />
+                <ToastHost theme={style === 'graphite' ? 'dark' : 'light'} />
               </AppTierContext.Provider>
             </SessionCtx.Provider>
           </MotionConfig>

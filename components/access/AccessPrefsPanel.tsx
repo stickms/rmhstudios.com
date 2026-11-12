@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 import { Switch } from '@/components/ui/switch';
 import { Tabs, type TabItem } from '@/components/ui/tabs';

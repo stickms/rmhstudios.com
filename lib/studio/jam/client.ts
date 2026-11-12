@@ -8,7 +8,7 @@
  * rolled back to the mirror, so the room never diverges.
  */
 import type { Socket } from 'socket.io-client';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import { useStudioStore } from '@/lib/studio/store';

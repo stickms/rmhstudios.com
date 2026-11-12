@@ -5,7 +5,7 @@
 import { Copy, ExternalLink, Link2, Link2Off } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { SignInRequiredDialog } from '@/components/shared/SignInRequiredDialog';
 import { useSession } from '@/components/Providers';
 import { useClipboard } from '@/hooks/useClipboard';

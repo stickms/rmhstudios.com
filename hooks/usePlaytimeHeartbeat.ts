@@ -7,7 +7,7 @@
  */
 
 import { useEffect } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { recordPlaytimeBeatApi } from '@/lib/playtime/playtime.contract';

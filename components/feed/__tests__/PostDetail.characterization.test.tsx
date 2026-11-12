@@ -59,7 +59,7 @@ vi.mock('@tanstack/react-router', () => ({
   useLocation: ({ select }: { select: (l: { pathname: string }) => unknown }) =>
     select({ pathname: '/rmharks/p1' }),
 }));
-vi.mock('sonner', () => ({ toast: { success: () => undefined, error: () => undefined } }));
+vi.mock('@/lib/toast', () => ({ toast: { success: () => undefined, error: () => undefined } }));
 vi.mock('@/components/Providers', () => ({
   useSession: () => ({ data: ctl.session }),
   useResolvedUser: () => ({ resolved: ctl.resolved }),

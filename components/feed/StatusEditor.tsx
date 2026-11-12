@@ -1,6 +1,6 @@
 import { useState } from'react';
 import { useTranslation } from'react-i18next';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { Smile, X } from'lucide-react';
 import { api } from '@/lib/contract/client';
 import { clearProfileStatusApi, setProfileStatusApi } from '@/lib/profile/profile-extras.contract';

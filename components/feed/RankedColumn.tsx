@@ -4,7 +4,7 @@ import { Swords, Trophy, Check, X, Flag } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { Select } from'@/components/ui/select';
 import { UserAvatar } from'./UserAvatar';
 import { HandleInput } from'./HandleInput';

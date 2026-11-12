@@ -19,7 +19,7 @@
 import { Bell, BellOff, BellRing } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { usePushSubscription } from '@/lib/usePushSubscription';
 import { api } from '@/lib/contract/client';

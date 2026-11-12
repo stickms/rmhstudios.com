@@ -7,7 +7,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Boxes, FileArchive, FolderOpen, Globe, Layers, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { deleteDraft, listDrafts, type DraftSummary } from '@/lib/tf2-hud/local-drafts';
 import { useEditor } from '@/lib/tf2-hud/store';

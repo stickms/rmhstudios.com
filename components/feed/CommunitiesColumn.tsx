@@ -16,7 +16,7 @@ import {
 import { useSession } from '@/components/Providers';
 import { LockedCommunityHeader, RequestToJoin } from '@/components/communities/LockedCommunity';
 import { ColumnHeader } from './ColumnHeader';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createCommunityApi, listCommunitiesApi } from '@/lib/communities/communities.contract';

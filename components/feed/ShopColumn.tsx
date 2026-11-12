@@ -4,7 +4,7 @@ import { ShoppingBag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Spinner } from '@/components/ui/spinner';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   KIND_LABELS,
   KIND_ORDER,

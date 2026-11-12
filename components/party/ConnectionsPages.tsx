@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { CalendarCheck, Plus, Share2, Star, Trash2 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';

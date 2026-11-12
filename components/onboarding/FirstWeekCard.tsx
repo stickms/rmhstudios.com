@@ -14,7 +14,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { claimFirstWeekApi } from '@/lib/onboarding.contract';

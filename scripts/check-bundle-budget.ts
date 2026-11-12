@@ -225,10 +225,14 @@ const BUDGETS = {
   // Steel phase 7 (2026-11-12): lowered to the measured values plus ~2% for build-to-build variance (the plan's
   // ledger, section 17, has the numbers). Measured: site CSS 31,941 B brotli; entry 441,074 B raw; critical path
   // 1,091,976 B raw and 309,564 B brotli. (Phase 6 had measured 32,190, 442,305, 1,093,213 and 309,620.)
+  //
+  // Third-pass audit RT1 (2026-11-12), one line per cut, each measured + ~2% on a `vite build --sourcemap`:
+  //   sonner on the first toast: entry 441,074 -> 408,202 B raw; critical path 1,091,976 -> 1,059,228 B raw and
+  //   309,564 -> 301,992 B brotli.
   siteCssBrotli: 32_600,
-  entryRaw: 450_000,
-  criticalPathRaw: 1_114_000,
-  criticalPathBrotli: 315_700,
+  entryRaw: 416_400,
+  criticalPathRaw: 1_080_400,
+  criticalPathBrotli: 308_000,
 };
 
 /**

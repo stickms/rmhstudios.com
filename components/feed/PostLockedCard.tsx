@@ -3,7 +3,7 @@ import { useState } from'react';
 import { Lock, Loader2 } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from'react-i18next';
 import { unlockPostApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';

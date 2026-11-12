@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Package, PackageOpen, Trash2 } from 'lucide-react';
 import { IconButton } from '@/components/ui/icon-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';

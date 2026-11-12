@@ -29,7 +29,7 @@ import type { SliceSong } from '@features/slice-it/engine/types';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { useSession } from '@/components/Providers';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { calculateScoreMultiplier } from '@features/slice-it/engine/scoring';

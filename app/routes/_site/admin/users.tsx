@@ -6,7 +6,7 @@ import { AdminBody } from '@/components/admin/AdminBody';
 import { useTranslation } from "react-i18next";
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Search, CheckCircle, Shield, Pencil, Check, X, Crown, Coins, Bot, User as UserIcon, Users } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';

@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Highlighter, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { createAnchor, resolveAnchor, type TextAnchor } from '@/lib/library/text-anchor';
 import {

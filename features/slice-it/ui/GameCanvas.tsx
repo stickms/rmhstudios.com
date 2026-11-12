@@ -51,7 +51,7 @@ import { MatchResults } from './MatchResults';
 import { addMatchListener, leaveLobby } from '@features/slice-it/engine/net/client';
 import type { PausePayload } from '@features/slice-it/engine/net/events';
 import type { BeatMap, Slice } from '@features/slice-it/engine/types';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
 import { gameSurfaceDpr } from '@/lib/display-scale';
 import {

@@ -25,7 +25,7 @@ import { AnimatePresence, m as motion } from 'framer-motion';
 import { CalendarPlus, RefreshCw, Settings2, WifiOff } from 'lucide-react';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Link } from '@tanstack/react-router';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import type { Availability, CalendarStateDTO, Session, SessionDTO } from '@/lib/pf2ecal/types';

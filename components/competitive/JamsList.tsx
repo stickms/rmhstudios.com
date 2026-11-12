@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { jamsQuery } from '@/lib/competitive/jams.queries';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

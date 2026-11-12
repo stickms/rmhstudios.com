@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 import { Switch } from '@/components/ui/switch';
 import { api } from '@/lib/contract/client';

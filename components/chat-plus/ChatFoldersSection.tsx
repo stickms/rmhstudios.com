@@ -5,7 +5,7 @@ import { serverError } from '@/lib/http';
 import { createChatFolderApi, setChatFolderMemberApi } from '@/lib/chat-plus/folders.contract';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FolderPlus } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { FOLDER_NAME_MAX, MAX_FOLDERS, scopeKeyOf, type ChatRef } from '@/lib/chat-plus/types';

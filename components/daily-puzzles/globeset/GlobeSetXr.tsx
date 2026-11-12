@@ -31,7 +31,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as THREE from 'three';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DOT_COLORS, type Card } from '@/lib/globeset/cards';

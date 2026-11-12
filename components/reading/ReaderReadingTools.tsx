@@ -14,7 +14,7 @@ import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'rea
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { BookMarked, FileText, ScanLine } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { useMyShelves, useShelfMutations } from '@/lib/reading/client';
 import { useReadingRuler } from '@/lib/reading/ruler';

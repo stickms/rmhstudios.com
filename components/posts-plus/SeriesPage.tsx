@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { seriesDetailQuery } from '@/lib/posts-plus/series-detail.queries';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { ArrowDown, ArrowUp, BellOff, BellPlus, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { RMHarkCard } from '@/components/feed/RMHarkCard';

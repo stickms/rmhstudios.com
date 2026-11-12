@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Bookmark, FolderPlus, Trash2, FileX } from 'lucide-react';
 
 import { Card } from '@/components/ui/card';

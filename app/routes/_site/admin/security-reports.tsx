@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { Badge } from '@/components/ui/badge';
 import {

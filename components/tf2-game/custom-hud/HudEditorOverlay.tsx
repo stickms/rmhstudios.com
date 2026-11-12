@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { flushLocalDraft, useEditor } from '@/lib/tf2-hud/store';
 import { selectionKey, type HudSelection } from '@/lib/tf2-game/client/custom-hud/selection';
 import { toTestState } from '@/lib/tf2-game/client/custom-hud/adapter';

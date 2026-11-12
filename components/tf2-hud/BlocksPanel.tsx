@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { orphansOf } from '@/lib/tf2-hud/blocks/apply';
 import {
   addBlockKey,

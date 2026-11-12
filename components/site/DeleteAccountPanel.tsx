@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 import { authClient } from '@/lib/auth-client';
 import { api } from '@/lib/contract/client';

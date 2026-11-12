@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { api } from '@/lib/contract/client';
 import { checkInStreakApi, getStreakApi } from '@/lib/streak.contract';

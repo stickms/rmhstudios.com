@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { syncCustomFonts } from '@/lib/tf2-hud/assets/font-sync';
 import { ensureBundledFonts } from '@/lib/tf2-hud/assets/fonts';
 import { ImageStore, materialsChanged } from '@/lib/tf2-hud/assets/images';

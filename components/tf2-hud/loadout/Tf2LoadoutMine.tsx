@@ -7,7 +7,7 @@ import { Link } from '@tanstack/react-router';
 import { Search, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { SignInRequiredDialog } from '@/components/shared/SignInRequiredDialog';
 import { useSession } from '@/components/Providers';

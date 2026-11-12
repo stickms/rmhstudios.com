@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Check, Copy, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 import { cn } from '@/lib/utils';
 import { useClipboard } from '@/hooks/useClipboard';

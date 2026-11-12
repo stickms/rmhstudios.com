@@ -16,7 +16,7 @@ import { ReadabilityMeter } from '@/components/reading/ReadabilityMeter';
 // already fallen behind by six elements) is what makes this pane a preview.
 import { markdownComponents } from '@/components/blog/markdown-components';
 import '@/components/ui/spine.css';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';

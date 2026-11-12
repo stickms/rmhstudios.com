@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { listFeedQuery } from '@/lib/lists/list-feed.queries';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Pin, Trash2 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 

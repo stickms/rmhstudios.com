@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ShieldAlert } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { ComposeBox } from '@/components/feed/ComposeBox';
 import { FlairChip } from '@/components/communities/FlairChip';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';

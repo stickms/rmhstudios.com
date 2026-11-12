@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';

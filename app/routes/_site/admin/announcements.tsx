@@ -24,7 +24,7 @@ import {
   MAX_ANNOUNCEMENT_IMAGES,
   type CreateAnnouncementInput,
 } from '@/lib/announcement-schema';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { uploadImagesApi } from '@/lib/media/upload.contract';

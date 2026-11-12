@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { PLAYTIME_PRIVACY_VALUES, type PlaytimePrivacy } from '@/lib/playtime/privacy';

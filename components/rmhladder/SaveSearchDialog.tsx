@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BellRing, BookmarkPlus } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type { ListJobsFilters } from '@/lib/rmhladder/server/queries';
 import { Button } from '@/components/ui/button';
 import {

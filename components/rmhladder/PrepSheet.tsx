@@ -20,7 +20,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarClock, Lightbulb, Loader2, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type { PrepSheet as PrepSheetData } from '@/lib/rmhladder/prep.server';
 import type { UpgradeRequiredBody } from '@/lib/entitlements/features';
 import { api } from '@/lib/contract/client';

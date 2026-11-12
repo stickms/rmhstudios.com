@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { removeWishApi } from '@/lib/wishlist/wishlist.contract';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Heart, Trash2, Gift } from 'lucide-react';
 
 import { Card } from '@/components/ui/card';

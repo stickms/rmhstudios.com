@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Camera, ThumbsUp, Trash2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { PageLayout } from '@/components/feed/PageLayout';

@@ -18,7 +18,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useCelebration } from '@/hooks/useCelebration';
 import { buildPlan, localToday, type Plan, type PlanSettings } from '@/lib/dunesday/schedule';
 import {
