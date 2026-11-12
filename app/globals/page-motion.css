@@ -300,79 +300,6 @@ input[type='number'] {
   }
 }
 
-/* ─── Per-page content transition ────────────────────────────────────────
- * Only the content column(s) animate on navigation — the left nav rail lives
- * outside the content <main> (see app/routes/_site.tsx), so it never moves.
- * Route-to-route navigation remounts the content, replaying this enter
- * animation. `backwards` fill applies the start frame immediately (no flash)
- * and leaves NO lingering transform afterward (so `position: fixed`
- * descendants are unaffected once the animation settles).
- *
- * Deliberately NOT on the sampled spring (`--spring-smooth`, §7.1) like the
- * floating surfaces: while any transform is running on a page root, its
- * `position: fixed` descendants (the compose FAB, floating lanes) are laid out
- * against the page box instead of the viewport. 0.16s of that is invisible;
- * the spring's 0.64s settle would park the FAB at the bottom of the document
- * for over half a second on every navigation. */
-/* The page swap (docs/superpowers/specs/2026-10-27-smooth-transitions-design.md). OPACITY ONLY, and never blank: the old
-   page dims to --swap-dim while it leaves (html[data-page-leaving], set by lib/page-transition.ts) and the new one
-   enters from that same level, so a navigation reads as one quick dip instead of a blink. No transform on purpose: a
-   running transform on the page root makes its `position: fixed` descendants (the compose FAB, floating lanes) lay out
-   against the page box instead of the viewport. Every other one-shot entrance inside the page is finished at mount
-   (finishEntranceAnimations), so this is the only one that paints. */
-:root {
-  --swap-dim: 0.72;
-  --swap-out: 100ms;
-  --swap-in: 220ms;
-}
-@keyframes page-enter {
-  from {
-    opacity: var(--swap-dim);
-  }
-  to {
-    opacity: 1;
-  }
-}
-.page-root > * {
-  animation: page-enter var(--swap-in) var(--ease-smooth) backwards;
-  transition: opacity var(--swap-out) var(--ease-smooth);
-}
-html[data-page-leaving] .page-root > * {
-  opacity: var(--swap-dim);
-}
-/* The kind rides on the flag itself (a sibling leave dims only the content). */
-.page-root > [data-page-enter-complete],
-.page-root > [data-route-pending] {
-  animation: none !important;
-}
-/* Not on the document's own first paint. The enter is for ARRIVING by a
- * navigation; on a fresh load the server-rendered page is already there, and
- * fading it in from opacity 0 hid it at first contentful paint — an element
- * painted at opacity 0 is not an LCP candidate, so the home feed's first card
- * never counted (docs/archive/2026/performance-audit-2026-10-21.md §Home LCP).
- * `data-navigated` is set on the first client navigation (`app/routes/__root.tsx`),
- * which marks the page then on screen complete first so it never replays. */
-html:not([data-navigated]) .page-root > * {
-  animation: none;
-}
-
-/* Same layout group (tabbed / sibling pages): the frame, the title and the tab strip, stays perfectly still and only the
-   content swaps. The column itself never animates; the swap is keyed to what is NOT the frame, on the shape the
-   shell renders (PageLayout's `page-content`). Pages with another shape simply swap instantly. */
-html[data-nav-kind='sibling'] .page-root > * {
-  animation: none;
-}
-html[data-nav-kind='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']) {
-  animation: page-enter var(--swap-in) var(--ease-smooth) backwards;
-  transition: opacity var(--swap-out) var(--ease-smooth);
-}
-html[data-page-leaving='sibling'] .page-root > * {
-  opacity: 1;
-}
-html[data-page-leaving='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']) {
-  opacity: var(--swap-dim);
-}
-
 /* ══════════════════════════════════════════════════════════════════════════
    §7.1 — `data-motion`: the enter/exit vocabulary for floating surfaces
    ==========================================================================
@@ -732,91 +659,10 @@ html[data-page-leaving='sibling'] [data-slot='page-content'] > :not([data-slot='
   }
 }
 
-/* Back/forward (history POP) navigations shouldn't replay the enter animation —
- * returning should feel like landing back where you were, not the page
- * re-animating. Toggled by components/ui/BackNavAnimation.tsx. */
-html.nav-pop .page-root > * {
-  animation: none !important;
-}
-
 /* Section 7.3 Eversion is reserved for globe navigation.
    Existing data-evert markers retain an opacity state layer for menus,
    selected navigation and cards. Controls never grow a second globe, invert,
    or animate a moving origin. No document listeners are needed for this layer. */
-:root {
-  --evert-in: 0.419s;
-  --evert-ease: linear(
-    0,
-    0.0322,
-    0.1102,
-    0.2123,
-    0.3234,
-    0.4335,
-    0.5364,
-    0.6287,
-    0.7088,
-    0.7764,
-    0.8322,
-    0.8772,
-    0.9128,
-    0.9403,
-    0.9612,
-    0.9766,
-    0.9876,
-    0.9953,
-    1.0004,
-    1.0036,
-    1.0053,
-    1.0061,
-    1.0063,
-    1.006,
-    1.0054,
-    1.0048,
-    1.0041,
-    1.0034,
-    1.0028,
-    1.0022,
-    1.0017,
-    1.0013,
-    1
-  );
-  --evert-pop-in: 0.524s;
-  --evert-ease-pop: linear(
-    0,
-    0.0444,
-    0.1515,
-    0.2898,
-    0.4367,
-    0.5767,
-    0.701,
-    0.8049,
-    0.8872,
-    0.949,
-    0.9926,
-    1.021,
-    1.0374,
-    1.0448,
-    1.0458,
-    1.0426,
-    1.0371,
-    1.0305,
-    1.0238,
-    1.0176,
-    1.0121,
-    1.0077,
-    1.0042,
-    1.0016,
-    0.9999,
-    0.9987,
-    0.9981,
-    0.9979,
-    0.9979,
-    0.9981,
-    0.9984,
-    0.9987,
-    1
-  );
-}
 @layer components {
   /* `relative` in this layer so a control's own `absolute`/`fixed` utility still wins. */
   [data-evert] {
@@ -868,77 +714,11 @@ html.nav-pop .page-root > * {
   }
 }
 
-/* The ghost of the layer (lib/evert-auto.ts): for a control that cannot hold its own `::before` (a text field, a
-   textarea, a select, an inline link, a control whose `::before` the site already uses), one shared body-level box
-   laid over the control in its own shape. `lib/evert-auto.ts` places it with an inline `translate` and size (re-placed
-   only on scroll and resize while it is up) and copies the control's radius; the hover ghost carries
-   `data-liquid-glass="lit"`, so the glass engine draws the shared optical response (tilt, light, rim) on it exactly
-   as on a control that holds its own slab.
-   Restored after a39a095e deleted these base rules with the old scale eversion while the script still creates the
-   ghost — without them it fell to the end of <body> as a static block and added page height (F2, 2026-10-23).
-   Adapted to the current layer and the jelly contract: it is fixed and out of flow, never takes the pointer, is an
-   overlay that is never a soft body (physics, the registry and the arcs exclude `.evert-ghost`), and its state is
-   an OPACITY change like `[data-evert]::before` above — no scale, no moving origin, no transform transition, no
-   filter or backdrop-filter. */
-.evert-ghost {
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: calc(var(--z-tooltip) - 1);
-  pointer-events: none;
-  contain: strict;
-  isolation: isolate;
-  background: var(--site-surface-hover);
-  opacity: 0;
-  transition: opacity var(--site-transition-speed) var(--ease-glass);
-}
-.evert-ghost[data-on] {
-  opacity: 0.8;
-}
-.evert-ghost[data-on][data-pressed] {
-  opacity: 1;
-}
-.evert-ghost[data-kind='focus'] {
-  background: color-mix(in srgb, var(--site-accent) 7%, transparent);
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--site-accent) 45%, transparent);
-}
-.evert-ghost[data-kind='focus'][data-on] {
-  opacity: 1;
-}
 @media (hover: hover) and (pointer: fine) {
   @layer components {
     [data-evert]:hover:not(:disabled, [aria-disabled='true'], [data-disabled])::before {
       opacity: 1;
     }
-  }
-}
-
-/* Legacy variant tint tokens remain for selected/pressed consumers. Hover uses
-   the shared coat/optical tilt; the CSS build policy removes hover colour swaps. */
-@layer components {
-  [data-slot='button']:is([data-variant='default'], [data-variant='ghost']),
-  [data-slot='menu-item'],
-  [data-slot='select-item'],
-  [data-slot='select'][data-evert],
-  [role='tab'][data-evert],
-  [data-tab-active][data-evert],
-  .rad-rail__item,
-  .radial-topbar__btn,
-  .cstudio-ranked__toggle,
-  .store-spot__link {
-    --evert-tint: var(--site-surface-hover);
-    --evert-rest-opacity: 1;
-  }
-  .radial-topbar__signin {
-    --evert-tint: var(--site-accent);
-    --evert-rest-opacity: 1;
-  }
-  .cstudio-ranked__link {
-    --evert-tint: color-mix(in srgb, var(--site-accent) 22%, transparent);
-    --evert-rest-opacity: 1;
-  }
-  [data-slot='menu-item'][data-tone='danger'] {
-    --evert-tint: color-mix(in srgb, var(--site-danger) 10%, transparent);
   }
 }
 
@@ -1041,14 +821,11 @@ html.nav-pop .page-root > * {
    durations stay the springs' settle times, so the curves front-load the travel
    the way the springs do (their last third is sub-pixel); `snappy` and `pop`
    keep their overshoot through a y > 1 control point. Chromium and Gecko
-   accelerate `linear()` and keep the exact springs. After every token it
-   overrides (the evert springs are declared above). */
+   accelerate `linear()` and keep the exact springs. */
 @supports (font: -apple-system-body) {
   :root {
     --spring-smooth: var(--ease-smooth);
     --spring-snappy: var(--ease-pop);
     --spring-sheet: var(--ease-smooth);
-    --evert-ease: var(--ease-smooth);
-    --evert-ease-pop: var(--ease-pop);
   }
 }

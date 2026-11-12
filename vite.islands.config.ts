@@ -27,8 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { materialHover } from './lib/liquid/hover-css';
-import { buildWasm } from './scripts/build-wasm.mjs';
+import { hoverPolicy } from './lib/hover-css';
 import {
   ISLANDS_BASE_URL,
   ISLANDS_OUT_DIR,
@@ -58,14 +57,8 @@ export default defineConfig({
   publicDir: false,
   resolve: { tsconfigPaths: true },
   define: sharedDefine(),
-  css: { postcss: { plugins: [materialHover()] } },
+  css: { postcss: { plugins: [hoverPolicy()] } },
   plugins: [
-    {
-      name: 'build-numeric-wasm',
-      async config() {
-        await buildWasm();
-      },
-    },
     stubServerFiles(),
     tailwindcss(),
     react(),

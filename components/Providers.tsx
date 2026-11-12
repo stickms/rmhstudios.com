@@ -9,7 +9,6 @@ import {
   useCallback,
 } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { setSharedQueryClient } from '@/lib/query-client-ref';
 import { useLocation, useRouter, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
 import { SiteToaster } from '@/components/ui/site-toaster';
@@ -40,23 +39,12 @@ import {
   READABLE_FONT_KEY,
   CUSTOM_ACCENT_KEY,
   COLOR_VISION_KEY,
-  NAV_TRANSITION_KEY,
-  DEFAULT_NAV_TRANSITION,
-  ALWAYS_EVERT_GLOBE_KEY,
-  EVERSION_LEVEL_KEY,
-  DEFAULT_EVERSION_LEVEL,
-  isEversionLevel,
-  isNavTransition,
   isColorVisionMode,
   applyColorVision,
   JELLY_MOTION_KEY,
   DEFAULT_JELLY_MOTION,
   isJellyMotion,
   applyJellyMotion,
-  ELECTRIC_ARCS_KEY,
-  DEFAULT_ELECTRIC_ARCS,
-  isElectricArcs,
-  applyElectricArcs,
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useSoftRenderSettle } from '@/hooks/useSoftRenderSettle';
@@ -179,12 +167,6 @@ export function Providers({
   // The router's QueryClient (lib/query/make-query-client.ts): built once per SSR request and once
   // per page load in getRouter(), so route loaders seed the same cache the components read.
   const queryClient = useRouter().options.context.queryClient;
-  // Lets the globe eversion's AFTER readiness gate ask whether the destination still has queries
-  // loading (lib/query-client-ref.ts: a variable and a type, nothing to bundle).
-  useEffect(() => {
-    setSharedQueryClient(queryClient);
-    return () => setSharedQueryClient(null);
-  }, [queryClient]);
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const preview = useThemeStore((s) => s.preview);
@@ -194,11 +176,7 @@ export function Providers({
   const readableFont = useThemeStore((s) => s.readableFont);
   const customAccent = useThemeStore((s) => s.customAccent);
   const colorVision = useThemeStore((s) => s.colorVision);
-  const navTransition = useThemeStore((s) => s.navTransition);
-  const alwaysEvertGlobe = useThemeStore((s) => s.alwaysEvertGlobe);
-  const eversionLevel = useThemeStore((s) => s.eversionLevel);
   const jellyMotion = useThemeStore((s) => s.jellyMotion);
-  const electricArcs = useThemeStore((s) => s.electricArcs);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -227,9 +205,6 @@ export function Providers({
   // Remember whether this browser draws in software (the games' canvas glow reads it). Not on a site-shell page: that
   // page's one WebGL context is the chrome renderer's (Steel B3).
   useSoftRenderSettle(pathname);
-
-  // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
-  // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
   // so a user whose locale was resolved via Accept-Language (no cookie yet) gets
@@ -360,18 +335,19 @@ export function Providers({
     if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
     const cv = readString(COLOR_VISION_KEY);
     if (isColorVisionMode(cv)) st.setColorVision(cv);
-    const nt = readString(NAV_TRANSITION_KEY);
-    if (isNavTransition(nt)) st.setNavTransition(nt);
-    if (readString(ALWAYS_EVERT_GLOBE_KEY) === '1') st.setAlwaysEvertGlobe(true);
-    const el = readString(EVERSION_LEVEL_KEY);
-    if (isEversionLevel(el)) st.setEversionLevel(el);
     const jm = readString(JELLY_MOTION_KEY);
     if (isJellyMotion(jm)) st.setJellyMotion(jm);
-    const ea = readString(ELECTRIC_ARCS_KEY);
-    if (isElectricArcs(ea)) st.setElectricArcs(ea);
     // The globe cursor and its per-device settings were removed (2026-11-08): drop the stale key so devices do not keep
     // dead data. Nothing reads it any more. Safe to delete once every device that ever stored it has loaded the site.
     removeKey('rmh-globe-cursor');
+    // The settings Steel retired (page eversion, always-evert, eversion level, electric arcs): drop their cached values.
+    for (const key of [
+      'rmh-nav-transition',
+      'rmh-eversion-level',
+      'rmh-always-evert-globe',
+      'rmh-electric-arcs',
+    ])
+      removeKey(key);
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
     // A corrupt cache reads as null: the built-in theme shows through.
@@ -464,25 +440,11 @@ export function Providers({
     applyColorVision(html, colorVision);
     if (colorVision !== 'none') writeString(COLOR_VISION_KEY, colorVision);
     else removeKey(COLOR_VISION_KEY);
-    // Eversion transition choice: cache only (no DOM effect) so the controller can
-    // read it synchronously; the default is expressed by absence.
-    if (navTransition !== DEFAULT_NAV_TRANSITION)
-      writeString(NAV_TRANSITION_KEY, navTransition);
-    else removeKey(NAV_TRANSITION_KEY);
-    if (alwaysEvertGlobe) writeString(ALWAYS_EVERT_GLOBE_KEY, '1');
-    else removeKey(ALWAYS_EVERT_GLOBE_KEY);
-    if (eversionLevel !== DEFAULT_EVERSION_LEVEL)
-      writeString(EVERSION_LEVEL_KEY, eversionLevel);
-    else removeKey(EVERSION_LEVEL_KEY);
-    // Plasmatic Jelly (R8/R9): stamped on <html> for the jelly/arc runtimes and
-    // cached for the pre-paint script; both express the default by absence.
+    // Globe motion: stamped on <html> for the globe and the games' ambient canvases and cached for the pre-paint
+    // script; the default is expressed by absence.
     applyJellyMotion(html, jellyMotion);
     if (jellyMotion !== DEFAULT_JELLY_MOTION) writeString(JELLY_MOTION_KEY, jellyMotion);
     else removeKey(JELLY_MOTION_KEY);
-    applyElectricArcs(html, electricArcs);
-    if (electricArcs !== DEFAULT_ELECTRIC_ARCS)
-      writeString(ELECTRIC_ARCS_KEY, electricArcs);
-    else removeKey(ELECTRIC_ARCS_KEY);
     // Custom accent (raw hex) overrides the preset accent applied just above.
     if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
       const { hex, fg } = ensureReadableAccent(customAccent);
@@ -532,11 +494,7 @@ export function Providers({
     readableFont,
     customAccent,
     colorVision,
-    navTransition,
-    alwaysEvertGlobe,
-    eversionLevel,
     jellyMotion,
-    electricArcs,
     userTheme,
     userThemePreview,
   ]);
@@ -614,11 +572,7 @@ export function Providers({
           readableFont?: boolean | null;
           customAccent?: string | null;
           colorVision?: string | null;
-          navTransition?: string | null;
-          alwaysEvertGlobe?: boolean | null;
-          eversionLevel?: string | null;
           jellyMotion?: string | null;
-          electricArcs?: string | null;
         };
         if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
           store.setFontScale(Number(r.fontScale));
@@ -627,11 +581,7 @@ export function Providers({
         if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
           store.setCustomAccent(r.customAccent);
         if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
-        if (isNavTransition(r.navTransition)) store.setNavTransition(r.navTransition);
-        if (typeof r.alwaysEvertGlobe === 'boolean') store.setAlwaysEvertGlobe(r.alwaysEvertGlobe);
-        if (isEversionLevel(r.eversionLevel)) store.setEversionLevel(r.eversionLevel);
         if (isJellyMotion(r.jellyMotion)) store.setJellyMotion(r.jellyMotion);
-        if (isElectricArcs(r.electricArcs)) store.setElectricArcs(r.electricArcs);
         appearanceSyncedRef.current = true;
       })
       .catch(() => {});

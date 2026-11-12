@@ -6,16 +6,13 @@ import { settleSoftRender } from '@/lib/low-end';
  * browser rasterises in software, and remember the finding (`lib/low-end.ts`, `localStorage` `rmh-soft-render`, 12 h).
  *
  * Steel B3: a site-shell page creates exactly one WebGL context, the chrome renderer's. This probe makes a second,
- * throwaway one, so it stands down wherever `.site-shell` is in the document; the only readers of its finding are the
- * games' canvas glow and (until phase 6) the old globe, none of which a site page mounts. A site visit that goes on to a
+ * throwaway one, so it stands down wherever `.site-shell` is in the document; the only reader of its finding is the
+ * games' canvas glow, which a site page does not mount. A site visit that goes on to a
  * game by client navigation settles on arrival there: `pathname` re-runs the check, and `settled` keeps it to once.
  *
- * Nothing about the site material depends on the answer: software-rendering browsers get the full material. It is read
- * by the code that decides what ONE heavy feature does on such a browser: the liquid globe keeps its CSS glass instead
- * of a second GL context, and the games' canvas glow (`canvasGlowEnabled`) stays off. Both read the remembered finding,
- * so a direct visit to a game page still records it for the next load. It runs after the window `load` event, at idle
- * (400 ms at most), because the throwaway GL context it creates must not compete with hydration. It is a separate hook
- * from `useJellyPointer` on purpose: the jelly mount hook never probes the GPU.
+ * Nothing about the site depends on the answer. It is read by the games' canvas glow (`canvasGlowEnabled`), which stays
+ * off on such a browser; a direct visit to a game page still records it for the next load. It runs after the window
+ * `load` event, at idle (400 ms at most), because the throwaway GL context it creates must not compete with hydration.
  */
 export function useSoftRenderSettle(pathname?: string): void {
   const settled = useRef(false);

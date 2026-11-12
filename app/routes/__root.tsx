@@ -19,10 +19,8 @@ import { PREPAINT_BODY_SCRIPT, prepaintHeadScripts } from '@/lib/prepaint/config
 import { SiteHeadContent } from '@/components/SiteHeadContent';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
-import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
-import { markPageEnterComplete } from '@/lib/motion';
 import { startViewportPrefetch } from '@/lib/viewport-prefetch';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
@@ -131,7 +129,6 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
             customAccent: true,
             colorVision: true,
             jellyMotion: true,
-            electricArcs: true,
           },
         }),
       ).catch(() => null),
@@ -458,21 +455,6 @@ function RootComponent() {
   // and holds hydration up behind it (app/router.tsx). It still waits for `load`.
   useEffect(() => startViewportPrefetch(router), [router]);
 
-  // The `page-enter` fade is for arriving by a navigation, so globals.css holds
-  // it off until the first one: on a fresh load it hid the server-rendered page
-  // at first paint and kept the home feed out of LCP. History subscribers run
-  // before the router renders the next page, so the flag is in place for it;
-  // the page on screen now is marked complete first, so flipping the flag never
-  // replays the fade on it (a same-page REPLACE such as a tab change).
-  useEffect(() => {
-    const unsubscribe = router.history.subscribe(() => {
-      unsubscribe();
-      markPageEnterComplete();
-      document.documentElement.setAttribute('data-navigated', '');
-    });
-    return unsubscribe;
-  }, [router]);
-
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK
   // query params (frame_id, instance_id, etc.) that the embedded app needs.
@@ -494,7 +476,6 @@ function RootComponent() {
       i18nResources={i18nResources}
     >
       <NavigationProgress />
-      <BackNavAnimation />
       <TwemojiProvider>
         <Outlet />
       </TwemojiProvider>

@@ -59,7 +59,6 @@ const LOCAL_BANDS = [
   'components/library/library/sections-refresh.css :: .lib-reader__details-overlay :: 39',
   'components/library/library/sections-refresh.css :: .lib-reader__details :: 40',
   'components/library/library/sections-refresh.css :: .lib-explorer :: 35',
-  'components/radial/radial/overlay-globe.css :: .radial-globe__reticle :: 400',
   'components/reading/reading.css :: .rf-pop :: 70',
   'components/reading/reading.css :: .rf-seltool :: 70',
   'components/reading/reading.css :: .rf-ruler :: 60',

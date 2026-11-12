@@ -60,7 +60,7 @@ export const fade: Variants = {
 
 /**
  * ── The pre-Steel runtime, deleted with it (plan 15.3, phase 6) ──────────────────────────────────────────────────
- * Not Steel tokens: the page-enter, view-transition and pop-presence code that is still wired reads these three.
+ * Not Steel tokens: the view-transition, swap-reveal and pop-presence code that is still wired reads these two.
  */
 
 /** `ease` as a CSS timing function, for the WAAPI `easing` of the old page-swap code. */
@@ -72,11 +72,3 @@ export const SMOOTH_EASE_CSS = 'cubic-bezier(0.3, 0, 0.15, 1)';
  * React remove a hand-rolled menu. If one moves, move the other (`lib/__tests__/motion-pop-spring.test.ts`).
  */
 export const POP_COLLAPSE_MS = 160;
-
-/** Mark the currently mounted route roots as already settled, so the CSS `page-enter` does not start late. */
-export function markPageEnterComplete(): void {
-  if (typeof document === 'undefined') return;
-  for (const element of document.querySelectorAll<HTMLElement>('.page-root > *')) {
-    element.dataset.pageEnterComplete = '';
-  }
-}

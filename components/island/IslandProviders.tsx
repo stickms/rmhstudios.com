@@ -14,8 +14,7 @@
  *  - the app-tier flag (`AppTierContext`), framer-motion's lazy features and
  *    `MotionConfig`, the site's `<SiteToaster>`, and `TwemojiProvider` (the root
  *    wraps every page in it, so a game's emoji draw as the same images);
- *  - the jelly material's document services (`useJellyPointer`), client error
- *    reporting and Core Web Vitals, and the two per-title trackers the site
+ *  - client error reporting and Core Web Vitals, and the two per-title trackers the site
  *    mounts globally: Recents and the playtime heartbeat.
  *
  * Everything else the site's `Providers` does is for site pages (theme
@@ -32,7 +31,6 @@ import {
 import { AppTierContext } from '@/components/ui/app-tier-context';
 import { SiteToaster } from '@/components/ui/site-toaster';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
-import { useJellyPointer } from '@/hooks/useJellyPointer';
 import { usePlaytimeHeartbeat } from '@/hooks/usePlaytimeHeartbeat';
 import { recordRecent } from '@/hooks/useRecents';
 import { sessionAuthClient } from '@/lib/auth-session-client';
@@ -55,8 +53,6 @@ function IslandSession({ data, children }: { data: IslandData; children: ReactNo
 export function IslandProviders({ data, children }: { data: IslandData; children: ReactNode }) {
   const lang = typeof document === 'undefined' ? DEFAULT_LOCALE : document.documentElement.lang;
   const locale = isLocale(lang) ? lang : DEFAULT_LOCALE;
-
-  useJellyPointer();
 
   useEffect(() => {
     installGlobalErrorHandlers();

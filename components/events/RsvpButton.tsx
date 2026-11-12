@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { JellyGroup } from '@/components/ui/jelly-group';
+import { Button } from '@/components/ui/button';
 import type { RsvpStatus, RsvpResult } from '@/lib/events.server';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
@@ -59,12 +59,18 @@ export function RsvpButton({
   };
 
   return (
-    // One jelly body with two flat members: the chosen answer is the glow lying on it (clicking it again withdraws).
-    <JellyGroup size="sm" role="group" aria-label={t('rsvp-label', { defaultValue: 'RSVP' })}>
-      <JellyGroup.Item
+    // The chosen answer is the filled button (clicking it again withdraws).
+    <div
+      role="group"
+      aria-label={t('rsvp-label', { defaultValue: 'RSVP' })}
+      className="flex items-center gap-2"
+    >
+      <Button
+        size="sm"
+        variant={status === 'going' ? 'default' : 'ghost'}
+        aria-pressed={status === 'going'}
         onClick={() => submit('going')}
         disabled={disabled || busy || full}
-        selected={status === 'going'}
       >
         <Check aria-hidden />
         {status === 'going'
@@ -72,15 +78,17 @@ export function RsvpButton({
           : full
             ? t('rsvp-full', { defaultValue: 'Full' })
             : t('rsvp-go', { defaultValue: 'Going' })}
-      </JellyGroup.Item>
-      <JellyGroup.Item
+      </Button>
+      <Button
+        size="sm"
+        variant={status === 'maybe' ? 'default' : 'ghost'}
+        aria-pressed={status === 'maybe'}
         onClick={() => submit('maybe')}
         disabled={disabled || busy}
-        selected={status === 'maybe'}
       >
         <HelpCircle aria-hidden />
         {t('rsvp-maybe', { defaultValue: 'Maybe' })}
-      </JellyGroup.Item>
-    </JellyGroup>
+      </Button>
+    </div>
   );
 }

@@ -465,7 +465,6 @@ const CSS_DEBT: Record<string, { hex: number; radius: number }> = {
   'components/security/security.css': { hex: 0, radius: 4 },
   'components/rmhcalculator/rmhcalculator.css': { hex: 0, radius: 3 },
   'components/library/book-3d.css': { hex: 1, radius: 2 },
-  'components/radial/radial/overlay-globe.css': { hex: 2, radius: 0 },
 };
 
 const SITE_CSS = collectCss('components').filter((f) => {
@@ -800,7 +799,7 @@ describe('design consistency — no debossed surfaces (audit 2026-10-09)', () =>
  * Steel phase 1 the CSS soft body, app/jelly-material.css, owned `scale` on hover and press, and a framer-motion
  * `whileHover` / `whileTap` that animated `scale`, `x` or `y` was a second writer on the same property.) The debt below
  * still only goes down, now toward zero rather than toward one owner. It is the same reasoning as
- * `lib/liquid/hover-css.ts`, which strips hand-written CSS hover lifts.
+ * `lib/hover-css.ts`, which strips hand-written CSS hover lifts.
  *
  * Site tier only (games and the `--app-*` apps own their own motion). The per-file counts below are frozen on
  * 2026-10-23 and only go down; new code gets zero. Hover and press feedback on a site surface comes from its role

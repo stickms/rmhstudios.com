@@ -5,7 +5,7 @@
  *
  * The shared backdrop behind every `_site` page — the two aurora layers
  * (`.site-aurora::before/::after`, app/globals.css), the concentric rings and
- * the blob field (`.radial-backdrop__*`, components/radial/radial.css) — used to
+ * the blob field (`.radial-backdrop__*`, deleted with the radial shell) — used to
  * animate forever: an aurora drift, a ring "breathe", a blob drift. Each was
  * individually justified as "transform-only, runs on the compositor, costs the
  * main thread nothing", and each claim was true. What none of them accounted
@@ -43,7 +43,6 @@ const ROOT = join(__dirname, '..', '..');
 const read = (path: string) => readCss(join(ROOT, path)).replace(/\/\*[\s\S]*?\*\//g, '');
 
 const GLOBALS = read('app/globals.css');
-const RADIAL = read('components/radial/radial.css');
 
 /** Innermost `selector { declarations }` pairs — nested @media/@layer bodies match at their leaves. */
 function rules(css: string): Array<{ selector: string; body: string }> {
@@ -62,10 +61,7 @@ function animations(body: string): string[] {
 const BACKDROP_SELECTOR = /\.site-aurora|\.radial-backdrop/;
 
 describe('no backdrop layer animates', () => {
-  it.each([
-    ['app/globals.css', GLOBALS],
-    ['components/radial/radial.css', RADIAL],
-  ])('%s declares no running animation on a backdrop selector', (_file, css) => {
+  it.each([['app/globals.css', GLOBALS]])('%s declares no running animation on a backdrop selector', (_file, css) => {
     const offenders: string[] = [];
     for (const { selector, body } of rules(css)) {
       if (!BACKDROP_SELECTOR.test(selector)) continue;
@@ -81,7 +77,7 @@ describe('no backdrop layer animates', () => {
     // `will-change: transform` on a layer that no longer moves keeps a
     // viewport-sized (or larger — the aurora is oversized by 14–18%) texture
     // resident for nothing.
-    const offenders = [...rules(GLOBALS), ...rules(RADIAL)]
+    const offenders = rules(GLOBALS)
       .filter(({ selector, body }) => BACKDROP_SELECTOR.test(selector) && /will-change\s*:(?!\s*auto)/.test(body))
       .map(({ selector }) => selector);
     expect(offenders).toEqual([]);
@@ -89,17 +85,7 @@ describe('no backdrop layer animates', () => {
 
   it('the retired keyframes are gone, not just unreferenced', () => {
     for (const name of ['aurora-drift', 'aurora-drift-far', 'radial-breathe', 'radial-blob-drift']) {
-      expect(GLOBALS + RADIAL).not.toMatch(new RegExp(`@keyframes\\s+${name}\\b`));
-    }
-  });
-});
-
-describe('the material sheen is a single pass (jelly moves inside surfaces; the room does not)', () => {
-  it('.glass-liquid::after never loops', () => {
-    const sheen = rules(GLOBALS).filter(({ selector }) => /\.glass-liquid::after/.test(selector));
-    expect(sheen.length).toBeGreaterThan(0);
-    for (const { body } of sheen) {
-      for (const value of animations(body)) expect(value).not.toMatch(/\binfinite\b/);
+      expect(GLOBALS).not.toMatch(new RegExp(`@keyframes\\s+${name}\\b`));
     }
   });
 });

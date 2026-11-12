@@ -27,12 +27,9 @@ const ROOT = process.cwd();
 /** file -> number of `!important` declarations. */
 const BASELINE: Record<string, number> = {
   'app/globals/base-interaction.css': 3,
-  'app/globals/components-reveal.css': 1,
-  'app/globals/loader-print-access.css': 21,
-  'app/globals/page-motion.css': 3,
+  'app/globals/loader-print-access.css': 20,
+  'app/globals/page-motion.css': 1,
   'features/balatro/ui/balatro.css': 2,
-  'components/radial/radial/feed-cards-panels.css': 3,
-  'components/radial/eversion/eversion.css': 4,
   'components/rmhcalculator/rmhcalculator.css': 1,
   'components/tf2-hud/tf2-hud.css': 1,
 };

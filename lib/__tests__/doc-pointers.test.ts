@@ -76,7 +76,7 @@ describe('N8 — the gates point at files that exist', () => {
     expect(
       missing,
       'A gate tells its reader to look at a file that does not exist. Point it at the current owner ' +
-        '(docs/plasmatic-jelly-system.md for the material, lib/jelly/** for the services).',
+        '(docs/plans/2026-11-11-steel-design-implementation.md for the design).',
     ).toEqual([]);
   });
 });

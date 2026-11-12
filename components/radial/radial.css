@@ -1,6 +1,0 @@
-/* RMH Radial UI — the monochrome, circular design language. Entry sheet: the partials in radial/ are imported in
-   source order and together are the one stylesheet this file used to be (redesign E4). Every colour is a --site-* token. */
-
-@import './radial/shell-frame.css';
-@import './radial/overlay-globe.css';
-@import './radial/feed-cards-panels.css';

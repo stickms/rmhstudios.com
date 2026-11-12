@@ -39,10 +39,8 @@ import { readCss } from './css-source';
  */
 
 const ROOT = process.cwd();
-const RADIAL_CSS = join('components', 'radial', 'radial.css');
 
 const SHEETS = [
-  RADIAL_CSS,
   join('app', 'globals.css'),
   join('components', 'feed', 'feed.css'),
   join('components', 'shared', 'app-theme.css'),
@@ -59,28 +57,6 @@ const read = (rel: string) => readCss(join(ROOT, rel));
  */
 const code = (rel: string) => read(rel).replace(/\/\*[\s\S]*?\*\//g, '');
 
-/**
- * Selectors for layers that cover the whole viewport. A `filter: url(…)` on any
- * of these is the shape of the bug above, whatever the filter claims to do.
- */
-const VIEWPORT_LAYERS = [
-  '.radial-backdrop',
-  '.radial-backdrop__field',
-  '.radial-backdrop__rings',
-  '.radial-hub__overlay',
-  // The hub's expanding disc, under its current name and its old one. The old
-  // name is kept deliberately: the guard should still fire if anyone brings
-  // `.radial-hub__blur` back rather than silently going unenforced.
-  '.radial-hub__veil',
-  '.radial-hub__blur',
-  // The liquid globe is the thing that MOVES over the hub's overlay, which is
-  // what makes a filter on any of these layers ruinous rather than merely
-  // expensive — see the note above `.radial-hub__veil` in radial.css.
-  '.radial-globe',
-  '.radial-globe__stage',
-  '.radial-globe__glass',
-];
-
 /** Every `selector { … }` block in a stylesheet, flattened to one string each. */
 function ruleBlocks(css: string): { selector: string; body: string }[] {
   const out: { selector: string; body: string }[] = [];
@@ -94,37 +70,6 @@ function ruleBlocks(css: string): { selector: string; body: string }[] {
 }
 
 describe('SVG filter cost budget', () => {
-  const radialCss = read(RADIAL_CSS);
-  const blocks = ruleBlocks(radialCss);
-
-  it('parses radial.css into a non-trivial set of rules', () => {
-    expect(blocks.length).toBeGreaterThan(200);
-  });
-
-  it('no `filter: url()` on a full-viewport backdrop layer', () => {
-    const offenders = blocks
-      .filter(({ selector, body }) => {
-        if (!/filter:\s*url\(/.test(body)) return false;
-        // Match the layer as a whole class token, so `.radial-backdrop__blob`
-        // does not read as `.radial-backdrop`.
-        return VIEWPORT_LAYERS.some((layer) =>
-          new RegExp(`${layer.replace(/[.]/g, '\\.')}(?![\\w-])`).test(selector),
-        );
-      })
-      .map(({ selector }) => selector);
-
-    expect(
-      offenders,
-      `\n\`filter: url(…)\` found on a full-viewport layer:\n` +
-        offenders.map((s) => `  ${s}`).join('\n') +
-        `\n\nA filtered subtree with animating children re-runs the whole filter ` +
-        `graph every frame over the whole filter region — on a viewport-sized ` +
-        `layer that costs ~4x the page's frame time (measured; see the note above ` +
-        `the media query in components/radial/radial.css). If the intent is a ` +
-        `soft/fused field, use soft-edged gradients as .radial-backdrop__blob does.\n`,
-    ).toEqual([]);
-  });
-
   it('no CSS filter function is chained after a url() reference', () => {
     // Scan every stylesheet: the hazard is a property of the CSS, and `.lg-goo`
     // / the app tiers use `url()` filters. A declaration qualifies when a

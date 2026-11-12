@@ -29,7 +29,7 @@ import { pickMatchup } from '@/lib/kowloon-knockout/render/menuMatchup';
 import { resolveMenuQuality, type MenuQuality } from '@/lib/kowloon-knockout/render/menuQuality';
 import { FrameDriver, NeonRig } from '@/components/kowloon-knockout/arena/SceneKit';
 import { useGraphicsStore } from '@/lib/kowloon-knockout/render/graphicsStore';
-import { jellyMotionLevel } from '@/lib/jelly/tiers';
+import { motionStill } from '@/lib/appearance/prefs';
 
 const FOV = 34;
 /** Where the fighters' feet land in the canvas, from the top (the street's kerb sits near the bottom). */
@@ -153,7 +153,7 @@ function Duel({ models, onLoop, bus, script }: { models: [string, string]; onLoo
 function useStill(): boolean {
     const [still, setStill] = useState(false);
     useEffect(() => {
-        const read = () => setStill(jellyMotionLevel() === 'still');
+        const read = () => setStill(motionStill());
         read();
         if (typeof MutationObserver === 'undefined') return;
         const obs = new MutationObserver(read);

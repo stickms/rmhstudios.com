@@ -266,12 +266,6 @@
 
   /* ── 1. Chrome, decoration and floating UI ─────────────────────────────── */
   .glass-chrome,
-  .radial-skip,
-  .radial-backdrop,
-  .radial-topbar,
-  .radial-hub,
-  .radial-globe,
-  .rad-rail,
   .glass-scrim,
   [data-sonner-toaster],
   [data-print='hide'] {
@@ -296,10 +290,7 @@
   .glass-overlay,
   .glass-inset,
   .glass-opaque,
-  .glass-interactive,
-  .glass-refract,
-  .glass-liquid,
-  .glass-bevel-sm {
+  .glass-interactive {
     background: none !important;
     background-image: none !important;
     backdrop-filter: none !important;
@@ -310,21 +301,9 @@
     border-color: #bbb !important;
   }
 
-  /* The three decorative pseudo-elements the material hangs its rim glint,
-     refraction and liquid sheen on. */
-  .glass-chrome--aside::before,
-  .glass-refract::before,
-  .glass-refract--prism::before,
-  .glass-liquid::after {
-    display: none !important;
-  }
-
   /* ── 4. Give the content the whole sheet ───────────────────────────────── */
   main,
   #main-content,
-  .radial-shell,
-  .radial-shell__main,
-  .radial-frame,
   .page-root,
   [data-slot='site-main-column'] {
     display: block !important;
@@ -498,13 +477,6 @@ html.fools h1::after {
 html.fools h2::after {
   content: ' 🎈';
   content: ' 🎈' / '';
-}
-html.fools .radial-core__mark {
-  font-size: 0;
-}
-html.fools .radial-core__mark::after {
-  content: 'RMHaha';
-  font-size: clamp(1rem, 4vw, 1.3rem);
 }
 
 /* ── Route progress (components/ui/NavigationProgress.tsx) ────────────────────────────────────────────────────────

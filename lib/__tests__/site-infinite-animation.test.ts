@@ -40,7 +40,7 @@ const SHEETS = [
   ...readdirSync(join(ROOT, 'app'))
     .filter((f) => f.endsWith('.css'))
     .map((f) => `app/${f}`),
-  ...['ui', 'radial', 'feed', 'site'].flatMap((d) => collectCss(`components/${d}`)),
+  ...['ui', 'feed', 'site', 'shell'].flatMap((d) => collectCss(`components/${d}`)),
 ]
   // A split entry sheet (`radial.css` + `radial/*.css`, redesign E4) is scanned once, through its entry: `read`
   // inlines the partials, so listing them too would count every rule twice under a second file name.
@@ -97,7 +97,7 @@ function perpetual(file: string): Perpetual[] {
  * Removed 2026-10-23 (H1): `dock-globe-shimmer` and `dock-globe-glint` (now one sweep per hover) and
  * `globe-current-halo` (now three breaths when a pin becomes current). The entries had called them "icon-sized" and
  * "open hub only", but all three ran on the DOCKED globe — every desktop page, at rest, under `still` too — and held
- * the page at ≈58 frames/s (`testing/e2e/frame-budget.mjs --gate`).
+ * the page at ≈58 frames/s.
  */
 const BASELINE = new Map<string, string>([
   [
@@ -117,15 +117,6 @@ const BASELINE = new Map<string, string>([
     'app/globals.css :: dr-title-glow',
     'Dream Rift landing title glow (its game landing, not a surface)',
   ],
-  ['components/radial/radial.css :: radial-pulse-soft', 'unread / live dots, a few px'],
-  [
-    'components/radial/radial.css :: globe-armed',
-    'the reticle while a hold is armed (hub or docked globe) — only while the pointer is down on a full ring',
-  ],
-  [
-    'components/radial/eversion/eversion.css :: evert-popup-turn',
-    'eversion popup spinner, while a navigation runs',
-  ],
 ]);
 
 describe('N3 — no perpetual CSS animation on the site tier without an owner', () => {
@@ -133,10 +124,8 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
 
   it('scans the site-tier sheets', () => {
     expect(SHEETS.length).toBeGreaterThan(5);
-    for (const f of ['app/globals.css', 'components/radial/radial.css']) {
-      expect(SHEETS).toContain(f);
-    }
-    expect(found.length).toBeGreaterThan(5);
+    expect(SHEETS).toContain('app/globals.css');
+    expect(found.length).toBeGreaterThan(3);
   });
 
   it('every infinite animation is on the frozen baseline', () => {
@@ -146,8 +135,7 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
     expect(
       offenders,
       'A free-standing `infinite` keyframe never stops: not for a hidden tab, not offscreen, not under ' +
-        '`jellyMotion = still`, not on a degraded tier — the page re-renders on every vsync (frame-budget --gate). ' +
-        'Ambient motion belongs to the jelly services (lib/jelly, docs/plasmatic-jelly-system.md). If this is a ' +
+        '`jellyMotion = still` — the page re-renders on every vsync. Steel R5: nothing moves at rest. If this is a ' +
         'loader, end it with the load; if it is decoration, make it a one-shot.',
     ).toEqual([]);
   });

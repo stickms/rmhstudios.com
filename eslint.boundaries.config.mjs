@@ -108,7 +108,6 @@ export default tseslint.config(
   {
     ignores: [
       '.cache/**',
-      'wasm/**',
       '.output/**',
       '.tanstack/**',
       '.vinxi/**',

@@ -12,8 +12,6 @@
  * `/api/preferences/appearance` ever receives.
  */
 
-import { NAV_TRANSITIONS, type NavTransition } from '@/lib/eversion/types';
-
 export const FONT_SCALES = [875, 1000, 1125, 1250] as const;
 export type FontScale = (typeof FONT_SCALES)[number];
 export const DEFAULT_FONT_SCALE = 1000;
@@ -77,77 +75,30 @@ export function applyColorVision(html: HTMLElement, mode: ColorVisionMode) {
   else html.setAttribute('data-color-vision', mode);
 }
 
-// ── Navigation transition (globe eversion, spec §9.3) ───────────────────────
-// Which projection the page-to-page eversion uses, or `random` (a fresh draw
-// per navigation). The value list is owned by the eversion contract so the API
-// enum, the select and the controller can never disagree; it is re-exported here
-// because this module is the one the store and the no-flash cache import.
-// `lib/eversion/types.ts` imports nothing at runtime, so this stays zod-free
-// and adds nothing to the client critical path.
-//
-// The default is Mercator (amended 2026-10-19; it was `random`): the owner asked
-// for "a better projection of the page onto the sphere". Mercator is conformal, so
-// every letter keeps its shape on the globe (only its size grows toward the
-// poles), the page wraps round the globe like a wall map onto a globe, and it is
-// the same every time. Equirectangular - what NASA's globe textures use - stretches
-// text sideways; Peirce and the azimuthal maps fold the page into petals and
-// wedges. A visitor who chose another keeps it.
-export const DEFAULT_NAV_TRANSITION: NavTransition = 'mercator';
-export { NAV_TRANSITIONS };
-export type { NavTransition };
-
-export function isNavTransition(v: unknown): v is NavTransition {
-  return typeof v === 'string' && (NAV_TRANSITIONS as readonly string[]).includes(v);
-}
-
-/** An absent or unknown stored value means the default, never an error. */
-export function resolveNavTransition(v: unknown): NavTransition {
-  return isNavTransition(v) ? v : DEFAULT_NAV_TRANSITION;
-}
-
-// ── Eversion level (amended 2026-10-21) ─────────────────────────────────────
-// Eversion belongs to the liquid-globe navigator. Keep `all` valid for older
-// persisted accounts and clients; resolving it migrates it to `globe`. Ordinary
-// controls use short colour/opacity changes and never create a mini globe.
-export const EVERSION_LEVELS = ['all', 'globe'] as const;
-export type EversionLevel = (typeof EVERSION_LEVELS)[number];
-export const DEFAULT_EVERSION_LEVEL: EversionLevel = 'globe';
-
-export function isEversionLevel(v: unknown): v is EversionLevel {
-  return typeof v === 'string' && (EVERSION_LEVELS as readonly string[]).includes(v);
-}
-
-/** An absent or unknown stored value means the default, never an error. */
-export function resolveEversionLevel(v: unknown): EversionLevel {
-  // Keep accepting legacy persisted values, but ordinary navigation is always immediate.
-  return v === 'globe' ? v : DEFAULT_EVERSION_LEVEL;
-}
-
 export const FONT_SCALE_KEY = 'rmh-font-scale';
 export const DENSITY_KEY = 'rmh-density';
 export const READABLE_FONT_KEY = 'rmh-readable-font';
 export const CUSTOM_ACCENT_KEY = 'rmh-custom-accent';
 export const COLOR_VISION_KEY = 'rmh-color-vision';
-export const NAV_TRANSITION_KEY = 'rmh-nav-transition';
-/** Eversion level: cached as 'globe' when set, absent when 'all' (the default). */
-export const EVERSION_LEVEL_KEY = 'rmh-eversion-level';
-/** "Always evert globe": cached as '1' when on, absent when off (the default). */
-export const ALWAYS_EVERT_GLOBE_KEY = 'rmh-always-evert-globe';
 
-// ── Jelly motion (Plasmatic Jelly R8, plan 04 §4.2) ─────────────────────────
-// The WCAG 2.2.2 control for the jelly material's ambient motion. It is a
-// MATERIAL setting, not the retired reduce-motion: it reads no OS media query
-// and never touches navigation transitions or framer-motion. `still` stops all
-// ambient motion (and forces electric arcs off, whatever `electricArcs` says);
-// `calm` damps it. Consumers read `html[data-jelly-motion]` (see
-// `jellyMotionLevel()` in `lib/jelly/tiers.ts`).
+// ── Globe motion ────────────────────────────────────────────────────────────
+// The WCAG 2.2.2 control for the one ambient motion Steel has: the globe's idle drift (`lib/globe/view.ts`), and the
+// ambient canvases of the games that read it (`motionStill`). `lively` (default) lets it drift; `still` stops it.
+// The name and the `html[data-jelly-motion]` attribute are kept from the control this replaces, so a stored choice,
+// the account column and every reader keep working. A stored `calm` (the retired middle level) reads as `lively`.
 //
-// Contract: the attribute is present ONLY when the value is not the default
-// (`lively`), the same as `data-color-vision` / `data-density`; the
-// localStorage key is likewise written only for a non-default value.
-export const JELLY_MOTION_LEVELS = ['lively', 'calm', 'still'] as const;
+// Contract: the attribute is present ONLY when the value is not the default (`lively`), the same as
+// `data-color-vision` / `data-density`; the localStorage key is likewise written only for a non-default value.
+export const JELLY_MOTION_LEVELS = ['lively', 'still'] as const;
 export type JellyMotion = (typeof JELLY_MOTION_LEVELS)[number];
 export const DEFAULT_JELLY_MOTION: JellyMotion = 'lively';
+
+/** True while `html[data-jelly-motion='still']`: the visitor stopped ambient motion (WCAG 2.2.2). */
+export function motionStill(
+  doc: Document | undefined = typeof document === 'undefined' ? undefined : document,
+): boolean {
+  return doc?.documentElement.getAttribute('data-jelly-motion') === 'still';
+}
 
 export function isJellyMotion(v: unknown): v is JellyMotion {
   return typeof v === 'string' && (JELLY_MOTION_LEVELS as readonly string[]).includes(v);
@@ -164,34 +115,5 @@ export function applyJellyMotion(html: HTMLElement, value: JellyMotion) {
   else html.setAttribute('data-jelly-motion', value);
 }
 
-// ── Electric arcs (Plasmatic Jelly R9, plan 03 §5) ──────────────────────────
-// `full` (default): ambient + click arcs; `clicks`: click arcs only; `off`:
-// none. The settings copy says plainly that `off` is the choice for anyone
-// sensitive to flicker. `jellyMotion = still` forces arcs off at the runtime
-// regardless of this value — the attribute records only the user's choice.
-//
-// Contract: `html[data-electric-arcs]` is present only when not `full`; the
-// localStorage key is written only for a non-default value.
-export const ELECTRIC_ARC_MODES = ['full', 'clicks', 'off'] as const;
-export type ElectricArcs = (typeof ELECTRIC_ARC_MODES)[number];
-export const DEFAULT_ELECTRIC_ARCS: ElectricArcs = 'full';
-
-export function isElectricArcs(v: unknown): v is ElectricArcs {
-  return typeof v === 'string' && (ELECTRIC_ARC_MODES as readonly string[]).includes(v);
-}
-
-/** An absent or unknown stored value means the default, never an error. */
-export function resolveElectricArcs(v: unknown): ElectricArcs {
-  return isElectricArcs(v) ? v : DEFAULT_ELECTRIC_ARCS;
-}
-
-/** Stamp the mode on <html> (pre-paint safe; DOM only). Default removes it. */
-export function applyElectricArcs(html: HTMLElement, value: ElectricArcs) {
-  if (value === DEFAULT_ELECTRIC_ARCS) html.removeAttribute('data-electric-arcs');
-  else html.setAttribute('data-electric-arcs', value);
-}
-
-/** Jelly motion: cached only when not 'lively' (the default). */
+/** Globe motion: cached only when not 'lively' (the default). */
 export const JELLY_MOTION_KEY = 'rmh-jelly-motion';
-/** Electric arcs: cached only when not 'full' (the default). */
-export const ELECTRIC_ARCS_KEY = 'rmh-electric-arcs';

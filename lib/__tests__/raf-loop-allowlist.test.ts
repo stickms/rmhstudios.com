@@ -11,15 +11,11 @@ import { join, posix } from 'node:path';
  * nothing animates), or an unmount `cancelAnimationFrame` for the self-contained
  * games/apps (their loops run only while the game is mounted/active).
  *
- * Two standards since Plasmatic Jelly (master plan R7, 2026-10-23):
- *   - IDLE-AT-REST — everything, including every jelly driver.
- *   - IDLE-WHEN-UNSEEN — exactly ONE exception, the engine's ambient haze clock: it keeps
- *     waking its driver (15 Hz idle floor) while a haze surface is visible and stops
- *     (0 Hz, no wake) when nobody can see it.
- *   Since #989 the jelly has ONE rAF, `lib/jelly/frame.ts`; the engine, physics, arc
- *   renderer and fallback light are drivers on it and call no rAF of their own.
- *   `jelly-ownership.test.ts` (N2b) pins that single owner; `jelly-contract.test.ts`
- *   (N1) pins the clock's stop conditions. This test
+ * Two standards:
+ *   - IDLE-AT-REST — everything (Steel R5).
+ *   - IDLE-WHEN-UNSEEN — exactly ONE exception, the chrome globe's idle drift (`lib/globe/view.ts`): a 15 Hz
+ *     tick (7 on handhelds) that stops when the tab is hidden or unfocused, the globe is off screen, or motion
+ *     is Still or reduced (Steel G5a, bounded by `testing/e2e/steel-rest.mjs`). This test
  * enumerates every source that calls `requestAnimationFrame` and asserts the set
  * exactly matches {@link ALLOW}. When it fails:
  *   - a NEW file appears → prove it has a settle/stop condition (idle-at-rest for
@@ -37,11 +33,8 @@ import { join, posix } from 'node:path';
  *                                       and all are deleted (§5.1.1). So was
  *                                       `lib/glass-lens.ts`, whose rAF belonged to
  *                                       a generator with no caller.
- *   - components/radial/RadialHub.tsx, components/radial/QuickPanel.tsx —
- *                                       one-shot rAF to move focus after the
- *                                       menu/panel opens; cancelled in cleanup.
  *   - components/ui/anchored-menu.tsx — two one-shots, no loop: the same
- *                                       move-focus-after-open frame as QuickPanel,
+ *                                       move-focus-after-open frame as a menu,
  *                                       and a re-anchor THROTTLE that coalesces a
  *                                       scroll/resize burst into one frame (the
  *                                       handler no-ops while a frame is already
@@ -50,39 +43,9 @@ import { join, posix } from 'node:path';
  *                                       cleanup, and both effects only run while
  *                                       the menu is open — a page at rest has
  *                                       neither.
- *   - lib/jelly/frame.ts            — the jelly frame driver (#989): the ONE rAF behind
- *                                       the engine's ambient clock and rim draws, the
- *                                       soft body, the arc renderer and the fallback
- *                                       light. Settle proof: a frame is requested only
- *                                       while at least one registered driver is awake;
- *                                       a driver stays awake only by returning `true`
- *                                       from its frame, so when every driver has settled
- *                                       NO frame is requested; `stop()` cancels a pending
- *                                       frame nobody else needs. The ambient clock wakes
- *                                       its driver from a timer (60 Hz engaged, 15 Hz
- *                                       idle floor, 0 when unseen — `policy.ts`
- *                                       `ambientHz`), never by spinning; physics and arcs
- *                                       wake only on input, a strike or a live arc.
- *                                       Proven in lib/jelly/__tests__/frame.test.ts.
- *   - components/radial/LiquidGlobe.tsx — the navigation globe's spin/dwell loop.
- *                                       NOT bounded by mount: the desktop shell
- *                                       DOCKS it (`RadialGlobeDock`), on every page,
- *                                       for the whole visit. So it is idle-at-rest
- *                                       like a jelly driver: it runs every vsync
- *                                       only while something moves (a hand on it,
- *                                       a settle, a ripple, the dwell ring, the
- *                                       soft body, an eversion); otherwise it
- *                                       sleeps on a timer to the next jelly
- *                                       ambient tick (drift + coat haze: engaged
- *                                       rate, then the 15 Hz idle floor after
- *                                       IDLE_AFTER_MS, on the grid it shares with
- *                                       the globe worker's coat clock) — and with NOTHING
- *                                       scheduled under jellyMotion `still`, the
- *                                       degraded tiers, a hidden/unfocused tab or
- *                                       off screen. Every handler that moves it
- *                                       wakes it (raising `dirty`). It writes only
- *                                       transform/opacity/custom properties and
- *                                       reads no layout; unmount cancels both.
+ *   - hooks/fluid-drag-settle.ts      — the settle spring behind `useFluidDrag`: a frame is requested only
+ *                                       between a release and the spring arriving, `cancel()` / `dispose()`
+ *                                       cancel it, and nothing is scheduled at rest.
  *   - components/rideshare/cars/LiquidCarStage.tsx — the RMH family of cars'
  *                                       turntable. Idle-at-rest by construction
  *                                       and NOT bounded by mount, which matters
@@ -129,24 +92,8 @@ import { join, posix } from 'node:path';
  *                                       when its lean changes, or when it is touched, and while a drag/flick/reset
  *                                       is moving, then ends once the spring and the view have settled (`frame()` does not reschedule), so a page at rest runs no
  *                                       loop. It also stops while off screen (IntersectionObserver) or the tab is
- *                                       hidden, draws one still frame under jellyMotion `still`, and cancels its
+ *                                       hidden, draws one still frame under Globe motion `still`, and cancels its
  *                                       pending frame on unmount.
- *   - components/radial/eversion/useEversionController.ts — the eversion controller's two
- *                                       one-shot rAF waits (`nextFrame()`): each resolves one
- *                                       promise and never re-requests a frame.
- *   - lib/eversion/gl/host.ts — the globe-eversion
- *                                       navigation effect's frame loop (its
- *                                       worker, lib/eversion/gl/worker.ts, is a
- *                                       dedicated worker and exempt, see
- *                                       `isWorkerOnlyRaf`; this is the same
- *                                       core's in-thread scheduler where workers
- *                                       cannot present). Bounded by the
- *                                       navigation: the loop starts at `start`
- *                                       and stops at `done`/`abort`/
- *                                       `context-lost`; no loop runs at rest.
- *                                       The core requests a frame only while a
- *                                       run is live and the page is visible, and
- *                                       `host.ts` disposes it on `pagehide`.
  *   - app/routes/_site/library/index.tsx — one-shot rAF that starts the
  *                                       scroll-settle glide after a category
  *                                       switch; cancelled in cleanup and on the
@@ -192,11 +139,6 @@ const ALLOW = new Set<string>([
   // frame and stops (a MutationObserver restarts it), and it is capped at 30 fps (15 on handhelds and
   // low-end devices) with a buffer sized per layout (no per-frame canvas reallocation).
   'components/rmhmusic/learn/PaperBackdrop.tsx',
-  // The ONE jelly frame (#989). The engine, the soft body, the arc renderer and
-  // the fallback cursor light are drivers on it (`drive(fn, { order })`) and call
-  // no rAF themselves. No frame is requested while no driver is awake; `stop()`
-  // cancels. Settle proven in lib/jelly/__tests__/frame.test.ts.
-  'lib/jelly/frame.ts',
   // The chrome renderer's frame source (Steel 4.3, V9). Not a loop: input requests ONE
   // coalesced frame; a frame asks for the next only while a thumb's `--c` is mid-fade
   // or a declared transition (the globe opening) is running. Settle proven in
@@ -299,7 +241,6 @@ const ALLOW = new Set<string>([
   'components/library/LibraryReveal.tsx',
   'components/library/UploadModal.tsx',
   'components/elections/GlobeCanvas.tsx',
-  'components/radial/LiquidGlobe.tsx',
   'components/neon-driftway/NeonDriftwayGame.tsx',
   'features/nightrail/ui/NightrailGame.tsx',
   'components/news/NewsHero.tsx',
@@ -315,8 +256,6 @@ const ALLOW = new Set<string>([
   'components/rmh-pmc/shared.tsx',
   'components/rmhcalculator/ScientificCalculator.tsx',
   'components/rmhcoins/PlinkoGame.tsx',
-  'components/radial/QuickPanel.tsx',
-  'components/radial/RadialHub.tsx',
   'components/rmhtech/RmhtechLanding.tsx',
   'features/signal-forge/ui/SignalForgeGame.tsx',
   'components/site/LanguageSwitcher.tsx',
@@ -324,13 +263,6 @@ const ALLOW = new Set<string>([
   'components/studio/mixer/VUMeter.tsx',
   'features/synapse-storm/ui/PuzzleCard.tsx',
   'components/temple-of-joy/TempleGlobes.tsx',
-  // Globe eversion (T25): bounded by the navigation — the loop starts at `start` and stops at
-  // `done`/`abort`/`context-lost`; no loop runs at rest.
-  'lib/eversion/gl/host.ts',
-  // Globe eversion (T31): ONE-SHOT rAFs, never a loop. `nextFrame()` resolves a single promise
-  // (the two-frame waits before the AFTER capture and before `reveal`, spec §6.3/§6.6), with a
-  // 100 ms timer so a hidden tab cannot hang it. Nothing re-requests a frame from the callback.
-  'components/radial/eversion/useEversionController.ts',
   'components/temple-of-joy/TempleOfJoyGame.tsx',
   // The headline joy/rate readouts write textContent on a frame loop
   // rather than re-rendering their subtree 60 times a second.
@@ -341,6 +273,7 @@ const ALLOW = new Set<string>([
   'components/ui/tabs.tsx',
   'components/velum2099/game/main.ts',
   'features/void-breaker/ui/VoidBreakerGame.tsx',
+  'hooks/fluid-drag-settle.ts',
   'hooks/useCelebration.ts',
   'hooks/useDeviceAttitude.ts',
   'hooks/useLiquidBackground.ts',
@@ -431,7 +364,7 @@ function workerTargets(sources: ReadonlyArray<{ file: string; src: string }>): S
 }
 
 /**
- * A dedicated worker's own `requestAnimationFrame` (e.g. the liquid globe's `components/radial/globe-worker.ts`) is
+ * A dedicated worker's own `requestAnimationFrame` (e.g. a render worker) is
  * not a page frame: it never wakes the page's frame driver or its main thread, which is what this gate guards. Exempt
  * only a file that IS started as a worker somewhere in the repo AND touches no `document.` / `window.` — not a file
  * that merely carries `/// <reference lib="webworker" />` (a directive anyone can add to a page module).
@@ -461,7 +394,7 @@ function usesRaf(file: string): boolean {
 
 describe('the worker exemption bites (fixtures)', () => {
   const host = {
-    file: 'components/radial/globe-worker-host.ts',
+    file: 'fixture/globe-worker-host.ts',
     src: "const w = new Worker(new URL('./globe-worker.ts', import.meta.url), { type: 'module' });",
   };
   const targets = workerTargets([
@@ -475,17 +408,14 @@ describe('the worker exemption bites (fixtures)', () => {
   ]);
 
   it('resolves worker URLs relative to the file that starts them', () => {
-    expect([...targets].sort()).toEqual([
-      'components/radial/globe-worker.ts',
-      'fixture/a/c/tick.worker.ts',
-    ]);
+    expect([...targets].sort()).toEqual(['fixture/a/c/tick.worker.ts', 'fixture/globe-worker.ts']);
   });
 
   it('exempts a real worker that touches no DOM', () => {
     const src = stripComments(
       '/// <reference lib="webworker" />\nscope.requestAnimationFrame(onFrame);',
     );
-    expect(isWorkerOnlyRaf('components/radial/globe-worker.ts', src, targets)).toBe(true);
+    expect(isWorkerOnlyRaf('fixture/globe-worker.ts', src, targets)).toBe(true);
   });
 
   it('does NOT exempt a page module that only carries the webworker directive', () => {
@@ -495,11 +425,7 @@ describe('the worker exemption bites (fixtures)', () => {
 
   it('does NOT exempt a worker target that reaches for the page (document. / window.)', () => {
     expect(
-      isWorkerOnlyRaf(
-        'components/radial/globe-worker.ts',
-        'window.requestAnimationFrame(f);',
-        targets,
-      ),
+      isWorkerOnlyRaf('fixture/globe-worker.ts', 'window.requestAnimationFrame(f);', targets),
     ).toBe(false);
     expect(
       isWorkerOnlyRaf(
@@ -512,13 +438,6 @@ describe('the worker exemption bites (fixtures)', () => {
 
   it('does NOT exempt a file only a comment points at', () => {
     expect(isWorkerOnlyRaf('fixture/ghost.ts', 'requestAnimationFrame(f);', targets)).toBe(false);
-  });
-
-  it("the repo's worker rAF loops are the exempt ones", () => {
-    const real = repoWorkerTargets();
-    expect(real.has('components/radial/globe-worker.ts')).toBe(true);
-    expect(usesRaf('components/radial/globe-worker.ts')).toBe(false);
-    expect(usesRaf('components/radial/LiquidGlobe.tsx')).toBe(true);
   });
 });
 
@@ -538,8 +457,8 @@ describe('§17.3 requestAnimationFrame loop allowlist', () => {
         `\n\nProve each has a settle/stop condition (idle-at-rest for the shared ` +
         `motion tier, or an unmount cancelAnimationFrame for a game/app), then add ` +
         `it to ALLOW in lib/__tests__/raf-loop-allowlist.test.ts. Idle-when-unseen ` +
-        `(a loop that keeps ticking while visible) is reserved for the jelly engine's ` +
-        `ambient clock (docs/plasmatic-jelly-system.md) — ambient motion goes through it.\n`,
+        `(a loop that keeps ticking while visible) is reserved for the chrome globe's ` +
+        `idle drift (lib/globe/view.ts).\n`,
     ).toEqual([]);
   });
 

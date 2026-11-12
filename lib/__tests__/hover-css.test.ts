@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import postcss from 'postcss';
-import { materialHover } from '../hover-css';
+import { hoverPolicy } from '../hover-css';
 
 const compile = async (css: string) =>
-  (await postcss([materialHover()]).process(css, { from: undefined })).css;
+  (await postcss([hoverPolicy()]).process(css, { from: undefined })).css;
 
-describe('material hover CSS policy', () => {
+describe('hover CSS policy', () => {
   it('places guards before pseudo-elements so production CSS minification stays valid', async () => {
     const css = await compile('::-webkit-scrollbar-thumb:hover { filter: brightness(2) }');
     expect(css).toContain(':not(*)::-webkit-scrollbar-thumb');
@@ -29,30 +29,8 @@ describe('material hover CSS policy', () => {
     expect(css).toContain('opacity: .4');
   });
 
-  it("lets the CSS soft body's hover pose through, and only that", async () => {
-    // app/jelly-material.css §8: the soft body is CSS now, and its hover plump/dent is the one sanctioned writer.
-    const css =
-      await compile(`html:not(.native-material) .glass-fill:hover { scale: var(--jelly-hover-plump) }
-      html:not(.native-material) button:hover { scale: var(--jelly-hover-dent); color: red }`);
-    expect(css).toContain('.glass-fill:hover { scale: var(--jelly-hover-plump) }');
-    expect(css).toMatch(/button:hover \{ scale: var\(--jelly-hover-dent\); color: red \}/);
-    // The size-capped form the sheet actually ships (app/jelly-material.css §8) passes too.
-    const cap =
-      'min(var(--jelly-hover-plump), calc(1 + var(--jelly-edge-reach) / var(--jelly-s, 1000)))';
-    expect(await compile(`.glass-fill:hover { scale: ${cap} }`)).toBe(
-      `.glass-fill:hover { scale: ${cap} }`,
-    );
-    // …however Prettier wraps it.
-    const wrapped = `.glass-fill:hover {\n  scale: min(\n    var(--jelly-hover-plump),\n    calc(1 + var(--jelly-edge-reach) / var(--jelly-s, 1000))\n  );\n}`;
-    expect(await compile(wrapped)).toBe(wrapped);
-    const dent =
-      'max(var(--jelly-hover-dent), calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000)))';
-    expect(await compile(`button:hover { scale: ${dent} }`)).toBe(
-      `button:hover { scale: ${dent} }`,
-    );
-    // A hand-written lift, a pose computed from the token, or a raw value is still a second writer.
+  it('strips a hand-written hover lift on the host', async () => {
     const lifts = await compile(`.card:hover { scale: 1.02 }
-      .tile:hover { scale: calc(var(--jelly-hover-plump) * 1.01) }
       .chip:hover { translate: var(--my-lift) }`);
     const root = postcss.parse(lifts);
     root.walkRules((rule) => {
@@ -106,7 +84,7 @@ describe('material hover CSS policy', () => {
         .rule({ selector: 'button:hover' })
         .append({ prop: 'filter', value: 'brightness(2)' }, { prop: 'opacity', value: '1' }),
     );
-    const result = await postcss([materialHover()]).process(root, { from: undefined });
+    const result = await postcss([hoverPolicy()]).process(root, { from: undefined });
     const stable = result.root.first;
     expect(stable?.toString()).toContain('filter: brightness(2)');
     expect(stable?.toString()).not.toContain('opacity');

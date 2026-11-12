@@ -100,58 +100,15 @@ bundle only**. SSR/server builds get the real module.
   everywhere (Web Audio — **always** go through `getAudioContext()`, never
   `new AudioContext()` — plus haptics, idle callbacks, wake lock, fullscreen,
   WebGL detection). `app-toast.ts` is the toast store for the full-screen apps.
-- **Plasmatic Jelly (the site material):** the material itself is CSS
-  (`app/jelly-material.css`: static rim, woken haze, CSS-spring soft body); `jelly/` is
-  what is left of its JavaScript. `tiers.ts` is the single shared policy (tiers,
-  `JELLY_BUDGETS`, `jellyMode()`, `jellyOff()`, opt-out and host selectors,
-  `MOTION_BOUNDS`, `FLASH_LEDGER`; every jelly service reads it, nothing restates it).
-  There is no low-end tier (`perf-lite` was removed 2026-11-08): `JellyTier` is
-  `full | coarse | handheld | off`, and software-rendering or weak devices get the full
-  material. `lib/low-end.ts` is the separate capability read (`isLowEndCapability()`,
-  `softRenderDetected()`) for games, RUM, the eversion mesh tier and the globe's CSS
-  fallback; it is never a class on `<html>` and nothing in `jelly/` or the CSS material
-  reads it (`lib/__tests__/no-perf-lite.test.ts`).
-  `soft-policy.ts` + `spring-curves.ts` hold the soft body's numbers (`SOFT_BODY`,
-  `CSS_SPRINGS`, `CSS_SOFT_BODY`, the size cap) and sample the springs into the
-  `--spring-*` `linear()` tokens (`jelly-spring-tokens.test.ts` keeps the CSS equal).
-  `pointer-vars.ts` is the ONE delegated pointer variable (`--px`, `--py`,
-  `--jelly-s` on the hovered host). `frame.ts` is the ONE jelly
-  `requestAnimationFrame`: every service registers a driver with `drive(fn, { order })` —
-  `useFluidDrag` 5, pointer variable 25, arcs 30 — and no frame runs while no driver is
-  awake; `pointer.ts` is the ONE set of window pointer listeners,
-  `onJellyPointer(type, fn)`. `arc-lazy.ts` is the click arc's installer (one
-  `pointerdown` subscription; imports `arcs/` on the first press, removes it 10 s after
-  the last click). `arcs/` is the click arc: pure `geometry/bolt/rng/rate/ledger/pairs/
-timeline/glow/dispersion/refraction/reflection/impact/flash-budget/nudge`, `charge.ts`
-  (decay, hop carry; the breakdown and Coulomb laws are unreachable now), `clicks`,
-  `field.ts` (timer-driven click charge hops), `runtime` and `renderer.ts` (a frame
-  driver at order 30); `scheduler.ts` and the ambient paths of `field.ts` / `runtime.ts`
-  are dead code kept behind `ambient: false` (the next cut). `@/lib/jelly/arcs` exports
-  `dischargeAt`/`strike`. `registry.ts` (one set of observers over every jelly host,
-  cached rects, no rAF; installed by the arcs), `bus.ts` (typed event bus),
-  `drag-report.ts` (the drag owners' report), `ambient-tick.ts` (the tick grid the globe
-  and its cursor share). Components never import the arc service; they take jelly
-  through role classes and `data-jelly*` attributes. It all mounts from
-  `hooks/useJellyPointer.ts`.
-- **Liquid glass (what the globe still uses):** `liquid/glass/` — the WebGL rim/haze
-  engine (`engine.ts`, `shader.ts`, `haze-shader.ts`, `renderer.ts`, the glass worker) is
-  **gone**. What stays: `scene.ts` + `scene-store.ts` + `scene-feed.ts` (the page snapshot
-  the liquid globe refracts, built on `eversion/capture`; `scene-feed.ts` is the refcounted
-  feed — one picture on load, route change, theme change and resize, nothing at scroll or
-  content mutation; `RadialShell` holds it), `policy.ts` (`innerRadius`, `PLASMA_LOOK`),
-  `color.ts` and `jelly-glsl.ts` (the noise GLSL). `liquid/optics.ts` is the N-BK7 optics;
-  `liquid/hover-css.ts` is the PostCSS plugin that strips hand-written hover lifts
-  (deformation comes from the CSS soft body only). `dough.ts` is the globe's soft-body
-  field (pure, unit-tested; unrelated to `jelly/`). Contract:
-  [`docs/plasmatic-jelly-system.md`](../docs/plasmatic-jelly-system.md).
-- **Frontend WebAssembly:** `wasm/` at the repo root contains AssemblyScript
-  dough and Peirce kernels; `lib/wasm/` owns loading, fixed memory and JavaScript
-  fallbacks. `DoughBody.enableWasm()` migrates the current state after loading;
-  eversion's `gl/core.ts` warms the projection module in its render realm.
-  `lib/wasm/generated/` and `wasm/.generated/` are build outputs. Vite and
-  `pnpm test` compile automatically; direct Vitest runs require `pnpm wasm:build`.
-  Source map, parity tests, benchmarks and deployment prerequisites:
-  [`docs/frontend-webassembly.md`](../docs/frontend-webassembly.md).
+- **The chrome globe's physics (Steel G5a):** `dough.ts` (the soft-body field a poke dents; plain JS,
+  unit-tested), `fluid.ts` (springs, rubber band, the ripple) and `trackball.ts` (free rotation) are the
+  shared primitives `lib/globe/engine.ts` runs on; `lib/chrome/` is the one WebGL renderer. The old
+  material's runtime (`jelly/`, `liquid/`, `eversion/`, `wasm/`) was deleted in Steel phase 6.
+  `lib/low-end.ts` is the separate capability read (`isLowEndCapability()`, `softRenderDetected()`) for
+  games and RUM; it is never a class on `<html>` (`lib/__tests__/no-perf-lite.test.ts`).
+  `lib/hover-css.ts` is the PostCSS plugin that strips hand-written hover lifts and shadows.
+  The Globe motion setting (`lib/appearance/prefs.ts`: `motionStill()`, `html[data-jelly-motion='still']`)
+  stops the globe's idle drift and the games' ambient canvases.
 - **Moderation/admin:** `moderation.server.ts`, `admin-audit.server.ts`,
   `admin-review.server.ts`, `security-reports.ts`.
 - **Webhooks (outbound developer API):** `webhooks/` (emit, events,

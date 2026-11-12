@@ -426,11 +426,14 @@ select:focus-visible,
 input:not([type='checkbox'], [type='radio'], [type='range'], [type='button'], [type='submit'], [type='reset'], [type='file'], [type='color'], [type='image']):focus-visible {
   outline-offset: -1px;
 }
-/* A field with NO box (no border, no padding: the home composer, the reply field) has nothing for a ring to sit on, and
-   a ring would hug the words. Its focus mark is a 2px ink line under it: the same weight and colour as the ring. */
-:is(input, textarea).field-bare:focus-visible {
+/* A text field with NO box (no border, no padding: the home composer, the reply field, the full composer's textarea)
+   has nothing for a ring to sit on: a ring hugs the words, and a line under it reads as a stray rule (owner,
+   2026-11-12: "weird underline? also new post modal is horrendous for that outline"). Such a field shows no ring. Its
+   focus mark is the caret, which only a text field has. A field opts in by saying so: the `field-bare` class, or the
+   `outline-none` / `outline-hidden` utility its author already wrote (this rule is what lets that utility win over the
+   unlayered K10 rule above). Fields with a border keep the ring on it. */
+:is(input, textarea):is(.field-bare, .outline-none, .outline-hidden, [class*='focus:outline-none'], [class*='focus-visible:outline-none'], [class*='focus:outline-hidden'], [class*='focus-visible:outline-hidden']):focus-visible {
   outline: none;
-  box-shadow: 0 2px 0 var(--site-text);
 }
 
 /* Firefox-specific native chrome that ignores our theme:
@@ -463,171 +466,21 @@ textarea,
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Press feedback on tap/click — opacity only, so there's never a layout
-   shift, and it reads on both touch and mouse. Disabled controls stay inert.
-   Material-press elements opt OUT (§5.3): the springy scale on Button
-   ([data-slot='button']) and .glass-interactive is the press cue there — an
-   opacity flicker fights the squish. Links and legacy buttons keep the cue — except where the CSS soft body
-   (app/jelly-material.css §8) springs them: every selector carries that rule's own scope and host list as a
-   `:not(:where(…))` guard (zero specificity; one copy for the whole list), so a control that squashes never also
-   flashes. Two more clauses cover a press that squashes something AROUND the pressed element (Task 8): a plain link
-   inside a host (the card it fills squashes as the card) and anything inside a press body (`data-jelly-press-body`: the
-   group, bar or pill squashes as one body), except a `:focus-visible` member: a keyboard Space/Enter sets `:active` on
-   the member alone, the body does not squash, and this cue is its only press feedback. (A member focused from the
-   keyboard and then clicked can still match `:focus-visible` in Chromium, so that one press shows both.) One that the soft body leaves alone (an opted-out member outside a body, a
-   plain link outside any host, a tab in a Tabs strip, a native-material route, a game in play) keeps this cue.
-   lib/__tests__/jelly-soft-body.test.ts holds the guard equal to the host rule. */
+/* Press feedback on tap/click: opacity only, so there is never a layout shift, and it reads on touch and mouse.
+   Links take it everywhere. Buttons, tabs, menu items and summaries on the site take their press fill from their own
+   component (Steel M1), so the cue is theirs only where no component draws one: a native-material route (the games
+   library, the TF2 hub, RMH Music) and a game in play. Disabled controls stay inert. */
 :is(
-    a:not(.glass-interactive),
-    button:not(:disabled):not([aria-disabled='true']):not([data-slot='button']):not(
-        .glass-interactive
-      ),
-    [role='button']:not([aria-disabled='true']):not(.glass-interactive),
-    [role='tab']:not(.glass-interactive),
-    [role='menuitem']:not(.glass-interactive),
-    summary
-  ):not(
-    :where(
-      html:not(.native-material, [data-game-state='playing'])
-        :is(
-          .glass-fill,
-          .glass-interactive,
-          [data-evert],
-          [data-liquid-surface],
-          [data-fluid-press],
-          [data-jelly='card'],
-          [data-jelly='lift'],
-          [data-jelly='control'],
-          [data-jelly='sink'],
-          [data-jelly='firm'],
-          button,
-          [role='button'],
-          [role='tab'],
-          [role='menuitem'],
-          [role='switch'],
-          [role='option'],
-          summary,
-          [data-slot='button'],
-          [data-jelly-press-body]
-        ):not(
-          .glass-pane:not([data-jelly-press-body]),
-          .glass-chrome:not([data-jelly-press-body]),
-          .glass-overlay,
-          .glass-inset,
-          .app-glass,
-          [data-liquid-glass]:not(.glass-fill, .glass-interactive),
-          [data-jelly='off'],
-          [data-jelly='none'],
-          [data-jelly='pane'],
-          [data-jelly='drag'],
-          [data-liquid-material='off'],
-          [data-liquid-motion='off'],
-          [data-fluid-press='off'],
-          [data-fluid-press='none'],
-          :disabled,
-          [aria-disabled='true'],
-          [data-evert-delegate],
-          [data-gesture]:not([data-gesture='hold']),
-          [draggable='true'],
-          input,
-          textarea,
-          select,
-          [contenteditable='true'],
-          [contenteditable=''],
-          canvas,
-          video,
-          iframe,
-          .radial-globe,
-          .radial-globe__stage,
-          .radial-globe__glass,
-          .radial-globe__jelly,
-          .radial-globe__cage,
-          .radial-globe__skin,
-          .rad-globe-dock,
-          .eversion-overlay,
-          .evert-ghost,
-          :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
-          :is(
-              [data-jelly-scope='off'],
-              [data-jelly-zone='playfield'],
-              [data-liquid-motion='off'],
-              [inert]
-            )
-            *
-        ),
-      html:not(.native-material, [data-game-state='playing'])
-        :is(
-          .glass-fill,
-          .glass-interactive,
-          [data-evert],
-          [data-liquid-surface],
-          [data-fluid-press],
-          [data-jelly='card'],
-          [data-jelly='lift'],
-          [data-jelly='control'],
-          [data-jelly='sink'],
-          [data-jelly='firm'],
-          button,
-          [role='button'],
-          [role='tab'],
-          [role='menuitem'],
-          [role='switch'],
-          [role='option'],
-          summary,
-          [data-slot='button'],
-          [data-jelly-press-body]
-        ):not(
-          .glass-pane:not([data-jelly-press-body]),
-          .glass-chrome:not([data-jelly-press-body]),
-          .glass-overlay,
-          .glass-inset,
-          .app-glass,
-          [data-liquid-glass]:not(.glass-fill, .glass-interactive),
-          [data-jelly='off'],
-          [data-jelly='none'],
-          [data-jelly='pane'],
-          [data-jelly='drag'],
-          [data-liquid-material='off'],
-          [data-liquid-motion='off'],
-          [data-fluid-press='off'],
-          [data-fluid-press='none'],
-          :disabled,
-          [aria-disabled='true'],
-          [data-evert-delegate],
-          [data-gesture]:not([data-gesture='hold']),
-          [draggable='true'],
-          input,
-          textarea,
-          select,
-          [contenteditable='true'],
-          [contenteditable=''],
-          canvas,
-          video,
-          iframe,
-          .radial-globe,
-          .radial-globe__stage,
-          .radial-globe__glass,
-          .radial-globe__jelly,
-          .radial-globe__cage,
-          .radial-globe__skin,
-          .rad-globe-dock,
-          .eversion-overlay,
-          .evert-ghost,
-          :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
-          :is(
-              [data-jelly-scope='off'],
-              [data-jelly-zone='playfield'],
-              [data-liquid-motion='off'],
-              [inert]
-            )
-            *
-        )
-        a:not([data-slot], [role], [data-fluid-press], .glass-interactive),
-      html:not(.native-material, [data-game-state='playing'])
-        [data-jelly-press-body]
-        *:not(:focus-visible)
+  a,
+  html:is(.native-material, [data-game-state='playing'])
+    :is(
+      button:not(:disabled):not([aria-disabled='true']):not([data-slot='button']),
+      [role='button']:not([aria-disabled='true']),
+      [role='tab'],
+      [role='menuitem'],
+      summary
     )
-  ):active {
+):active {
   opacity: 0.6;
   transition: opacity 60ms ease;
 }

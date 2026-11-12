@@ -273,20 +273,9 @@ review_site "Gradient, blur, glow or mask in a class (Steel R1, B2)" \
   'class.*(^|[^A-Za-z0-9:_-])(backdrop-blur|blur-|bg-gradient-|bg-linear-|bg-radial-|bg-conic-|mix-blend-|drop-shadow|shadow-(sm|md|lg|xl|2xl|inner))' \
   'Steel has no gradient, blur, glow, blend or shadow on content: surfaces are solid colours from the section-2 tokens, an overlay is the one raised surface (docs/plans/2026-11-11-steel-design-implementation.md S5). Chrome lives in steel-chrome.css and globe-nav.css only (phases 2 and 3).'
 
-# Previews of the vitest gates that still run (lib/__tests__/jelly-ownership.test.ts N2, site-infinite-animation N3,
-# design-consistency N11), scoped to added lines. The old material's own rules are gone with the material.
-# The /jelly lab (app/routes/jelly.tsx) is the one sanctioned importer — it demonstrates strike() on
-# demand — matching jelly-ownership.test.ts N2(a). POSIX ERE has no lookahead, so it is filtered out after the scan.
-n2_hits=$(scan '^(components|app/routes)/.*\.tsx?$' "from ['\"]@/lib/jelly/(physics|compose|bridge|arcs)" |
-  grep -v '^  app/routes/jelly\.tsx:' || true)
-if [ -n "$n2_hits" ]; then
-  fail "Component imports the jelly physics/arc service (N2)"
-  printf '%s\n' "$n2_hits"
-  printf '%s    → %s%s\n' "$dim" 'The jelly services are the old material (historical since Steel; phase 6 deletes them) and mount once from hooks/useJellyPointer.ts. Do not import them from a component.' "$off"
-fi
-
-# The vitest gate (site-infinite-animation N3) pins the frozen list of loops that may remain and stays the authority.
-n3_hits=$(scan '^(app/([^/]*|globals/[^/]*)|components/(ui|radial|feed|site)/.*)\.css$' \
+# Preview of the vitest gate (site-infinite-animation N3, design-consistency N11), scoped to added lines.
+# site-infinite-animation N3 pins the frozen list of loops that may remain and stays the authority.
+n3_hits=$(scan '^(app/([^/]*|globals/[^/]*)|components/(ui|feed|site|shell)/.*)\.css$' \
   '(animation[^:;]*:[^;]*infinite|animation-iteration-count:[[:space:]]*infinite)' || true)
 if [ -n "$n3_hits" ]; then
   fail "Perpetual CSS animation (N3)"
@@ -297,18 +286,6 @@ fi
 review_site "Framer gesture transform on a site surface (N11)" \
   'while(Hover|Tap)[[:space:]]*=[[:space:]]*\{[^}]*(scale|[^a-z]x|[^a-z]y)[[:space:]]*:' \
   'Steel M6: no hover lifts, springs or press squash (docs/plans/2026-11-11-steel-design-implementation.md section 11).'
-
-# N9 (review until the data-liquid-* codemod lands, then blocking): the
-# Liquid Glass vocabulary stops growing. New code speaks jelly.
-review "Old Liquid Glass vocabulary (N9)" \
-  '^(components|app|hooks|lib)/.*\.(tsx?|css)$' \
-  '(data-liquid-[a-z]+|@/lib/liquid/(runtime|glass/engine))' \
-  'New opt-outs are data-jelly="off" / data-jelly-scope="off" (lib/jelly/tiers.ts OPT_OUT_SELECTOR); the jelly services mount from hooks/useJellyPointer.ts only. The old spelling is still read, never newly written.'
-if git "${DIFF[@]}" --name-only --diff-filter=A 2>/dev/null | grep -qE '(^|/)(liquid-[^/]*|useLiquid[^/]*)$'; then
-  warn "New file named liquid-* / useLiquid* (N9)"
-  git "${DIFF[@]}" --name-only --diff-filter=A 2>/dev/null | grep -E '(^|/)(liquid-[^/]*|useLiquid[^/]*)$' | sed 's/^/  /'
-  printf '%s    → New jelly code is named jelly-* / useJelly* (docs/plans/plasmatic-jelly/05-gates-docs-naming.md §3). Existing names stay.%s\n' "$dim" "$off"
-fi
 
 review "Per-frame write to a root custom property" \
   '^(components|app|hooks|lib)/.*\.tsx?$' \
@@ -404,7 +381,6 @@ else
     lib/__tests__/appearance-contrast.test.ts
     lib/__tests__/color-vision-a11y.test.ts
     lib/__tests__/responsive-layout-contract.test.ts
-    lib/__tests__/portal-token-scope.test.ts
     lib/__tests__/raf-loop-allowlist.test.ts
     lib/__tests__/performance-guardrails.test.ts
     lib/__tests__/api-handler-adoption.test.ts
@@ -417,28 +393,11 @@ else
     lib/__tests__/test-discovery.test.ts
     lib/__tests__/fouc-contract.test.ts
     lib/__tests__/handheld-tier.test.ts
-    lib/__tests__/jelly-contract.test.ts
-    lib/__tests__/jelly-ownership.test.ts
     lib/__tests__/steel-flat.test.ts
     lib/__tests__/steel-tokens.test.ts
     lib/__tests__/site-infinite-animation.test.ts
     lib/__tests__/doc-pointers.test.ts
     lib/__tests__/appearance-jelly-motion.test.ts
-    lib/__tests__/appearance-electric-arcs.test.ts
-    # The arc renderer (the arcs' only rAF owner) and runtime are named on
-    # their own as well as through lib/jelly/, so moving the directory can
-    # never silently drop the flash-ledger / live-arc-only contract.
-    lib/jelly/arcs/__tests__/renderer.test.ts
-    lib/jelly/arcs/__tests__/runtime.test.ts
-    # The one jelly frame driver and the one pointer hub (#989) — named for the
-    # same reason: they are the settle proof the rAF allowlist and N2(b) cite.
-    lib/jelly/__tests__/frame.test.ts
-    lib/jelly/__tests__/pointer.test.ts
-    # The pointer-variable service's and the arc renderer's frame and pointer
-    # ownership (#989).
-    lib/liquid/__tests__/frame-owners.test.ts
-    lib/jelly/
-    lib/liquid/
   )
   if [ "$FULL" = 1 ]; then
     if pnpm test; then pass "full vitest suite"; else fail "vitest suite"; fi

@@ -62,24 +62,17 @@ model AppearancePreference {
   /// 'tritanopia'; null/'none' → the untouched palette. Retints the semantic
   /// success/danger/warning tokens only.
   colorVision        String? @db.VarChar(16)
-  /// Globe-eversion navigation transition (spec §9.3): 'random' | one
-  /// projection id (see NAV_TRANSITIONS in lib/eversion/types.ts); null →
-  /// 'random'. Nullable with no backfill so the old image never names it.
+  /// Retired (Steel phase 6): the page-eversion transition, kept for database compatibility, never read or written.
   navTransition      String? @db.VarChar(16)
-  /// "Always evert globe" (spec amendment 2026-10-18): run the eversion even
-  /// where it is skipped for performance. Never overrides reduced motion.
+  /// Retired (Steel phase 6): "always evert globe", kept for database compatibility, never read or written.
   alwaysEvertGlobe   Boolean @default(false)
-  /// Eversion level (spec amendment 2026-10-21): 'all' | 'globe' (see
-  /// EVERSION_LEVELS in lib/appearance/prefs.ts); null -> 'all'. Nullable with
-  /// no backfill so the old image never names it.
+  /// Retired (Steel phase 6): the eversion level, kept for database compatibility, never read or written.
   eversionLevel      String? @db.VarChar(8)
-  /// Jelly motion (Plasmatic Jelly R8): 'lively' | 'calm' | 'still' (see
-  /// JELLY_MOTION_LEVELS in lib/appearance/prefs.ts); null -> 'lively'. A new
-  /// column on purpose: the retired `reduceMotion` holds stale values with
-  /// different semantics. Nullable with no backfill.
+  /// Globe motion: 'lively' | 'still' (see JELLY_MOTION_LEVELS in lib/appearance/prefs.ts); null -> 'lively'. A stored
+  /// 'calm' (the retired middle level) reads as 'lively'. A new column on purpose: the retired `reduceMotion` holds
+  /// stale values with different semantics. Nullable with no backfill.
   jellyMotion        String? @db.VarChar(8)
-  /// Electric arcs (Plasmatic Jelly R9): 'full' | 'clicks' | 'off' (see
-  /// ELECTRIC_ARC_MODES); null -> 'full'. Nullable with no backfill.
+  /// Retired (Steel phase 6): the click-arc mode, kept for database compatibility, never read or written.
   electricArcs       String? @db.VarChar(8)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

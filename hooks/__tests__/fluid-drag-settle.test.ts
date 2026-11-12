@@ -1,6 +1,5 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import { createFrameLoop } from '@/lib/jelly/frame';
 import { createSettle } from '../fluid-drag-settle';
 
 function fakeWindow() {
@@ -28,9 +27,9 @@ function fakeWindow() {
 
 function setup() {
   const f = fakeWindow();
-  const loop = createFrameLoop(f.win);
-  const make = () => createSettle({ drive: (fn, o) => loop.drive(fn, o) });
-  return { ...f, loop, make };
+  const make = () =>
+    createSettle({ raf: f.win.requestAnimationFrame, caf: f.win.cancelAnimationFrame });
+  return { ...f, make };
 }
 
 describe('createSettle', () => {
@@ -46,8 +45,8 @@ describe('createSettle', () => {
     expect(pending.size).toBe(0);
   });
 
-  it('dispose mid-settle stops the driver', () => {
-    const { make, step, pending, loop } = setup();
+  it('dispose mid-settle stops the frame', () => {
+    const { make, step, pending } = setup();
     const settle = make();
     const onStep = vi.fn();
     const onDone = vi.fn();
@@ -60,7 +59,6 @@ describe('createSettle', () => {
     expect(onStep.mock.calls.length).toBe(calls);
     expect(onDone).not.toHaveBeenCalled();
     expect(pending.size).toBe(0);
-    expect(loop.size).toBe(0);
   });
 
   it('two settles run independently', () => {

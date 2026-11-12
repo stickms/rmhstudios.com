@@ -16,8 +16,6 @@ export default tseslint.config(
   {
     ignores: [
       '.cache/**',
-      // AssemblyScript has its own compiler/types and is checked by wasm:build.
-      'wasm/**',
       '.output/**',
       '.tanstack/**',
       '.vinxi/**',

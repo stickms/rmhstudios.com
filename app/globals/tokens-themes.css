@@ -191,16 +191,10 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1); /* looping orbit / sweep motion */
   --ease-pulse: cubic-bezier(0.4, 0, 0.6, 1); /* Tailwind's pulse, symmetric */
   --ease-exit-in: cubic-bezier(0.4, 0, 1, 1); /* accelerating exits that leave the screen */
-  --ease-evert-in: cubic-bezier(0.55, 0, 1, 0.45); /* the eversion's gather-in, steeper than exit-in */
   --ease-crawl: cubic-bezier(0.1, 0.7, 0.2, 1); /* the nav progress bar's slow crawl to 90% */
   --ease-overshoot: cubic-bezier(0.34, 1.2, 0.4, 1); /* a soft 3D overshoot (library covers) */
   --ease-pop: cubic-bezier(0.34, 1.4, 0.64, 1); /* overshoot pop; WebKit fallback of --spring-snappy */
   --ease-morph: cubic-bezier(0.32, 0.72, 0, 1); /* scoped View Transition group morph */
-  /* The docked globe's one-shot shimmer: a gentle symmetric ease-in-out, kept byte-exact (E7). */
-  --ease-shimmer: cubic-bezier(0.45, 0, 0.25, 1);
-  /* The docked globe's own timings (components/radial, deleted in phase 6). */
-  --globe-coat-fade: 420ms;
-  --globe-enter: 560ms;
 
   /* Geist for everything, Geist Mono for data (CLAUDE.md "Identity"). The
      metric-matched 'Geist Fallback' (inside --font-geist) then the OS face
@@ -320,11 +314,9 @@
   /* ── §5.6 Shell stacking scale ────────────────────────────────────────────
      One ordered set of layers for the application chrome, so a new fixed element
      picks a NAME rather than inventing a number that happens to work today.
-     Everything here paints inside `.radial-shell`, which sets `isolation:
-     isolate` — that caps the whole scale below any positioned body-level sibling
-     (dialogs, sheets and the toaster all portal out to `<body>` at z-50+), which
-     is what keeps a modal above the chrome no matter what these say. */
-  --z-backdrop: 0;
+     Everything here paints inside the site shell, which isolates it below any positioned
+     body-level sibling (dialogs, sheets and the toaster all portal out to `<body>` at z-50+),
+     which is what keeps a modal above the chrome no matter what these say. */
   --z-content: 1;
   --z-rail: 2;
   --z-topbar: 60;
@@ -338,18 +330,10 @@
   /* The in-call banner, and the call dialogs opened from it one layer above. */
   --z-call: 120;
   --z-call-dialog: 121;
-  /* Body-level, not shell-level: the top bar's quick panels portal out of the
-     shell (the bar's `backdrop-filter` would otherwise be their containing
-     block). 40 sits above `.radial-shell` — which participates at z-auto — and
-     below the z-50 dialogs/sheets, so a modal still covers a popover. */
-  --z-quickpanel: 40;
-  /* Body-level for the same reason, but for menus that hang off a trigger in the
-     PAGE rather than in the top bar (the composer's (+) menu — see
-     components/ui/anchored-menu). Page content renders inside `.radial-frame`,
-     which is itself a stacking context pinned at `--z-content`, so a menu left
-     in place is capped at 1 relative to the chrome and the top bar (60), the hub
-     orb and the compose FAB (80) all paint over it. Same band as the quick
-     panels: above the shell, below the z-50 dialogs. */
+  /* Body-level: a menu that hangs off a trigger in the page (the composer's (+) menu — see
+     components/ui/anchored-menu) portals to <body>, because page content sits in a stacking context pinned at
+     `--z-content`, so a menu left in place would be capped at 1 and the floating chrome (80) would paint over it.
+     Above the shell, below the z-50 dialogs. */
   --z-menu: 40;
   /* The same menu opened from INSIDE a modal (the composer's emoji picker and @mention list):
      it portals to <body>, outside the dialog's z-50 layer, so at 40 it would paint behind the
@@ -357,13 +341,6 @@
      `Select`'s z-[60] (all 60), below the floating hub (80) and tooltips. Its own value: tokens
      never tie (lib/__tests__/stacking-consistency.test.ts). Applied in components/ui/anchored-menu.css. */
   --z-menu-in-dialog: 65;
-  /* Electric arcs (Plasmatic Jelly, 03-arcs.md §4.1): the body-level Canvas2D
-     `.jelly-arc-layer`. Above the quick panels / menus (40), so a bolt can land on
-     a top-bar button; below the z-50 dialogs and sheets, so a modal covers it.
-     A click arc INSIDE an open modal lifts the layer to `--z-arcs-modal` for its
-     lifetime (above the dialog band, still below tooltips and the toaster). */
-  --z-arcs: 45;
-  --z-arcs-modal: 55;
   --z-skip: 200;
   /* The ordinary modal band — what `Dialog` / `Sheet` (Tailwind `z-50`) paint at. Library overlays
      that portal to <body> name it instead of repeating the number. */

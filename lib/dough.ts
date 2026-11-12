@@ -116,8 +116,6 @@ export function pressTarget(dx: number, dy: number, out: { x: number; y: number 
   out.y = (dy / r) * f * PRESS_PUSH;
 }
 
-import type { DoughKernel } from './wasm/dough';
-
 export class DoughBody {
   readonly n = DOUGH_N;
   readonly extent = DOUGH_EXTENT;
@@ -153,8 +151,6 @@ export class DoughBody {
   private mask = new Float32Array(DOUGH_N * DOUGH_N);
   /** The most a cell's material may be carried (see `reachFor`), radii. */
   private reach = new Float32Array(DOUGH_N * DOUGH_N);
-  private wasm: DoughKernel | null = null;
-  private wasmLoading: Promise<boolean> | undefined;
   private held = false;
   private vx = 0;
   private vy = 0;
@@ -172,62 +168,6 @@ export class DoughBody {
         this.reach[j * DOUGH_N + i] = reachFor(Math.hypot(x, y));
       }
     }
-  }
-
-  /** Warm off the critical path; migrate current state atomically without losing a drag. */
-  enableWasm(): Promise<boolean> {
-    this.wasmLoading ??= import('./wasm/dough')
-      .then(async ({ createDoughKernel }) => {
-        const kernel = await createDoughKernel();
-        if (!kernel) return false;
-        const arrays = [
-          this.ex,
-          this.ey,
-          this.evx,
-          this.evy,
-          this.px,
-          this.py,
-          this.ux,
-          this.uy,
-          this.hh,
-          this.lapX,
-          this.lapY,
-          this.mask,
-          this.field,
-        ];
-        let offset = kernel.pointer();
-        const views = arrays.map((array) => {
-          const view = new Float32Array(kernel.memory.buffer, offset, array.length);
-          view.set(array);
-          offset += array.byteLength;
-          return view;
-        });
-        [
-          this.ex,
-          this.ey,
-          this.evx,
-          this.evy,
-          this.px,
-          this.py,
-          this.ux,
-          this.uy,
-          this.hh,
-          this.lapX,
-          this.lapY,
-          this.mask,
-          this._field,
-        ] = views;
-        this.wasm = kernel;
-        this.version++;
-        return true;
-      })
-      .catch(() => false)
-      .then((ok) => {
-        // Not loaded: forget it so a later call can try again (`wasmModule` bounds the fetches).
-        if (!ok) this.wasmLoading = undefined;
-        return ok;
-      });
-    return this.wasmLoading;
   }
 
   /** Take hold at (x, y). */
@@ -365,18 +305,6 @@ export class DoughBody {
   }
 
   private substep(dt: number): void {
-    if (this.wasm) {
-      this.pinch = this.wasm.substep(
-        dt,
-        this.held ? 1 : 0,
-        this.gx,
-        this.gy,
-        this.vx,
-        this.vy,
-        this.pinch,
-      );
-      return;
-    }
     const N = DOUGH_N;
     const { ex, ey, evx, evy, px, py, lapX, lapY, mask } = this;
     const held = this.held;
@@ -481,10 +409,6 @@ export class DoughBody {
    * the limb all the way out instead of stopping where the shader's own two-pass guess ran out of field.
    */
   private derive(): void {
-    if (this.wasm) {
-      this.wasm.derive();
-      return;
-    }
     const N = DOUGH_N;
     const { ex, ey, px, py, ux, uy, hh, field, reach } = this;
     const h = this.h;

@@ -2,7 +2,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import type { Box3, Object3D } from 'three';
-import { jellyMotionLevel } from '@/lib/jelly/tiers';
+import { motionStill } from '@/lib/appearance/prefs';
 import type { EffectPlacement } from '@/lib/tf2-loadout/catalog-types';
 import { createParticleEnvironment } from '@/lib/tf2-loadout/particles/attachments';
 import { acquireTextures, useParticleBundle } from '@/lib/tf2-loadout/particles/client';
@@ -95,10 +95,10 @@ export default function EffectParticles({
   useFrame(({ scene, camera, clock }, delta) => {
     if (!runtime || !visible.current || document.hidden) return;
     runtime.attachment.update();
-    if (jellyMotionLevel() !== 'still') runtime.renderer.simulation.advance(delta);
+    if (!motionStill()) runtime.renderer.simulation.advance(delta);
     const sceneCopy = capture.current?.update(scene, camera, clock.elapsedTime);
     runtime.renderer.update(camera, spec.placement.s, sceneCopy);
-    if (jellyMotionLevel() !== 'still') invalidate();
+    if (!motionStill()) invalidate();
   });
   return runtime ? <primitive object={runtime.renderer.group} /> : null;
 }

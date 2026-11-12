@@ -1,9 +1,7 @@
-import { useContext, useEffect, useLayoutEffect } from 'react';
+import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShellLayoutContext } from '@/components/feed/shell-context';
-import { markPageEnterComplete } from '@/lib/motion';
-import { finishEntranceAnimations } from '@/lib/page-transition';
 
 /**
  * Default `pendingComponent` for the router (see `app/router.tsx`).
@@ -27,23 +25,6 @@ export function RoutePending() {
   // whenever we're rendering a pending shell page and `false` on full-screen
   // routes (which own their whole viewport).
   const inShell = useContext(ShellLayoutContext);
-
-  // The skeleton is a mount too: finish the one-shot entrances it brings (its heading's rise) before they paint, so a
-  // slow navigation does not blink twice (once for the skeleton, once for the page).
-  useLayoutEffect(() => {
-    const column = document.querySelector('.page-root');
-    if (column) finishEntranceAnimations(column);
-  }, []);
-
-  useEffect(
-    () => () => {
-      // Suspense/pending UI already communicated that navigation is underway.
-      // Passive unmount cleanup runs after React commits the destination DOM, so
-      // it can be marked immediately before the global page entrance can replay.
-      markPageEnterComplete();
-    },
-    [],
-  );
 
   return inShell ? <SitePagePending /> : <GenericPending />;
 }
