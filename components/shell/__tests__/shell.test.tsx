@@ -243,7 +243,17 @@ describe('the globe animates transform and opacity only, in 360 ms (G2, G6)', ()
     expect(css).not.toMatch(/data-slot-pos/);
     expect(css).toMatch(/\.globe-nav__write \{\s*--dy: calc\(var\(--globe-open-d\) \/ 2 \+ 40px\);/);
     // The pins wait for the body: nothing is shown at a wrong place before lib/globe has landed.
-    expect(css).toMatch(/\.globe-nav\[data-open\]\[data-globe-live\] \.globe-nav__pins \{\s*opacity: 1;/);
+    expect(css).toMatch(/\.globe-nav\[data-globe-live\] \.globe-nav__pins \{\s*opacity: 1;/);
+  });
+
+  it('carries its icons docked too: the anchor sits at the ball and is scaled with it, and takes no pointer until open', () => {
+    const pins = /\n\.globe-nav__pins \{([^}]*)\}/.exec(css)![1]!;
+    expect(pins).toContain('inset-block-end: calc(var(--globe-bottom) + var(--globe-d) / 2)');
+    expect(pins).toContain('transform: scale(calc(1 / var(--globe-scale, 4.5)))');
+    expect(pins).toContain('pointer-events: none');
+    expect(css).toMatch(/\.globe-nav\[data-open\]\[data-globe-live\] \.globe-nav__pins \{\s*pointer-events: auto;/);
+    // Docked the pins are a picture: the nav is inert until the menu opens.
+    expect(html()).toMatch(/class="globe-nav__pins"[^>]* inert/);
   });
 
   it('is the navigator on desktop too: a 124px ball at the foot of the sidebar that grows to 440px', () => {

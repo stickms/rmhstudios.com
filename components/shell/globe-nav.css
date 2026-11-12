@@ -52,7 +52,7 @@
     display: none;
   }
   .globe-nav .globe-nav__pins {
-    inset-block-start: 50%;
+    inset-inline-start: calc(var(--globe-start) + var(--globe-d) / 2);
   }
 }
 
@@ -202,29 +202,48 @@ html.ios-webkit .globe-nav__fade {
   white-space: nowrap;
 }
 
-/* The pins: a 0 x 0 anchor at the centre of the visible area. Each pin is placed from it. */
+/* The pins: a 0 x 0 anchor at the CENTRE OF THE GLOBE, wherever the globe is. Each pin is placed from it at the open
+   globe's radius (lib/globe/view.ts), and the anchor is scaled by the inverse of the globe's own scale while docked and
+   makes the globe's own move when it opens, so the icons ride the ball at both sizes and through the move between them
+   (owner, 2026-11-12: the icons orbit the small globe too, as they did on the liquid globe). Docked they are a picture:
+   the nav is `inert` and takes no pointer, so the ball under them is still the button. */
 .globe-nav__pins {
   position: fixed;
   inset-inline-start: 50%;
-  inset-block-start: calc(50% - var(--vv-follow, 0px) / 2);
+  inset-block-end: calc(var(--globe-bottom) + var(--globe-d) / 2);
   inline-size: 0;
   block-size: 0;
-  z-index: calc(var(--z-hub-orb-open) + 1);
+  z-index: var(--z-floating);
   opacity: 0;
-  visibility: hidden;
   pointer-events: none;
+  transform: scale(calc(1 / var(--globe-scale, 4.5)));
   transition:
-    opacity 0.1s ease,
-    visibility 0s linear 0.1s;
+    transform 0.36s var(--globe-ease),
+    opacity 0.18s ease;
 }
-/* G3: pins fade in 180 ms after a 160 ms delay. */
-.globe-nav[data-open][data-globe-live] .globe-nav__pins {
+.globe-nav[data-globe-live] .globe-nav__pins {
   opacity: 1;
-  visibility: visible;
+}
+.globe-nav[data-open] .globe-nav__pins {
+  z-index: calc(var(--z-hub-orb-open) + 1);
+  transform: translate(var(--globe-shift, 0px), calc(-1 * var(--globe-travel)));
+}
+[dir='rtl'] .globe-nav[data-open] .globe-nav__pins {
+  transform: translate(calc(-1 * var(--globe-shift, 0px)), calc(-1 * var(--globe-travel)));
+}
+.globe-nav[data-open][data-globe-live] .globe-nav__pins {
   pointer-events: auto;
-  transition:
-    opacity 0.18s ease 0.16s,
-    visibility 0s;
+}
+/* Docked, an icon would be 8px (10px on desktop) at the globe's scale: it is drawn 1.7 times that so it still reads,
+   and it carries no name, ring or count. The links under the globe belong to the open menu only. */
+.globe-nav__pin-dot {
+  transition: transform 0.36s var(--globe-ease);
+}
+.globe-nav:not([data-open]) .globe-nav__pin-dot {
+  transform: scale(1.7);
+}
+.globe-nav:not([data-open]) :is(.globe-nav__pin-name, .globe-nav__pin-ring, .globe-nav__count, .globe-nav__write, .globe-nav__more) {
+  visibility: hidden;
 }
 
 /* Everything in the nav is placed from the 0 x 0 anchor at the centre. The two text links sit under the globe. */
@@ -400,6 +419,7 @@ html.ios-webkit .globe-nav__fade {
   .globe-nav__globe::after,
   .globe-nav__veil,
   .globe-nav__pins,
+  .globe-nav__pin-dot,
   .globe-nav__dot {
     transition: none;
   }
