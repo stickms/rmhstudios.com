@@ -1,7 +1,7 @@
 /** Contract for the solo Laundry Sort score submit (redesign audit C1, batch 10). Client-safe. */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type { LeaderboardRow } from '@/app/routes/api/laundry-sort/leaderboard';
+import type { LeaderboardRow } from '@features/laundry-sort/api/laundry-sort.leaderboard.server';
 import type { laundryScoreBody } from './score-schema';
 
 export const submitLaundryScoreApi = endpoint<{

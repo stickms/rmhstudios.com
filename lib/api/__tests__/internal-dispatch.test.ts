@@ -14,8 +14,8 @@ describe('in-process API reads', () => {
     expect(templateOfRouteFile('/app/routes/api/tf2-hud/$id.download.ts')).toBe(
       '/api/tf2-hud/$id/download',
     );
-    expect(templateOfRouteFile('/app/routes/api/elections/races[.]csv.ts')).toBe(
-      '/api/elections/races.csv',
+    expect(templateOfRouteFile('/app/routes/api/v1/openapi[.]json.ts')).toBe(
+      '/api/v1/openapi.json',
     );
   });
 

@@ -83,9 +83,9 @@ path, image})` + `buildCanonical(path)` from `@/lib/seo` (see
 ## Adding an API route
 
 **First decide where it lives (third-pass audit AR3).** An endpoint whose handlers
-are all `implement()` bindings of a typed contract is **not a file here**: it is a
-registered module next to its contract, served by the one dispatcher
-`app/routes/api/$.ts`.
+all go through the wrapper is **not a file here**: it is a registered module in its
+domain's `api/` folder, served by the one dispatcher `app/routes/api/$.ts`. A new
+endpoint binds a typed contract with `implement()`:
 
 ```ts
 // lib/widgets/api/widgets.$id.server.ts   (path /api/widgets/$id, slashes written as dots)
@@ -102,14 +102,24 @@ export const route = apiRoute('/api/widgets/$id', {
 Then `pnpm api:routes` (regenerates `lib/api/route-table.server.ts`, the static list
 the dispatcher reads; `lib/api/__tests__/route-table.test.ts` fails if it is stale). No
 route tree change, nothing added to the client entry. A feature's handlers go in
-`features/<id>/api/`; a contract at the top of `lib/` uses `lib/api/routes/`.
+`features/<id>/api/`; an endpoint no domain owns uses `lib/api/routes/`.
 
-It **stays a route file** when it is anything else: a `defineHandler` with no
-contract, a stream or SSE, a redirect, a file or image response, a splat, a webhook,
-`/api/auth/$`, `/api/v1/**`. It also stays a file while a `$param` route file beside
-it would answer its path (`/api/messages/search` beside
-`/api/messages/$conversationId`): the router prefers any route file to the
-dispatcher's splat, so the two move together. The table test names the pair.
+A registered handler may also be a bare `defineHandler(options, handler)` with no
+contract. Just over half of the table is: 453 route files moved that way in AR3 part 2, body
+and options unchanged, because writing their contracts is first-audit C1 work. Such a
+module sits in the `api/` folder of the feature or `lib/` domain its path names or
+its code calls. Do not add new ones; give a new endpoint a contract. A wrapped
+handler that reads a multipart body, or answers with a file, an image or a redirect,
+is registered like any other: the dispatcher passes the same `Request` and returns
+the handler's `Response` untouched.
+
+It **stays a route file** when a handler is written without the wrapper (a webhook
+that verifies a raw body, an internal hook, an image or file route with its own
+caching), and when it is a splat, a stream or SSE response, `/api/auth/$` or
+`/api/v1/**`. It also stays a file while a `$param` route file beside it would answer
+its path (`/api/spaces/live` beside the raw `/api/spaces/$id`): the router prefers
+any route file to the dispatcher's splat, so the two move together. The table test
+names the pair.
 
 The dispatcher keeps what a route file did: the handler gets `{ request, params }`;
 HEAD falls back to GET; a method the endpoint does not handle, and a path nothing
@@ -117,8 +127,9 @@ answers, fall through to the app render exactly as before (an HTML shell, or the
 site 404).
 
 Route files are `.ts` files with `server.handlers` keyed by HTTP method
-(GET/POST/PUT/PATCH/DELETE/OPTIONS). Every handler goes through
-**`defineHandler`** from `@/lib/api/handler.server`, which runs the canonical
+(GET/POST/PUT/PATCH/DELETE/OPTIONS). Every handler, in a route file or a registered
+module, goes through **`defineHandler`** from `@/lib/api/handler.server` (`implement`
+is `defineHandler` bound to a contract), which runs the canonical
 auth → rate limit → validate → act order and catches anything that throws:
 
 ```ts

@@ -1,9 +1,10 @@
 /**
  * One registered API endpoint (third-pass audit AR3).
  *
- * An endpoint that only binds contracts with `implement()` is not a file under
- * `app/routes/api` any more. It is a module next to its contract that exports its
- * handlers by method:
+ * An endpoint whose handlers go through the wrapper (`implement()` for a typed contract,
+ * `defineHandler()` where there is no contract yet) is not a file under `app/routes/api`
+ * any more. It is a module in its domain's `api/` folder that exports its handlers by
+ * method:
  *
  * ```ts
  * // lib/admin/api/admin.flags.server.ts
@@ -18,8 +19,10 @@
  * `app/routes/api/$.ts` dispatches to it. A handler module is always `*.server.ts`, so
  * the Vite stub plugin keeps it out of the browser bundle whatever imports it.
  *
- * What stays a route file: anything that is not a plain `implement()` binding — a
- * splat, a stream, a redirect, a file response, `/api/auth/$`, `/api/v1/**`.
+ * What stays a route file: a handler written without the wrapper, a splat, a stream or
+ * SSE response, `/api/auth/$`, `/api/v1/**`. A wrapped handler that reads a multipart
+ * body or answers with a file or a redirect is registered like any other: the dispatcher
+ * hands it the same `Request` and returns its `Response` untouched.
  */
 
 export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';

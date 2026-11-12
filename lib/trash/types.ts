@@ -37,7 +37,7 @@ export type DeletedBy = 'author' | 'moderator' | 'system';
  * existed.
  *
  * The two delete routes that predate this feature
- * (`app/routes/api/rmharks/$id.ts` and `.../comment/$commentId.ts`) still write
+ * (`lib/feed/api/rmharks.$id.server.ts` and `.../comment/$commentId.ts`) still write
  * only the older boolean `deletedByAdmin`, so `deletedBy` is `null` on every
  * historical row and on everything those routes delete today. Treating `null`
  * as "unknown, therefore not restorable" would make the whole feature inert;

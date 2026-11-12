@@ -1,0 +1,134 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { defineHandler } from '@/lib/api/handler.server';
+import { prisma } from '@/lib/prisma.server';
+
+const VALID_MODES = [
+  'lights-out',
+  'alibi',
+  'spectrum',
+  'outcast',
+  'chainlink',
+  'impostor',
+  'globeset',
+];
+
+/**
+ * One stored run, in the shape the client's local store mirrors.
+ *
+ * Spelled out rather than left as `Record<string, any>`: `resultJson` really is
+ * free-form per mode (each game writes its own summary), but everything around
+ * it is fixed, and typing the envelope is what stops a renamed column from
+ * silently reaching the client as `undefined`.
+ */
+interface StoredResult {
+  puzzleDate: string;
+  score: number;
+  moves: number | null;
+  hintUsed: boolean | null;
+  dnf: boolean | null;
+  timeSeconds: number | null;
+  /** Mode-specific; the mode that wrote it is the only thing that can read it. */
+  resultJson: unknown;
+  completedAt: string;
+}
+
+export const route = apiRoute('/api/daily-puzzles/results', {
+  GET: defineHandler(
+    {
+      rateLimit: { limit: 30, windowMs: 60_000, prefix: 'daily-puzzle-results' },
+    },
+    async ({ request, session }) => {
+      try {
+        const { searchParams } = new URL(request.url);
+        const gameMode = searchParams.get('gameMode');
+        const dateKey = searchParams.get('date');
+
+        if (!gameMode || !VALID_MODES.includes(gameMode)) {
+          return Response.json({ error: 'Invalid game mode' }, { status: 400 });
+        }
+
+        // Single date lookup
+        if (dateKey) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+            return Response.json({ error: 'Invalid date' }, { status: 400 });
+          }
+
+          const entry = await prisma.dailyPuzzleScore.findUnique({
+            where: {
+              userId_gameMode_dateKey: {
+                userId: session.user.id,
+                gameMode,
+                dateKey,
+              },
+            },
+            select: {
+              score: true,
+              moves: true,
+              hintUsed: true,
+              dnf: true,
+              resultJson: true,
+              timeSeconds: true,
+              createdAt: true,
+            },
+          });
+
+          if (!entry) {
+            return Response.json({ result: null });
+          }
+
+          return Response.json({
+            result: {
+              puzzleDate: dateKey,
+              score: entry.score,
+              moves: entry.moves,
+              hintUsed: entry.hintUsed,
+              dnf: entry.dnf,
+              timeSeconds: entry.timeSeconds ?? null,
+              resultJson: entry.resultJson ?? null,
+              completedAt: entry.createdAt.toISOString(),
+            },
+          });
+        }
+
+        // All results for a game mode (last 30 days max)
+        const entries = await prisma.dailyPuzzleScore.findMany({
+          where: {
+            userId: session.user.id,
+            gameMode,
+          },
+          orderBy: { dateKey: 'desc' },
+          take: 30,
+          select: {
+            dateKey: true,
+            score: true,
+            moves: true,
+            hintUsed: true,
+            dnf: true,
+            resultJson: true,
+            timeSeconds: true,
+            createdAt: true,
+          },
+        });
+
+        const results: Record<string, StoredResult> = {};
+        for (const e of entries) {
+          results[e.dateKey] = {
+            puzzleDate: e.dateKey,
+            score: e.score,
+            moves: e.moves,
+            hintUsed: e.hintUsed,
+            dnf: e.dnf,
+            timeSeconds: e.timeSeconds ?? null,
+            resultJson: e.resultJson ?? null,
+            completedAt: e.createdAt.toISOString(),
+          };
+        }
+
+        return Response.json({ results, gameMode });
+      } catch (e) {
+        console.error('Daily puzzle results fetch failed:', e);
+        return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+      }
+    },
+  ),
+});

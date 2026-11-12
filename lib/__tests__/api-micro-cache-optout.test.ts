@@ -45,9 +45,9 @@ describe('micro-cache opt-out', () => {
 
   it('visibility-flippable and write-then-read routes opt out', () => {
     for (const f of [
-      'app/routes/api/users/$id.wishlist.ts',
+      'lib/wishlist/api/users.$id.wishlist.server.ts',
       'lib/tournaments/api/tournaments.server.ts',
-      'app/routes/api/achievements/$userId.ts',
+      'lib/achievements/api/achievements.$userId.server.ts',
     ])
       expect(readFileSync(join(ROOT, f), 'utf8')).toMatch(/microCache:\s*false/);
   });

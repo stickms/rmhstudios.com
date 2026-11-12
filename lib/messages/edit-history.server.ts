@@ -5,7 +5,7 @@
  * ## Why this exists
  *
  * Posts already work this way: `RMHarkEdit` snapshots the previous body before
- * `RMHark.content` is overwritten (`app/routes/api/rmharks/$id.ts`), so an edit
+ * `RMHark.content` is overwritten (`lib/feed/api/rmharks.$id.server.ts`), so an edit
  * is a new version rather than a silent rewrite. A DM edit needs the same
  * property for the same reason — otherwise "edit" is a way to make a report
  * describe text that no longer exists anywhere.

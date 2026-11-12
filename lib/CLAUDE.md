@@ -134,9 +134,10 @@ registered endpoint, below) use `defineHandler` / `implement`:
 const session = await auth.api.getSession({ headers: request.headers });
 ```
 
-**Registered endpoints live here (third-pass audit AR3).** An endpoint that only
-binds contracts with `implement()` is `lib/<domain>/api/<path.with.dots>.server.ts`
-(`lib/api/routes/…` when the contract sits at the top of `lib/`), exporting
+**Registered endpoints live here (third-pass audit AR3).** An endpoint whose handlers
+all go through the wrapper (`implement()` for a contract, a bare `defineHandler()`
+where there is none yet) is `lib/<domain>/api/<path.with.dots>.server.ts`
+(`lib/api/routes/…` when no domain owns it), exporting
 `route = apiRoute('/api/…', { GET: implement(…) })` from `@/lib/api/route.server`.
 `lib/api/route-table.server.ts` is the GENERATED list of them (`pnpm api:routes`;
 never hand-edit), `lib/api/route-match.ts` is the path matcher (the router's rules,

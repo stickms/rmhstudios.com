@@ -7,9 +7,9 @@ export default defineFeature({
   basePath: '/dream-rift',
   delivery: 'island',
   routes: [
-    'app/routes/api/dream-rift/coop.ts',
-    'app/routes/api/dream-rift/leaderboard.ts',
-    'app/routes/api/dream-rift/score.ts',
+    'features/dream-rift/api/dream-rift.coop.server.ts',
+    'features/dream-rift/api/dream-rift.leaderboard.server.ts',
+    'features/dream-rift/api/dream-rift.score.server.ts',
     'app/routes/dream-rift.tsx',
   ],
   namespaces: ['c-dream-rift'],

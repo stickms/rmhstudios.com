@@ -5,7 +5,7 @@
  *
  * Satori renders it (no CSS grid, every multi-child box is `display:flex`), through the same font and
  * rasteriser plumbing as every other card. Only numbers and our own fixed words are ever drawn — never
- * text taken from a request (see app/routes/api/og/elections.ts).
+ * text taken from a request (see lib/og/api/og.elections.server.ts).
  */
 
 import React from 'react';

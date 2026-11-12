@@ -230,10 +230,10 @@ export type EditorTool =
 
 ```
 app/routes/slice-it/edit.$songId.tsx          Editor shell (full-screen, no _site)
-app/routes/api/slice-it/charts.ts             GET list / POST create
-app/routes/api/slice-it/charts/$id.ts         GET / PATCH / DELETE one chart
+features/slice-it/api/slice-it.charts.server.ts             GET list / POST create
+features/slice-it/api/slice-it.charts.$id.server.ts         GET / PATCH / DELETE one chart
 app/routes/api/slice-it/charts/$id/publish.ts POST — draft → public
-app/routes/api/slice-it/charts/$id/revisions.ts GET history / POST restore
+features/slice-it/api/slice-it.charts.$id.revisions.server.ts GET history / POST restore
 app/routes/api/slice-it/charts/$id/generate.ts  POST — the auto modes (§8)
 
 features/slice-it/ui/editor/
@@ -1246,7 +1246,7 @@ session check → rate limit → zod `safeParse` → try/catch order, and is the
 place that order is written down in code.
 
 ```ts
-// app/routes/api/slice-it/charts/$id.ts
+// features/slice-it/api/slice-it.charts.$id.server.ts
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';

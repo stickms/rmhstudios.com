@@ -434,7 +434,7 @@ model FeedAnnouncement {
   @@map("feed_announcement")
 }
 
-/// (Formerly marked DEAD; app/routes/api/announcements/$id/vote.ts reaches it via
+/// (Formerly marked DEAD; lib/api/routes/announcements.$id.vote.server.ts reaches it via
 /// `option.poll`, so it stays.)
 model FeedAnnouncementPoll {
   id             String    @id @default(cuid())

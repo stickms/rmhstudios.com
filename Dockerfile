@@ -434,7 +434,7 @@ FROM node:24.21.0-alpine AS runtime-base
 # curl: container healthchecks (compose) + the deploy's port probes.
 # ca-certificates: outbound TLS (R2 sync, DeepSeek, Discord, etc.).
 # ffmpeg: slice-it transcodes uploaded audio to compressed AAC/.m4a
-# (app/routes/api/slice-it/songs/upload.ts → lib/audio/transcode.server.ts).
+# (features/slice-it/api/slice-it.songs.upload.server.ts → lib/audio/transcode.server.ts).
 RUN apk add --no-cache curl ca-certificates ffmpeg
 
 WORKDIR /app

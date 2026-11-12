@@ -32,7 +32,7 @@
  */
 import { PREPAINT_BODY_SHA256, PREPAINT_SHA256 } from '../prepaint/generated';
 
-/** Where violation reports are POSTed (app/routes/api/csp-report.ts). */
+/** Where violation reports are POSTed (lib/api/routes/csp-report.server.ts). */
 export const CSP_REPORT_PATH = '/api/csp-report';
 /** The Reporting API endpoint name used by `report-to` / `Reporting-Endpoints`. */
 export const CSP_REPORT_GROUP = 'csp';

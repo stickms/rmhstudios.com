@@ -81,7 +81,7 @@ separate registry is edited. A build-time generator turns the file tree into a t
     <tr><td><code>app/routes/_site.tsx</code></td><td>A <i>pathless</i> layout (leading <code>_</code>): adds the sidebar but contributes no URL segment.</td></tr>
     <tr><td><code>app/routes/_site/index.tsx</code></td><td>The <code>/</code> home feed, nested inside the <code>_site</code> layout.</td></tr>
     <tr><td><code>app/routes/blog.$slug.tsx</code></td><td><code>/blog/&lt;slug&gt;</code> — the <code>$slug</code> segment is a dynamic parameter.</td></tr>
-    <tr><td><code>app/routes/api/search.ts</code></td><td><code>/api/search</code> — a server route (note: <code>.ts</code>, not <code>.tsx</code>).</td></tr>
+    <tr><td><code>lib/search/api/search.server.ts</code></td><td><code>/api/search</code> — a server route (note: <code>.ts</code>, not <code>.tsx</code>).</td></tr>
     <tr><td><code>app/routes/sitemap[.]xml.ts</code></td><td><code>/sitemap.xml</code> — brackets escape a literal dot in the URL.</td></tr>
   </tbody>
 </table>
@@ -138,11 +138,11 @@ export const Route = createFileRoute('/_site/')({
   component: Home,
 });</code></pre>
 
-<p>The search endpoint, <code>app/routes/api/search.ts</code>, is a server route. It exports no
+<p>The search endpoint, <code>lib/search/api/search.server.ts</code>, is a server route. It exports no
 component at all — instead it provides a <code>server.handlers.GET</code> function that rate-limits the
 caller, reads the query string, runs four Prisma queries in parallel, and returns JSON:</p>
 
-<pre><code>// app/routes/api/search.ts (excerpt)
+<pre><code>// lib/search/api/search.server.ts (excerpt)
 export const Route = createFileRoute('/api/search')({
   server: {
     handlers: {
@@ -302,7 +302,7 @@ the games, so one framework serves a portfolio blog and a 3D physics game withou
 <div class="summary"><h4>Summary</h4><ul>
   <li><b>SSR</b> renders the React tree to HTML on the server per request, then <b>hydrates</b> it in the browser; rmhstudios.com uses it so the personalized shell renders correctly on the first paint (<code>getInitialUser</code> in <code>app/routes/__root.tsx</code>).</li>
   <li><b>File-based routing</b> turns the <code>app/routes/</code> tree into URLs. A build step generates <code>app/routeTree.gen.ts</code>, which <code>app/router.tsx</code> imports; pathless layouts like <code>_site.tsx</code> add structure without URL segments, and <code>$slug</code> marks dynamic parameters.</li>
-  <li><b>Page routes</b> export a <code>component</code> and <code>loader</code>; <b>server routes</b> (e.g. <code>app/routes/api/search.ts</code>) export HTTP <code>handlers</code> returning Web <code>Response</code>s. Together with <code>createServerFn</code> they form the app's <b>BFF</b>.</li>
+  <li><b>Page routes</b> export a <code>component</code> and <code>loader</code>; <b>server routes</b> (e.g. <code>lib/search/api/search.server.ts</code>) export HTTP <code>handlers</code> returning Web <code>Response</code>s. Together with <code>createServerFn</code> they form the app's <b>BFF</b>.</li>
   <li><b>Nitro</b> is the runtime: the Vite build emits <code>.output/server/index.mjs</code>, which the Dockerfile runs as <code>node .output/server/index.mjs</code> on port <code>7005</code>. <code>traceDeps</code> controls what gets externalized from the server bundle.</li>
   <li>SSR fits a mixed site: it makes content crawlable and fast while <code>heavyExternals</code>, <code>manualChunks</code>, and <code>stubServerFiles</code> keep browser-only game code out of both the server bundle and content visitors' downloads.</li>
 </ul></div>
@@ -319,7 +319,7 @@ the games, so one framework serves a portfolio blog and a 3D physics game withou
 
   <div class="exercise"><span class="qid">3.3</span>
     <span class="tag concept">concept</span><span class="tag medium">medium</span>
-    Given the four files <code>app/routes/_site.tsx</code>, <code>app/routes/_site/index.tsx</code>, <code>app/routes/blog.$slug.tsx</code>, and <code>app/routes/api/search.ts</code>, state the URL each serves and classify each as a pathless layout, a page route, or a server route. Explain how you can tell <code>search.ts</code> is not a page route from its file extension and exports alone.</div>
+    Given the four files <code>app/routes/_site.tsx</code>, <code>app/routes/_site/index.tsx</code>, <code>app/routes/blog.$slug.tsx</code>, and <code>lib/search/api/search.server.ts</code>, state the URL each serves and classify each as a pathless layout, a page route, or a server route. Explain how you can tell <code>search.ts</code> is not a page route from its file extension and exports alone.</div>
 
   <div class="exercise"><span class="qid">3.4</span>
     <span class="tag concept">concept</span><span class="tag easy">easy</span>
@@ -331,7 +331,7 @@ the games, so one framework serves a portfolio blog and a 3D physics game withou
 
   <div class="exercise"><span class="qid">3.6</span>
     <span class="tag trace">trace</span><span class="tag medium">medium</span>
-    A request arrives for <code>GET /api/search?q=ab</code> at a rate exceeding the limit. Trace what the <code>GET</code> handler in <code>app/routes/api/search.ts</code> does, and give the exact HTTP status code and shape of the response it returns. Contrast this control flow with what a page route's <code>loader</code> returns.</div>
+    A request arrives for <code>GET /api/search?q=ab</code> at a rate exceeding the limit. Trace what the <code>GET</code> handler in <code>lib/search/api/search.server.ts</code> does, and give the exact HTTP status code and shape of the response it returns. Contrast this control flow with what a page route's <code>loader</code> returns.</div>
 
   <div class="exercise"><span class="qid">3.7</span>
     <span class="tag concept">concept</span><span class="tag medium">medium</span>

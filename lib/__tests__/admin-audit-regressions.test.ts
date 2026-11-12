@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 import { Prisma } from '@prisma/client';
 
 const mocks = vi.hoisted(() => ({
@@ -19,12 +20,12 @@ vi.mock('@/lib/admin-audit.server', () => ({ logAdminAction: mocks.audit }));
 vi.mock('@/lib/seo/indexnow.server', () => ({ pingIndexNow: vi.fn() }));
 vi.mock('@/lib/rate-limit.server', () => ({ withRateLimitAsync: async () => null }));
 
-import { Route as blogRoute } from '@/app/routes/api/admin/blog';
-import { Route as usersRoute } from '@/app/routes/api/admin/users';
+import { route as blogRoute } from '@/lib/admin/api/admin.blog.server';
+import { route as usersRoute } from '@/lib/admin/api/admin.users.server';
 
 type Handler = (ctx: { request: Request; params: Record<string, string> }) => Promise<Response>;
 const handler = (route: unknown, method: string): Handler =>
-  (route as { options: { server: { handlers: Record<string, Handler> } } }).options.server.handlers[
+  handlersOf<Handler>(route)[
     method
   ];
 const post = handler(blogRoute, 'POST');

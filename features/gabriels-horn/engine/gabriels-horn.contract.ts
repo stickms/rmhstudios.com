@@ -1,7 +1,7 @@
 /** Contracts for Gabriel's Horn reads and the house-rule balancer (redesign audit C1, batch 7). Client-safe. */
 import { endpoint } from '@/lib/contract/endpoint';
-import type { HornLeaderboardRow } from '@/app/routes/api/gabriels-horn/leaderboard';
-import type { HouseRuleProposal } from '@/app/routes/api/gabriels-horn/house-rule';
+import type { HornLeaderboardRow } from '@features/gabriels-horn/api/gabriels-horn.leaderboard.server';
+import type { HouseRuleProposal } from '@features/gabriels-horn/api/gabriels-horn.house-rule.server';
 
 export const hornLeaderboardApi = endpoint<{
   query: { limit?: number };

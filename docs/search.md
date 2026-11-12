@@ -1,7 +1,7 @@
 # Search — how the site finds things
 
 > Reference doc. Code is in [`lib/search/`](../lib/search/), the route is
-> [`app/routes/api/search.ts`](../app/routes/api/search.ts), and the index DDL
+> [`lib/search/api/search.server.ts`](../lib/search/api/search.server.ts), and the index DDL
 > is `prisma/migrations/20260801150000_search_fuzzy_v2/migration.sql`.
 
 Search covers **nine corpora** on one relevance scale: people, posts, user

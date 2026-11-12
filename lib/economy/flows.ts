@@ -283,7 +283,7 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     id: 'coin-purchase',
     kind: 'sink',
     surface: 'In-app unlocks',
-    source: 'app/routes/api/coins/purchase.ts',
+    source: 'lib/economy/api/coins.purchase.server.ts',
     bounded: false,
     note: 'Priced unlocks charged against the house rather than another member.',
   },

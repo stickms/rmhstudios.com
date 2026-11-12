@@ -23,14 +23,18 @@ import { renderRouteTable } from '../../../scripts/gen-api-route-table';
  * `app/routes/api/$.ts`, next to the route files that remain.
  *
  * Everything here is static (the tree and the contract modules, no handler is loaded), so
- * it runs in the commit gate. It holds four things:
+ * it runs in the commit gate. It holds five things:
  *
  *  1. the generated table lists exactly the modules that register an endpoint;
- *  2. the router plus the table answer every path as one flat router over all of the
+ *  2. every registered path and method has exactly one handler: a path is registered
+ *     once, no route file declares the same path, and each handler is a wrapped one,
+ *     `implement(contract, …)` or a `defineHandler(…)` that has no contract yet;
+ *  3. the router plus the table answer every path as one flat router over all of the
  *     templates would: no route file can take a registered path, and a registered path
  *     wins or loses to its neighbours as it did when it was a file;
- *  3. every contract resolves to exactly one handler, for its method;
- *  4. a registered module binds each contract under that contract's own method and path.
+ *  4. every contract resolves to exactly one handler, for its method;
+ *  5. a handler bound with `implement()` binds its contract under that contract's own
+ *     method and path.
  */
 
 const ROOT = process.cwd();
@@ -77,8 +81,30 @@ interface Binding {
   expr: string;
 }
 
-/** The handlers a registered module declares, with each `implement()`'s contract resolved. */
-function bindingsOf(source: ApiSource): { bindings: Binding[]; other: string[] } {
+/** What `bindingsOf` found in one registered module. */
+interface Bindings {
+  /** `implement(contract, …)` handlers, each with its contract resolved. */
+  bindings: Binding[];
+  /** Methods bound with a bare `defineHandler(…)`: wrapped, no contract yet. */
+  plain: string[];
+  /** Methods bound with anything else. A registered module may not have any. */
+  other: string[];
+  /** Every method key, in source order (a repeat shows up twice). */
+  methods: string[];
+}
+
+const bindingsCache = new Map<string, Bindings>();
+
+/** The handlers a registered module declares, by how each is bound. */
+function bindingsOf(source: ApiSource): Bindings {
+  const cached = bindingsCache.get(source.file);
+  if (cached) return cached;
+  const found = readBindings(source);
+  bindingsCache.set(source.file, found);
+  return found;
+}
+
+function readBindings(source: ApiSource): Bindings {
   const text = read(source.file);
   const sf = ts.createSourceFile(source.file, text, ts.ScriptTarget.Latest, true);
   const imports = new Map<string, { module: string; name: string | null }>();
@@ -115,11 +141,19 @@ function bindingsOf(source: ApiSource): { bindings: Binding[]; other: string[] }
     throw new Error(`${source.file}: no \`export const route = apiRoute(path, { … })\``);
 
   const bindings: Binding[] = [];
+  const plain: string[] = [];
   const other: string[] = [];
+  const methods: string[] = [];
   for (const prop of handlers.properties) {
     const method = prop.name?.getText(sf) ?? '?';
+    methods.push(method);
     const init = ts.isPropertyAssignment(prop) ? prop.initializer : undefined;
-    if (!init || !ts.isCallExpression(init) || init.expression.getText(sf) !== 'implement') {
+    const callee = init && ts.isCallExpression(init) ? init.expression.getText(sf) : undefined;
+    if (callee === 'defineHandler') {
+      plain.push(method);
+      continue;
+    }
+    if (!init || !ts.isCallExpression(init) || callee !== 'implement') {
       other.push(method);
       continue;
     }
@@ -135,7 +169,7 @@ function bindingsOf(source: ApiSource): { bindings: Binding[]; other: string[] }
     }
     bindings.push({ method, contract: isEndpoint(contract) ? contract : undefined, expr });
   }
-  return { bindings, other };
+  return { bindings, plain, other, methods };
 }
 
 describe('the generated route table', () => {
@@ -161,7 +195,7 @@ describe('the generated route table', () => {
     expect(misplaced).toEqual([]);
   });
 
-  it('a registered module is only implement() bindings', () => {
+  it('every handler of a registered module is implement() or defineHandler()', () => {
     const offenders: string[] = [];
     for (const source of registered) {
       const { other } = bindingsOf(source);
@@ -169,8 +203,32 @@ describe('the generated route table', () => {
     }
     expect(
       offenders,
-      'a handler that is not a plain implement() binding stays a route file under app/routes/api',
+      'a handler written without the wrapper stays a route file under app/routes/api',
     ).toEqual([]);
+  });
+
+  it('every registered path and method has exactly one handler', () => {
+    const problems: string[] = [];
+    const KNOWN = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']);
+    const fileByTemplate = new Map(fileRoutes.map((f) => [f.template.toLowerCase(), f.file]));
+    const seen = new Map<string, string>();
+    for (const source of registered) {
+      const key = source.template.toLowerCase();
+      const twin = seen.get(key);
+      if (twin) problems.push(`${source.template}: registered by ${twin} and ${source.file}`);
+      seen.set(key, source.file);
+      const file = fileByTemplate.get(key);
+      if (file) problems.push(`${source.template}: registered by ${source.file}, and ${file}`);
+      const { methods } = bindingsOf(source);
+      if (methods.length === 0) problems.push(`${source.file}: no handlers`);
+      for (const method of methods) {
+        if (!KNOWN.has(method)) problems.push(`${source.file}: unknown method ${method}`);
+      }
+      if (new Set(methods).size !== methods.length) {
+        problems.push(`${source.file}: a method is bound twice (${methods.join(', ')})`);
+      }
+    }
+    expect(problems).toEqual([]);
   });
 });
 
@@ -277,14 +335,14 @@ describe('contracts and their handlers', () => {
       const source = sources[0]!;
       const declares =
         source.kind === 'registered'
-          ? bindingsOf(source).bindings.some((b) => b.method === contract.method)
+          ? bindingsOf(source).methods.includes(contract.method)
           : new RegExp(`\\b${contract.method}\\s*:`).test(read(source.file));
       if (!declares) problems.push(`${name}: ${source.file} has no ${contract.method} handler`);
     }
     expect(problems).toEqual([]);
   });
 
-  it('a registered module binds each contract under its own method and path', () => {
+  it('an implement() binding binds its contract under its own method and path', () => {
     const problems: string[] = [];
     for (const source of registered) {
       for (const binding of bindingsOf(source).bindings) {

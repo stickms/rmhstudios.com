@@ -468,7 +468,7 @@ export const LEADERBOARD_PAGE_SIZE_MAX = 100;
  * `(isPublic, chartRating DESC)` index shipped with C3 and had no reader:
  * `docs/_handoff/rating-requests.md` §1 asked for exactly this value. NULLS
  * LAST is the whole subtlety and lives with the ORDER BY in
- * `app/routes/api/slice-it/songs.ts` — a song with no rated chart is not a
+ * `features/slice-it/api/slice-it.songs.server.ts` — a song with no rated chart is not a
  * trivially easy song, and Postgres sorts NULLs FIRST on DESC by default, which
  * would put every unrated song at the top of "hardest first".
  */

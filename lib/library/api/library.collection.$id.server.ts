@@ -1,0 +1,44 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/library/collections.contract';
+import { defineHandler } from '@/lib/api/handler.server';
+import { auth } from '@/lib/auth';
+import { updateCollection, deleteCollection, type Viewer } from '@/lib/library/collections.server';
+import { isSafeLibraryId } from '@/lib/library/keys';
+
+/**
+ * /api/library/collection/$id
+ *   PATCH  — rename / re-describe a collection ({ title?, description? }).
+ *   DELETE — remove a collection (and its items, by cascade).
+ * Owner-or-admin only (enforced in the data layer).
+ */
+async function getViewer(request: Request): Promise<Viewer> {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session) return null;
+  return { id: session.user.id, isAdmin: Boolean((session.user as { isAdmin?: boolean }).isAdmin) };
+}
+
+export const route = apiRoute('/api/library/collection/$id', {
+  PATCH: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+    if (!isSafeLibraryId(params.id)) return Response.json({ error: 'Not found.' }, { status: 404 });
+    const viewer = await getViewer(request);
+    const body = (await request.json().catch(() => ({}))) as {
+      title?: unknown;
+      description?: unknown;
+    };
+    const result = await updateCollection(viewer, params.id, {
+      title: typeof body.title === 'string' ? body.title : undefined,
+      description: typeof body.description === 'string' ? body.description : undefined,
+    });
+    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    return Response.json({ ok: true, ...result.value });
+  }),
+
+  DELETE: implement(C.deleteLibraryCollectionApi, { auth: 'none' }, async ({ request, params }) => {
+    if (!isSafeLibraryId(params.id)) return Response.json({ error: 'Not found.' }, { status: 404 });
+    const viewer = await getViewer(request);
+    const result = await deleteCollection(viewer, params.id);
+    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    return Response.json({ ok: true });
+  }),
+});

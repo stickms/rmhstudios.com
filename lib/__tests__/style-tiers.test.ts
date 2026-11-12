@@ -206,5 +206,10 @@ describe('entry stylesheet tiers', () => {
     expect(styleTierFor(['__root__', '/altair'], false)).toBe('app');
     expect(styleTierFor(['__root__', '/a-route-added-later'], false)).toBe('app');
     expect(styleTierFor(['__root__', '/_site', '/_site/'], true)).toBe('app');
+    // The API dispatcher: the root's 404 for an unknown path, the empty top-level render
+    // for a registered endpoint asked with a method it does not handle.
+    expect(styleTierFor(['__root__', '/api/$'], false)).toBe('site');
+    expect(styleTierFor(['__root__', '/api/$'], false, true)).toBe('site');
+    expect(styleTierFor(['__root__', '/api/$'], false, false)).toBe('app');
   });
 });

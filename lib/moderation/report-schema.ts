@@ -4,7 +4,7 @@
  * ## Why this file exists
  *
  * The reason list and the details length limit were written twice: once as a
- * `z.enum([...])` inside `app/routes/api/moderation/report.ts`, and once as a
+ * `z.enum([...])` inside `lib/moderation/api/moderation.report.server.ts`, and once as a
  * hand-typed array of nine `{ value, label }` objects in
  * `components/moderation/ReportDialog.tsx`, plus a `maxLength={1000}` that
  * happened to match the route's `.max(1000)`.

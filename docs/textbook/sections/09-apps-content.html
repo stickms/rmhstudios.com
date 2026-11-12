@@ -51,7 +51,7 @@ S3_FORCE_PATH_STYLE=true
 <div class="scope"><b>Scope: object storage is wired, but narrow.</b> The store is real and running, yet its <em>only</em> consumers in the code are the social feed's image upload and serve routes (the <code>rmharks/</code> prefix in bucket <code>rmh-media</code>). RmhTube, RmhMusic, RmhType, RmhStudy, and RmhCode do <em>not</em> use it — as we will see, their media comes from external providers. There are also no presigned URLs, no multipart upload, and no HTTP <code>Range</code> streaming anywhere: a repo-wide search for <code>presigned</code>, <code>getSignedUrl</code>, and <code>multipart</code> returns nothing. Uploads and downloads both proxy the whole file through the Node server.</div>
 
 <h3>An upload's round trip</h3>
-<p>The feed's image endpoints show the pattern end to end. The upload route <code>app/routes/api/rmharks/image.ts</code> handles a <code>POST</code>: it requires a Better Auth session, rate-limits to 10 requests per minute, caps the request at 4 images of 5&nbsp;MB each, and — crucially — verifies each file is really an image by inspecting its leading bytes (<code>validateImageBuffer</code>) rather than trusting the filename. Only then does it write:</p>
+<p>The feed's image endpoints show the pattern end to end. The upload route <code>lib/media/api/rmharks.image.server.ts</code> handles a <code>POST</code>: it requires a Better Auth session, rate-limits to 10 requests per minute, caps the request at 4 images of 5&nbsp;MB each, and — crucially — verifies each file is really an image by inspecting its leading bytes (<code>validateImageBuffer</code>) rather than trusting the filename. Only then does it write:</p>
 
 <pre><code>const filename = `${session.user.id}-${Date.now()}-${rand}${ext}`;
 await putObject(
@@ -282,7 +282,7 @@ flowchart TB
 
   <div class="exercise"><span class="qid">9.2</span>
     <span class="tag trace">trace</span><span class="tag medium">medium</span>
-    Trace a user uploading a profile image through the feed image endpoints. List, in order, the checks <code>app/routes/api/rmharks/image.ts</code> applies before calling <code>putObject</code>, and explain why the magic-byte check (<code>validateImageBuffer</code>) cannot be replaced by trusting the filename extension.</div>
+    Trace a user uploading a profile image through the feed image endpoints. List, in order, the checks <code>lib/media/api/rmharks.image.server.ts</code> applies before calling <code>putObject</code>, and explain why the magic-byte check (<code>validateImageBuffer</code>) cannot be replaced by trusting the filename extension.</div>
 
   <div class="exercise"><span class="qid">9.3</span>
     <span class="tag concept">concept</span><span class="tag medium">medium</span>

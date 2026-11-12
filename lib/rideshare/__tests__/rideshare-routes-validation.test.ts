@@ -162,7 +162,7 @@ const CASES: Case[] = [
   },
   {
     name: 'driver online: not a boolean',
-    mod: '@/app/routes/api/rideshare/driver',
+    mod: '@/lib/rideshare/api/rideshare.driver.server',
     method: 'PATCH',
     body: { isOnline: 'yes' },
     status: 400,
@@ -170,7 +170,7 @@ const CASES: Case[] = [
   },
   {
     name: 'driver online: no body at all',
-    mod: '@/app/routes/api/rideshare/driver',
+    mod: '@/lib/rideshare/api/rideshare.driver.server',
     method: 'PATCH',
     body: undefined,
     status: 400,
@@ -178,7 +178,7 @@ const CASES: Case[] = [
   },
   {
     name: 'driver apply: empty body reports the first zod issue',
-    mod: '@/app/routes/api/rideshare/driver',
+    mod: '@/lib/rideshare/api/rideshare.driver.server',
     method: 'POST',
     body: {},
     status: 400,
@@ -273,7 +273,7 @@ describe('rideshare routes keep their bespoke 400 messages', () => {
 
   it('driver apply: the 409 for an existing application still wins over a bad body', async () => {
     h.prisma.rideshareDriver.findUnique.mockResolvedValueOnce({ status: 'APPROVED' } as never);
-    const res = await call(await handler('@/app/routes/api/rideshare/driver', 'POST'), 'POST', {});
+    const res = await call(await handler('@/lib/rideshare/api/rideshare.driver.server', 'POST'), 'POST', {});
     expect(res.status).toBe(409);
     await expect(res.json()).resolves.toEqual({ error: 'You are already an approved driver.' });
   });
