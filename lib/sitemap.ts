@@ -406,16 +406,6 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/offline': 'noindex', // the service worker's offline shell
   '/discord/lights-out': 'noindex', // Discord Activity surface, minimal head
   '/discord/rmhbox': 'noindex',
-  // The Plasmatic Jelly lab: a live gallery of every elevation role, the soft
-  // body, the arcs and the motion levels, for reviewing the material. Its
-  // predecessor (`/liquid-glass`) was listed in the sitemap at priority 0.4 with
-  // no inbound link anywhere in the running UI — an indexable page a visitor had
-  // no way to reach, competing with `/design` (the actual public write-up) for
-  // the same queries. It is tooling; developers reach it by URL.
-  '/jelly': 'noindex',
-  '/liquid-glass': 'redirect', // → /jelly (the lab moved with the material)
-  // The globe-eversion harness (T26): internal tooling, admin-only, noindex.
-  '/eversion-lab': 'admin',
   '/rmh-internal-affairs': 'noindex', // internal microsite
   '/secret': 'noindex', // easter eggs — indexing them defeats the point
   // Signed-in only and deliberately unsearchable (licensing): also disallowed in

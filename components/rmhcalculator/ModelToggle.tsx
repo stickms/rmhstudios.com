@@ -1,5 +1,5 @@
 /**
- * ModelToggle — segmented switch (one JellyGroup, flat members) between DeepSeek Reasoner and DeepSeek Chat.
+ * ModelToggle — segmented switch between DeepSeek Reasoner and DeepSeek Chat.
  *
  * Reasoner is the accurate default (streams its working); Chat trades depth for
  * speed. Purely presentational — the parent owns the value and persistence.
@@ -8,7 +8,8 @@
 import { Brain, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CALC_MODELS, CALC_MODEL_META, type CalcModel } from '@/lib/rmhcalculator/types';
-import { JellyGroup } from '@/components/ui/jelly-group';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const ICONS: Record<CalcModel, typeof Brain> = { reasoner: Brain, chat: Zap };
 
@@ -26,24 +27,22 @@ export function ModelToggle({
   const { t } = useTranslation('c-rmhcalculator');
 
   return (
-    <JellyGroup
-      size="sm"
+    <div
       role="radiogroup"
       aria-label={t('model-label', { defaultValue: 'Calculation model' })}
-      className={className}
+      className={cn('inline-flex items-center gap-1', className)}
     >
       {CALC_MODELS.map((model) => {
         const Icon = ICONS[model];
         const active = model === value;
         const meta = CALC_MODEL_META[model];
         return (
-          <JellyGroup.Item
+          <Button
             key={model}
             role="radio"
             aria-checked={active}
-            // A radio, not a toggle: its state is `aria-checked`.
-            aria-pressed={undefined}
-            selected={active}
+            size="sm"
+            variant={active ? 'default' : 'ghost'}
             disabled={disabled}
             title={meta.hint}
             onClick={() => onChange(model)}
@@ -55,9 +54,9 @@ export function ModelToggle({
                 ? t('model-reasoner', { defaultValue: 'Reasoner' })
                 : t('model-chat', { defaultValue: 'Chat' })}
             </span>
-          </JellyGroup.Item>
+          </Button>
         );
       })}
-    </JellyGroup>
+    </div>
   );
 }

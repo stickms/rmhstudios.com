@@ -1,12 +1,11 @@
 /**
- * `useFluidDrag` rides the jelly's shared services (CLAUDE.md "Design system: Plasmatic Jelly" → Performance): its
- * settle spring is a driver on the ONE frame (`lib/jelly/frame.ts`) and its move/up/cancel come from the ONE pointer
- * hub (`lib/jelly/pointer.ts`). What it must prove:
- *  - mounting adds the hub's listeners, not the hook's own, and requests no frame;
- *  - a drag tracks the pointer 1:1, and release settles back to 0 through shared frames, then sleeps (no frame
- *    pending at rest) and calls `onSettle` once;
+ * `useFluidDrag`: its settle spring requests a frame only between a release and the spring arriving, and its
+ * move/up/cancel are passive capture listeners on the window. What it must prove:
+ *  - mounting adds those listeners and requests no frame;
+ *  - a drag tracks the pointer 1:1, and release settles back to 0 through frames, then sleeps (no frame pending at
+ *    rest) and calls `onSettle` once;
  *  - a throw past the threshold dismisses and the spring continues the throw;
- *  - a new press interrupts a settle; unmount unregisters the driver and the hub's listeners.
+ *  - a new press interrupts a settle; unmount cancels the frame and removes the listeners.
  *
  * The suite runs in `node`, so React is replaced by a minimal single-render hook runtime (refs, callbacks, effects
  * run on mount, cleanups on unmount) — enough to drive the hook's real logic against the real services.
@@ -24,7 +23,7 @@ vi.mock('react', () => ({
   },
 }));
 
-const { useFluidDrag, FLUID_DRAG_FRAME_ORDER } = await import('../useFluidDrag');
+const { useFluidDrag } = await import('../useFluidDrag');
 /** The hook as a plain function: the mocked React above is the "render" (one call, then the effects). */
 const renderDrag = useFluidDrag;
 
@@ -99,12 +98,8 @@ const down = (handle: ReturnType<typeof useFluidDrag>, y: number, t: number) =>
     timeStamp: t,
   } as unknown as React.PointerEvent);
 
-describe('useFluidDrag on the shared jelly frame and pointer hub', () => {
-  it('runs before physics (10)', () => {
-    expect(FLUID_DRAG_FRAME_ORDER).toBeLessThan(10);
-  });
-
-  it('subscribes through the hub (capture + passive) and requests no frame at rest', () => {
+describe('useFluidDrag', () => {
+  it('subscribes on the window (capture + passive) and requests no frame at rest', () => {
     const { unmount } = mount({ dimension: () => 400, onUpdate: () => {} });
     const types = w.win.addEventListener.mock.calls.map((c) => c[0]);
     expect(types).toEqual(expect.arrayContaining(['pointermove', 'pointerup', 'pointercancel']));
@@ -116,7 +111,7 @@ describe('useFluidDrag on the shared jelly frame and pointer hub', () => {
     expect(w.listenerCount()).toBe(0);
   });
 
-  it('tracks the pointer 1:1, then settles back to rest on shared frames and sleeps', () => {
+  it('tracks the pointer 1:1, then settles back to rest on frames and sleeps', () => {
     const updates: number[] = [];
     const onSettle = vi.fn();
     const { handle, unmount } = mount({
@@ -179,7 +174,7 @@ describe('useFluidDrag on the shared jelly frame and pointer hub', () => {
     unmount();
   });
 
-  it('a new press interrupts a settle; unmount unregisters the driver', () => {
+  it('a new press interrupts a settle; unmount cancels the frame', () => {
     const updates: number[] = [];
     const { handle, unmount } = mount({ dimension: () => 400, onUpdate: (v) => updates.push(v) });
     down(handle, 0, 0);

@@ -10,7 +10,6 @@ import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { JellyGroup } from '@/components/ui/jelly-group';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DURATION, EASE } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -84,7 +83,7 @@ export function SelectionBar({
           exit="exit"
           transition={{ duration: DURATION.fast, ease: EASE.standard }}
           className={cn(
-            'glass-chrome sticky bottom-3 mt-3 flex flex-wrap items-center gap-2 rounded-site px-3 py-2',
+            'sticky bottom-3 border border-site-border bg-site-surface mt-3 flex flex-wrap items-center gap-2 rounded-site px-3 py-2',
             className,
           )}
         >
@@ -93,44 +92,32 @@ export function SelectionBar({
           </span>
 
           {onSelectAll && !allSelected && (
-            <JellyGroup.Item onClick={onSelectAll} className="min-h-9 px-3 text-xs">
+            <Button variant="ghost" size="sm" onClick={onSelectAll}>
               {t('select-all', { defaultValue: 'Select all' })}
-            </JellyGroup.Item>
+            </Button>
           )}
 
           <div className="ms-auto flex flex-wrap items-center gap-2">
-            {actions.map((action) =>
-              // Neutral actions lie flat on the bar (its glass is the one body); a coloured action keeps its Button.
-              !action.variant || action.variant === 'ghost' ? (
-                <JellyGroup.Item
-                  key={action.id}
-                  disabled={action.disabled}
-                  onClick={action.onClick}
-                  className="min-h-9"
-                >
-                  {action.icon ? <action.icon aria-hidden /> : null}
-                  {action.label}
-                </JellyGroup.Item>
-              ) : (
-                <Button
-                  key={action.id}
-                  variant={action.variant}
-                  size="sm"
-                  disabled={action.disabled}
-                  onClick={action.onClick}
-                >
-                  {action.icon ? <action.icon aria-hidden /> : null}
-                  {action.label}
-                </Button>
-              ),
-            )}
-            <JellyGroup.Item
+            {actions.map((action) => (
+              <Button
+                key={action.id}
+                variant={action.variant ?? 'ghost'}
+                size="sm"
+                disabled={action.disabled}
+                onClick={action.onClick}
+              >
+                {action.icon ? <action.icon aria-hidden /> : null}
+                {action.label}
+              </Button>
+            ))}
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClear}
               aria-label={t('clear-selection', { defaultValue: 'Clear selection' })}
-              className="min-h-9 min-w-9 px-2"
             >
               <X aria-hidden />
-            </JellyGroup.Item>
+            </Button>
           </div>
         </motion.div>
       )}

@@ -24,7 +24,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { jellyMotionLevel, jellyTier } from '@/lib/jelly/tiers';
+import { motionStill } from '@/lib/appearance/prefs';
 import { isLowEndCapability } from '@/lib/low-end';
 import {
   MAX_POPS,
@@ -82,7 +82,7 @@ export function PaperBackdrop() {
       }
     };
 
-    const still = () => jellyMotionLevel() === 'still';
+    const still = () => motionStill();
 
     const layout = () => {
       const rect = canvas.getBoundingClientRect();
@@ -107,8 +107,8 @@ export function PaperBackdrop() {
         paint();
         return;
       }
-      const tier = jellyTier();
-      const interval = tier === 'handheld' || isLowEndCapability() ? FRAME_MS_LOW : FRAME_MS;
+      const handheld = window.matchMedia('(pointer: coarse) and (max-width: 1024px)').matches;
+      const interval = handheld || isLowEndCapability() ? FRAME_MS_LOW : FRAME_MS;
       if (last === 0) last = now;
       if (now - last >= interval) {
         stepScene(scene, (now - last) / 1000);

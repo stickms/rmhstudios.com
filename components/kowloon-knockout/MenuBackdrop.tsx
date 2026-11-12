@@ -15,7 +15,7 @@
  */
 
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { jellyMotionLevel } from '@/lib/jelly/tiers';
+import { motionStill } from '@/lib/appearance/prefs';
 import { useGraphicsStore } from '@/lib/kowloon-knockout/render/graphicsStore';
 import {
   STILL_TIME, bufferSizeFor, createStreetScene, renderStreet, type StreetScene,
@@ -70,13 +70,13 @@ export default function MenuBackdrop() {
       scene = createStreetScene(w, h, { cast: false });
       image = new ImageData(new Uint8ClampedArray(scene.buf.buffer), w, h);
       // A layout change while still: redraw the one frame at the new size.
-      if (jellyMotionLevel() === 'still') paint(STILL_TIME);
+      if (motionStill()) paint(STILL_TIME);
     };
 
     const frame = (now: number) => {
       raf = 0;
       if (document.hidden || !scene || !image) return;
-      if (jellyMotionLevel() === 'still') {
+      if (motionStill()) {
         paint(STILL_TIME);
         return;
       }

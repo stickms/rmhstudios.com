@@ -3,10 +3,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
-import { JellyGroup } from '@/components/ui/jelly-group';
-
-/** A square member: an icon or a page number, a 36px target (44px on touch, from the member's own floor). */
-const ICON_MEMBER = 'min-w-9 px-2';
+import { Button } from '@/components/ui/button';
 
 interface PaginationProps {
   /** Current (1-based) page. */
@@ -52,24 +49,25 @@ export function Pagination({
 
   return (
     <div className={cn('flex flex-col items-center gap-4', className)}>
-      {/* One jelly body; first/prev/pages/next/last are flat members, the current page a glow lying on it. */}
-      <JellyGroup size="sm" className="max-w-full justify-center">
-        <JellyGroup.Item
+      <div className="flex max-w-full items-center justify-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => onPageChange(1)}
           disabled={safePage === 1}
-          className={ICON_MEMBER}
           aria-label={t('first-page', { defaultValue: 'First page' })}
         >
           <ChevronsLeft aria-hidden />
-        </JellyGroup.Item>
-        <JellyGroup.Item
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => onPageChange(safePage - 1)}
           disabled={safePage === 1}
-          className={ICON_MEMBER}
           aria-label={t('prev-page', { defaultValue: 'Previous page' })}
         >
           <ChevronLeft aria-hidden />
-        </JellyGroup.Item>
+        </Button>
 
         {pageNumbers.map((p, i) =>
           p === '...' ? (
@@ -77,41 +75,42 @@ export function Pagination({
               ...
             </span>
           ) : (
-            <JellyGroup.Item
+            <Button
               key={p}
+              variant={safePage === p ? 'default' : 'ghost'}
+              size="icon"
               onClick={() => onPageChange(p)}
-              selected={safePage === p}
-              // The current page is `aria-current`, not a toggle.
-              aria-pressed={undefined}
               aria-current={safePage === p ? 'page' : undefined}
               className={cn(
-                ICON_MEMBER,
-                'text-sm font-medium',
+                'text-sm',
+                safePage === p && 'font-semibold',
                 safePage !== p && 'hidden sm:inline-flex',
               )}
             >
               {p}
-            </JellyGroup.Item>
+            </Button>
           ),
         )}
 
-        <JellyGroup.Item
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => onPageChange(safePage + 1)}
           disabled={safePage === totalPages}
-          className={ICON_MEMBER}
           aria-label={t('next-page', { defaultValue: 'Next page' })}
         >
           <ChevronRight aria-hidden />
-        </JellyGroup.Item>
-        <JellyGroup.Item
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => onPageChange(totalPages)}
           disabled={safePage === totalPages}
-          className={ICON_MEMBER}
           aria-label={t('last-page', { defaultValue: 'Last page' })}
         >
           <ChevronsRight aria-hidden />
-        </JellyGroup.Item>
-      </JellyGroup>
+        </Button>
+      </div>
       {showIndicator ? (
         <p className="text-sm text-site-text-muted">
           {t('page-of', {

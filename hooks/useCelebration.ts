@@ -53,18 +53,6 @@ export function useCelebration() {
       if (!l.alive) return;
       const colors = options.colors ?? themeColors();
       const origin = { x: options.origin?.x ?? 0.5, y: options.origin?.y ?? 0.6 };
-      // The jelly discharges at the burst's origin. The arc runtime exists only after a press (and ten seconds past
-      // the last one, lib/jelly/arc-lazy.ts), so install it first: without that a celebration that no click preceded
-      // discharged nothing. `ensureClickArcs` does nothing while arcs are off; `dischargeAt` applies every arc gate
-      // and the flash ledger.
-      void import('@/lib/jelly/arc-lazy')
-        .then(({ ensureClickArcs }) => ensureClickArcs())
-        .then(() => import('@/lib/jelly/arcs'))
-        .then(({ dischargeAt }) =>
-          dischargeAt(origin.x * window.innerWidth, origin.y * window.innerHeight),
-        )
-        .catch(() => {});
-
       if (options.kind === 'fireworks') {
         const end = Date.now() + 800;
         let id = 0;

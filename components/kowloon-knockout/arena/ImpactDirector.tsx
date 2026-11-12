@@ -4,7 +4,7 @@ import type { GameSession, RenderFighter } from '@/lib/kowloon-knockout/net/sess
 import type { ImpactBus } from '@/lib/kowloon-knockout/render/impact';
 import { toImpactEvent } from '@/lib/kowloon-knockout/render/impactEvents';
 import { stepBus } from '@/lib/kowloon-knockout/render/impactStep';
-import { jellyMotionLevel } from '@/lib/jelly/tiers';
+import { motionStill } from '@/lib/appearance/prefs';
 
 /** Runs before the fighters and the camera read the bus (see the priority). */
 export const DIRECTOR_PRIORITY = -100;
@@ -30,7 +30,7 @@ export default function ImpactDirector({ session, framesRef, bus }: {
         stepBus(bus, delta, now);
         const events = session.drainFx();
         if (events.length === 0) return;
-        const calm = jellyMotionLevel() === 'still';
+        const calm = motionStill();
         for (const e of events) {
             const impact = toImpactEvent(e, framesRef.current);
             if (!impact) continue;

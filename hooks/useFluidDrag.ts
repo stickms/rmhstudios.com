@@ -7,11 +7,7 @@ import {
   type SpringState,
 } from '@/lib/fluid';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
-import { onJellyPointer } from '@/lib/jelly/pointer';
-import { reportJellyDrag } from '@/lib/jelly/drag-report';
 import { createSettle, type Settle } from '@/hooks/fluid-drag-settle';
-
-export { FLUID_DRAG_FRAME_ORDER } from '@/hooks/fluid-drag-settle';
 
 /**
  * A single-axis drag that behaves the way a native one does — principles 2–5 of
@@ -24,18 +20,8 @@ export { FLUID_DRAG_FRAME_ORDER } from '@/hooks/fluid-drag-settle';
  * so the caller decides what it means — a sheet translating, a drawer opening, a
  * card being swiped away. The hook never touches the DOM's layout.
  *
- * Jelly: pass `jellyTarget` and the hook reports the surface's drag on every move
- * and at release (`reportJellyDrag` in `lib/jelly/drag-report.ts`), so `drag:start` /
- * `drag:end` reach the jelly bus (the arcs hold their ambient strikes while a drag is
- * under way). The hook owns the drag position; since the soft body became CSS
- * (CSS-first jelly, PR 3) nothing adds a stretch on top of it.
- *
- * Frames and pointers (CLAUDE.md "Design system: Plasmatic Jelly" → Performance): the settle spring
- * (`createSettle` in `hooks/fluid-drag-settle.ts`) is a driver on the ONE jelly frame
- * (`drive(fn, { order: FLUID_DRAG_FRAME_ORDER })` from `lib/jelly/frame.ts`) and the gesture's
- * move/up/cancel come from the ONE pointer hub (`onJellyPointer` from `lib/jelly/pointer.ts`) — the hook owns no
- * `requestAnimationFrame` and adds no window listeners. The driver is awake only between a release and the
- * spring arriving, and is unregistered on unmount.
+ * Frames and pointers: the settle spring (`createSettle` in `hooks/fluid-drag-settle.ts`) requests a frame only between
+ * a release and the spring arriving, and the gesture's move/up/cancel are passive capture listeners on the window.
  *
  * ```tsx
  * const drag = useFluidDrag({
@@ -73,8 +59,6 @@ export interface FluidDragOptions {
   spring?: Spring;
   /** Ignore the gesture entirely (e.g. a desktop-only dialog). */
   disabled?: boolean;
-  /** The surface jelly should stretch while it is dragged (usually the element `onUpdate` moves). */
-  jellyTarget?: () => HTMLElement | null;
 }
 
 export interface FluidDragHandle {
@@ -104,16 +88,6 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
   const tracker = useRef(new VelocityTracker());
   const settler = useRef<Settle | null>(null);
   const dismissing = useRef(false);
-  /** The element this drag reported to jelly, so an unmount or a stale drag can close it (`drag:end`). */
-  const jellyEl = useRef<HTMLElement | null>(null);
-
-  /** Tell jelly the reported drag is over; without it the soft body stays `dragged` (busy) forever. */
-  const endJelly = useCallback((vx = 0, vy = 0) => {
-    const el = jellyEl.current;
-    jellyEl.current = null;
-    if (el) reportJellyDrag(el, vx, vy, 'end');
-  }, []);
-
   const stop = useCallback(() => {
     settler.current?.cancel();
   }, []);
@@ -148,7 +122,6 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
       // A second press from the SAME pointer means its pointerup never reached us (released outside the window, a
       // swallowed event): the old drag is stale, so close it and take this one rather than refusing every later drag.
       if (pointerId.current !== null && pointerId.current !== e.pointerId) return;
-      if (pointerId.current !== null) endJelly();
       // Interrupting a settle is the point: take over from wherever it is, with
       // whatever velocity it has, rather than letting it finish first.
       stop();
@@ -160,7 +133,7 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
       tracker.current.reset();
       tracker.current.add(state.current.value, e.timeStamp);
     },
-    [stop, endJelly],
+    [stop],
   );
 
   useEffect(() => {
@@ -181,13 +154,6 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
       state.current = { value: next, velocity: 0 };
       tracker.current.add(next, e.timeStamp);
       o.onUpdate(next);
-      const jelly = o.jellyTarget?.();
-      if (jelly) {
-        if (jellyEl.current && jellyEl.current !== jelly) endJelly();
-        jellyEl.current = jelly;
-        const v = tracker.current.get();
-        reportJellyDrag(jelly, axis === 'x' ? v : 0, axis === 'y' ? v : 0, 'move');
-      }
     };
 
     const finish = (e: PointerEvent, commit: boolean) => {
@@ -199,13 +165,6 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
       // web sheets give themselves away, by starting their exit animation from
       // rest no matter how hard they were thrown.
       state.current = { value: state.current.value, velocity };
-      const jelly = o.jellyTarget?.();
-      if (jelly) {
-        const axis = o.axis ?? 'y';
-        if (jellyEl.current && jellyEl.current !== jelly) endJelly();
-        jellyEl.current = null;
-        reportJellyDrag(jelly, axis === 'x' ? velocity : 0, axis === 'y' ? velocity : 0, 'end');
-      } else endJelly();
 
       const dimension = Math.max(1, o.dimension());
       const threshold = dimension * (o.dismissAt ?? 0.5);
@@ -230,26 +189,25 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
     const onUp = (e: PointerEvent) => finish(e, true);
     const onCancel = (e: PointerEvent) => finish(e, false);
 
-    const offs = [
-      onJellyPointer('pointermove', onMove),
-      onJellyPointer('pointerup', onUp),
-      onJellyPointer('pointercancel', onCancel),
-    ];
+    const listenOpts: AddEventListenerOptions = { capture: true, passive: true };
+    window.addEventListener('pointermove', onMove, listenOpts);
+    window.addEventListener('pointerup', onUp, listenOpts);
+    window.addEventListener('pointercancel', onCancel, listenOpts);
     return () => {
-      for (const off of offs) off();
+      window.removeEventListener('pointermove', onMove, listenOpts);
+      window.removeEventListener('pointerup', onUp, listenOpts);
+      window.removeEventListener('pointercancel', onCancel, listenOpts);
     };
-  }, [settle, endJelly]);
+  }, [settle]);
 
-  // Unmount: stop the settle's frame driver (the pointer subscriptions are released above), and close a drag still in
-  // progress — its pointerup will never be heard now.
+  // Unmount: stop the settle's frame (the pointer listeners are released above).
   useEffect(
     () => () => {
       pointerId.current = null;
-      endJelly();
       settler.current?.dispose();
       settler.current = null;
     },
-    [endJelly],
+    [],
   );
 
   return {
