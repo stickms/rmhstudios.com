@@ -1,6 +1,6 @@
 // The /admin/alarms page model: what the watchdog returns, and the pure helpers
 // that order and label it. Client-safe (no imports) so the page and its tests
-// share one definition; the server side lives in app/routes/api/admin/oncall.ts.
+// share one definition; the server side lives in lib/admin/api/admin.oncall.server.ts.
 
 /** Mirrors the watchdog's AlarmRecord (deploy/oncall-watchdog/src/engine.ts). */
 export interface AlarmView {

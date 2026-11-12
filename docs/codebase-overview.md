@@ -125,8 +125,13 @@ stage (`go build ./cmd/...`), not Bazel; Bazel is the CI unit-test gate.
 
 - **Routing/data:** routes live in `app/routes`; `routeTree.gen.ts` is generated
   by the TanStack plugin on dev/build — **add a route file, then let a `vite dev`
-  or build regenerate the tree** (there is no standalone CLI wired). API routes
-  use `createFileRoute('/api/...')({ server: { handlers: { GET, POST } } })`.
+  or build regenerate the tree** (there is no standalone CLI wired). An API
+  endpoint is one of two things: a route file,
+  `createFileRoute('/api/...')({ server: { handlers: { GET, POST } } })`, or, when
+  it only binds typed contracts with `implement()`, a registered module beside its
+  contract (`route = apiRoute('/api/...', { GET: implement(...) })`, listed in the
+  generated `lib/api/route-table.server.ts` and served by the one dispatcher route
+  `app/routes/api/$.ts`; see `app/CLAUDE.md`).
 - **Server-only code:** `*.server.ts(x)` files are stubbed out of the client
   bundle by a Vite plugin (`vite.config.ts`). Heavy client-only deps (three,
   monaco, pixi, tone, …) are externalized from the Nitro server bundle and
@@ -188,7 +193,7 @@ lint` jobs were removed. Production binaries build via the root `Dockerfile`.
 | Understand the shell / global setup | `app/routes/__root.tsx`, `app/routes/_site.tsx`, `components/Providers.tsx`                    |
 | Add a page                          | a new file under `app/routes/_site/`                                                           |
 | Add an API endpoint                 | a new file under `app/routes/api/` (then regenerate the route tree)                            |
-| Work on the feed                    | `components/feed/*`, `app/routes/api/rmharks.ts`, `lib/feed/*`                                 |
+| Work on the feed                    | `components/feed/*`, `lib/feed/api/rmharks.server.ts`, `lib/feed/*`                                 |
 | Work on a game                      | `app/routes/<game>.tsx` + `components/<game>/*` + `server/socket-server/*` (or `go-services/`) |
 | Change theming                      | `app/globals.css`, `stores/themeStore.ts`                                                      |
 | Understand priorities / open work   | `docs/website-improvement-plan.md`                                                             |

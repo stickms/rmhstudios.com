@@ -4,6 +4,7 @@
  * notify the stream, which then re-read the stale counter.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({
   del: vi.fn(async (..._k: string[]) => {}),
@@ -31,11 +32,11 @@ vi.mock('@/lib/prisma.server', () => ({
 }));
 
 import { Route as ReadAll } from '../../../app/routes/api/messages/read-all';
-import { Route as ReadOne } from '../../../app/routes/api/messages/$conversationId/read';
+import { route as ReadOne } from '@/lib/messages/api/messages.$conversationId.read.server';
 
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 const post = (route: unknown, params: Record<string, string> = {}) =>
-  (route as { options: { server: { handlers: { POST: Handler } } } }).options.server.handlers.POST({
+  handlersOf<Handler>(route).POST({
     request: new Request('https://x.test/x', {
       method: 'POST',
       headers: { 'cf-connecting-ip': String(Math.random()), cookie: 'better-auth.session_token=t' },

@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { buildCardSelect } from '@/lib/user-builds-list';
 
-const ROUTES = ['app/routes/api/user-builds.ts', 'app/routes/api/user-builds/featured.ts'];
+const ROUTES = ['lib/api/routes/user-builds.server.ts', 'lib/api/routes/user-builds.featured.server.ts'];
 
 describe('build card select', () => {
   it('never selects the readme or marketplace/admin bookkeeping', () => {

@@ -4,6 +4,7 @@
  * of a search returned unrelated builds. The two groups are now AND-ed.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 const { findMany, findUnique } = vi.hoisted(() => ({ findMany: vi.fn(), findUnique: vi.fn() }));
 
@@ -18,13 +19,9 @@ vi.mock('@/lib/rmhcode-auth', () => ({ getAuthenticatedUser: async () => null })
 vi.mock('@/lib/rate-limit', () => ({ rateLimit: vi.fn(), getClientIp: vi.fn() }));
 vi.mock('@/lib/prisma.server', () => ({ prisma: { userBuild: { findMany, findUnique } } }));
 
-import { Route } from '@/app/routes/api/user-builds';
+import { route as Route } from '@/lib/api/routes/user-builds.server';
 
-const GET = (
-  Route as unknown as {
-    options: { server: { handlers: { GET: (c: { request: Request }) => Promise<Response> } } };
-  }
-).options.server.handlers.GET;
+const GET = handlersOf<(c: { request: Request }) => Promise<Response>>(Route).GET;
 
 const call = (qs: string) => GET({ request: new Request(`http://x/api/user-builds?${qs}`) });
 

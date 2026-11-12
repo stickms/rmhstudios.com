@@ -6,6 +6,7 @@
  * toast. (The rideshare routes have their own table in lib/rideshare/__tests__.)
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({ getSession: vi.fn() }));
 
@@ -28,10 +29,7 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
-  };
-  return m.Route.options.server.handlers[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
 interface Case {
@@ -47,62 +45,62 @@ interface Case {
 const CASES: Case[] = [
   {
     name: 'homes watch create: empty label',
-    mod: '@/app/routes/api/homes/watches',
+    mod: '@/lib/homes/api/homes.watches.server',
     method: 'POST',
     body: { label: '' },
     error: 'Please check the watch details.',
   },
   {
     name: 'homes watch create: malformed JSON (was a 500)',
-    mod: '@/app/routes/api/homes/watches',
+    mod: '@/lib/homes/api/homes.watches.server',
     method: 'POST',
     body: '{nope',
     error: 'Please check the watch details.',
   },
   {
     name: 'homes watch toggle: active is not a boolean',
-    mod: '@/app/routes/api/homes/watches',
+    mod: '@/lib/homes/api/homes.watches.server',
     method: 'PATCH',
     body: { id: 'w1', active: 'yes' },
     error: 'Invalid request',
   },
   {
     name: 'homes watch delete: no id',
-    mod: '@/app/routes/api/homes/watches',
+    mod: '@/lib/homes/api/homes.watches.server',
     method: 'DELETE',
     url: 'https://rmhstudios.com/api/homes/watches',
     error: 'Missing id',
   },
   {
     name: 'homes watch delete: blank id',
-    mod: '@/app/routes/api/homes/watches',
+    mod: '@/lib/homes/api/homes.watches.server',
     method: 'DELETE',
     url: 'https://rmhstudios.com/api/homes/watches?id=%20%20',
     error: 'Missing id',
   },
   {
     name: 'referral claim: code too short',
-    mod: '@/app/routes/api/referrals/claim',
+    mod: '@/lib/api/routes/referrals.claim.server',
     method: 'POST',
     body: { code: 'ab' },
     error: 'Invalid code',
   },
   {
     name: 'referral claim: no body',
-    mod: '@/app/routes/api/referrals/claim',
+    mod: '@/lib/api/routes/referrals.claim.server',
     method: 'POST',
     error: 'Invalid code',
   },
   {
     name: 'push subscribe: not a URL',
-    mod: '@/app/routes/api/push/subscribe',
+    mod: '@/lib/push/api/push.subscribe.server',
     method: 'POST',
     body: { endpoint: 'nope', keys: { p256dh: 'a', auth: 'b' } },
     error: 'Invalid subscription',
   },
   {
     name: 'comment reaction: empty emoji',
-    mod: '@/app/routes/api/comments/$commentId/react',
+    mod: '@/lib/social/api/comments.$commentId.react.server',
     method: 'POST',
     body: { emoji: '' },
     params: { commentId: 'c1' },
@@ -110,7 +108,7 @@ const CASES: Case[] = [
   },
   {
     name: 'comment reaction: not an allowed reaction',
-    mod: '@/app/routes/api/comments/$commentId/react',
+    mod: '@/lib/social/api/comments.$commentId.react.server',
     method: 'POST',
     body: { emoji: 'definitely-not-an-emoji' },
     params: { commentId: 'c1' },
@@ -118,7 +116,7 @@ const CASES: Case[] = [
   },
   {
     name: 'card review: grade out of range',
-    mod: '@/app/routes/api/study/cards/$id/review',
+    mod: '@/lib/study/api/study.cards.$id.review.server',
     method: 'POST',
     body: { grade: 9 },
     params: { id: 'k1' },
@@ -126,7 +124,7 @@ const CASES: Case[] = [
   },
   {
     name: 'card review: grade is a string',
-    mod: '@/app/routes/api/study/cards/$id/review',
+    mod: '@/lib/study/api/study.cards.$id.review.server',
     method: 'POST',
     body: { grade: '2' },
     params: { id: 'k1' },
@@ -134,27 +132,27 @@ const CASES: Case[] = [
   },
   {
     name: 'neon driftway score: score is a string',
-    mod: '@/app/routes/api/neon-driftway/score',
+    mod: '@/lib/game/api/neon-driftway.score.server',
     method: 'POST',
     body: { score: '12' },
     error: 'Invalid score',
   },
   {
     name: 'neon driftway score: no body',
-    mod: '@/app/routes/api/neon-driftway/score',
+    mod: '@/lib/game/api/neon-driftway.score.server',
     method: 'POST',
     error: 'Invalid score',
   },
   {
     name: 'synapse storm score: score without solved puzzles',
-    mod: '@/app/routes/api/games/synapse-storm/score',
+    mod: '@/lib/game/api/games.synapse-storm.score.server',
     method: 'POST',
     body: { score: 5, puzzlesSolved: 0, maxCombo: 0, peakDifficulty: 1, totalTime: 10 },
     error: 'Invalid score data',
   },
   {
     name: 'synapse storm score: unknown field (strict)',
-    mod: '@/app/routes/api/games/synapse-storm/score',
+    mod: '@/lib/game/api/games.synapse-storm.score.server',
     method: 'POST',
     body: { score: 0, puzzlesSolved: 0, maxCombo: 0, peakDifficulty: 1, totalTime: 1, cheat: 1 },
     error: 'Invalid score data',
@@ -190,7 +188,7 @@ describe('migrated routes keep their bespoke 400 messages', () => {
 
   it('anonymous callers still get 401 before any validation', async () => {
     h.getSession.mockResolvedValue(null);
-    const fn = await handler('@/app/routes/api/referrals/claim', 'POST');
+    const fn = await handler('@/lib/api/routes/referrals.claim.server', 'POST');
     const res = await fn({
       params: {},
       request: new Request('https://rmhstudios.com/api/x', {

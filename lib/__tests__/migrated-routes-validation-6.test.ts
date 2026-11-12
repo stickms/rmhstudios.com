@@ -5,6 +5,7 @@
  * the bespoke 400 bodies the clients read. Drives the real route handlers.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({ getSession: vi.fn() }));
 
@@ -46,10 +47,7 @@ vi.mock('@tanstack/react-router', () => ({
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 
 async function handler(mod: string, method: string): Promise<Handler> {
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
-  };
-  return m.Route.options.server.handlers[method]!;
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method]!;
 }
 
 const EVENTS = '@/app/routes/api/events/index';

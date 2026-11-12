@@ -41,7 +41,7 @@ From the reference article, the load-bearing ideas:
 
 Core paths (current):
 
-- **Read path** — [app/routes/api/rmharks.ts](../../app/routes/api/rmharks.ts):
+- **Read path** — [lib/feed/api/rmharks.server.ts](../../lib/feed/api/rmharks.server.ts):
   every feed request runs `rMHark.findMany` ordered by `createdAt desc` over the
   *entire* table, plus a **second** `rMHarkRepost.findMany`, then merges, sorts,
   de-dupes reposts, and interleaves static announcements (3 RMHarks : 1
@@ -109,7 +109,7 @@ the seams later phases plug into.
 1. **Stable keyset pagination.** Replace the timestamp-only cursor with a
    composite `(createdAt, id)` keyset so ties don't drop/duplicate rows across
    pages. The current "two `findMany` + merge + `slice(0, limit)`" pattern in
-   [rmharks.ts](../../app/routes/api/rmharks.ts) can silently drop the older
+   [rmharks.ts](../../lib/feed/api/rmharks.server.ts) can silently drop the older
    half of whichever stream was denser in a page — encode the cursor as
    `{ createdAt, id }` and apply it to both the rmhark and repost queries.
 2. **Unify the timeline read behind one function.** Extract
@@ -256,7 +256,7 @@ What shipped (no new infrastructure required):
     and repost queries. Tolerates the legacy ISO cursor during deploys.
   - Unified read path: [lib/feed/timeline.ts](../../lib/feed/timeline.ts)
     exposes `getTimeline({ userId, surface, filter, cursor, limit, search })`;
-    [app/routes/api/rmharks.ts](../../app/routes/api/rmharks.ts) is now a thin
+    [lib/feed/api/rmharks.server.ts](../../lib/feed/api/rmharks.server.ts) is now a thin
     handler over it. The "following"/"foryou" branches share one mapper.
   - Feed naming: `feed=following|foryou` query param (back-compat with the
     legacy `filter=friends`). UI tabs renamed **For You** / **Following**.

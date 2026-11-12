@@ -8,8 +8,8 @@ export default defineFeature({
   delivery: 'island',
   routes: [
     'app/routes/nightrail.tsx',
-    'app/routes/api/nightrail/tricks/index.ts',
-    'app/routes/api/nightrail/tricks/vote.ts',
+    'lib/trick-week/api/nightrail.tricks.server.ts',
+    'lib/trick-week/api/nightrail.tricks.vote.server.ts',
   ],
   namespaces: ['c-nightrail'],
   catalog: 'features/nightrail/catalog.ts',

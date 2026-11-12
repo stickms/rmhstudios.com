@@ -127,11 +127,24 @@ POST: defineHandler({ auth: 'optional' }, async ({ userId }) => …); // userId:
 ```
 
 Reach for the raw call below only outside an API route (server functions,
-workers) — inside `app/routes/api/**` use `defineHandler`:
+workers) — inside an API handler (a route file under `app/routes/api/**`, or a
+registered endpoint, below) use `defineHandler` / `implement`:
 
 ```ts
 const session = await auth.api.getSession({ headers: request.headers });
 ```
+
+**Registered endpoints live here (third-pass audit AR3).** An endpoint that only
+binds contracts with `implement()` is `lib/<domain>/api/<path.with.dots>.server.ts`
+(`lib/api/routes/…` when the contract sits at the top of `lib/`), exporting
+`route = apiRoute('/api/…', { GET: implement(…) })` from `@/lib/api/route.server`.
+`lib/api/route-table.server.ts` is the GENERATED list of them (`pnpm api:routes`;
+never hand-edit), `lib/api/route-match.ts` is the path matcher (the router's rules,
+tested against the router), `lib/api/route-dispatch.server.ts` is what
+`app/routes/api/$.ts` and the in-process loader read (`internal-dispatch.server.ts`)
+ask, and `lib/api/route-sources.ts` is the node-only list of every API handler source
+for tests and scripts. When to register and when to keep a route file:
+`app/CLAUDE.md` §"Adding an API route".
 
 Session `tier` is injected by the `customSession` plugin from
 `entitlements.ts`. Note `lib/auth.ts` requires `reflect-metadata` — it is

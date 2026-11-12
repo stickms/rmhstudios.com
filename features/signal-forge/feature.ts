@@ -7,11 +7,11 @@ export default defineFeature({
   basePath: '/secret/signal-forge',
   delivery: 'island',
   routes: [
-    'app/routes/api/signal-forge/abandon.ts',
-    'app/routes/api/signal-forge/leaderboard.ts',
-    'app/routes/api/signal-forge/load.ts',
+    'features/signal-forge/api/signal-forge.abandon.server.ts',
+    'features/signal-forge/api/signal-forge.leaderboard.server.ts',
+    'features/signal-forge/api/signal-forge.load.server.ts',
     'app/routes/api/signal-forge/save.ts',
-    'app/routes/api/signal-forge/score.ts',
+    'features/signal-forge/api/signal-forge.score.server.ts',
     'app/routes/secret/signal-forge.tsx',
   ],
   // The game's strings, and the Vault's (`r-secret`: the way back to /secret) the page frame renders.

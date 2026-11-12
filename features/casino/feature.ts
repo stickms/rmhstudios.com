@@ -17,7 +17,7 @@ export default defineFeature({
   kind: 'game',
   basePath: '/predictions',
   delivery: 'shell',
-  routes: ['app/routes/api/casino/rooms.ts'],
+  routes: ['lib/api/routes/casino.rooms.server.ts'],
   namespaces: ['c-rmhcoins'],
   listed: false,
 });

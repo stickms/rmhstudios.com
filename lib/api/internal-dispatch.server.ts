@@ -8,12 +8,16 @@
  * request's headers (so its cookie, and therefore its session), in the same process:
  * no socket, no second definition, and every check the route makes is made.
  *
- * The handler is found from the contract's path template, which is the route file's
- * path (`/api/series/$id` is `app/routes/api/series/$id.ts` or `.../$id/index.ts`).
+ * The handler is found from the contract's path template. A registered endpoint
+ * (`lib/api/route.server.ts`, third-pass audit AR3) declares that template itself; for an
+ * endpoint that is still a route file it is the file's path (`/api/x/$id` is
+ * `app/routes/api/x/$id.ts` or `.../x/$id/index.ts`).
  */
 import { getRequest } from '@tanstack/react-start/server';
 import { HttpError } from '@/lib/http';
 import { markInternalRequest } from '@/lib/api/internal-request.server';
+import { apiRouteByTemplate } from '@/lib/api/route-dispatch.server';
+import { templateOfRouteFile } from '@/lib/api/route-template';
 
 type Handler = (args: {
   request: Request;
@@ -25,24 +29,26 @@ type RouteModule = {
 
 const modules = import.meta.glob<RouteModule>('/app/routes/api/**/*.ts');
 
-/** `/app/routes/api/tf2-hud/$id.download.ts` -> `/api/tf2-hud/$id/download`. */
-export function templateOfRouteFile(file: string): string {
-  // An escaped literal dot (`races[.]csv`) is not a path separator: split around it.
-  return file
-    .replace(/^\/app\/routes/, '')
-    .replace(/\.ts$/, '')
-    .split('[.]')
-    .map((part) => part.replace(/\./g, '/'))
-    .join('.')
-    .replace(/\/index$/, '');
-}
-
 let byTemplate: Map<string, () => Promise<RouteModule>> | undefined;
 function routeModules(): Map<string, () => Promise<RouteModule>> {
   byTemplate ??= new Map(
     Object.entries(modules).map(([file, load]) => [templateOfRouteFile(file), load]),
   );
   return byTemplate;
+}
+
+async function getHandler(template: string): Promise<Handler> {
+  const registered = apiRouteByTemplate(template);
+  if (registered) {
+    const handler = registered.handlers.GET;
+    if (!handler) throw new Error(`${template} has no GET handler`);
+    return handler;
+  }
+  const load = routeModules().get(template);
+  if (!load) throw new Error(`no API route for ${template}`);
+  const handler = (await load()).Route?.options?.server?.handlers?.GET;
+  if (!handler) throw new Error(`${template} has no GET handler`);
+  return handler;
 }
 
 /**
@@ -54,10 +60,7 @@ export async function readInternal<T>(
   params: Record<string, string> | undefined,
   pathWithQuery: string,
 ): Promise<T> {
-  const load = routeModules().get(template);
-  if (!load) throw new Error(`no API route file for ${template}`);
-  const handler = (await load()).Route?.options?.server?.handlers?.GET;
-  if (!handler) throw new Error(`${template} has no GET handler`);
+  const handler = await getHandler(template);
 
   const page = getRequest();
   const request = markInternalRequest(

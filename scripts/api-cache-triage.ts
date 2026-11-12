@@ -31,6 +31,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import { CACHE_POLICY } from '../lib/api/cache-policies';
+import { registeredApiRoutes } from '../lib/api/route-sources';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const API_DIR = path.join(ROOT, 'app/routes/api');
@@ -548,10 +549,9 @@ function compact(node: ts.Node, sf: ts.SourceFile): string {
   return node.getText(sf).replace(/\s+/g, ' ').replace(/,\s*}/g, ' }').slice(0, 160);
 }
 
-function scanRoute(file: string): Omit<Row, 'clientRefs'>[] {
+function scanRoute(file: string, url: string = routeUrl(file)): Omit<Row, 'clientRefs'>[] {
   const sf = loadSource(file)!;
   const rows: Omit<Row, 'clientRefs'>[] = [];
-  const url = routeUrl(file);
 
   const visitHandlers = (obj: ts.ObjectLiteralExpression) => {
     for (const prop of obj.properties) {
@@ -651,6 +651,16 @@ function scanRoute(file: string): Omit<Row, 'clientRefs'>[] {
       ts.isObjectLiteralExpression(node.initializer)
     ) {
       visitHandlers(node.initializer);
+    }
+    // A registered endpoint (lib/api/route.server.ts): `apiRoute('/api/…', { GET: … })`.
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'apiRoute' &&
+      node.arguments[1] &&
+      ts.isObjectLiteralExpression(node.arguments[1])
+    ) {
+      visitHandlers(node.arguments[1]);
     }
     ts.forEachChild(node, find);
   };
@@ -873,6 +883,9 @@ export function triage(): Row[] {
   const files = walk(API_DIR).filter((f) => !f.includes(`${path.sep}v1${path.sep}`));
   const base: Omit<Row, 'clientRefs'>[] = [];
   for (const f of files) base.push(...scanRoute(f));
+  // Endpoints registered behind the dispatcher `app/routes/api/$.ts` (third-pass audit AR3)
+  // are handlers like any route file; they declare their own path.
+  for (const r of registeredApiRoutes(ROOT)) base.push(...scanRoute(path.join(ROOT, r.file), r.template));
   const counts = countClientRefs([...new Set(base.map((r) => r.url))]);
   return base.map((r) => ({ ...r, clientRefs: counts.get(r.url) ?? 0 }));
 }

@@ -112,7 +112,7 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
     // taking the user lookup down with it.
     // perf: this ran an uncached query on every signed-in render. Cache the row
     // for 5 min (invalidated by the appearance PUT in
-    // app/routes/api/preferences/appearance.ts, so a save is never stale), and
+    // lib/preferences/api/preferences.appearance.server.ts, so a save is never stale), and
     // give it its OWN short timeout: a slow query drops only the seed, never the
     // user (the loader keeps running and still warms the cache). The loader
     // throws on DB failure so an error is not cached as "no row".

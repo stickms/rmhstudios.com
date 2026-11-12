@@ -17,6 +17,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { LOCALES, NAMESPACES } from '../lib/i18n/config';
+import { registeredApiRoutes } from '../lib/api/route-sources';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'docs', '_generated', 'facts.json');
@@ -61,6 +62,9 @@ const facts = {
   prismaMigrations: migrations.size,
   routeFiles: routes.length,
   apiRouteFiles: apiRoutes.length,
+  // Endpoints served by the dispatcher app/routes/api/$.ts from a registered module
+  // (lib/api/route.server.ts, third-pass audit AR3); not route files.
+  registeredApiEndpoints: registeredApiRoutes(ROOT).length,
   pageRouteFiles: routes.length - apiRoutes.length,
   i18nNamespaces: NAMESPACES.length,
   shippedLocales: LOCALES.length,

@@ -1,0 +1,62 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import { getDailyPuzzleApi } from '@/lib/daily-puzzles/daily-puzzles.contract';
+import { getTodayEST, formatDateKey } from '@/lib/daily-puzzles/seed';
+import { getOrCreateDailyPuzzle, isAIPuzzleMode } from '@/lib/daily-puzzles/generate.server';
+
+// How far back a puzzle may be requested/generated on demand. The history UI
+// only exposes the last 14 days; this bound keeps generation from being driven
+// for arbitrary far-past dates.
+const MAX_PAST_DAYS = 60;
+
+export const route = apiRoute('/api/daily-puzzles/puzzle', {
+  GET: implement(
+    getDailyPuzzleApi,
+    {
+      auth: 'none',
+      rateLimit: { limit: 60, windowMs: 60_000, prefix: 'daily-puzzle-content' },
+      // Anonymous-invariant and immutable once generated: the body is a pure
+      // function of (gameMode, date), both of which are in the query string.
+      // Nobody's score or progress appears here — that lives on
+      // `/api/daily-puzzles/results`, which stays uncached.
+      cache: {
+        visibility: 'public',
+        maxAge: 300,
+        sMaxAge: 3600,
+        staleWhileRevalidate: 3600,
+      },
+    },
+    async ({ request }) => {
+      try {
+        const { searchParams } = new URL(request.url);
+        const gameMode = searchParams.get('gameMode') ?? '';
+        const dateKey = searchParams.get('date') ?? '';
+
+        if (!isAIPuzzleMode(gameMode)) {
+          return Response.json({ error: 'Invalid game mode' }, { status: 400 });
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+          return Response.json({ error: 'Invalid date' }, { status: 400 });
+        }
+
+        // Only today or the recent past — never a future day (which would let
+        // players peek at an unreleased puzzle).
+        const today = getTodayEST();
+        const todayKey = formatDateKey(today);
+        const minDate = new Date(today);
+        minDate.setDate(minDate.getDate() - MAX_PAST_DAYS);
+        const minKey = formatDateKey(minDate);
+        if (dateKey > todayKey || dateKey < minKey) {
+          return Response.json({ error: 'Date out of range' }, { status: 400 });
+        }
+
+        const { data } = await getOrCreateDailyPuzzle(gameMode, dateKey);
+
+        return Response.json({ puzzle: data });
+      } catch (e) {
+        console.error('Daily puzzle content fetch failed:', e);
+        return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+      }
+    },
+  ),
+});
