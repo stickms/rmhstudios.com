@@ -267,6 +267,16 @@
 .site-margin__row:hover {
   background: var(--site-bg-subtle);
 }
+/* A person in "Who to follow": the avatar, then the name, the handle and the reason, stacked. Still a row on a rule. */
+.site-margin__person {
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+}
+.site-margin__person-text {
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
 .site-margin__page {
   margin-block-start: 26px;
 }

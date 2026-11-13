@@ -10,7 +10,7 @@ const MarginLists = lazy(() => import('./MarginLists'));
 
 /**
  * The margin column (Steel L6): a search field, then at most two short lists under `t-label` headings, then whatever
- * the page portals in (`ContextRail`). Nothing here is a card or carries a picture.
+ * the page portals in (`ContextRail`). Nothing here is a card; the only pictures are the avatars in "Who to follow".
  *
  * The search field is a real GET form to `/explore`, so it works with scripting off; with scripting it navigates in
  * place. `/` still opens the command palette (KeyboardShortcuts).

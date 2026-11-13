@@ -365,7 +365,7 @@ own pins.
 | L3 | **Desktop, no margin (1024–1279px, or pages that do not need one):** sidebar 220px · content `1fr`. Catalogue and settings use this at every width. |
 | L4 | **Sidebar,** top to bottom, 22px top and 24px side padding: the words "RMH Studios" (15px, 600) · the five sections as words (15px; current is ink 600, others muted; 7px vertical padding) · the primary "Write a post" button · the signed-in handle with a 28px avatar · the globe, pushed to the bottom (G10). No icons beside the words. |
 | L5 | **Content column:** 40px side padding in the three-column frame, 48px in the two-column one. Reading content (feed, thread, article, settings) is capped at 640px wide. Grids may use the full column. |
-| L6 | **Margin column:** 22px top and 24px side padding. A search field, then at most two short lists, each under a `t-label` heading, rows on rules. Nothing in the margin is a card or carries a picture. Its content loads after the main column. |
+| L6 | **Margin column:** 22px top and 24px side padding. A search field, then at most two short lists, each under a `t-label` heading, rows on rules. Nothing in the margin is a card. The one picture is a 32px avatar beside each person in "Who to follow", whose row is the avatar, the name, the handle and, where accounts the viewer follows already follow them, one line naming up to two (owner, 2026-11-13: "recommended users on the sidebar should have an avatar (maybe also show followed by mutuals)"; this replaces "nothing carries a picture"). Its content loads after the main column. |
 | L7 | Vertical rhythm: 14px inside a row, 22px above a station, 26px above a page title on desktop. |
 | L8 | Full-screen games and apps are outside this shell and keep their own look, as today. |
 

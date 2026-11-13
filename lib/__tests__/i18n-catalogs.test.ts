@@ -689,6 +689,11 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // Who to follow: the mutual-follows line (owner, 2026-11-13). English-only until the translate pipeline runs.
+    'who-to-follow-mutual-one',
+    'who-to-follow-mutual-two',
+    'who-to-follow-mutual-more',
+    'who-to-follow-mutual-one-more',
     // Profile banner crop (2026-11-13): the editor's "Adjust crop" control and its load error. English-only until the translate pipeline runs on build.
     'adjust-cover',
     'failed-load-banner',
