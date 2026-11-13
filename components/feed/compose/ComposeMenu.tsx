@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import {
   Plus,
+  MoreHorizontal,
   BarChart3,
   ImagePlay,
   ImagePlus,
@@ -48,6 +49,7 @@ const ITEM =
  * room, rather than being shoved back down the screen by a viewport clamp.
  */
 export function ComposeMenu({
+  trigger = 'plus',
   menuOpen,
   setMenuOpen,
   closeMenu,
@@ -73,6 +75,7 @@ export function ComposeMenu({
   onSaveDraft,
   setShowSchedule,
 }: {
+  trigger?: 'plus' | 'dots';
   menuOpen: boolean;
   setMenuOpen: Dispatch<SetStateAction<boolean>>;
   closeMenu: () => void;
@@ -118,7 +121,7 @@ export function ComposeMenu({
         aria-expanded={menuOpen}
         className="p-1.5 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors"
       >
-        <Plus className="w-4.5 h-4.5" />
+        {trigger === 'dots' ? <MoreHorizontal className="w-4.5 h-4.5" /> : <Plus className="w-4.5 h-4.5" />}
       </button>
 
       <AnchoredMenu

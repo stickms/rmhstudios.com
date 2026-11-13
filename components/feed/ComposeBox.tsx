@@ -72,13 +72,22 @@ export function ComposeBox({
   communityId,
   onPosted,
   extraBody,
+  initialContent = '',
+  openMenuOnMount = false,
+  menuTrigger = 'plus',
 }: {
+  /** Text the composer starts with: what was typed in the home feed's one-line row before it was expanded. */
+  initialContent?: string;
+  /** Open the options menu as the composer mounts: the home row's three dots expand it and show the options at once. */
+  openMenuOnMount?: boolean;
+  /** The options menu's trigger: the plus sign, or the three dots the home row expanded from. */
+  menuTrigger?: 'plus' | 'dots';
   communityId?: string;
   onPosted?: (item: any) => void;
   /** Extra fields merged into the create body (community flair / challenge entry). */
   extraBody?: Record<string, unknown>;
 } = {}) {
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(initialContent);
   const [audience, setAudience] = useState<AudienceValue>('PUBLIC');
   const [replyControl, setReplyControl] = useState<ReplyControlValue>('EVERYONE');
   const [replyOpen, setReplyOpen] = useState(false);
@@ -90,7 +99,7 @@ export function ComposeBox({
   const [unlockPrice, setUnlockPrice] = useState(''); // coins to unlock;''= free
   const [submitting, setSubmitting] = useState(false);
   const [attachment, setAttachment] = useState<Attachment>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(openMenuOnMount);
   const [audienceOpen, setAudienceOpen] = useState(false);
   const [poll, setPoll] = useState<PollDraft>(emptyPoll);
   const [gifUrl, setGifUrl] = useState('');
@@ -545,6 +554,7 @@ export function ComposeBox({
 
               {/* Plus button — image upload, GIF, poll, draft, schedule. */}
               <ComposeMenu
+                trigger={menuTrigger}
                 menuOpen={menuOpen}
                 setMenuOpen={setMenuOpen}
                 closeMenu={closeMenu}
