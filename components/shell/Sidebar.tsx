@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { MoreHorizontal } from 'lucide-react';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -187,12 +188,14 @@ export function Sidebar() {
               ref={menuAnchor}
               type="button"
               variant="ghost"
-              size="xs"
+              size="icon-xs"
+              aria-label={t('shell-account-menu', { defaultValue: 'More' })}
+              title={t('shell-account-menu', { defaultValue: 'More' })}
               aria-haspopup="menu"
               aria-expanded={menuOpen}
               onClick={toggleMenu}
             >
-              {t('shell-account-menu', { defaultValue: 'More' })}
+              <MoreHorizontal className="size-4" aria-hidden />
             </Button>
             {menuMounted && (
               <Suspense fallback={null}>

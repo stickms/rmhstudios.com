@@ -689,6 +689,10 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // Post menu and icon pass (owner, 2026-11-13). English-only until the translate pipeline runs.
+    'post-actions',
+    'post-link-copied',
+    'post-link-copy-failed',
     // Who to follow: the mutual-follows line (owner, 2026-11-13). English-only until the translate pipeline runs.
     'who-to-follow-mutual-one',
     'who-to-follow-mutual-two',

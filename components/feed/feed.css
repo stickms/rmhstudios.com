@@ -98,14 +98,16 @@
   line-height: 1.45;
 }
 
-/* K8, post actions: plain muted 13px words, 18px apart. On is ink at weight 600 (A2), never a colour. No icons, no
-   counter animation. Each word keeps a 44px hit area (A3) through ::after, which reaches 9px into the 18px gap on each
-   side, so neighbouring areas meet and never overlap. */
+/* K8, post actions (owner, 2026-11-13: icons in place of the words): a 16px icon in muted ink with its count beside it,
+   28px apart. On is ink (A2), never a colour: a filled heart, a heavier stroke, the count at weight 600. No counter
+   animation. Each control keeps a 44px hit area (A3) through ::after, which reaches 14px past the icon on every side:
+   half the 28px gap, so neighbouring areas meet and never overlap. A control that is still a word (a reply's "Show
+   replies", "Hide today's question") uses the same class and is unchanged. */
 .feed-actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: 18px;
+  align-items: center;
+  column-gap: 28px;
   margin-block-start: 10px;
   color: var(--site-text-muted);
   font-size: 13px;
@@ -114,7 +116,7 @@
 .feed-action {
   position: relative;
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 5px;
   padding: 0;
   border: 0;
@@ -132,6 +134,10 @@
   inset-block: -14px;
   inset-inline: -9px;
 }
+.feed-actions .feed-action::after,
+.feed-action--icon::after {
+  inset: -14px;
+}
 .feed-action:hover {
   color: var(--site-text);
 }
@@ -140,8 +146,31 @@
   color: var(--site-text);
   font-weight: 600;
 }
+.feed-action__icon {
+  flex: none;
+  inline-size: 16px;
+  block-size: 16px;
+  stroke-width: 1.75;
+}
+.feed-action[aria-pressed='true'] .feed-action__icon,
+.feed-action[data-on] .feed-action__icon {
+  stroke-width: 2.5;
+}
+.feed-action[aria-pressed='true'] .feed-action__icon[data-fill],
+.feed-action[data-on] .feed-action__icon[data-fill] {
+  fill: currentColor;
+  stroke-width: 1.75;
+}
 .feed-action__count {
   font-variant-numeric: tabular-nums;
+}
+/* The three dots at the top end of a home feed row. The row's author line leaves room for them (FeedRow: `pe-9`). */
+.feed-row__menu {
+  position: absolute;
+  inset-block-start: calc(var(--spine-pad) + 6px);
+  inset-inline-end: 0;
+  display: flex;
+  color: var(--site-text-muted);
 }
 .feed-actions__views {
   margin-inline-start: auto;

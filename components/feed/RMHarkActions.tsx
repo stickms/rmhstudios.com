@@ -1,4 +1,4 @@
-import { Repeat, PenSquare } from 'lucide-react';
+import { Heart, MessageCircle, Repeat, Repeat2, PenSquare } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState, useRef } from 'react';
 import { useFeedStore } from '@/stores/feedStore';
@@ -119,10 +119,13 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
   };
 
   const repostLabel = t('action-repost', { defaultValue: 'Repost' });
+  const likeLabel = t('like', { defaultValue: 'Like' });
+  const replyLabel = t('reply', { defaultValue: 'Reply' });
 
-  // K8 (Steel): plain muted 13px words, 18px apart. "On" is ink at weight 600 (A2), never a colour. No icons, no
-  // counter animation: a count is the plain number beside the word. Each word keeps a 44px hit area (A3) through the
-  // stylesheet's ::after, so the row can sit as tight as the plan says.
+  // K8 (Steel, as amended by the owner on 2026-11-13: "try using more minimal icons across the UI instead of text"):
+  // each action is its icon with the count beside it, in muted ink. The word is still the control's name (visually
+  // hidden, and the hover title). "On" is ink, a filled heart or a heavier stroke, and the count at weight 600 (A2),
+  // never a colour. No counter animation. Each keeps a 44px hit area (A3) through the stylesheet's ::after.
   return (
     <div className={cn('feed-actions', className)}>
       <button
@@ -131,8 +134,10 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
         aria-pressed={!!item.liked}
         data-on={item.liked ? '' : undefined}
         className="feed-action"
+        title={likeLabel}
       >
-        {t('like', { defaultValue: 'Like' })}
+        <Heart className="feed-action__icon" data-fill="" aria-hidden />
+        <span className="sr-only">{likeLabel}</span>
         <ActionCount value={item.likeCount} />
       </button>
 
@@ -154,8 +159,10 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
           className="feed-action"
           aria-haspopup="menu"
           aria-expanded={repostMenu}
+          title={repostLabel}
         >
-          {repostLabel}
+          <Repeat2 className="feed-action__icon" aria-hidden />
+          <span className="sr-only">{repostLabel}</span>
           <ActionCount value={item.repostCount} />
           {item.reposted && (
             <span className="sr-only">{t('action-reposted', { defaultValue: 'Reposted' })}</span>
@@ -220,8 +227,9 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
         </Suspense>
       )}
 
-      <button type="button" onClick={handleCommentClick} className="feed-action">
-        {t('reply', { defaultValue: 'Reply' })}
+      <button type="button" onClick={handleCommentClick} className="feed-action" title={replyLabel}>
+        <MessageCircle className="feed-action__icon" aria-hidden />
+        <span className="sr-only">{replyLabel}</span>
         <ActionCount value={item.commentCount} />
       </button>
 
