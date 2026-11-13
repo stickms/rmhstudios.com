@@ -887,5 +887,13 @@
   "homes-save-listing": "Save listing",
   "homes-saved": "Saved",
   "homes-save": "Save",
-  "homes-alert-paused": "Paused"
+  "homes-alert-paused": "Paused",
+  "spaces-none-live": "No live Spaces right now. Start one above.",
+  "space-live-tag": "Live",
+  "space-hosted-by-in": "Hosted by {{host}} in {{community}}",
+  "space-hosted-by": "Hosted by {{host}}",
+  "space-started": "Started {{when}}",
+  "space-join": "Join",
+  "space-listening_one": "{{count}} listening",
+  "space-listening_other": "{{count}} listening"
 }
