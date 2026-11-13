@@ -47,7 +47,7 @@ export interface StakeClaim {
   /** The phase the room was in and what the amount is made of. */
   detail: string;
   /**
-   * Set by a durable table (`blackjack-table-state.ts`): the key names the
+   * Set by a durable table (`<game>-table-state.ts`): the key names the
    * stake, not this shutdown, so a restore can find the refund. Unset = one
    * key per claim per shutdown, as before.
    */
