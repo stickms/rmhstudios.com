@@ -6,6 +6,7 @@
  * Phases: idle → betting (25s) → spinning → results (5s) → betting.
  */
 
+import { randomUUID } from 'crypto';
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../../../server/socket-server/prisma-client';
 import {
@@ -17,11 +18,25 @@ import {
 import { checkRateLimit } from '../../../server/socket-server/rate-limit';
 import { logger } from '../../../server/socket-server/logger';
 import {
+  CASINO_SHUTDOWN_DEADLINE_MS,
   InFlight,
   settleShutdownClaims,
   type ShutdownRefundSummary,
   type StakeClaim,
 } from './casino-shutdown';
+import { saveTablesOrRefund } from './durable-shutdown';
+import {
+  ROULETTE_STAKE_KEYS as STAKE_KEYS,
+  ROULETTE_TABLE_VERSION,
+  parseStoredRouletteTable,
+  seatStake,
+  unsavedTableClaims,
+  type StoredRouletteTable,
+} from './roulette-table-state';
+import type { StakeFate } from './stake-keys';
+import { readStakeFates } from './stake-ledger';
+import { TablePersistence } from './table-persistence';
+import type { CasinoTableStore } from './table-store';
 import {
   type Bet,
   type BetType,
@@ -63,6 +78,10 @@ interface PlayerSeat {
   // Set when a player leaves/disconnects mid-round but still has an active bet.
   // The seat is kept until the spin resolves so the payout still lands.
   pendingRemoval?: boolean;
+  // Names the bets on this seat: minted by the first bet, dropped when the
+  // bets are cleared or the next betting phase opens. Durable tables key the
+  // spin's payout and any return of the bets by it (roulette-table-state.ts).
+  stakeId: string | null;
 }
 
 interface RouletteRoom {
@@ -82,6 +101,9 @@ interface RouletteRoom {
   // the gap started betting and the stray timer then restarted it, zeroing
   // every debited bet.
   restartTimer: ReturnType<typeof setTimeout> | null;
+  // Durable tables only: armed when a table is restored after a restart; when
+  // it fires, seats whose player has not come back leave under the usual rules.
+  reconnectTimer: ReturnType<typeof setTimeout> | null;
   // True from the moment resolvePayouts has computed this round's payouts
   // (its settlement transaction then owns every bet) until the next betting
   // phase. The phase stays 'spinning' across that await, so shutdown reads
@@ -102,6 +124,13 @@ const RESULTS_DISPLAY_MS = 8_000;
 const SPIN_ANIMATION_DELAY_MS = 5_000;
 const MIN_BET = 1;
 const MAX_HISTORY = 50;
+// Restored tables (durable tables only). The betting window reopens at its
+// full length. A spin that was waiting on the wheel pays after this delay
+// instead of the animation delay, so a reconnecting player sees it land.
+const RESTORE_SETTLE_DELAY_MS = 10_000;
+// How long a restored seat is held for its player before the seat is treated
+// as a disconnect.
+const RESTORE_RECONNECT_MS = 30_000;
 
 // ── Bet Validation ─────────────────────────────────────────────────
 
@@ -179,6 +208,9 @@ let ioRef: Server;
 let closing = false;
 // Debits, refunds and payout transactions still awaiting the database.
 const inFlight = new InFlight();
+// Set once by restoreRouletteTables() when CASINO_DURABLE_TABLES is on; null
+// otherwise, and then every `durable?.` below does nothing.
+let durable: TablePersistence | null = null;
 
 // Socket.io room that lobby browsers join so room-list updates reach only the
 // clients currently viewing the lobby — not every connected socket on the
@@ -226,6 +258,8 @@ function serializeTableState(room: RouletteRoom): TableStateSnapshot {
 }
 
 function broadcastTableState(room: RouletteRoom) {
+  // Every change a client can see goes out through here, so this is the save seam.
+  durable?.markDirty(room.roomId);
   ioRef.to(roomKey(room.roomId)).emit(S2C.TABLE_STATE, serializeTableState(room));
 }
 
@@ -272,6 +306,10 @@ function clearTimers(room: RouletteRoom) {
     clearTimeout(room.restartTimer);
     room.restartTimer = null;
   }
+  if (room.reconnectTimer) {
+    clearTimeout(room.reconnectTimer);
+    room.reconnectTimer = null;
+  }
 }
 
 /** The wheel is spinning or showing results: stakes are committed. */
@@ -288,11 +326,23 @@ function isLive(room: RouletteRoom): boolean {
 }
 
 /** Return a stake that never reached a spin. Errors are logged, never thrown. */
-function refundStake(room: RouletteRoom, userId: string, amount: number, note: string) {
-  return inFlight.track(refundStakeNow(room, userId, amount, note));
+function refundStake(
+  room: RouletteRoom,
+  userId: string,
+  amount: number,
+  note: string,
+  idempotencyKey?: string,
+) {
+  return inFlight.track(refundStakeNow(room, userId, amount, note, idempotencyKey));
 }
 
-async function refundStakeNow(room: RouletteRoom, userId: string, amount: number, note: string) {
+async function refundStakeNow(
+  room: RouletteRoom,
+  userId: string,
+  amount: number,
+  note: string,
+  idempotencyKey?: string,
+) {
   if (amount <= 0) return;
   try {
     const prisma = getPrismaClient();
@@ -303,6 +353,7 @@ async function refundStakeNow(room: RouletteRoom, userId: string, amount: number
         entityType: 'roulette',
         entityId: room.roomId,
         note,
+        ...(idempotencyKey ? { idempotencyKey } : {}),
       });
       return getBalanceOn(tx, userId);
     });
@@ -335,6 +386,7 @@ function startBettingPhase(room: RouletteRoom) {
     p.bets = [];
     p.totalBetThisRound = 0;
     p.lastPayout = 0;
+    p.stakeId = null;
   }
 
   room.bettingDeadline = Date.now() + BETTING_DURATION_MS;
@@ -394,23 +446,39 @@ function startSpinPhase(room: RouletteRoom) {
   broadcastTableState(room);
 
   // Wait for client animation to complete, then resolve payouts
+  scheduleSettlement(room, result, SPIN_ANIMATION_DELAY_MS);
+}
+
+function scheduleSettlement(room: RouletteRoom, result: number, delayMs: number) {
+  if (room.spinTimer) clearTimeout(room.spinTimer);
   room.spinTimer = setTimeout(() => {
     room.spinTimer = null;
     void inFlight.track(resolvePayouts(room, result));
-  }, SPIN_ANIMATION_DELAY_MS);
+  }, delayMs);
 }
 
 async function resolvePayouts(room: RouletteRoom, result: number) {
   if (room.phase !== 'spinning' || !isLive(room)) return;
   // From here the settlement below owns every bet on the table (see `settling`).
+  // `settling` on the way in happens only on a restored table that was saved
+  // while this settlement was in flight: its history and statistics are
+  // already counted.
+  const counted = room.settling;
   room.settling = true;
   room.lastResult = result;
-  room.history.unshift(result);
-  if (room.history.length > MAX_HISTORY) {
-    room.history = room.history.slice(0, MAX_HISTORY);
+  if (!counted) {
+    room.history.unshift(result);
+    if (room.history.length > MAX_HISTORY) {
+      room.history = room.history.slice(0, MAX_HISTORY);
+    }
   }
 
-  const payoutUpdates: { userId: string; totalPayout: number; netGain: number }[] = [];
+  const payoutUpdates: {
+    userId: string;
+    totalPayout: number;
+    netGain: number;
+    idempotencyKey: string | undefined;
+  }[] = [];
 
   for (const p of room.players.values()) {
     if (p.bets.length === 0) continue;
@@ -424,11 +492,20 @@ async function resolvePayouts(room: RouletteRoom, result: number) {
     p.lastPayout = totalPayout;
 
     // Update session stats
-    p.sessionStats.totalBet += p.totalBetThisRound;
-    p.sessionStats.totalWon += totalPayout;
-    p.sessionStats.roundsPlayed++;
+    if (!counted) {
+      p.sessionStats.totalBet += p.totalBetThisRound;
+      p.sessionStats.totalWon += totalPayout;
+      p.sessionStats.roundsPlayed++;
+    }
 
-    payoutUpdates.push({ userId: p.userId, totalPayout, netGain });
+    payoutUpdates.push({
+      userId: p.userId,
+      totalPayout,
+      netGain,
+      // Durable tables: one key per stake, so a settlement that runs again
+      // after a restart credits nothing a second time.
+      idempotencyKey: durable && p.stakeId ? STAKE_KEYS.payout(p.stakeId) : undefined,
+    });
   }
 
   try {
@@ -447,6 +524,7 @@ async function resolvePayouts(room: RouletteRoom, result: number) {
             entityType: 'roulette',
             entityId: room.roomId,
             note: 'Roulette payout',
+            ...(update.idempotencyKey ? { idempotencyKey: update.idempotencyKey } : {}),
           });
         }
       }
@@ -537,6 +615,7 @@ function destroyRoom(roomId: string) {
   if (room) {
     clearTimers(room);
     rooms.delete(roomId);
+    durable?.remove(roomId);
     logger.info({ event: 'rl_room_destroyed', roomId });
     broadcastRoomList();
   }
@@ -610,6 +689,7 @@ function onCreateRoom(socket: Socket, payload: unknown) {
     resultsTimer: null,
     spinTimer: null,
     restartTimer: null,
+    reconnectTimer: null,
     settling: false,
     roundNumber: 0,
     bettingDeadline: null,
@@ -713,9 +793,11 @@ function joinRoom(room: RouletteRoom, socket: Socket) {
     totalBetThisRound: 0,
     lastPayout: 0,
     sessionStats: { totalBet: 0, totalWon: 0, roundsPlayed: 0 },
+    stakeId: null,
   };
 
   room.players.set(userId, player);
+  durable?.markDirty(room.roomId);
   socketToUserId.set(socket.id, userId);
   userToRoom.set(userId, room.roomId);
   socket.join(roomKey(room.roomId));
@@ -787,6 +869,7 @@ function leaveRoom(userId: string, socketId: string) {
       leavingSock.leave(roomKey(roomId));
       leavingSock.emit(S2C.ROOM_LEFT, { roomId });
     }
+    durable?.markDirty(roomId);
     logger.info({ event: 'rl_player_left_pending_payout', roomId, userId, seatIndex });
     return;
   }
@@ -794,9 +877,19 @@ function leaveRoom(userId: string, socketId: string) {
   // Bets placed this betting phase never reached a spin: give them back (they
   // used to vanish with the deleted seat).
   const uncommitted = player.totalBetThisRound;
+  const stakeId = player.stakeId;
   player.bets = [];
   player.totalBetThisRound = 0;
-  void refundStake(room, userId, uncommitted, 'Roulette bet refund (left table)');
+  player.stakeId = null;
+  void refundStake(
+    room,
+    userId,
+    uncommitted,
+    'Roulette bet refund (left table)',
+    // Keyed by the stake, so a restart that restores a save taken before this
+    // refund can see the bets were returned.
+    durable && stakeId ? STAKE_KEYS.returned(stakeId) : undefined,
+  );
 
   room.players.delete(userId);
   userToRoom.delete(userId);
@@ -879,6 +972,7 @@ function onUpdateRoom(socket: Socket, payload: unknown) {
     joinCode: room.joinCode,
   });
 
+  durable?.markDirty(roomId);
   broadcastRoomList();
 }
 
@@ -964,6 +1058,7 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
 
     player.bets.push({ type: betType, numbers, amount });
     player.totalBetThisRound += amount;
+    player.stakeId ??= randomUUID();
 
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
     broadcastTableState(room);
@@ -974,6 +1069,9 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
       logger.error({ event: 'rl_bet_error', userId, error: String(err) });
       socket.emit(S2C.ERROR, { message: 'Failed to place bet.' });
     }
+  } finally {
+    // A stake moved: write the table now instead of waiting for the coalesced save.
+    durable?.saveNow(room.roomId);
   }
 }
 
@@ -1011,8 +1109,14 @@ async function onClearBets(socket: Socket) {
   const cleared = player.bets;
   const refundAmount = cleared.reduce((sum, b) => sum + b.amount, 0);
   const round = room.roundNumber;
+  // The stake id goes with the bets it named: a bet placed from here on starts
+  // a new one, and the refund below is keyed by the old one, so a restart that
+  // restores a save taken before this refund can see the bets were returned.
+  const stakeId = player.stakeId;
+  const returnKey = durable && stakeId ? STAKE_KEYS.returned(stakeId) : undefined;
   player.bets = [];
   player.totalBetThisRound -= refundAmount;
+  player.stakeId = null;
 
   try {
     const prisma = getPrismaClient();
@@ -1025,6 +1129,7 @@ async function onClearBets(socket: Socket) {
         entityType: 'roulette',
         entityId: room.roomId,
         note: 'Roulette bet cleared',
+        ...(returnKey ? { idempotencyKey: returnKey } : {}),
       });
       return getBalanceOn(tx, userId);
     });
@@ -1037,12 +1142,18 @@ async function onClearBets(socket: Socket) {
     if (isLive(room) && room.roundNumber === round && room.players.get(userId) === player && room.phase === 'betting') {
       player.bets = [...cleared, ...player.bets];
       player.totalBetThisRound += refundAmount;
+      // Bets placed while the refund awaited already carry a new id; all of
+      // them now ride on that one.
+      player.stakeId ??= stakeId;
       broadcastTableState(room);
     } else {
       // Too late to play them: retry the refund once instead of losing them.
-      void refundStake(room, userId, refundAmount, 'Roulette bet cleared (retry)');
+      void refundStake(room, userId, refundAmount, 'Roulette bet cleared (retry)', returnKey);
     }
     socket.emit(S2C.ERROR, { message: 'Failed to clear bets.' });
+  } finally {
+    // A stake moved: write the table now instead of waiting for the coalesced save.
+    durable?.saveNow(room.roomId);
   }
 }
 
@@ -1102,7 +1213,11 @@ export function handleRouletteDisconnect(_io: Server, socket: Socket): void {
 // ── Shutdown ───────────────────────────────────────────────────────
 
 /**
- * Hub shutdown: refund every bet on a table that is betting or spinning and
+ * Hub shutdown. With durable tables on (`CASINO_DURABLE_TABLES=1`, see
+ * {@link saveRouletteOnShutdown}) every table is written to the store and
+ * nothing is refunded. Otherwise:
+ *
+ * Refund every bet on a table that is betting or spinning and
  * has not started settling, then kill every room. A spin whose payout
  * transaction is already in flight (`settling`) is left to it — that
  * transaction computed every seat's credit before awaiting, and shutdown waits
@@ -1116,6 +1231,7 @@ export function handleRouletteDisconnect(_io: Server, socket: Socket): void {
  * waits for that too.
  */
 export function refundRouletteOnShutdown(deadlineMs?: number): Promise<ShutdownRefundSummary> {
+  if (durable) return saveRouletteOnShutdown(durable, deadlineMs ?? CASINO_SHUTDOWN_DEADLINE_MS);
   closing = true;
   const claims: StakeClaim[] = [];
   for (const room of rooms.values()) {
@@ -1143,4 +1259,253 @@ export function refundRouletteOnShutdown(deadlineMs?: number): Promise<ShutdownR
   userToRoom.clear();
   socketToUserId.clear();
   return settleShutdownClaims('roulette', claims, inFlight, deadlineMs);
+}
+
+// ── Durable tables (CASINO_DURABLE_TABLES=1) ───────────────────────
+
+/** A live room as it is stored: no timers, deadlines or socket ids. */
+function serializeRoom(room: RouletteRoom): StoredRouletteTable {
+  return {
+    v: ROULETTE_TABLE_VERSION,
+    roomId: room.roomId,
+    name: room.name,
+    ownerId: room.ownerId,
+    ownerName: room.ownerName,
+    maxPlayers: room.maxPlayers,
+    privacy: room.privacy,
+    joinCode: room.joinCode,
+    phase: room.phase,
+    settling: room.settling,
+    roundNumber: room.roundNumber,
+    players: Array.from(room.players.values(), (p) => ({
+      seatIndex: p.seatIndex,
+      userId: p.userId,
+      userName: p.userName,
+      avatarUrl: p.avatarUrl,
+      bets: p.bets.map((b) => ({ type: b.type, numbers: [...b.numbers], amount: b.amount })),
+      totalBetThisRound: p.totalBetThisRound,
+      lastPayout: p.lastPayout,
+      sessionStats: { ...p.sessionStats },
+      pendingRemoval: p.pendingRemoval === true,
+      stakeId: p.stakeId,
+    })),
+    lastResult: room.lastResult,
+    history: [...room.history],
+    savedAt: Date.now(),
+  };
+}
+
+/** A stored table as a room: every seat disconnected, no timer armed. */
+function roomFromStored(s: StoredRouletteTable): RouletteRoom {
+  const players = new Map<string, PlayerSeat>();
+  for (const p of s.players) {
+    const { pendingRemoval, ...seat } = p;
+    players.set(p.userId, { ...seat, socketId: '', ...(pendingRemoval ? { pendingRemoval: true } : {}) });
+  }
+  return {
+    roomId: s.roomId,
+    name: s.name,
+    ownerId: s.ownerId,
+    ownerName: s.ownerName,
+    maxPlayers: s.maxPlayers,
+    privacy: s.privacy,
+    joinCode: s.joinCode,
+    phase: s.phase,
+    players,
+    bettingTimer: null,
+    resultsTimer: null,
+    spinTimer: null,
+    restartTimer: null,
+    reconnectTimer: null,
+    settling: s.settling,
+    roundNumber: s.roundNumber,
+    bettingDeadline: null,
+    lastResult: s.lastResult,
+    history: s.history,
+  };
+}
+
+/**
+ * Hub shutdown with durable tables: save instead of refund. Synchronously,
+ * before anything awaits: mark the module closed, stop every timer, take a
+ * snapshot of every table and empty the maps. The rest, and why a stake is
+ * saved or refunded and never both, is `saveTablesOrRefund`
+ * (`durable-shutdown.ts`); the refunds are keyed `rl-return:<stakeId>`.
+ */
+function saveRouletteOnShutdown(tables: TablePersistence, deadlineMs: number): Promise<ShutdownRefundSummary> {
+  closing = true;
+  const stored: StoredRouletteTable[] = [];
+  for (const room of rooms.values()) {
+    clearTimers(room);
+    if (room.players.size > 0) stored.push(serializeRoom(room));
+  }
+  rooms.clear();
+  userToRoom.clear();
+  socketToUserId.clear();
+  return saveTablesOrRefund('roulette', tables, stored, unsavedTableClaims, inFlight, deadlineMs);
+}
+
+/** Restart a restored table's clock for the phase it was stored in. See RESTORE_* above. */
+function resumeRoom(room: RouletteRoom) {
+  if (room.phase === 'betting') {
+    // Bets already placed stay on their seats; the window reopens in full.
+    room.bettingDeadline = Date.now() + BETTING_DURATION_MS;
+    room.bettingTimer = setTimeout(() => endBettingPhase(room), BETTING_DURATION_MS);
+  } else if (room.phase === 'spinning' && room.lastResult !== null) {
+    // The wheel has landed (the number is stored): only the payout is pending.
+    // If the settlement had started (`settling`) it runs again; it is computed
+    // from the stored number and bets, and its credits are keyed per stake.
+    scheduleSettlement(room, room.lastResult, RESTORE_SETTLE_DELAY_MS);
+  } else {
+    // idle, results: nothing at stake. Seats that had already left go now (the
+    // results sweep that would have pruned them did not run). The settled
+    // round's bets come off the seats here, as the next betting phase would
+    // have taken them off: outside a round, a bet on a seat is one to give back.
+    for (const [uid, p] of room.players) {
+      if (p.pendingRemoval) room.players.delete(uid);
+      p.bets = [];
+      p.totalBetThisRound = 0;
+      p.stakeId = null;
+    }
+    room.phase = 'idle';
+    if (room.players.size === 0) {
+      destroyRoom(room.roomId);
+      return;
+    }
+    room.restartTimer = setTimeout(() => {
+      room.restartTimer = null;
+      startBettingPhase(room);
+    }, 2000);
+  }
+
+  room.reconnectTimer = setTimeout(() => {
+    room.reconnectTimer = null;
+    if (!isLive(room)) return;
+    // Mid-spin an absent seat is already handled: its bets are settled by user
+    // id and the results sweep prunes it.
+    if (roundInProgress(room)) return;
+    for (const p of [...room.players.values()]) {
+      const sock = p.socketId ? ioRef.sockets.sockets.get(p.socketId) : null;
+      // The disconnect rule outside a spin: the seat leaves, and bets placed
+      // during betting are refunded.
+      if (sock?.connected) continue;
+      // Not if the user has since sat down at another table: leaveRoom acts on
+      // the table the user maps to, and joining that one already left this one.
+      if (userToRoom.get(p.userId) === room.roomId) leaveRoom(p.userId, p.socketId);
+    }
+  }, RESTORE_RECONNECT_MS);
+}
+
+export interface RouletteRestoreSummary {
+  restored: number;
+  /** Entries that were not valid tables. Left in the store for a person to read. */
+  unreadable: number;
+  /** Stakes found already refunded by the previous process, and taken off their seats. */
+  returnedStakes: number;
+  /** Tables whose stored spin the ledger shows was already paid: not paid or played again. */
+  settledRounds: number;
+}
+
+/**
+ * Turn durable tables on for this process and bring back every table the
+ * previous one saved. Called once at boot, before the hub listens, and only
+ * when `openCasinoTableStore()` returned a store. Never throws.
+ *
+ * Every seat comes back disconnected; a player returns through the ordinary
+ * `rl:join_room` reconnect branch. The betting window reopens at its full
+ * length; a spin that had landed pays 10 s after the restore, by user id, so
+ * a player who does not return is still paid.
+ *
+ * An entry that does not parse is logged at error level and LEFT in the
+ * store: it may hold stakes, and deleting it would delete the only record.
+ * If the ledger cannot be read to check what became of the stakes
+ * (`stake-ledger.ts`), no table with a stake is restored on this boot (they
+ * stay in the store for the next one).
+ */
+export async function restoreRouletteTables(io: Server, store: CasinoTableStore): Promise<RouletteRestoreSummary> {
+  ioRef = io;
+  durable = new TablePersistence(
+    store,
+    'roulette',
+    (id) => {
+      const room = rooms.get(id);
+      return room ? serializeRoom(room) : null;
+    },
+    logger,
+  );
+  const summary: RouletteRestoreSummary = { restored: 0, unreadable: 0, returnedStakes: 0, settledRounds: 0 };
+
+  let entries;
+  try {
+    entries = await store.loadAll('roulette');
+  } catch (err) {
+    logger.error({ event: 'rl_tables_load_failed', error: String(err) });
+    return summary;
+  }
+
+  const tables: StoredRouletteTable[] = [];
+  for (const entry of entries) {
+    const table = parseStoredRouletteTable(entry.data);
+    if (!table || table.roomId !== entry.id) {
+      summary.unreadable++;
+      logger.error({ event: 'rl_table_unreadable', roomId: entry.id });
+      continue;
+    }
+    if (table.players.length === 0) {
+      durable.remove(entry.id);
+      continue;
+    }
+    tables.push(table);
+  }
+
+  let fates: Map<string, StakeFate> | null;
+  try {
+    fates = await readStakeFates(
+      STAKE_KEYS,
+      tables.flatMap((t) => t.players.flatMap((seat) => (seat.stakeId && seatStake(seat) > 0 ? [seat.stakeId] : []))),
+    );
+  } catch (err) {
+    fates = null;
+    logger.error({ event: 'rl_tables_ledger_check_failed', error: String(err) });
+  }
+
+  for (const table of tables) {
+    const staked = table.players.some((seat) => seatStake(seat) > 0);
+    if (staked && !fates) {
+      logger.error({ event: 'rl_table_not_restored', roomId: table.roomId, reason: 'ledger unreadable' });
+      continue;
+    }
+    // A payout row for any stake: the old process settled this spin after the
+    // copy in the store was written. One transaction pays the whole table, so
+    // the round is over for every seat.
+    if (table.players.some((seat) => seat.stakeId && fates?.get(seat.stakeId) === 'paid')) {
+      summary.settledRounds++;
+      logger.warn({ event: 'rl_round_already_settled', roomId: table.roomId, round: table.roundNumber });
+      table.phase = 'results';
+    }
+    for (const seat of table.players) {
+      if (!seat.stakeId || fates?.get(seat.stakeId) !== 'returned') continue;
+      // Refunded by the previous process: the seat stays, with nothing on it.
+      summary.returnedStakes++;
+      logger.warn({ event: 'rl_stake_already_returned', roomId: table.roomId, userId: seat.userId, amount: seatStake(seat) });
+      seat.bets = [];
+      seat.totalBetThisRound = 0;
+      seat.stakeId = null;
+    }
+
+    const room = roomFromStored(table);
+    rooms.set(room.roomId, room);
+    for (const p of room.players.values()) {
+      // As after a mid-spin disconnect: the user still maps to the room, so
+      // joining another table leaves this one first.
+      if (!p.pendingRemoval) userToRoom.set(p.userId, room.roomId);
+    }
+    resumeRoom(room);
+    if (!rooms.has(room.roomId)) continue; // every seat had already left
+    durable.markDirty(room.roomId);
+    summary.restored++;
+  }
+
+  logger.info({ event: 'rl_tables_restored', ...summary });
+  return summary;
 }

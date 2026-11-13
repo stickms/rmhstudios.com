@@ -19,7 +19,8 @@
  * find them without SCAN. A key that expired is pruned from the index on load.
  */
 
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
+import { connectStateRedis } from '../shared/redis-state';
 import { z } from 'zod';
 import type { RMHboxLobby, RMHboxPlayer, RMHboxSpectator, LobbySettings, LobbyState } from './types';
 
@@ -359,8 +360,6 @@ interface StoreLogger {
   warn(entry: Record<string, unknown>): void;
 }
 
-const CONNECT_TIMEOUT_MS = 3_000;
-
 /**
  * Open the durable lobby store, or return `null` (feature off). Never throws.
  * With `RMHBOX_DURABLE_LOBBIES` unset this returns before constructing
@@ -377,35 +376,19 @@ export async function openLobbyStore(
     return null;
   }
 
-  const redis = new Redis(url, {
-    lazyConnect: true,
-    connectTimeout: CONNECT_TIMEOUT_MS,
-    // Boot only: give up quickly instead of retrying forever if Redis is down.
-    retryStrategy: () => null,
-    maxRetriesPerRequest: 1,
-  });
-  // Errors after boot must never crash the hub; save failures are logged by the caller.
-  redis.on('error', (err: Error) => logger.warn({ event: 'durable_lobbies_redis_error', error: err.message }));
-
-  try {
-    await Promise.race([
-      redis.connect(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('connect timeout')), CONNECT_TIMEOUT_MS + 500).unref(),
-      ),
-    ]);
-  } catch (err) {
+  const connection = await connectStateRedis(url, (err) =>
+    // Errors after boot must never crash the hub; save failures are logged by the caller.
+    logger.warn({ event: 'durable_lobbies_redis_error', error: err.message }),
+  );
+  if ('error' in connection) {
     logger.warn({
       event: 'durable_lobbies_unavailable',
-      error: err instanceof Error ? err.message : String(err),
+      error: connection.error,
       fallback: 'in-memory lobbies (lost on restart)',
     });
-    redis.disconnect();
     return null;
   }
 
-  // Connected: allow normal reconnects from here on.
-  redis.options.retryStrategy = (times) => Math.min(times * 200, 5_000);
   logger.info({ event: 'durable_lobbies_enabled' });
-  return new RedisLobbyStore(redis);
+  return new RedisLobbyStore(connection.redis);
 }

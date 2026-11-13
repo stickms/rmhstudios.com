@@ -1,5 +1,6 @@
 /**
- * A deploy during an open blackjack round (third-pass audit OP3, done-when).
+ * A deploy during an open blackjack round, and during a baccarat deal
+ * (third-pass audit OP3, done-when).
  *
  * Unlike the other files here this one does not go through the web app. It
  * runs the socket hub's casino tier inside the test process, twice: a real
@@ -19,9 +20,12 @@
  * title says which one ran.
  *
  * Not covered here: the hub's session middleware (a test middleware reads the
- * user id from the handshake), the OS signal, and the process exit. The shoe
- * is stacked so the restarted round can be compared, card for card and coin
+ * user id from the handshake), the OS signal, and the process exit. The shoes
+ * are stacked so the restarted round can be compared, card for card and coin
  * for coin, with the same round played without a restart.
+ *
+ * The baccarat case runs on the hub's real clocks (a 20 s betting window, a
+ * 10 s wait before a restored deal pays), so it takes about 45 s.
  */
 import { createServer, type Server as HttpServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -48,6 +52,22 @@ vi.mock('../../features/casino/engine/blackjack/logic', async (importOriginal) =
     createShoe: () => [
       ...Array.from({ length: 100 }, () => ({ suit: 'S', rank: '2' })),
       ...[...shoe.ranks].reverse().map((rank) => ({ suit: 'H', rank })),
+    ],
+  };
+});
+
+/**
+ * Baccarat: player 2, 3 (five: draws); banker K, 4 (four). The player draws a
+ * 5 (zero); the banker, on four against a 5, draws a 3 (seven). Banker wins.
+ */
+const baccShoe = vi.hoisted(() => ({ ranks: ['2', 'K', '3', '4', '5', '3'] }));
+vi.mock('../../features/casino/engine/baccarat/logic', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../features/casino/engine/baccarat/logic')>();
+  return {
+    ...actual,
+    createShoe: () => [
+      ...Array.from({ length: 100 }, () => ({ suit: 'S', rank: '9' })),
+      ...[...baccShoe.ranks].reverse().map((rank) => ({ suit: 'H', rank })),
     ],
   };
 });
@@ -201,9 +221,9 @@ async function playToBsTurn(hub: Hub, aId: string, bId: string) {
   return { a, b, roomId, table: await bsTurn };
 }
 
-async function leave(socket: ClientSocket): Promise<void> {
-  const left = next(socket, 'bj:room_left');
-  socket.emit('bj:leave_room');
+async function leave(socket: ClientSocket, game: 'bj' | 'bacc' = 'bj'): Promise<void> {
+  const left = next(socket, `${game}:room_left`);
+  socket.emit(`${game}:leave_room`);
   await left;
 }
 
@@ -342,4 +362,119 @@ describe(`a deploy during an open blackjack round (table store: ${BACKING})`, ()
     await leave(a2);
     await second.stop();
   }, 60_000);
+});
+
+// ─── Baccarat ────────────────────────────────────────────────────
+
+interface BaccTableState {
+  phase: string;
+  roundNumber: number;
+  playerHand: Array<{ suit: string; rank: string }>;
+  bankerHand: Array<{ suit: string; rank: string }>;
+  players: Array<{ userId: string; totalBetThisRound: number; lastPayout: number }>;
+}
+interface BaccRoundResult {
+  result: string;
+  playerHand: Array<{ suit: string; rank: string }>;
+  bankerHand: Array<{ suit: string; rank: string }>;
+  playerValue: number;
+  bankerValue: number;
+}
+
+/** A creates a table, B joins. A puts 20 on banker, B 10 on player and 5 on the tie. Betting stays open. */
+async function seatAndBetBaccarat(hub: Hub, aId: string, bId: string) {
+  const a = await player(hub, aId);
+  const b = await player(hub, bId);
+  const created = next<{ roomId: string }>(a, 'bacc:room_created');
+  a.emit('bacc:create_room', { name: 'Restart', privacy: 'unlisted' });
+  const { roomId } = await created;
+  const joined = next(b, 'bacc:room_joined');
+  b.emit('bacc:join_room', { roomId });
+  await joined;
+  for (const [socket, type, amount] of [
+    [a, 'banker', 20],
+    [b, 'player', 10],
+    [b, 'tie', 5],
+  ] as const) {
+    const debited = next(socket, 'bacc:balance_update');
+    socket.emit('bacc:place_bet', { type, amount });
+    await debited;
+  }
+  return { a, b, roomId };
+}
+
+describe(`a deploy during a baccarat deal (table store: ${BACKING})`, () => {
+  it('completes the deal from the stored shoe and pays the same hands, to a player who returns and one who does not', async () => {
+    const [aId, bId, cId, dId] = await Promise.all(['ba', 'bb', 'bc', 'bd'].map(seedUser));
+    const { MemoryCasinoTableStore } = await import('../../features/casino/server/table-store');
+    const memory = REDIS_URL ? null : new MemoryCasinoTableStore();
+
+    // ── Process 1 ──
+    const first = await startHub(memory);
+
+    // The round with no restart (users C and D). Its betting window closes 6 s before the other table's.
+    const control = await seatAndBetBaccarat(first, cId, dId);
+    const controlResult = next<BaccRoundResult>(control.a, 'bacc:round_result', () => true, 40_000);
+    const controlSettled = next<BaccTableState>(control.a, 'bacc:table_state', (s) => s.phase === 'results', 40_000);
+    await new Promise((resolve) => setTimeout(resolve, 6_000));
+
+    // The round the deploy lands on (users A and B).
+    const open = await seatAndBetBaccarat(first, aId, bId);
+    const dealing = next<BaccTableState>(open.a, 'bacc:table_state', (s) => s.phase === 'dealing', 40_000);
+
+    const expected = await controlResult;
+    await controlSettled;
+    expect(expected).toMatchObject({ result: 'banker', playerValue: 0, bankerValue: 7 });
+    expect(expected.bankerHand.map((c) => c.rank)).toEqual(['K', '4', '3']);
+    expect(await coins(cId)).toBe(START - 20 + 40);
+    expect(await coins(dId)).toBe(START - 15);
+    // They leave while the results show: their seats wait for the sweep, which the deploy cuts off.
+    await leave(control.a, 'bacc');
+    await leave(control.b, 'bacc');
+
+    // The deploy: the first four cards are drawn, no third card yet, nothing paid.
+    await dealing;
+    const summaries = (await first.stop()) as Array<{ game: string; claims: number; saved?: number }>;
+    const baccarat = summaries.find((s) => s.game === 'baccarat')!;
+    expect(baccarat.claims).toBe(0); // saved, not refunded
+    expect(baccarat.saved).toBeGreaterThanOrEqual(1);
+    expect(await coins(aId)).toBe(START - 20);
+    expect(await coins(bId)).toBe(START - 15);
+
+    // ── Process 2 ──
+    baccShoe.ranks = ['9', '9', '9', '9', '9', '9']; // a shoe built now would deal these
+    const second = await startHub(memory);
+    const a2 = await player(second, aId); // B does not reconnect
+    const aBack = next<BaccTableState>(a2, 'bacc:table_state');
+    const result = next<BaccRoundResult>(a2, 'bacc:round_result', () => true, 30_000);
+    a2.emit('bacc:join_room', { roomId: open.roomId });
+    const resumed = await aBack;
+    expect(resumed.roundNumber).toBe(1);
+    expect(resumed.playerHand.map((c) => c.rank)).toEqual(['2', '3', '5']);
+    expect(resumed.bankerHand.map((c) => c.rank)).toEqual(['K', '4', '3']);
+    expect(resumed.players.map((p) => [p.userId, p.totalBetThisRound])).toEqual([
+      [aId, 20],
+      [bId, 15],
+    ]);
+
+    expect(await result).toEqual(expected); // the restored deal pays 10 s after the restore
+    await next<BaccTableState>(a2, 'bacc:table_state', (s) => s.phase === 'results');
+    expect(await coins(aId)).toBe(await coins(cId));
+    expect(await coins(bId)).toBe(await coins(dId));
+    // Exactly the rows a round with no restart writes: nothing refunded, nothing paid twice.
+    expect(await ledger(aId)).toEqual(await ledger(cId));
+    expect(await ledger(bId)).toEqual(await ledger(dId));
+    expect(await ledger(aId)).toEqual([
+      [-20, 'Baccarat bet'],
+      [40, 'Baccarat payout'],
+    ]);
+
+    // B's seat is pruned once the results have been shown; A's stays. A leaves, so the entry leaves the store.
+    const pruned = await next<BaccTableState>(a2, 'bacc:table_state', (s) => s.phase === 'betting');
+    expect(pruned.players.map((p) => p.userId)).toEqual([aId]);
+    await leave(a2, 'bacc');
+    // The other table came back with both seats already gone, and was removed at the restore.
+    expect((await import('../../features/casino/server')).listCasinoRooms().baccarat).toEqual([]);
+    await second.stop();
+  }, 120_000);
 });

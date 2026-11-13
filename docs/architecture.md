@@ -368,24 +368,29 @@ realtime topology.)
   lobby nobody returns to disbands as it always has. With the flag unset, or
   the plane unreachable, nothing is constructed and lobbies are lost on restart
   as before. Details: `server/CLAUDE.md` (rmhbox).
-- **Durable blackjack tables (third-pass audit OP3, off by default):** with
+- **Durable casino tables (third-pass audit OP3, off by default):** with
   `CASINO_DURABLE_TABLES=1` **and** `REDIS_STATE_URL` reachable at boot, the
-  socket hub writes each blackjack table to the `redis-state` plane as
-  `casino:table:blackjack:<roomId>` (versioned JSON, no TTL, indexed by the set
-  `casino:tables:blackjack`): after every change (coalesced, 500 ms), at once
-  after a stake lands, and once more inside its graceful shutdown, where the
-  save replaces the refund. The next process restores the tables before it
-  listens. A deploy during a round then keeps the round: the same seats, bets,
-  hands, dealer cards and shoe, with each phase clock restarted in full. A
-  player who does not reconnect is stood by the turn clock and paid by user id,
-  as after any disconnect. A stake is saved or refunded, never both: if the
+  socket hub writes each blackjack, roulette and baccarat table to the
+  `redis-state` plane as `casino:table:<game>:<roomId>` (versioned JSON, no TTL,
+  indexed by the set `casino:tables:<game>`): after every change (coalesced,
+  500 ms), at once after a stake moves, and once more inside its graceful
+  shutdown, where the save replaces the refund. The next process restores the
+  tables before it listens. A deploy during a round then keeps the round: the
+  same seats and bets, and the blackjack hands and shoe, the number a roulette
+  wheel landed on, or the baccarat hands and shoe. Betting windows and turn
+  clocks restart in full; a round that was only waiting to be paid is paid 10 s
+  after the restore. A player who does not reconnect is paid by user id, as
+  after any disconnect. A stake is saved or refunded, never both: if the
   shutdown save is not acknowledged the stakes are refunded under a per-stake
-  ledger key, and restore zeroes any stored stake that has such a refund row.
-  With the flag unset, or the plane unreachable at boot, nothing is constructed
-  and every casino table refunds at shutdown as before. Roulette, baccarat and
-  Hold'em refund at shutdown in both cases. Do not unset the flag while the
-  store still holds tables: the off path never reads them. Details:
-  `server/CLAUDE.md` (socket-server).
+  ledger key (`<game>-return:<stakeId>`), payouts are credited under
+  `<game>-payout:<stakeId>`, and restore reads both, so a returned stake comes
+  off its seat and a round that was already paid is not played again. With the
+  flag unset, or the plane unreachable at boot, nothing is constructed and
+  every casino table refunds at shutdown as before. Hold'em cashes out at
+  shutdown in both cases: its chips move between seats without ledger rows and
+  it has no rejoin path. Do not unset the flag while the store still holds
+  tables: the off path never reads them. Details: `server/CLAUDE.md`
+  (socket-server).
 
 ## 8. Observability
 

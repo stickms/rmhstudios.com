@@ -33,6 +33,9 @@ import {
   unsavedTableClaims,
   type StoredBlackjackTable,
 } from './blackjack-table-state';
+import { saveTablesOrRefund } from './durable-shutdown';
+import { stakeKeys, type StakeFate } from './stake-keys';
+import { readStakeFates } from './stake-ledger';
 import { TablePersistence } from './table-persistence';
 import type { CasinoTableStore } from './table-store';
 import {
@@ -249,6 +252,7 @@ const inFlight = new InFlight();
 // Set once by restoreBlackjackTables() when CASINO_DURABLE_TABLES is on; null
 // otherwise, and then every `durable?.` below does nothing.
 let durable: TablePersistence | null = null;
+const STAKE_KEYS = stakeKeys('bj');
 
 // Socket.io room that lobby browsers join so room-list updates reach only the
 // clients currently viewing the lobby — not every connected socket on the
@@ -2136,13 +2140,11 @@ function roomFromStored(s: StoredBlackjackTable): BlackjackRoom {
  *    process runs the settlement again and the per-stake keys make every
  *    credit that already landed a no-op.
  *
- * A stake is saved or refunded, never both. If the store does not acknowledge
- * the write (rejected, or no answer in half the deadline), every unsettled
- * stake is refunded under its `bj-return:<stakeId>` key. The store may still
- * hold the table (the write landed after all, or an older coalesced save is
- * there): restore looks those keys up and zeroes any stake that has one.
+ * A stake is saved or refunded, never both: `saveTablesOrRefund`
+ * (`durable-shutdown.ts`) refunds every unsettled stake under its
+ * `bj-return:<stakeId>` key when the store does not acknowledge the write.
  */
-async function saveBlackjackOnShutdown(
+function saveBlackjackOnShutdown(
   tables: TablePersistence,
   deadlineMs: number,
 ): Promise<ShutdownRefundSummary> {
@@ -2156,21 +2158,7 @@ async function saveBlackjackOnShutdown(
   userToRoom.clear();
   socketToUserId.clear();
 
-  const startedAt = Date.now();
-  const outcome = await tables.saveAtShutdown(
-    stored.map((t) => ({ id: t.roomId, data: t })),
-    deadlineMs / 2,
-  );
-  const remainingMs = Math.max(0, deadlineMs - (Date.now() - startedAt));
-
-  if (outcome !== 'saved') {
-    const claims = stored.flatMap(unsavedTableClaims);
-    logger.error({ event: 'bj_tables_not_saved_refunding', outcome, tables: stored.length, claims: claims.length });
-    return settleShutdownClaims('blackjack', claims, inFlight, remainingMs);
-  }
-  // Nothing to refund; still wait (inside the deadline) for in-flight work.
-  const summary = await settleShutdownClaims('blackjack', [], inFlight, remainingMs);
-  return { ...summary, saved: stored.length };
+  return saveTablesOrRefund('blackjack', tables, stored, unsavedTableClaims, inFlight, deadlineMs);
 }
 
 /** A restored round is given this long, per phase, before its clock acts. See RESTORE_* above. */
@@ -2233,31 +2221,14 @@ function resumeRoom(room: BlackjackRoom) {
   }, RESTORE_RECONNECT_MS);
 }
 
-/**
- * Stakes in `tables` that the previous process gave back after its last
- * successful save: the stake ids that have a `bj-return:` row in the ledger.
- */
-async function returnedStakeIds(tables: StoredBlackjackTable[]): Promise<Set<string>> {
-  const byKey = new Map<string, string>();
-  for (const t of tables) {
-    for (const seat of t.players) {
-      if (seat.stakeId && seatStake(seat) > 0) byKey.set(returnKey(seat.stakeId), seat.stakeId);
-    }
-  }
-  if (byKey.size === 0) return new Set();
-  const rows = await getPrismaClient().coinTransaction.findMany({
-    where: { idempotencyKey: { in: [...byKey.keys()] } },
-    select: { idempotencyKey: true },
-  });
-  return new Set(rows.map((r) => byKey.get(r.idempotencyKey ?? '')).filter((id): id is string => !!id));
-}
-
 export interface BlackjackRestoreSummary {
   restored: number;
   /** Entries that were not valid tables. Left in the store for a person to read. */
   unreadable: number;
   /** Stakes found already refunded by the previous process, and zeroed. */
   returnedStakes: number;
+  /** Tables whose stored round the ledger shows was already paid: not played again. */
+  settledRounds: number;
 }
 
 /**
@@ -2272,9 +2243,10 @@ export interface BlackjackRestoreSummary {
  *
  * An entry that does not parse is logged at error level and LEFT in the
  * store: it may hold stakes, and deleting it would delete the only record.
- * If the ledger cannot be read to check for returned stakes, no table with a
- * stake is restored on this boot (they stay in the store for the next one):
- * restoring one unchecked could pay a stake that was already refunded.
+ * If the ledger cannot be read to check what became of the stakes
+ * (`stake-ledger.ts`), no table with a stake is restored on this boot (they
+ * stay in the store for the next one): restoring one unchecked could pay a
+ * stake that was already refunded, or replay a round that was already paid.
  */
 export async function restoreBlackjackTables(
   io: Server,
@@ -2290,7 +2262,7 @@ export async function restoreBlackjackTables(
     },
     logger,
   );
-  const summary: BlackjackRestoreSummary = { restored: 0, unreadable: 0, returnedStakes: 0 };
+  const summary: BlackjackRestoreSummary = { restored: 0, unreadable: 0, returnedStakes: 0, settledRounds: 0 };
 
   let entries;
   try {
@@ -2315,25 +2287,40 @@ export async function restoreBlackjackTables(
     tables.push(table);
   }
 
-  let returned: Set<string> | null;
+  let fates: Map<string, StakeFate> | null;
   try {
-    returned = await returnedStakeIds(tables);
+    fates = await readStakeFates(
+      STAKE_KEYS,
+      tables.flatMap((t) => t.players.flatMap((seat) => (seat.stakeId && seatStake(seat) > 0 ? [seat.stakeId] : []))),
+    );
   } catch (err) {
-    returned = null;
+    fates = null;
     logger.error({ event: 'bj_tables_ledger_check_failed', error: String(err) });
   }
 
   for (const table of tables) {
     const staked = table.players.some((seat) => seatStake(seat) > 0);
-    if (staked && !returned) {
+    if (staked && !fates) {
       logger.error({ event: 'bj_table_not_restored', roomId: table.roomId, reason: 'ledger unreadable' });
       continue;
     }
+    // A payout row for any stake: the old process settled this round after the
+    // copy in the store was written. The round is over for the whole table (one
+    // transaction pays it), so it is not played again and takes no new stake.
+    const settled = table.players.some((seat) => seat.stakeId && fates?.get(seat.stakeId) === 'paid');
+    if (settled) {
+      summary.settledRounds++;
+      logger.warn({ event: 'bj_round_already_settled', roomId: table.roomId, round: table.roundNumber });
+      table.phase = 'results';
+    }
     for (const seat of table.players) {
-      if (!seat.stakeId || !returned?.has(seat.stakeId)) continue;
-      // Refunded by the previous process: the seat stays, with nothing on it.
-      summary.returnedStakes++;
-      logger.warn({ event: 'bj_stake_already_returned', roomId: table.roomId, userId: seat.userId, amount: seatStake(seat) });
+      const returned = !!seat.stakeId && fates?.get(seat.stakeId) === 'returned';
+      if (!returned && !settled) continue;
+      if (returned) {
+        // Refunded by the previous process: the seat stays, with nothing on it.
+        summary.returnedStakes++;
+        logger.warn({ event: 'bj_stake_already_returned', roomId: table.roomId, userId: seat.userId, amount: seatStake(seat) });
+      }
       seat.bet = 0;
       seat.insuranceBet = 0;
       for (const h of seat.hands) h.bet = 0;

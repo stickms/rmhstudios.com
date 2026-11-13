@@ -376,7 +376,7 @@ touches. Blocking on every PR (the `integration` job in `web-ci.yml`).
 | `developer-api.test.ts`  | free accounts cannot mint keys; a paid key authenticates `/api/v1/me`; revoked and made-up keys → 401; scopes (read-only key cannot post, `write:posts` can)                                                                                                                                                                          |
 | `stripe-webhook.test.ts` | signed `customer.subscription.created/updated/deleted` events POSTed to `/api/auth/stripe/webhook`: bad/forged/missing signature gives 4xx and no row; created grants the tier (visible in the session's `tier`); replays are idempotent (one row); updated changes plan; deleted downgrades to free; unknown customer grants nothing |
 | `public.test.ts`         | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge                                                                                                                                                                                                                               |
-| `casino-restart.test.ts` | a deploy during an open blackjack round (third-pass audit OP3): the round settles to the same players with the cards, results, balances and ledger rows of the same round played without a restart; a player who does not come back is still paid. Not through the web app: see below                                                    |
+| `casino-restart.test.ts` | a deploy during an open blackjack round and during a baccarat deal (third-pass audit OP3): each settles to the same players with the cards, results, balances and ledger rows of the same round with no restart; an absent player is still paid. Baccarat takes about 45 s (real clocks). Not through the web app: see below             |
 
 How it works: `global-setup.ts` waits for `/api/ready`, then signs up the shared
 cast (`alice`, `bob`, `carol`) once and hands their cookies to the files via
@@ -431,7 +431,8 @@ compared card for card. The table store is Redis when
 container and sets it; each simulated process opens its own connection) and one
 in-memory store carried across otherwise; the describe title names the one that
 ran. If the variable is set and Redis is unreachable the test fails. Use a
-throwaway Redis: the test writes `casino:table:blackjack:*`. It seeds its own users
+throwaway Redis: the test writes `casino:table:blackjack:*` and
+`casino:table:baccarat:*`. It seeds its own users
 directly, so it can be run without the web app by giving vitest a config with the
 same aliases and no `globalSetup`.
 

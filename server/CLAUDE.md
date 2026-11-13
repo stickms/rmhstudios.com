@@ -65,48 +65,91 @@ socket)` (casino games also `initialize<Game>(io)` at boot, and a
     `features/casino/server/casino-shutdown.ts`; a new casino game needs one). Registered
     per-connection in `index.ts`. Isolation is by event-name prefix
     (`rmhtype:*`, `altair:*`, `bj:*`, …) + socket.io rooms — **no namespaces**.
-  - **Durable casino tables (third-pass audit OP3, first slice, OFF by default).** Enabled
+  - **Durable casino tables (third-pass audit OP3, OFF by default).** Enabled
     only when `CASINO_DURABLE_TABLES=1` AND `REDIS_STATE_URL` (the `redis-state` plane,
     never the cache-plane `REDIS_URL`) is reachable at boot; otherwise
     `openCasinoTableStore()` returns `null`, nothing is constructed and every casino game
-    refunds at shutdown as above. Blackjack is the only game on it: roulette, baccarat and
-    Hold'em refund at shutdown either way. Files, all in `features/casino/server/`:
-    `table-store.ts` (the `CasinoTableStore` contract, Redis and in-memory; one key per
-    table `casino:table:<game>:<roomId>`, set index `casino:tables:<game>`, **no TTL**: an
-    expired table would be lost coins), `table-persistence.ts` (coalesced 500 ms save per
-    table from `broadcastTableState`, an immediate save after any stake lands, remove on
-    destroy), `blackjack-table-state.ts` (the stored shape, zod-validated: seats, bets,
-    hands, dealer cards, the whole shoe in draw order, turn order; no timers, socket ids
-    or deadlines). `restoreCasinoTables(io)` runs **before `listen()`**.
-    - **Saved or refunded, never both.** With the store on, blackjack's entry in
+    refunds at shutdown as above. **Blackjack, roulette and baccarat are on it. Hold'em is
+    not** and cashes out at shutdown either way (why: last bullet). Files, all in
+    `features/casino/server/`: `table-store.ts` (the `CasinoTableStore` contract, Redis and
+    in-memory; one key per table `casino:table:<game>:<roomId>`, set index
+    `casino:tables:<game>`, **no TTL**: an expired table would be lost coins; the boot
+    connect is `server/shared/redis-state.ts`, shared with rmhbox's lobby store),
+    `table-persistence.ts` (coalesced 500 ms save per table from `broadcastTableState`, an
+    immediate save after any stake moves, remove on destroy), `<game>-table-state.ts` (the
+    stored shape, zod-validated, `v: 1`; no timers, socket ids or deadlines),
+    `stake-keys.ts` / `stake-ledger.ts` (the ledger keys and the read at restore),
+    `durable-shutdown.ts` (save or refund). `restoreCasinoTables(io)` runs **before
+    `listen()`**, one game after another; one game failing does not stop the next.
+    - **What is stored.** Blackjack: seats, bets, hands, dealer cards, turn order and the
+      whole shoe in draw order. Roulette: seats, every bet, the history and, while the
+      wheel spins, the number it landed on (`lastResult`; an entry that says `spinning`
+      with no number does not parse). Baccarat: seats, bets, both hands as drawn so far,
+      the history and the whole shoe. Roulette and baccarat also store `settling` (the
+      settlement had started, so its history and statistics are already counted).
+    - **Saved or refunded, never both.** With the store on, each game's entry in
       `CASINO_SHUTDOWN_REFUNDS` snapshots every table synchronously (before `io.close()`,
       so the disconnect fan-out cannot forfeit a turn or refund the betting phase), empties
       its maps and writes the snapshots in one call. Nothing is refunded. If the store does
       not acknowledge the write within half the casino deadline, every unsettled stake is
-      refunded instead, under the key `bj-return:<stakeId>`.
-    - **Ledger keys.** Each bet mints a `stakeId` on its seat. With the store on, the
-      round's payout is credited under `bj-payout:<stakeId>` and a stake given back
-      unplayed (player left during betting, or the failed-save refund above) under
-      `bj-return:<stakeId>`. Restore reads the `bj-return:` rows for every staked seat it
-      is about to bring back and zeroes the ones that exist, and a settlement that runs a
-      second time (saved mid-payout, or restored from a save older than the payout)
-      credits nothing twice. If that ledger read fails at boot, tables with a stake are
-      not restored on that boot and stay in the store.
+      refunded instead, under the key `<game>-return:<stakeId>` (`saveTablesOrRefund`).
+    - **Ledger keys.** Prefixes `bj`, `rl`, `bacc`. A blackjack bet mints a `stakeId` on
+      its seat; in roulette and baccarat the first bet on a seat mints it, later bets ride
+      on it, and clearing the bets drops it (the next bet is a new stake). With the store
+      on, the round's payout is credited under `<game>-payout:<stakeId>` and a stake given
+      back unplayed (cleared, the player left during betting, or the failed-save refund
+      above) under `<game>-return:<stakeId>`. Restore reads both for every staked seat it is
+      about to bring back. A `return` row: the stake comes off the seat. A `payout` row
+      for ANY stake at a table: the old process settled that round after the stored copy
+      was written (one transaction pays the whole table), so the round is not paid or
+      played again and takes no new stake; the table comes back between rounds. A
+      settlement that does run a second time (saved mid-payout before its transaction
+      committed) credits nothing twice. If that ledger read fails at boot, tables with a
+      stake are not restored on that boot and stay in the store.
     - **Restore.** Every seat comes back disconnected; the player returns through the
-      ordinary `bj:join_room` reconnect branch (the client already rejoins its seat). Every
-      phase clock restarts at its full length (betting 15 s, insurance 10 s, turn 30 s); a
-      round that was waiting on the dealer's reveal pays 10 s after the restore. A player
-      who does not return is handled by the existing rules: the turn clock stands the
-      hand, the payout is credited by user id, the results sweep prunes the seat; 30 s
-      after the restore a seat still absent outside a round leaves the table (a bet placed
-      in the betting phase is refunded). An entry that does not parse is logged
-      (`bj_table_unreadable`) and left in the store.
+      game's ordinary `join_room` reconnect branch (these three clients already rejoin
+      their seat). Clocks: every betting window reopens at its full length (blackjack
+      15 s, roulette 25 s, baccarat 20 s) with the bets already placed still on their
+      seats; blackjack insurance 10 s and turn 30 s restart in full; a blackjack round
+      waiting on the dealer's reveal, a roulette spin that had landed and a baccarat deal
+      in progress each pay 10 s after the restore. The roulette wheel is not spun again:
+      the stored number is paid. A baccarat deal is not replayed card by card: the third
+      cards are drawn at once from the stored shoe by the rules and the whole hands are
+      shown to whoever rejoins. A player who does not return is handled by the existing
+      rules: the blackjack turn clock stands the hand, every payout is credited by user
+      id, the results sweep prunes the seat; 30 s after the restore a seat still absent
+      outside a round leaves the table (a bet placed in the betting phase is refunded
+      under its `return` key). An entry that does not parse is logged
+      (`<bj|rl|bacc>_table_unreadable`) and left in the store.
     - **Turning it off** with tables still in the store leaves their stakes there: the
       off path never reads the store. Turn it off only after a boot with it on has logged
-      `bj_tables_restored` and those rounds have ended.
-    - Tests: `features/casino/server/__tests__/blackjack-durable-tables.test.ts` (fake
-      timers, in-memory store and ledger) and `testing/integration/casino-restart.test.ts`
-      (real Socket.IO, Postgres ledger, Redis when `INTEGRATION_REDIS_STATE_URL` is set).
+      `bj_tables_restored`, `rl_tables_restored` and `bacc_tables_restored` and those
+      rounds have ended.
+    - **Known gaps.** After a crash (no shutdown) a table comes back as of its last
+      acknowledged save, so a stake debited after that save is lost, as every stake is
+      with the switch off. If the saves had been failing since before a round was
+      settled, and every seat lost that round (no `payout` row exists: the ledger holds
+      no zero-amount rows), the stored round is played again; closing that needs a
+      settled marker outside the coin ledger, which means a table and a migration. A
+      change to a stored shape needs a migration or an empty store: an entry of another
+      version is left unread.
+    - **Why Hold'em is not on the store.** (1) Its chips move between seats in memory
+      (blinds, calls, pots) and only the buy-in and the cash-out touch the ledger, so no
+      per-stake key can tell a restore that an older stored copy is wrong: a seat cashed
+      out after the copy was written took chips the copy still shows on other seats, and
+      restoring it mints or loses coins. It needs a cash-out key per seat and a rule for a
+      copy older than a cash-out (for example, the stored table total less the cash-out
+      rows since), which is an owner decision. (2) It has no rejoin path: the hub folds
+      and cashes out a seat the moment its socket drops, and the client goes back to the
+      lobby on reconnect because `holdem:join_room` is a buy-in
+      (`features/casino/engine/holdem/socket.ts`). A restored table would hold seats
+      nobody can return to; that needs a seat hold on disconnect and a client change.
+      (3) `endHand` finishes through a closure and two timed showdown steps that would
+      have to become restorable states.
+    - Tests: `features/casino/server/__tests__/{blackjack,roulette,baccarat}-durable-tables.test.ts`
+      (fake timers, in-memory store and ledger) and `testing/integration/casino-restart.test.ts`
+      (real Socket.IO, Postgres ledger, Redis when `INTEGRATION_REDIS_STATE_URL` is set;
+      blackjack and baccarat).
   - **Feature handlers (redesign A1):** a moved feature keeps its handlers in
     `features/<id>/server/` and default-exports one `FeatureSocketServer` from
     `features/<id>/server/index.ts`; `socket-server/features.ts` lists them and `index.ts`
@@ -254,8 +297,10 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   `createServerPrismaClient(logger)` (`@prisma/adapter-pg`, pool
   `SERVER_DB_POOL_SIZE` default 5), `createRateLimiter(rules)` (per
   `socketId:event` sliding window), `session-auth.ts` (the ONE Better Auth session
-  check — see Auth below) and `redis-adapter.ts` (opt-in Socket.IO Redis
-  adapter). **Room/lobby abstractions are NOT shared** — each hub owns its own.
+  check — see Auth below), `redis-adapter.ts` (opt-in Socket.IO Redis
+  adapter) and `redis-state.ts` (`connectStateRedis`: the one bounded boot-time
+  connect to the `redis-state` plane, used by rmhbox's lobby store and the
+  casino table store). **Room/lobby abstractions are NOT shared** — each hub owns its own.
 
 ### Deleted (replaced by Go)
 
@@ -312,7 +357,7 @@ history if a rollback ever needs it.
    `shared/redis-adapter.ts`; otherwise logged, in-memory adapter, hub still
    starts) but that only lays the backplane: **room/lobby/
    stake state still lives in process memory**. rmhbox's opt-in durable lobbies
-   and the opt-in durable blackjack tables (`CASINO_DURABLE_TABLES=1`)
+   and the opt-in durable casino tables (`CASINO_DURABLE_TABLES=1`)
    (above) survive a restart of ONE instance; they are not a shared live store
    (each process still owns its Maps), so running two replicas is NOT yet safe.
    Do not raise replica counts.
@@ -328,9 +373,10 @@ history if a rollback ever needs it.
    credential and stays in the hubs.
 3. rmhtube persists rooms; rmhbox persists lobbies only with
    `RMHBOX_DURABLE_LOBBIES=1` + `REDIS_STATE_URL` (off by default), and never a
-   round in progress. socket-server persists blackjack tables, round in progress
-   included, only with `CASINO_DURABLE_TABLES=1` + `REDIS_STATE_URL` (off by
-   default); every other casino table and game room there is memory only.
+   round in progress. socket-server persists blackjack, roulette and baccarat
+   tables, round in progress included, only with `CASINO_DURABLE_TABLES=1` +
+   `REDIS_STATE_URL` (off by default); Hold'em and every other game room there
+   are memory only.
 4. Leaderboard/match writes are fire-and-forget — never block gameplay on DB
    success.
 5. Per-socket rate limits reset on reconnect; the rule maps in each
