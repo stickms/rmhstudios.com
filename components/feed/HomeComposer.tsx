@@ -1,6 +1,6 @@
 import { Suspense, lazy, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { MoreHorizontal } from 'lucide-react';
+import { BarChart3, ImagePlay, ImagePlus, MoreHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,7 @@ const ComposeBox = lazy(() => import('./ComposeBox').then((m) => ({ default: m.C
  * It sends through the same submit path as the full composer (`useComposeSubmit`): the post appears at the top of the
  * feed at once in its dimmed "posting" state, and is reconciled or rolled back and restored into the field when the
  * server answers. Anything richer than a line of text (pictures, a poll, a GIF, a schedule) is the full composer, one
- * press away behind the three dots in the row: the row becomes the full composer in place, carrying whatever has been
+ * press away behind the three dots in the row (a picture, a GIF and a poll have their own buttons beside them): the row becomes the full composer in place, carrying whatever has been
  * typed, with its options open as a dropdown (owner, 2026-11-13: "a dropdown three dots menu for post options that
  * doesn't open a modal"). The row shows at every width: the globe no longer carries "Write a post", so on a phone this
  * is where a post is written.
@@ -46,7 +46,13 @@ export function HomeComposer() {
   const { resolved } = useResolvedUser();
   const postsPlus = usePostsPlusCompose();
   const [content, setContent] = useState('');
-  const [expanded, setExpanded] = useState(false);
+  // What the row was expanded with: the options menu, pictures already chosen, or the GIF picker or poll editor.
+  const [expanded, setExpanded] = useState<{
+    menu?: boolean;
+    files?: File[];
+    attachment?: 'gif' | 'poll';
+  } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -110,7 +116,9 @@ export function HomeComposer() {
     snapshotDraft: () => ({ content, answering: postsPlus.answering }),
     // A failed post goes back into the field, ahead of anything typed since.
     restoreFailedDraft: (draft) => {
-      setContent((current) => (current.trim() ? prependFailedContent(draft.content, current) : draft.content));
+      setContent((current) =>
+        current.trim() ? prependFailedContent(draft.content, current) : draft.content,
+      );
       postsPlus.restore({ ttl: null, series: null, answering: draft.answering });
     },
     resetForm,
@@ -149,11 +157,13 @@ export function HomeComposer() {
           <div className="-mx-4 -my-3">
             <ComposeBox
               initialContent={content}
-              openMenuOnMount
+              openMenuOnMount={expanded.menu === true}
               menuTrigger="dots"
+              initialAttachment={expanded.attachment ?? null}
+              {...(expanded.files ? { initialFiles: expanded.files } : {})}
               onPosted={() => {
                 setContent('');
-                setExpanded(false);
+                setExpanded(null);
               }}
             />
           </div>
@@ -183,17 +193,62 @@ export function HomeComposer() {
           autoComplete="off"
           className="field-bare h-9 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0"
         />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-haspopup="menu"
-          aria-label={t('compose-post-options', { defaultValue: 'Post options' })}
-          title={t('compose-post-options', { defaultValue: 'Post options' })}
-          onClick={() => setExpanded(true)}
-        >
-          <MoreHorizontal aria-hidden />
-        </Button>
+        <div className="flex shrink-0 items-center">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = Array.from(e.target.files ?? []);
+              if (files.length) setExpanded({ files });
+            }}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t('menu-add-image', { defaultValue: 'Add Image' })}
+            title={t('menu-add-image', { defaultValue: 'Add Image' })}
+            onClick={() => fileRef.current?.click()}
+          >
+            <ImagePlus aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="hidden sm:inline-flex"
+            aria-label={t('menu-add-gif', { defaultValue: 'Add GIF' })}
+            title={t('menu-add-gif', { defaultValue: 'Add GIF' })}
+            onClick={() => setExpanded({ attachment: 'gif' })}
+          >
+            <ImagePlay aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="hidden sm:inline-flex"
+            aria-label={t('menu-create-poll', { defaultValue: 'Create Poll' })}
+            title={t('menu-create-poll', { defaultValue: 'Create Poll' })}
+            onClick={() => setExpanded({ attachment: 'poll' })}
+          >
+            <BarChart3 aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-haspopup="menu"
+            aria-label={t('compose-post-options', { defaultValue: 'Post options' })}
+            title={t('compose-post-options', { defaultValue: 'Post options' })}
+            onClick={() => setExpanded({ menu: true })}
+          >
+            <MoreHorizontal aria-hidden />
+          </Button>
+        </div>
         <Button type="submit" variant="primary" disabled={!canSubmit}>
           {t('post-button', { defaultValue: 'Post' })}
         </Button>
