@@ -7,6 +7,7 @@ import { RelativeTime } from '@/components/ui/RelativeTime';
 import { SpineItem } from '@/components/ui/spine';
 import { RMHarkActions } from '@/components/feed/RMHarkActions';
 import { PostMenuTrigger } from '@/components/feed/PostMenuTrigger';
+import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 import { FeedMedia } from '@/components/feed/FeedMedia';
 import { TakeMeterLazy } from '@/components/feed/TakeMeterLazy';
 import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadges';
@@ -90,6 +91,7 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
                 <span className="sr-only">{t('verified', { defaultValue: 'Verified' })}</span>
               </>
             ) : null}
+            {item.user?.isBot ? <AutomatedBadge /> : null}
           </span>
           <span className="t-meta block truncate">
             {item.user?.handle ? <bdi>{`@${item.user.handle}`}</bdi> : ''}
