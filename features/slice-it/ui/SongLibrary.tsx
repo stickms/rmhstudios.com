@@ -4,6 +4,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { isHeicCover, normalizeCover } from '@features/slice-it/engine/cover-image';
 import { toast } from '@/lib/toast';
 import {
+  ChevronRight,
   Heart,
   Image as ImageIcon,
   Layers,
@@ -169,12 +170,14 @@ export function SongLibrary({
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const optionsRef = React.useRef<HTMLButtonElement>(null);
 
-  // The row's primary action, named for what it actually does here.
+  // The row's primary action, named for what it actually does here. In the solo
+  // menu it opens the record (the sidebar, or the strip above the list on a
+  // phone) and the run starts from there, so it says OPEN and is not a play glyph.
   const selectLabel =
     selectAction === 'add'
       ? ts('library-add', { defaultValue: 'ADD' })
-      : t('play', { defaultValue: 'PLAY' });
-  const SelectIcon = selectAction === 'add' ? Plus : Play;
+      : ts('library-open', { defaultValue: 'OPEN' });
+  const SelectIcon = selectAction === 'add' ? Plus : ChevronRight;
 
   /* ── Filters (L18): URL search params, not component state ─────────────── */
 
