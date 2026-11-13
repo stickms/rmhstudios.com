@@ -69,6 +69,7 @@
   "ban-author": "작성자 차단",
   "ban-length-prompt": "차단 기간(일, 비워두면 영구):",
   "ban-reason-prompt": "차단 사유:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "새 개발자 로그를 작성하거나 기존 블로그 게시물을 편집 및 삭제합니다.",
   "blog-title": "블로그 게시물 관리",
   "bot-no-email": "Automated account",

@@ -7,6 +7,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { getAllPosts } from '@/lib/blog';
+import { getBusiness } from '@/lib/businesses';
 import { Plus, Edit, FileText } from 'lucide-react';
 import { DeleteBlogButton } from '@/components/admin/DeleteBlogButton';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ import { useTranslation } from 'react-i18next';
 // session resolution on every navigation into the section and was one more copy
 // of the rule to keep in sync with the real one.
 const fetchBlogData = createServerFn({ method: 'GET' }).handler(async () => {
-  const posts = await getAllPosts(['title', 'slug', 'date']);
+  const posts = await getAllPosts(['title', 'slug', 'date', 'announcement', 'business']);
   return { posts };
 });
 
@@ -68,6 +69,12 @@ function AdminBlogDashboard() {
                 <div className="min-w-0">
                   <h3 className="t-heading break-words text-site-text">{post.title as string}</h3>
                   <p className="t-meta mt-1 break-all">
+                    {post.announcement === true ? (
+                      <>
+                        {getBusiness(typeof post.business === 'string' ? post.business : null).name} ·{' '}
+                        {t('blog-announcement-label', { defaultValue: 'Announcement' })} ·{' '}
+                      </>
+                    ) : null}
                     {post.date as string} · /{post.slug as string}
                   </p>
                 </div>

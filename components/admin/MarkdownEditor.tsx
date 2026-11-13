@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import {
   EditorView,
   keymap,
@@ -42,22 +42,52 @@ const editorTheme = EditorView.theme(
   { dark: true },
 );
 
-export function MarkdownEditor({
-  value,
-  onChange,
-  className,
-  placeholder,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  className?: string;
-  placeholder?: string;
-}) {
+/** What a parent can do to the editor's document without owning its state. */
+export interface MarkdownEditorHandle {
+  /**
+   * Replaces the main selection with `text`, puts the caret after it and focuses the editor.
+   * With `ownLine`, a newline is added before and/or after `text` only where the neighbouring
+   * characters are not already line breaks, so the text sits on a line of its own.
+   * Returns false when the editor view does not exist yet (before mount, after unmount).
+   */
+  insertAtCursor: (text: string, options?: { ownLine?: boolean }) => boolean;
+}
+
+export const MarkdownEditor = forwardRef<
+  MarkdownEditorHandle,
+  {
+    value: string;
+    onChange: (value: string) => void;
+    className?: string;
+    placeholder?: string;
+  }
+>(function MarkdownEditor({ value, onChange, className, placeholder }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   // Keep onChange current without recreating the editor on every render.
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+
+  useImperativeHandle(ref, () => ({
+    insertAtCursor: (text: string, options?: { ownLine?: boolean }) => {
+      const view = viewRef.current;
+      if (!view) return false;
+      const { from, to } = view.state.selection.main;
+      const doc = view.state.doc;
+      const lead =
+        options?.ownLine && from > 0 && doc.sliceString(from - 1, from) !== '\n' ? '\n' : '';
+      const trail = options?.ownLine && doc.sliceString(to, to + 1) !== '\n' ? '\n' : '';
+      const insert = `${lead}${text}${trail}`;
+      view.dispatch({
+        changes: { from, to, insert },
+        selection: { anchor: from + insert.length },
+        scrollIntoView: true,
+        userEvent: 'input.paste',
+      });
+      view.focus();
+      return true;
+    },
+  }));
 
   useEffect(() => {
     if (!hostRef.current) return;
@@ -101,4 +131,4 @@ export function MarkdownEditor({
   }, [value]);
 
   return <div ref={hostRef} className={cn('h-full w-full overflow-hidden', className)} />;
-}
+});
