@@ -175,83 +175,85 @@ export function HomeComposer() {
   return (
     <SpineItem dot={false} className="home-composer" data-slot="home-composer">
       <form
-        className="home-composer__row"
+        className="flex flex-col gap-1"
         onSubmit={(e) => {
           e.preventDefault();
           void handleSubmit();
         }}
       >
-        <UserAvatar src={image} alt="" size={28} fallbackName={name ?? undefined} />
-        <Input
-          ref={inputRef}
-          id={HOME_COMPOSER_INPUT_ID}
-          value={content}
-          maxLength={MAX_RMHARK_LENGTH}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
-          aria-label={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
-          autoComplete="off"
-          className="field-bare h-9 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0"
-        />
-        <div className="flex shrink-0 items-center">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/png,image/jpeg,image/gif,image/webp"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              const files = Array.from(e.target.files ?? []);
-              if (files.length) setExpanded({ files });
-            }}
+        <div className="home-composer__row">
+          <UserAvatar src={image} alt="" size={28} fallbackName={name ?? undefined} />
+          <Input
+            ref={inputRef}
+            id={HOME_COMPOSER_INPUT_ID}
+            value={content}
+            maxLength={MAX_RMHARK_LENGTH}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
+            aria-label={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
+            autoComplete="off"
+            className="field-bare h-9 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0"
           />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label={t('menu-add-image', { defaultValue: 'Add Image' })}
-            title={t('menu-add-image', { defaultValue: 'Add Image' })}
-            onClick={() => fileRef.current?.click()}
-          >
-            <ImagePlus aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="hidden sm:inline-flex"
-            aria-label={t('menu-add-gif', { defaultValue: 'Add GIF' })}
-            title={t('menu-add-gif', { defaultValue: 'Add GIF' })}
-            onClick={() => setExpanded({ attachment: 'gif' })}
-          >
-            <ImagePlay aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="hidden sm:inline-flex"
-            aria-label={t('menu-create-poll', { defaultValue: 'Create Poll' })}
-            title={t('menu-create-poll', { defaultValue: 'Create Poll' })}
-            onClick={() => setExpanded({ attachment: 'poll' })}
-          >
-            <BarChart3 aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-haspopup="menu"
-            aria-label={t('compose-post-options', { defaultValue: 'Post options' })}
-            title={t('compose-post-options', { defaultValue: 'Post options' })}
-            onClick={() => setExpanded({ menu: true })}
-          >
-            <MoreHorizontal aria-hidden />
+        </div>
+        <div className="flex items-center ps-8">
+          <div className="flex min-w-0 flex-1 items-center">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = Array.from(e.target.files ?? []);
+                if (files.length) setExpanded({ files });
+              }}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t('menu-add-image', { defaultValue: 'Add Image' })}
+              title={t('menu-add-image', { defaultValue: 'Add Image' })}
+              onClick={() => fileRef.current?.click()}
+            >
+              <ImagePlus aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t('menu-add-gif', { defaultValue: 'Add GIF' })}
+              title={t('menu-add-gif', { defaultValue: 'Add GIF' })}
+              onClick={() => setExpanded({ attachment: 'gif' })}
+            >
+              <ImagePlay aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t('menu-create-poll', { defaultValue: 'Create Poll' })}
+              title={t('menu-create-poll', { defaultValue: 'Create Poll' })}
+              onClick={() => setExpanded({ attachment: 'poll' })}
+            >
+              <BarChart3 aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-haspopup="menu"
+              aria-label={t('compose-post-options', { defaultValue: 'Post options' })}
+              title={t('compose-post-options', { defaultValue: 'Post options' })}
+              onClick={() => setExpanded({ menu: true })}
+            >
+              <MoreHorizontal aria-hidden />
+            </Button>
+          </div>
+          <Button type="submit" variant="primary" disabled={!canSubmit}>
+            {t('post-button', { defaultValue: 'Post' })}
           </Button>
         </div>
-        <Button type="submit" variant="primary" disabled={!canSubmit}>
-          {t('post-button', { defaultValue: 'Post' })}
-        </Button>
       </form>
       {postsPlus.answering && (
         <p className="t-meta mt-2 flex items-center gap-3">
