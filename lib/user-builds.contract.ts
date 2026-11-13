@@ -28,7 +28,8 @@ export type UserBuildsQuery = {
   category?: string;
   technology?: string;
   search?: string;
-  sort?: 'recent' | 'popular' | 'views';
+  /** `best` is the ranked order of lib/ranking/best.ts; the default, `recent`, is what the management lists want. */
+  sort?: 'best' | 'recent' | 'popular' | 'views';
   userId?: string;
   curated?: boolean;
 };

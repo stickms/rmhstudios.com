@@ -28,8 +28,14 @@ describe('build card select', () => {
 
   it.each(ROUTES)('%s: every build.<field> the mapper reads is selected', (route) => {
     const src = readFileSync(route, 'utf8');
-    // Restrict to the mapper (`items.map((build) =>` / `builds.map((build) =>`).
-    const mapper = src.slice(src.indexOf('.map((build: any)'));
+    // Restrict to the mapper: an inline `.map((build: any) =>`, or the list route's `cardOf(build: any`,
+    // which both of its sorts share.
+    const start = Math.max(
+      src.indexOf('.map((build: any)'),
+      src.indexOf('function cardOf(build: any'),
+    );
+    expect(start).toBeGreaterThan(-1);
+    const mapper = src.slice(start);
     const read = new Set([...mapper.matchAll(/\bbuild\.(\w+)/g)].map((m) => m[1]));
     expect(read.size).toBeGreaterThan(10);
     const selected = new Set(Object.keys(buildCardSelect('u1')));

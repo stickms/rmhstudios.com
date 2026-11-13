@@ -22,6 +22,7 @@
     "lib/api/route-match.ts",
     "lib/api/route-template.ts",
     "lib/api/route-sources.ts",
+    "lib/ranking/**/*.ts",
     "lib/streak-reminders.server.ts",
     "server/shared/session-auth.ts",
     "server/shared/redis-adapter.ts"

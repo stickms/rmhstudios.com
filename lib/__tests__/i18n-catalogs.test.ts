@@ -84,6 +84,12 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // Create, Library, Homes and Spaces page fixes (2026-11-13). English-only until the translate pipeline runs.
+  builds: [
+    'sort-best',
+    'sort-popular',
+    'sort-newest',
+  ],
   // Globe motion setting (Steel phase 6, 2026-11-12). English-only until the translate pipeline runs on build.
   // Steel phase 7 (2026-11-12): the news article is a titled page; its not-found line is new.
   pages: ['article-not-found-hint'],

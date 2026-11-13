@@ -4,7 +4,7 @@
  * The AI-persona gallery, rendered as a Steam-style storefront (rotating hero +
  * spotlight rail + varied mosaic) via the shared `Storefront`, with the inline
  * "create a persona" form on top. "Your personas" stay pinned in their own strip
- * above the public showcase, which re-advertises a different mix on each load.
+ * above the public showcase, which is ranked (Best by default; lib/ranking/best.ts).
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -17,6 +17,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
+import { SortSelect, useCreationSortOptions } from '@/components/creator-studio/SortSelect';
+import { DEFAULT_CREATION_SORT, type CreationSort } from '@/lib/ranking/best';
+import '@/components/builds/builds.css';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
@@ -36,19 +39,15 @@ interface Persona {
 
 const fmt = (n: number) => n.toLocaleString();
 
-function hueFor(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
-  return h;
-}
-
-export function PersonasTab({ seed }: { seed: number }) {
+export function PersonasTab() {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [mine, setMine] = useState<Persona[]>([]);
   const [signedIn, setSignedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState<CreationSort>(DEFAULT_CREATION_SORT);
+  const sortOptions = useCreationSortOptions();
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,14 +62,14 @@ export function PersonasTab({ seed }: { seed: number }) {
 
   const load = useCallback(async () => {
     try {
-      const data = await api(listPersonasApi);
+      const data = await api(listPersonasApi, { query: { sort } });
       setPersonas(data.personas);
       setMine(data.mine);
       setSignedIn(data.signedIn);
     } catch {
       // Keep the current gallery when the refresh fails.
     }
-  }, []);
+  }, [sort]);
 
   useEffect(() => {
     let active = true;
@@ -142,7 +141,6 @@ export function PersonasTab({ seed }: { seed: number }) {
         description: p.tagline ?? undefined,
         coverUrl: p.avatarUrl ?? null,
         emoji: p.emoji,
-        hue: hueFor(p.id),
         cta: t('chat', { defaultValue: 'Chat' }),
         to: `/personas/${p.id}`,
         meta: personaMeta(p, true),
@@ -323,7 +321,14 @@ export function PersonasTab({ seed }: { seed: number }) {
 
       <Storefront
         items={items}
-        seed={seed}
+        featured={sort === DEFAULT_CREATION_SORT}
+        toolbar={
+          <div data-slot="page-controls" className="builds-toolbar">
+            <div className="builds-toolbar__right">
+              <SortSelect value={sort} onChange={setSort} options={sortOptions} />
+            </div>
+          </div>
+        }
         emptyLabel={t('no-personas-yet', { defaultValue: 'No personas yet — create the first!' })}
       />
     </div>

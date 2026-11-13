@@ -81,7 +81,7 @@ const FLAT_BASELINE: Record<string, FlatCount> = {
   'app/globals/loader-print-access.css': { bf: 2, fl: 0, gr: 6 }, // `backdrop-filter: none` print resets are not counted
   'app/globals/page-motion.css': { bf: 0, fl: 2, gr: 8 }, // Dream Rift and doctrine skins live in this shared sheet
   'app/globals/tokens-themes.css': { bf: 0, fl: 0, gr: 1 }, // the scroll-fade mask
-  'components/creator-studio/storefront.css': { bf: 0, fl: 0, gr: 6 },
+  'components/creator-studio/storefront.css': { bf: 0, fl: 0, gr: 3 }, // the hero's scrim under its text
   'components/kaikai-debt/kaikai-debt.css': { bf: 0, fl: 0, gr: 5 },
   'components/rmhcalculator/rmhcalculator.css': { bf: 0, fl: 1, gr: 1 },
   'components/rmhtech/rmhtech.css': { bf: 0, fl: 3, gr: 5 },

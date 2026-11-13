@@ -461,7 +461,7 @@ const CSS_DEBT: Record<string, { hex: number; radius: number }> = {
   'components/library/library/sections-refresh.css': { hex: 24, radius: 2 },
   'components/rmhtech/rmhtech.css': { hex: 16, radius: 5 },
   'components/library/album-viewer.css': { hex: 7, radius: 3 },
-  'components/creator-studio/storefront.css': { hex: 5, radius: 0 },
+  'components/creator-studio/storefront.css': { hex: 2, radius: 0 },
   'components/security/security.css': { hex: 0, radius: 4 },
   'components/rmhcalculator/rmhcalculator.css': { hex: 0, radius: 3 },
   'components/library/book-3d.css': { hex: 1, radius: 2 },
