@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from'react';
 import { useTranslation } from'react-i18next';
 import { X, Plus, BarChart3, ImagePlus } from'lucide-react';
-import { GifEmbed } from'./GifEmbed';
-import { GifPicker } from'./GifPicker';
+import { GifAttachment, GifPopover } from './compose/GifAttachment';
 import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
 import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
@@ -67,6 +66,9 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  multiSelect: false,
  });
  const [gifUrl, setGifUrl] = useState('');
+ // The GIF picker is a popover off the GIF button; the chosen GIF is the attachment.
+ const [gifOpen, setGifOpen] = useState(false);
+ const gifBtnRef = useRef<HTMLButtonElement>(null);
  const [imageUrls, setImageUrls] = useState<string[]>([]);
  // Per-image alt text (accessibility), aligned by index with imageUrls.
  const [imageAlts, setImageAlts] = useState<string[]>([]);
@@ -252,22 +254,30 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* GIF button */}
  <button
+ ref={gifBtnRef}
  type="button"
- onClick={() => {
- if (attachment === 'gif') setGifUrl('');
- setAttachment((a) => (a ==='gif'? null :'gif'));
- setPoll({ question:'', options: ['',''], multiSelect: false });
- }}
- aria-pressed={attachment ==='gif'}
+ onClick={() => setGifOpen((v) => !v)}
+ aria-haspopup="dialog"
+ aria-expanded={gifOpen}
  title={t('attach-gif-title', { defaultValue:'Add a GIF'})}
  className={`px-1.5 py-1 rounded-full text-xs font-bold leading-none border transition-colors ${
- attachment ==='gif'
+ hasGif
  ?'border-site-accent text-site-accent bg-site-accent/10'
  :'border-site-border text-site-text-muted hover:text-site-accent hover:bg-site-accent/10'
  }`}
  >
  {t('gif-heading', { defaultValue:'GIF'})}
  </button>
+ <GifPopover
+ open={gifOpen}
+ onClose={() => setGifOpen(false)}
+ anchorRef={gifBtnRef}
+ onSelect={(url) => {
+ setAttachment('gif');
+ setGifUrl(url);
+ setPoll({ question:'', options: ['',''], multiSelect: false });
+ }}
+ />
 
  {/* Emoji picker */}
  <EmojiPickerButton direction="down"onSelect={insertEmoji} />
@@ -467,41 +477,15 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  </div>
  )}
 
- {/* GIF picker */}
- {attachment ==='gif'&& (
- <div className="surface-card mt-2 rounded-site px-4 py-3">
- <div className="flex items-center justify-between mb-2">
- <span className="site-section-label">
- {t('gif-heading', { defaultValue:'GIF'})}
- </span>
- <button
- type="button"
- onClick={() => {
+ {/* The chosen GIF. Choosing one is the popover off the GIF button. */}
+ {hasGif && (
+ <GifAttachment
+ gifUrl={gifUrl.trim()}
+ onRemove={() => {
  setAttachment(null);
  setGifUrl('');
  }}
- className="p-1 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
- >
- <X className="w-3.5 h-3.5"/>
- </button>
- </div>
-
- {gifUrl.trim() ? (
- <div className="relative">
- <GifEmbed url={gifUrl.trim()} />
- <button
- type="button"
- onClick={() => setGifUrl('')}
- aria-label={t('remove-gif-aria', { defaultValue:'Remove GIF'})}
- className="absolute top-1 right-1 p-1 rounded-full bg-site-media-scrim-strong text-site-media-ink hover:bg-site-media-scrim-hover transition-colors"
- >
- <X className="w-3.5 h-3.5"/>
- </button>
- </div>
- ) : (
- <GifPicker onSelect={(u) => setGifUrl(u)} />
- )}
- </div>
+ />
  )}
 
  {/* Uploaded image preview strip */}

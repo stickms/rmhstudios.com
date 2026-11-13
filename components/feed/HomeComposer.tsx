@@ -1,40 +1,109 @@
-import { Suspense, lazy, useRef, useState } from 'react';
+import {
+  Suspense,
+  lazy,
+  startTransition,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import { Link } from '@tanstack/react-router';
-import { BarChart3, ImagePlay, ImagePlus, MoreHorizontal } from 'lucide-react';
+import { BarChart3, ImagePlay, ImagePlus, MoreHorizontal, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SpineItem } from '@/components/ui/spine';
 import { useResolvedUser, useSession } from '@/components/Providers';
-import { usePostsPlusCompose } from '@/components/posts-plus/PostsPlusCompose';
+import { PostsPlusChips, usePostsPlusCompose } from '@/components/posts-plus/PostsPlusCompose';
 import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-limits';
 import { clearComposeDraft } from '@/hooks/useComposeDraft';
 import { HOME_COMPOSER_INPUT_ID } from './home-composer-id';
 import { useComposeSubmit } from './compose/useComposeSubmit';
 import {
+  COMPOSER_FIELD_CLASS,
+  ComposerRow,
+  ComposerTool,
+  useComposerFieldGrow,
+  type ComposerFieldHandoff,
+  type ComposerOpen,
+} from './compose/ComposerRow';
+import {
   buildComposeBody,
   buildOptimisticItem,
   computeCanSubmit,
+  counterToneClass,
   emptyPoll,
   prependFailedContent,
   type SessionUserShape,
 } from './compose/compose-state';
 
-/** Pictures, a GIF, a poll, audience, a schedule: the full composer, fetched the first time the three dots are pressed. */
-const ComposeBox = lazy(() => import('./ComposeBox').then((m) => ({ default: m.ComposeBox })));
+/**
+ * Pictures, a GIF, a poll, the AI tools, audience, a schedule: the full composer. It stays off the home page's
+ * critical path: the chunk is requested when the composer is first touched (hovered, focused or pressed), so it is
+ * usually there by the time a quick action asks for it.
+ */
+const loadComposeBox = () => import('./ComposeBox');
+const ComposeBox = lazy(() => loadComposeBox().then((m) => ({ default: m.ComposeBox })));
 
 /**
- * The home feed's one-line composer (Steel section 10, Home): avatar, a borderless field and the page's one primary
- * button, Post. It is the first item on the spine and has no dot (P3: a form hangs dotless).
+ * The light row's field. It is its own component for its cleanup: when the full composer replaces the row, this
+ * records where the caret was and whether the field had focus, while the element is still in the document, and the
+ * full composer's field picks both up (`ComposeBox`, `fieldHandoff`).
+ */
+function LightField({
+  value,
+  onChange,
+  onSubmit,
+  handoff,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  onSubmit: () => void;
+  handoff: RefObject<ComposerFieldHandoff | null>;
+}) {
+  const { t } = useTranslation('feed');
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useComposerFieldGrow(ref, value);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    return () => {
+      if (!el) return;
+      handoff.current = {
+        focused: document.activeElement === el,
+        start: el.selectionStart,
+        end: el.selectionEnd,
+      };
+    };
+  }, [handoff]);
+  return (
+    <textarea
+      ref={ref}
+      id={HOME_COMPOSER_INPUT_ID}
+      value={value}
+      rows={1}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) onSubmit();
+      }}
+      placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
+      aria-label={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
+      autoComplete="off"
+      className={COMPOSER_FIELD_CLASS}
+    />
+  );
+}
+
+/**
+ * The home feed's composer (Steel section 10, Home): avatar, a borderless field that grows with its text, a row of
+ * quick actions (picture, GIF, poll, AI, three dots) and the page's one primary button, Post. It is the first item on
+ * the spine and has no dot (P3: a form hangs dotless).
  *
- * It sends through the same submit path as the full composer (`useComposeSubmit`): the post appears at the top of the
- * feed at once in its dimmed "posting" state, and is reconciled or rolled back and restored into the field when the
- * server answers. Anything richer than a line of text (pictures, a poll, a GIF, a schedule) is the full composer, one
- * press away behind the three dots in the row (a picture, a GIF and a poll have their own buttons beside them): the row becomes the full composer in place, carrying whatever has been
- * typed, with its options open as a dropdown (owner, 2026-11-13: "a dropdown three dots menu for post options that
- * doesn't open a modal"). The row shows at every width: the globe no longer carries "Write a post", so on a phone this
- * is where a post is written.
+ * It keeps one look (owner, 2026-11-13: "I don't like how the three buttons menu changes the look of the compose
+ * box"). What renders first is a light row: a plain field and buttons, sending through the same submit path as the
+ * full composer (`useComposeSubmit`), so a line of text posts without fetching anything. A quick action needs the full
+ * composer, which is `ComposeBox` in its `row` variant: the same parts (`compose/ComposerRow`) with the pickers and
+ * menus behind them. The swap happens in a transition, so the light row stays on screen until the chunk is ready, and
+ * the text, the caret and the focus are handed over; nothing moves, and the popover or editor that was asked for
+ * opens. From then on the full composer stays, so there is no swap back.
  *
  * Signed out, the row is a one-line sign-in prompt in the same place and the same height (plan section 18, D6), and the
  * sign-in button is that view's one primary (R4). While the session is still unknown the row holds its height empty, so
@@ -46,24 +115,24 @@ export function HomeComposer() {
   const { resolved } = useResolvedUser();
   const postsPlus = usePostsPlusCompose();
   const [content, setContent] = useState('');
-  // What the row was expanded with: the options menu, pictures already chosen, or the GIF picker or poll editor.
-  const [expanded, setExpanded] = useState<{
-    menu?: boolean;
-    files?: File[];
-    attachment?: 'gif' | 'poll';
-  } | null>(null);
+  // Set once a quick action has asked for the full composer: what to open as it mounts, or the pictures to upload.
+  const [expanded, setExpanded] = useState<{ open?: ComposerOpen; files?: File[] } | null>(null);
+  const expand = (what: { open?: ComposerOpen; files?: File[] }) => {
+    void loadComposeBox();
+    startTransition(() => setExpanded(what));
+  };
   const fileRef = useRef<HTMLInputElement>(null);
+  const handoff = useRef<ComposerFieldHandoff | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  const trimmed = content.trim();
+  const remaining = MAX_RMHARK_LENGTH - content.length;
   const canSubmit = computeCanSubmit({
-    hasContent: trimmed.length > 0,
+    hasContent: content.trim().length > 0,
     hasPoll: false,
     hasGif: false,
     hasImages: false,
     hasCodeEmbed: false,
-    remaining: MAX_RMHARK_LENGTH - content.length,
+    remaining,
     submitting,
     uploadingCount: 0,
     missingAltCount: 0,
@@ -150,128 +219,105 @@ export function HomeComposer() {
   const name = resolved?.name || session.user.name || null;
   const image = resolved?.image || session.user.image || null;
 
-  if (expanded) {
-    return (
-      <SpineItem dot={false} className="home-composer" data-slot="home-composer">
-        <Suspense fallback={<div className="home-composer__row" aria-hidden />}>
-          <div className="-mx-4 -my-3">
-            <ComposeBox
-              initialContent={content}
-              openMenuOnMount={expanded.menu === true}
-              menuTrigger="dots"
-              initialAttachment={expanded.attachment ?? null}
-              {...(expanded.files ? { initialFiles: expanded.files } : {})}
-              onPosted={() => {
-                setContent('');
-                setExpanded(null);
-              }}
-            />
-          </div>
-        </Suspense>
-      </SpineItem>
-    );
-  }
-
   return (
-    <SpineItem dot={false} className="home-composer" data-slot="home-composer">
-      <form
-        className="flex flex-col gap-1"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void handleSubmit();
-        }}
-      >
-        <div className="home-composer__row">
-          <UserAvatar src={image} alt="" size={28} fallbackName={name ?? undefined} />
-          <Input
-            ref={inputRef}
-            id={HOME_COMPOSER_INPUT_ID}
-            value={content}
-            maxLength={MAX_RMHARK_LENGTH}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
-            aria-label={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
-            autoComplete="off"
-            className="field-bare h-9 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0"
+    <SpineItem
+      dot={false}
+      className="home-composer"
+      data-slot="home-composer"
+      onPointerEnter={() => void loadComposeBox()}
+      onFocus={() => void loadComposeBox()}
+    >
+      <Suspense fallback={null}>
+        {expanded ? (
+          <ComposeBox
+            variant="row"
+            initialContent={content}
+            fieldHandoff={handoff}
+            {...(expanded.open ? { initialOpen: expanded.open } : {})}
+            {...(expanded.files ? { initialFiles: expanded.files } : {})}
           />
-        </div>
-        <div className="flex items-center ps-8">
-          <div className="flex min-w-0 flex-1 items-center">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/png,image/jpeg,image/gif,image/webp"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? []);
-                if (files.length) setExpanded({ files });
-              }}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={t('menu-add-image', { defaultValue: 'Add Image' })}
-              title={t('menu-add-image', { defaultValue: 'Add Image' })}
-              onClick={() => fileRef.current?.click()}
-            >
-              <ImagePlus aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={t('menu-add-gif', { defaultValue: 'Add GIF' })}
-              title={t('menu-add-gif', { defaultValue: 'Add GIF' })}
-              onClick={() => setExpanded({ attachment: 'gif' })}
-            >
-              <ImagePlay aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={t('menu-create-poll', { defaultValue: 'Create Poll' })}
-              title={t('menu-create-poll', { defaultValue: 'Create Poll' })}
-              onClick={() => setExpanded({ attachment: 'poll' })}
-            >
-              <BarChart3 aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-haspopup="menu"
-              aria-label={t('compose-post-options', { defaultValue: 'Post options' })}
-              title={t('compose-post-options', { defaultValue: 'Post options' })}
-              onClick={() => setExpanded({ menu: true })}
-            >
-              <MoreHorizontal aria-hidden />
-            </Button>
-          </div>
-          <Button type="submit" variant="primary" disabled={!canSubmit}>
-            {t('post-button', { defaultValue: 'Post' })}
-          </Button>
-        </div>
-      </form>
-      {postsPlus.answering && (
-        <p className="t-meta mt-2 flex items-center gap-3">
-          <span className="min-w-0 flex-1 truncate">
-            {t('chip-answering', {
-              ns: 'f-posts-plus',
-              defaultValue: 'Answering: {{question}}',
-              question: postsPlus.answering.text,
-            })}
-          </span>
-          <button type="button" className="feed-action" onClick={postsPlus.clearAnswering}>
-            {t('chip-answering-remove', {
-              ns: 'f-posts-plus',
-              defaultValue: 'Stop answering the question',
-            })}
-          </button>
-        </p>
-      )}
+        ) : (
+          <ComposerRow
+            image={image}
+            name={name}
+            field={
+              <LightField
+                value={content}
+                onChange={(next) => {
+                  setContent(next);
+                  // Past one post's length the full composer takes over: it offers the text as a thread.
+                  if (next.length > MAX_RMHARK_LENGTH) expand({});
+                }}
+                onSubmit={() => void handleSubmit()}
+                handoff={handoff}
+              />
+            }
+            tools={
+              <>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    if (files.length) expand({ files });
+                  }}
+                />
+                <ComposerTool
+                  icon={ImagePlus}
+                  label={t('menu-add-image', { defaultValue: 'Add Image' })}
+                  onClick={() => fileRef.current?.click()}
+                />
+                <ComposerTool
+                  icon={ImagePlay}
+                  label={t('menu-add-gif', { defaultValue: 'Add GIF' })}
+                  aria-haspopup="dialog"
+                  aria-expanded={false}
+                  onClick={() => expand({ open: 'gif' })}
+                />
+                <ComposerTool
+                  icon={BarChart3}
+                  label={t('menu-create-poll', { defaultValue: 'Create Poll' })}
+                  onClick={() => expand({ open: 'poll' })}
+                />
+                <ComposerTool
+                  icon={Sparkles}
+                  label={t('compose-ai-tools', { defaultValue: 'AI tools' })}
+                  aria-haspopup="menu"
+                  aria-expanded={false}
+                  onClick={() => expand({ open: 'ai' })}
+                />
+                <ComposerTool
+                  icon={MoreHorizontal}
+                  label={t('compose-post-options', { defaultValue: 'Post options' })}
+                  aria-haspopup="menu"
+                  aria-expanded={false}
+                  onClick={() => expand({ open: 'menu' })}
+                />
+              </>
+            }
+            post={
+              <>
+                {remaining <= 20 && (
+                  <span className={`t-meta me-3 ${counterToneClass(remaining)}`}>{remaining}</span>
+                )}
+                <Button
+                  type="button"
+                  variant="primary"
+                  disabled={!canSubmit}
+                  onClick={() => void handleSubmit()}
+                >
+                  {t('post-button', { defaultValue: 'Post' })}
+                </Button>
+              </>
+            }
+          >
+            <PostsPlusChips pp={postsPlus} />
+          </ComposerRow>
+        )}
+      </Suspense>
     </SpineItem>
   );
 }

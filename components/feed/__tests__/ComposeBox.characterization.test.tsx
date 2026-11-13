@@ -104,6 +104,10 @@ const S = {
   pendingDraft: 27,
   showPriceModal: 28,
   showCheatSheet: 29,
+  gifOpen: 30,
+  aiOpen: 31,
+  emojiOpen: 32,
+  tagsOn: 33,
 } as const;
 
 function render(seed: Partial<Record<keyof typeof S, unknown>> = {}, props: object = {}) {
@@ -154,8 +158,13 @@ describe('ComposeBox characterization', () => {
       render({ attachment: 'poll', poll: { question: '', options: ['', ''], multiSelect: false } }),
     ).toMatchSnapshot();
   });
-  it('gif attachment: picker, then chosen', () => {
-    expect(render({ attachment: 'gif' })).toMatchSnapshot();
+  it('gif: the picker is a popover, the chosen GIF an attachment', () => {
+    const picking = render({ gifOpen: true });
+    expect(picking).toContain('data-anchored-menu="Add GIF"');
+    expect(picking).toContain('Search GIFs...');
+    expect(picking).toMatchSnapshot();
+    // An attachment with no GIF chosen draws nothing: there is no inline picker any more.
+    expect(render({ attachment: 'gif' })).toBe(render());
     expect(
       render({ attachment: 'gif', gifUrl: 'https://media.tenor.com/x/y.gif' }),
     ).toMatchSnapshot();
@@ -240,5 +249,105 @@ describe('ComposeBox characterization', () => {
   });
   it('is deterministic', () => {
     expect(render({ menuOpen: true })).toBe(render({ menuOpen: true }));
+  });
+});
+
+/**
+ * The home composer's look (`variant="row"`): what the owner asked for on 2026-11-13. Pressing a quick action must not
+ * change the box, the GIF picker is a popover, and AI is one quick action instead of a row of chips.
+ */
+describe('ComposeBox, row variant', () => {
+  const row = (seed: Parameters<typeof render>[0] = {}, props: object = {}) =>
+    render(seed, { variant: 'row', ...props });
+  const labels = (html: string) =>
+    [...html.matchAll(/<button[^>]*aria-label="([^"]+)"/g)].map((m) => m[1]);
+
+  it('quick actions in order, then Post as the primary', () => {
+    const html = row();
+    expect(labels(html)).toEqual([
+      'Add Image',
+      'Add GIF',
+      'Create Poll',
+      'AI tools',
+      'Post options',
+    ]);
+    expect(html).toMatch(/data-variant="primary"[^>]*>(<[^>]+>)*Post</);
+    expect(html).toMatchSnapshot();
+  });
+  it('the field is one borderless line, not the bordered well', () => {
+    const html = row({ content: 'a line of text' });
+    const field = /<textarea[^>]*>/.exec(html)![0];
+    expect(field).toContain('rows="1"');
+    expect(field).toContain('field-bare');
+    expect(field).toContain('border-0');
+    expect(field).not.toContain('surface-field');
+  });
+  it('no AI chips, counter or emoji button until asked for', () => {
+    const html = row({ content: 'a line of text' });
+    expect(html).not.toContain('Improve');
+    expect(html).not.toContain('Add emoji');
+    expect(html).not.toContain('t-meta');
+  });
+  it('the counter shows for the last 20 characters and past the limit', () => {
+    expect(row({ content: 'x'.repeat(265) })).toContain('>15<');
+    expect(row({ content: 'x'.repeat(290) })).toContain('>-10<');
+  });
+  it('the AI quick action opens the rewrites, the draft and the locked image row', () => {
+    const html = row({ content: 'a line of text', aiOpen: true });
+    expect(html).toContain('data-anchored-menu="AI tools"');
+    for (const label of [
+      'Generate with AI',
+      'Improve',
+      'Fix grammar',
+      'Shorten',
+      'Expand',
+      'Casual',
+      'Formal',
+    ]) {
+      expect(html).toContain(label);
+    }
+    // The session user has no tier: image generation is shown locked.
+    expect(html).toContain('Generate images with AI — upgrade to unlock');
+    expect(html).toMatchSnapshot();
+  });
+  it('rewrites are off until there is something to rewrite', () => {
+    const menu = (html: string) => html.slice(html.indexOf('data-anchored-menu="AI tools"'));
+    expect(menu(row({ aiOpen: true }))).toMatch(/<button[^>]*disabled=""[^>]*>(<[^>]+>)*Improve/);
+    expect(menu(row({ content: 'enough', aiOpen: true }))).not.toMatch(
+      /<button[^>]*disabled=""[^>]*>(<[^>]+>)*Improve/,
+    );
+  });
+  it('the options menu leaves out what has its own quick action and carries the emoji picker', () => {
+    const html = row({ menuOpen: true });
+    const menu = html.slice(html.indexOf('data-anchored-menu="Post options"'));
+    expect(menu).toContain('Visibility');
+    expect(menu).toContain('Add emoji');
+    expect(menu).not.toContain('Add Image');
+    expect(menu).not.toContain('Add GIF');
+    expect(menu).not.toContain('Create Poll');
+    expect(html).toMatchSnapshot();
+  });
+  it('opens what the home row was pressed for', () => {
+    expect(row({}, { initialOpen: 'menu' })).toContain('data-anchored-menu="Post options"');
+    expect(row({}, { initialOpen: 'gif' })).toContain('data-anchored-menu="Add GIF"');
+    expect(row({}, { initialOpen: 'ai' })).toContain('data-anchored-menu="AI tools"');
+    expect(row({}, { initialOpen: 'poll' })).toContain('Ask a question');
+  });
+  it('what the post carries sits between the field and the quick actions', () => {
+    const html = row({
+      content: 'hello',
+      isSensitive: true,
+      imageUrls: ['/a.png'],
+      attachment: 'gif',
+      gifUrl: 'https://media.tenor.com/x/y.gif',
+    });
+    const at = (needle: string) => html.indexOf(needle);
+    expect(at('<textarea')).toBeLessThan(at('CW'));
+    expect(at('CW')).toBeLessThan(at('Remove GIF'));
+    expect(at('Remove GIF')).toBeLessThan(at('aria-label="Add Image"'));
+    expect(html).toMatchSnapshot();
+  });
+  it('suggested tags are opt-in from the AI menu', () => {
+    expect(row({ aiOpen: true })).toContain('Suggest tags');
   });
 });

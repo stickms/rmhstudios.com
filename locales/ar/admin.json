@@ -74,6 +74,7 @@
   "ban-author": "حظر المؤلف",
   "ban-length-prompt": "مدة الحظر بالأيام (فارغ = دائم):",
   "ban-reason-prompt": "سبب الحظر:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "كتابة سجلات مطور جديدة، أو تعديل وحذف منشورات المدونة الحالية.",
   "blog-title": "إدارة منشورات المدونة",
   "bot-no-email": "Automated account",

@@ -69,6 +69,7 @@
   "ban-author": "封禁作者",
   "ban-length-prompt": "封禁天数（留空为永久）：",
   "ban-reason-prompt": "封禁原因：",
+  "blog-announcement-label": "Announcement",
   "blog-description": "编写新的开发者日志，或编辑、删除现有的博客文章。",
   "blog-title": "管理博客文章",
   "bot-no-email": "Automated account",

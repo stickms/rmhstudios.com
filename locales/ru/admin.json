@@ -72,6 +72,7 @@
   "ban-author": "Забанить автора",
   "ban-length-prompt": "Длительность бана в днях (пусто = навсегда):",
   "ban-reason-prompt": "Причина бана:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "Пишите новые дневники разработчика, редактируйте и удаляйте существующие записи блога.",
   "blog-title": "Управление записями блога",
   "bot-no-email": "Automated account",
