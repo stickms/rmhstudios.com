@@ -71,6 +71,7 @@
   "ban-author": "Ban author",
   "ban-length-prompt": "Ban length in days (blank = permanent):",
   "ban-reason-prompt": "Ban reason:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "Write new developer logs, or edit and delete existing blog posts.",
   "blog-title": "Manage Blog Posts",
   "bot-no-email": "Automated account",

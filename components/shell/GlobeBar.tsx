@@ -21,7 +21,7 @@ interface GlobeBarProps {
  * (owner, 2026-11-13: "remove the light dark toggle and 'all sections' from that pill too"): the edition is set in
  * Settings, Appearance, and /sections is still a page.
  *
- * One flat row of icons with short labels on a pill: the overlay surface and its border, no shadow. Every item is a 44px target. It exists
+ * One flat row of icons on a pill (each control's word is its name and tooltip, not drawn): the overlay surface and its border, no shadow. Every item is a 44px target. It exists
  * only while the menu is open (it fades with it, opacity only), floats above the safe area by the docked globe's own
  * inset rule, and on a window too short to hold it under the globe it is a column of icons at the inline end instead
  * (globe-nav.css). It comes after the pins in the tab order; Escape closes the menu from it as from anywhere.
@@ -57,13 +57,20 @@ export function GlobeBar({ open, onClose }: GlobeBarProps) {
           to={viewerPath}
           {...item}
           aria-label={t('shell-your-profile', { defaultValue: 'Your profile, {{name}}', name })}
+          title={t('profile', { defaultValue: 'Profile' })}
           onClick={onClose}
         >
           <UserAvatar src={resolved?.image || user.image} alt="" size={22} fallbackName={name} />
           <span className="globe-nav__bar-label">{t('profile', { defaultValue: 'Profile' })}</span>
         </Link>
       ) : sessionUnknown ? null : (
-        <Link to="/login" search={{ callbackURL: undefined }} {...item} onClick={onClose}>
+        <Link
+          to="/login"
+          search={{ callbackURL: undefined }}
+          {...item}
+          title={t('shell-sign-in', { defaultValue: 'Sign in' })}
+          onClick={onClose}
+        >
           <LogIn aria-hidden />
           <span className="globe-nav__bar-label">
             {t('shell-sign-in', { defaultValue: 'Sign in' })}
@@ -73,6 +80,7 @@ export function GlobeBar({ open, onClose }: GlobeBarProps) {
       <button
         type="button"
         {...item}
+        title={t('search', { defaultValue: 'Search' })}
         onClick={() => {
           onClose();
           openCommandPalette();
@@ -81,12 +89,22 @@ export function GlobeBar({ open, onClose }: GlobeBarProps) {
         <Search aria-hidden />
         <span className="globe-nav__bar-label">{t('search', { defaultValue: 'Search' })}</span>
       </button>
-      <Link to="/settings" {...item} onClick={onClose}>
+      <Link
+        to="/settings"
+        {...item}
+        title={t('settings', { defaultValue: 'Settings' })}
+        onClick={onClose}
+      >
         <Settings aria-hidden />
         <span className="globe-nav__bar-label">{t('settings', { defaultValue: 'Settings' })}</span>
       </Link>
       {user ? (
-        <button type="button" {...item} onClick={signOut}>
+        <button
+          type="button"
+          {...item}
+          title={t('sign-out', { defaultValue: 'Sign out' })}
+          onClick={signOut}
+        >
           <LogOut aria-hidden />
           <span className="globe-nav__bar-label">
             {t('sign-out', { defaultValue: 'Sign out' })}

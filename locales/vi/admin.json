@@ -69,6 +69,7 @@
   "ban-author": "Cấm tác giả",
   "ban-length-prompt": "Thời gian cấm theo ngày (để trống = vĩnh viễn):",
   "ban-reason-prompt": "Lý do cấm:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "Viết nhật ký nhà phát triển mới, hoặc chỉnh sửa và xóa các bài viết blog hiện có.",
   "blog-title": "Quản lý bài viết blog",
   "bot-no-email": "Automated account",
