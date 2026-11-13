@@ -4,15 +4,15 @@ import { useEffect, useState } from 'react';
 import { Gift, Check, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
+import { useSitewideAnnouncementStore } from '@/stores/sitewideAnnouncementStore';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 const COOLDOWN_KEY = 'rmh-freemonth-snooze';
 const COOLDOWN_MS = 4 * 24 * 60 * 60 * 1000; // re-offer roughly every few days
-// Sequence behind first-run onboarding + the "what's new" modal so they never
-// stack on screen at once.
+// Sequence behind first-run onboarding (and the sitewide announcement popup)
+// so they never stack on screen at once.
 const WELCOME_KEY = 'rmh-welcome-seen-v1';
-const WHATSNEW_KEY = 'rmh-whatsnew-seen-v2';
 
 /**
  * Occasionally offers eligible (free-tier, never-claimed) users a free month of
@@ -23,7 +23,12 @@ const WHATSNEW_KEY = 'rmh-whatsnew-seen-v2';
 export function FreeMonthModal() {
   const { t } = useTranslation("feed");
   const { data: session, isPending } = useSession();
-  const [open, setOpen] = useState(false);
+  const [eligible, setEligible] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const announcementOpen = useSitewideAnnouncementStore((s) => s.open);
+  // Hold the offer while the announcement popup is up; it shows once that closes.
+  const open = eligible && !dismissed && !announcementOpen;
+  const setOpen = (o: boolean) => (o ? setEligible(true) : setDismissed(true));
   const [claiming, setClaiming] = useState(false);
   const [claimed, setClaimed] = useState(false);
 
@@ -32,7 +37,7 @@ export function FreeMonthModal() {
     let cancelled = false;
     (async () => {
       try {
-        if (!localStorage.getItem(WELCOME_KEY) || !localStorage.getItem(WHATSNEW_KEY)) return;
+        if (!localStorage.getItem(WELCOME_KEY)) return;
         const snooze = Number(localStorage.getItem(COOLDOWN_KEY) || '0');
         if (snooze && Date.now() < snooze) return;
 

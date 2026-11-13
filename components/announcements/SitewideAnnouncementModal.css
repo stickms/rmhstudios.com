@@ -1,0 +1,39 @@
+/* Sitewide announcement popup: fade + rise in, fade out. Driven by Radix's
+ * data-state (Presence waits for the exit animation). The box composes with
+ * the native `translate` centering. Reduced motion (OS or account toggle, via
+ * data-reduced) = opacity only. The scrim reuses dialog.css's overlay motion. */
+.sitewide-announcement[data-state="open"] {
+  animation: sitewide-in 0.4s var(--ease-glass);
+}
+.sitewide-announcement[data-state="closed"] {
+  animation: sitewide-out 0.25s ease-in forwards;
+}
+.sitewide-announcement[data-reduced="true"][data-state="open"] {
+  animation: sitewide-fade-in 0.2s linear;
+}
+.sitewide-announcement[data-reduced="true"][data-state="closed"] {
+  animation: sitewide-fade-out 0.15s linear forwards;
+}
+
+@keyframes sitewide-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+}
+@keyframes sitewide-out {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+@keyframes sitewide-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sitewide-fade-out {
+  to {
+    opacity: 0;
+  }
+}

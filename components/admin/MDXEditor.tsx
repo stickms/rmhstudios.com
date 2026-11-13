@@ -1,48 +1,44 @@
 import { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from '@tanstack/react-router';
-import { ArrowLeft, Upload } from 'lucide-react';
+import { ArrowLeft, ImagePlus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import ReactMarkdown from 'react-markdown';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { MarkdownEditor } from '@/components/admin/MarkdownEditor';
+import { BlogMarkdown } from '@/components/blog/BlogMarkdown';
+import { Select } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
-  AnimatedH1,
-  AnimatedH2,
-  AnimatedH3,
-  AnimatedP,
-  AnimatedUl,
-  AnimatedOl,
-  AnimatedLi,
-  AnimatedBlockquote,
-  AnimatedImg,
-  AnimatedHr,
-  AnimatedPre,
-} from '@/components/blog/MDXAnimations';
+  BUSINESSES,
+  DEFAULT_BUSINESS_ID,
+  isBusinessId,
+  type BusinessId,
+} from '@/lib/businesses';
+import { ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS } from '@/lib/sitewide-announcement';
 import { toast } from 'sonner';
 
-const animatedComponents = {
-  h1: AnimatedH1,
-  h2: AnimatedH2,
-  h3: AnimatedH3,
-  p: AnimatedP,
-  ul: AnimatedUl,
-  ol: AnimatedOl,
-  li: AnimatedLi,
-  blockquote: AnimatedBlockquote,
-  img: AnimatedImg,
-  hr: AnimatedHr,
-  pre: AnimatedPre,
-};
+/** ISO timestamp -> value for <input type="datetime-local"> in local time. */
+function isoToLocalInput(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 export function MDXEditor({
   initialData,
   isEdit = false,
 }: {
-  initialData?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  initialData?: Record<string, any> & {
+    announcement?: boolean;
+    business?: string;
+    announcementExpiresAt?: string | null;
+  };
   isEdit?: boolean;
 }) {
   const navigate = useRouter().navigate;
@@ -62,6 +58,17 @@ export function MDXEditor({
   });
   const [content, setContent] = useState(initialData?.content || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+
+  const wasAnnouncement = Boolean(initialData?.announcement);
+  const [announcement, setAnnouncement] = useState(wasAnnouncement);
+  const [business, setBusiness] = useState<BusinessId>(
+    isBusinessId(initialData?.business) ? initialData.business : DEFAULT_BUSINESS_ID,
+  );
+  const [expiresLocal, setExpiresLocal] = useState(
+    isoToLocalInput(initialData?.announcementExpiresAt),
+  );
 
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -82,6 +89,39 @@ export function MDXEditor({
       toast.success(t('markdown-imported', { defaultValue: 'Imported {{name}}', name: file.name }));
     } catch {
       toast.error(t('markdown-import-failed', { defaultValue: 'Could not read that file' }));
+    }
+  };
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIsUploadingMedia(true);
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const res = await fetch('/api/admin/blog/media', { method: 'POST', body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || typeof data.url !== 'string') {
+        throw new Error(
+          data.error || t('media-upload-failed', { defaultValue: 'Could not upload that file' }),
+        );
+      }
+      const alt = file.name.replace(/\.[^.]+$/, '').replace(/[[\]]/g, '');
+      const snippet = `![${alt}](${data.url})`;
+      // The CodeMirror editor does not expose its cursor, so append on its own line.
+      setContent((prev: string) => {
+        const base = prev.replace(/\s+$/, '');
+        return base ? `${base}\n\n${snippet}\n` : `${snippet}\n`;
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : t('media-upload-failed', { defaultValue: 'Could not upload that file' }),
+      );
+    } finally {
+      setIsUploadingMedia(false);
     }
   };
 
@@ -109,6 +149,10 @@ export function MDXEditor({
           .filter(Boolean),
         content,
         isEdit,
+        announcement,
+        business,
+        announcementExpiresAt:
+          announcement && expiresLocal ? new Date(expiresLocal).toISOString() : null,
       };
 
       const res = await fetch('/api/admin/blog', {
@@ -309,6 +353,81 @@ export function MDXEditor({
                     rows={3}
                   />
                 </div>
+
+                <fieldset className="space-y-3 rounded-site-sm border border-site-border p-4">
+                  <legend className="px-1 text-sm font-semibold text-site-text">
+                    {t('sitewide-announcement-legend', { defaultValue: 'Sitewide announcement' })}
+                  </legend>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <Label id="announcement-label" htmlFor="announcement-switch">
+                        {t('sitewide-announcement-label', {
+                          defaultValue: 'Sitewide announcement',
+                        })}
+                      </Label>
+                      <p id="announcement-help" className="text-xs text-site-text-dim">
+                        {t('sitewide-announcement-help', {
+                          defaultValue:
+                            'Pops up once for every visitor and is pinned at the top of the feed.',
+                        })}
+                      </p>
+                    </div>
+                    <Switch
+                      id="announcement-switch"
+                      checked={announcement}
+                      onCheckedChange={setAnnouncement}
+                      aria-labelledby="announcement-label"
+                      aria-describedby="announcement-help"
+                    />
+                  </div>
+                  {announcement && (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="announcement-business">
+                          {t('announcement-business-label', { defaultValue: 'From business' })}
+                        </Label>
+                        <Select
+                          id="announcement-business"
+                          value={business}
+                          onChange={(e) => setBusiness(e.target.value as BusinessId)}
+                        >
+                          {BUSINESSES.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="announcement-expires">
+                          {t('announcement-expires-label', { defaultValue: 'Stop showing after' })}
+                        </Label>
+                        <Input
+                          id="announcement-expires"
+                          type="datetime-local"
+                          value={expiresLocal}
+                          onChange={(e) => setExpiresLocal(e.target.value)}
+                          aria-describedby="announcement-expires-help"
+                        />
+                        <p id="announcement-expires-help" className="text-xs text-site-text-dim">
+                          {t('announcement-expires-help', {
+                            defaultValue:
+                              'Optional. When empty, it stops showing {{days}} days after it is announced.',
+                            days: ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS,
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {announcement && wasAnnouncement && (
+                    <p className="text-xs text-site-text-muted">
+                      {t('announcement-reannounce-note', {
+                        defaultValue:
+                          'Already announced. Switching this off and on again re-announces it to everyone.',
+                      })}
+                    </p>
+                  )}
+                </fieldset>
               </form>
 
               <div className="flex-1 flex flex-col min-h-0 h-full">
@@ -334,6 +453,28 @@ export function MDXEditor({
                     <Upload className="w-4 h-4 mr-1.5" aria-hidden="true" />
                     {t('upload-markdown', { defaultValue: 'Upload .md' })}
                   </Button>
+                  <input
+                    ref={mediaInputRef}
+                    type="file"
+                    accept="image/*,video/mp4,video/webm,video/quicktime"
+                    className="hidden"
+                    onChange={handleMediaUpload}
+                    aria-label={t('upload-media', { defaultValue: 'Upload image / video' })}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    disabled={isUploadingMedia}
+                    aria-busy={isUploadingMedia}
+                    onClick={() => mediaInputRef.current?.click()}
+                  >
+                    <ImagePlus className="w-4 h-4 mr-1.5" aria-hidden="true" />
+                    {isUploadingMedia
+                      ? t('uploading-media', { defaultValue: 'Uploading...' })
+                      : t('upload-media', { defaultValue: 'Upload image / video' })}
+                  </Button>
                 </div>
                 <div className="flex-1 border border-site-border rounded-site-sm overflow-hidden relative min-h-75 sm:min-h-0">
                   <MarkdownEditor
@@ -344,6 +485,12 @@ export function MDXEditor({
                     })}
                   />
                 </div>
+                <p className="mt-2 text-xs text-site-text-dim">
+                  {t('media-hint', {
+                    defaultValue:
+                      'A YouTube link also works: ![caption](https://youtu.be/…)',
+                  })}
+                </p>
               </div>
             </div>
           </ResizablePanel>
@@ -381,7 +528,7 @@ export function MDXEditor({
                       {formData.description}
                     </p>
                   )}
-                  <ReactMarkdown components={animatedComponents}>{previewContent}</ReactMarkdown>
+                  <BlogMarkdown content={previewContent} />
                 </>
               ) : (
                 <div className="text-center text-site-text-dim mt-32 flex flex-col items-center gap-4">

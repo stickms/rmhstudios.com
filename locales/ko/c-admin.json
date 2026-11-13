@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "오류가 발생했습니다",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "관리자로 돌아가기",
   "back-to-admin-label": "관리자로 돌아가기",
   "changes-now-live": "변경 사항이 적용되었습니다.",
@@ -22,6 +26,8 @@
   "live-preview": "실시간 미리보기",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "메타데이터",
   "new-blog-post": "새 블로그 게시물",
   "post-created-successfully": "게시물이 성공적으로 생성되었습니다!",
@@ -31,6 +37,9 @@
   "save-post": "게시물 저장",
   "saving": "저장 중...",
   "show-preview": "미리보기 표시",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "슬러그",
   "slug-title": "소문자, 숫자, 하이픈만 사용 가능",
   "tags-label": "태그 (쉼표로 구분)",
@@ -39,5 +48,7 @@
   "title-placeholder": "내 멋진 게시물",
   "untitled-post": "제목 없는 게시물",
   "update-post": "게시물 업데이트",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

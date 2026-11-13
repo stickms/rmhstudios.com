@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "एक त्रुटी आली",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "प्रशासनाकडे परत जा",
   "back-to-admin-label": "प्रशासनाकडे परत जा",
   "changes-now-live": "तुमचे बदल आता लागू झाले आहेत.",
@@ -22,6 +26,8 @@
   "live-preview": "लाइव्ह पूर्वावलोकन",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "मेटाडेटा",
   "new-blog-post": "नवीन ब्लॉग पोस्ट",
   "post-created-successfully": "पोस्ट यशस्वीरित्या तयार झाली!",
@@ -31,6 +37,9 @@
   "save-post": "पोस्ट जतन करा",
   "saving": "जतन करत आहे...",
   "show-preview": "पूर्वावलोकन दाखवा",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "स्लग",
   "slug-title": "फक्त लहान अक्षरे, संख्या आणि हायफन्स",
   "tags-label": "टॅग (स्वल्पविरामाने विभाजित)",
@@ -39,5 +48,7 @@
   "title-placeholder": "माझी अप्रतिम पोस्ट",
   "untitled-post": "शीर्षक नसलेली पोस्ट",
   "update-post": "पोस्ट अद्यतनित करा",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

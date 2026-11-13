@@ -14,7 +14,7 @@ import { SiteShell } from '@/components/feed/SiteShell';
 import '@/components/feed/feed.css';
 
 // Shell overlays that render nothing until a condition fires — first-run/locale/
-// what's-new/free-month modals, the one-time cookie notice, global keyboard
+// announcement/free-month modals, the one-time cookie notice, global keyboard
 // shortcuts, and the music mini-player (only when a track is active). Lazy-load
 // them so their code + deps leave the eager hydration path of every _site page
 // (perf F6 / rewrite R3-T7). Each renders null on the server and the Suspense
@@ -27,8 +27,10 @@ const LanguageFirstRunModal = lazy(() =>
     default: m.LanguageFirstRunModal,
   })),
 );
-const WhatsNewModal = lazy(() =>
-  import('@/components/feed/WhatsNewModal').then((m) => ({ default: m.WhatsNewModal })),
+const SitewideAnnouncementModal = lazy(() =>
+  import('@/components/announcements/SitewideAnnouncementModal').then((m) => ({
+    default: m.SitewideAnnouncementModal,
+  })),
 );
 const FreeMonthModal = lazy(() =>
   import('@/components/feed/FreeMonthModal').then((m) => ({ default: m.FreeMonthModal })),
@@ -58,7 +60,7 @@ function SiteLayout() {
           <Suspense fallback={null}>
             <LanguageFirstRunModal />
             <WelcomeModal />
-            <WhatsNewModal />
+            <SitewideAnnouncementModal />
             <FreeMonthModal />
             <CookieConsent />
             <KeyboardShortcuts />

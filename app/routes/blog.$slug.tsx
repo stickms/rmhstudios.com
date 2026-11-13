@@ -7,36 +7,18 @@ import { createServerFn } from '@tanstack/react-start';
 import { getPostBySlug } from '@/lib/blog';
 import { buildCanonical, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
-import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { ArrowLeft, Calendar, Megaphone } from 'lucide-react';
 import { ShareButton } from '@/components/blog/ShareButton';
 import { liquidVTName } from '@/lib/view-transition';
-import {
-  AnimatedH1, AnimatedH2, AnimatedH3, AnimatedP,
-  AnimatedUl, AnimatedOl, AnimatedLi,
-  AnimatedBlockquote, AnimatedImg, AnimatedHr, AnimatedPre,
-} from '@/components/blog/MDXAnimations';
-
-const animatedComponents = {
-  h1: AnimatedH1,
-  h2: AnimatedH2,
-  h3: AnimatedH3,
-  p: AnimatedP,
-  ul: AnimatedUl,
-  ol: AnimatedOl,
-  li: AnimatedLi,
-  blockquote: AnimatedBlockquote,
-  img: AnimatedImg,
-  hr: AnimatedHr,
-  pre: AnimatedPre,
-};
+import { BlogMarkdown } from '@/components/blog/BlogMarkdown';
+import { getBusiness } from '@/lib/businesses';
 
 const fetchPost = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
-    const post = await getPostBySlug(slug, ['title', 'date', 'description', 'content']);
+    const post = await getPostBySlug(slug, ['title', 'date', 'description', 'content', 'announcement', 'business']);
     return post;
   });
 
@@ -96,6 +78,16 @@ function BlogPost() {
             </div>
             <ShareButton slug={slug} />
           </div>
+          {(post as { announcement?: unknown }).announcement === true && (
+            <p className="mb-4 inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-accent-dim px-3 py-1 text-sm font-medium text-site-accent">
+              <Megaphone className="h-4 w-4" aria-hidden />
+              <span>
+                {getBusiness((post as { business?: string }).business).name}
+                {' · '}
+                {t('announcement-badge', { defaultValue: 'Announcement' })}
+              </span>
+            </p>
+          )}
           <h1 className="text-4xl md:text-5xl font-black text-site-text mb-6 tracking-tight leading-tight font-(family-name:--site-font-display) animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both">
             {post.title}
           </h1>
@@ -104,9 +96,7 @@ function BlogPost() {
           </p>
         </header>
 
-        <div className="prose prose-invert prose-lg max-w-none break-words prose-code:break-words prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-xl prose-img:border prose-img:border-site-border">
-          <ReactMarkdown components={animatedComponents}>{post.content as string}</ReactMarkdown>
-        </div>
+        <BlogMarkdown content={post.content as string} />
 
         <hr className="my-12 border-site-border" />
 

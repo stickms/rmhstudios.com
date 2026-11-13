@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "একটি ত্রুটি ঘটেছে",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "অ্যাডমিনে ফিরে যান",
   "back-to-admin-label": "অ্যাডমিনে ফিরে যান",
   "changes-now-live": "আপনার পরিবর্তনগুলি এখন লাইভ।",
@@ -22,6 +26,8 @@
   "live-preview": "লাইভ প্রিভিউ",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "মেটাডেটা",
   "new-blog-post": "নতুন ব্লগ পোস্ট",
   "post-created-successfully": "পোস্ট সফলভাবে তৈরি হয়েছে!",
@@ -31,6 +37,9 @@
   "save-post": "পোস্ট সংরক্ষণ করুন",
   "saving": "সংরক্ষণ করা হচ্ছে...",
   "show-preview": "প্রিভিউ দেখান",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "স্লাগ",
   "slug-title": "শুধুমাত্র ছোট হাতের অক্ষর, সংখ্যা এবং হাইফেন",
   "tags-label": "ট্যাগ (কমা দ্বারা পৃথক)",
@@ -39,5 +48,7 @@
   "title-placeholder": "আমার অসাধারণ পোস্ট",
   "untitled-post": "শিরোনামহীন পোস্ট",
   "update-post": "পোস্ট আপডেট করুন",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

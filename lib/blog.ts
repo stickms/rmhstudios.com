@@ -25,7 +25,7 @@ export async function getPostBySlug(slug: string, fields: string[] = []) {
   }
 
   type Items = {
-    [key: string]: string | string[] | undefined | null;
+    [key: string]: string | string[] | boolean | undefined | null;
   };
 
   const items: Items = {};
@@ -45,6 +45,14 @@ export async function getPostBySlug(slug: string, fields: string[] = []) {
       items[field] = post.image;
     } else if (field === "tags") {
       items[field] = post.tags;
+    } else if (field === "announcement") {
+      items[field] = post.announcement;
+    } else if (field === "business") {
+      items[field] = post.business;
+    } else if (field === "announcedAt") {
+      items[field] = post.announcedAt ? post.announcedAt.toISOString() : null;
+    } else if (field === "announcementExpiresAt") {
+      items[field] = post.announcementExpiresAt ? post.announcementExpiresAt.toISOString() : null;
     }
   });
 

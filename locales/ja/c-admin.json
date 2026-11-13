@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "エラーが発生しました",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "管理画面に戻る",
   "back-to-admin-label": "管理画面に戻る",
   "changes-now-live": "変更が公開されました。",
@@ -22,6 +26,8 @@
   "live-preview": "ライブプレビュー",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "メタデータ",
   "new-blog-post": "新規ブログ投稿",
   "post-created-successfully": "投稿が作成されました！",
@@ -31,6 +37,9 @@
   "save-post": "投稿を保存",
   "saving": "保存中...",
   "show-preview": "プレビューを表示",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "スラッグ",
   "slug-title": "小文字の英字、数字、ハイフンのみ使用可能",
   "tags-label": "タグ（カンマ区切り）",
@@ -39,5 +48,7 @@
   "title-placeholder": "素晴らしい投稿",
   "untitled-post": "無題の投稿",
   "update-post": "投稿を更新",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

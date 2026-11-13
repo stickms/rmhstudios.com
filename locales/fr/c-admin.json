@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "Une erreur est survenue",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Retour à l'administration",
   "back-to-admin-label": "Retour à l'administration",
   "changes-now-live": "Vos modifications sont désormais en ligne.",
@@ -22,6 +26,8 @@
   "live-preview": "Aperçu en direct",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Métadonnées",
   "new-blog-post": "Nouvel article de blog",
   "post-created-successfully": "Article créé avec succès !",
@@ -31,6 +37,9 @@
   "save-post": "Enregistrer l'article",
   "saving": "Enregistrement...",
   "show-preview": "Afficher l'aperçu",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Uniquement lettres minuscules, chiffres et tirets",
   "tags-label": "Étiquettes (séparées par des virgules)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Mon super article",
   "untitled-post": "Article sans titre",
   "update-post": "Mettre à jour l'article",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

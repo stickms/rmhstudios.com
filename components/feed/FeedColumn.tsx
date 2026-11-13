@@ -8,6 +8,7 @@ import { ComposeBoxLazy } from './ComposeBoxLazy';
 import { FeedList } from './FeedList';
 import { PullToRefresh } from './PullToRefresh';
 import { FeedAnnouncements } from './FeedAnnouncements';
+import { SitewideAnnouncementCard } from './SitewideAnnouncementCard';
 import { OnboardingChecklist } from './OnboardingChecklist';
 import { JumpBackIn } from './JumpBackIn';
 import { MobileMenuButton } from './MobileMenuButton';
@@ -263,6 +264,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
         </AsyncReveal>
 
         {/* Admin announcements, pinned above the composer */}
+        {!search && <SitewideAnnouncementCard />}
         {!search && <FeedAnnouncements />}
 
         {/* First-run onboarding checklist (new accounts only) */}

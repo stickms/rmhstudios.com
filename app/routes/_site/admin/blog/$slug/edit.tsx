@@ -23,7 +23,7 @@ const fetchPostForEdit = createServerFn({ method: 'GET' })
     }
 
     try {
-      const post = await getPostBySlug(slug, ["title", "slug", "date", "description", "image", "tags", "content"]);
+      const post = await getPostBySlug(slug, ["title", "slug", "date", "description", "image", "tags", "content", "announcement", "business", "announcementExpiresAt"]);
       return post;
     } catch (e) {
       throw notFound();

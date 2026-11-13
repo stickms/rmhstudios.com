@@ -222,7 +222,8 @@ model User {
   redemptionsReviewed RedemptionRequest[] @relation("RedemptionReviewer")
 
   // Admin-authored feed announcements
-  feedAnnouncements FeedAnnouncement[]
+  feedAnnouncements     FeedAnnouncement[]
+  blogAnnouncementsSeen BlogAnnouncementSeen[]
 
   // Admin moderation: audit log entries authored, strikes received/issued
   auditLogs     AdminAuditLog[] @relation("AuditAdmin")
@@ -330,22 +331,22 @@ model User {
   sharedMoments        SharedMoment[]
 
   // ─── Parity / QOL / customization (2026-07-20 design) ────────────────────
-  saveFolders        SaveFolder[]
-  savedItems         SavedItem[]
-  historyEntries     HistoryEntry[]
-  contentAwardsGiven ContentAward[]
-  wishlistEntries    WishlistEntry[]
-  closeFriendsOwned  CloseFriend[]  @relation("CircleOwner")
-  closeFriendOf      CloseFriend[]  @relation("CircleMember")
-  userLists          UserList[]
+  saveFolders         SaveFolder[]
+  savedItems          SavedItem[]
+  historyEntries      HistoryEntry[]
+  contentAwardsGiven  ContentAward[]
+  wishlistEntries     WishlistEntry[]
+  closeFriendsOwned   CloseFriend[]    @relation("CircleOwner")
+  closeFriendOf       CloseFriend[]    @relation("CircleMember")
+  userLists           UserList[]
   userListMemberships UserListMember[]
-  feedSignals        FeedSignal[]
-  gameReviews        GameReview[]
-  gameReviewVotes    GameReviewVote[]
-  gameGuides         GameGuide[]
-  userThemes         UserTheme[]
-  profileLayout      ProfileLayout?
-  savedSearches      SavedSearch[]
+  feedSignals         FeedSignal[]
+  gameReviews         GameReview[]
+  gameReviewVotes     GameReviewVote[]
+  gameGuides          GameGuide[]
+  userThemes          UserTheme[]
+  profileLayout       ProfileLayout?
+  savedSearches       SavedSearch[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -359,13 +360,13 @@ model User {
 // (the default) — rows are created on first save from the preferences panel.
 // Moderation notices (SYSTEM/strike) are always delivered regardless.
 model NotificationPreference {
-  userId   String  @id
-  likes    Boolean @default(true)
-  comments Boolean @default(true) // includes replies
-  follows  Boolean @default(true)
-  mentions Boolean @default(true)
-  reposts  Boolean @default(true)
-  system   Boolean @default(true) // achievements, levels, coins, …
+  userId      String  @id
+  likes       Boolean @default(true)
+  comments    Boolean @default(true) // includes replies
+  follows     Boolean @default(true)
+  mentions    Boolean @default(true)
+  reposts     Boolean @default(true)
+  system      Boolean @default(true) // achievements, levels, coins, …
   // Weekly digest email (opt-in). Missing row / unset = off; users turn it on
   // in settings. Kept opt-in for deliverability + consent hygiene.
   emailDigest Boolean @default(false)
@@ -390,17 +391,17 @@ model NotificationPreference {
 // knobs (density, font scale, …) can be added later as additional nullable
 // columns without a data backfill. A missing row = all defaults.
 model AppearancePreference {
-  userId              String  @id
-  style               String? // site theme id (see SITE_STYLES); null → DEFAULT_STYLE (Glass Dark)
-  accent              String? // accent preset id (see ACCENT_PRESETS); null → theme's own accent
-  reduceTransparency  Boolean @default(false) // collapse the glass to opaque surfaces
+  userId             String  @id
+  style              String? // site theme id (see SITE_STYLES); null → DEFAULT_STYLE (Glass Dark)
+  accent             String? // accent preset id (see ACCENT_PRESETS); null → theme's own accent
+  reduceTransparency Boolean @default(false) // collapse the glass to opaque surfaces
   // Appearance & accessibility suite (§13). Null = built-in default.
-  fontScale    Int? // 875 | 1000 | 1125 | 1250 (per-mille; avoids floats)
-  density      String? @db.VarChar(8) // 'cozy' | 'compact'
-  readableFont Boolean @default(false)
-  customAccent String? @db.VarChar(7) // '#rrggbb'; wins over `accent` preset
-  reduceMotion Boolean @default(false)
-  glassLevel   Int? // glass clarity slider (§5.46): 0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear; null → 2
+  fontScale          Int? // 875 | 1000 | 1125 | 1250 (per-mille; avoids floats)
+  density            String? @db.VarChar(8) // 'cozy' | 'compact'
+  readableFont       Boolean @default(false)
+  customAccent       String? @db.VarChar(7) // '#rrggbb'; wins over `accent` preset
+  reduceMotion       Boolean @default(false)
+  glassLevel         Int? // glass clarity slider (§5.46): 0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear; null → 2
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -544,11 +545,37 @@ model BlogPost {
   tags        String[]
   content     String
 
+  // Sitewide announcement mode (docs/superpowers/specs/2026-11-12-sitewide-announcements-design.md).
+  // `announcement` = pop up once for every visitor + pin in the feed.
+  // `business` is a BusinessId from lib/businesses.ts. `announcedAt` is stamped
+  // each time the flag flips false → true (it versions the "seen" state).
+  announcement          Boolean   @default(false)
+  business              String    @default("rmh-studios") @db.VarChar(40)
+  announcedAt           DateTime?
+  announcementExpiresAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  seenBy BlogAnnouncementSeen[]
+
   @@index([date(sort: Desc)])
+  @@index([announcement, announcedAt(sort: Desc)])
   @@map("blog_post")
+}
+
+/// One row per signed-in member who dismissed a sitewide announcement popup.
+model BlogAnnouncementSeen {
+  userId String
+  postId String
+  seenAt DateTime @default(now())
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([postId])
+  @@map("blog_announcement_seen")
 }
 
 // --- Game Models ---
@@ -2548,18 +2575,18 @@ model GroupPollVote {
 
 /// RMHStudy flashcard deck (#31). Decks are personal but can be shared publicly.
 model FlashcardDeck {
-  id          String   @id @default(cuid())
-  userId      String
-  title       String   @db.VarChar(100)
-  description String?  @db.VarChar(500)
-  isPublic    Boolean  @default(false)
-  cardCount   Int      @default(0)
+  id           String   @id @default(cuid())
+  userId       String
+  title        String   @db.VarChar(100)
+  description  String?  @db.VarChar(500)
+  isPublic     Boolean  @default(false)
+  cardCount    Int      @default(0)
   // Set when this deck was cloned from a public deck (marketplace). Provenance +
   // the "you already added this deck" guard. Not a relation (the source may be
   // deleted); it just records the source deck id.
   clonedFromId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   cards Flashcard[]
@@ -4582,23 +4609,23 @@ model UserSeasonProgress {
 /// Scheduled posts are materialized into real RMHarks lazily by the publisher
 /// once their time is due. `publishedId` links to the created post afterwards.
 model ScheduledPost {
-  id          String         @id @default(cuid())
-  userId      String
-  content     String         @db.Text
-  gifUrl      String?        @db.Text
-  imageUrls   String[]       @default([])
+  id           String             @id @default(cuid())
+  userId       String
+  content      String             @db.Text
+  gifUrl       String?            @db.Text
+  imageUrls    String[]           @default([])
   // Per-image alt text (accessibility), aligned by index with imageUrls.
-  imageAlts   String[]       @default([])
-  audience    RMHarkAudience @default(PUBLIC)
+  imageAlts    String[]           @default([])
+  audience     RMHarkAudience     @default(PUBLIC)
   isSensitive  Boolean            @default(false)
   replyControl RMHarkReplyControl @default(EVERYONE)
-  unlockPrice Int?
-  communityId String?
-  poll        Json? // { question, options[], multiSelect, durationHours }
-  scheduledAt DateTime? // null = plain draft
-  publishedId String? // set once published → the created RMHark id
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  unlockPrice  Int?
+  communityId  String?
+  poll         Json? // { question, options[], multiSelect, durationHours }
+  scheduledAt  DateTime? // null = plain draft
+  publishedId  String? // set once published → the created RMHark id
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -5337,14 +5364,14 @@ enum WagerMatchStatus {
 }
 
 model WagerMatch {
-  id         String           @id @default(cuid())
-  gameId     String           @db.VarChar(64) // GameInfo.id / app id; must be wager-eligible
+  id           String           @id @default(cuid())
+  gameId       String           @db.VarChar(64) // GameInfo.id / app id; must be wager-eligible
   challengerId String
-  opponentId String? // null = open challenge anyone may accept
-  stakeCoins Int // per-player stake
-  potCoins   Int              @default(0) // escrowed total (2 × stake once accepted)
-  rakeBps    Int              @default(0) // rake in basis points, taken from the pot on settle
-  status     WagerMatchStatus @default(OPEN)
+  opponentId   String? // null = open challenge anyone may accept
+  stakeCoins   Int // per-player stake
+  potCoins     Int              @default(0) // escrowed total (2 × stake once accepted)
+  rakeBps      Int              @default(0) // rake in basis points, taken from the pot on settle
+  status       WagerMatchStatus @default(OPEN)
 
   // Result reporting
   winnerId                   String?
@@ -5441,11 +5468,11 @@ model TournamentEntrant {
   eliminatedAt DateTime?
   joinedAt     DateTime  @default(now())
 
-  tournament  Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  matchesAsA  TournamentMatch[] @relation("MatchEntrantA")
-  matchesAsB  TournamentMatch[] @relation("MatchEntrantB")
-  matchesWon  TournamentMatch[] @relation("MatchWinner")
+  tournament Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchesAsA TournamentMatch[] @relation("MatchEntrantA")
+  matchesAsB TournamentMatch[] @relation("MatchEntrantB")
+  matchesWon TournamentMatch[] @relation("MatchWinner")
 
   @@unique([tournamentId, userId])
   @@index([tournamentId, seed])

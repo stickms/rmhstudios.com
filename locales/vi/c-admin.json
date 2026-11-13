@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "Đã xảy ra lỗi",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Quay lại trang quản trị",
   "back-to-admin-label": "Quay lại Trang quản trị",
   "changes-now-live": "Các thay đổi của bạn hiện đã có hiệu lực.",
@@ -22,6 +26,8 @@
   "live-preview": "Xem trước trực tiếp",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Siêu dữ liệu",
   "new-blog-post": "Bài viết blog mới",
   "post-created-successfully": "Bài viết đã được tạo thành công!",
@@ -31,6 +37,9 @@
   "save-post": "Lưu bài viết",
   "saving": "Đang lưu...",
   "show-preview": "Hiển thị bản xem trước",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Chỉ chấp nhận chữ thường, số và dấu gạch ngang",
   "tags-label": "Thẻ (phân cách bằng dấu phẩy)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Bài viết tuyệt vời của tôi",
   "untitled-post": "Bài viết chưa có tiêu đề",
   "update-post": "Cập nhật bài viết",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

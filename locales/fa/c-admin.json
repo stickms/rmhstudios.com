@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "خطایی رخ داد",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "بازگشت به مدیریت",
   "back-to-admin-label": "بازگشت به مدیریت",
   "changes-now-live": "تغییرات شما اکنون اعمال شده است.",
@@ -22,6 +26,8 @@
   "live-preview": "پیش\u200cنمایش زنده",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "فراداده",
   "new-blog-post": "پست وبلاگ جدید",
   "post-created-successfully": "پست با موفقیت ایجاد شد!",
@@ -31,6 +37,9 @@
   "save-post": "ذخیره پست",
   "saving": "در حال ذخیره...",
   "show-preview": "نمایش پیش\u200cنمایش",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "نامک",
   "slug-title": "فقط حروف کوچک، اعداد و خط فاصله",
   "tags-label": "برچسب\u200cها (جدا شده با کاما)",
@@ -39,5 +48,7 @@
   "title-placeholder": "پست عالی من",
   "untitled-post": "پست بدون عنوان",
   "update-post": "به\u200cروزرسانی پست",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

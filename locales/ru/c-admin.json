@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "Произошла ошибка",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Назад в админку",
   "back-to-admin-label": "Назад в админку",
   "changes-now-live": "Ваши изменения теперь опубликованы.",
@@ -22,6 +26,8 @@
   "live-preview": "Предпросмотр в реальном времени",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Метаданные",
   "new-blog-post": "Новый пост в блоге",
   "post-created-successfully": "Пост успешно создан!",
@@ -31,6 +37,9 @@
   "save-post": "Сохранить пост",
   "saving": "Сохранение...",
   "show-preview": "Показать предпросмотр",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Только строчные буквы, цифры и дефисы",
   "tags-label": "Теги (через запятую)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Мой крутой пост",
   "untitled-post": "Пост без названия",
   "update-post": "Обновить пост",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

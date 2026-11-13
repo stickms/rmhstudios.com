@@ -2,6 +2,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { logAdminAction } from "@/lib/admin-audit.server";
+import { invalidateCached } from "@/lib/cached.server";
+import { saveAnnouncementFieldsSchema } from "@/lib/sitewide-announcement";
+import { applyAnnouncementFields, invalidateCurrentAnnouncement } from "@/lib/sitewide-announcement.server";
 
 export const Route = createFileRoute('/api/admin/blog')({
   server: {
@@ -17,8 +20,6 @@ export const Route = createFileRoute('/api/admin/blog')({
 
         const body = await request.json();
         const { title, slug, description, image, date, tags, content, isEdit } = body;
-
-        console.log(`Saving blog post (${isEdit ? 'EDIT' : 'NEW'}):`, body);
 
         if (!title || !slug || !date || !description || !content) {
             return Response.json({ error: "Missing required fields" }, { status: 400 });
@@ -44,7 +45,26 @@ export const Route = createFileRoute('/api/admin/blog')({
            formattedTags = [tags];
         }
 
-        await prisma.blogPost.upsert({
+        const announcementParsed = saveAnnouncementFieldsSchema.safeParse({
+            announcement: body.announcement,
+            business: body.business,
+            announcementExpiresAt: body.announcementExpiresAt,
+        });
+        if (!announcementParsed.success) {
+            return Response.json({ error: "Invalid announcement fields" }, { status: 400 });
+        }
+
+        const existing = await prisma.blogPost.findUnique({
+            where: { slug },
+            select: { id: true, announcement: true, announcedAt: true },
+        });
+        const { data: announcementData, reannounced } = applyAnnouncementFields(
+            existing,
+            announcementParsed.data,
+            new Date(),
+        );
+
+        const upsertPost = prisma.blogPost.upsert({
             where: { slug },
             update: {
                 title,
@@ -52,7 +72,8 @@ export const Route = createFileRoute('/api/admin/blog')({
                 description,
                 image: image || null,
                 tags: formattedTags,
-                content
+                content,
+                ...announcementData
             },
             create: {
                 slug,
@@ -61,9 +82,23 @@ export const Route = createFileRoute('/api/admin/blog')({
                 description,
                 image: image || null,
                 tags: formattedTags,
-                content
+                content,
+                ...announcementData
             }
         });
+
+        if (existing && reannounced) {
+            // Re-announcing: everyone sees it again.
+            await prisma.$transaction([
+                prisma.blogAnnouncementSeen.deleteMany({ where: { postId: existing.id } }),
+                upsertPost,
+            ]);
+        } else {
+            await upsertPost;
+        }
+
+        await invalidateCurrentAnnouncement();
+        await invalidateCached('sidebar:blogPosts');
 
         await logAdminAction(user.id, isEdit ? 'blog.edit' : 'blog.create', {
             targetType: 'BlogPost',
@@ -103,6 +138,8 @@ export const Route = createFileRoute('/api/admin/blog')({
             throw e;
         }
 
+        await invalidateCurrentAnnouncement();
+        await invalidateCached('sidebar:blogPosts');
         await logAdminAction(user.id, 'blog.delete', { targetType: 'BlogPost', targetId: slug });
 
         return Response.json({ success: true });

@@ -243,3 +243,19 @@ export function ownsFeedImageUrl(url: string, userId: string): boolean {
   const filename = feedImageFilename(url);
   return filename !== null && filename.startsWith(`${userId}-`);
 }
+
+// ─── Blog / announcement media ───────────────────────────────────────────────
+// Images and videos an admin uploads from the blog editor (sitewide
+// announcements embed them with markdown image syntax). Served from the CDN in
+// prod, else the Node proxy at app/routes/api/blog/media/$filename.ts.
+export const BLOG_MEDIA_PREFIX = "blog/";
+
+export function blogMediaKey(filename: string): string {
+  return `${BLOG_MEDIA_PREFIX}${filename}`;
+}
+
+export function blogMediaUrl(filename: string): string {
+  return CDN_BASE
+    ? `${CDN_BASE}/${blogMediaKey(filename)}`
+    : `/api/blog/media/${filename}`;
+}

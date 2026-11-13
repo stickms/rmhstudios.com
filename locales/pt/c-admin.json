@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "Ocorreu um erro",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Voltar ao admin",
   "back-to-admin-label": "Voltar ao Admin",
   "changes-now-live": "Suas alterações agora estão no ar.",
@@ -22,6 +26,8 @@
   "live-preview": "Pré-visualização ao Vivo",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Metadados",
   "new-blog-post": "Nova Postagem no Blog",
   "post-created-successfully": "Postagem criada com sucesso!",
@@ -31,6 +37,9 @@
   "save-post": "Salvar Postagem",
   "saving": "Salvando...",
   "show-preview": "Mostrar Pré-visualização",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Apenas letras minúsculas, números e hífens",
   "tags-label": "Tags (separadas por vírgula)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Minha Postagem Incrível",
   "untitled-post": "Postagem sem Título",
   "update-post": "Atualizar Postagem",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

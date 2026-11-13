@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "May naganap na error",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Bumalik sa admin",
   "back-to-admin-label": "Bumalik sa Admin",
   "changes-now-live": "Ang iyong mga pagbabago ay live na ngayon.",
@@ -22,6 +26,8 @@
   "live-preview": "Live na Preview",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Metadata",
   "new-blog-post": "Bagong Blog Post",
   "post-created-successfully": "Matagumpay na nagawa ang post!",
@@ -31,6 +37,9 @@
   "save-post": "I-save ang Post",
   "saving": "Sine-save...",
   "show-preview": "Ipakita ang Preview",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Mga maliliit na letra, numero, at gitling lamang",
   "tags-label": "Mga Tag (pinaghihiwalay ng kuwit)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Ang Aking Kahanga-hangang Post",
   "untitled-post": "Walang Pamagat na Post",
   "update-post": "I-update ang Post",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

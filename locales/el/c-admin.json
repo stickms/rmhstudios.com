@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "Παρουσιάστηκε σφάλμα",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Επιστροφή στη διαχείριση",
   "back-to-admin-label": "Επιστροφή στη Διαχείριση",
   "changes-now-live": "Οι αλλαγές σας είναι πλέον ενεργές.",
@@ -22,6 +26,8 @@
   "live-preview": "Ζωντανή Προεπισκόπηση",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Μεταδεδομένα",
   "new-blog-post": "Νέα Ανάρτηση Ιστολογίου",
   "post-created-successfully": "Η ανάρτηση δημιουργήθηκε με επιτυχία!",
@@ -31,6 +37,9 @@
   "save-post": "Αποθήκευση Ανάρτησης",
   "saving": "Αποθήκευση...",
   "show-preview": "Εμφάνιση Προεπισκόπησης",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Μόνο πεζά γράμματα, αριθμοί και παύλες",
   "tags-label": "Ετικέτες (διαχωρισμένες με κόμμα)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Η Καταπληκτική Μου Ανάρτηση",
   "untitled-post": "Ανάρτηση χωρίς τίτλο",
   "update-post": "Ενημέρωση Ανάρτησης",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

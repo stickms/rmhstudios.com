@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "ਇੱਕ ਗਲਤੀ ਆਈ",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "ਐਡਮਿਨ 'ਤੇ ਵਾਪਸ ਜਾਓ",
   "back-to-admin-label": "ਐਡਮਿਨ 'ਤੇ ਵਾਪਸ ਜਾਓ",
   "changes-now-live": "ਤੁਹਾਡੀਆਂ ਤਬਦੀਲੀਆਂ ਹੁਣ ਲਾਈਵ ਹਨ।",
@@ -22,6 +26,8 @@
   "live-preview": "ਲਾਈਵ ਪ੍ਰੀਵਿਊ",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "ਮੈਟਾਡੇਟਾ",
   "new-blog-post": "ਨਵੀਂ ਬਲੌਗ ਪੋਸਟ",
   "post-created-successfully": "ਪੋਸਟ ਸਫਲਤਾਪੂਰਵਕ ਬਣਾਈ ਗਈ!",
@@ -31,6 +37,9 @@
   "save-post": "ਪੋਸਟ ਸੁਰੱਖਿਅਤ ਕਰੋ",
   "saving": "ਸੁਰੱਖਿਅਤ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ...",
   "show-preview": "ਪ੍ਰੀਵਿਊ ਦਿਖਾਓ",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "ਸਿਰਫ ਛੋਟੇ ਅੱਖਰ, ਅੰਕ ਅਤੇ ਹਾਈਫਨ",
   "tags-label": "ਟੈਗ (ਕਾਮੇ ਨਾਲ ਵੱਖ ਕੀਤੇ)",
@@ -39,5 +48,7 @@
   "title-placeholder": "ਮੇਰੀ ਸ਼ਾਨਦਾਰ ਪੋਸਟ",
   "untitled-post": "ਬਿਨਾਂ ਸਿਰਲੇਖ ਵਾਲੀ ਪੋਸਟ",
   "update-post": "ਪੋਸਟ ਅੱਪਡੇਟ ਕਰੋ",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

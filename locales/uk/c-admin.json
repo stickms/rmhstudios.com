@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "Сталася помилка",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Назад до адмінки",
   "back-to-admin-label": "Назад до адмінки",
   "changes-now-live": "Ваші зміни тепер опубліковано.",
@@ -22,6 +26,8 @@
   "live-preview": "Попередній перегляд",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Метадані",
   "new-blog-post": "Новий допис у блозі",
   "post-created-successfully": "Допис успішно створено!",
@@ -31,6 +37,9 @@
   "save-post": "Зберегти допис",
   "saving": "Збереження...",
   "show-preview": "Показати перегляд",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Лише малі літери, цифри та дефіси",
   "tags-label": "Теги (через кому)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Мій чудовий допис",
   "untitled-post": "Допис без назви",
   "update-post": "Оновити допис",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

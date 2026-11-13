@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "A apărut o eroare",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Înapoi la administrare",
   "back-to-admin-label": "Înapoi la Administrare",
   "changes-now-live": "Modificările tale sunt acum active.",
@@ -22,6 +26,8 @@
   "live-preview": "Previzualizare Live",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Metadate",
   "new-blog-post": "Postare Nouă pe Blog",
   "post-created-successfully": "Postarea a fost creată cu succes!",
@@ -31,6 +37,9 @@
   "save-post": "Salvează Postarea",
   "saving": "Se salvează...",
   "show-preview": "Arată Previzualizarea",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Doar litere mici, cifre și cratime",
   "tags-label": "Etichete (separate prin virgulă)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Postarea Mea Minunată",
   "untitled-post": "Postare Fără Titlu",
   "update-post": "Actualizează Postarea",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

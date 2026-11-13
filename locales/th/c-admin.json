@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "เกิดข้อผิดพลาด",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "กลับไปยังผู้ดูแลระบบ",
   "back-to-admin-label": "กลับไปยังผู้ดูแลระบบ",
   "changes-now-live": "การเปลี่ยนแปลงของคุณใช้งานได้แล้ว",
@@ -22,6 +26,8 @@
   "live-preview": "ตัวอย่างสด",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "ข้อมูลเมตา",
   "new-blog-post": "บล็อกโพสต์ใหม่",
   "post-created-successfully": "สร้างโพสต์สำเร็จ!",
@@ -31,6 +37,9 @@
   "save-post": "บันทึกโพสต์",
   "saving": "กำลังบันทึก...",
   "show-preview": "แสดงตัวอย่าง",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "เฉพาะตัวอักษรพิมพ์เล็ก ตัวเลข และยัติภังค์",
   "tags-label": "แท็ก (คั่นด้วยเครื่องหมายจุลภาค)",
@@ -39,5 +48,7 @@
   "title-placeholder": "โพสต์สุดเจ๋งของฉัน",
   "untitled-post": "โพสต์ไม่มีชื่อ",
   "update-post": "อัปเดตโพสต์",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

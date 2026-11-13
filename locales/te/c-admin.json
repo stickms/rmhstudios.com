@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "ఒక లోపం సంభవించింది",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "నిర్వాహకానికి తిరిగి వెళ్ళు",
   "back-to-admin-label": "నిర్వాహకానికి తిరిగి వెళ్ళు",
   "changes-now-live": "మీ మార్పులు ఇప్పుడు ప్రత్యక్షంగా ఉన్నాయి.",
@@ -22,6 +26,8 @@
   "live-preview": "ప్రత్యక్ష ప్రివ్యూ",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "మెటాడేటా",
   "new-blog-post": "కొత్త బ్లాగ్ పోస్ట్",
   "post-created-successfully": "పోస్ట్ విజయవంతంగా సృష్టించబడింది!",
@@ -31,6 +37,9 @@
   "save-post": "పోస్ట్ సేవ్ చేయి",
   "saving": "సేవ్ చేస్తోంది...",
   "show-preview": "ప్రివ్యూ చూపించు",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "స్లగ్",
   "slug-title": "చిన్న అక్షరాలు, సంఖ్యలు మరియు హైఫన్లు మాత్రమే",
   "tags-label": "ట్యాగ్లు (కామా ద్వారా వేరు చేయబడినవి)",
@@ -39,5 +48,7 @@
   "title-placeholder": "నా అద్భుతమైన పోస్ట్",
   "untitled-post": "శీర్షిక లేని పోస్ట్",
   "update-post": "పోస్ట్ నవీకరించు",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

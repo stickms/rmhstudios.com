@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "ஒரு பிழை ஏற்பட்டது",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "நிர்வாகத்திற்குத் திரும்பு",
   "back-to-admin-label": "நிர்வாகத்திற்குத் திரும்பு",
   "changes-now-live": "உங்கள் மாற்றங்கள் இப்போது நடைமுறையில் உள்ளன.",
@@ -22,6 +26,8 @@
   "live-preview": "நேரடி முன்னோட்டம்",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "மெட்டாடேட்டா",
   "new-blog-post": "புதிய வலைப்பதிவு பதிவு",
   "post-created-successfully": "பதிவு வெற்றிகரமாக உருவாக்கப்பட்டது!",
@@ -31,6 +37,9 @@
   "save-post": "பதிவை சேமி",
   "saving": "சேமிக்கிறது...",
   "show-preview": "முன்னோட்டத்தைக் காட்டு",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "ஸ்லக்",
   "slug-title": "சிறிய எழுத்துக்கள், எண்கள் மற்றும் கோடுகள் மட்டுமே",
   "tags-label": "குறிச்சொற்கள் (கமாவால் பிரிக்கப்பட்டவை)",
@@ -39,5 +48,7 @@
   "title-placeholder": "எனது அருமையான பதிவு",
   "untitled-post": "தலைப்பில்லா பதிவு",
   "update-post": "பதிவை புதுப்பி",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

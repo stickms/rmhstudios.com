@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "Terjadi kesalahan",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Kembali ke admin",
   "back-to-admin-label": "Kembali ke Admin",
   "changes-now-live": "Perubahan Anda sekarang sudah aktif.",
@@ -22,6 +26,8 @@
   "live-preview": "Pratinjau Langsung",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Metadata",
   "new-blog-post": "Posting Blog Baru",
   "post-created-successfully": "Posting berhasil dibuat!",
@@ -31,6 +37,9 @@
   "save-post": "Simpan Posting",
   "saving": "Menyimpan...",
   "show-preview": "Tampilkan Pratinjau",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Hanya huruf kecil, angka, dan tanda hubung",
   "tags-label": "Tag (dipisahkan koma)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Posting Keren Saya",
   "untitled-post": "Posting Tanpa Judul",
   "update-post": "Perbarui Posting",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }

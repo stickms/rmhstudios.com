@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "Ett fel uppstod",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Tillbaka till admin",
   "back-to-admin-label": "Tillbaka till Admin",
   "changes-now-live": "Dina ändringar är nu publicerade.",
@@ -22,6 +26,8 @@
   "live-preview": "Live-förhandsvisning",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Metadata",
   "new-blog-post": "Nytt blogginlägg",
   "post-created-successfully": "Inlägg skapat!",
@@ -31,6 +37,9 @@
   "save-post": "Spara inlägg",
   "saving": "Sparar...",
   "show-preview": "Visa förhandsvisning",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Sitewide announcement",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Endast gemener, siffror och bindestreck",
   "tags-label": "Taggar (kommaseparerade)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Mitt fantastiska inlägg",
   "untitled-post": "Namnlöst inlägg",
   "update-post": "Uppdatera inlägg",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image / video",
+  "uploading-media": "Uploading..."
 }
