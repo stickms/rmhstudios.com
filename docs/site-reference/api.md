@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 992 endpoints across 199 groups: 109 route files under `app/routes/api` and 883 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 997 endpoints across 199 groups: 110 route files under `app/routes/api` and 887 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-95 routes.
+100 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -145,6 +145,11 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/vibe/backfill-thumbs` | `POST` | `lib/rmhvibe/api/admin.vibe.backfill-thumbs.server.ts` |
 | `/api/admin/view-as` | `GET` | `lib/admin/api/admin.view-as.server.ts` |
 | `/api/admin/wager/:id/resolve` | `POST` | `lib/wager/api/admin.wager.$id.resolve.server.ts` |
+| `/api/admin/wiki/assist` | `POST` | `app/routes/api/admin/wiki/assist.ts` |
+| `/api/admin/wiki/pages` | `GET` `POST` | `lib/wiki/api/admin.wiki.pages.server.ts` |
+| `/api/admin/wiki/pages/:id` | `DELETE` `GET` `PUT` | `lib/wiki/api/admin.wiki.pages.$id.server.ts` |
+| `/api/admin/wiki/seed` | `POST` | `lib/wiki/api/admin.wiki.seed.server.ts` |
+| `/api/admin/wiki/theme` | `POST` | `lib/wiki/api/admin.wiki.theme.server.ts` |
 
 ## `/api/advent`
 
