@@ -21,6 +21,7 @@ import {
   initializeBaccarat,
   listPublicRooms as listBaccaratRooms,
   refundBaccaratOnShutdown,
+  restoreBaccaratTables,
 } from './baccarat';
 import {
   registerRouletteHandlers,
@@ -28,6 +29,7 @@ import {
   initializeRoulette,
   listPublicRooms as listRouletteRooms,
   refundRouletteOnShutdown,
+  restoreRouletteTables,
 } from './roulette';
 import { logger } from '../../../server/socket-server/logger';
 import { openCasinoTableStore, type CasinoTableStore } from './table-store';
@@ -73,17 +75,33 @@ let tableStore: CasinoTableStore | null = null;
  * (third-pass audit OP3; `table-store.ts`). With `CASINO_DURABLE_TABLES` unset this resolves at once having
  * done nothing. Never throws: the hub must start whatever the store or the database is doing.
  *
- * Blackjack is the only game on the store. Roulette, baccarat and Hold'em still refund at shutdown.
+ * Blackjack, roulette and baccarat are on the store. Hold'em still cashes out at shutdown: its chips move
+ * between seats in memory with no ledger row, so the per-stake keys that make an older stored copy safe for
+ * the other three do not apply to it (`server/CLAUDE.md`, durable casino tables).
+ *
+ * One game failing to restore does not stop the next: each is tried on its own.
  *
  * @param store a test's own store; production passes nothing and the environment decides.
  */
 export async function restoreCasinoTables(io: Server, store?: CasinoTableStore): Promise<void> {
   try {
     tableStore = store ?? (await openCasinoTableStore(logger));
-    if (!tableStore) return;
-    await restoreBlackjackTables(io, tableStore);
   } catch (err) {
     logger.error({ event: 'casino_tables_restore_error', error: String(err) });
+    return;
+  }
+  if (!tableStore) return;
+  const games = [
+    ['blackjack', restoreBlackjackTables],
+    ['roulette', restoreRouletteTables],
+    ['baccarat', restoreBaccaratTables],
+  ] as const;
+  for (const [game, restore] of games) {
+    try {
+      await restore(io, tableStore);
+    } catch (err) {
+      logger.error({ event: 'casino_tables_restore_error', game, error: String(err) });
+    }
   }
 }
 
@@ -109,8 +127,8 @@ export function listCasinoRooms() {
  * in this order, synchronously, before `io.close()`, so each module claims its stakes before the disconnect
  * fan-out and no payout timer can pay a refunded stake.
  *
- * With durable tables on, blackjack's entry saves its tables instead of refunding them (same call, same
- * synchronous claim: it snapshots and empties its rooms before it awaits anything).
+ * With durable tables on, the blackjack, roulette and baccarat entries save their tables instead of refunding
+ * them (same call, same synchronous claim: each snapshots and empties its rooms before it awaits anything).
  */
 export const CASINO_SHUTDOWN_REFUNDS: ReadonlyArray<readonly [game: string, run: (deadlineMs: number) => Promise<unknown>]> = [
   ['blackjack', refundBlackjackOnShutdown],
