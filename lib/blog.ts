@@ -72,7 +72,9 @@ export async function getAllPosts(fields: string[] = []) {
       description: fields.includes("description"),
       image: fields.includes("image"),
       tags: fields.includes("tags"),
-      content: fields.includes("content")
+      content: fields.includes("content"),
+      announcement: fields.includes("announcement"),
+      business: fields.includes("business")
     }
   });
 

@@ -71,6 +71,7 @@
   "ban-author": "Bannir l'auteur",
   "ban-length-prompt": "Durée du ban en jours (vide = permanent) :",
   "ban-reason-prompt": "Motif du ban :",
+  "blog-announcement-label": "Announcement",
   "blog-description": "Écrire de nouveaux journaux de développeur, ou modifier et supprimer des articles de blog existants.",
   "blog-title": "Gérer les articles de blog",
   "bot-no-email": "Automated account",

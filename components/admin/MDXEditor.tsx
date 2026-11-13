@@ -11,7 +11,7 @@ import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import ReactMarkdown from 'react-markdown';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { MarkdownEditor } from '@/components/admin/MarkdownEditor';
+import { MarkdownEditor, type MarkdownEditorHandle } from '@/components/admin/MarkdownEditor';
 import { ReadabilityMeter } from '@/components/reading/ReadabilityMeter';
 // The published article's own element map — importing it (rather than
 // re-listing a subset here, which is what this file used to do and which had
@@ -64,6 +64,7 @@ export function MDXEditor({
   const [content, setContent] = useState(asString(initialData?.content));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<MarkdownEditorHandle>(null);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
   const wasAnnouncement = initialData?.announcement === true;
@@ -106,11 +107,16 @@ export function MDXEditor({
       const { url } = await api(uploadBlogMediaApi, { body });
       const alt = file.name.replace(/\.[^.]+$/, '').replace(/[[\]]/g, '');
       const snippet = `![${alt}](${url})`;
-      // MarkdownEditor does not expose its cursor, so the snippet goes on its own line at the end.
-      setContent((prev: string) => {
-        const base = prev.replace(/\s+$/, '');
-        return base ? `${base}\n\n${snippet}\n` : `${snippet}\n`;
-      });
+      // Insert at the editor's cursor, on a line of its own. Below `lg` the editor pane is hidden in preview
+      // mode, so there is no cursor to honour there: fall back to appending at the end, as does a missing view.
+      const view = isPreviewMode ? null : editorRef.current;
+      const inserted = view?.insertAtCursor(snippet, { ownLine: true }) ?? false;
+      if (!inserted) {
+        setContent((prev: string) => {
+          const base = prev.replace(/\s+$/, '');
+          return base ? `${base}\n\n${snippet}\n` : `${snippet}\n`;
+        });
+      }
     } catch (error) {
       toast.error(
         serverError(error) ||
@@ -502,6 +508,7 @@ export function MDXEditor({
                 </div>
                 <div className="surface-field relative min-h-75 flex-1 overflow-hidden rounded-site-sm sm:min-h-0">
                   <MarkdownEditor
+                    ref={editorRef}
                     value={content}
                     onChange={setContent}
                     placeholder={t('content-placeholder', {

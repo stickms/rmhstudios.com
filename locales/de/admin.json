@@ -70,6 +70,7 @@
   "ban-author": "Autor sperren",
   "ban-length-prompt": "Sperrdauer in Tagen (leer = dauerhaft):",
   "ban-reason-prompt": "Sperrgrund:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "Neue Entwicklerprotokolle schreiben oder vorhandene Blogbeiträge bearbeiten und löschen.",
   "blog-title": "Blogbeiträge verwalten",
   "bot-no-email": "Automated account",

@@ -69,6 +69,7 @@
   "ban-author": "Larang penulis",
   "ban-length-prompt": "Durasi larangan dalam hari (kosong = permanen):",
   "ban-reason-prompt": "Alasan larangan:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "Tulis catatan pengembang baru, atau edit dan hapus posting blog yang ada.",
   "blog-title": "Kelola Posting Blog",
   "bot-no-email": "Automated account",
