@@ -10,9 +10,19 @@ interface GifPickerProps {
  className?: string;
  /** Pre-filled search (the `/gif cats` slash command). */
  initialQuery?: string;
+ /**
+ * What to show when GIF search is switched off on this server. An inline picker shows nothing (the default), which
+ * hides the feature; a popover has already opened, so it says so rather than open empty.
+ */
+ unavailable?: React.ReactNode;
+ /**
+ * Height of the scrolling grid. Inline pickers grow with their results up to a cap (the default). A popover passes a
+ * fixed height: it is placed and capped from its size as it opens, so it must not grow when the results arrive.
+ */
+ listClassName?: string;
 }
 
-export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }: GifPickerProps) {
+export function GifPicker({ onSelect, onClose, className ='', initialQuery ='', unavailable = null, listClassName ='max-h-72' }: GifPickerProps) {
  const { t } = useTranslation('feed');
  const [query, setQuery] = useState(initialQuery);
  const [results, setResults] = useState<KlipyGif[]>([]);
@@ -57,7 +67,7 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
  return () => io.disconnect();
  }, [next, loading, query, fetchPage]);
 
- if (error ==='unavailable') return null; // feature off → hide entirely
+ if (error ==='unavailable') return unavailable; // feature off → hide entirely, or say so
 
  return (
  <div className={`surface-card rounded-site p-4 ${className}`}>
@@ -80,7 +90,7 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
  )}
  </div>
 
- <div className="max-h-72 overflow-y-auto">
+ <div className={`${listClassName} overflow-y-auto`}>
  {error ==='failed'&& (
  <div className="flex items-center justify-center gap-2 py-6 text-site-text-muted text-xs">
  <ImageOff className="w-4 h-4"/>

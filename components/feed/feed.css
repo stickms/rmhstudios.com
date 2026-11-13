@@ -184,6 +184,23 @@
   gap: 12px;
   min-block-size: 40px;
 }
+/* With the field in it, the row hangs from its first line: the field grows downward as text wraps and the avatar stays
+   beside the first line (28px avatar centred on the field's 36px line). */
+.home-composer__row--field {
+  align-items: flex-start;
+  padding-block: 2px;
+}
+.home-composer__row--field > :first-child {
+  margin-block-start: 4px;
+}
+/* The field: one 36px line with no border or fill, growing with its text and scrolling past 40% of the viewport.
+   `field-sizing` does the growing in the layout pass; `useComposerFieldGrow` covers engines without it. */
+.home-composer__field {
+  field-sizing: content;
+  min-block-size: 36px;
+  max-block-size: 40vh;
+  resize: none;
+}
 
 
 

@@ -1,11 +1,21 @@
-import { lazy, Suspense, useState, useRef, useEffect, useCallback } from 'react';
-import { ImagePlus, Check } from 'lucide-react';
+import {
+  lazy,
+  Suspense,
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  type KeyboardEvent,
+  type RefObject,
+} from 'react';
+import { BarChart3, ImagePlay, ImagePlus, Check } from 'lucide-react';
 import { AIGenerateButton } from './AIGenerateButton';
 import { AIImageButton } from './AIImageButton';
 import { ComposeAssist } from './ComposeAssist';
 import { TagSuggest } from './TagSuggest';
 import { MentionTextarea } from './MentionTextarea';
-import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { EmojiPickerButton, EmojiPickerPopover } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -36,9 +46,19 @@ import {
 import { ComposerAvatar, ContentWarningPill, UnlockPricePill } from './compose/ComposeChips';
 import { DraftRestoreBanner } from './compose/DraftRestoreBanner';
 import { PollEditor } from './compose/PollEditor';
-import { GifAttachment } from './compose/GifAttachment';
+import { GifAttachment, GifPopover } from './compose/GifAttachment';
 import { ImagePreviewStrip } from './compose/ImagePreviewStrip';
 import { ComposeMenu } from './compose/ComposeMenu';
+import { ComposeAiMenu } from './compose/ComposeAiMenu';
+import {
+  COMPOSER_FIELD_CLASS,
+  ComposerRow,
+  ComposerTool,
+  useComposerFieldGrow,
+  type ComposerFieldHandoff,
+  type ComposerOpen,
+} from './compose/ComposerRow';
+import { HOME_COMPOSER_INPUT_ID } from './home-composer-id';
 import { AudiencePickerDialog, ReplyPickerDialog } from './compose/PickerDialogs';
 import { AltTextDialog, CheatSheetDialog, UnlockPriceDialog } from './compose/ComposeDialogs';
 import { useComposeUploads } from './compose/useComposeUploads';
@@ -68,26 +88,35 @@ import {
 // longer than one post, so it is a separate chunk almost nobody downloads.
 const ThreadPostPanel = lazy(() => import('./ThreadPostPanel'));
 
+/**
+ * The full composer. It has two looks over one set of state:
+ *
+ * - `box` (the default; community pages through `ComposeBoxLazy`): a bordered text well with the AI chips, the counter
+ *   and the (+) menu under it.
+ * - `row`: the home feed's composer, drawn with the same parts as the light row `HomeComposer` shows before this chunk
+ *   is fetched (`compose/ComposerRow`), so the swap from one to the other is not visible. Its options are popovers
+ *   and dropdowns hanging off the quick actions; the only things that appear in the composer itself are what the post
+ *   carries.
+ */
 export function ComposeBox({
   communityId,
   onPosted,
   extraBody,
+  variant = 'box',
   initialContent = '',
-  openMenuOnMount = false,
-  menuTrigger = 'plus',
+  initialOpen,
   initialFiles,
-  initialAttachment = null,
+  fieldHandoff,
 }: {
+  variant?: 'box' | 'row';
+  /** Text the composer starts with: what was typed in the home row before this composer took over. */
+  initialContent?: string;
+  /** What the home row was pressed for: the options menu, the GIF popover, the poll editor or the AI menu. */
+  initialOpen?: ComposerOpen;
   /** Pictures chosen in the home row's own file picker before the composer was fetched; uploaded as it mounts. */
   initialFiles?: File[];
-  /** Start with the GIF picker or the poll editor open: the home row's GIF and poll buttons. */
-  initialAttachment?: 'gif' | 'poll' | null;
-  /** Text the composer starts with: what was typed in the home feed's one-line row before it was expanded. */
-  initialContent?: string;
-  /** Open the options menu as the composer mounts: the home row's three dots expand it and show the options at once. */
-  openMenuOnMount?: boolean;
-  /** The options menu's trigger: the plus sign, or the three dots the home row expanded from. */
-  menuTrigger?: 'plus' | 'dots';
+  /** The home row's caret, and whether its field had focus, at the moment this composer replaced it. */
+  fieldHandoff?: RefObject<ComposerFieldHandoff | null>;
   communityId?: string;
   onPosted?: (item: any) => void;
   /** Extra fields merged into the create body (community flair / challenge entry). */
@@ -104,8 +133,8 @@ export function ComposeBox({
   const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
   const [unlockPrice, setUnlockPrice] = useState(''); // coins to unlock;''= free
   const [submitting, setSubmitting] = useState(false);
-  const [attachment, setAttachment] = useState<Attachment>(initialAttachment);
-  const [menuOpen, setMenuOpen] = useState(openMenuOnMount);
+  const [attachment, setAttachment] = useState<Attachment>(initialOpen === 'poll' ? 'poll' : null);
+  const [menuOpen, setMenuOpen] = useState(initialOpen === 'menu');
   const [audienceOpen, setAudienceOpen] = useState(false);
   const [poll, setPoll] = useState<PollDraft>(emptyPoll);
   const [gifUrl, setGifUrl] = useState('');
@@ -138,8 +167,28 @@ export function ComposeBox({
   const [pendingDraft, setPendingDraft] = useState<ComposeDraft | null>(null);
   const [showPriceModal, setShowPriceModal] = useState(false); // unlock-price popover
   const [showCheatSheet, setShowCheatSheet] = useState(false); // markdown cheat sheet
+  // The GIF picker is a popover: open or not is separate from whether a GIF is attached.
+  const [gifOpen, setGifOpen] = useState(initialOpen === 'gif');
+  // Row look only: the AI menu, the emoji picker (opened from the options menu) and the suggested-tags strip.
+  const [aiOpen, setAiOpen] = useState(initialOpen === 'ai');
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [tagsOn, setTagsOn] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const gifBtnRef = useRef<HTMLButtonElement>(null);
+  const row = variant === 'row';
+  useComposerFieldGrow(textareaRef, row ? content : '');
+  // Taking over from the home row: put the caret where it was, and keep the focus if the field had it, so someone
+  // still typing when this chunk arrives carries on in the same place.
+  useLayoutEffect(() => {
+    const handoff = fieldHandoff?.current;
+    const el = textareaRef.current;
+    if (!handoff || !el) return;
+    el.setSelectionRange(handoff.start, handoff.end);
+    if (handoff.focused) el.focus({ preventScroll: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, as this composer takes over
+  }, []);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
 
   // Autosave the draft text so a refresh/navigation can't eat an unsent post;
@@ -163,6 +212,8 @@ export function ComposeBox({
   // "did the press land inside the menu?" test can no longer be a `contains`
   // check on the trigger's wrapper.
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const closeGif = useCallback(() => setGifOpen(false), []);
+  const closeEmoji = useCallback(() => setEmojiOpen(false), []);
 
   const hasPoll = isPollPostable(attachment, poll);
   const hasGif = isGifPostable(attachment, gifUrl);
@@ -248,6 +299,7 @@ export function ComposeBox({
     setScheduleAt('');
     setShowPriceModal(false);
     setShowCheatSheet(false);
+    setTagsOn(false);
     postsPlus.reset();
     codeEmbed.reset();
   };
@@ -351,259 +403,205 @@ export function ComposeBox({
     );
   }
 
-  return (
-    // Floating composer slab (§8.3): its own L2 .relative over the aurora
-    // gutter (mx-3), separated from the first post by the feed gap; one L2 per
-    // page is in budget. focus-within lifts the pane's hairline while writing,
-    // then settles back — an activation cue, not a layout change.
-    <div
-      className="relative px-4 py-3"
-      onPaste={smartPaste.onPaste}
-      onDragEnter={smartPaste.onDragEnter}
-      onDragOver={smartPaste.onDragOver}
-      onDragLeave={smartPaste.onDragLeave}
-      onDrop={smartPaste.onDrop}
-    >
-      {/* Drop hint. L4 .surface-overlay: it floats over the composer's own
- content, and anything below L4 has no blur, so the text under it
- would ghost through. */}
-      {smartPaste.dragActive && (
-        <div className="surface-overlay pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-          <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
-            <ImagePlus className="h-4 w-4" aria-hidden />
-            {t('drop-images-here', { defaultValue: 'Drop images to attach' })}
-          </span>
-        </div>
+  const rootHandlers = {
+    onPaste: smartPaste.onPaste,
+    onDragEnter: smartPaste.onDragEnter,
+    onDragOver: smartPaste.onDragOver,
+    onDragLeave: smartPaste.onDragLeave,
+    onDrop: smartPaste.onDrop,
+  };
+
+  // Drop hint. `.surface-overlay`: it floats over the composer's own content.
+  const dropHint = smartPaste.dragActive && (
+    <div className="surface-overlay pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+      <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
+        <ImagePlus className="h-4 w-4" aria-hidden />
+        {t('drop-images-here', { defaultValue: 'Drop images to attach' })}
+      </span>
+    </div>
+  );
+
+  const draftBanner = pendingDraft && !content && (
+    <DraftRestoreBanner
+      draft={pendingDraft}
+      onRestore={() => {
+        setContent(pendingDraft.content);
+        if (pendingDraft.gifUrl) {
+          // `hasGif` needs the attachment too, or the GIF is restored
+          // invisibly and never posted.
+          setAttachment('gif');
+          setGifUrl(pendingDraft.gifUrl);
+        }
+        setPendingDraft(null);
+      }}
+      onDiscard={() => {
+        clearComposeDraft();
+        setPendingDraft(null);
+      }}
+    />
+  );
+
+  const submitOnModEnter = (e: KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
+  };
+
+  const addPoll = () => {
+    setAttachment('poll');
+    setGifUrl('');
+  };
+
+  // What the post carries, under the field in both looks: the thread offer, the active options' chips, the poll
+  // editor, the chosen GIF, the pictures, the schedule panel.
+  const attachments = (
+    <>
+      {remaining < 0 && !communityId && (
+        <Suspense fallback={null}>
+          <ThreadPostPanel
+            content={content}
+            blockedBy={threadBlockedBy({
+              hasImages,
+              hasGif,
+              hasPoll,
+              audience,
+              isSensitive,
+              replyControl,
+              unlockPrice,
+            })}
+            onPosted={handleThreadPosted}
+          />
+        </Suspense>
       )}
-      {pendingDraft && !content && (
-        <DraftRestoreBanner
-          draft={pendingDraft}
-          onRestore={() => {
-            setContent(pendingDraft.content);
-            if (pendingDraft.gifUrl) {
-              // `hasGif` needs the attachment too, or the GIF is restored
-              // invisibly and never posted.
-              setAttachment('gif');
-              setGifUrl(pendingDraft.gifUrl);
-            }
-            setPendingDraft(null);
-          }}
-          onDiscard={() => {
-            clearComposeDraft();
-            setPendingDraft(null);
+
+      {parseInt(unlockPrice, 10) > 0 && (
+        <UnlockPricePill price={parseInt(unlockPrice, 10)} onEdit={() => setShowPriceModal(true)} />
+      )}
+
+      {isSensitive && <ContentWarningPill onRemove={() => setIsSensitive(false)} />}
+
+      {isTake && <TakeChip onRemove={() => setIsTake(false)} />}
+      <CodeEmbedChip ce={codeEmbed} />
+      <PostsPlusChips pp={postsPlus} />
+
+      {/* Poll creator */}
+      {attachment === 'poll' && (
+        <PollEditor
+          poll={poll}
+          setPoll={setPoll}
+          pollDuration={pollDuration}
+          setPollDuration={setPollDuration}
+          onRemove={() => {
+            setAttachment(null);
+            setPoll(emptyPoll());
           }}
         />
       )}
-      <div className="flex gap-3">
-        {/* Avatar */}
-        <ComposerAvatar
-          image={resolvedUser?.image || session.user.image}
-          name={resolvedUser?.name || session.user.name}
+
+      {/* The chosen GIF. Choosing one is the popover's job (GifPopover, below). */}
+      {hasGif && (
+        <GifAttachment
+          gifUrl={gifUrl.trim()}
+          onRemove={() => {
+            setAttachment(null);
+            setGifUrl('');
+          }}
         />
+      )}
 
-        {/* Compose area */}
-        <div className="flex-1 min-w-0">
-          <MentionTextarea
-            ref={textareaRef}
-            id="compose-box"
-            value={content}
-            onChange={setContent}
-            placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
-            rows={3}
-            // X1: no hard cap outside communities — a longer draft is offered as a
-            // thread below, and the Post button stays blocked while it is over the
-            // limit, so an over-length single post still cannot be sent.
-            maxLength={communityId ? MAX_RMHARK_LENGTH : undefined}
-            // Recessed text well (§8.3): .surface-field carries the border, radius and
-            // inner shadow; accent border on focus is the input affordance.
-            // `block`: a textarea is inline-block by default, so its wrapper
-            // reserved ~6px of baseline descender space under it — a gap nobody
-            // meant, and the last 6px of layout shift when this composer replaced
-            // its placeholder (which has no wrapper) on the feed.
-            className="block w-full surface-field text-site-text placeholder:text-site-text-muted text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                handleSubmit();
-              }
-            }}
-          />
+      {/* Uploaded image preview strip */}
+      {imageUrls.length > 0 && (
+        <ImagePreviewStrip
+          imageUrls={imageUrls}
+          imageAlts={imageAlts}
+          onEditAlt={setAltEditIndex}
+          onRemove={(i) => {
+            setImageUrls((prev) => removeAt(prev, i));
+            setImageAlts((prev) => removeAt(prev, i));
+          }}
+        />
+      )}
+      <AltTextNotice missing={missingAlt} onFix={setAltEditIndex} />
+      {imageError && <p className="text-xs text-site-danger mt-1">{imageError}</p>}
 
-          <ComposeAssist value={content} onChange={setContent} />
-
-          <TagSuggest value={content} onChange={setContent} />
-
-          {remaining < 0 && !communityId && (
-            <Suspense fallback={null}>
-              <ThreadPostPanel
-                content={content}
-                blockedBy={threadBlockedBy({
-                  hasImages,
-                  hasGif,
-                  hasPoll,
-                  audience,
-                  isSensitive,
-                  replyControl,
-                  unlockPrice,
-                })}
-                onPosted={handleThreadPosted}
-              />
-            </Suspense>
-          )}
-
-          {parseInt(unlockPrice, 10) > 0 && (
-            <UnlockPricePill
-              price={parseInt(unlockPrice, 10)}
-              onEdit={() => setShowPriceModal(true)}
-            />
-          )}
-
-          {isSensitive && <ContentWarningPill onRemove={() => setIsSensitive(false)} />}
-
-          {isTake && <TakeChip onRemove={() => setIsTake(false)} />}
-          <CodeEmbedChip ce={codeEmbed} />
-          <PostsPlusChips pp={postsPlus} />
-
-          {/* Poll creator */}
-          {attachment === 'poll' && (
-            <PollEditor
-              poll={poll}
-              setPoll={setPoll}
-              pollDuration={pollDuration}
-              setPollDuration={setPollDuration}
-              onRemove={() => {
-                setAttachment(null);
-                setPoll(emptyPoll());
-              }}
-            />
-          )}
-
-          {/* GIF picker */}
-          {attachment === 'gif' && (
-            <GifAttachment
-              gifUrl={gifUrl}
-              onSelect={(u) => setGifUrl(u)}
-              onClear={() => setGifUrl('')}
-              onClose={() => {
-                setAttachment(null);
-                setGifUrl('');
-              }}
-            />
-          )}
-
-          {/* Uploaded image preview strip */}
-          {imageUrls.length > 0 && (
-            <ImagePreviewStrip
-              imageUrls={imageUrls}
-              imageAlts={imageAlts}
-              onEditAlt={setAltEditIndex}
-              onRemove={(i) => {
-                setImageUrls((prev) => removeAt(prev, i));
-                setImageAlts((prev) => removeAt(prev, i));
-              }}
-            />
-          )}
-          <AltTextNotice missing={missingAlt} onFix={setAltEditIndex} />
-          {imageError && <p className="text-xs text-site-danger mt-1">{imageError}</p>}
-
-          {/* Hidden file input */}
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/gif,image/webp"
-            multiple
-            className="hidden"
-            onChange={(e) => handleImageFiles(e.target.files)}
-          />
-
-          {/* Schedule panel — the shared control (B17), so the community composer
+      {/* Schedule panel — the shared control (B17), so the community composer
  and the drafts list get the same field, the same zone label and the
  same "must be in the future" refusal without a second copy. */}
-          {showSchedule && (
-            <ScheduleControl
-              className="mt-2"
-              value={scheduleAt}
-              onChange={setScheduleAt}
-              disabled={!canSubmit}
-              submitting={submitting}
-              onSubmit={(iso) => handleSaveScheduled(iso)}
-              onCancel={() => {
-                setShowSchedule(false);
-                setScheduleAt('');
-              }}
-            />
-          )}
+      {showSchedule && (
+        <ScheduleControl
+          className="mt-2"
+          value={scheduleAt}
+          onChange={setScheduleAt}
+          disabled={!canSubmit}
+          submitting={submitting}
+          onSubmit={(iso) => handleSaveScheduled(iso)}
+          onCancel={() => {
+            setShowSchedule(false);
+            setScheduleAt('');
+          }}
+        />
+      )}
+    </>
+  );
 
-          {savedMsg && (
-            <p className="mt-2 inline-flex items-center gap-1 text-xs text-site-accent">
-              <Check className="h-3.5 w-3.5" /> {savedMsg}
-            </p>
-          )}
+  const fileInput = (
+    <input
+      ref={imageInputRef}
+      type="file"
+      accept="image/png,image/jpeg,image/gif,image/webp"
+      multiple
+      className="hidden"
+      onChange={(e) => handleImageFiles(e.target.files)}
+    />
+  );
 
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-2">
-              {/* Character counter */}
-              <span className={`text-xs font-mono ${counterToneClass(remaining)}`}>
-                {remaining}
-              </span>
-            </div>
+  const savedNote = savedMsg && (
+    <p className="mt-2 inline-flex items-center gap-1 text-xs text-site-accent">
+      <Check className="h-3.5 w-3.5" /> {savedMsg}
+    </p>
+  );
 
-            <div className="flex items-center gap-1.5">
-              {/* AI draft button */}
-              <AIGenerateButton
-                request={{ mode: 'post', draft: content }}
-                onGenerated={(text) => setContent(text)}
-                title={t('ai-generate-title', { defaultValue: 'Generate a reply with AI' })}
-              />
+  const menu = (
+    <ComposeMenu
+      variant={variant}
+      anchorRef={menuBtnRef}
+      menuOpen={menuOpen}
+      setMenuOpen={setMenuOpen}
+      closeMenu={closeMenu}
+      imageInputRef={imageInputRef}
+      audience={audience}
+      replyControl={replyControl}
+      setAudienceOpen={setAudienceOpen}
+      setReplyOpen={setReplyOpen}
+      isSensitive={isSensitive}
+      setIsSensitive={setIsSensitive}
+      isTake={isTake}
+      setIsTake={setIsTake}
+      codeEmbed={codeEmbed}
+      postsPlus={postsPlus}
+      imageCount={imageUrls.length}
+      onAddGif={() => setGifOpen(true)}
+      onAddPoll={addPoll}
+      onAddEmoji={() => setEmojiOpen(true)}
+      setShowPriceModal={setShowPriceModal}
+      setShowCheatSheet={setShowCheatSheet}
+      canSubmit={canSubmit}
+      onSaveDraft={() => handleSaveScheduled(null)}
+      setShowSchedule={setShowSchedule}
+    />
+  );
 
-              {/* AI image button — locked (greyed + upgrade nudge) below HARD-R */}
-              <AIImageButton
-                draft={content}
-                locked={!canGenerateImage}
-                disabled={imageUrls.length >= MAX_IMAGES}
-                onGenerated={(url) => setImageUrls((prev) => appendImages(prev, [url]))}
-              />
-
-              {/* Emoji picker — sits next to the GIF/poll (+) menu */}
-              <EmojiPickerButton direction="down" onSelect={insertEmoji} />
-
-              {/* Plus button — image upload, GIF, poll, draft, schedule. */}
-              <ComposeMenu
-                trigger={menuTrigger}
-                menuOpen={menuOpen}
-                setMenuOpen={setMenuOpen}
-                closeMenu={closeMenu}
-                imageInputRef={imageInputRef}
-                audience={audience}
-                replyControl={replyControl}
-                setAudienceOpen={setAudienceOpen}
-                setReplyOpen={setReplyOpen}
-                isSensitive={isSensitive}
-                setIsSensitive={setIsSensitive}
-                isTake={isTake}
-                setIsTake={setIsTake}
-                codeEmbed={codeEmbed}
-                postsPlus={postsPlus}
-                imageCount={imageUrls.length}
-                attachment={attachment}
-                setAttachment={setAttachment}
-                setGifUrl={setGifUrl}
-                setPoll={setPoll}
-                setShowPriceModal={setShowPriceModal}
-                setShowCheatSheet={setShowCheatSheet}
-                canSubmit={canSubmit}
-                onSaveDraft={() => handleSaveScheduled(null)}
-                setShowSchedule={setShowSchedule}
-              />
-
-              <Button variant="default" size="sm" disabled={!canSubmit} onClick={handleSubmit}>
-                {submitting
-                  ? t('posting', { defaultValue: 'Posting…' })
-                  : t('post-button', { defaultValue: 'Post' })}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+  const dialogs = (
+    <>
+      {/* The GIF picker: a popover off the GIF quick action (row) or the (+) button (box). */}
+      <GifPopover
+        open={gifOpen}
+        onClose={closeGif}
+        anchorRef={row ? gifBtnRef : menuBtnRef}
+        onSelect={(url) => {
+          setAttachment('gif');
+          setGifUrl(url);
+          setPoll(emptyPoll());
+        }}
+      />
 
       <CodeEmbedDialog ce={codeEmbed} />
       <PostsPlusDialogs
@@ -653,6 +651,180 @@ export function ComposeBox({
           onClose={() => setAltEditIndex(null)}
         />
       )}
+    </>
+  );
+
+  if (row) {
+    return (
+      <ComposerRow
+        image={resolvedUser?.image || session.user.image || null}
+        name={resolvedUser?.name || session.user.name || null}
+        {...rootHandlers}
+        field={
+          <MentionTextarea
+            ref={textareaRef}
+            id={HOME_COMPOSER_INPUT_ID}
+            value={content}
+            onChange={setContent}
+            placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
+            aria-label={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
+            rows={1}
+            className={COMPOSER_FIELD_CLASS}
+            onKeyDown={submitOnModEnter}
+          />
+        }
+        tools={
+          <>
+            {fileInput}
+            <ComposerTool
+              icon={ImagePlus}
+              label={t('menu-add-image', { defaultValue: 'Add Image' })}
+              disabled={imageUrls.length >= MAX_IMAGES}
+              onClick={() => imageInputRef.current?.click()}
+            />
+            <ComposerTool
+              ref={gifBtnRef}
+              icon={ImagePlay}
+              label={t('menu-add-gif', { defaultValue: 'Add GIF' })}
+              aria-haspopup="dialog"
+              aria-expanded={gifOpen}
+              onClick={() => setGifOpen((v) => !v)}
+            />
+            <ComposerTool
+              icon={BarChart3}
+              label={t('menu-create-poll', { defaultValue: 'Create Poll' })}
+              onClick={addPoll}
+            />
+            <ComposeAiMenu
+              open={aiOpen}
+              setOpen={setAiOpen}
+              content={content}
+              setContent={setContent}
+              imageLocked={!canGenerateImage}
+              imagesFull={imageUrls.length >= MAX_IMAGES}
+              onImage={(url) => setImageUrls((prev) => appendImages(prev, [url]))}
+              tagsOn={tagsOn}
+              setTagsOn={setTagsOn}
+            />
+            {menu}
+          </>
+        }
+        post={
+          <>
+            {/* The counter, once it matters: the last 20 characters, and past the limit. */}
+            {remaining <= 20 && (
+              <span className={`t-meta me-3 ${counterToneClass(remaining)}`}>{remaining}</span>
+            )}
+            <Button type="button" variant="primary" disabled={!canSubmit} onClick={handleSubmit}>
+              {t('post-button', { defaultValue: 'Post' })}
+            </Button>
+          </>
+        }
+        footer={
+          <>
+            {savedNote}
+            {draftBanner}
+            {dropHint}
+            <EmojiPickerPopover
+              open={emojiOpen}
+              onClose={closeEmoji}
+              anchorRef={menuBtnRef}
+              side="bottom"
+              onSelect={insertEmoji}
+            />
+            {dialogs}
+          </>
+        }
+      >
+        {tagsOn && <TagSuggest value={content} onChange={setContent} />}
+        {attachments}
+      </ComposerRow>
+    );
+  }
+
+  return (
+    <div className="relative px-4 py-3" {...rootHandlers}>
+      {dropHint}
+      {draftBanner}
+      <div className="flex gap-3">
+        {/* Avatar */}
+        <ComposerAvatar
+          image={resolvedUser?.image || session.user.image}
+          name={resolvedUser?.name || session.user.name}
+        />
+
+        {/* Compose area */}
+        <div className="flex-1 min-w-0">
+          <MentionTextarea
+            ref={textareaRef}
+            id="compose-box"
+            value={content}
+            onChange={setContent}
+            placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
+            rows={3}
+            // X1: no hard cap outside communities — a longer draft is offered as a
+            // thread below, and the Post button stays blocked while it is over the
+            // limit, so an over-length single post still cannot be sent.
+            maxLength={communityId ? MAX_RMHARK_LENGTH : undefined}
+            // Recessed text well (§8.3): .surface-field carries the border, radius and
+            // inner shadow; accent border on focus is the input affordance.
+            // `block`: a textarea is inline-block by default, so its wrapper
+            // reserved ~6px of baseline descender space under it — a gap nobody
+            // meant, and the last 6px of layout shift when this composer replaced
+            // its placeholder (which has no wrapper) on the feed.
+            className="block w-full surface-field text-site-text placeholder:text-site-text-muted text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
+            onKeyDown={submitOnModEnter}
+          />
+
+          <ComposeAssist value={content} onChange={setContent} />
+
+          <TagSuggest value={content} onChange={setContent} />
+
+          {attachments}
+          {fileInput}
+          {savedNote}
+
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center gap-2">
+              {/* Character counter */}
+              <span className={`text-xs font-mono ${counterToneClass(remaining)}`}>
+                {remaining}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {/* AI draft button */}
+              <AIGenerateButton
+                request={{ mode: 'post', draft: content }}
+                onGenerated={(text) => setContent(text)}
+                title={t('ai-generate-title', { defaultValue: 'Generate a reply with AI' })}
+              />
+
+              {/* AI image button — locked (greyed + upgrade nudge) below HARD-R */}
+              <AIImageButton
+                draft={content}
+                locked={!canGenerateImage}
+                disabled={imageUrls.length >= MAX_IMAGES}
+                onGenerated={(url) => setImageUrls((prev) => appendImages(prev, [url]))}
+              />
+
+              {/* Emoji picker — sits next to the GIF/poll (+) menu */}
+              <EmojiPickerButton direction="down" onSelect={insertEmoji} />
+
+              {/* Plus button — image upload, GIF, poll, draft, schedule. */}
+              {menu}
+
+              <Button variant="default" size="sm" disabled={!canSubmit} onClick={handleSubmit}>
+                {submitting
+                  ? t('posting', { defaultValue: 'Posting…' })
+                  : t('post-button', { defaultValue: 'Post' })}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {dialogs}
     </div>
   );
 }

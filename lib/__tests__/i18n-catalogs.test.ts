@@ -704,6 +704,10 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // The home composer's AI quick action and the GIF popover (owner, 2026-11-13). English-only until the translate pipeline runs.
+    'ai-suggest-tags',
+    'compose-ai-tools',
+    'gif-unavailable',
     // The open globe's bar: the edition toggle (owner, 2026-11-13). English-only until the translate pipeline runs.
     'shell-edition-day',
     'shell-edition-night',
