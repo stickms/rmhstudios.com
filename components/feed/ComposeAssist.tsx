@@ -7,17 +7,20 @@ import { Sparkles, Loader2 } from'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from'react-i18next';
 
-type Action ='improve'|'shorten'|'expand'|'fix'|'casual'|'formal';
-const ACTIONS: Action[] = ['improve','fix','shorten','expand','casual','formal'];
+export type AssistAction ='improve'|'shorten'|'expand'|'fix'|'casual'|'formal';
+export const ASSIST_ACTIONS: AssistAction[] = ['improve','fix','shorten','expand','casual','formal'];
+/** Below this there is nothing to rewrite. */
+export const ASSIST_MIN_CHARS = 3;
 
-/** AI compose-assist chips that rewrite the current draft in place. */
-export function ComposeAssist({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+/**
+ * The AI rewrites of the current draft: the labels, which one is running, and the call that replaces the draft with
+ * the result. Shared by the chips under the boxed composer and the AI menu of the home composer.
+ */
+export function useComposeAssist(value: string, onChange: (v: string) => void) {
  const { t } = useTranslation('feed');
- const [busy, setBusy] = useState<Action | null>(null);
+ const [busy, setBusy] = useState<AssistAction | null>(null);
 
- if (value.trim().length < 3) return null;
-
- const ACTION_LABELS: Record<Action, string> = {
+ const labels: Record<AssistAction, string> = {
  improve: t('action-improve', { defaultValue:'Improve'}),
  fix: t('action-fix-grammar', { defaultValue:'Fix grammar'}),
  shorten: t('action-shorten', { defaultValue:'Shorten'}),
@@ -26,7 +29,7 @@ export function ComposeAssist({ value, onChange }: { value: string; onChange: (v
  formal: t('action-formal', { defaultValue:'Formal'}),
  };
 
- const run = async (action: Action) => {
+ const run = async (action: AssistAction) => {
  setBusy(action);
  try {
  const data = await api(transformTextApi, { body: { text: value, action }, timeoutMs: AI_TIMEOUT_MS });
@@ -43,12 +46,22 @@ export function ComposeAssist({ value, onChange }: { value: string; onChange: (v
  }
  };
 
+ return { busy, run, labels, available: value.trim().length >= ASSIST_MIN_CHARS };
+}
+
+/** AI compose-assist chips that rewrite the current draft in place. */
+export function ComposeAssist({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+ const { t } = useTranslation('feed');
+ const { busy, run, labels, available } = useComposeAssist(value, onChange);
+
+ if (!available) return null;
+
  return (
  <div className="mt-2 flex flex-wrap items-center gap-2"role="group"aria-label={t('ai-writing-assist', { defaultValue:'AI writing assist'})}>
  <span className="flex items-center gap-1 text-xs text-site-text-muted">
  <Sparkles className="h-3.5 w-3.5 text-site-accent"/> AI
  </span>
- {ACTIONS.map((id) => (
+ {ASSIST_ACTIONS.map((id) => (
  <button
  key={id}
  type="button"
@@ -57,7 +70,7 @@ export function ComposeAssist({ value, onChange }: { value: string; onChange: (v
  className="inline-flex items-center gap-1 rounded-full border border-site-border px-3 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text disabled:opacity-50"
  >
  {busy === id ? <Loader2 className="h-3 w-3 animate-spin"/> : null}
- {ACTION_LABELS[id]}
+ {labels[id]}
  </button>
  ))}
  </div>

@@ -25,6 +25,37 @@ interface AIImageButtonProps {
 }
 
 /**
+ * Ask the image model for a picture themed on the draft. `generate` hands the feed URL to `onGenerated`, and resolves
+ * to the error message when the request fails (also kept in `error`), or to null. The server checks the tier.
+ */
+export function useAiImage(draft: string, onGenerated: (url: string) => void) {
+ const { t } = useTranslation('feed');
+ const [loading, setLoading] = useState(false);
+ const [error, setError] = useState<string | null>(null);
+
+ const generate = async (): Promise<string | null> => {
+ if (loading) return null;
+ setLoading(true);
+ setError(null);
+ try {
+ const data = await api(aiGenerateImageApi, { body: { draft }, timeoutMs: AI_IMAGE_TIMEOUT_MS });
+ if (typeof data?.url ==='string'&& data.url) {
+ onGenerated(data.url);
+ }
+ return null;
+ } catch (e) {
+ const message = serverError(e) || t('ai-image-failed', { defaultValue:'Failed to generate image'});
+ setError(message);
+ return message;
+ } finally {
+ setLoading(false);
+ }
+ };
+
+ return { loading, error, generate };
+}
+
+/**
  * A wand button that asks xAI to generate an image for the post and hands the
  * resulting feed URL back to the composer. HARD-R+ only — the composer passes
  * `locked`for lower tiers so they see the feature (greyed out) and an upgrade
@@ -41,28 +72,16 @@ export function AIImageButton({
  const resolvedTitle = locked
  ? t('ai-image-locked-title', { defaultValue:'Generate images with AI — upgrade to unlock'})
  : title ?? t('ai-image-generate', { defaultValue:'Generate an image with AI'});
- const [loading, setLoading] = useState(false);
- const [error, setError] = useState<string | null>(null);
+ const { loading, error, generate } = useAiImage(draft, onGenerated);
  const [showUpgrade, setShowUpgrade] = useState(false);
 
- const handleClick = async () => {
+ const handleClick = () => {
  if (locked) {
  setShowUpgrade(true);
  return;
  }
- if (loading || disabled) return;
- setLoading(true);
- setError(null);
- try {
- const data = await api(aiGenerateImageApi, { body: { draft }, timeoutMs: AI_IMAGE_TIMEOUT_MS });
- if (typeof data?.url ==='string'&& data.url) {
- onGenerated(data.url);
- }
- } catch (e) {
- setError(serverError(e) || t('ai-image-failed', { defaultValue:'Failed to generate image'}));
- } finally {
- setLoading(false);
- }
+ if (disabled) return;
+ void generate();
  };
 
  return (
@@ -95,8 +114,16 @@ export function AIImageButton({
  )}
  </button>
 
- {locked && showUpgrade && (
- <Dialog open onOpenChange={(o) => !o && setShowUpgrade(false)}>
+ {locked && showUpgrade && <AIImageUpgradeDialog onClose={() => setShowUpgrade(false)} />}
+ </>
+ );
+}
+
+/** The upgrade nudge a locked AI image control opens: what the feature is, and the way to the membership store. */
+export function AIImageUpgradeDialog({ onClose }: { onClose: () => void }) {
+ const { t } = useTranslation('feed');
+ return (
+ <Dialog open onOpenChange={(o) => !o && onClose()}>
  <DialogContent className="w-full max-w-sm gap-0 p-0 text-center sm:p-0">
 {/* The dialog's header: the icon on a plain ground */}
  <div className="relative px-6 pb-6 pt-8">
@@ -120,7 +147,7 @@ export function AIImageButton({
  <Link
               to="/store"
               search={{ tab: 'membership' }}
-              onClick={() => setShowUpgrade(false)}
+              onClick={() => onClose()}
             >
  <Button variant="default"className="w-full">
  <Sparkles className="h-4 w-4"/>
@@ -130,7 +157,7 @@ export function AIImageButton({
  <Button
  variant="ghost"
  size="sm"
- onClick={() => setShowUpgrade(false)}
+ onClick={() => onClose()}
  className="w-full text-site-text-muted"
  >
  {t('maybe-later', { defaultValue:'Maybe later'})}
@@ -139,7 +166,5 @@ export function AIImageButton({
  </div>
  </DialogContent>
  </Dialog>
- )}
- </>
  );
 }

@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import {
   Plus,
@@ -12,6 +11,7 @@ import {
   CalendarClock,
   Check,
   AlertTriangle,
+  Smile,
 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -25,14 +25,8 @@ import {
   type usePostsPlusCompose,
 } from '@/components/posts-plus/PostsPlusCompose';
 import { TakeMenuItem } from '../TakeCompose';
-import {
-  MAX_IMAGES,
-  emptyPoll,
-  type Attachment,
-  type AudienceValue,
-  type PollDraft,
-  type ReplyControlValue,
-} from './compose-state';
+import { MAX_IMAGES, type AudienceValue, type ReplyControlValue } from './compose-state';
+import { ComposerTool } from './ComposerRow';
 import { useAudienceOptions, useReplyOptions } from './compose-options';
 
 const ITEM =
@@ -43,13 +37,18 @@ const ITEM =
  * code embed, posts-plus, image, GIF, poll, unlock price, formatting help,
  * draft and schedule.
  *
+ * In the home composer (`variant="row"`) the trigger is the three dots at the end of the quick actions and the menu is
+ * a dropdown under them. A picture, a GIF and a poll have their own buttons in that row, so their rows are left out
+ * here, and the emoji picker, which has no button there, gets one.
+ *
  * The panel is an AnchoredMenu: it portals to <body> (in place it is trapped
  * inside the page frame's stacking context, so the top bar and the floating
  * chrome paint over it) and it opens on whichever side of the composer has
  * room, rather than being shoved back down the screen by a viewport clamp.
  */
 export function ComposeMenu({
-  trigger = 'plus',
+  variant,
+  anchorRef,
   menuOpen,
   setMenuOpen,
   closeMenu,
@@ -65,17 +64,18 @@ export function ComposeMenu({
   codeEmbed,
   postsPlus,
   imageCount,
-  attachment,
-  setAttachment,
-  setGifUrl,
-  setPoll,
+  onAddGif,
+  onAddPoll,
+  onAddEmoji,
   setShowPriceModal,
   setShowCheatSheet,
   canSubmit,
   onSaveDraft,
   setShowSchedule,
 }: {
-  trigger?: 'plus' | 'dots';
+  variant: 'box' | 'row';
+  /** The trigger, owned by the composer: the GIF and emoji popovers it opens from this menu hang off the same button. */
+  anchorRef: RefObject<HTMLButtonElement | null>;
   menuOpen: boolean;
   setMenuOpen: Dispatch<SetStateAction<boolean>>;
   closeMenu: () => void;
@@ -91,10 +91,9 @@ export function ComposeMenu({
   codeEmbed: ReturnType<typeof useCodeEmbedCompose>;
   postsPlus: ReturnType<typeof usePostsPlusCompose>;
   imageCount: number;
-  attachment: Attachment;
-  setAttachment: Dispatch<SetStateAction<Attachment>>;
-  setGifUrl: (url: string) => void;
-  setPoll: Dispatch<SetStateAction<PollDraft>>;
+  onAddGif: () => void;
+  onAddPoll: () => void;
+  onAddEmoji: () => void;
   setShowPriceModal: (open: boolean) => void;
   setShowCheatSheet: (open: boolean) => void;
   canSubmit: boolean;
@@ -102,7 +101,6 @@ export function ComposeMenu({
   setShowSchedule: (show: boolean) => void;
 }) {
   const { t } = useTranslation('feed');
-  const menuBtnRef = useRef<HTMLButtonElement>(null);
   const audienceOptions = useAudienceOptions();
   const replyOptions = useReplyOptions();
   const currentAudience = audienceOptions.find((o) => o.value === audience) ?? audienceOptions[0];
@@ -112,25 +110,40 @@ export function ComposeMenu({
 
   return (
     <>
-      <button
-        ref={menuBtnRef}
-        type="button"
-        onClick={() => setMenuOpen((v) => !v)}
-        aria-label={t('add-to-post-aria', { defaultValue: 'Add to post' })}
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        className="p-1.5 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors"
-      >
-        {trigger === 'dots' ? <MoreHorizontal className="w-4.5 h-4.5" /> : <Plus className="w-4.5 h-4.5" />}
-      </button>
+      {variant === 'row' ? (
+        <ComposerTool
+          ref={anchorRef}
+          icon={MoreHorizontal}
+          label={t('compose-post-options', { defaultValue: 'Post options' })}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((v) => !v)}
+        />
+      ) : (
+        <button
+          ref={anchorRef}
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label={t('add-to-post-aria', { defaultValue: 'Add to post' })}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          className="p-1.5 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+        >
+          <Plus className="w-4.5 h-4.5" />
+        </button>
+      )}
 
       <AnchoredMenu
         open={menuOpen}
         onClose={closeMenu}
-        anchorRef={menuBtnRef}
-        label={t('add-to-post-aria', { defaultValue: 'Add to post' })}
-        side="top"
-        align="end"
+        anchorRef={anchorRef}
+        label={
+          variant === 'row'
+            ? t('compose-post-options', { defaultValue: 'Post options' })
+            : t('add-to-post-aria', { defaultValue: 'Add to post' })
+        }
+        side={variant === 'row' ? 'bottom' : 'top'}
+        align={variant === 'row' ? 'start' : 'end'}
         className="w-56"
       >
         {/* Post visibility (audience) — opens a picker modal */}
@@ -183,47 +196,61 @@ export function ComposeMenu({
         <CodeEmbedMenuItem ce={codeEmbed} onPick={() => setMenuOpen(false)} />
         <PostsPlusMenuItems pp={postsPlus} onPick={() => setMenuOpen(false)} />
         <div className="my-1 border-t border-site-border" />
-        <button
-          type="button"
-          disabled={imageCount >= MAX_IMAGES}
-          onClick={() => {
-            imageInputRef.current?.click();
-            setMenuOpen(false);
-          }}
-          title={
-            imageCount >= MAX_IMAGES
-              ? t('max-images-title', { defaultValue: 'Maximum 4 images' })
-              : undefined
-          }
-          className={`${ITEM} disabled:opacity-40 disabled:cursor-not-allowed`}
-        >
-          <ImagePlus className="w-4 h-4 text-site-text-muted" />
-          {t('menu-add-image', { defaultValue: 'Add Image' })}
-        </button>
-        <button
-          onClick={() => {
-            if (attachment === 'gif') setGifUrl('');
-            setAttachment((a) => (a === 'gif' ? null : 'gif'));
-            setPoll(emptyPoll());
-            setMenuOpen(false);
-          }}
-          aria-pressed={attachment === 'gif'}
-          className={ITEM}
-        >
-          <ImagePlay className="w-4 h-4 text-site-text-muted" />
-          {t('menu-add-gif', { defaultValue: 'Add GIF' })}
-        </button>
-        <button
-          onClick={() => {
-            setAttachment('poll');
-            setGifUrl('');
-            setMenuOpen(false);
-          }}
-          className={ITEM}
-        >
-          <BarChart3 className="w-4 h-4 text-site-text-muted" />
-          {t('menu-create-poll', { defaultValue: 'Create Poll' })}
-        </button>
+        {variant === 'row' ? (
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              onAddEmoji();
+            }}
+            className={ITEM}
+          >
+            <Smile className="w-4 h-4 text-site-text-muted" />
+            {t('emoji-picker-open', { defaultValue: 'Add emoji' })}
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled={imageCount >= MAX_IMAGES}
+              onClick={() => {
+                imageInputRef.current?.click();
+                setMenuOpen(false);
+              }}
+              title={
+                imageCount >= MAX_IMAGES
+                  ? t('max-images-title', { defaultValue: 'Maximum 4 images' })
+                  : undefined
+              }
+              className={`${ITEM} disabled:opacity-40 disabled:cursor-not-allowed`}
+            >
+              <ImagePlus className="w-4 h-4 text-site-text-muted" />
+              {t('menu-add-image', { defaultValue: 'Add Image' })}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                onAddGif();
+              }}
+              className={ITEM}
+            >
+              <ImagePlay className="w-4 h-4 text-site-text-muted" />
+              {t('menu-add-gif', { defaultValue: 'Add GIF' })}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onAddPoll();
+                setMenuOpen(false);
+              }}
+              className={ITEM}
+            >
+              <BarChart3 className="w-4 h-4 text-site-text-muted" />
+              {t('menu-create-poll', { defaultValue: 'Create Poll' })}
+            </button>
+          </>
+        )}
         <button
           type="button"
           onClick={() => {

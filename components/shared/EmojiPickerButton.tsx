@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState, type RefObject } from 'react';
 import { Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,30 +70,56 @@ export function EmojiPickerButton({
           it. AnchoredMenu also supplies the collision flip that `direction` was
           approximating by hand, so the caller's preference is now a hint that
           gets overridden when the chosen side has no room. */}
-      <AnchoredMenu
+      <EmojiPickerPopover
         open={open}
         onClose={() => setOpen(false)}
         anchorRef={triggerRef}
         side={direction === 'up' ? 'top' : 'bottom'}
-        align="end"
-        focusOnOpen={false}
-        label={t('emoji-picker-open', { defaultValue: 'Add emoji' })}
-        // The picker renders its own emoji and re-renders as you scroll/pick;
-        // exclude it from the app-wide twemoji observer so it never rewrites a
-        // node the picker owns (which crashes React) and never walks its huge
-        // subtree on every scroll mutation.
-        className="p-0"
-      >
-        <div data-no-twemoji>
-          <Suspense
-            fallback={
-              <Skeleton className="h-[360px] w-[300px] rounded-site" />
-            }
-          >
-            <EmojiPickerPanel onSelect={onSelect} />
-          </Suspense>
-        </div>
-      </AnchoredMenu>
+        onSelect={onSelect}
+      />
     </div>
+  );
+}
+
+/**
+ * The picker's popover on its own, for a caller that opens it from a control it already has (a row of a menu, a
+ * toolbar button) instead of from the smiley trigger above.
+ */
+export function EmojiPickerPopover({
+  open,
+  onClose,
+  anchorRef,
+  side,
+  onSelect,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** The control the popover hangs off, and where focus returns. */
+  anchorRef: RefObject<HTMLElement | null>;
+  side: 'top' | 'bottom';
+  onSelect: (emoji: string) => void;
+}) {
+  const { t } = useTranslation('feed');
+  return (
+    <AnchoredMenu
+      open={open}
+      onClose={onClose}
+      anchorRef={anchorRef}
+      side={side}
+      align="end"
+      focusOnOpen={false}
+      label={t('emoji-picker-open', { defaultValue: 'Add emoji' })}
+      // The picker renders its own emoji and re-renders as you scroll/pick;
+      // exclude it from the app-wide twemoji observer so it never rewrites a
+      // node the picker owns (which crashes React) and never walks its huge
+      // subtree on every scroll mutation.
+      className="p-0"
+    >
+      <div data-no-twemoji>
+        <Suspense fallback={<Skeleton className="h-[360px] w-[300px] rounded-site" />}>
+          <EmojiPickerPanel onSelect={onSelect} />
+        </Suspense>
+      </div>
+    </AnchoredMenu>
   );
 }

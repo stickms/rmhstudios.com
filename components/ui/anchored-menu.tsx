@@ -102,9 +102,11 @@ export interface AnchoredMenuProps {
    * ARIA role for the panel. `menu` (the default) goes with `MenuItem` rows and
    * the roving focus below. An **autocomplete** attached to a text field is
    * `listbox`: its options are described BY the field, which keeps the
-   * `aria-activedescendant` relationship the field owns.
+   * `aria-activedescendant` relationship the field owns. A **popover that holds
+   * a tool** rather than rows (a search field over a grid of results) is
+   * `dialog`: it is not modal, and the name comes from `label`.
    */
-  role?: 'menu' | 'listbox';
+  role?: 'menu' | 'listbox' | 'dialog';
   /**
    * Move focus into the panel on open, and hand it back on close. On by
    * default, because that is what `role="menu"` promises.
@@ -423,7 +425,7 @@ export function AnchoredMenu({
         createPortal(
           // The panel DOES carry an interactive role and `tabIndex={-1}`. The
           // rule fires only because `role` is a prop (`menu | listbox`) and so
-          // cannot be resolved statically; both values are interactive roles,
+          // cannot be resolved statically; every value is an interactive role,
           // and the union type is what stops a caller passing anything else.
           // eslint-disable-next-line jsx-a11y/no-static-element-interactions
           <div
