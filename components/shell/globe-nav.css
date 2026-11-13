@@ -401,7 +401,11 @@ html.ios-webkit .globe-nav__fade {
    while closed.
 
    iOS (CLAUDE.md "iOS Safari bars"): it is never flush to the bottom edge. It floats above the safe area by the docked
-   globe's own inset rule, it is as wide as its items and no wider, and it paints nothing but its icons and words.
+   globe's own inset rule, it is as wide as its items and no wider, and it floats 18px clear of the edge as the docked globe does.
+
+   The items sit on one pill (owner, 2026-11-13: "add a pill background behind the icons and buttons on the bottom bar
+   when the globe is open"): the overlay surface and its 1px border, flat, with no shadow and no blur, so the words read
+   over whatever page shows through the veil.
 
    It is fixed in the window on phone and desktop alike: the desktop .globe-nav box is sticky, which is not a containing
    block for a fixed child. */
@@ -415,6 +419,10 @@ html.ios-webkit .globe-nav__fade {
   justify-content: center;
   gap: 2px;
   max-inline-size: calc(100vw - 16px);
+  padding: 4px 8px;
+  border: 1px solid var(--site-border);
+  border-radius: 999px;
+  background: var(--site-surface);
   translate: -50% 0;
   opacity: 0;
   visibility: hidden;
@@ -450,7 +458,7 @@ html.ios-webkit .globe-nav__fade {
   min-block-size: 52px;
   padding: 6px 7px;
   border: 0;
-  border-radius: var(--site-radius);
+  border-radius: 999px;
   background: none;
   color: var(--site-text);
   font: inherit;
@@ -486,11 +494,12 @@ html.ios-webkit .globe-nav__fade {
   [dir='rtl'] .globe-nav__bar {
     inset-inline-start: auto;
     inset-inline-end: calc(12px + env(safe-area-inset-right, 0px));
-    inset-block: 0;
+    inset-block: 50% auto;
     flex-direction: column;
     align-items: center;
     max-inline-size: none;
-    translate: none;
+    padding: 8px 4px;
+    translate: 0 -50%;
   }
   .globe-nav .globe-nav__bar-item {
     min-inline-size: 44px;

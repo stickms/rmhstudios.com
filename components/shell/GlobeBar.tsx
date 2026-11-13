@@ -21,7 +21,7 @@ interface GlobeBarProps {
  * section as a list; and Sign out. It replaces the two text links that hung under the globe ("Write a post" is gone
  * from the menu, "All sections" is an item here).
  *
- * One flat row of icons with short labels: no surface, no rule, on the veil. Every item is a 44px target. It exists
+ * One flat row of icons with short labels on a pill: the overlay surface and its border, no shadow. Every item is a 44px target. It exists
  * only while the menu is open (it fades with it, opacity only), floats above the safe area by the docked globe's own
  * inset rule, and on a window too short to hold it under the globe it is a column of icons at the inline end instead
  * (globe-nav.css). It comes after the pins in the tab order; Escape closes the menu from it as from anywhere.
