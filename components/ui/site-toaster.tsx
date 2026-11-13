@@ -1,7 +1,34 @@
-import { useEffect } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 // eslint-disable-next-line no-restricted-imports -- the one module that loads sonner; everything else uses @/lib/toast
 import { Toaster, toast } from 'sonner';
 import { bindToaster } from '@/lib/toast';
+
+/**
+ * sonner colours every part of a toast (the body, the description, the action and cancel buttons, the close
+ * button, and the success / error / warning / info variants) from its own light or dark palette. These are its
+ * custom properties pointed at the site's tokens, so a toast follows whatever the page is wearing (Day, Night, a
+ * user theme, an accent preset) and not just a light/dark guess. Its `theme` prop still picks the few values that
+ * have no property. The description's colour has none either; app/styles/steel-overlay.css sets it.
+ */
+const TOKEN_PALETTE = {
+  '--normal-bg': 'var(--site-surface)',
+  '--normal-bg-hover': 'var(--site-bg-subtle)',
+  '--normal-text': 'var(--site-text)',
+  '--normal-border': 'var(--site-border)',
+  '--normal-border-hover': 'var(--site-border)',
+  '--success-bg': 'var(--site-surface)',
+  '--success-text': 'var(--site-success)',
+  '--success-border': 'var(--site-border)',
+  '--info-bg': 'var(--site-surface)',
+  '--info-text': 'var(--site-text)',
+  '--info-border': 'var(--site-border)',
+  '--warning-bg': 'var(--site-surface)',
+  '--warning-text': 'var(--site-text)',
+  '--warning-border': 'var(--site-border)',
+  '--error-bg': 'var(--site-surface)',
+  '--error-text': 'var(--site-danger)',
+  '--error-border': 'var(--site-border)',
+} as CSSProperties;
 
 /**
  * The site's sonner `<Toaster>`: one placement and one fill for every toast.
@@ -17,12 +44,15 @@ export function SiteToaster({ theme }: { theme: 'light' | 'dark' }) {
   return (
     <Toaster
       theme={theme}
-      position="bottom-left"
+      // Bottom right (owner, 2026-11-13). On a desktop that corner is the margin column, clear of the globe at the
+      // foot of the sidebar.
+      position="bottom-right"
+      style={TOKEN_PALETTE}
       // The bottom lane is SHARED, and sonner does not know that.
       //
       // Left to its defaults, sonner sits 16px off the bottom edge at
       // `z-index: 999999999` — above everything — and below 600px it
-      // rewrites `bottom-left` to span the WHOLE bottom edge. That is
+      // rewrites `bottom-right` to span the WHOLE bottom edge. That is
       // the hub orb's lane: the orb is
       // `bottom: calc(env(safe-area-inset-bottom) + var(--site-hub-orb-inset))`
       // and 60px tall, so on a 390px phone a toast covered it almost
@@ -36,7 +66,10 @@ export function SiteToaster({ theme }: { theme: 'light' | 'dark' }) {
       // geometry tokens (globals.css §5.5x), so this clears the orb by
       // construction and cannot drift if the orb is resized. It
       // already includes the safe-area inset — do not add it twice.
-      offset={{ bottom: 'var(--site-floating-reserve)' }}
+      //
+      // `--toast-bottom` (app/styles/steel-overlay.css) is that reserve wherever the globe is docked at the bottom
+      // of the page, and the plain 16px gap at 1024px and up, where the globe lives in the sidebar.
+      offset={{ bottom: 'var(--toast-bottom)', right: '1rem' }}
       mobileOffset={{
         bottom: 'var(--site-floating-reserve)',
         left: '0.75rem',

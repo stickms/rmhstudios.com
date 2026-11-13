@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "Ein Fehler ist aufgetreten",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Zurück zur Administration",
   "back-to-admin-label": "Zurück zur Administration",
   "changes-now-live": "Ihre Änderungen sind jetzt live.",
@@ -22,6 +26,8 @@
   "live-preview": "Live-Vorschau",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Metadaten",
   "new-blog-post": "Neuer Blogbeitrag",
   "post-created-successfully": "Beitrag erfolgreich erstellt!",
@@ -31,6 +37,9 @@
   "save-post": "Beitrag speichern",
   "saving": "Wird gespeichert...",
   "show-preview": "Vorschau anzeigen",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Announce this post",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Nur Kleinbuchstaben, Zahlen und Bindestriche",
   "tags-label": "Tags (durch Kommas getrennt)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Mein großartiger Beitrag",
   "untitled-post": "Unbenannter Beitrag",
   "update-post": "Beitrag aktualisieren",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image or video",
+  "uploading-media": "Uploading..."
 }

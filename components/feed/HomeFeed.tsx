@@ -16,6 +16,7 @@ import type { FeedItem } from '@/lib/feed-types';
 import { CaughtUpDivider } from './CaughtUpDivider';
 import { FeedRow } from './FeedRow';
 import { HomeComposer } from './HomeComposer';
+import { SitewideAnnouncementRow } from './SitewideAnnouncementRow';
 
 /** The server-streamed first page (For You / all), resolved via <Await>. */
 export interface InitialFeed {
@@ -170,11 +171,14 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
   }, [ready, onEndReached, entries.length]);
 
   const label = t('feed', { defaultValue: 'Feed' });
+  // The live sitewide announcement leads the feed, above the composer. Not in a search, which is a result list.
+  const pinned = search ? null : <SitewideAnnouncementRow />;
 
   if (entries.length === 0) {
     if (error && initialized) {
       return (
         <Spine>
+          {pinned}
           <HomeComposer />
           <SpineItem dot={false}>
             <p className="t-body">{t('feed-error', { defaultValue: 'Could not load the feed.' })}</p>
@@ -189,6 +193,7 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
       // An empty timeline: the composer is the first move.
       return (
         <Spine>
+          {pinned}
           <HomeComposer />
         </Spine>
       );
@@ -198,6 +203,7 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
 
   return (
     <Spine>
+      {pinned}
       <HomeComposer />
       {/* A virtual item (the question card, the fortune, the caught-up row) renders its own spine item, or nothing. */}
       <div role="feed" aria-label={label}>

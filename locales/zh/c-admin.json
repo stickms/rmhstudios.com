@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "发生了一个错误。",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "返回管理员",
   "back-to-admin-label": "返回管理员",
   "changes-now-live": "你的更改现已生效。",
@@ -22,6 +26,8 @@
   "live-preview": "实时预览",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "元数据",
   "new-blog-post": "新博客文章",
   "post-created-successfully": "帖子创建成功！",
@@ -31,6 +37,9 @@
   "save-post": "保存帖子",
   "saving": "保存中...",
   "show-preview": "显示预览",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Announce this post",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "蛞蝓",
   "slug-title": "仅限小写字母、数字和连字符",
   "tags-label": "标签（逗号分隔）",
@@ -39,5 +48,7 @@
   "title-placeholder": "我的精彩帖子",
   "untitled-post": "无标题帖子",
   "update-post": "更新帖子",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image or video",
+  "uploading-media": "Uploading..."
 }

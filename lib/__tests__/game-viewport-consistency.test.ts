@@ -387,6 +387,21 @@ describe('full-screen viewport contract — games and apps', () => {
       'add data-jelly-zone="playfield" to these games\' stage or canvas (Rule 4)',
     ).toEqual([]);
   });
+
+  // In the flow, a canvas with `height: 100%` falls back to the ratio of its own
+  // drawing buffer wherever that percentage is indefinite, so the box the buffer
+  // is sized FROM is propped up BY the buffer. On a phone this left the playfield
+  // several screens tall through the countdown (the buffer started at the height
+  // of the library page) with the lanes and the judgement line off screen.
+  it("Slice It's playfield canvas is out of the flow, so its buffer never sizes its own box", () => {
+    const src = readFileSync(join(ROOT, 'features/slice-it/ui/GameCanvas.tsx'), 'utf8');
+    const canvas = /<canvas\s+ref=\{canvasRef\}\s+className="([^"]*)"/.exec(src);
+    expect(canvas, 'the playfield <canvas ref={canvasRef}> was not found').not.toBeNull();
+    const classes = (canvas?.[1] ?? '').split(/\s+/);
+    expect(classes).toContain('slice-canvas-el');
+    expect(classes).toContain('absolute');
+    expect(classes).toContain('inset-0');
+  });
 });
 
 /**

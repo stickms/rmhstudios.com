@@ -907,6 +907,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   'r-slice-it': [
     // Menu redesign, 2026-11-04: the route header's logo alt text.
     'game-title',
+    // 2026-11-13: the song row's action opens the record, so it says Open.
+    'library-open',
+    'open-song',
     // Extract backlog, 2026-09-15 — see the block at the end of this map.
     'artist-play-count_one',
     'pack-track-count_one',

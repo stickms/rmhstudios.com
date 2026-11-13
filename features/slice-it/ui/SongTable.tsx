@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Play, Plus } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Loader2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,7 +27,7 @@ interface SongTableProps {
   hasMore: boolean;
   loading: boolean;
   onLoadMore: () => void;
-  /** Hides the per-row Play action, mirroring the grid's `readOnly` behaviour. */
+  /** Hides the per-row primary action, mirroring the grid's `readOnly` behaviour. */
   readOnly?: boolean;
   /** What the row's primary action does, for its glyph and accessible name.
    *  Mirrors the grid — see `SongLibrary`'s prop of the same name. */
@@ -244,8 +244,8 @@ export function SongTable({
                               defaultValue: 'Add {{title}}',
                               title: song.title,
                             })
-                          : t('play-song', {
-                              defaultValue: 'Play {{title}}',
+                          : t('open-song', {
+                              defaultValue: 'Open {{title}}',
                               title: song.title,
                             })
                       }
@@ -253,7 +253,7 @@ export function SongTable({
                       {selectAction === 'add' ? (
                         <Plus className="w-3.5 h-3.5" aria-hidden />
                       ) : (
-                        <Play className="w-3.5 h-3.5" aria-hidden />
+                        <ChevronRight className="w-3.5 h-3.5" aria-hidden />
                       )}
                     </Button>
                   )}
