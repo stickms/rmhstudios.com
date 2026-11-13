@@ -298,21 +298,21 @@ describe('the bar under the open globe (G3a; owner, 2026-11-13)', () => {
   const css = read('components/shell/globe-nav.css').replace(/\/\*[\s\S]*?\*\//g, '');
   const bar = (out: string) => /<div class="globe-nav__bar"[^>]*>([\s\S]*?)<\/div>/.exec(out)!;
 
-  it('signed out: Sign in, Search, Settings, the edition, All sections, each an icon with a short label', () => {
+  it('signed out: Sign in, Search, Settings, each an icon with a short label', () => {
     const [whole, inner] = bar(html());
     expect(whole).toMatch(/^<div class="globe-nav__bar" role="group" aria-label="Account" inert=""/);
     const labels = [...inner!.matchAll(/globe-nav__bar-label">([^<]+)</g)].map((m) => m[1]);
-    expect(labels).toEqual(['Sign in', 'Search', 'Settings', 'Day', 'All sections']);
+    expect(labels).toEqual(['Sign in', 'Search', 'Settings']);
     expect(inner).toMatch(/<a [^>]*href="\/login"/);
     expect(inner).toMatch(/<a [^>]*href="\/settings"/);
-    expect(inner).toMatch(/<a [^>]*href="\/sections"/);
+    // The edition toggle and "All sections" left the bar (owner, 2026-11-13): Appearance and /sections keep them.
+    expect(inner).not.toMatch(/href="\/sections"/);
+    expect(inner).not.toContain('edition');
     // Every item leads with an icon that is decoration, and is a focus stop of the open globe.
     const items = [...inner!.matchAll(/<(?:a|button)[^>]*class="globe-nav__bar-item"[^>]*>/g)].map((m) => m[0]);
-    expect(items).toHaveLength(5);
+    expect(items).toHaveLength(3);
     for (const item of items) expect(item).toContain('data-globe-stop=""');
-    expect(inner!.match(/<svg[^>]*aria-hidden="true"/g)).toHaveLength(5);
-    // The edition button says what it will do; Night is the default edition, so it offers Day.
-    expect(inner).toMatch(/<button[^>]*aria-label="Switch to the Day edition"/);
+    expect(inner!.match(/<svg[^>]*aria-hidden="true"/g)).toHaveLength(3);
     // Nothing in the menu writes a post (T7): the sidebar's button is the only one.
     expect(inner).not.toContain('Write a post');
   });
