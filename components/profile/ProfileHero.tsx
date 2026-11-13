@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { BadgeCheck, Bot, Coins, Gift, ShieldCheck } from 'lucide-react';
 
 import { AchievementBadgeStrip } from '@/components/feed/AchievementBadgeStrip';
+import { EmojiText } from '@/components/ui/emoji';
 import { StatusBadge } from '@/components/feed/StatusBadge';
 import { StatusEditor } from '@/components/feed/StatusEditor';
 import { VinylRecord } from '@/components/feed/VinylRecord';
@@ -195,7 +196,7 @@ export function ProfileHero({
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
             <h1 className="t-title truncate" style={nameStyle}>
-              {name}
+              <EmojiText>{name}</EmojiText>
             </h1>
             <IdentityBadges profile={profile} />
           </div>
@@ -218,7 +219,9 @@ export function ProfileHero({
       </div>
 
       {profile.bio ? (
-        <p className="t-body mt-3 max-w-2xl whitespace-pre-wrap break-words">{profile.bio}</p>
+        <p className="t-body mt-3 max-w-2xl whitespace-pre-wrap break-words">
+          <EmojiText>{profile.bio}</EmojiText>
+        </p>
       ) : profile.isOwnProfile ? (
         <button
           type="button"
@@ -365,7 +368,7 @@ export function ProfileHero({
       </div>
 
       <p className="t-meta mt-3 flex flex-wrap gap-x-4 gap-y-1">
-        {profile.location ? <span>{profile.location}</span> : null}
+        {profile.location ? <EmojiText>{profile.location}</EmojiText> : null}
         {profile.website ? (
           <a
             href={safeHref(profile.website)}
