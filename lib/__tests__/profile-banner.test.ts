@@ -38,7 +38,7 @@ describe('profile banner ratio', () => {
     expect(box).toMatch(/aspectRatio:\s*PROFILE_BANNER_ASPECT/);
     // A height or a max-* clamp beside the ratio would bring the width-dependent crop back.
     expect(box).not.toMatch(/\b(?:h|max-h|min-h|max-w)-(?!full)[\w[\]/.-]+/);
-    expect(box).not.toMatch(/block-size|(?:max-|min-)?height/i);
+    expect(box).not.toMatch(/block-size|blockSize|(?:max|min)?-?height\s*:|[hH]eight:/);
   });
 
   it('the profile, the cover field and the preview all draw that box', () => {

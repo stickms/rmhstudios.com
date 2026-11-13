@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 987 endpoints across 197 groups: 109 route files under `app/routes/api` and 878 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 988 endpoints across 197 groups: 109 route files under `app/routes/api` and 879 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1421,7 +1421,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/profile`
 
-31 routes.
+32 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1449,6 +1449,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/profile/avatar` | `DELETE` `POST` | `lib/api/routes/profile.avatar.server.ts` |
 | `/api/profile/avatar/:filename` | `GET` | `app/routes/api/profile/avatar/$filename.ts` |
 | `/api/profile/banner` | `DELETE` `POST` | `lib/api/routes/profile.banner.server.ts` |
+| `/api/profile/banner-source` | `GET` | `lib/api/routes/profile.banner-source.server.ts` |
 | `/api/profile/banner/:filename` | `GET` | `app/routes/api/profile/banner/$filename.ts` |
 | `/api/profile/layout` | `GET` `PUT` | `lib/profile/api/profile.layout.server.ts` |
 | `/api/profile/me` | `GET` | `lib/profile/api/profile.me.server.ts` |

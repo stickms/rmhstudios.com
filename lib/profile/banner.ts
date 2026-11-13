@@ -9,12 +9,12 @@
  *
  * 3:1 because that is what the upload endpoint has always resized towards
  * (1500x500), so banners stored before this constant existed already fit, and
- * because it is the height the profile column can afford: 119px of a 358px
- * phone column, 213px of the 640px desktop one.
+ * because it is a height the profile column can afford: 115px of the 344px
+ * column on a 390px phone, 206px of the 619px column at 1280px.
  */
 export const PROFILE_BANNER_ASPECT = 3;
 
-/** The stored rendition: twice the widest column the banner is drawn in. */
+/** The stored rendition: more than twice the widest column the banner is drawn in. */
 export const PROFILE_BANNER_WIDTH = 1500;
 export const PROFILE_BANNER_HEIGHT = PROFILE_BANNER_WIDTH / PROFILE_BANNER_ASPECT;
 
