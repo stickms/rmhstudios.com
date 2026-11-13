@@ -1,5 +1,6 @@
 import { Suspense, lazy, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { BarChart3, ImagePlay, ImagePlus, MoreHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,8 +21,8 @@ import {
   type SessionUserShape,
 } from './compose/compose-state';
 
-/** Pictures, a GIF, a poll, audience, a schedule: the full composer, fetched the first time Options is pressed. */
-const ComposeModal = lazy(() => import('./ComposeModal').then((m) => ({ default: m.ComposeModal })));
+/** Pictures, a GIF, a poll, audience, a schedule: the full composer, fetched the first time the three dots are pressed. */
+const ComposeBox = lazy(() => import('./ComposeBox').then((m) => ({ default: m.ComposeBox })));
 
 /**
  * The home feed's one-line composer (Steel section 10, Home): avatar, a borderless field and the page's one primary
@@ -30,9 +31,10 @@ const ComposeModal = lazy(() => import('./ComposeModal').then((m) => ({ default:
  * It sends through the same submit path as the full composer (`useComposeSubmit`): the post appears at the top of the
  * feed at once in its dimmed "posting" state, and is reconciled or rolled back and restored into the field when the
  * server answers. Anything richer than a line of text (pictures, a poll, a GIF, a schedule) is the full composer, one
- * press away behind "Options" in the row: it opens over the page carrying whatever has been typed (owner, 2026-11-12:
- * "where are the post options for the feed?"). Phones do not show the row at all (the globe's "Write a post" is the way in), so the row is hidden
- * below 1024px, the width at which the sidebar appears.
+ * press away behind the three dots in the row (a picture, a GIF and a poll have their own buttons beside them): the row becomes the full composer in place, carrying whatever has been
+ * typed, with its options open as a dropdown (owner, 2026-11-13: "a dropdown three dots menu for post options that
+ * doesn't open a modal"). The row shows at every width: the globe no longer carries "Write a post", so on a phone this
+ * is where a post is written.
  *
  * Signed out, the row is a one-line sign-in prompt in the same place and the same height (plan section 18, D6), and the
  * sign-in button is that view's one primary (R4). While the session is still unknown the row holds its height empty, so
@@ -44,8 +46,13 @@ export function HomeComposer() {
   const { resolved } = useResolvedUser();
   const postsPlus = usePostsPlusCompose();
   const [content, setContent] = useState('');
-  const [optionsOpen, setOptionsOpen] = useState(false);
-  const [optionsSeed, setOptionsSeed] = useState('');
+  // What the row was expanded with: the options menu, pictures already chosen, or the GIF picker or poll editor.
+  const [expanded, setExpanded] = useState<{
+    menu?: boolean;
+    files?: File[];
+    attachment?: 'gif' | 'poll';
+  } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -109,7 +116,9 @@ export function HomeComposer() {
     snapshotDraft: () => ({ content, answering: postsPlus.answering }),
     // A failed post goes back into the field, ahead of anything typed since.
     restoreFailedDraft: (draft) => {
-      setContent((current) => (current.trim() ? prependFailedContent(draft.content, current) : draft.content));
+      setContent((current) =>
+        current.trim() ? prependFailedContent(draft.content, current) : draft.content,
+      );
       postsPlus.restore({ ttl: null, series: null, answering: draft.answering });
     },
     resetForm,
@@ -141,8 +150,30 @@ export function HomeComposer() {
   const name = resolved?.name || session.user.name || null;
   const image = resolved?.image || session.user.image || null;
 
+  if (expanded) {
+    return (
+      <SpineItem dot={false} className="home-composer" data-slot="home-composer">
+        <Suspense fallback={<div className="home-composer__row" aria-hidden />}>
+          <div className="-mx-4 -my-3">
+            <ComposeBox
+              initialContent={content}
+              openMenuOnMount={expanded.menu === true}
+              menuTrigger="dots"
+              initialAttachment={expanded.attachment ?? null}
+              {...(expanded.files ? { initialFiles: expanded.files } : {})}
+              onPosted={() => {
+                setContent('');
+                setExpanded(null);
+              }}
+            />
+          </div>
+        </Suspense>
+      </SpineItem>
+    );
+  }
+
   return (
-    <SpineItem dot={false} className="home-composer hidden lg:block" data-slot="home-composer">
+    <SpineItem dot={false} className="home-composer" data-slot="home-composer">
       <form
         className="home-composer__row"
         onSubmit={(e) => {
@@ -162,34 +193,66 @@ export function HomeComposer() {
           autoComplete="off"
           className="field-bare h-9 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0"
         />
-        <Button
-          type="button"
-          variant="ghost"
-          aria-haspopup="dialog"
-          onClick={() => {
-            setOptionsSeed(content);
-            setOptionsOpen(true);
-          }}
-        >
-          {t('compose-options', { defaultValue: 'Options' })}
-        </Button>
+        <div className="flex shrink-0 items-center">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = Array.from(e.target.files ?? []);
+              if (files.length) setExpanded({ files });
+            }}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t('menu-add-image', { defaultValue: 'Add Image' })}
+            title={t('menu-add-image', { defaultValue: 'Add Image' })}
+            onClick={() => fileRef.current?.click()}
+          >
+            <ImagePlus aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="hidden sm:inline-flex"
+            aria-label={t('menu-add-gif', { defaultValue: 'Add GIF' })}
+            title={t('menu-add-gif', { defaultValue: 'Add GIF' })}
+            onClick={() => setExpanded({ attachment: 'gif' })}
+          >
+            <ImagePlay aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="hidden sm:inline-flex"
+            aria-label={t('menu-create-poll', { defaultValue: 'Create Poll' })}
+            title={t('menu-create-poll', { defaultValue: 'Create Poll' })}
+            onClick={() => setExpanded({ attachment: 'poll' })}
+          >
+            <BarChart3 aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-haspopup="menu"
+            aria-label={t('compose-post-options', { defaultValue: 'Post options' })}
+            title={t('compose-post-options', { defaultValue: 'Post options' })}
+            onClick={() => setExpanded({ menu: true })}
+          >
+            <MoreHorizontal aria-hidden />
+          </Button>
+        </div>
         <Button type="submit" variant="primary" disabled={!canSubmit}>
           {t('post-button', { defaultValue: 'Post' })}
         </Button>
       </form>
-      {optionsOpen && (
-        <Suspense fallback={null}>
-          <ComposeModal
-            open
-            initialContent={optionsSeed}
-            onClose={() => {
-              setOptionsOpen(false);
-              // The full composer took the words with it; whatever it did with them, the row starts clean.
-              setContent('');
-            }}
-          />
-        </Suspense>
-      )}
       {postsPlus.answering && (
         <p className="t-meta mt-2 flex items-center gap-3">
           <span className="min-w-0 flex-1 truncate">

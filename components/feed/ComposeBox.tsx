@@ -72,13 +72,28 @@ export function ComposeBox({
   communityId,
   onPosted,
   extraBody,
+  initialContent = '',
+  openMenuOnMount = false,
+  menuTrigger = 'plus',
+  initialFiles,
+  initialAttachment = null,
 }: {
+  /** Pictures chosen in the home row's own file picker before the composer was fetched; uploaded as it mounts. */
+  initialFiles?: File[];
+  /** Start with the GIF picker or the poll editor open: the home row's GIF and poll buttons. */
+  initialAttachment?: 'gif' | 'poll' | null;
+  /** Text the composer starts with: what was typed in the home feed's one-line row before it was expanded. */
+  initialContent?: string;
+  /** Open the options menu as the composer mounts: the home row's three dots expand it and show the options at once. */
+  openMenuOnMount?: boolean;
+  /** The options menu's trigger: the plus sign, or the three dots the home row expanded from. */
+  menuTrigger?: 'plus' | 'dots';
   communityId?: string;
   onPosted?: (item: any) => void;
   /** Extra fields merged into the create body (community flair / challenge entry). */
   extraBody?: Record<string, unknown>;
 } = {}) {
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(initialContent);
   const [audience, setAudience] = useState<AudienceValue>('PUBLIC');
   const [replyControl, setReplyControl] = useState<ReplyControlValue>('EVERYONE');
   const [replyOpen, setReplyOpen] = useState(false);
@@ -89,8 +104,8 @@ export function ComposeBox({
   const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
   const [unlockPrice, setUnlockPrice] = useState(''); // coins to unlock;''= free
   const [submitting, setSubmitting] = useState(false);
-  const [attachment, setAttachment] = useState<Attachment>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [attachment, setAttachment] = useState<Attachment>(initialAttachment);
+  const [menuOpen, setMenuOpen] = useState(openMenuOnMount);
   const [audienceOpen, setAudienceOpen] = useState(false);
   const [poll, setPoll] = useState<PollDraft>(emptyPoll);
   const [gifUrl, setGifUrl] = useState('');
@@ -109,6 +124,14 @@ export function ComposeBox({
     handleImageFiles,
     explainRejection,
   } = useComposeUploads();
+  // The home row hands over the pictures it was given; they upload once, as the composer mounts.
+  const initialFilesRef = useRef(initialFiles);
+  useEffect(() => {
+    const files = initialFilesRef.current;
+    initialFilesRef.current = undefined;
+    if (files?.length) void uploadImages(files.slice(0, MAX_IMAGES));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on mount
+  }, []);
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleAt, setScheduleAt] = useState(''); // datetime-local value
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
@@ -545,6 +568,7 @@ export function ComposeBox({
 
               {/* Plus button — image upload, GIF, poll, draft, schedule. */}
               <ComposeMenu
+                trigger={menuTrigger}
                 menuOpen={menuOpen}
                 setMenuOpen={setMenuOpen}
                 closeMenu={closeMenu}
