@@ -1,37 +1,35 @@
 /**
  * MarketColumn — the player-to-player marketplace surface.
  *
- * Extracted from the former `/market` route so it can be embedded as the
- * "Market" tab inside `/store`. Owns the client state, item/sort filters, the
- * recent-sales sparkline, the listing grid, the Sell dialog, and the client
- * refetch against `/api/market/listings`. SSR data is seeded via props from the
- * host route loader (`browse({ sort: 'recent' })` + the viewer id).
+ * The "Market" tab of `/store`. Anatomy: a filter row (item, sort, and Sell at its end), the
+ * recent-sales line when one item is picked, then the same product grid the shop draws, each tile
+ * opening `ListingDialog`, which holds the one action. Owns the client state and the refetch
+ * against `/api/market/listings`; SSR data is seeded by the route loader
+ * (`browse({ sort: 'recent' })`, the viewer id and the viewer's balance).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Store, Tag } from 'lucide-react';
-import { ColumnHeader } from '@/components/feed/ColumnHeader';
+import { useRouter } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { getShopItem } from '@/lib/shop/catalog';
-import { ListingCard } from '@/components/market/ListingCard';
-import type { MarketListingView } from '@/lib/market/market.contract';
+import { ListingDialog, sellerLabel } from '@/components/market/ListingDialog';
+import { CoinAmount } from '@/components/shop/CoinAmount';
+import { ItemPicture } from '@/components/shop/ItemPicture';
+import { PRODUCT_GRID, ProductTile } from '@/components/shop/ProductTile';
+import { RarityMark } from '@/components/shop/RarityMark';
 import { WatchControl } from '@/components/discovery/WatchControl';
 import { SellSheet } from '@/components/market/SellSheet';
 import { api } from '@/lib/contract/client';
-import { browseListingsApi } from '@/lib/market/market.contract';
+import { browseListingsApi,
+  type MarketListingView,
+  type PriceHistoryView,
+} from '@/lib/market/market.contract';
 
-interface PriceHistoryView {
-  sales: { price: number; at: string }[];
-  count: number;
-  low: number | null;
-  high: number | null;
-  average: number | null;
-}
 
 /** Tiny inline SVG sparkline of recent sale prices. */
 function Sparkline({ sales }: { sales: { price: number }[] }) {
@@ -63,12 +61,16 @@ function Sparkline({ sales }: { sales: { price: number }[] }) {
 export function MarketColumn({
   initialListings,
   viewerId,
+  coins,
 }: {
   initialListings: MarketListingView[];
   viewerId: string | null;
+  /** The viewer's coin balance; null when signed out. */
+  coins: number | null;
 }) {
   const { t } = useTranslation('site');
   const { data: session } = useSession();
+  const router = useRouter();
 
   const [listings, setListings] = useState<MarketListingView[]>(initialListings);
   const [sort, setSort] = useState<'recent' | 'price_asc' | 'price_desc'>('recent');
@@ -76,6 +78,7 @@ export function MarketColumn({
   const [history, setHistory] = useState<PriceHistoryView | null>(null);
   const [loading, setLoading] = useState(false);
   const [sellOpen, setSellOpen] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const currentUserId = session?.user.id ?? viewerId;
 
@@ -102,9 +105,16 @@ export function MarketColumn({
     load();
   }, [load]);
 
-  const onDone = useCallback((id: string) => {
-    setListings((prev) => prev.filter((l) => l.id !== id));
-  }, []);
+  // A buy or a cancel moves coins and inventory, which the header's balance and the Shop tab read
+  // from the route loader.
+  const onDone = useCallback(
+    (id: string) => {
+      setOpenId(null);
+      setListings((prev) => prev.filter((l) => l.id !== id));
+      void router.invalidate();
+    },
+    [router],
+  );
 
   // Items that currently have listings — a manageable filter set.
   const filterOptions = useMemo(() => {
@@ -115,31 +125,16 @@ export function MarketColumn({
   }, [initialListings]);
 
   const filteredName = itemFilter ? (getShopItem(itemFilter)?.name ?? itemFilter) : null;
+  const open = openId ? (listings.find((l) => l.id === openId) ?? null) : null;
 
   return (
-    <>
-      <ColumnHeader
-        icon={Store}
-        headingLevel="h2"
-        title={t('market-title', { defaultValue: 'Marketplace' })}
-        actions={
-          session ? (
-            <Button size="sm" variant="default" onClick={() => setSellOpen(true)}>
-              <Tag className="h-4 w-4" /> {t('market-sell', { defaultValue: 'Sell' })}
-            </Button>
-          ) : undefined
-        }
-      />
-
-      <div
-        data-slot="page-controls"
-        className="flex flex-wrap items-center gap-3 border-b border-site-border px-4 py-3"
-      >
+    <div className="flex flex-col gap-4 pt-4">
+      <div data-slot="page-controls" className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <Select
           value={itemFilter}
           onChange={(e) => setItemFilter(e.target.value)}
           aria-label={t('market-filter-item', { defaultValue: 'Filter by item' })}
-          className="h-11 w-full min-w-0 flex-1 sm:w-auto sm:min-w-40"
+          className="w-auto min-w-36"
         >
           <option value="">{t('market-all-items', { defaultValue: 'All items' })}</option>
           {filterOptions.map((o) => (
@@ -152,7 +147,7 @@ export function MarketColumn({
           value={sort}
           onChange={(e) => setSort(e.target.value as typeof sort)}
           aria-label={t('market-sort', { defaultValue: 'Sort listings' })}
-          className="h-11 w-full min-w-0 flex-1 sm:w-auto sm:min-w-36 sm:flex-none"
+          className="w-auto min-w-36"
         >
           <option value="recent">{t('market-sort-recent', { defaultValue: 'Newest' })}</option>
           <option value="price_asc">
@@ -162,67 +157,107 @@ export function MarketColumn({
             {t('market-sort-price-desc', { defaultValue: 'Price: high to low' })}
           </option>
         </Select>
+        {session ? (
+          <Button variant="default" className="ms-auto" onClick={() => setSellOpen(true)}>
+            {t('market-sell-item', { defaultValue: 'Sell an item' })}
+          </Button>
+        ) : null}
       </div>
 
-      {itemFilter && (
-        <div className="flex justify-end border-b border-site-border px-4 py-2">
+      {itemFilter ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-y border-site-border py-3">
+          {history && history.count > 0 ? (
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="min-w-0">
+                <p className="t-body truncate font-medium text-site-text">
+                  {t('market-history-heading', {
+                    name: filteredName,
+                    defaultValue: '{{name}} · recent sales',
+                  })}
+                </p>
+                <p className="t-meta">
+                  {t('market-history-stats', {
+                    count: history.count,
+                    low: history.low?.toLocaleString(),
+                    high: history.high?.toLocaleString(),
+                    avg: history.average?.toLocaleString(),
+                    defaultValue: '{{count}} sales · low {{low}} · avg {{avg}} · high {{high}}',
+                  })}
+                </p>
+              </div>
+              <Sparkline sales={history.sales} />
+            </div>
+          ) : (
+            <p className="t-body text-site-text-muted">
+              {t('market-history-none', {
+                name: filteredName,
+                defaultValue: '{{name}} has no recorded sales yet.',
+              })}
+            </p>
+          )}
           <WatchControl kind="market" targetId={itemFilter} />
         </div>
-      )}
-
-      {itemFilter && history && history.count > 0 && (
-        <div className="flex items-center justify-between gap-3 border-b border-site-border px-4 py-3">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-site-text">
-              {t('market-history-heading', {
-                name: filteredName,
-                defaultValue: '{{name}} · recent sales',
-              })}
-            </p>
-            <p className="text-xs text-site-text-muted">
-              {t('market-history-stats', {
-                count: history.count,
-                low: history.low?.toLocaleString(),
-                high: history.high?.toLocaleString(),
-                avg: history.average?.toLocaleString(),
-                defaultValue: '{{count}} sales · low {{low}} · avg {{avg}} · high {{high}}',
-              })}
-            </p>
-          </div>
-          <Sparkline sales={history.sales} />
-        </div>
-      )}
+      ) : null}
 
       {loading ? (
         <div className="flex justify-center py-20">
           <Spinner />
         </div>
       ) : listings.length === 0 ? (
-        <div className="p-4">
-          <EmptyState
-            icon={Store}
-            title={t('market-empty-title', { defaultValue: 'No listings yet' })}
-            description={t('market-empty-desc', {
-              defaultValue:
-                'Nothing is for sale right now. If you own tradable cosmetics, be the first to list one.',
-            })}
-          />
-        </div>
+        <EmptyState
+          title={t('market-empty-title', { defaultValue: 'No listings yet' })}
+          description={t('market-empty-text', {
+            defaultValue: 'Nothing is for sale right now. If you own a tradable cosmetic, list it.',
+          })}
+          action={
+            session ? (
+              <Button variant="default" onClick={() => setSellOpen(true)}>
+                {t('market-sell-item', { defaultValue: 'Sell an item' })}
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
-        <div className="grid grid-cols-1 gap-4 py-4 md:px-4 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {listings.map((listing) => (
-            <ListingCard
-              key={listing.id}
-              listing={listing}
-              isOwn={!!currentUserId && listing.seller.id === currentUserId}
-              canBuy={!!currentUserId && listing.seller.id !== currentUserId}
-              onDone={onDone}
-            />
-          ))}
+        <div className={PRODUCT_GRID}>
+          {listings.map((listing) => {
+            const isOwn = !!currentUserId && listing.seller.id === currentUserId;
+            return (
+              <ProductTile
+                key={listing.id}
+                onOpen={() => setOpenId(listing.id)}
+                picture={
+                  <ItemPicture kind={listing.item?.kind ?? null} art={listing.item?.data ?? {}} />
+                }
+                name={listing.item?.name ?? listing.itemId}
+                detail={listing.item ? <RarityMark rarity={listing.item.rarity} /> : undefined}
+                trailing={<CoinAmount amount={listing.priceCoins} className="text-site-text" />}
+                footer={
+                  listing.status === 'HELD' ? (
+                    t('market-under-review', { defaultValue: 'Under review' })
+                  ) : isOwn ? (
+                    t('market-your-listing', { defaultValue: 'Your listing' })
+                  ) : (
+                    <span dir="ltr">
+                      {sellerLabel(listing, t('market-seller', { defaultValue: 'Seller' }))}
+                    </span>
+                  )
+                }
+              />
+            );
+          })}
         </div>
       )}
 
+      <ListingDialog
+        listing={open}
+        onOpenChange={(next) => {
+          if (!next) setOpenId(null);
+        }}
+        viewerId={currentUserId}
+        coins={currentUserId ? coins : null}
+        onDone={onDone}
+      />
       <SellSheet open={sellOpen} onOpenChange={setSellOpen} onListed={load} />
-    </>
+    </div>
   );
 }

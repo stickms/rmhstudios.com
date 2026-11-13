@@ -11,21 +11,30 @@
  * The active tab is mirrored into the `?tab=` search param so deep links
  * (e.g. /store?tab=market) and back-navigation land on the right surface.
  *
- * (Note: `/store/$userid` is a separate per-creator storefront route — leave
- * it untouched.)
+ * Anatomy (the same on every tab): the page title with the viewer's coin
+ * balance beside it as a quiet fact and a link to the wallet, the four sections
+ * as `PageTabs`, then the section. A catalogue page takes the two-column frame
+ * (`NoMargin`), so the product grid has the width the margin would have held.
+ * The balance is the loader's: every purchase invalidates the route, so the
+ * header, the grid and the dialogs read one number.
+ *
+ * (`/store/$userid` is a separate per-creator storefront route.)
  */
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
-import { CalendarClock, Sparkles, ShoppingBag, Store as StoreIcon } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { MEMBER_FEATURES, type MemberFeature } from '@/lib/entitlements/features';
-import { ShopColumn } from '@/components/feed/ShopColumn';
+import { ShopPanel } from '@/components/shop/ShopPanel';
+import { CoinAmount } from '@/components/shop/CoinAmount';
+import { Button } from '@/components/ui/button';
+import { NoMargin } from '@/components/shell/NoMargin';
 import { MarketColumn } from '@/components/market/MarketColumn';
 import { DailyTab } from '@/components/economy-plus/DailyTab';
 import type { TabItem } from '@/components/ui/tabs';
@@ -99,29 +108,39 @@ function Store() {
   );
 
   const tabs: TabItem[] = [
-    { id: 'shop', label: t('store-tab-shop', { defaultValue: 'Shop' }), icon: ShoppingBag },
-    { id: 'market', label: t('store-tab-market', { defaultValue: 'Market' }), icon: StoreIcon },
-    { id: 'daily', label: te('store-tab-daily', { defaultValue: 'Daily' }), icon: CalendarClock },
-    {
-      id: 'membership',
-      label: t('store-tab-membership', { defaultValue: 'Membership' }),
-      icon: Sparkles,
-    },
+    { id: 'shop', label: t('store-tab-shop', { defaultValue: 'Shop' }) },
+    { id: 'market', label: t('store-tab-market', { defaultValue: 'Market' }) },
+    { id: 'daily', label: te('store-tab-daily', { defaultValue: 'Daily' }) },
+    { id: 'membership', label: t('store-tab-membership', { defaultValue: 'Membership' }) },
   ];
 
   return (
     <PageLayout
       wide
       title={t('store-title', { defaultValue: 'Store' })}
-      description={t('store-subtitle', {
-        defaultValue: 'Membership, cosmetics you can buy with coins, and the player marketplace.',
+      description={t('store-description', {
+        defaultValue: 'Cosmetics for coins, the player market, and membership.',
       })}
+      headerRight={
+        shop.signedIn ? (
+          <div className="flex items-center gap-3">
+            <p className="t-body flex items-center gap-2 text-site-text">
+              <span className="sr-only">
+                {t('store-balance-label', { defaultValue: 'Your balance' })}
+              </span>
+              <CoinAmount amount={shop.coins} />
+            </p>
+            <Button asChild variant="default">
+              <Link to="/wallet">
+                <Wallet aria-hidden />
+                {t('store-wallet', { defaultValue: 'Wallet' })}
+              </Link>
+            </Button>
+          </div>
+        ) : undefined
+      }
     >
-      {/* §16.2: Membership/Shop/Market as the shared Tabs sheet, below the page title
-          `PageLayout` renders (this page used to draw its own title capsule —
-          the whole point of the shared header is that it doesn't have to).
-          `?tab=` mirroring, roving nav and the aria-controls tabpanel wiring
-          (idBase="store" → `store-tab-*` / `store-panel-*`) are unchanged. */}
+      <NoMargin />
       <PageTabs
         tabs={tabs}
         value={tab}
@@ -133,19 +152,15 @@ function Store() {
       {tab === 'membership' && (
         <div role="tabpanel" id="store-panel-membership" aria-labelledby="store-tab-membership">
           <MembershipPanel
-            currentTier={currentTier}
-            headingLevel="h2"
+            currentTier={viewerId ? currentTier : null}
             returnPath="/store"
-            // The hero's secondary action used to smooth-scroll down this same
-            // panel; the coin shop is a sibling tab now, so it switches tabs.
-            onCoinShop={() => setTab('shop')}
             highlightFeature={feature ?? null}
           />
         </div>
       )}
       {tab === 'shop' && (
         <div role="tabpanel" id="store-panel-shop" aria-labelledby="store-tab-shop">
-          <ShopColumn initialData={shop} />
+          <ShopPanel data={shop} />
         </div>
       )}
       {tab === 'daily' && (
@@ -155,7 +170,11 @@ function Store() {
       )}
       {tab === 'market' && (
         <div role="tabpanel" id="store-panel-market" aria-labelledby="store-tab-market">
-          <MarketColumn initialListings={listings} viewerId={viewerId} />
+          <MarketColumn
+            initialListings={listings}
+            viewerId={viewerId}
+            coins={shop.signedIn ? shop.coins : null}
+          />
         </div>
       )}
     </PageLayout>
