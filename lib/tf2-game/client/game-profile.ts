@@ -81,8 +81,11 @@ export interface ClientGameProfile {
   readonly itemCatalog: boolean;
   /** Loads what the client's simulation needs before predicting (CS:GO: its module and weapon data). */
   prepare(): Promise<void>;
-  /** Models every match shows (bodies and arms), preloaded so nobody pops in. */
-  preloadModels(): readonly string[];
+  /**
+   * Models every match shows (bodies and arms), preloaded so nobody pops in. `essentialOnly` (the phone
+   * tier) leaves out what can arrive when first drawn, to keep the load within a phone's memory.
+   */
+  preloadModels(essentialOnly?: boolean): readonly string[];
   /** Starts the listen-server worker that hosts this game's match (a bundler worker entry of the game's own). */
   createListenWorker(): Worker;
   /** The prediction world on the client (CS:GO's has CS players and rules). */

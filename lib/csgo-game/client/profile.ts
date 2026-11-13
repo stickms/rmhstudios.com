@@ -45,7 +45,7 @@ export const CSGO_PROFILE: ClientGameProfile = {
     // The weapon data the client predicts with (the same document the listen server reads).
     if (!hasCsWeaponData()) setCsWeaponData(await loadCsWeaponData(httpObjectLoader(gameAssetApi('csgo'))));
   },
-  preloadModels: () => preloadCsModels(),
+  preloadModels: (essentialOnly) => preloadCsModels(essentialOnly),
   createWorld: (init, map) => new CsWorld({ ...init, mode: map.mode === 'dm' ? 'dm' : 'de' }),
   restorePlayer: (player, rec, weapons) => restoreCsPlayerFromRecords(player as CsPlayer, rec, weapons),
   createListenWorker: () => new Worker(new URL('./listen-worker.ts', import.meta.url), { type: 'module', name: 'csgo-listen-server' }),

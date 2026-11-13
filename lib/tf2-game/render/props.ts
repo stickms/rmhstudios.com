@@ -48,6 +48,16 @@ export interface LoadedModel {
 
 export interface ModelProvider {
   load(mdlPath: string): Promise<LoadedModel | null>;
+  /** Forgets a loaded model, so its file and parsed copy can be collected once nothing else holds it. */
+  release?(mdlPath: string): void;
+}
+
+/**
+ * `BufferAttribute.onUpload` callback: drops the CPU copy once the GPU has it (three's documented
+ * pattern). The attribute keeps its `count`, so it still draws; nothing may read `array` afterwards.
+ */
+function dropArrayAfterUpload(this: BufferAttribute): void {
+  (this as unknown as { array: unknown }).array = null;
 }
 
 /** STATIC_PROP_* flags. */
@@ -167,6 +177,14 @@ export interface StaticPropOptions {
   hdr: boolean;
   lightScale: number;
   skyArea: number;
+  /**
+   * Keep as little of each prop model as drawing needs (the phone tier): the provider forgets the model
+   * once its meshes are built, and vertex data leaves the CPU when it reaches the GPU. A map has over a
+   * thousand prop models (de_dust2: 1,255) and holding every file and its parsed copy cost most of a
+   * gigabyte, which iPhone Safari does not give a tab. A lost WebGL context ends the match either way
+   * (RenderCore.onLost), so nothing re-uploads from the dropped arrays.
+   */
+  lean?: boolean;
 }
 
 export interface StaticPropStats {
@@ -255,6 +273,7 @@ export class StaticPropRenderer {
         }
         this.stats.loaded++;
         for (const g of this.groups) if (g.model === m) this.build(g, lm);
+        if (this.opts.lean) this.opts.provider.release?.(m);
       }),
     );
   }
@@ -300,6 +319,10 @@ export class StaticPropRenderer {
         geo.setAttribute('uv', new BufferAttribute(new Float32Array(sg.getAttribute('position').count * 2), 2));
       }
       geo.setIndex(sg.getIndex());
+      if (this.opts.lean) {
+        for (const name of ['position', 'normal', 'uv'] as const) (sg.getAttribute(name) as BufferAttribute | undefined)?.onUpload(dropArrayAfterUpload);
+        sg.getIndex()?.onUpload(dropArrayAfterUpload);
+      }
       if (!sg.boundingSphere) sg.computeBoundingSphere();
       geo.boundingSphere = sg.boundingSphere?.clone() ?? null;
       geo.boundingBox = sg.boundingBox?.clone() ?? null;

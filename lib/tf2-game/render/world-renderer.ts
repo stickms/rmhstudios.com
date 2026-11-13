@@ -78,6 +78,8 @@ export interface WorldRendererOptions {
   textures?: TextureCache | null;
   /** Static prop models (null: no props). */
   models?: ModelProvider | null;
+  /** Hold as little prop model data as drawing needs (StaticPropOptions.lean; the phone tier). */
+  leanProps?: boolean;
   /** Whether the sun reaches a Source point (static prop lighting); default always. */
   sunVisible?: (p: Vec3Like) => boolean;
   /** Lighting lump to use; default the manifest's, else LDR when present. */
@@ -321,6 +323,7 @@ export class WorldRenderer {
       bsp.staticProps && opts.models
         ? new StaticPropRenderer(bsp, {
             provider: opts.models,
+            lean: opts.leanProps ?? false,
             sun: this.sun,
             shared: this.shared,
             sunUniforms: this.sunUniforms,
