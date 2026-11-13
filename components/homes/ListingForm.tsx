@@ -141,29 +141,27 @@ export function ListingForm({ listing }: ListingFormProps) {
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
       {error && (
-        <div role="alert" className="rounded-site border border-site-danger/40 bg-site-danger/10 px-4 py-3 text-sm text-site-danger">
+        <div role="alert" className="t-body border-s-2 border-site-danger ps-3 text-site-danger">
           {error}
         </div>
       )}
 
-      {/* Type + property */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Tabs
-          size="sm"
-          tabs={[
-            { id: 'RENT', label: 'For rent' },
-            { id: 'SALE', label: 'For sale' },
-          ]}
-          value={listingType}
-          onChange={(id) => setListingType(id as ListingType)}
-          aria-label="Listing type"
-          className="w-auto"
-        />
+      {/* Type, then property: the strip on its own line, the select a labelled field like the rest. */}
+      <Tabs
+        tabs={[
+          { id: 'RENT', label: 'For rent' },
+          { id: 'SALE', label: 'For sale' },
+        ]}
+        value={listingType}
+        onChange={(id) => setListingType(id as ListingType)}
+        aria-label="Listing type"
+      />
+      <Field label="Property type" htmlFor="property-type">
         <Select
+          id="property-type"
           value={propertyType}
           onChange={(e) => setPropertyType(e.target.value as PropertyType)}
-          aria-label="Property type"
-          className="w-auto min-w-40"
+          containerClassName="sm:w-56"
         >
           {PROPERTY_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -171,7 +169,7 @@ export function ListingForm({ listing }: ListingFormProps) {
             </option>
           ))}
         </Select>
-      </div>
+      </Field>
 
       {/* Title */}
       <Field label="Title" htmlFor="title">
@@ -293,18 +291,16 @@ export function ListingForm({ listing }: ListingFormProps) {
           {AMENITY_OPTIONS.map((a) => {
             const on = amenities.includes(a);
             return (
-              <button
+              <Button
                 key={a}
                 type="button"
+                variant="default"
+                aria-pressed={on}
                 onClick={() => toggleAmenity(a)}
-                className={`min-h-11 rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
-                  on
-                    ? 'border-site-accent bg-site-bg-subtle text-site-accent'
-                    : 'border-site-border text-site-text-muted hover:text-site-text'
-                }`}
+                className={on ? 'border-site-text bg-site-bg-subtle' : 'text-site-text-muted'}
               >
                 {a}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -333,7 +329,7 @@ export function ListingForm({ listing }: ListingFormProps) {
       </div>
 
       <div className="flex items-center gap-3 pt-2">
-        <Button type="submit" size="lg" loading={submitting}>
+        <Button type="submit" variant="primary" loading={submitting}>
           {isEditing ? 'Save changes' : 'Post listing'}
         </Button>
         <Button

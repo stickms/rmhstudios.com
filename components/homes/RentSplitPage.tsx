@@ -23,7 +23,7 @@ export function RentSplitPage({
   const initial = useMemo(() => parseRentSplit(search), []);
   return (
     <PageLayout title={t('rsp-page-title', { defaultValue: 'Fair rent split' })}>
-      <div className="max-w-3xl px-4 pt-4 pb-12">
+      <div className="max-w-3xl">
         <p className="mb-4 text-sm text-site-text-muted">
           {t('rsp-page-intro', {
             defaultValue:
