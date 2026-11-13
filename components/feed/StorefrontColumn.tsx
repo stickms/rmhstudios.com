@@ -1,403 +1,481 @@
-/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
-import { useEffect, useState, useCallback, useRef } from'react';
-import { useTranslation } from'react-i18next';
-import { Loader2, Plus, Trash2, Check, ShoppingBag, X, EyeOff, Eye } from'lucide-react';
-import { Button } from'@/components/ui/button';
-import { IconButton } from'@/components/ui/icon-button';
-import { Input } from'@/components/ui/input';
-import { Textarea } from'@/components/ui/textarea';
-import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
-import { Spinner } from'@/components/ui/spinner';
-import { EmptyState } from'@/components/ui/empty-state';
-import { UserAvatar } from'./UserAvatar';
-import { PinnedHero } from'./PinnedHero';
-import { ColumnHeader } from'./ColumnHeader';
-import { api } from'@/lib/contract/client';
-import { HttpError, serverError } from'@/lib/http';
+import { useEffect, useState, useCallback, useRef, useId } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
+import { Check, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import {
- createStorefrontProductApi,
- deleteStorefrontProductApi,
- getStorefrontApi,
- updateStorefrontProductApi,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
+import { CoinAmount } from '@/components/shop/CoinAmount';
+import { toast } from '@/lib/toast';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  createStorefrontProductApi,
+  deleteStorefrontProductApi,
+  getStorefrontApi,
+  updateStorefrontProductApi,
   buyStorefrontProductApi,
-} from'@/lib/storefront/storefront.contract';
+} from '@/lib/storefront/storefront.contract';
+import { PageLayout } from './PageLayout';
+import { UserAvatar } from './UserAvatar';
 
 interface Product {
- id: string;
- title: string;
- description: string | null;
- price: number;
- active: boolean;
- salesCount: number;
- owned: boolean;
- deliverable: string | null;
+  id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  active: boolean;
+  salesCount: number;
+  owned: boolean;
+  deliverable: string | null;
 }
 
 interface Creator {
- id: string;
- name: string | null;
- handle: string | null;
- image: string | null;
+  id: string;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
 }
 
 const fmt = (n: number) => n.toLocaleString();
+const EMPTY_FORM = { title: '', description: '', price: '', deliverable: '' };
 
+/**
+ * A creator's storefront, `/store/<userid>`: the things one person sells for coins.
+ *
+ * Anatomy: a titled page (the creator's name is the title, once), the seller as one row that
+ * links to their profile, then the products as rows on rules: name and price on one line, the
+ * description, what it has sold, the deliverable for whoever may see it, and the row's actions.
+ * These products have no picture, so they are rows, not tiles. The owner's one primary is New
+ * product, which opens a dialog; a visitor's Buy asks before it spends coins.
+ */
 export function StorefrontColumn({
- userid,
- initialData,
+  userid,
+  initialData,
 }: {
- userid: string;
- /** Storefront prefetched by the route loader; `null`when not prefetched/found. */
- initialData?: {
- creator: Creator;
- products: Product[];
- isOwner: boolean;
- signedIn: boolean;
- } | null;
+  userid: string;
+  /** Storefront prefetched by the route loader; `null` when not prefetched/found. */
+  initialData?: {
+    creator: Creator;
+    products: Product[];
+    isOwner: boolean;
+    signedIn: boolean;
+  } | null;
 }) {
- const { t } = useTranslation('feed');
- // Seed from the loader when provided so the storefront paints immediately and
- // the mount fetch is skipped. Mutations still fetch to refresh.
- const seeded = useRef(initialData !== undefined && initialData !== null);
- const [creator, setCreator] = useState<Creator | null>(initialData?.creator ?? null);
- const [products, setProducts] = useState<Product[]>(initialData?.products ?? []);
- const [isOwner, setIsOwner] = useState(!!initialData?.isOwner);
- const [signedIn, setSignedIn] = useState(!!initialData?.signedIn);
- const [loading, setLoading] = useState(!seeded.current);
- const [notFound, setNotFound] = useState(false);
- const [busy, setBusy] = useState<string | null>(null);
- const [showForm, setShowForm] = useState(false);
- const [form, setForm] = useState({ title:'', description:'', price:'', deliverable:''});
- const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation('feed');
+  const confirm = useConfirm();
+  const formId = useId();
+  // Seed from the loader when provided so the storefront paints immediately and
+  // the mount fetch is skipped. Mutations still fetch to refresh.
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [creator, setCreator] = useState<Creator | null>(initialData?.creator ?? null);
+  const [products, setProducts] = useState<Product[]>(initialData?.products ?? []);
+  const [isOwner, setIsOwner] = useState(!!initialData?.isOwner);
+  const [signedIn, setSignedIn] = useState(!!initialData?.signedIn);
+  const [loading, setLoading] = useState(!seeded.current);
+  const [notFound, setNotFound] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [error, setError] = useState<string | null>(null);
 
- const load = useCallback(async () => {
- try {
- const data = await api(getStorefrontApi, { params: { userid }, retries: 0 });
- setCreator(data.creator);
- setProducts(data.products ?? []);
- setIsOwner(!!data.isOwner);
- setSignedIn(!!data.signedIn);
- } catch (e) {
- if (e instanceof HttpError && e.status === 404) setNotFound(true);
- }
- }, [userid]);
+  const load = useCallback(async () => {
+    try {
+      const data = await api(getStorefrontApi, { params: { userid }, retries: 0 });
+      setCreator(data.creator);
+      setProducts(data.products ?? []);
+      setIsOwner(!!data.isOwner);
+      setSignedIn(!!data.signedIn);
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 404) setNotFound(true);
+    }
+  }, [userid]);
 
- useEffect(() => {
- // The route loader already seeded the storefront (the column remounts per
- // userid via its `key`), so skip the mount fetch.
- if (seeded.current) return;
- let active = true;
- (async () => {
- try {
- await load();
- } finally {
- if (active) setLoading(false);
- }
- })();
- return () => {
- active = false;
- };
- }, [load]);
+  useEffect(() => {
+    // The route loader already seeded the storefront (the column remounts per
+    // userid via its `key`), so skip the mount fetch.
+    if (seeded.current) return;
+    let active = true;
+    (async () => {
+      try {
+        await load();
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [load]);
 
- async function create() {
- if (busy !== null) return;
- setBusy('create');
- setError(null);
- try {
- const price = parseInt(form.price, 10);
- try {
- await api(createStorefrontProductApi, {
- body: {
- title: form.title.trim(),
- description: form.description.trim() || undefined,
- price,
- deliverable: form.deliverable.trim() || undefined,
- },
- });
- } catch (e) {
- setError(serverError(e) ?? t('could-not-create', { defaultValue:'Could not create'}));
- return;
- }
- setForm({ title:'', description:'', price:'', deliverable:''});
- setShowForm(false);
- await load();
- } finally {
- setBusy(null);
- }
- }
+  async function create() {
+    if (busy !== null) return;
+    setBusy('create');
+    setError(null);
+    try {
+      await api(createStorefrontProductApi, {
+        body: {
+          title: form.title.trim(),
+          description: form.description.trim() || undefined,
+          price: parseInt(form.price, 10),
+          deliverable: form.deliverable.trim() || undefined,
+        },
+      });
+      setForm(EMPTY_FORM);
+      setShowForm(false);
+      await load();
+    } catch (e) {
+      setError(
+        serverError(e) ??
+          t('storefront-create-failed', {
+            defaultValue: 'The product was not listed. Check the fields and try again.',
+          }),
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
 
- async function buy(id: string) {
- if (busy !== null) return;
- setBusy(`buy:${id}`);
- try {
- try {
- await api(buyStorefrontProductApi, { params: { id } });
- } catch (e) {
- const msg = serverError(e);
- if (msg) alert(msg);
- return;
- }
- await load();
- } finally {
- setBusy(null);
- }
- }
+  async function buy(p: Product) {
+    if (busy !== null) return;
+    const ok = await confirm({
+      title: t('storefront-buy-title', { title: p.title, defaultValue: 'Buy {{title}}?' }),
+      description: t('storefront-buy-desc', {
+        price: fmt(p.price),
+        defaultValue: 'This spends {{price}} coins. Coin purchases are not refunded.',
+      }),
+      confirmLabel: t('storefront-buy-confirm', {
+        price: fmt(p.price),
+        defaultValue: 'Buy for {{price}} coins',
+      }),
+    });
+    if (!ok) return;
+    setBusy(`buy:${p.id}`);
+    try {
+      await api(buyStorefrontProductApi, { params: { id: p.id } });
+      toast.success(t('storefront-bought', { title: p.title, defaultValue: 'Bought {{title}}' }));
+      await load();
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('storefront-buy-failed', { defaultValue: 'Purchase failed' }),
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
 
- async function toggleActive(p: Product) {
- if (busy !== null) return;
- setBusy(`tog:${p.id}`);
- try {
- try {
- await api(updateStorefrontProductApi, { params: { id: p.id }, body: { active: !p.active } });
- } catch {
- return;
- }
- await load();
- } finally {
- setBusy(null);
- }
- }
+  async function toggleActive(p: Product) {
+    if (busy !== null) return;
+    setBusy(`tog:${p.id}`);
+    try {
+      await api(updateStorefrontProductApi, { params: { id: p.id }, body: { active: !p.active } });
+      await load();
+    } catch (e) {
+      toast.error(
+        serverError(e) ??
+          t('storefront-update-failed', { defaultValue: 'That did not save. Try again.' }),
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
 
- async function remove(id: string) {
- if (busy !== null) return;
- setBusy(`del:${id}`);
- try {
- try {
- await api(deleteStorefrontProductApi, { params: { id } });
- } catch {
- return;
- }
- await load();
- } finally {
- setBusy(null);
- }
- }
+  async function remove(p: Product) {
+    if (busy !== null) return;
+    const ok = await confirm({
+      title: t('storefront-delete-title', { title: p.title, defaultValue: 'Delete {{title}}?' }),
+      description: t('storefront-delete-desc', {
+        defaultValue: 'It leaves your store. People who bought it keep what they bought.',
+      }),
+      confirmLabel: t('delete', { defaultValue: 'Delete' }),
+      danger: true,
+    });
+    if (!ok) return;
+    setBusy(`del:${p.id}`);
+    try {
+      await api(deleteStorefrontProductApi, { params: { id: p.id } });
+      await load();
+    } catch (e) {
+      toast.error(
+        serverError(e) ??
+          t('storefront-delete-failed', { defaultValue: 'That was not deleted. Try again.' }),
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
 
- if (loading) {
- return (
- <div className="flex justify-center px-4 pt-4 pb-12">
- <Spinner />
- </div>
- );
- }
- if (notFound || !creator) {
- return (
- <EmptyState
- description={t('storefront-not-found', { defaultValue:'Storefront not found.'})}
- />
- );
- }
+  if (loading) {
+    return (
+      <PageLayout title={t('storefront', { defaultValue: 'Storefront' })}>
+        <div className="flex justify-center pt-4 pb-12">
+          <Spinner />
+        </div>
+      </PageLayout>
+    );
+  }
+  if (notFound || !creator) {
+    return (
+      <PageLayout title={t('storefront', { defaultValue: 'Storefront' })}>
+        <EmptyState
+          title={t('storefront-missing-title', { defaultValue: 'No store here' })}
+          description={t('storefront-missing-desc', {
+            defaultValue: 'This link does not match anyone. Check the name, or go to the store.',
+          })}
+          action={
+            <Button asChild variant="default">
+              <Link to="/store">{t('storefront-missing-action', { defaultValue: 'Go to the store' })}</Link>
+            </Button>
+          }
+        />
+      </PageLayout>
+    );
+  }
 
- const validForm = form.title.trim().length >= 2 && parseInt(form.price, 10) > 0;
+  const validForm = form.title.trim().length >= 2 && parseInt(form.price, 10) > 0;
+  const creatorName = creator.name || creator.handle || t('creator', { defaultValue: 'Creator' });
 
- return (
- <div>
- <PinnedHero
- eyebrow={
- creator.handle
- ? `@${creator.handle}`
- : t('storefront-eyebrow', { defaultValue:'Creator store'})
- }
- title={creator.name || t('creator', { defaultValue:'Creator'})}
- subtitle={t('storefront-hero-sub', {
- defaultValue:'Coin-purchasable drops, straight from the creator.',
- })}
- />
- <ColumnHeader
- title={t('creators-store', {
- name: creator.name || creator.handle ||'Creator',
- defaultValue:"{{name}}'s store",
- })}
- actions={
- isOwner && (
- <Button
- size="sm"
- variant="default"
- onClick={() => setShowForm((v) => !v)}
- >
- <Plus className="h-3.5 w-3.5"/> {t('new-product', { defaultValue:'New product'})}
- </Button>
- )
- }
- />
+  return (
+    <PageLayout
+      title={t('creators-store', { name: creatorName, defaultValue: "{{name}}'s store" })}
+      description={t('storefront-lead', { defaultValue: 'Sold for coins. Buyers get the deliverable at once.' })}
+      headerRight={
+        isOwner ? (
+          <Button variant="primary" onClick={() => setShowForm(true)}>
+            <Plus aria-hidden />
+            {t('new-product', { defaultValue: 'New product' })}
+          </Button>
+        ) : undefined
+      }
+    >
+      <Link
+        to="/u/$userid"
+        params={{ userid: creator.handle ?? creator.id }}
+        className="flex min-h-11 items-center gap-3 border-y border-site-border py-3"
+      >
+        <UserAvatar user={creator} linkToProfile={false} />
+        <span className="min-w-0">
+          <span className="t-body block truncate font-medium text-site-text">{creatorName}</span>
+          {creator.handle ? (
+            <span className="t-meta block truncate" dir="ltr">
+              @{creator.handle}
+            </span>
+          ) : null}
+        </span>
+        <span className="t-body ms-auto shrink-0 text-site-text-muted">
+          {t('storefront-view-profile', { defaultValue: 'View profile' })}
+        </span>
+      </Link>
 
- <div className="mx-4 mt-4 flex items-center gap-3 rounded-site px-4 py-3">
- <UserAvatar user={creator} />
- <div className="min-w-0">
- <p className="truncate text-sm font-semibold text-site-text">
- {creator.name ||'Creator'}
- </p>
- {creator.handle && (
- <p className="truncate text-xs text-site-text-muted">@{creator.handle}</p>
- )}
- </div>
- </div>
+      {products.length === 0 ? (
+        <EmptyState
+          className="pt-6"
+          title={t('storefront-empty-title', { defaultValue: 'No products yet' })}
+          description={
+            isOwner
+              ? t('storefront-empty-owner', {
+                  defaultValue: 'List something you make: a file, a code, a link or a message.',
+                })
+              : t('no-products-visitor', { defaultValue: 'This creator has no products yet.' })
+          }
+        />
+      ) : (
+        <ul>
+          {products.map((p) => (
+            <li key={p.id} className="flex flex-col gap-2 border-b border-site-border py-4">
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="t-body min-w-0 break-words font-medium text-site-text">{p.title}</h2>
+                <CoinAmount amount={p.price} className="t-body text-site-text" />
+              </div>
+              {p.description ? (
+                <p className="t-body text-site-text-muted">{p.description}</p>
+              ) : null}
+              <p className="t-meta flex flex-wrap items-center gap-2">
+                <span>
+                  {t('sold-count', {
+                    count: p.salesCount,
+                    formattedCount: fmt(p.salesCount),
+                    defaultValue: '{{formattedCount}} sold',
+                  })}
+                </span>
+                {!p.active ? (
+                  <Badge>{t('storefront-hidden', { defaultValue: 'Hidden' })}</Badge>
+                ) : null}
+              </p>
 
- {showForm && (
- <div className="mx-4 mt-4 rounded-site p-5">
- <div className="flex items-center justify-between">
- <h2 className="text-sm font-semibold text-site-text">
- {t('new-product', { defaultValue:'New product'})}
- </h2>
- <IconButton
- icon={X}
- label={t('close', { defaultValue:'Close'})}
- onClick={() => setShowForm(false)}
- />
- </div>
- <div className="mt-3 space-y-3">
- <Input
- value={form.title}
- onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
- placeholder={t('title-placeholder', { defaultValue:'Title'})}
- maxLength={80}
+              {p.deliverable ? (
+                <div className="border-s-2 border-site-border ps-3">
+                  <p className="t-label">{t('deliverable-label', { defaultValue: 'Deliverable' })}</p>
+                  <p className="t-body whitespace-pre-wrap break-words text-site-text">
+                    {p.deliverable}
+                  </p>
+                </div>
+              ) : null}
 
- />
- <Textarea
- value={form.description}
- onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
- placeholder={t('description-optional-placeholder', {
- defaultValue:'Description (optional)',
- })}
- maxLength={500}
- rows={2}
- className="resize-none"
- />
- <Input
- type="number"
- min={1}
- value={form.price}
- onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
- placeholder={t('price-coins-placeholder', { defaultValue:'Price (coins)'})}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {isOwner ? (
+                  <>
+                    <Button
+                      variant="default"
+                      disabled={busy !== null}
+                      loading={busy === `tog:${p.id}`}
+                      onClick={() => toggleActive(p)}
+                    >
+                      {p.active
+                        ? t('hide', { defaultValue: 'Hide' })
+                        : t('show', { defaultValue: 'Show' })}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      disabled={busy !== null}
+                      loading={busy === `del:${p.id}`}
+                      onClick={() => remove(p)}
+                    >
+                      {t('delete', { defaultValue: 'Delete' })}
+                    </Button>
+                  </>
+                ) : p.owned ? (
+                  <p className="t-body inline-flex min-h-9 items-center gap-1 text-site-text">
+                    <Check className="size-4" aria-hidden />
+                    {t('purchased', { defaultValue: 'Purchased' })}
+                  </p>
+                ) : signedIn ? (
+                  <Button
+                    variant="default"
+                    disabled={busy !== null}
+                    loading={busy === `buy:${p.id}`}
+                    onClick={() => buy(p)}
+                  >
+                    {t('buy', { defaultValue: 'Buy' })}
+                  </Button>
+                ) : (
+                  <Button asChild variant="default">
+                    <a href="/login">{t('sign-in-to-buy', { defaultValue: 'Sign in to buy' })}</a>
+                  </Button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
 
- />
- <Textarea
- value={form.deliverable}
- onChange={(e) => setForm((f) => ({ ...f, deliverable: e.target.value }))}
- placeholder={t('deliverable-placeholder', {
- defaultValue:'Deliverable — link, code, or message revealed to buyers (optional)',
- })}
- maxLength={2000}
- rows={2}
- className="resize-none"
- />
- {error && <p className="text-xs text-site-danger">{error}</p>}
- <div className="flex justify-end">
- <Button
- size="sm"
- variant="default"
- disabled={!validForm || busy !== null}
- onClick={create}
- >
- {busy ==='create'? (
- <Loader2 className="h-3.5 w-3.5 animate-spin"/>
- ) : (
- t('list-product', { defaultValue:'List product'})
- )}
- </Button>
- </div>
- </div>
- </div>
- )}
-
- <div className="space-y-3 px-4 pt-4 pb-12">
- {products.length === 0 ? (
- <EmptyState
- description={
- isOwner
- ? t('no-products-owner', { defaultValue:'No products yet — list your first one!'})
- : t('no-products-visitor', { defaultValue:'This creator has no products yet.'})
- }
- />
- ) : (
- products.map((p) => (
- <div
- key={p.id}
- className={`rounded-site p-5 ${p.active ?'':'opacity-70'}`}
- >
- <div className="flex items-start justify-between gap-3">
- <div className="min-w-0">
- <p className="font-semibold text-site-text">{p.title}</p>
- {p.description && (
- <p className="mt-0.5 text-sm text-site-text-muted">{p.description}</p>
- )}
- <p className="mt-1 text-xs text-site-text-muted">
- {t('sold-count', {
- count: p.salesCount,
- formattedCount: fmt(p.salesCount),
- defaultValue:'{{formattedCount}} sold',
- })}
- {!p.active ? t('hidden-suffix', { defaultValue:'· hidden'}) :''}
- </p>
- </div>
- <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-site-text">
- <CoinIcon className="h-4 w-4"/> {fmt(p.price)}
- </span>
- </div>
-
- {p.deliverable && (
- <div className="mt-3 rounded-site-sm border border-site-accent/30 bg-site-accent/5 px-3 py-2 text-sm text-site-text">
- <p className="mb-1 text-xs font-semibold text-site-accent">
- {t('deliverable-label', { defaultValue:'Deliverable'})}
- </p>
- <p className="whitespace-pre-wrap break-words">{p.deliverable}</p>
- </div>
- )}
-
- <div className="mt-3 flex items-center gap-2">
- {isOwner ? (
- <>
- <Button
- size="sm"
- variant="default"
- disabled={busy !== null}
- onClick={() => toggleActive(p)}
- >
- {p.active ? (
- <EyeOff className="h-3.5 w-3.5"/>
- ) : (
- <Eye className="h-3.5 w-3.5"/>
- )}
- {p.active
- ? t('hide', { defaultValue:'Hide'})
- : t('show', { defaultValue:'Show'})}
- </Button>
- <Button
- size="sm"
- variant="ghost"
- disabled={busy !== null}
- onClick={() => remove(p.id)}
- className="gap-1 text-site-text-muted hover:text-site-danger"
- >
- <Trash2 className="h-3.5 w-3.5"/> {t('delete', { defaultValue:'Delete'})}
- </Button>
- </>
- ) : p.owned ? (
- <span className="inline-flex items-center gap-1 text-sm font-semibold text-site-accent">
- <Check className="h-4 w-4"/> {t('purchased', { defaultValue:'Purchased'})}
- </span>
- ) : (
- <Button
- size="sm"
- variant="default"
- disabled={!signedIn || busy !== null}
- onClick={() => buy(p.id)}
- >
- {busy === `buy:${p.id}`? (
- <Loader2 className="h-3.5 w-3.5 animate-spin"/>
- ) : (
- <ShoppingBag className="h-3.5 w-3.5"/>
- )}
- {signedIn
- ? t('buy', { defaultValue:'Buy'})
- : t('sign-in-to-buy', { defaultValue:'Sign in to buy'})}
- </Button>
- )}
- </div>
- </div>
- ))
- )}
- </div>
- </div>
- );
+      <Dialog
+        open={showForm}
+        onOpenChange={(next) => {
+          setShowForm(next);
+          if (!next) setError(null);
+        }}
+      >
+        <DialogContent mobileFullscreen className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('new-product', { defaultValue: 'New product' })}</DialogTitle>
+            <DialogDescription>
+              {t('storefront-form-desc', {
+                defaultValue: 'Buyers pay in coins and see the deliverable as soon as they buy.',
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            id={formId}
+            className="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (validForm) void create();
+            }}
+          >
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`${formId}-title`}>
+                {t('storefront-field-title', { defaultValue: 'Name' })}
+              </Label>
+              <Input
+                id={`${formId}-title`}
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                maxLength={80}
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`${formId}-price`}>
+                {t('storefront-field-price', { defaultValue: 'Price in coins' })}
+              </Label>
+              <Input
+                id={`${formId}-price`}
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={form.price}
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`${formId}-description`}>
+                {t('storefront-field-description', { defaultValue: 'Description (optional)' })}
+              </Label>
+              <Textarea
+                id={`${formId}-description`}
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                maxLength={500}
+                rows={2}
+                className="resize-none"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`${formId}-deliverable`}>
+                {t('storefront-field-deliverable', { defaultValue: 'Deliverable (optional)' })}
+              </Label>
+              <Textarea
+                id={`${formId}-deliverable`}
+                value={form.deliverable}
+                onChange={(e) => setForm((f) => ({ ...f, deliverable: e.target.value }))}
+                maxLength={2000}
+                rows={2}
+                className="resize-none"
+                aria-describedby={`${formId}-deliverable-hint`}
+              />
+              <p id={`${formId}-deliverable-hint`} className="t-body text-site-text-muted">
+                {t('storefront-field-deliverable-hint', {
+                  defaultValue: 'A link, a code or a message. Only buyers see it.',
+                })}
+              </p>
+            </div>
+            {error ? (
+              <p role="alert" className="t-body text-site-danger">
+                {error}
+              </p>
+            ) : null}
+          </form>
+          <DialogFooter>
+            <Button variant="default" onClick={() => setShowForm(false)}>
+              {t('cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              type="submit"
+              form={formId}
+              variant="primary"
+              disabled={!validForm}
+              loading={busy === 'create'}
+            >
+              {t('list-product', { defaultValue: 'List product' })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </PageLayout>
+  );
 }
