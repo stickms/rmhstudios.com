@@ -1,6 +1,6 @@
 /**
  * The site shell (Steel section 9, 8.1; plan 15.1): it renders complete with no client hooks of its own, the sidebar
- * lists exactly the five sections, and the phone globe is a button that exposes `aria-expanded`, opens on a state
+ * lists the sections as words ("You" is its account row), and the phone globe is a button that exposes `aria-expanded`, opens on a state
  * attribute and closes on Escape. The suite is `node` (no DOM), so markup is asserted through `renderToString`, the
  * keyboard rules through the pure functions the component delegates to, and the motion contract through the stylesheet.
  * `testing/e2e/steel-rest.mjs` drives the real thing in a browser.
@@ -46,7 +46,7 @@ vi.mock('@/lib/useNotificationCount', () => ({ useNotificationCount: () => ({ co
 vi.mock('@/hooks/useMediaQuery', () => ({ useMediaQuery: () => false }));
 
 const { SiteShell } = await import('../SiteShell');
-const { SECTIONS, currentSection, pageOwnsPrimary } = await import('../sections');
+const { SECTIONS, SIDEBAR_SECTIONS, currentSection, isViewerPath, pageOwnsPrimary } = await import('../sections');
 const { globeKeyAction } = await import('../globe-nav-state');
 
 const ROOT = join(__dirname, '../../..');
@@ -166,13 +166,30 @@ describe('on desktop the docked globe is part of the sidebar, not a fixed layer 
   });
 });
 
-describe('the sidebar lists exactly the five sections (L4)', () => {
-  it('Feed, Explore, Games, Inbox, You, as words, in that order', () => {
+describe('the sidebar lists the sections as words, and "You" is the account row (L4; owner, 2026-11-13)', () => {
+  it('Feed, Explore, Games, Inbox, as words, in that order: no "You"', () => {
+    // "You" is still a section (`/sections` lists it, and a profile knows where it is); the sidebar does not name it.
     expect(SECTIONS.map((s) => s.id)).toEqual(['front', 'explore', 'games', 'inbox', 'you']);
+    expect(SIDEBAR_SECTIONS.map((s) => s.id)).toEqual(['front', 'explore', 'games', 'inbox']);
     const out = html();
     const nav = /<nav class="site-sidebar__sections" aria-label="Sections">([\s\S]*?)<\/nav>/.exec(out)![1]!;
     const labels = [...nav.matchAll(/<a [^>]*>([^<]+)</g)].map((m) => m[1]);
-    expect(labels).toEqual(['Feed', 'Explore', 'Games', 'Inbox', 'You']);
+    expect(labels).toEqual(['Feed', 'Explore', 'Games', 'Inbox']);
+    // Nothing in the sidebar's lists is current on a profile: the account row is.
+    expect(/<nav class="site-sidebar__sections"[\s\S]*?<\/nav>/.exec(html('/u/rmh'))![0]).not.toContain('aria-current');
+  });
+
+  it('signed out, the account row is Sign in and the way to every section', () => {
+    const row = /<div class="site-sidebar__account">([\s\S]*?)<\/div>/.exec(html())![1]!;
+    expect(row).toMatch(/<a [^>]*href="\/login"[^>]*>Sign in<\/a>/);
+    expect(row).toMatch(/href="\/sections"/);
+  });
+
+  it('knows the viewer\'s own pages from anyone else\'s', () => {
+    expect(isViewerPath('/u/rmh', '/u/rmh')).toBe(true);
+    expect(isViewerPath('/u/rmh/post/abc', '/u/rmh')).toBe(true);
+    expect(isViewerPath('/u/rmhx', '/u/rmh')).toBe(false);
+    expect(isViewerPath('/u/rmh', null)).toBe(false);
   });
 
   it('lists the other destinations as a second, quieter list of words', () => {

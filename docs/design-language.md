@@ -84,7 +84,7 @@ and forms. What it means on each page is fixed by the recipes (P4); do not inven
 
 ## 6. The shell
 
-`components/shell/SiteShell.tsx` mounts every `_site` page: a 220px sidebar of the five sections and the docked globe on
+`components/shell/SiteShell.tsx` mounts every `_site` page: a 220px sidebar of the sections and the docked globe on
 desktop, the docked globe alone on a phone, an optional 320px margin (`NoMargin` opts a page out). Top-level routes (games,
 login, legal) are full-screen and outside it. `PageLayout` supplies the title block, the optional back link and breadcrumbs,
 and the content column; `PageFrame` supplies the column for a page whose content already names itself.

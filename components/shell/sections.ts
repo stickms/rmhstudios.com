@@ -1,6 +1,11 @@
 /**
- * The five sections (Steel 8.1 G3, 9 L4): Front, Explore, Games, Inbox, You. One list feeds the sidebar, the phone
- * globe's pins and `/sections`, so the three can never disagree about what exists or what is current.
+ * The five sections (Steel 8.1 G3, 9 L4): Front, Explore, Games, Inbox, You. One list feeds the sidebar, `/sections`
+ * and "which section is this path in", so they can never disagree about what exists or what is current.
+ *
+ * The sidebar lists the first four as words. "You" is not a word there (owner, 2026-11-13: "get rid of 'you' on the
+ * sidebar since people can just click on their icon/avatar in the bottom left"): the account row at the sidebar's foot
+ * is the link to the viewer's own page, and on a phone the open globe's bar carries it (GlobeBar). It stays a section,
+ * so `/sections` still lists it and a profile or settings page still knows where it is.
  *
  * Client-safe and free of React: `href` is a function of the signed-in handle because "You" is the viewer's own page.
  */
@@ -39,6 +44,9 @@ export const SECTIONS: readonly Section[] = [
   },
 ] as const;
 
+/** The sections the desktop sidebar lists as words: all but "You", which is the account row at its foot. */
+export const SIDEBAR_SECTIONS: readonly Section[] = SECTIONS.filter((section) => section.id !== 'you');
+
 const matches = (pathname: string, base: string) =>
   base === '/' ? pathname === '/' : pathname === base || pathname.startsWith(`${base}/`);
 
@@ -53,6 +61,11 @@ export function viewerPathFor(
   user: { id: string; handle?: string | null } | null | undefined,
 ): string | null {
   return user ? `/u/${user.handle || user.id}` : null;
+}
+
+/** Whether `pathname` is the viewer's own profile or a page under it (their posts), given {@link viewerPathFor}. */
+export function isViewerPath(pathname: string, viewerPath: string | null): boolean {
+  return viewerPath !== null && matches(pathname, viewerPath);
 }
 
 /**

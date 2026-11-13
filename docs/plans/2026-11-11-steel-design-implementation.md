@@ -364,7 +364,7 @@ own pins.
 | L1 | **Phone (< 1024px):** one column, 18px side padding, 16px top padding plus `env(safe-area-inset-top)`. No fixed header. The page title scrolls with the page. The globe is the only fixed element. |
 | L2 | **Desktop (≥ 1024px):** a three-column frame capped at 1240px and centred: sidebar 220px · content `1fr` · margin 320px. Columns are divided by 1px rules that run the full height. |
 | L3 | **Desktop, no margin (1024–1279px, or pages that do not need one):** sidebar 220px · content `1fr`. Catalogue and settings use this at every width. |
-| L4 | **Sidebar,** top to bottom, 22px top and 24px side padding: the words "RMH Studios" (15px, 600) · the five sections as words (15px; current is ink 600, others muted; 7px vertical padding) · the primary "Write a post" button · the signed-in handle with a 28px avatar · the globe, pushed to the bottom (G10). No icons beside the words. |
+| L4 | **Sidebar,** top to bottom, 22px top and 24px side padding: the words "RMH Studios" (15px, 600) · the sections as words: Feed, Explore, Games, Inbox (15px; current is ink 600, others muted; 7px vertical padding) · the primary "Write a post" button · the account row: the signed-in handle with a 28px avatar, one link to the viewer's own profile and ink 600 there, with three dots beside it for the account menu · the globe, pushed to the bottom (G10). No icons beside the words. "You" is not one of the words (owner, 2026-11-13: "get rid of 'you' on the sidebar since people can just click on their icon/avatar in the bottom left"); it stays a section on `/sections`, and on a phone the open globe's bar leads to the profile (G3a). |
 | L5 | **Content column:** 40px side padding in the three-column frame, 48px in the two-column one. Reading content (feed, thread, article, settings) is capped at 640px wide. Grids may use the full column. |
 | L6 | **Margin column:** 22px top and 24px side padding. A search field, then at most two short lists, each under a `t-label` heading, rows on rules. Nothing in the margin is a card. The one picture is a 32px avatar beside each person in "Who to follow", whose row is the avatar, the name, the handle and, where accounts the viewer follows already follow them, one line naming up to two (owner, 2026-11-13: "recommended users on the sidebar should have an avatar (maybe also show followed by mutuals)"; this replaces "nothing carries a picture"). Its content loads after the main column. |
 | L7 | Vertical rhythm: 14px inside a row, 22px above a station, 26px above a page title on desktop. |
@@ -449,7 +449,7 @@ against this document.
 | `components/shell/SiteShell.tsx` | The frame from section 9: sidebar, content slot, optional margin slot |
 | `components/shell/Sidebar.tsx` | L4, with the desktop globe (G10) |
 | `components/shell/GlobeNav.tsx` + `globe-nav.css` | Section 8.1. A button, a nav, CSS state. No canvas. |
-| `components/shell/__tests__/` | The shell renders with no client hooks; the globe exposes `aria-expanded`; the sidebar lists exactly the five sections |
+| `components/shell/__tests__/` | The shell renders with no client hooks; the globe exposes `aria-expanded`; the sidebar lists the sections as words and its account row is "You" |
 | `app/routes/_site/sections.tsx` | The no-script destination list (G7) |
 
 ### 15.2 Change

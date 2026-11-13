@@ -1355,6 +1355,7 @@
   "shell-unread-count_other": "{{count}} unread",
   "shell-write-post": "Write a post",
   "shell-you-fallback": "You",
+  "shell-your-profile": "Your profile, {{name}}",
   "shop-categories-label": "Shop categories",
   "shop-eyebrow": "Cosmetics & flair",
   "shop-hero-sub": "Spend your coins on name colors, badges, avatar frames and more — then equip them across the studio.",

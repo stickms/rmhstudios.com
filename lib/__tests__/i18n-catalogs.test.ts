@@ -689,6 +689,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // Sidebar account row and the open globe's bar (owner, 2026-11-13). English-only until the translate pipeline runs.
+    'shell-your-profile',
     // Post menu and icon pass (owner, 2026-11-13). English-only until the translate pipeline runs.
     'post-actions',
     'post-link-copied',
