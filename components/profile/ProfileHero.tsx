@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { BadgeCheck, Bot, Coins, Gift, ShieldCheck } from 'lucide-react';
 
 import { AchievementBadgeStrip } from '@/components/feed/AchievementBadgeStrip';
+import { EmojiText } from '@/components/ui/emoji';
 import { StatusBadge } from '@/components/feed/StatusBadge';
 import { StatusEditor } from '@/components/feed/StatusEditor';
 import { VinylRecord } from '@/components/feed/VinylRecord';
@@ -22,6 +23,7 @@ import { getFeaturedProfileLink } from '@/lib/profile/featured-links';
 import { SITE_URL } from '@/lib/seo';
 import { ProfileIdentityExtras } from './plus/ProfileIdentityExtras';
 import type { ProfileData } from './profile-types';
+import { ProfileBanner } from './ProfileBanner';
 import './profile.css';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
@@ -146,6 +148,8 @@ export function ProfileHero({
 }: ProfileHeroProps) {
   const { t } = useTranslation('feed');
   const name = displayName || profile.username || t('user', { defaultValue: 'User' });
+  // The banner box holds the uploaded picture; without one, the equipped banner cosmetic, or else the equipped theme's
+  // backdrop. Steel phase 5 dropped the element that drew this value and left the line that computed it.
   const headerBackdrop = profile.cosmetics?.banner?.gradient ?? profile.cosmetics?.theme?.gradient;
   const joined = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(
     new Date(profile.createdAt),
@@ -175,11 +179,11 @@ export function ProfileHero({
   // is the spine below (ProfileColumn).
   return (
     <header className="profile-head">
-      {profile.bannerUrl ? (
-        <div
+      {profile.bannerUrl || headerBackdrop ? (
+        <ProfileBanner
+          src={profile.bannerUrl}
+          backdrop={headerBackdrop}
           className="profile-head__banner"
-          style={{ backgroundImage: `url(${profile.bannerUrl})` }}
-          aria-hidden
         />
       ) : null}
 
@@ -192,7 +196,7 @@ export function ProfileHero({
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
             <h1 className="t-title truncate" style={nameStyle}>
-              {name}
+              <EmojiText>{name}</EmojiText>
             </h1>
             <IdentityBadges profile={profile} />
           </div>
@@ -215,7 +219,9 @@ export function ProfileHero({
       </div>
 
       {profile.bio ? (
-        <p className="t-body mt-3 max-w-2xl whitespace-pre-wrap break-words">{profile.bio}</p>
+        <p className="t-body mt-3 max-w-2xl whitespace-pre-wrap break-words">
+          <EmojiText>{profile.bio}</EmojiText>
+        </p>
       ) : profile.isOwnProfile ? (
         <button
           type="button"
@@ -362,7 +368,7 @@ export function ProfileHero({
       </div>
 
       <p className="t-meta mt-3 flex flex-wrap gap-x-4 gap-y-1">
-        {profile.location ? <span>{profile.location}</span> : null}
+        {profile.location ? <EmojiText>{profile.location}</EmojiText> : null}
         {profile.website ? (
           <a
             href={safeHref(profile.website)}

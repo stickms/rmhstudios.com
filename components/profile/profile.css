@@ -3,14 +3,16 @@
 .profile-head {
   padding-block-end: 8px;
 }
+/* The banner's box (its ratio, border and placeholder) is components/profile/ProfileBanner.tsx; only its place in the
+   header is set here. It has no height: the ratio gives it one from the column's width. */
 .profile-head__banner {
-  block-size: 96px;
   margin-block-end: 16px;
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius);
-  background-color: var(--site-bg-subtle);
-  background-size: cover;
-  background-position: center;
+}
+/* An equipped point-shop theme writes its accent over the profile column (profileThemeStyle). Steel draws the active
+   tab's underline in ink, which no longer follows the accent, so on a themed profile the underline takes it back: a
+   solid colour on a 2px rule, and the active tab is still marked by its ink text as well (A2). */
+.profile-themed [role='tab']::after {
+  background-color: var(--site-accent);
 }
 /* Membership and tip goal: a heading and a line under a rule, not a card. */
 .profile-head__block {

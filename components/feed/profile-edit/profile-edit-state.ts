@@ -3,6 +3,7 @@
  * the modal makes from its draft — dirty/can-save, handle sanitising, link
  * clean-up and the PATCH body. No React, no I/O.
  */
+import { PROFILE_BANNER_MAX_MB } from '@/lib/profile/banner';
 import type { SpotifyTrack } from '../SpotifySongSearch';
 
 export interface ProfileSongData {
@@ -52,6 +53,30 @@ export interface ProfileEditInitial extends ProfileSongData {
   membershipPriceCoins?: number | null;
 }
 
+/**
+ * The whole picture a banner is cropped from. `kept` means the server already holds it (it
+ * was read back to adjust the crop), so a save sends only the new crop; otherwise it is a
+ * picture chosen in this session and is uploaded with the crop as the new source.
+ */
+export interface BannerPicture {
+  blob: Blob;
+  kept: boolean;
+}
+
+/** A banner picture open in the cropper; `src` is an object URL for `blob`. */
+export interface BannerCropSession extends BannerPicture {
+  src: string;
+}
+
+/** The multipart body of a banner save (`uploadBannerApi`). */
+export function buildBannerUpload(crop: File, picture: BannerPicture | null): FormData {
+  const form = new FormData();
+  form.append('banner', crop);
+  if (picture?.kept) form.append('source', 'keep');
+  else if (picture) form.append('original', picture.blob, 'original');
+  return form;
+}
+
 export type EditorSection = 'identity' | 'links' | 'creator' | 'privacy';
 export type HandleStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
@@ -60,7 +85,7 @@ export const MAX_BIO = 160;
 export const MAX_LOCATION = 100;
 export const MAX_WEBSITE = 200;
 export const MAX_AVATAR_MB = 5;
-export const MAX_BANNER_MB = 8;
+export const MAX_BANNER_MB = PROFILE_BANNER_MAX_MB;
 export const MAX_HANDLE = 20;
 
 /** The editable draft the dirty/save derivations read. */

@@ -63,3 +63,64 @@ export function Emoji({ children, label, className, size = '1em' }: EmojiProps) 
     />
   );
 }
+
+/**
+ * One emoji as Twemoji would draw it: a flag (two regional indicators), a keycap, or a
+ * pictograph with its modifiers, variation selectors, tag sequence and ZWJ joins. Written with
+ * Unicode property escapes rather than taken from `@twemoji/api`, whose regex lives in the
+ * lazily loaded chunk the provider waits for.
+ */
+const EMOJI_SEQUENCE =
+  /\p{Regional_Indicator}{2}|[0-9#*]\uFE0F?\u20E3|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier}|[\u{E0020}-\u{E007F}]+)*(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})*)*/gu;
+
+/**
+ * A lone character that is a pictograph only on request (the copyright sign, an arrow, a card
+ * suit written without U+FE0F) stays text, as it does for the provider.
+ */
+function drawsAsEmoji(sequence: string): boolean {
+  return [...sequence].length > 1 || /^\p{Emoji_Presentation}$/u.test(sequence);
+}
+
+/** `text` cut into plain runs and emoji, in order. Exported for the test. */
+export function splitEmoji(text: string): { emoji: boolean; value: string }[] {
+  const parts: { emoji: boolean; value: string }[] = [];
+  let last = 0;
+  for (const match of text.matchAll(EMOJI_SEQUENCE)) {
+    const value = match[0];
+    const at = match.index ?? 0;
+    if (!drawsAsEmoji(value)) continue;
+    if (at > last) parts.push({ emoji: false, value: text.slice(last, at) });
+    parts.push({ emoji: true, value });
+    last = at + value.length;
+  }
+  if (last < text.length) parts.push({ emoji: false, value: text.slice(last) });
+  return parts;
+}
+
+/**
+ * `<EmojiText>`: a string of user-authored text with its emoji drawn as Twemoji, by React.
+ *
+ * This is the renderer for short text that React re-renders or that must be right in the
+ * first paint (a status, a display name, a bio line), and for anything inside a portal that
+ * mounts before the provider has loaded its chunk. The text stays text: each emoji becomes an
+ * `<Emoji>` image whose `alt` is the emoji, so copying, screen readers and a blocked CDN all
+ * get the character back. It renders into a `data-no-twemoji` span, so the provider's
+ * observer leaves the result alone, and it never uses `dangerouslySetInnerHTML`.
+ */
+export function EmojiText({ children, className }: { children: string; className?: string }) {
+  const parts = splitEmoji(children);
+  return (
+    <span data-no-twemoji className={className}>
+      {parts.map((part, i) =>
+        part.emoji ? (
+          // Keyed by position: the parts of one string have no other identity.
+          <Emoji key={i} label={part.value}>
+            {part.value}
+          </Emoji>
+        ) : (
+          part.value
+        ),
+      )}
+    </span>
+  );
+}

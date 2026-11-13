@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Link } from '@tanstack/react-router';
@@ -96,7 +97,10 @@ export function ProfileColumn({
   }
 
   return (
-    <div className="flex flex-col" style={profileThemeStyle(profile)}>
+    <div
+      className={cn('flex flex-col', profile.cosmetics?.theme && 'profile-themed')}
+      style={profileThemeStyle(profile)}
+    >
       <ProfileHero
         profile={profile}
         displayName={displayName}

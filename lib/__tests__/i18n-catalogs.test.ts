@@ -683,6 +683,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // Profile banner crop (2026-11-13): the editor's "Adjust crop" control and its load error. English-only until the translate pipeline runs on build.
+    'adjust-cover',
+    'failed-load-banner',
     // Steel phase 5 (2026-11-12): the settings hub's stations. English-only until the translate pipeline runs on build; remove with it.
     'conversation-send',
     'explore-from-studio',

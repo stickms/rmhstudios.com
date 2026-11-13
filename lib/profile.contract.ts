@@ -1,6 +1,6 @@
 /**
  * Contracts for /api/profile (redesign audit C1). Client-safe: types only.
- * Avatar and banner uploads are multipart and stay raw calls.
+ * Avatar and banner uploads are multipart (`body: FormData`).
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
@@ -37,10 +37,25 @@ export const uploadAvatarApi = endpoint<{ body: FormData; res: { image: string }
   path: '/api/profile/avatar',
 });
 
-/** Multipart: `banner` (one image, <= 8 MB). Answers the stored banner URL. */
+/**
+ * Multipart, each image <= 8 MB (`PROFILE_BANNER_MAX_MB`): `banner` is the picture as framed;
+ * `original` is the whole picture it was framed from, kept so the crop can be adjusted later;
+ * `source=keep` marks a re-crop of the stored banner, whose kept picture stays. The server cuts
+ * `banner` to `PROFILE_BANNER_ASPECT` whatever it is sent. Answers the stored banner URL.
+ */
 export const uploadBannerApi = endpoint<{ body: FormData; res: { bannerUrl: string } }>()({
   method: 'POST',
   path: '/api/profile/banner',
+});
+
+/**
+ * The picture the caller's banner was cut from, as image bytes (not JSON): the kept upload, or
+ * the banner itself when none was kept. Same-origin, so the crop canvas can read it wherever the
+ * public banner is served from. Read it with `fetch(apiUrl(bannerSourceApi))`. 404 without a banner.
+ */
+export const bannerSourceApi = endpoint<{ res: Blob }>()({
+  method: 'GET',
+  path: '/api/profile/banner-source',
 });
 
 /** Reset to the account picture: removes the custom avatar and answers the avatar now in effect. */

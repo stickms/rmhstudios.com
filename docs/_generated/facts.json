@@ -6,13 +6,13 @@
   "prismaMigrations": 279,
   "routeFiles": 505,
   "apiRouteFiles": 111,
-  "registeredApiEndpoints": 882,
+  "registeredApiEndpoints": 883,
   "pageRouteFiles": 394,
   "i18nNamespaces": 132,
   "shippedLocales": 16,
-  "testFiles": 1067,
+  "testFiles": 1070,
   "workflows": 20,
-  "componentTsxFiles": 1460,
+  "componentTsxFiles": 1463,
   "cssFiles": 120,
-  "cssLines": 66475
+  "cssLines": 66477
 }

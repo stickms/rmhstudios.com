@@ -40,6 +40,8 @@ export function IdentitySection({
         preview={form.bannerPreview}
         inputRef={form.bannerInputRef}
         onSelect={assets.handleBannerSelect}
+        onAdjust={() => void assets.handleAdjustBanner()}
+        adjusting={form.bannerLoading}
         onRemove={assets.handleRemoveBanner}
       />
 
