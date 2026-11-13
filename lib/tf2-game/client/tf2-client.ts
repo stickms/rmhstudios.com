@@ -54,7 +54,7 @@ import { TF2_LIMITS, type BotDifficulty, type JoinedPayload, type RoomAdminPaylo
 import type { MatchCommand, MatchOptions } from '../server/match-host';
 import type { AudioEngine } from '../audio/engine';
 import { EntityLoopSounds, LateStartFilter } from '../audio/loops';
-import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
+import { modelLoaderFor } from '../render/bounded-gltf-loader';
 import { buildHudState, HudEventLog, hudSourceFromSnapshot, playerLookup, type HudSource } from './hud-adapter';
 import type { HudCommand, HudStore } from './hud-store';
 import { zoomSensitivityScale, type GameSettings } from './settings';
@@ -841,7 +841,8 @@ export class Tf2Client implements GameClient {
       const loaded = pkg.loaded!;
       this.trace = wallTrace(loaded.collision);
       const textures = core.textureCache(assets);
-      const models = new ModelLibrary({ url: (p) => gameAssetUrl(p, assets), loader: new Tf2GLTFLoader() });
+      // A few models at a time, and on a phone their textures at the plan's cap (bounded-gltf-loader.ts).
+      const models = new ModelLibrary({ url: (p) => gameAssetUrl(p, assets), loader: modelLoaderFor(core.plan) });
       this.models = models;
       this.progress.begin('textures');
       const world = new WorldRenderer({
@@ -850,6 +851,7 @@ export class Tf2Client implements GameClient {
         game: assets,
         textures,
         models,
+        leanProps: core.plan.tier === 'mobile',
         sunVisible: this.sunVisible,
       });
       this.world = world;
@@ -888,7 +890,7 @@ export class Tf2Client implements GameClient {
         this.progress.step('textures', peak - textures.pending, peak);
       }, 200);
       // Models: every body and arms the game shows, so nobody pops in.
-      const classModels = this.profile.preloadModels();
+      const classModels = this.profile.preloadModels(core.plan.tier === 'mobile');
       this.progress.begin('models', classModels.length);
       let doneModels = 0;
       const modelLoads = classModels.map((m) =>

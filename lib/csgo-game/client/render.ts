@@ -60,11 +60,12 @@ const ARM_MODELS = [
 /**
  * Every published model a match may show, preloaded with the map so the loading screen holds until they
  * are ready: both teams' player models (with their animations), the arms, every weapon's view and world
- * model, the planted bomb.
+ * model, the planted bomb. `essentialOnly` (the phone tier) leaves the weapons out: 89 weapon models are
+ * about 76 MB of files, and each loads when it is first drawn (the entity renderers and `CsViewModel` ask the model library then).
  */
-export function preloadCsModels(): string[] {
+export function preloadCsModels(essentialOnly = false): string[] {
   const out = new Set<string>([...Object.values(CS_PLAYER_MODELS), ...ARM_MODELS, PLANTED_C4]);
-  if (hasCsWeaponData()) {
+  if (!essentialOnly && hasCsWeaponData()) {
     for (const w of csWeaponTable().weapons.values()) {
       if (w.viewModel) out.add(w.viewModel);
       if (w.worldModel) out.add(w.worldModel);

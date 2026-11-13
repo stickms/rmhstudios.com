@@ -377,6 +377,16 @@ export class ModelLibrary implements ModelProvider {
     return a ? { gltf: a.gltf, materials: a.materials } : null;
   }
 
+  /**
+   * ModelProvider: forgets a model. Whoever already holds the asset keeps it; the next `asset()` loads it
+   * again. Static props call this on the phone tier once their meshes are built.
+   */
+  release(mdlPath: string): void {
+    const key = normalizeModelPath(mdlPath);
+    this.assets.delete(key);
+    this.ready.delete(key);
+  }
+
   /** Resolves when every request so far has settled. */
   async whenIdle(): Promise<void> {
     let n = -1;
