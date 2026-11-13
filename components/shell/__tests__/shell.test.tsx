@@ -155,7 +155,7 @@ describe('on desktop the docked globe is part of the sidebar, not a fixed layer 
     const frame = out.indexOf('site-shell__frame');
     expect(out.indexOf('class="site-margin"')).toBeGreaterThan(frame);
     expect(out.indexOf('class="globe-nav"')).toBeGreaterThan(out.indexOf('class="site-margin"'));
-    expect(out).toMatch(/<\/nav><\/div><\/div>/);
+    expect(read('components/shell/SiteShell.tsx')).toMatch(/<MarginColumn \/>[\s\S]*?<GlobeNav \/>\s*<\/div>/);
   });
 
   it('stays a fixed ball on a phone, 18px above the bottom edge', () => {
@@ -275,7 +275,9 @@ describe('the phone globe (G1 to G8)', () => {
     expect(pins.match(/globe-nav__pin-name/g)!.length).toBe(links.length);
     // The front page is named by the section word.
     expect(pins).toMatch(/globe-nav__pin-name">Feed</);
-    expect(pins).toContain('Write a post');
+    // The two text links that hung under the globe are gone: the menu does not write a post (owner, 2026-11-13).
+    expect(pins).not.toContain('Write a post');
+    expect(pins).not.toContain('All sections');
   });
 
   it('shows unread as a dot with a text equivalent when docked and a number on the Inbox pin (G8)', () => {
@@ -289,6 +291,62 @@ describe('the phone globe (G1 to G8)', () => {
     expect(src).toMatch(/void import\('@\/lib\/chrome'\)\.then\(\(m\) => m\.animateChrome\(360\)\)/);
     expect(src).not.toMatch(/from\s+['"]@\/lib\/chrome/);
     expect(src).not.toMatch(/Worker|getContext|requestAnimationFrame|<canvas/);
+  });
+});
+
+describe('the bar under the open globe (G3a; owner, 2026-11-13)', () => {
+  const css = read('components/shell/globe-nav.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const bar = (out: string) => /<div class="globe-nav__bar"[^>]*>([\s\S]*?)<\/div>/.exec(out)!;
+
+  it('signed out: Sign in, Search, Settings, the edition, All sections, each an icon with a short label', () => {
+    const [whole, inner] = bar(html());
+    expect(whole).toMatch(/^<div class="globe-nav__bar" role="group" aria-label="Account" inert=""/);
+    const labels = [...inner!.matchAll(/globe-nav__bar-label">([^<]+)</g)].map((m) => m[1]);
+    expect(labels).toEqual(['Sign in', 'Search', 'Settings', 'Day', 'All sections']);
+    expect(inner).toMatch(/<a [^>]*href="\/login"/);
+    expect(inner).toMatch(/<a [^>]*href="\/settings"/);
+    expect(inner).toMatch(/<a [^>]*href="\/sections"/);
+    // Every item leads with an icon that is decoration, and is a focus stop of the open globe.
+    const items = [...inner!.matchAll(/<(?:a|button)[^>]*class="globe-nav__bar-item"[^>]*>/g)].map((m) => m[0]);
+    expect(items).toHaveLength(5);
+    for (const item of items) expect(item).toContain('data-globe-stop=""');
+    expect(inner!.match(/<svg[^>]*aria-hidden="true"/g)).toHaveLength(5);
+    // The edition button says what it will do; Night is the default edition, so it offers Day.
+    expect(inner).toMatch(/<button[^>]*aria-label="Switch to the Day edition"/);
+    // Nothing in the menu writes a post (T7): the sidebar's button is the only one.
+    expect(inner).not.toContain('Write a post');
+  });
+
+  it('comes after the pins, so it is after them in the tab order, and Tab stays inside all three', () => {
+    const out = html();
+    expect(out.indexOf('class="globe-nav__bar"')).toBeGreaterThan(out.indexOf('class="globe-nav__pins"'));
+    expect(read('components/shell/GlobeNav.tsx')).toContain("'[data-pin], [data-globe-stop], [data-globe-button]'");
+  });
+
+  it('shows only while open, by opacity, and only its items take the pointer', () => {
+    const rest = /\n\.globe-nav__bar \{([^}]*)\}/.exec(css)![1]!;
+    expect(rest).toContain('opacity: 0');
+    expect(rest).toContain('visibility: hidden');
+    expect(rest).toContain('pointer-events: none');
+    expect(rest).toMatch(/transition:\s*opacity 0\.18s ease,\s*visibility 0s linear 0\.18s;/);
+    expect(css).toMatch(/\.globe-nav\[data-open\] \.globe-nav__bar \{\s*opacity: 1;\s*visibility: visible;/);
+    expect(css).toMatch(/\.globe-nav\[data-open\] \.globe-nav__bar-item \{\s*pointer-events: auto;/);
+  });
+
+  it('floats above the safe area by the docked globe\'s inset rule, never flush to the edge (iOS)', () => {
+    const rest = /\n\.globe-nav__bar \{([^}]*)\}/.exec(css)![1]!;
+    expect(rest).toContain('inset-block-end: calc(18px + env(safe-area-inset-bottom, 0px) + var(--vv-follow, 0px))');
+    expect(rest).not.toMatch(/inset-inline: 0|inline-size: 100/);
+    expect(rest).toContain('z-index: calc(var(--z-hub-orb-open) + 1)');
+  });
+
+  it('gives every item a 44px target, and stands as a column of icons when the window is too short', () => {
+    const item = /\.globe-nav \.globe-nav__bar-item \{([^}]*)\}/.exec(css)![1]!;
+    expect(item).toContain('min-inline-size: 48px');
+    expect(item).toContain('min-block-size: 52px');
+    const short = /@media \(max-height: 480px\), \(min-width: 1024px\) and \(max-height: 660px\) \{([\s\S]*?)\n\}\n/.exec(css)![1]!;
+    expect(short).toContain('flex-direction: column');
+    expect(short).toMatch(/min-inline-size: 44px;\s*min-block-size: 44px;/);
   });
 });
 
@@ -350,7 +408,8 @@ describe('the globe animates transform and opacity only, in 360 ms (G2, G6)', ()
     const props = [...css.matchAll(/transition:\s*([^;]+);/g)]
       .filter((m) => m[1]!.trim() !== 'none')
       .flatMap((m) => m[1]!.split(',').map((part) => part.trim().split(/\s+/)[0]));
-    expect(new Set(props)).toEqual(new Set(['transform', 'opacity', 'visibility']));
+    // `background-color` is the hover fill on the bar's items (M1, 90 ms): a colour, not a move.
+    expect(new Set(props)).toEqual(new Set(['transform', 'opacity', 'visibility', 'background-color']));
   });
 
   it('floats 18px above the bottom edge and follows Safari\'s toolbar and the inset in CSS', () => {
@@ -358,9 +417,9 @@ describe('the globe animates transform and opacity only, in 360 ms (G2, G6)', ()
     expect(css).toMatch(/\.globe-nav__dock \{[^}]*inset-block-end: var\(--globe-bottom\)/);
   });
 
-  it('places pins by transform from the sphere, never from fixed offsets, and hangs the write link under the globe', () => {
+  it('places pins by transform from the sphere, never from fixed offsets, and hangs no link under the globe', () => {
     expect(css).not.toMatch(/data-slot-pos/);
-    expect(css).toMatch(/\.globe-nav__write \{\s*--dy: calc\(var\(--globe-open-d\) \/ 2 \+ 40px\);/);
+    expect(css).not.toMatch(/globe-nav__write|globe-nav__more/);
     // The pins wait for the body AND for the menu: docked, the destinations are the dots the body draws on the sphere.
     expect(css).toMatch(/\.globe-nav\[data-open\]\[data-globe-live\] \.globe-nav__pins \{\s*opacity: 1;/);
     expect(css).not.toMatch(/\.globe-nav\[data-globe-live\] \.globe-nav__pins \{/);

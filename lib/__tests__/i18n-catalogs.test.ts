@@ -689,6 +689,11 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // The open globe's bar: the edition toggle (owner, 2026-11-13). English-only until the translate pipeline runs.
+    'shell-edition-day',
+    'shell-edition-night',
+    'shell-edition-to-day',
+    'shell-edition-to-night',
     // Sidebar account row and the open globe's bar (owner, 2026-11-13). English-only until the translate pipeline runs.
     'shell-your-profile',
     // Post menu and icon pass (owner, 2026-11-13). English-only until the translate pipeline runs.
