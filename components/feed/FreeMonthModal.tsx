@@ -6,6 +6,7 @@ import { claimFreeMonthApi, getFreeMonthApi } from '@/lib/promo.contract';
 import { useSession } from'@/components/Providers';
 import { Button } from'@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
+import { useSitewideAnnouncementStore } from'@/stores/sitewideAnnouncementStore';
 
 const COOLDOWN_KEY ='rmh-freemonth-snooze';
 const COOLDOWN_MS = 4 * 24 * 60 * 60 * 1000; // re-offer roughly every few days
@@ -37,7 +38,8 @@ export function FreeMonthModal() {
  if (snooze && Date.now() < snooze) return;
 
  const data = await api(getFreeMonthApi);
- if (!cancelled && data.eligible) setOpen(true);
+ // Never over the sitewide announcement popup; the snooze is untouched, so it is offered next visit.
+ if (!cancelled && data.eligible && !useSitewideAnnouncementStore.getState().open) setOpen(true);
  } catch {
  // ignore
  }

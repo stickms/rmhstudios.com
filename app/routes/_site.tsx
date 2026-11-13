@@ -37,6 +37,11 @@ const LanguageFirstRunModal = lazy(() =>
 const WhatsNewModal = lazy(() =>
   import('@/components/feed/WhatsNewModal').then((m) => ({ default: m.WhatsNewModal })),
 );
+const SitewideAnnouncementModal = lazy(() =>
+  import('@/components/announcements/SitewideAnnouncementModal').then((m) => ({
+    default: m.SitewideAnnouncementModal,
+  })),
+);
 const FreeMonthModal = lazy(() =>
   import('@/components/feed/FreeMonthModal').then((m) => ({ default: m.FreeMonthModal })),
 );
@@ -88,6 +93,7 @@ function SiteLayout() {
             <LanguageFirstRunModal />
             <WelcomeModal />
             <WhatsNewModal />
+            <SitewideAnnouncementModal />
             <FreeMonthModal />
             <KeyboardShortcuts />
             <TargetedNoticeBanner />

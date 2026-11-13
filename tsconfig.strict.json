@@ -23,6 +23,11 @@
     "lib/api/route-template.ts",
     "lib/api/route-sources.ts",
     "lib/streak-reminders.server.ts",
+    "lib/businesses.ts",
+    "lib/blog-media.ts",
+    "lib/sitewide-announcement.ts",
+    "lib/sitewide-announcement-schema.ts",
+    "lib/sitewide-announcement.contract.ts",
     "server/shared/session-auth.ts",
     "server/shared/redis-adapter.ts"
   ],

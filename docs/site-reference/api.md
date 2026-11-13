@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 987 endpoints across 197 groups: 109 route files under `app/routes/api` and 878 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 992 endpoints across 199 groups: 109 route files under `app/routes/api` and 883 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-94 routes.
+95 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -63,6 +63,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/appeals/:id` | `POST` | `lib/admin/api/admin.appeals.$id.server.ts` |
 | `/api/admin/audit-log` | `GET` | `lib/admin/api/admin.audit-log.server.ts` |
 | `/api/admin/blog` | `DELETE` `POST` | `lib/admin/api/admin.blog.server.ts` |
+| `/api/admin/blog/media` | `POST` | `lib/admin/api/admin.blog.media.server.ts` |
 | `/api/admin/bots` | `GET` `PUT` | `lib/admin/api/admin.bots.server.ts` |
 | `/api/admin/canvas` | `GET` `POST` | `lib/canvas/api/admin.canvas.server.ts` |
 | `/api/admin/canvas/:id` | `DELETE` | `lib/canvas/api/admin.canvas.$id.server.ts` |
@@ -273,6 +274,14 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | ----- | ------- | ------ |
 | `/api/birthday` | `DELETE` `GET` `PUT` | `lib/gifting/api/birthday.server.ts` |
 | `/api/birthday/next` | `GET` | `lib/gifting/api/birthday.next.server.ts` |
+
+## `/api/blog`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/blog/media/:filename` | `GET` | `lib/media/api/blog.media.$filename.server.ts` |
 
 ## `/api/bookmarks`
 
@@ -1421,7 +1430,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/profile`
 
-31 routes.
+32 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1449,6 +1458,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/profile/avatar` | `DELETE` `POST` | `lib/api/routes/profile.avatar.server.ts` |
 | `/api/profile/avatar/:filename` | `GET` | `app/routes/api/profile/avatar/$filename.ts` |
 | `/api/profile/banner` | `DELETE` `POST` | `lib/api/routes/profile.banner.server.ts` |
+| `/api/profile/banner-source` | `GET` | `lib/api/routes/profile.banner-source.server.ts` |
 | `/api/profile/banner/:filename` | `GET` | `app/routes/api/profile/banner/$filename.ts` |
 | `/api/profile/layout` | `GET` `PUT` | `lib/profile/api/profile.layout.server.ts` |
 | `/api/profile/me` | `GET` | `lib/profile/api/profile.me.server.ts` |
@@ -1892,6 +1902,15 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/signal-forge/load` | `GET` | `features/signal-forge/api/signal-forge.load.server.ts` |
 | `/api/signal-forge/save` | `POST` | `features/signal-forge/api/signal-forge.save.server.ts` |
 | `/api/signal-forge/score` | `POST` | `features/signal-forge/api/signal-forge.score.server.ts` |
+
+## `/api/sitewide-announcement`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/sitewide-announcement` | `GET` | `lib/api/routes/sitewide-announcement.server.ts` |
+| `/api/sitewide-announcement/seen` | `POST` | `lib/api/routes/sitewide-announcement.seen.server.ts` |
 
 ## `/api/slice-it`
 

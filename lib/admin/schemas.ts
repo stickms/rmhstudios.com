@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { handleSchema } from '@/lib/handle-schema';
+import { saveAnnouncementFieldsSchema } from '@/lib/sitewide-announcement-schema';
 
 export const adminUserUpdateSchema = z
   .object({
@@ -29,4 +30,5 @@ export const blogPostSchema = z.object({
     .transform((value) => (typeof value === 'string' ? (value.trim() ? [value] : []) : value)),
   content: z.string().min(1).max(2_000_000),
   isEdit: z.boolean().default(false),
+  ...saveAnnouncementFieldsSchema.shape,
 });
