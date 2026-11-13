@@ -69,6 +69,7 @@
   "ban-author": "作成者を禁止",
   "ban-length-prompt": "禁止期間（日数、空白＝永久）:",
   "ban-reason-prompt": "禁止理由:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "新しい開発者ログを作成したり、既存のブログ投稿を編集・削除したりできます。",
   "blog-title": "ブログ投稿の管理",
   "bot-no-email": "Automated account",
