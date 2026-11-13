@@ -342,11 +342,12 @@ describe('the bar under the open globe (G3a; owner, 2026-11-13)', () => {
 
   it('gives every item a 44px target, and stands as a column of icons when the window is too short', () => {
     const item = /\.globe-nav \.globe-nav__bar-item \{([^}]*)\}/.exec(css)![1]!;
-    expect(item).toContain('min-inline-size: 48px');
-    expect(item).toContain('min-block-size: 52px');
+    expect(item).toContain('min-inline-size: 44px');
+    expect(item).toContain('min-block-size: 44px');
+    // The words are names, not drawn: clipped at every size (owner, 2026-11-13).
+    expect(css).toMatch(/\n\.globe-nav__bar-label \{[^}]*clip-path: inset\(50%\)/);
     const short = /@media \(max-height: 480px\), \(min-width: 1024px\) and \(max-height: 660px\) \{([\s\S]*?)\n\}\n/.exec(css)![1]!;
     expect(short).toContain('flex-direction: column');
-    expect(short).toMatch(/min-inline-size: 44px;\s*min-block-size: 44px;/);
   });
 });
 
