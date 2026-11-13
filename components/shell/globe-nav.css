@@ -422,6 +422,7 @@ html.ios-webkit .globe-nav__fade {
   padding: 4px 8px;
   border: 1px solid var(--site-border);
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-surface);
   translate: -50% 0;
   opacity: 0;
@@ -459,6 +460,7 @@ html.ios-webkit .globe-nav__fade {
   padding: 6px 7px;
   border: 0;
   border-radius: 999px;
+  corner-shape: round;
   background: none;
   color: var(--site-text);
   font: inherit;
