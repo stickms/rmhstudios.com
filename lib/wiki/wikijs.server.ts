@@ -73,7 +73,7 @@ export function wikiPublicUrl(): string {
 }
 
 /** The one locale the site writes pages in. Wiki.js namespaces every path by locale. */
-function wikiLocale(): string {
+export function wikiLocale(): string {
   return process.env.WIKIJS_LOCALE || 'en';
 }
 
@@ -83,7 +83,14 @@ export function isWikiConfigured(): boolean {
 
 const TIMEOUT_MS = 10_000;
 
-async function gql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
+/**
+ * One authenticated GraphQL call. Exported for `./appearance.server.ts`; page
+ * work goes through the functions below.
+ */
+export async function wikiGraphql<T>(
+  query: string,
+  variables: Record<string, unknown> = {},
+): Promise<T> {
   const key = process.env.WIKIJS_API_KEY;
   if (!key) throw new WikiError('not_configured', 'WIKIJS_API_KEY is not set');
 
@@ -142,7 +149,7 @@ function toPage(raw: RawPage): WikiPage {
 }
 
 export async function listWikiPages(): Promise<WikiPageSummary[]> {
-  const data = await gql<{ pages: { list: WikiPageSummary[] } }>(
+  const data = await wikiGraphql<{ pages: { list: WikiPageSummary[] } }>(
     `query { pages { list(orderBy: TITLE) { ${SUMMARY_FIELDS} } } }`,
   );
   return data.pages.list.map((p) => ({
@@ -153,7 +160,7 @@ export async function listWikiPages(): Promise<WikiPageSummary[]> {
 }
 
 export async function getWikiPage(id: number): Promise<WikiPage> {
-  const data = await gql<{ pages: { single: RawPage | null } }>(
+  const data = await wikiGraphql<{ pages: { single: RawPage | null } }>(
     `query ($id: Int!) { pages { single(id: $id) { ${PAGE_FIELDS} } } }`,
     { id },
   );
@@ -168,7 +175,7 @@ export async function getWikiPage(id: number): Promise<WikiPage> {
  * Page.locale"). Both take the id only and read the page back with `single`.
  */
 export async function createWikiPage(input: WikiPageInput): Promise<WikiPage> {
-  const data = await gql<{
+  const data = await wikiGraphql<{
     pages: { create: { responseResult: ResponseResult; page: { id: number } | null } };
   }>(
     `mutation ($content: String!, $description: String!, $isPublished: Boolean!, $locale: String!,
@@ -195,7 +202,7 @@ export async function updateWikiPage(
   input: Omit<WikiPageInput, 'path'>,
 ): Promise<WikiPage> {
   const current = await getWikiPage(id);
-  const data = await gql<{
+  const data = await wikiGraphql<{
     pages: { update: { responseResult: ResponseResult } };
   }>(
     `mutation ($id: Int!, $content: String, $description: String, $isPublished: Boolean,
@@ -215,9 +222,23 @@ export async function updateWikiPage(
 }
 
 export async function deleteWikiPage(id: number): Promise<void> {
-  const data = await gql<{ pages: { delete: { responseResult: ResponseResult } } }>(
+  const data = await wikiGraphql<{ pages: { delete: { responseResult: ResponseResult } } }>(
     `mutation ($id: Int!) { pages { delete(id: $id) { ${RESULT_FIELDS} } } }`,
     { id },
   );
   assertSucceeded(data.pages.delete.responseResult);
+}
+
+/**
+ * Render a page again. Wiki.js decides at render time whether each internal
+ * link points at a page that exists, and marks the ones that do not as broken;
+ * a page written before its link targets stays that way until it is rendered
+ * again.
+ */
+export async function renderWikiPage(id: number): Promise<void> {
+  const data = await wikiGraphql<{ pages: { render: { responseResult: ResponseResult } } }>(
+    `mutation ($id: Int!) { pages { render(id: $id) { ${RESULT_FIELDS} } } }`,
+    { id },
+  );
+  assertSucceeded(data.pages.render.responseResult);
 }

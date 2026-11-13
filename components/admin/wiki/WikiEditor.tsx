@@ -10,20 +10,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { api, apiQuery, errorField } from '@/lib/contract/client';
+import { isWikiPath, parseWikiTags, slugifyWikiTitle } from '@/lib/wiki/editor-fields';
 import type { wikiPage } from '@/lib/wiki/wiki-schema';
 import { useWikiAssist, type WikiAssistFailure } from './useWikiAssist';
 import { createWikiPageApi, getWikiPageApi, updateWikiPageApi } from '@/lib/wiki/wiki.contract';
-
-/** Mirrors `wikiPath` in `lib/wiki/wiki-schema.ts`, for the inline hint before a save. */
-const PATH = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
-
-function slugify(title: string): string {
-  return title
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 type Page = z.infer<typeof wikiPage>;
 
@@ -107,7 +97,7 @@ function WikiEditorForm({
   const { writing } = assist;
 
   const isNew = id === null;
-  const pathValid = PATH.test(path);
+  const pathValid = isWikiPath(path);
   const canSave = Boolean(title.trim() && content.trim() && (!isNew || pathValid)) && !writing;
 
   const save = async () => {
@@ -116,10 +106,7 @@ function WikiEditorForm({
       title: title.trim(),
       description: description.trim(),
       content,
-      tags: tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
+      tags: parseWikiTags(tags),
       isPublished,
     };
     try {
@@ -183,7 +170,7 @@ function WikiEditorForm({
             maxLength={200}
             onChange={(e) => {
               setTitle(e.target.value);
-              if (isNew && !pathTouched) setPath(slugify(e.target.value));
+              if (isNew && !pathTouched) setPath(slugifyWikiTitle(e.target.value));
             }}
           />
         </div>

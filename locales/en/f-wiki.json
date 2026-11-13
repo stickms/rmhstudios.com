@@ -1,4 +1,5 @@
 {
+  "apply-theme": "Apply wiki theme",
   "assist-draft": "Write draft",
   "assist-empty": "The assistant wrote nothing. Try again.",
   "assist-failed": "The assistant stopped before it finished.",
@@ -56,6 +57,8 @@
   "setup-description": "Create an API key in the Wiki.js admin area, set it as WIKIJS_API_KEY and restart the web service. The steps are in docs/wiki.md.",
   "setup-title": "The wiki is not connected",
   "tags-placeholder": "Separated by commas",
+  "theme-failed": "Could not apply the wiki theme.",
+  "themed": "Wiki theme applied.",
   "unreachable-description": "Check that the wikijs service is running and that WIKIJS_URL and WIKIJS_API_KEY are correct.",
   "unreachable-title": "The wiki did not answer",
   "view": "View",

@@ -8,7 +8,12 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { api, apiQuery } from '@/lib/contract/client';
-import { deleteWikiPageApi, listWikiPagesApi, seedWikiPagesApi } from '@/lib/wiki/wiki.contract';
+import {
+  applyWikiThemeApi,
+  deleteWikiPageApi,
+  listWikiPagesApi,
+  seedWikiPagesApi,
+} from '@/lib/wiki/wiki.contract';
 import { WikiEditor } from './WikiEditor';
 
 /** `null` is the list; `'new'` or a page id is the editor. */
@@ -27,6 +32,7 @@ export function WikiPanel() {
   const reload = () => q.refetch();
   const [view, setView] = useState<View>(null);
   const [seeding, setSeeding] = useState(false);
+  const [theming, setTheming] = useState(false);
 
   const seed = async () => {
     setSeeding(true);
@@ -46,6 +52,18 @@ export function WikiPanel() {
       toast.error(t('seed-failed', { defaultValue: 'Could not add the starter pages.' }));
     } finally {
       setSeeding(false);
+    }
+  };
+
+  const applyTheme = async () => {
+    setTheming(true);
+    try {
+      await api(applyWikiThemeApi);
+      toast.success(t('themed', { defaultValue: 'Wiki theme applied.' }));
+    } catch {
+      toast.error(t('theme-failed', { defaultValue: 'Could not apply the wiki theme.' }));
+    } finally {
+      setTheming(false);
     }
   };
 
@@ -121,6 +139,9 @@ export function WikiPanel() {
           })}
         </p>
         <div className="flex flex-wrap gap-2">
+          <Button loading={theming} onClick={() => void applyTheme()}>
+            {t('apply-theme', { defaultValue: 'Apply wiki theme' })}
+          </Button>
           <Button loading={seeding} onClick={() => void seed()}>
             {t('seed', { defaultValue: 'Add starter pages' })}
           </Button>

@@ -1,10 +1,13 @@
 # The wiki (wiki.rmhstudios.com)
 
 The public wiki is [Wiki.js](https://js.wiki) 2, running as its own container
-on its own subdomain. Everyone can read it. Site admins create, edit and delete
-its pages from **rmhstudios.com/admin/wiki**, with a DeepSeek writing assistant
-in the editor. Admins do not get a second account: the site holds one Wiki.js
-API key and puts its own admin check in front of it.
+on its own subdomain. It is a separate site from rmhstudios.com on purpose: it
+shares no shell, stylesheet or design tokens with the main site, and it is
+styled after Wikipedia (the classic Vector skin). Everyone can read it. Site
+admins create, edit and delete its pages from **rmhstudios.com/admin/wiki**,
+with a DeepSeek writing assistant in the editor. Admins do not get a second
+account: the site holds one Wiki.js API key and puts its own admin check in
+front of it.
 
 ```
 visitor ── Cloudflare ── Apache (wiki.rmhstudios.com.conf) ── wikijs :7010 ── Postgres (database `wikijs`)
@@ -25,65 +28,93 @@ site admin ── /admin/wiki ── /api/admin/wiki/** (auth: admin) ───�
 | Admin API (list, create, read, update, delete, seed) | `lib/wiki/api/*.server.ts` |
 | Writing assistant (event stream) | `app/routes/api/admin/wiki/assist.ts`, prompt `WIKI_WRITE` in `lib/ai/prompts/index.ts` |
 | Admin page | `app/routes/_site/admin/wiki.tsx`, `components/admin/wiki/` |
+| Wikipedia look (CSS override, site title, sidebar navigation) | `lib/wiki/wikipedia-theme.ts`, `lib/wiki/appearance.server.ts` |
 | Starter pages | `lib/wiki/starter-pages.ts`, `lib/wiki/seed.server.ts` |
-| Setup scripts | `scripts/wiki/bootstrap.ts`, `scripts/wiki/seed.ts` |
+| Setup scripts | `scripts/wiki/bootstrap.mjs`, `scripts/wiki/theme.ts`, `scripts/wiki/seed.ts` |
+| Tests | `lib/wiki/__tests__/`, `deploy/__tests__/wiki-deploy.test.ts` |
 
 ## First-time setup (production)
 
 Nothing here runs on a deploy. The `wikijs` service is behind the `wiki`
-compose profile, so a stack that has not done these steps is unaffected.
+compose profile, so a stack that has not done these steps is unaffected. Run
+the commands from the repository checkout on the VPS, after a deploy that
+contains the wiki code.
 
 1. **Database.** Wiki.js keeps everything (pages, history, uploads, settings)
    in its own database on the host Postgres:
 
    ```bash
-   sudo -u postgres psql -c "CREATE ROLE wikijs LOGIN PASSWORD '<password>'"
+   sudo -u postgres psql -c "CREATE ROLE wikijs LOGIN PASSWORD '<db-password>'"
    sudo -u postgres psql -c "CREATE DATABASE wikijs OWNER wikijs"
    ```
 
-   Postgres must accept that role from the Docker bridge, the same
-   `pg_hba.conf` rule the site's own role already has.
+   Postgres must accept that role from the Docker bridge. If the existing
+   `pg_hba.conf` rule for the containers names the site's database or role
+   rather than `all`, add the same line for `wikijs` and reload Postgres.
 
-2. **Environment.** In `.env.production` set `WIKIJS_DB_PASS=<password>` (the
-   other `WIKIJS_DB_*` values have working defaults; see `.env.example`).
+2. **Environment.** Add to `.env.production`:
+
+   ```bash
+   WIKIJS_DB_PASS=<db-password>
+   ```
 
 3. **Start the container** (once; `restart: unless-stopped` keeps it up):
 
    ```bash
    docker compose -p rmhstudios-prod --env-file .env.production --profile wiki up -d wikijs
+   docker logs -f rmhstudios-prod-wikijs   # wait for "Browse to http://YOUR-SERVER-IP:3000/ to complete setup!"
    ```
 
 4. **Bootstrap.** This finishes the Wiki.js setup wizard, turns its API on and
-   prints the API key:
+   prints the API key. It runs inside the container, so the host needs no Node:
 
    ```bash
-   WIKIJS_URL=http://localhost:7010 \
-   WIKIJS_ADMIN_EMAIL=<you> WIKIJS_ADMIN_PASSWORD='<a strong password>' \
-   pnpm wiki:bootstrap
+   docker exec -i \
+     -e WIKIJS_ADMIN_EMAIL='<you>' -e WIKIJS_ADMIN_PASSWORD='<a strong password>' \
+     rmhstudios-prod-wikijs node - < scripts/wiki/bootstrap.mjs
    ```
 
    The email and password become the Wiki.js root administrator, used only to
-   sign in at `wiki.rmhstudios.com/login` for Wiki.js's own settings (theme,
-   navigation, search). Keep them in the password manager.
+   sign in at `wiki.rmhstudios.com/login` for Wiki.js's own settings. Keep them
+   in the password manager. The last line of output is the API key.
 
-5. **Connect the site.** Put the printed key in `.env.production` as
-   `WIKIJS_API_KEY`, then deploy (or restart `web`) so the site picks it up.
+5. **Connect the site.** Add the key to `.env.production`, then recreate `web`
+   so it reads it (a blue/green swap, no downtime):
 
-6. **Apache and DNS.** Install `deploy/apache/wiki.rmhstudios.com.conf` (the
-   steps are in its header) and create the `wiki` DNS record
-   (`terraform apply` in `deploy/terraform/`, or by hand in Cloudflare, proxied).
+   ```bash
+   WIKIJS_API_KEY=<the printed key>
+   ```
 
-7. **Starter pages.** Press **Add starter pages** on `/admin/wiki`, or run
-   `WIKIJS_URL=http://localhost:7010 WIKIJS_API_KEY=<key> pnpm wiki:seed`.
-   Both create only the pages that are missing and never overwrite one.
+   ```bash
+   ./deploy.sh production
+   ```
+
+6. **Apache.** Install the vhost (DNS for `wiki.rmhstudios.com` must point at
+   the same Cloudflare-proxied origin as the main site):
+
+   ```bash
+   sudo cp deploy/apache/wiki.rmhstudios.com.conf /etc/apache2/sites-available/wiki.rmhstudios.com.conf
+   sudo a2ensite wiki.rmhstudios.com
+   sudo apachectl configtest && sudo systemctl reload apache2
+   ```
+
+7. **Theme and starter pages.** Sign in to rmhstudios.com as an admin, open
+   `/admin/wiki`, press **Apply wiki theme**, then **Add starter pages**. Both
+   are safe to press again: the theme is replaced with the current one, and
+   pages that already exist are never overwritten.
+
+8. **Check.** `https://wiki.rmhstudios.com` shows the main page in the
+   Wikipedia look, signed out.
 
 ## Local development
 
 Run Wiki.js any way you like on port 7010 (the compose service works:
 `docker compose --profile wiki up -d wikijs` with `WIKIJS_DB_*` pointing at a
-local Postgres), then `pnpm wiki:bootstrap`, put the key in `.env` as
-`WIKIJS_API_KEY` with `WIKIJS_URL=http://localhost:7010` and
-`WIKI_PUBLIC_URL=http://localhost:7010`, and open `/admin/wiki`.
+local Postgres), then
+`WIKIJS_URL=http://localhost:7010 WIKIJS_ADMIN_EMAIL=… WIKIJS_ADMIN_PASSWORD=… pnpm wiki:bootstrap`,
+put the key in `.env` as `WIKIJS_API_KEY` with `WIKIJS_URL=http://localhost:7010`
+and `WIKI_PUBLIC_URL=http://localhost:7010`, and open `/admin/wiki`.
+`pnpm wiki:theme` and `pnpm wiki:seed` do what the two buttons do.
 
 Without `WIKIJS_API_KEY` the admin page shows the setup message and makes no
 request to the wiki.
@@ -94,10 +125,31 @@ request to the wiki.
   `isAdmin` is 403. That check is the only thing between a visitor and the key.
 - The key has full access to Wiki.js. It lives in the server environment and is
   sent only from the site to the `wikijs` container over the compose network.
-- Create, update, delete and seed are written to the admin audit log
-  (`wiki.page.create`, `wiki.page.update`, `wiki.page.delete`, `wiki.seed`).
+- Create, update, delete, seed and theme are written to the admin audit log
+  (`wiki.page.create`, `wiki.page.update`, `wiki.page.delete`, `wiki.seed`,
+  `wiki.theme`).
 - A page's path cannot be changed from the site; move a page in Wiki.js itself.
 - Pages are Markdown and public. The site does not create private pages.
+
+## The Wikipedia look
+
+Wiki.js has no theme files to deploy; its look is configuration in its own
+database. `applyWikiAppearance()` writes all of it through the API:
+
+- the CSS override (`WIKIPEDIA_CSS`): grey page, white article with the pale
+  blue edge, serif headings on hairline rules, blue links, a boxed contents
+  list and bordered tables with grey headers;
+- the site title ("RMH Studios Wiki") and logo, with comments, ratings and
+  personal wikis turned off (visitors read; they have no accounts);
+- a static sidebar: Main page, the starter pages, and a link back to
+  rmhstudios.com.
+
+Change the look by editing `lib/wiki/wikipedia-theme.ts`, deploying, and
+pressing **Apply wiki theme** again. The stylesheet uses Wikipedia's literal
+colours and no `--site-*` token, so a change to the main site's palette never
+reaches the wiki; `lib/wiki/__tests__/appearance.server.test.ts` holds that.
+Its selectors target Wiki.js 2.5's markup, which is one reason the image is
+pinned.
 
 ## The writing assistant
 
@@ -112,9 +164,9 @@ facts and to leave a `[placeholder]` instead, so read a draft before saving it.
 
 ## Operations
 
-- **The API key expires after three years.** Run `pnpm wiki:bootstrap` again
-  with the same administrator credentials to issue a new one; it skips the
-  steps that are already done.
+- **The API key expires after three years.** Run the bootstrap command (step
+  4) again with the same administrator credentials to issue a new one; it
+  skips the steps that are already done.
 - **A wrong or expired key reads but does not write.** Wiki.js treats an
   invalid key as a guest, and guests can read public pages, so the page list
   still loads and saving fails. If saves fail, check the key first.

@@ -48,6 +48,15 @@ export const seedWikiPagesApi = endpoint<{ res: z.infer<typeof wikiSeedResult> }
 });
 
 /**
+ * Applies the Wikipedia look (CSS override, site title, sidebar navigation) to
+ * the wiki (`lib/wiki/appearance.server.ts`).
+ */
+export const applyWikiThemeApi = endpoint<{ res: { success: true } }>()({
+  method: 'POST',
+  path: '/api/admin/wiki/theme',
+});
+
+/**
  * DeepSeek writing assistant. The response is `text/event-stream`
  * (`{"delta"}` frames, `{"error"}` on failure, closed by `[DONE]`), so the
  * client reads it with `streamWikiAssist`, not `api()`.
