@@ -9,10 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
-import { UserAvatar } from '@/components/ui/UserAvatar';
-import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { MenuItem, MenuLabel } from '@/components/ui/menu';
-import { LogOut, Menu as MenuIcon, Settings } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { musicGain, useSliceItStore } from '@features/slice-it/engine/store';
 import { GameEngine } from '@features/slice-it/engine/engine';
 import { hitSoundPath, hitSoundPreloadList } from '@features/slice-it/engine/hit-sound-pool';
@@ -66,16 +63,13 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const navigate = useNavigate();
   const quit = useQuitGame();
   // The details panel is a column beside the library on a wide screen and a sheet
-  // over it on a narrow one; the primary nav is in the bar on a tablet and up and
-  // at the foot of the screen (where a thumb is) on a phone.
+  // over it on a narrow one; the primary nav is in the sleeve on a wide screen, in
+  // the head on a tablet and in a row under it on a phone.
   const isWide = useMediaQuery('(min-width: 1024px)');
   const isPhone = useMediaQuery('(max-width: 639px)');
   const search = useSearch({ strict: false }) as Record<string, string | undefined>;
   const { startRun, isLoading } = useStartRun(engine);
   const [showSettings, setShowSettings] = React.useState(false);
-  // A phone's bar is the logo and one menu button; account, settings and quit live in it.
-  const [barMenuOpen, setBarMenuOpen] = React.useState(false);
-  const barMenuRef = React.useRef<HTMLButtonElement>(null);
   const [showCalibration, setShowCalibration] = React.useState(false);
   const [showMultiplayer, setShowMultiplayer] = React.useState(false);
   const [soloMode, setSoloMode] = React.useState<SoloMode>('library');
@@ -120,13 +114,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   // Ref to stop SongLibrary preview audio from outside
   const stopPreviewRef = React.useRef<(() => void) | null>(null);
 
-  const avatarUrl = (session.data?.user as { image?: string | null } | undefined)?.image ?? null;
-  // The operator is whoever is signed in — there is nothing to type. (A name field
-  // in Settings used to shadow it, which only ever let the two disagree.)
-  const sessionUser = session.data?.user as
-    | { name?: string | null; username?: string | null }
-    | undefined;
-  const userName = sessionUser ? sessionUser.name || sessionUser.username || 'OPERATOR' : '';
 
   /**
    * Open a track's details panel.
@@ -269,6 +256,45 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
     </nav>
   );
 
+  const renderLogo = (titleClass: string, logoClass: string) => (
+    <h1 className={titleClass}>
+      <img
+        className={logoClass}
+        src="/images/games/logos/slice-it-line.svg"
+        alt={t('game-title', { defaultValue: 'Slice It!' })}
+        width={1395}
+        height={282}
+        decoding="async"
+        fetchPriority="high"
+      />
+    </h1>
+  );
+
+  // Settings over Leave, at the right of the wordmark: the two controls the old
+  // top bar carried, on every width.
+  const renderActs = () => (
+    <div className="slice-acts">
+      <button
+        type="button"
+        className="slice-bar__icon"
+        onClick={() => setShowSettings(true)}
+        aria-label={t('settings', { defaultValue: 'Settings' })}
+        title={t('settings', { defaultValue: 'Settings' })}
+      >
+        <Settings className="size-[18px]" aria-hidden />
+      </button>
+      <button
+        type="button"
+        className="slice-bar__icon"
+        onClick={quit}
+        aria-label={t('quit', { defaultValue: 'QUIT' })}
+        title={t('quit', { defaultValue: 'QUIT' })}
+      >
+        <LogOut className="size-[18px]" aria-hidden />
+      </button>
+    </div>
+  );
+
   // Unified Main Menu View
   return (
     <div className="slice-menu absolute inset-0 z-50 flex flex-col overflow-hidden bg-slice-bg text-slice-text">
@@ -305,136 +331,16 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             </div>
           )}
 
-          {/* One slim bar: back, wordmark, the four places you can go, and the
-              player. It replaces a 60px route header stacked over a 125px
-              masthead — the game's art lives in the details column now, and
-              the slash under the bar is the key art's one motif. */}
-          {isWide ? (
-            <header className="slice-line">
-              <div className="slice-line__l">
-                <span className="slice-chip">RMH-050</span>
-              </div>
-              <div className="slice-line__r">
-                <span className="slice-label">
-                  {t('operator', { defaultValue: 'Operator' })}{' '}
-                  <b className="slice-figure">{userName || 'GUEST'}</b>
-                </span>
-                <button
-                  type="button"
-                  className="slice-bar__icon"
-                  onClick={() => setShowSettings(true)}
-                  aria-label={t('settings', { defaultValue: 'Settings' })}
-                >
-                  <Settings className="size-[18px]" aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className="slice-bar__icon"
-                  onClick={quit}
-                  aria-label={t('quit', { defaultValue: 'QUIT' })}
-                  title={t('quit', { defaultValue: 'QUIT' })}
-                >
-                  <LogOut className="size-[18px]" aria-hidden />
-                </button>
-              </div>
-            </header>
-          ) : (
+          {/* No bar across the top. On a wide screen the wordmark, Settings and Leave
+              are the head of the sleeve (below); under 1024px there is no sleeve, so
+              the same head opens the page, with the four places beside the wordmark
+              on a tablet and in a row under it on a phone. */}
+          {!isWide && (
             <header className="slice-bar">
-            <h1 className="slice-bar__title">
-              <img
-                className="slice-bar__logo"
-                src="/images/games/logos/slice-it-line.svg"
-                alt={t('game-title', { defaultValue: 'Slice It!' })}
-                width={1395}
-                height={282}
-                decoding="async"
-                fetchPriority="high"
-              />
-            </h1>
-            {!isPhone && renderNav(false)}
-            {isPhone ? (
-              <>
-                <button
-                  ref={barMenuRef}
-                  type="button"
-                  className="slice-bar__icon ml-auto"
-                  aria-haspopup="menu"
-                  aria-expanded={barMenuOpen}
-                  aria-label={t('menu', { defaultValue: 'Menu' })}
-                  onClick={() => setBarMenuOpen((open) => !open)}
-                >
-                  <MenuIcon className="size-5" aria-hidden />
-                </button>
-                <AnchoredMenu
-                  open={barMenuOpen}
-                  onClose={() => setBarMenuOpen(false)}
-                  anchorRef={barMenuRef}
-                  label={t('menu', { defaultValue: 'Menu' })}
-                  className="slice-tokens slice-menu-panel w-56"
-                >
-                  <MenuLabel className="flex items-center gap-2.5">
-                    <UserAvatar
-                      src={avatarUrl}
-                      alt=""
-                      size={24}
-                      fallbackName={userName || undefined}
-                      className="shrink-0"
-                    />
-                    <span className="min-w-0 truncate">{userName || 'GUEST'}</span>
-                  </MenuLabel>
-                  <MenuItem
-                    icon={Settings}
-                    onSelect={() => {
-                      setBarMenuOpen(false);
-                      // After the menu has closed and given focus back, not in the
-                      // same tick: the settings panel's own focus handling would
-                      // otherwise lose the race with it.
-                      window.setTimeout(() => setShowSettings(true), 80);
-                    }}
-                  >
-                    {t('settings', { defaultValue: 'Settings' })}
-                  </MenuItem>
-                  <MenuItem
-                    icon={LogOut}
-                    onSelect={() => {
-                      setBarMenuOpen(false);
-                      quit();
-                    }}
-                  >
-                    {t('quit', { defaultValue: 'QUIT' })}
-                  </MenuItem>
-                </AnchoredMenu>
-              </>
-            ) : (
-            <div className="slice-bar__who">
-              <UserAvatar
-                src={avatarUrl}
-                alt={userName || 'Player'}
-                size={30}
-                fallbackName={userName || undefined}
-                className="slice-bar__avatar shrink-0"
-              />
-              <span className="slice-bar__name slice-figure">{userName || 'GUEST'}</span>
-              <button
-                type="button"
-                className="slice-bar__icon"
-                onClick={() => setShowSettings(true)}
-                aria-label={t('settings', { defaultValue: 'Settings' })}
-              >
-                <Settings className="size-[18px]" aria-hidden />
-              </button>
-              <button
-                type="button"
-                className="slice-bar__icon"
-                onClick={quit}
-                aria-label={t('quit', { defaultValue: 'QUIT' })}
-                title={t('quit', { defaultValue: 'QUIT' })}
-              >
-                <LogOut className="size-[18px]" aria-hidden />
-              </button>
-            </div>
-            )}
-          </header>
+              {renderLogo('slice-bar__title', 'slice-bar__logo')}
+              {!isPhone && renderNav(false)}
+              {renderActs()}
+            </header>
           )}
 
           {/* A phone: the four places, one short row under the bar. At the top, so the
@@ -519,7 +425,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   )}
                   {soloMode === 'library' && (
                     <SongLibrary
-                      /* PLAY opens the details panel; it does not start the run.
+                      /* OPEN opens the details panel; it does not start the run.
                          Starting straight from the row dropped the player into a
                          chart at whatever difficulty and modifiers were left over
                          from the last song, with nothing in between to look at —
@@ -545,17 +451,10 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             {isWide && (
               <aside className="slice-sleeve" aria-label={t('song-details', { defaultValue: 'Song Details' })}>
                 <div className="slice-sleeve__top">
-                  <h1 className="slice-sleeve__title">
-                    <img
-                      className="slice-sleeve__logo"
-                      src="/images/games/logos/slice-it-line.svg"
-                      alt={t('game-title', { defaultValue: 'Slice It!' })}
-                      width={1395}
-                      height={282}
-                      decoding="async"
-                      fetchPriority="high"
-                    />
-                  </h1>
+                  <div className="slice-sleeve__head">
+                    {renderLogo('slice-sleeve__title', 'slice-sleeve__logo')}
+                    {renderActs()}
+                  </div>
                   {renderNav(true)}
                 </div>
                 <div className="slice-sleeve__body">

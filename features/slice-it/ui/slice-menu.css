@@ -2,11 +2,12 @@
    Slice It!: main menu layout — "Pressing".
    Scheme: docs/game-design-schemes/slice-it.json — tokens live in slice-it.css.
 
-   A record sleeve. On a wide screen: a 36px catalogue line on top; below it the
-   tracklist on the left and the sleeve (wordmark, the printed A1/A2/B1/B2 track
-   box, the record you picked) on the right. Below 1024px the sleeve is gone: a
-   slim bar carries the wordmark and the nav, and the record opens as a sheet.
-   On a phone the nav is the four cells at the foot of the screen, in the flow.
+   A record sleeve. On a wide screen: the tracklist on the left and the sleeve on
+   the right (the wordmark with Settings over Leave beside it, the printed track
+   box, the record you picked). No bar runs across the top. Below 1024px the
+   sleeve is gone: the same head (wordmark, Settings over Leave) opens the page,
+   with the nav beside the wordmark, and the record opens as a sheet. On a phone
+   the nav is a row of four cells under the head, in the flow.
 
    Flat, hard-edged, no glow, no radius. State is shown by fill (paper, cyan,
    pink), never by motion.
@@ -21,7 +22,6 @@
     .slice-bar__icon,
     .slice-nav__item,
     .slice-btn-primary,
-    .slice-chip,
     .slice-go,
     .slice-press,
     .slice-sq,
@@ -33,67 +33,6 @@
   outline-offset: 2px;
 }
 
-/* ── The catalogue line (wide) ────────────────────────────── */
-
-.slice-line {
-  position: relative;
-  z-index: 2;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: calc(36px + var(--safe-top, 0px));
-  padding: var(--safe-top, 0px) max(28px, var(--safe-right, 0px)) 0 max(28px, var(--safe-left, 0px));
-  border-bottom: 1px solid var(--slice-border);
-  background: var(--slice-bg);
-}
-
-.slice-line__l,
-.slice-line__r {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: 0;
-}
-
-.slice-line__r {
-  gap: 14px;
-}
-
-.slice-line .slice-label i {
-  font-style: normal;
-  padding: 0 4px;
-}
-
-.slice-line .slice-label b {
-  font-weight: 500;
-  color: var(--slice-paper);
-}
-
-/* The back link, as the key art prints its catalogue number. */
-.slice-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 7px;
-  border: 1.5px solid var(--slice-primary);
-  background: transparent;
-  color: var(--slice-primary);
-  font-family: var(--slice-mono);
-  font-size: 12px;
-  line-height: 1;
-  letter-spacing: 0.1em;
-  text-decoration: none;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.slice-chip:hover {
-  background: var(--slice-primary);
-  color: var(--slice-label);
-}
-
 /* ── The bar (narrow) ─────────────────────────────────────── */
 
 .slice-bar {
@@ -103,8 +42,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: calc(52px + var(--safe-top, 0px));
-  padding: var(--safe-top, 0px) max(16px, var(--safe-right, 0px)) 0 max(12px, var(--safe-left, 0px));
+  padding: calc(4px + var(--safe-top, 0px)) max(12px, var(--safe-right, 0px)) 4px
+    max(12px, var(--safe-left, 0px));
   border-bottom: 1px solid var(--slice-border);
   background: var(--slice-bg);
 }
@@ -112,12 +51,14 @@
 .slice-bar__title {
   margin: 0 4px 0 2px;
   line-height: 0;
+  min-width: 0;
 }
 
 .slice-bar__logo {
   display: block;
   width: auto;
-  height: 40px;
+  max-width: 100%;
+  height: 44px;
 }
 
 .slice-bar__icon {
@@ -139,35 +80,19 @@
   color: var(--slice-label);
 }
 
-.slice-bar__who {
+/* Settings over Leave, at the end of the head (the sleeve's, or the page's below
+   1024px). A finger gets 44px each. */
+.slice-acts {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-left: auto;
-  min-width: 0;
+  flex-direction: column;
+  flex-shrink: 0;
+  margin-inline-start: auto;
 }
 
-.slice-bar__avatar {
-  border-radius: 9999px;
-  corner-shape: round;
-  box-shadow: 0 0 0 1.5px var(--slice-primary);
-}
-
-.slice-bar__name {
-  display: none;
-  max-width: 14ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--slice-text);
-}
-
-@media (min-width: 640px) {
-  .slice-bar__name {
-    display: block;
+@media (pointer: coarse) {
+  .slice-acts .slice-bar__icon {
+    width: 44px;
+    height: 44px;
   }
 }
 
@@ -248,10 +173,21 @@
 
 .slice-sleeve__top {
   flex-shrink: 0;
-  padding: 24px 28px 16px;
+  /* The sleeve reaches the top and the far edge of the screen now that no bar sits
+     above it, so its head keeps clear of both insets itself. */
+  padding: calc(20px + var(--safe-top, 0px)) 28px 16px;
+  padding-inline-end: max(28px, var(--safe-right, 0px));
+}
+
+.slice-sleeve__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .slice-sleeve__title {
+  flex: 1;
+  min-width: 0;
   margin: 0;
   line-height: 0;
 }
@@ -281,6 +217,13 @@
   overflow: hidden;
   border: 1px solid var(--slice-border);
   background: var(--slice-bg);
+}
+
+/* With the bar gone the list reaches the top of a wide screen too. */
+@media (min-width: 1024px) {
+  .slice-menu__col {
+    padding-top: var(--safe-top, 0px);
+  }
 }
 
 /* ── The record (the picked track, in the sleeve or the sheet) ─ */
@@ -1004,12 +947,8 @@
 /* ── A phone ──────────────────────────────────────────────── */
 
 @media (max-width: 639px) {
-  .slice-bar {
-    min-height: calc(44px + var(--safe-top, 0px));
-  }
-
   .slice-bar__logo {
-    height: 30px;
+    height: 40px;
   }
 
   /* The nav is one short row under the bar, in the flow: at the top of the page so
