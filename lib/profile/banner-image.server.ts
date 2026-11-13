@@ -3,7 +3,7 @@
  * its crop is a request, not a fact: whatever arrives is cut to the banner
  * ratio and size here, so a stored banner is always `PROFILE_BANNER_ASPECT`.
  */
-import sharp from 'sharp';
+import sharp, { type Metadata } from 'sharp';
 import { optimizeImage } from '@/lib/image-optimize';
 import {
   PROFILE_BANNER_SOURCE_MAX_EDGE,
@@ -24,7 +24,7 @@ export interface EncodedBanner {
  * is too small to hold a region.
  */
 export async function renderBannerRendition(input: Buffer): Promise<EncodedBanner | null> {
-  let meta: sharp.Metadata;
+  let meta: Metadata;
   try {
     meta = await sharp(input).metadata();
   } catch {
