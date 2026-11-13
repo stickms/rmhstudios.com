@@ -1,5 +1,6 @@
 import type { ComponentPropsWithoutRef } from 'react';
 import { cn } from '@/lib/utils';
+import { classifyMedia } from '@/lib/blog-media';
 
 /**
  * The markdown element map shared by the article surfaces (`/blog/$slug`,
@@ -51,9 +52,23 @@ export const MdH4 = ({ className, children, ...props }: El<'h4'>) => (
   </h4>
 );
 
-export const MdP = ({ className, ...props }: El<'p'>) => (
-  <p className={cn('t-prose mb-4 text-site-text', className)} {...props} />
-);
+/** The slice of react-markdown's hast `node` this file reads. */
+type HastNode = { children?: Array<{ type?: string; tagName?: string }> };
+
+/**
+ * react-markdown wraps a lone `![alt](src)` in a `<p>`, and `MdImg` renders a `<figure>` (a video, an iframe), which is
+ * invalid inside `<p>` and trips a hydration warning. A paragraph that holds an image therefore renders as a `<div>`
+ * with the same prose styling.
+ */
+export const MdP = ({
+  className,
+  node,
+  ...props
+}: El<'p'> & { node?: HastNode }) => {
+  const hasMedia = node?.children?.some((c) => c.type === 'element' && c.tagName === 'img');
+  const Tag = hasMedia ? 'div' : 'p';
+  return <Tag className={cn('t-prose mb-4 text-site-text', className)} {...props} />;
+};
 
 export const MdUl = ({ className, ...props }: El<'ul'>) => (
   <ul
@@ -100,13 +115,62 @@ export const MdPre = ({ className, ...props }: El<'pre'>) => (
   />
 );
 
-/** A figure: the image is a picture (S4) with its alt text as a visible caption. */
-export const MdImg = ({ className, alt, ...props }: El<'img'>) => (
-  <figure className="my-6 overflow-hidden rounded-site border border-site-border bg-site-bg-subtle">
-    <img className={cn('h-auto w-full', className)} alt={alt} loading="lazy" {...props} />
-    {alt && <figcaption className="t-meta border-t border-site-border px-3 py-2">{alt}</figcaption>}
-  </figure>
-);
+/**
+ * A figure: the picture, video or YouTube embed is a picture (S4) with its alt text as a visible caption. The kind comes
+ * from `classifyMedia`; markdown has no video syntax, so `![alt](clip.mp4)` and `![alt](youtube-url)` are the way in.
+ * No raw HTML is ever parsed: the iframe is built here, only for a recognised YouTube id, on the privacy host the CSP
+ * allows.
+ */
+export const MdImg = ({ className, alt, src, node: _node, ...props }: El<'img'> & { node?: unknown }) => {
+  const source = typeof src === 'string' ? src : '';
+  const media = classifyMedia(source);
+  const frame = 'my-6 overflow-hidden rounded-site border border-site-border bg-site-bg-subtle';
+  const caption = alt ? (
+    <figcaption className="t-meta border-t border-site-border px-3 py-2">{alt}</figcaption>
+  ) : null;
+
+  if (media.kind === 'video') {
+    return (
+      <figure className={frame}>
+        <video
+          controls
+          playsInline
+          preload="metadata"
+          src={media.src}
+          aria-label={alt || undefined}
+          className="block h-auto w-full"
+        />
+        {caption}
+      </figure>
+    );
+  }
+
+  if (media.kind === 'youtube') {
+    return (
+      <figure className={frame}>
+        <div className="aspect-video w-full">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${media.videoId}`}
+            title={alt || 'YouTube video'}
+            loading="lazy"
+            allowFullScreen
+            allow="encrypted-media; picture-in-picture; fullscreen"
+            referrerPolicy="strict-origin-when-cross-origin"
+            className="h-full w-full border-0"
+          />
+        </div>
+        {caption}
+      </figure>
+    );
+  }
+
+  return (
+    <figure className={frame}>
+      <img className={cn('h-auto w-full', className)} alt={alt} src={src} loading="lazy" {...props} />
+      {caption}
+    </figure>
+  );
+};
 
 /**
  * Inline code only. A fenced block arrives as `<pre><code class="language-x">`,

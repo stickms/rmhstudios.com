@@ -5,6 +5,10 @@ import { logAdminAction } from '@/lib/admin-audit.server';
 import { pingIndexNow } from '@/lib/seo/indexnow.server';
 import { Prisma } from '@prisma/client';
 import { blogPostSchema } from '@/lib/admin/schemas';
+import {
+  applyAnnouncementFields,
+  invalidateCurrentAnnouncement,
+} from '@/lib/sitewide-announcement.server';
 
 import { implement } from '@/lib/api/implement.server';
 import { saveBlogPostApi } from '@/lib/admin/admin-tools.contract';
@@ -17,11 +21,41 @@ export const route = apiRoute('/api/admin/blog', {
 
       const { title, slug, description, image, date, tags, content, isEdit } = body;
 
-      const data = { title, date, description, image: image || null, tags, content };
+      const baseData = { title, date, description, image: image || null, tags, content };
       try {
+        const existing = isEdit
+          ? await prisma.blogPost.findUnique({
+              where: { slug },
+              select: { id: true, announcement: true, announcedAt: true },
+            })
+          : null;
+        const { data: announcementData, reannounced } = applyAnnouncementFields(
+          existing,
+          {
+            announcement: body.announcement,
+            business: body.business,
+            announcementExpiresAt: body.announcementExpiresAt,
+          },
+          new Date(),
+        );
+        const data = { ...baseData, ...announcementData };
+
         // A create must never update a concurrent writer's post with the same slug.
-        if (isEdit) await prisma.blogPost.update({ where: { slug }, data });
-        else await prisma.blogPost.create({ data: { slug, ...data } });
+        if (isEdit) {
+          const update = prisma.blogPost.update({ where: { slug }, data });
+          if (existing && reannounced) {
+            // Re-announcing: everyone sees it again.
+            await prisma.$transaction([
+              prisma.blogAnnouncementSeen.deleteMany({ where: { postId: existing.id } }),
+              update,
+            ]);
+          } else {
+            await update;
+          }
+        } else {
+          await prisma.blogPost.create({ data: { slug, ...data } });
+        }
+        await invalidateCurrentAnnouncement();
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           if (error.code === 'P2002') {
@@ -66,6 +100,7 @@ export const route = apiRoute('/api/admin/blog', {
 
       try {
         await prisma.blogPost.delete({ where: { slug } });
+        await invalidateCurrentAnnouncement();
       } catch (e) {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
           // Prisma error code for record not found

@@ -269,6 +269,11 @@ describe('the globe animates transform and opacity only, in 360 ms (G2, G6)', ()
     expect(count).toBeGreaterThan(4);
     const near = placePoints(count).filter((p) => p.bz > 0.05);
     expect(first.match(/<circle r="3.25"/g)).toHaveLength(near.length);
+    // A dot is a white disc in a thin light grey outline, in the first paint and in the body: no dark ring.
+    expect(first).not.toMatch(/fill="#000"/);
+    expect(first).toMatch(/<circle r="3.25" fill="#fff" stroke="#bdbdbd"[^>]*vector-effect="non-scaling-stroke"/);
+    expect(read('lib/globe/shader.ts')).toContain('col = mix(col, vec3(0.74), 0.9 * face * smoothstep(ring + px, ring - px, dd));');
+    expect(read('lib/globe/shader.ts')).not.toContain('vec3(0.0), 0.55 * face');
     expect(first).toContain(`translate(${(near[0]!.bx * 50).toFixed(2)} ${(near[0]!.by * 50).toFixed(2)})`);
     // The canvas is transparent until the body's first frame, then fades in over 280 ms.
     expect(css).toMatch(/\.globe-nav \.globe-nav__globe > canvas \{\s*opacity: 0;\s*transition: opacity 0\.28s ease;/);

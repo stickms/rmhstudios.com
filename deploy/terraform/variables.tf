@@ -34,6 +34,12 @@ variable "rmhtube_host" {
   type        = string
 }
 
+variable "wiki_host" {
+  description = "Wiki hostname (Wiki.js behind Apache; see docs/wiki.md). Empty to manage no record."
+  type        = string
+  default     = "wiki.rmhstudios.com"
+}
+
 variable "proxied" {
   description = "Whether Cloudflare proxies (orange-cloud) the records. Use false for raw websockets unless on a proxy-compatible plan."
   type        = bool

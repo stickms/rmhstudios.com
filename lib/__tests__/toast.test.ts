@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 type ToastModule = typeof import('@/lib/toast');
 
@@ -79,5 +81,28 @@ describe('lib/toast: sonner loads on the first toast', () => {
     ]);
     // A toast raised after binding never re-arms the loader.
     expect(mod.toasterWanted()).toBe(false);
+  });
+});
+
+describe('the site toaster sits bottom right and wears the site tokens', () => {
+  const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
+  const src = read('components/ui/site-toaster.tsx');
+  const css = read('app/styles/steel-overlay.css');
+
+  it('is placed bottom right, above the docked globe below 1024px and 16px off the edge from there', () => {
+    expect(src).toContain('position="bottom-right"');
+    expect(src).not.toContain('position="bottom-left"');
+    expect(src).toContain("offset={{ bottom: 'var(--toast-bottom)', right: '1rem' }}");
+    expect(css).toMatch(/:root \{\s*--toast-bottom: var\(--site-floating-reserve\);/);
+    expect(css).toMatch(/@media \(min-width: 1024px\) \{\s*:root \{\s*--toast-bottom: calc\(1rem \+ env\(safe-area-inset-bottom, 0px\)\);/);
+  });
+
+  it("points every colour sonner owns at a site token, so a toast follows the page's theme", () => {
+    const palette = /const TOKEN_PALETTE = \{([\s\S]*?)\} as CSSProperties;/.exec(src)![1]!;
+    const entries = [...palette.matchAll(/'(--[a-z-]+)': '([^']+)'/g)];
+    expect(entries.length).toBe(17);
+    for (const [, , value] of entries) expect(value).toMatch(/^var\(--site-[a-z-]+\)$/);
+    expect(src).toContain('style={TOKEN_PALETTE}');
+    expect(css).toMatch(/\[data-description\] \{\s*color: var\(--site-text-muted\);/);
   });
 });

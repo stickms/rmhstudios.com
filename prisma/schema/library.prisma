@@ -10,11 +10,37 @@ model BlogPost {
   tags        String[]
   content     String
 
+  // Sitewide announcement mode (docs/superpowers/specs/2026-11-12-sitewide-announcements-design.md).
+  // `announcement` = pop up once for every visitor + pin at the top of the feed.
+  // `business` is a BusinessId from lib/businesses.ts. `announcedAt` is stamped
+  // each time the flag flips false → true (it versions the "seen" state).
+  announcement          Boolean   @default(false)
+  business              String    @default("rmh-studios") @db.VarChar(40)
+  announcedAt           DateTime?
+  announcementExpiresAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  seenBy BlogAnnouncementSeen[]
+
   @@index([date(sort: Desc)])
+  @@index([announcement, announcedAt(sort: Desc)])
   @@map("blog_post")
+}
+
+/// One row per signed-in member who dismissed a sitewide announcement popup.
+model BlogAnnouncementSeen {
+  userId String
+  postId String
+  seenAt DateTime @default(now())
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([postId])
+  @@map("blog_announcement_seen")
 }
 
 // ─── News ─────────────────────────────────────────────────────────

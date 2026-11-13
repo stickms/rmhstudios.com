@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConfirm } from '@/components/ui/confirm-dialog';
-import { api } from '@/lib/contract/client';
+import { api, apiUrl } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { removeProfileAvatarApi } from '@/lib/profile.contract';
+import { bannerSourceApi, removeProfileAvatarApi } from '@/lib/profile.contract';
 import {
   MAX_AVATAR_MB,
   MAX_BANNER_MB,
@@ -16,6 +16,13 @@ import type { ProfileEditForm } from './useProfileEditForm';
  * Avatar and banner handling: file selection with size limits, the crop
  * hand-off, banner removal, avatar reset, and releasing object URLs when a
  * preview is replaced or the editor unmounts.
+ *
+ * The banner is always cropped before it is previewed: choosing a file opens
+ * the cropper on it, and "Adjust crop" reopens the cropper on the whole
+ * picture the current banner was cut from. That picture is the file chosen in
+ * this session, or else the one the server kept, read through the same-origin
+ * `bannerSourceApi` (the public banner may be on the CDN, which a canvas
+ * cannot read back).
  */
 export function useProfileAssets(
   form: ProfileEditForm,
@@ -28,6 +35,9 @@ export function useProfileAssets(
     avatarPreview,
     bannerPreview,
     cropSrc,
+    bannerCrop,
+    bannerPicture,
+    bannerLoading,
     submitting,
     resettingAvatar,
     setError,
@@ -37,6 +47,9 @@ export function useProfileAssets(
     setBannerPreview,
     setBannerRemoved,
     setCropSrc,
+    setBannerCrop,
+    setBannerPicture,
+    setBannerLoading,
     setHasCustomAvatar,
     setResettingAvatar,
   } = form;
@@ -44,6 +57,8 @@ export function useProfileAssets(
   useEffect(() => () => revokeBlob(avatarPreview), [avatarPreview]);
   useEffect(() => () => revokeBlob(cropSrc), [cropSrc]);
   useEffect(() => () => revokeBlob(bannerPreview), [bannerPreview]);
+  const bannerCropSrc = bannerCrop?.src ?? null;
+  useEffect(() => () => revokeBlob(bannerCropSrc), [bannerCropSrc]);
 
   const handleBannerSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -58,16 +73,47 @@ export function useProfileAssets(
       return;
     }
     setError(null);
-    revokeBlob(bannerPreview);
-    setBannerFile(file);
-    setBannerPreview(URL.createObjectURL(file));
-    setBannerRemoved(false);
+    // Nothing changes until the crop is applied: cancelling keeps the banner as it was.
+    setBannerCrop({ src: URL.createObjectURL(file), blob: file, kept: false });
     event.target.value = '';
   };
 
+  const handleAdjustBanner = async () => {
+    if (bannerLoading || bannerCrop) return;
+    setError(null);
+    if (bannerPicture) {
+      setBannerCrop({ src: URL.createObjectURL(bannerPicture.blob), ...bannerPicture });
+      return;
+    }
+    setBannerLoading(true);
+    try {
+      const res = await fetch(apiUrl(bannerSourceApi), { credentials: 'same-origin' });
+      if (!res.ok) throw new Error(`banner source ${res.status}`);
+      const blob = await res.blob();
+      setBannerCrop({ src: URL.createObjectURL(blob), blob, kept: true });
+    } catch {
+      setError(
+        t('failed-load-banner', { defaultValue: 'Could not load the cover to adjust it' }),
+      );
+    } finally {
+      setBannerLoading(false);
+    }
+  };
+
+  const handleBannerCropDone = (croppedBlob: Blob) => {
+    if (!bannerCrop) return;
+    setBannerPicture({ blob: bannerCrop.blob, kept: bannerCrop.kept });
+    setBannerCrop(null);
+    setBannerFile(new File([croppedBlob], 'banner.png', { type: 'image/png' }));
+    setBannerPreview(URL.createObjectURL(croppedBlob));
+    setBannerRemoved(false);
+  };
+
+  const handleBannerCropCancel = () => setBannerCrop(null);
+
   const handleRemoveBanner = () => {
-    revokeBlob(bannerPreview);
     setBannerFile(null);
+    setBannerPicture(null);
     setBannerPreview(null);
     setBannerRemoved(true);
   };
@@ -138,6 +184,9 @@ export function useProfileAssets(
 
   return {
     handleBannerSelect,
+    handleAdjustBanner,
+    handleBannerCropDone,
+    handleBannerCropCancel,
     handleRemoveBanner,
     handleAvatarSelect,
     handleCropDone,

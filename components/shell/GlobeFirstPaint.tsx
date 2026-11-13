@@ -7,8 +7,8 @@
  * body fades in over it (globe-nav.css, THE BODY) the dots and lines are already where the body has them, and the
  * change reads as the ball gaining its reflection, not as one picture replacing another.
  *
- * The numbers are the shader's: parallels every 20 degrees to 60, meridians every 30; a dot is white to 0.065 R inside
- * a 55% black halo to 0.125 R (the docked dot size, 1.25); both fade toward the limb as `smoothstep(0.05, 0.35, z)`.
+ * The numbers are the shader's: parallels every 20 degrees to 60, meridians every 30; a dot is white to 0.065 R (the
+ * docked dot size, 1.25) inside a light grey outline one CSS pixel wide; both fade toward the limb as `smoothstep(0.05, 0.35, z)`.
  * The chrome under it is `.chrome-globe` (app/styles/steel-chrome.css, 4.2).
  */
 
@@ -41,8 +41,7 @@ export function GlobeFirstPaint({ points }: { points: number }) {
         </g>
         {dots.map((p, i) => (
           <g key={i} opacity={n2(smooth(0.05, 0.35, p.bz))} transform={`translate(${n2(p.bx * R)} ${n2(p.by * R)})`}>
-            <circle r="6.25" fill="#000" fillOpacity="0.55" />
-            <circle r="3.25" fill="#fff" />
+            <circle r="3.25" fill="#fff" stroke="#bdbdbd" strokeOpacity="0.9" strokeWidth="1" vectorEffect="non-scaling-stroke" />
           </g>
         ))}
       </svg>

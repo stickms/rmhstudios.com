@@ -6,6 +6,13 @@ interface TwemojiProviderProps {
  className?: string;
  /** Wrapper element tag. Defaults to a layout-neutral `display: contents` span. */
  tag?: keyof HTMLElementTagNameMap;
+ /**
+ * Also watch what mounts outside the wrapper, under `<body>`: dialogs, sheets, popovers,
+ * menus and toasts are portalled there, so without this their emoji stayed native glyphs
+ * (the status editor's presets, a name in a hover card, a toast). Only the root provider
+ * sets it; an island's provider keeps to its own subtree.
+ */
+ portals?: boolean;
 }
 
 // Math formula arrows look wrong as Twemoji, so leave them as native glyphs.
@@ -122,7 +129,12 @@ function whenIdle(fn: () => void) {
  * node React has adopted is safe to rewrite for the same reason the
  * MutationObserver path below always was.
  */
-export function TwemojiProvider({ children, className, tag: Tag = 'span' }: TwemojiProviderProps) {
+export function TwemojiProvider({
+ children,
+ className,
+ tag: Tag = 'span',
+ portals = false,
+}: TwemojiProviderProps) {
  const ref = useRef<HTMLElement>(null);
 
  useEffect(() => {
@@ -201,7 +213,14 @@ export function TwemojiProvider({ children, className, tag: Tag = 'span' }: Twem
  requestAnimationFrame(flush);
  }
  });
- observer.observe(el, { childList: true, subtree: true, characterData: true });
+ // With `portals` the watch is the whole body, which contains the wrapper. Portalled UI
+ // is created by React on the client, so it is safe to rewrite the moment it appears; the
+ // hydration-aware initial pass above still covers only the wrapper's server markup.
+ observer.observe(portals ? document.body : el, {
+ childList: true,
+ subtree: true,
+ characterData: true,
+ });
  });
 
  // Restore the native glyph when a Twemoji asset fails to load.
@@ -226,16 +245,17 @@ export function TwemojiProvider({ children, className, tag: Tag = 'span' }: Twem
  FAILED_ASSETS.add(img.getAttribute('src') ?? img.src);
  target.replaceWith(document.createTextNode(glyph));
  };
- el.addEventListener('error', onAssetError, true);
+ const errorRoot: HTMLElement = portals ? document.body : el;
+ errorRoot.addEventListener('error', onAssetError, true);
 
  return () => {
  // `observer` is undefined if the twemoji chunk hasn't resolved yet; the
  // flag stops that resolution from attaching one after teardown.
  cancelled = true;
  observer?.disconnect();
- el.removeEventListener('error', onAssetError, true);
+ errorRoot.removeEventListener('error', onAssetError, true);
  };
- }, []);
+ }, [portals]);
 
  const style = Tag === 'span' ? ({ display: 'contents' } as const) : undefined;
 

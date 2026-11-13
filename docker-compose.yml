@@ -236,6 +236,9 @@ services:
       - PORT=${PORT_WEB:-7005}
       - HOSTNAME=0.0.0.0
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      # Where /admin/wiki reaches the Wiki.js GraphQL API: the `wikijs` service by
+      # compose DNS. Unused until WIKIJS_API_KEY is set (docs/wiki.md).
+      - WIKIJS_URL=${WIKIJS_URL:-http://wikijs:3000}
       # Postgres connection budget (max_connections = 200, deploy/postgres/
       # postgresql.tuning.conf). Each Nitro worker owns a lib/prisma.server pool of
       # DATABASE_POOL_SIZE (default 20) plus a pg-boss producer pool (2), so one web
@@ -567,6 +570,67 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  # ─── Wiki (wiki.rmhstudios.com) ─────────────────────────────────────────────
+  # Wiki.js 2, the public wiki. Apache proxies wiki.rmhstudios.com to the loopback
+  # port published below (deploy/apache/wiki.rmhstudios.com.conf). Everything it
+  # stores (pages, history, uploads, settings) lives in its OWN Postgres database
+  # on the host, next to the site's; the container keeps no state and needs no
+  # volume. The site's /admin/wiki page manages its pages through the GraphQL API
+  # over compose DNS (WIKIJS_URL on `web`), so admins need no account here.
+  #
+  # OPT-IN, like pgbouncer: without the WIKIJS_DB_* credentials the container
+  # cannot start, and a profiled service is skipped by the deploy's plain
+  # `docker compose up`, so it cannot crash-loop a deploy for a stack that has
+  # not set the wiki up. Start it once, by hand (docs/wiki.md):
+  #   docker compose --profile wiki up -d wikijs
+  # `restart: unless-stopped` keeps it up across reboots and deploys after that.
+  wikijs:
+    # Pinned to the 2.5 line: 3.x is a different product with a different API.
+    image: ghcr.io/requarks/wiki:2.5
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-wikijs
+    restart: unless-stopped
+    profiles: ['wiki']
+    init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    # Resource limits (starting point): one Node process, low traffic.
+    mem_limit: 512m
+    mem_reservation: 192m
+    cpus: 0.5
+    # Below the default weight, like the workers: the wiki yields to web.
+    cpu_shares: 512
+    ports:
+      - '127.0.0.1:${PORT_WIKI:-7010}:3000'
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: ${WIKIJS_DB_HOST:-host.docker.internal}
+      DB_PORT: ${WIKIJS_DB_PORT:-5432}
+      DB_USER: ${WIKIJS_DB_USER:-wikijs}
+      DB_PASS: ${WIKIJS_DB_PASS:-}
+      DB_NAME: ${WIKIJS_DB_NAME:-wikijs}
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/healthz').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   # ─── Assets (streams /library /music /models /sprites from object storage) ──
   # Go port of the Apache-off-disk static CDN for the heavy media prefixes. In

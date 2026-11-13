@@ -477,7 +477,7 @@ function RootComponent() {
       i18nResources={i18nResources}
     >
       <NavigationProgress />
-      <TwemojiProvider>
+      <TwemojiProvider portals>
         <Outlet />
       </TwemojiProvider>
     </Providers>

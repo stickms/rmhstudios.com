@@ -689,6 +689,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // Profile banner crop (2026-11-13): the editor's "Adjust crop" control and its load error. English-only until the translate pipeline runs on build.
+    'adjust-cover',
+    'failed-load-banner',
     // Steel phase 5 (2026-11-12): the settings hub's stations. English-only until the translate pipeline runs on build; remove with it.
     'conversation-send',
     'explore-from-studio',
@@ -965,6 +968,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   'r-slice-it': [
     // Menu redesign, 2026-11-04: the route header's logo alt text.
     'game-title',
+    // 2026-11-13: the song row's action opens the record, so it says Open.
+    'library-open',
+    'open-song',
     // Extract backlog, 2026-09-15 — see the block at the end of this map.
     'artist-play-count_one',
     'pack-track-count_one',

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 363 routes. 200 render inside the standard site shell (sidebar, nav, context rail); 163 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 364 routes. 201 render inside the standard site shell (sidebar, nav, context rail); 163 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -60,6 +60,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/studio-challenges` | Studio sample flip \| Admin | admin | `app/routes/_site/admin/studio-challenges.tsx` |
 | `/admin/user-builds` | All User Builds \| Admin | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | Users \| Admin | admin | `app/routes/_site/admin/users.tsx` |
+| `/admin/wiki` | Wiki \| Admin | admin | `app/routes/_site/admin/wiki.tsx` |
 | `/advent` | — | public | `app/routes/_site/advent.tsx` |
 | `/alexdebtcounter` | redirects to `/kaikaidebtcounter` | public | `app/routes/_site/alexdebtcounter.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |

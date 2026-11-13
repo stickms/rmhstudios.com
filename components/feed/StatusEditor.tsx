@@ -15,6 +15,7 @@ import {
  SheetTitle,
  SheetFooter,
 } from'@/components/ui/sheet';
+import { EmojiText } from '@/components/ui/emoji';
 import { StatusBadge } from'./StatusBadge';
 import {
  STATUS_PRESETS,
@@ -153,7 +154,9 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  }}
  className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm text-site-text hover:border-site-text/40"
  >
- <span aria-hidden>{p.emoji}</span>
+ <span aria-hidden>
+ <EmojiText>{p.emoji}</EmojiText>
+ </span>
  {t(p.key, { defaultValue: p.text })}
  </button>
  ))}

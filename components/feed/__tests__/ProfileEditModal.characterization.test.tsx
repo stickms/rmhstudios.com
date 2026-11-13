@@ -102,6 +102,9 @@ const S = {
   hasCustomAvatar: 21,
   error: 22,
   selectedSong: 23,
+  bannerCrop: 24,
+  bannerPicture: 25,
+  bannerLoading: 26,
 } as const;
 
 const INITIAL = {
@@ -208,6 +211,11 @@ describe('ProfileEditModal characterization', () => {
   });
   it('crop modal open', () => {
     expect(render({ cropSrc: 'blob:crop' })).toMatchSnapshot();
+  });
+  it('banner crop modal open, and the adjust control while its picture loads', () => {
+    const picture = { blob: null, kept: true };
+    expect(render({ bannerCrop: { src: 'blob:banner', ...picture } })).toMatchSnapshot();
+    expect(render({ bannerLoading: true })).toMatchSnapshot();
   });
   it('links section: rows, empty, and at the limit', () => {
     expect(render({ section: 'links' })).toMatchSnapshot();
