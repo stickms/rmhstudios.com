@@ -5,7 +5,7 @@
  * reduced to its root bone and its blade bone: the model GLB has no clips, no `source.clipFrame` and a hull of
  * no size; the pack carries the sequences, in the converter's (y, z, x) basis.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   Bone,
   BoxGeometry,
@@ -14,6 +14,7 @@ import {
   Matrix4,
   MeshBasicMaterial,
   Skeleton,
+  type Object3D,
   SkinnedMesh,
   Uint16BufferAttribute,
   Vector3,
@@ -141,5 +142,29 @@ describe('a model animated by an anim pack', () => {
       knifePack({ clipFrame: rows }),
     );
     expect(both.frame.equals(new Matrix4())).toBe(true);
+  });
+
+  it("disposing an instance frees its skeleton's bone texture, and leaves the asset's alone", () => {
+    const asset = new ModelAsset('knife', knifeModel(NO_HULL), [], knifePack());
+    const skeletonOf = (root: Object3D): Skeleton => {
+      let found: Skeleton | null = null;
+      root.traverse((o) => {
+        if ((o as SkinnedMesh).isSkinnedMesh) found = (o as SkinnedMesh).skeleton;
+      });
+      return found!;
+    };
+    const inst = new ModelInstance(asset, {});
+    const own = skeletonOf(inst.root);
+    const shared = skeletonOf(asset.gltf.scene);
+    expect(own).not.toBe(shared);
+    // three.js makes these on the first draw.
+    own.computeBoneTexture();
+    shared.computeBoneTexture();
+    const freed = vi.fn();
+    own.boneTexture!.addEventListener('dispose', freed);
+    inst.dispose();
+    expect(freed).toHaveBeenCalledTimes(1);
+    expect(own.boneTexture).toBeNull();
+    expect(shared.boneTexture).not.toBeNull();
   });
 });

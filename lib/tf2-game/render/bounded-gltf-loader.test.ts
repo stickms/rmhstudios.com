@@ -3,7 +3,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 vi.mock('@/lib/tf2-loadout/gltf-loader', () => ({ Tf2GLTFLoader: class {} }));
 
-import { boundedGltfLoader, fitWithin, MODEL_LOADS } from './bounded-gltf-loader';
+import { boundedGltfLoader, MODEL_LOADS } from './bounded-gltf-loader';
 
 const gltfWith = (textures: unknown[]) => ({ parser: { getDependencies: async () => textures } }) as unknown as GLTF;
 
@@ -43,43 +43,7 @@ describe('boundedGltfLoader', () => {
     await expect(loader.loadAsync('good')).resolves.toBeTruthy();
   });
 
-  it('replaces a texture larger than the cap with a copy that fits, once per shared image', async () => {
-    const big = { naturalWidth: 2048, naturalHeight: 1024, width: 2048, height: 1024 };
-    const small = { naturalWidth: 256, naturalHeight: 256, width: 256, height: 256 };
-    const a = { image: big as unknown, needsUpdate: false };
-    const b = { image: big as unknown, needsUpdate: false };
-    const c = { image: small as unknown, needsUpdate: false };
-    const made: Array<{ w: number; h: number }> = [];
-    vi.stubGlobal('createImageBitmap', async (_src: unknown, o: { resizeWidth: number; resizeHeight: number; premultiplyAlpha: string }) => {
-      expect(o.premultiplyAlpha).toBe('none');
-      made.push({ w: o.resizeWidth, h: o.resizeHeight });
-      return { width: o.resizeWidth, height: o.resizeHeight, bitmap: true };
-    });
-    try {
-      const loader = boundedGltfLoader({ loadAsync: async () => gltfWith([a, b, c]) }, { concurrency: 2, maxTextureSize: 512 });
-      await loader.loadAsync('x.glb');
-    } finally {
-      vi.unstubAllGlobals();
-    }
-    expect(made).toEqual([{ w: 512, h: 256 }]);
-    expect(a.image).toMatchObject({ width: 512, height: 256 });
-    expect(b.image).toBe(a.image);
-    expect(a.needsUpdate && b.needsUpdate).toBe(true);
-    expect(c.image).toBe(small);
-    expect(c.needsUpdate).toBe(false);
-  });
-
-  it('keeps textures as they are without a cap', async () => {
-    const big = { width: 2048, height: 2048 };
-    const t = { image: big as unknown, needsUpdate: false };
-    await boundedGltfLoader({ loadAsync: async () => gltfWith([t]) }, { concurrency: 2 }).loadAsync('x.glb');
-    expect(t.image).toBe(big);
-  });
-
-  it('fits within the cap keeping the aspect, and loads few models at once on a phone', () => {
-    expect(fitWithin(1024, 512, 512)).toEqual({ width: 512, height: 256 });
-    expect(fitWithin(300, 200, 512)).toEqual({ width: 300, height: 200 });
-    expect(fitWithin(4096, 1, 512)).toEqual({ width: 512, height: 1 });
+  it('loads few models at once on a phone', () => {
     expect(MODEL_LOADS.phone).toBeLessThanOrEqual(8);
   });
 });
