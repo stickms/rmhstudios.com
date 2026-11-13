@@ -1,5 +1,6 @@
 /**
- * The "what a membership actually gets you" grid on the membership page.
+ * The "what a membership actually gets you" list on the membership page: one row on a rule per
+ * gated feature (icon, name, one line, and the plan it starts at or "Included").
  *
  * Rendered from `MEMBER_FEATURES` rather than hand-written copy, which is the
  * point: the same declaration gates the API route, so this page cannot advertise
@@ -7,8 +8,8 @@
  * gated feature puts it here in the same commit.
  *
  * When the viewer arrives from a refused action the URL carries
- * `?feature=<id>` (see `upgradeHref`), and that card is pulled to the front and
- * ringed — so someone who clicked "add a custom emoji" and was told to
+ * `?feature=<id>` (see `upgradeHref`), and that row is pulled to the front and
+ * marked — so someone who clicked "add a custom emoji" and was told to
  * subscribe lands looking at the custom-emoji card, not at a price table they
  * have to scan.
  */
@@ -19,7 +20,6 @@ import type { TFunction } from 'i18next';
 import {
   BadgeCheck,
   BriefcaseBusiness,
-  Check,
   Code,
   EyeOff,
   Keyboard,
@@ -40,6 +40,7 @@ import {
   type MemberFeature,
 } from '@/lib/entitlements/features';
 import type { Tier } from '@/lib/entitlements/tiers';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -79,7 +80,7 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
 
 function IconFor({ name, className }: { name: string; className?: string }) {
   const Cmp = FEATURE_ICONS[name] ?? Sparkles;
-  return <Cmp className={className} />;
+  return <Cmp className={className} aria-hidden />;
 }
 
 /**
@@ -190,66 +191,60 @@ export function MemberFeatureGrid({ tier, highlight, signedOut }: Props) {
   }, [highlight]);
 
   return (
-    <div className="mt-12">
-      <h3 className="text-center font-display text-2xl font-semibold text-site-text">
+    <div>
+      <h2 className="t-heading">
         {t('membership-features-title', { defaultValue: 'What a membership unlocks' })}
-      </h3>
-      <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-site-text-muted">
-        {t('membership-features-subtitle', {
+      </h2>
+      <p className="t-body mt-1 max-w-2xl text-site-text-muted">
+        {t('membership-features-lead', {
           defaultValue:
-            'Everything below is included from the tier shown on each card. Packs made by members can be installed and used by anyone, free accounts included.',
+            'Each feature is included from the plan named beside it. Packs made by members can be installed and used by anyone, free accounts included.',
         })}
       </p>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-4 border-t border-site-border">
         {features.map((feature) => {
           const unlocked = !signedOut && canUse(effectiveTier, feature.id);
           const isHighlight = feature.id === highlight;
           return (
-            <div key={feature.id} className="flex">
-              <article
-                // `.surface-card` is the repeated-card tier per the design language.
+            <li
+              key={feature.id}
+              data-slot="member-feature"
+              aria-current={isHighlight ? 'true' : undefined}
+              // The feature the viewer came for is marked by an ink rule at its start, and by
+              // being first: a row on a rule, not a ringed card.
+              className={cn(
+                'flex items-start gap-3 border-b border-site-border py-3',
+                isHighlight && 'border-s-2 border-s-site-text ps-3',
+              )}
+            >
+              <IconFor
+                name={feature.icon}
                 className={cn(
-                  'surface-card flex w-full flex-col gap-3 rounded-site p-5',
-                  isHighlight && 'ring-2 ring-site-accent',
+                  'mt-0.5 size-4 shrink-0',
+                  unlocked ? 'text-site-text' : 'text-site-text-muted',
                 )}
-                aria-current={isHighlight ? 'true' : undefined}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <span
-                    className={cn(
-                      'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-site-sm',
-                      unlocked
-                        ? 'bg-site-bg-subtle text-site-accent'
-                        : 'bg-site-surface-muted text-site-text-muted',
-                    )}
-                  >
-                    <IconFor name={feature.icon} className="h-5 w-5" />
-                  </span>
-                  {unlocked ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-site-accent">
-                      <Check className="h-3.5 w-3.5" aria-hidden />
-                      {t('feature-included', { defaultValue: 'Included' })}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-site-border px-2 py-0.5 text-xs font-medium text-site-text-muted">
-                      <Lock className="h-3 w-3" aria-hidden />
-                      {feature.minTier === 'free'
-                        ? t('feature-free', { defaultValue: 'Free' })
-                        : TIER_LABELS[feature.minTier]}
-                    </span>
-                  )}
-                </div>
-
-                <h4 className="text-base font-semibold text-site-text">{copy[feature.id].label}</h4>
-                <p className="text-sm leading-relaxed text-site-text-muted">
-                  {copy[feature.id].blurb}
-                </p>
-              </article>
-            </div>
+              />
+              <div className="min-w-0 flex-1">
+                <h3 className="t-body font-medium text-site-text">{copy[feature.id].label}</h3>
+                <p className="t-body text-site-text-muted">{copy[feature.id].blurb}</p>
+              </div>
+              {unlocked ? (
+                <Badge variant="success">
+                  {t('feature-included', { defaultValue: 'Included' })}
+                </Badge>
+              ) : (
+                <Badge>
+                  <Lock aria-hidden />
+                  {feature.minTier === 'free'
+                    ? t('feature-free', { defaultValue: 'Free' })
+                    : TIER_LABELS[feature.minTier]}
+                </Badge>
+              )}
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

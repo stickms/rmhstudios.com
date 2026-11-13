@@ -62,6 +62,19 @@ const SHEET_QUERY = '(max-width: 639px) and (pointer: coarse)';
  */
 const SHEET_HANDLE_H = 'calc(max(0.5rem, env(safe-area-inset-top)) + 1.75rem)';
 
+/**
+ * Records what had focus when the dialog opened. It renders (nothing) as a child of the content,
+ * so its first render runs after the dialog is told to open and before Radix moves focus inside.
+ */
+function OpenerCapture({ into }: { into: React.MutableRefObject<HTMLElement | null> }) {
+  React.useState(() => {
+    const active = typeof document === 'undefined' ? null : document.activeElement;
+    into.current = active instanceof HTMLElement && active !== document.body ? active : null;
+    return null;
+  });
+  return null;
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
@@ -92,10 +105,12 @@ const DialogContent = React.forwardRef<
       container,
       hideClose = false,
       style,
+      onCloseAutoFocus,
       ...props
     },
     ref,
   ) => {
+  const openerRef = React.useRef<HTMLElement | null>(null);
   const { t } = useTranslation('c-ui');
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const overlayRef = React.useRef<HTMLDivElement | null>(null);
@@ -150,8 +165,20 @@ const DialogContent = React.forwardRef<
         )}
         // Inline, so it wins over a caller's `p-0` as well as the default padding.
         style={sheet ? { ...style, paddingTop: SHEET_HANDLE_H } : style}
+        // Radix returns focus to its `DialogTrigger`. Most dialogs here are opened by state
+        // (`open={...}`) and have none, so closing one dropped focus on <body> and a keyboard
+        // user started again from the top of the page. Focus goes back to whatever opened it.
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          const opener = openerRef.current;
+          if (!event.defaultPrevented && opener?.isConnected) {
+            event.preventDefault();
+            opener.focus();
+          }
+        }}
         {...props}
       >
+        <OpenerCapture into={openerRef} />
         {sheet && (
           // The grab handle. Decorative and pointer-only — the close button below
           // is the accessible, keyboard-operable way out, and this never becomes
