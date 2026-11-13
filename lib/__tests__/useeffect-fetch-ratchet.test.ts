@@ -20,7 +20,7 @@ import { globSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /** Lower this when you migrate pages. Never raise it. */
-const BASELINE = 219;
+const BASELINE = 218;
 
 const USE_EFFECT = /\buseEffect\b/;
 const API_CALL = /fetch\(\s*['"`]\/api\/|(?<![\w.])api\(\s*[A-Za-z_]\w*Api\b/;

@@ -155,7 +155,7 @@ export function StorefrontColumn({
       title: t('storefront-buy-title', { title: p.title, defaultValue: 'Buy {{title}}?' }),
       description: t('storefront-buy-desc', {
         price: fmt(p.price),
-        defaultValue: 'This spends {{price}} coins. Coin purchases are not refunded.',
+        defaultValue: 'This spends {{price}} coins and shows you the deliverable.',
       }),
       confirmLabel: t('storefront-buy-confirm', {
         price: fmt(p.price),
@@ -198,7 +198,8 @@ export function StorefrontColumn({
     const ok = await confirm({
       title: t('storefront-delete-title', { title: p.title, defaultValue: 'Delete {{title}}?' }),
       description: t('storefront-delete-desc', {
-        defaultValue: 'It leaves your store. People who bought it keep what they bought.',
+        defaultValue:
+          'It leaves your store, and people who bought it lose its deliverable. To keep their access, hide it instead.',
       }),
       confirmLabel: t('delete', { defaultValue: 'Delete' }),
       danger: true,
