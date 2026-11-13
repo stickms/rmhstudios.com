@@ -42,7 +42,7 @@ import {
 } from '@/lib/tf2-game/render/entities';
 import type { AudioEngine } from '@/lib/tf2-game/audio/engine';
 import { soundlevelForRadius } from '@/lib/tf2-game/audio/attenuation';
-import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
+import { modelLoaderFor } from '@/lib/tf2-game/render/bounded-gltf-loader';
 import { SpWorld, type SpSnapshot } from '@/lib/sp-game/world/sp-world';
 import type { SpEvent } from '@/lib/sp-game/world/events';
 import type { SpUserCmd } from '@/lib/sp-game/player/sp-player';
@@ -267,7 +267,7 @@ export class SpClient implements GameClient {
     this.transition = transition;
     this.progress.finish('world');
     const textures = core.textureCache(this.game);
-    const models = new ModelLibrary({ url: (p) => gameAssetUrl(p, this.game), loader: new Tf2GLTFLoader() });
+    const models = new ModelLibrary({ url: (p) => gameAssetUrl(p, this.game), loader: modelLoaderFor(core.plan) });
     this.progress.begin('textures');
     const world = new WorldRenderer({
       bsp: pkg.bsp,
