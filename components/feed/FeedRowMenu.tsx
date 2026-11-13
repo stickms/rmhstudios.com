@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { translatePostApi } from '@/lib/ai/ai.contract';
@@ -15,8 +15,11 @@ interface FeedRowMenuProps {
   open: boolean;
   onClose: () => void;
   anchorRef: RefObject<HTMLElement | null>;
-  /** The translated text to show under the post, or null to show the original alone. */
-  onTranslation: (text: string | null) => void;
+  /**
+   * The translated text to show under the post and the language it is in, or null to show the original alone. The row
+   * shows it only while that is still the site's language.
+   */
+  onTranslation: (translation: { text: string; locale: string } | null) => void;
 }
 
 /**
@@ -33,21 +36,17 @@ export default function FeedRowMenu({ item, open, onClose, anchorRef, onTranslat
   const updateItem = useFeedStore((s) => s.updateItem);
   const removeItem = useFeedStore((s) => s.removeItem);
   const actualId = item.actualId ?? item.id;
-  const [translated, setTranslated] = useState<string | null>(null);
-  const [showing, setShowing] = useState(false);
+  // A translation is into the site's language: one made for another language is not this one's.
+  const [made, setMade] = useState<{ text: string; locale: string } | null>(null);
+  const translated = made && made.locale === locale ? made.text : null;
+  const [shown, setShown] = useState(false);
+  const showing = shown && translated !== null;
   const [translating, setTranslating] = useState(false);
-
-  // A translation is into the site's language: a new language drops it.
-  useEffect(() => {
-    setTranslated(null);
-    setShowing(false);
-    onTranslation(null);
-  }, [locale, onTranslation]);
 
   const toggleTranslation = async () => {
     if (translated) {
-      onTranslation(showing ? null : translated);
-      setShowing(!showing);
+      onTranslation(showing ? null : { text: translated, locale });
+      setShown(!showing);
       return;
     }
     setTranslating(true);
@@ -58,9 +57,9 @@ export default function FeedRowMenu({ item, open, onClose, anchorRef, onTranslat
         timeoutMs: AI_TIMEOUT_MS,
       });
       if (data.text) {
-        setTranslated(data.text);
-        setShowing(true);
-        onTranslation(data.text);
+        setMade({ text: data.text, locale });
+        setShown(true);
+        onTranslation({ text: data.text, locale });
       }
     } catch {
       toast.error(t('translate-error', { defaultValue: 'Could not translate this post.' }));

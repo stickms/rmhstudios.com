@@ -13,6 +13,7 @@ import { TakeMeterLazy } from '@/components/feed/TakeMeterLazy';
 import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadges';
 import { relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
+import { useLocaleStore } from '@/stores/localeStore';
 
 /** The post menu's rows and dialogs: fetched the first time a row's three dots are used, never with the feed. */
 const loadFeedRowMenu = () => import('@/components/feed/FeedRowMenu');
@@ -60,7 +61,10 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
   const menuAnchor = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuMounted, setMenuMounted] = useState(false);
-  const [translation, setTranslation] = useState<string | null>(null);
+  const locale = useLocaleStore((s) => s.locale);
+  const [made, setTranslation] = useState<{ text: string; locale: string } | null>(null);
+  // A translation is into the site's language: after a change of language it is no longer shown.
+  const translation = made && made.locale === locale ? made.text : null;
   const hasMenu = isRmhark && !pending && !item.deletedAt;
 
   // The body hard-clamps at five lines, so a long post would end mid-word with nothing to say more existed. Measured
