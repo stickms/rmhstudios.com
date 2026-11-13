@@ -8,6 +8,12 @@
 .profile-head__banner {
   margin-block-end: 16px;
 }
+/* An equipped point-shop theme writes its accent over the profile column (profileThemeStyle). Steel draws the active
+   tab's underline in ink, which no longer follows the accent, so on a themed profile the underline takes it back: a
+   solid colour on a 2px rule, and the active tab is still marked by its ink text as well (A2). */
+.profile-themed [role='tab']::after {
+  background-color: var(--site-accent);
+}
 /* Membership and tip goal: a heading and a line under a rule, not a card. */
 .profile-head__block {
   margin-block-start: 16px;

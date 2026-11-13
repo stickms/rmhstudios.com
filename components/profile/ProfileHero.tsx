@@ -147,6 +147,8 @@ export function ProfileHero({
 }: ProfileHeroProps) {
   const { t } = useTranslation('feed');
   const name = displayName || profile.username || t('user', { defaultValue: 'User' });
+  // The banner box holds the uploaded picture; without one, the equipped banner cosmetic, or else the equipped theme's
+  // backdrop. Steel phase 5 dropped the element that drew this value and left the line that computed it.
   const headerBackdrop = profile.cosmetics?.banner?.gradient ?? profile.cosmetics?.theme?.gradient;
   const joined = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(
     new Date(profile.createdAt),
@@ -176,8 +178,12 @@ export function ProfileHero({
   // is the spine below (ProfileColumn).
   return (
     <header className="profile-head">
-      {profile.bannerUrl ? (
-        <ProfileBanner src={profile.bannerUrl} className="profile-head__banner" />
+      {profile.bannerUrl || headerBackdrop ? (
+        <ProfileBanner
+          src={profile.bannerUrl}
+          backdrop={headerBackdrop}
+          className="profile-head__banner"
+        />
       ) : null}
 
       <div className="flex items-center gap-4">
