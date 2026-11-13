@@ -4192,8 +4192,11 @@ export function GameCanvas() {
             </div>
           )}
 
-          {/* Countdown Overlay */}
-          {status === 'PLAYING' && countdown > 0 && (
+          {/* Countdown Overlay. Also over the solo results screen's Retry, which
+              counts down while the status is still FINISHED: gated on PLAYING
+              alone, Retry showed no number and left the results up for three
+              seconds as if the press had done nothing. */}
+          {(status === 'PLAYING' || (status === 'FINISHED' && !isMultiplayer)) && countdown > 0 && (
             <div className="absolute inset-0 z-70 flex items-center justify-center pointer-events-none">
               <motion.div key={countdown} variants={popIn} initial="initial" animate="animate">
                 <span className="slice-display text-[7rem] sm:text-[12rem] text-slice-text soft-glow-text">
@@ -4225,7 +4228,10 @@ export function GameCanvas() {
             />
           )}
 
-          {status === 'FINISHED' && !isMultiplayer && (
+          {/* Gone for the Retry countdown: the engine has been reset, so the
+              sheet would read all zeros, and the field the run is about to start
+              on is what the number belongs over. */}
+          {status === 'FINISHED' && !isMultiplayer && countdown === 0 && (
             <GameOver
               engine={engine}
               onRetry={() => {
