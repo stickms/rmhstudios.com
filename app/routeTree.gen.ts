@@ -244,6 +244,7 @@ import { Route as SiteAdminSliceItContentRouteImport } from './routes/_site/admi
 import { Route as SiteAdminStudioChallengesRouteImport } from './routes/_site/admin/studio-challenges'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
+import { Route as SiteAdminWikiRouteImport } from './routes/_site/admin/wiki'
 import { Route as SiteAppsIndexRouteImport } from './routes/_site/apps/index'
 import { Route as SiteBlogIndexRouteImport } from './routes/_site/blog/index'
 import { Route as SiteBlogSlugRouteImport } from './routes/_site/blog/$slug'
@@ -441,6 +442,7 @@ import { Route as SiteHomesListingIdRouteImport } from './routes/_site/homes/lis
 import { Route as SiteNewsStoriesSlugRouteImport } from './routes/_site/news/stories/$slug'
 import { Route as SiteRmhladderJobsJobIdRouteImport } from './routes/_site/rmhladder/jobs/$jobId'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
+import { Route as ApiAdminWikiAssistRouteImport } from './routes/api/admin/wiki/assist'
 import { Route as ApiAlbumsAssetSplatRouteImport } from './routes/api/albums/asset/$'
 import { Route as ApiBalatroPackFileRouteImport } from './routes/api/balatro/pack.$file'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
@@ -1691,6 +1693,11 @@ const SiteAdminUsersRoute = SiteAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminWikiRoute = SiteAdminWikiRouteImport.update({
+  id: '/wiki',
+  path: '/wiki',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAppsIndexRoute = SiteAppsIndexRouteImport.update({
   id: '/apps/',
   path: '/apps/',
@@ -2694,6 +2701,11 @@ const SiteUUseridIndexRoute = SiteUUseridIndexRouteImport.update({
   path: '/u/$userid/',
   getParentRoute: () => SiteRoute,
 } as any)
+const ApiAdminWikiAssistRoute = ApiAdminWikiAssistRouteImport.update({
+  id: '/api/admin/wiki/assist',
+  path: '/api/admin/wiki/assist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAlbumsAssetSplatRoute = ApiAlbumsAssetSplatRouteImport.update({
   id: '/api/albums/asset/$',
   path: '/api/albums/asset/$',
@@ -3304,6 +3316,7 @@ export interface FileRoutesByFullPath {
   '/admin/studio-challenges': typeof SiteAdminStudioChallengesRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
+  '/admin/wiki': typeof SiteAdminWikiRoute
   '/blog/$slug': typeof SiteBlogSlugRoute
   '/builds/$slug': typeof SiteBuildsSlugRoute
   '/c/$slug': typeof SiteCSlugRoute
@@ -3499,6 +3512,7 @@ export interface FileRoutesByFullPath {
   '/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/news/stories/$slug': typeof SiteNewsStoriesSlugRoute
   '/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
+  '/api/admin/wiki/assist': typeof ApiAdminWikiAssistRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/balatro/pack/$file': typeof ApiBalatroPackFileRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
@@ -3783,6 +3797,7 @@ export interface FileRoutesByTo {
   '/admin/studio-challenges': typeof SiteAdminStudioChallengesRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
+  '/admin/wiki': typeof SiteAdminWikiRoute
   '/blog/$slug': typeof SiteBlogSlugRoute
   '/builds/$slug': typeof SiteBuildsSlugRoute
   '/c/$slug': typeof SiteCSlugRoute
@@ -3977,6 +3992,7 @@ export interface FileRoutesByTo {
   '/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/news/stories/$slug': typeof SiteNewsStoriesSlugRoute
   '/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
+  '/api/admin/wiki/assist': typeof ApiAdminWikiAssistRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/balatro/pack/$file': typeof ApiBalatroPackFileRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
@@ -4289,6 +4305,7 @@ export interface FileRoutesById {
   '/_site/admin/studio-challenges': typeof SiteAdminStudioChallengesRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
+  '/_site/admin/wiki': typeof SiteAdminWikiRoute
   '/_site/blog/$slug': typeof SiteBlogSlugRoute
   '/_site/builds/$slug': typeof SiteBuildsSlugRoute
   '/_site/c/$slug': typeof SiteCSlugRoute
@@ -4484,6 +4501,7 @@ export interface FileRoutesById {
   '/_site/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/_site/news/stories/$slug': typeof SiteNewsStoriesSlugRoute
   '/_site/rmhladder/jobs/$jobId': typeof SiteRmhladderJobsJobIdRoute
+  '/api/admin/wiki/assist': typeof ApiAdminWikiAssistRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/balatro/pack/$file': typeof ApiBalatroPackFileRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
@@ -4795,6 +4813,7 @@ export interface FileRouteTypes {
     | '/admin/studio-challenges'
     | '/admin/user-builds'
     | '/admin/users'
+    | '/admin/wiki'
     | '/blog/$slug'
     | '/builds/$slug'
     | '/c/$slug'
@@ -4990,6 +5009,7 @@ export interface FileRouteTypes {
     | '/homes/listing/$id'
     | '/news/stories/$slug'
     | '/rmhladder/jobs/$jobId'
+    | '/api/admin/wiki/assist'
     | '/api/albums/asset/$'
     | '/api/balatro/pack/$file'
     | '/api/builds/cover/$file'
@@ -5274,6 +5294,7 @@ export interface FileRouteTypes {
     | '/admin/studio-challenges'
     | '/admin/user-builds'
     | '/admin/users'
+    | '/admin/wiki'
     | '/blog/$slug'
     | '/builds/$slug'
     | '/c/$slug'
@@ -5468,6 +5489,7 @@ export interface FileRouteTypes {
     | '/homes/listing/$id'
     | '/news/stories/$slug'
     | '/rmhladder/jobs/$jobId'
+    | '/api/admin/wiki/assist'
     | '/api/albums/asset/$'
     | '/api/balatro/pack/$file'
     | '/api/builds/cover/$file'
@@ -5779,6 +5801,7 @@ export interface FileRouteTypes {
     | '/_site/admin/studio-challenges'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
+    | '/_site/admin/wiki'
     | '/_site/blog/$slug'
     | '/_site/builds/$slug'
     | '/_site/c/$slug'
@@ -5974,6 +5997,7 @@ export interface FileRouteTypes {
     | '/_site/homes/listing/$id'
     | '/_site/news/stories/$slug'
     | '/_site/rmhladder/jobs/$jobId'
+    | '/api/admin/wiki/assist'
     | '/api/albums/asset/$'
     | '/api/balatro/pack/$file'
     | '/api/builds/cover/$file'
@@ -6188,6 +6212,7 @@ export interface RootRouteChildren {
   SohumtrackerWeekWeekRoute: typeof SohumtrackerWeekWeekRoute
   TagTagRssDotxmlRoute: typeof TagTagRssDotxmlRoute
   UHandleRssDotxmlRoute: typeof UHandleRssDotxmlRoute
+  ApiAdminWikiAssistRoute: typeof ApiAdminWikiAssistRoute
   ApiAlbumsAssetSplatRoute: typeof ApiAlbumsAssetSplatRoute
   ApiBalatroPackFileRoute: typeof ApiBalatroPackFileRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
@@ -7879,6 +7904,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminUsersRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/wiki': {
+      id: '/_site/admin/wiki'
+      path: '/wiki'
+      fullPath: '/admin/wiki'
+      preLoaderRoute: typeof SiteAdminWikiRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/apps/': {
       id: '/_site/apps/'
       path: '/apps'
@@ -9258,6 +9290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteUUseridIndexRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/api/admin/wiki/assist': {
+      id: '/api/admin/wiki/assist'
+      path: '/api/admin/wiki/assist'
+      fullPath: '/api/admin/wiki/assist'
+      preLoaderRoute: typeof ApiAdminWikiAssistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/albums/asset/$': {
       id: '/api/albums/asset/$'
       path: '/api/albums/asset/$'
@@ -9800,6 +9839,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminStudioChallengesRoute: typeof SiteAdminStudioChallengesRoute
   SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRoute
   SiteAdminUsersRoute: typeof SiteAdminUsersRoute
+  SiteAdminWikiRoute: typeof SiteAdminWikiRoute
   SiteAdminIndexRoute: typeof SiteAdminIndexRoute
   SiteAdminAlbumsIdRoute: typeof SiteAdminAlbumsIdRoute
   SiteAdminBlogNewRoute: typeof SiteAdminBlogNewRoute
@@ -9843,6 +9883,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminStudioChallengesRoute: SiteAdminStudioChallengesRoute,
   SiteAdminUserBuildsRoute: SiteAdminUserBuildsRoute,
   SiteAdminUsersRoute: SiteAdminUsersRoute,
+  SiteAdminWikiRoute: SiteAdminWikiRoute,
   SiteAdminIndexRoute: SiteAdminIndexRoute,
   SiteAdminAlbumsIdRoute: SiteAdminAlbumsIdRoute,
   SiteAdminBlogNewRoute: SiteAdminBlogNewRoute,
@@ -10930,6 +10971,7 @@ const rootRouteChildren: RootRouteChildren = {
   SohumtrackerWeekWeekRoute: SohumtrackerWeekWeekRoute,
   TagTagRssDotxmlRoute: TagTagRssDotxmlRoute,
   UHandleRssDotxmlRoute: UHandleRssDotxmlRoute,
+  ApiAdminWikiAssistRoute: ApiAdminWikiAssistRoute,
   ApiAlbumsAssetSplatRoute: ApiAlbumsAssetSplatRoute,
   ApiBalatroPackFileRoute: ApiBalatroPackFileRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,

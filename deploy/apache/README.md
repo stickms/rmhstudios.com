@@ -8,6 +8,7 @@ Node web container and the realtime hubs.
 | ---- | ---------- | --------------- |
 | `rmhstudios.conf` | The main vhost — security headers, CSP, and every `ProxyPass` (web, `/socket/`, `/rmhbox-ws/`, `/rmhtube-ws/`). | **A human, by hand.** Nothing in the deploy copies it. |
 | `status.rmhstudios.com.conf` | The status subdomain's vhost (the Go `status` service on 7008). | A human, by hand. |
+| `wiki.rmhstudios.com.conf` | The wiki subdomain's vhost (the Wiki.js `wikijs` service on 7010; `docs/wiki.md`). | A human, by hand. |
 | `mpm_event.conf` | Worker/connection tuning. Paired with the Postgres tuning — see `deploy/postgres/`. | A human, by hand. |
 | `rmhstudios-web-active.conf.example` | Template for the blue/green port include. | Copied once; **rewritten by every deploy** thereafter. |
 
