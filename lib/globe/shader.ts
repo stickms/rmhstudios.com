@@ -13,7 +13,8 @@
  *     20 up to 60. A mirror ball looks the same at any rotation; the cage is what shows it turning.
  *   - the DESTINATIONS as dots on the sphere (`u_pin`, body space): docked, the globe shows where its pages are as
  *     dots that orbit with it, as the liquid globe did; open, the real icon pins (DOM links, lib/globe/view.ts) sit
- *     over them and the dots fade.
+ *     over them and the dots fade. A dot is a white disc inside a light grey outline one CSS pixel wide (owner,
+ *     2026-11-13: no dark ring round it).
  *
  * The canvas hangs outside the disc by BLEED of its diameter on every side so the silhouette has somewhere to go.
  */
@@ -151,7 +152,8 @@ float par = abs(lat - la);
 float mer = abs(asin(clamp(cos(lat) * sin(lon - lo), -1.0, 1.0)));
 float line = smoothstep(1.6 * w1, 0.6 * w1, min(par, mer));
 col = mix(col, vec3(0.0), 0.32 * u_dots.z * smoothstep(0.05, 0.35, n0.z) * line);
-col = mix(col, vec3(0.0), 0.55 * face * smoothstep(0.1 + px, 0.1 - px, dd));
+float ring = 0.052 + px * u_dpr;
+col = mix(col, vec3(0.74), 0.9 * face * smoothstep(ring + px, ring - px, dd));
 col = mix(col, vec3(1.0), face * smoothstep(0.052 + px, 0.052 - px, dd));
 float edge = 1.5 / (r * u_dpr);
 float rr = sqrt(r2);
