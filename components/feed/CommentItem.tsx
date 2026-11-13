@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useReconsider } from '@/components/safety/use-reconsider';
+import { PostMenuTrigger } from './PostMenuTrigger';
 import {
   Heart,
   Trash2,
   Repeat,
+  Repeat2,
+  MessageCircle,
   BadgeCheck,
   ShieldCheck,
   Languages,
@@ -376,7 +379,7 @@ export function CommentItem({
         <ReactionChips reactions={reactions} onToggle={toggleReaction} className="mt-2" />
       )}
 
-      {/* K8: plain muted words, 18px apart. "On" is ink at weight 600. */}
+      {/* K8 (as amended 2026-11-13): an icon and its count; the three dots open the menu. "On" is ink, never a colour. */}
       {!comment.deletedAt && (
         <div className="feed-actions">
           <button
@@ -385,8 +388,10 @@ export function CommentItem({
             aria-pressed={liked}
             data-on={liked ? '' : undefined}
             className="feed-action"
+            title={t('like', { defaultValue: 'Like' })}
           >
-            {t('like', { defaultValue: 'Like' })}
+            <Heart className="feed-action__icon" data-fill="" aria-hidden />
+            <span className="sr-only">{t('like', { defaultValue: 'Like' })}</span>
             {formatCount(likeCount) && (
               <span className="feed-action__count">{formatCount(likeCount)}</span>
             )}
@@ -397,8 +402,10 @@ export function CommentItem({
             aria-pressed={reposted}
             data-on={reposted ? '' : undefined}
             className="feed-action"
+            title={t('action-repost', { defaultValue: 'Repost' })}
           >
-            {t('action-repost', { defaultValue: 'Repost' })}
+            <Repeat2 className="feed-action__icon" aria-hidden />
+            <span className="sr-only">{t('action-repost', { defaultValue: 'Repost' })}</span>
             {formatCount(repostCount) && (
               <span className="feed-action__count">{formatCount(repostCount)}</span>
             )}
@@ -409,22 +416,19 @@ export function CommentItem({
               onClick={() => setReplyOpen((v) => !v)}
               aria-expanded={replyOpen}
               className="feed-action"
+              title={t('reply', { defaultValue: 'Reply' })}
             >
-              {t('reply', { defaultValue: 'Reply' })}
+              <MessageCircle className="feed-action__icon" aria-hidden />
+              <span className="sr-only">{t('reply', { defaultValue: 'Reply' })}</span>
             </button>
           )}
           <div className="relative">
-            <button
+            <PostMenuTrigger
               ref={menuBtnRef}
-              type="button"
+              label={t('more-options', { defaultValue: 'More options' })}
+              open={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
-              aria-label={t('more-options', { defaultValue: 'More options' })}
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              className="feed-action"
-            >
-              {t('action-more', { defaultValue: 'More' })}
-            </button>
+            />
             <AnchoredMenu
               open={menuOpen}
               onClose={() => setMenuOpen(false)}

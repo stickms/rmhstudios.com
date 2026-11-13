@@ -1,20 +1,27 @@
 /**
- * Shared"three-dots"overflow menu for a RMHark. Used by both the feed card
- * (RMHarkCard) and the post-detail page (PostDetail) so the two can't drift
- * apart again — every action (bookmark, likes/reposts, share, insights, edit,
- * pin, delete, tip, report, mute, block) and its modal live here once.
+ * Shared three-dots menu for a RMHark. Used by the home feed row (FeedRow, through
+ * the lazy FeedRowMenu), the feed card (RMHarkCard) and the post-detail page
+ * (PostDetail) so the three can't drift apart: every action (bookmark, reminder,
+ * share, copy link, likes/reposts, insights, edit, pin, delete, tip, report, mute,
+ * block) and its modal live here once.
+ *
+ * Two exports. `RMHarkOverflowPanel` is the menu and its dialogs, hung off a
+ * trigger the caller owns; `RMHarkOverflowMenu` is the trigger (PostMenuTrigger,
+ * the three dots) and the panel together. The home feed keeps only the trigger
+ * in its own chunk and fetches the panel the first time a menu is opened.
  *
  * Translation is the one action left to the parent: the translated text is
  * rendered in the post body, which each surface lays out differently, so the
  * parent owns that state and passes a `translate`control for the menu item.
  */
 
-import { lazy, Suspense, useRef, useState } from'react';
+import { lazy, Suspense, useRef, useState, type RefObject } from'react';
 import {
  Heart,
  Repeat,
  Trash2,
  Share2,
+ Link2,
  Flag,
  Ban,
  VolumeX,
@@ -34,6 +41,7 @@ import { useConfirm } from'@/components/ui/confirm-dialog';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { cn } from'@/lib/utils';
+import { PostMenuTrigger } from './PostMenuTrigger';
 import type { FeedItem } from'@/lib/feed-types';
 import { bookmarkPostApi, pinPostApi, deletePostApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
@@ -68,7 +76,7 @@ export interface RMHarkTranslateControl {
  onToggle: () => void;
 }
 
-interface RMHarkOverflowMenuProps {
+interface RMHarkOverflowShared {
  item: FeedItem;
  isAuthor: boolean;
  /** Sync count/content changes back to the surface (feed store, local state). */
@@ -78,18 +86,56 @@ interface RMHarkOverflowMenuProps {
  onRemove?: () => void;
  /** Optional translate menu item; the translated body is rendered by the parent. */
  translate?: RMHarkTranslateControl;
+}
+
+interface RMHarkOverflowMenuProps extends RMHarkOverflowShared {
  /** Extra classes for the positioned wrapper. */
  className?: string;
 }
 
-export function RMHarkOverflowMenu({
+interface RMHarkOverflowPanelProps extends RMHarkOverflowShared {
+ open: boolean;
+ onClose: () => void;
+ /** The trigger the menu hangs off and hands focus back to. */
+ anchorRef: RefObject<HTMLElement | null>;
+}
+
+/** The trigger and the panel together: the post card and the post page. */
+export function RMHarkOverflowMenu({ className, ...shared }: RMHarkOverflowMenuProps) {
+ const { t } = useTranslation('feed');
+ const [menuOpen, setMenuOpen] = useState(false);
+ const triggerRef = useRef<HTMLButtonElement>(null);
+ return (
+ <div className={cn('relative', className)}>
+ <PostMenuTrigger
+ ref={triggerRef}
+ label={t('post-actions', { defaultValue: 'Post actions' })}
+ open={menuOpen}
+ onClick={(e) => {
+ e.stopPropagation();
+ setMenuOpen((v) => !v);
+ }}
+ />
+ <RMHarkOverflowPanel
+ {...shared}
+ open={menuOpen}
+ onClose={() => setMenuOpen(false)}
+ anchorRef={triggerRef}
+ />
+ </div>
+ );
+}
+
+export function RMHarkOverflowPanel({
  item,
  isAuthor,
  onUpdate,
  onRemove,
  translate,
- className,
-}: RMHarkOverflowMenuProps) {
+ open: menuOpen,
+ onClose,
+ anchorRef,
+}: RMHarkOverflowPanelProps) {
  const { t } = useTranslation('feed');
  const confirm = useConfirm();
  // Shared root-level session (one subscription for the whole app).
@@ -97,7 +143,7 @@ export function RMHarkOverflowMenu({
  const actualId = item.actualId ?? item.id;
  const targetUserId = item.user?.id;
 
- const [menuOpen, setMenuOpen] = useState(false);
+ const setMenuOpen = (_open: false) => onClose();
  const [engagementModal, setEngagementModal] = useState<'likes'|'reposts'| null>(null);
  const [shareModalOpen, setShareModalOpen] = useState(false);
  const [reportOpen, setReportOpen] = useState(false);
@@ -107,7 +153,6 @@ export function RMHarkOverflowMenu({
  const [remindOpen, setRemindOpen] = useState(false);
  const [pinned, setPinned] = useState(!!item.pinned);
  const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
- const triggerRef = useRef<HTMLButtonElement>(null);
  const { run: runBookmark } = useOptimisticAction();
  const { run: runPin } = useOptimisticAction();
 
@@ -141,6 +186,16 @@ export function RMHarkOverflowMenu({
  navigator.share({ title:'RMH', text: shareText, url: shareUrl }).catch(() => {});
  } else {
  setShareModalOpen(true);
+ }
+ };
+
+ const handleCopyLink = async () => {
+ setMenuOpen(false);
+ try {
+ await navigator.clipboard.writeText(shareUrl);
+ toast.success(t('post-link-copied', { defaultValue: 'Link copied' }));
+ } catch {
+ toast.error(t('post-link-copy-failed', { defaultValue: 'Could not copy the link' }));
  }
  };
 
@@ -241,30 +296,10 @@ export function RMHarkOverflowMenu({
  const showTranslate =
  translate && !!item.content && !item.deletedAt && (item.content?.length ?? 0) > 8;
 
- return (
- <div className={cn('relative', className)}>
- <button
- ref={triggerRef}
- onClick={(e) => {
- e.stopPropagation();
- setMenuOpen((v) => !v);
- }}
- aria-label={t('more-options', { defaultValue:'More options'})}
- aria-haspopup="menu"
- aria-expanded={menuOpen}
- // K8: a plain word, not an icon-only button. "More options" (the name) contains the visible "More".
- className="feed-action"
- >
- {t('action-more', { defaultValue: 'More' })}
- </button>
- <AnchoredMenu
- open={menuOpen}
- onClose={() => setMenuOpen(false)}
- anchorRef={triggerRef}
- label={t('more-options', { defaultValue:'More options'})}
- className="w-52"
- >
- {session && (
+ // The rows, in groups: keep it for later, send it somewhere, who engaged, then what only the author or only a
+ // reader can do, with the row that cannot be undone last in its group and in the danger tone.
+ const keep = session ? (
+ <>
  <MenuItem
  icon={Bookmark}
  // The fill IS the state here, so it overrides the row's default dim ink.
@@ -275,8 +310,6 @@ export function RMHarkOverflowMenu({
  ? t('bookmark-saved-label', { defaultValue:'Saved'})
  : t('bookmark-label', { defaultValue:'Bookmark'})}
  </MenuItem>
- )}
- {session && (
  <MenuItem
  icon={AlarmClock}
  onSelect={() => {
@@ -286,27 +319,25 @@ export function RMHarkOverflowMenu({
  >
  {t('remind-me', { defaultValue:'Remind me'})}
  </MenuItem>
- )}
- <MenuItem
- icon={Heart}
- onSelect={() => {
- setMenuOpen(false);
- setEngagementModal('likes');
- }}
+ <MenuSeparator />
+ </>
+ ) : null;
+
+ return (
+ <>
+ <AnchoredMenu
+ open={menuOpen}
+ onClose={onClose}
+ anchorRef={anchorRef}
+ label={t('post-actions', { defaultValue: 'Post actions' })}
+ className="w-52"
  >
- {t('liked-by', { defaultValue:'Liked by'})}
- </MenuItem>
- <MenuItem
- icon={Repeat}
- onSelect={() => {
- setMenuOpen(false);
- setEngagementModal('reposts');
- }}
- >
- {t('rermharkd-by', { defaultValue:"reRMHark'd by"})}
- </MenuItem>
+ {keep}
  <MenuItem icon={Share2} onSelect={handleShare}>
  {t('share', { defaultValue:'Share'})}
+ </MenuItem>
+ <MenuItem icon={Link2} onSelect={handleCopyLink}>
+ {t('copy-link', { defaultValue: 'Copy link' })}
  </MenuItem>
  {showTranslate && (
  <MenuItem
@@ -326,6 +357,25 @@ export function RMHarkOverflowMenu({
  : t('translate', { defaultValue:'Translate'})}
  </MenuItem>
  )}
+ <MenuSeparator />
+ <MenuItem
+ icon={Heart}
+ onSelect={() => {
+ setMenuOpen(false);
+ setEngagementModal('likes');
+ }}
+ >
+ {t('liked-by', { defaultValue:'Liked by'})}
+ </MenuItem>
+ <MenuItem
+ icon={Repeat}
+ onSelect={() => {
+ setMenuOpen(false);
+ setEngagementModal('reposts');
+ }}
+ >
+ {t('rermharkd-by', { defaultValue:"reRMHark'd by"})}
+ </MenuItem>
  {isAuthor && (
  <>
  <MenuSeparator />
@@ -356,6 +406,7 @@ export function RMHarkOverflowMenu({
  ? t('unpin-from-profile', { defaultValue:'Unpin from profile'})
  : t('pin-to-profile', { defaultValue:'Pin to profile'})}
  </MenuItem>
+ <MenuSeparator />
  <MenuItem icon={Trash2} tone="danger" onSelect={handleDelete}>
  {t('delete', { defaultValue:'Delete'})}
  </MenuItem>
@@ -365,6 +416,7 @@ export function RMHarkOverflowMenu({
  <>
  <MenuSeparator />
  {targetUserId && (
+ <>
  <MenuItem
  icon={Coins}
  iconClassName="text-site-warning"
@@ -375,6 +427,8 @@ export function RMHarkOverflowMenu({
  >
  {t('send-tip', { defaultValue:'Send tip'})}
  </MenuItem>
+ <MenuSeparator />
+ </>
  )}
  <MenuItem
  icon={Flag}
@@ -483,6 +537,6 @@ export function RMHarkOverflowMenu({
  />
  </Suspense>
  )}
- </div>
+ </>
  );
 }

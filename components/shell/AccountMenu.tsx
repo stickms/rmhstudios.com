@@ -1,6 +1,7 @@
 import { useCallback, useRef, type RefObject } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { LayoutGrid, LogOut, Settings, User, Wallet } from 'lucide-react';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 
@@ -13,7 +14,8 @@ interface AccountMenuProps {
 
 /**
  * The signed-in handle's menu: everything the old top bar's profile panel held (Profile, Wallet, Settings, Sign out),
- * plus the way to the sections the five words do not name. One overlay (S5); rows are words.
+ * plus the way to the sections the five words do not name. One overlay (S5); a row is an icon and a word, like the
+ * post menu's (owner, 2026-11-13).
  */
 export function AccountMenu({ open, onClose, anchorRef, profileHref }: AccountMenuProps) {
   const { t } = useTranslation('feed');
@@ -51,20 +53,20 @@ export function AccountMenu({ open, onClose, anchorRef, profileHref }: AccountMe
       side="top"
       align="start"
     >
-      <MenuItem href={profileHref} onClick={onClose}>
+      <MenuItem icon={User} href={profileHref} onClick={onClose}>
         {t('profile', { defaultValue: 'Profile' })}
       </MenuItem>
-      <MenuItem href="/predictions" onClick={onClose}>
+      <MenuItem icon={Wallet} href="/predictions" onClick={onClose}>
         {t('nav-wallet', { defaultValue: 'Wallet' })}
       </MenuItem>
-      <MenuItem href="/settings" onClick={onClose}>
+      <MenuItem icon={Settings} href="/settings" onClick={onClose}>
         {t('settings', { defaultValue: 'Settings' })}
       </MenuItem>
-      <MenuItem href="/sections" onClick={onClose}>
+      <MenuItem icon={LayoutGrid} href="/sections" onClick={onClose}>
         {t('shell-all-sections', { defaultValue: 'All sections' })}
       </MenuItem>
       <MenuSeparator />
-      <MenuItem onClick={signOut}>{t('sign-out', { defaultValue: 'Sign out' })}</MenuItem>
+      <MenuItem icon={LogOut} onClick={signOut}>{t('sign-out', { defaultValue: 'Sign out' })}</MenuItem>
     </AnchoredMenu>
   );
 }

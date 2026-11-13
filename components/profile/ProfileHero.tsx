@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { OfficeHoursProfileButton } from '@/components/calendar/OfficeHoursProfileButton';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { BadgeCheck, Bot, Coins, Gift, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, Coins, Gift, ShieldCheck } from 'lucide-react';
+import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 
 import { AchievementBadgeStrip } from '@/components/feed/AchievementBadgeStrip';
 import { EmojiText } from '@/components/ui/emoji';
@@ -93,15 +94,12 @@ function IdentityBadges({ profile }: { profile: ProfileData }) {
         />
       ) : null}
       {profile.isBot ? (
-        <span
-          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-site-accent/10 px-2 py-0.5 text-xs font-semibold text-site-accent"
-          title={t('bot-account-hint', {
+        <AutomatedBadge
+          className="size-5"
+          tip={t('bot-account-hint', {
             defaultValue: 'Automated account — its posts are AI-generated.',
           })}
-        >
-          <Bot className="size-3.5" aria-hidden />
-          {t('bot-account', { defaultValue: 'Bot' })}
-        </span>
+        />
       ) : null}
     </>
   );

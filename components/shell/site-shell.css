@@ -78,6 +78,20 @@
   .site-sidebar {
     display: block;
   }
+  /* The columns are placed by name, not by order: the globe's box (globe-nav.css "DESKTOP") is a fourth grid item laid
+     over the sidebar's cell, and auto-placement would otherwise move the sidebar out from under it. */
+  .site-sidebar {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .site-main {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .site-margin {
+    grid-column: 3;
+    grid-row: 1;
+  }
   .site-sidebar__inner {
     display: flex;
     flex-direction: column;
@@ -224,13 +238,18 @@
   font-weight: 500;
   text-decoration: none;
 }
+/* The viewer's own profile: the row is the current place, as a section word would be. */
+.site-sidebar__handle[aria-current='page'] {
+  font-weight: 600;
+}
 .site-sidebar__handle-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* The globe is GlobeNav's element (globe-nav.css "DESKTOP"): a fixed 124px ball above the sidebar's foot. This keeps
-   its place in the column so the lists above never run under it; it never shrinks (the globe comes first). */
+/* The globe is GlobeNav's element (globe-nav.css "DESKTOP"): a 124px ball above the sidebar's foot, in a box with this
+   column's own sticky geometry. This keeps its place in the column so the lists above never run under it; it never
+   shrinks (the globe comes first). */
 .site-sidebar__globe-space {
   flex: none;
   block-size: 140px;
@@ -266,6 +285,16 @@
 }
 .site-margin__row:hover {
   background: var(--site-bg-subtle);
+}
+/* A person in "Who to follow": the avatar, then the name, the handle and the reason, stacked. Still a row on a rule. */
+.site-margin__person {
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+}
+.site-margin__person-text {
+  flex: 1 1 0;
+  min-inline-size: 0;
 }
 .site-margin__page {
   margin-block-start: 26px;

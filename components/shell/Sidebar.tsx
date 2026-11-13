@@ -1,10 +1,18 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { MoreHorizontal } from 'lucide-react';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { SECTIONS, WRITE_HREF, currentSection, pageOwnsPrimary, viewerPathFor } from './sections';
+import {
+  SIDEBAR_SECTIONS,
+  WRITE_HREF,
+  currentSection,
+  isViewerPath,
+  pageOwnsPrimary,
+  viewerPathFor,
+} from './sections';
 import { usePathname } from './shell-router-state';
 import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
@@ -17,10 +25,13 @@ const SECTION_HREFS = new Set(['/', '/explore', '/games', '/messages']);
 const AccountMenu = lazy(() => import('./AccountMenu').then((m) => ({ default: m.AccountMenu })));
 
 /**
- * The desktop sidebar (Steel L4), top to bottom: the words "RMH Studios", the five sections as words, as many of the
- * other places as the window's height leaves room for, the globe, the one ink primary, and at the foot the signed-in
- * handle with a 28px avatar (owner, 2026-11-12). It never scrolls: the globe and the foot keep their place and the
- * lists give way.
+ * The desktop sidebar (Steel L4), top to bottom: the words "RMH Studios", the sections as words (Feed, Explore, Games,
+ * Inbox), as many of the other places as the window's height leaves room for, the globe, the one ink primary, and at
+ * the foot the account row (owner, 2026-11-12). It never scrolls: the globe and the foot keep their place and the lists
+ * give way.
+ *
+ * THE ACCOUNT ROW IS "YOU" (owner, 2026-11-13). The avatar and handle are one link to the viewer's own profile, marked
+ * current there; the three dots beside it open the account menu. Signed out, the row is "Sign in" and "All sections".
  *
  * It is plain markup with links, so it is complete with scripting off (B1). Below 1024px it is not displayed
  * (site-shell.css) and the phone globe is the navigator.
@@ -103,7 +114,7 @@ export function Sidebar() {
           aria-label={t('shell-sections-label', { defaultValue: 'Sections' })}
         >
           <ul className="site-sidebar__list">
-            {SECTIONS.map((section) => {
+            {SIDEBAR_SECTIONS.map((section) => {
               const label = labels[section.id];
               const active = current === section.id;
               const count = section.id === 'inbox' ? inbox : 0;
@@ -174,7 +185,12 @@ export function Sidebar() {
 
         {user ? (
           <div className="site-sidebar__account">
-            <Link to={viewerPath ?? '/login'} className="site-sidebar__handle">
+            <Link
+              to={viewerPath ?? '/login'}
+              className="site-sidebar__handle"
+              aria-label={t('shell-your-profile', { defaultValue: 'Your profile, {{name}}', name: handle ? `@${handle}` : name })}
+              aria-current={isViewerPath(pathname, viewerPath) ? 'page' : undefined}
+            >
               <UserAvatar
                 src={resolved?.image || user.image}
                 alt=""
@@ -187,12 +203,14 @@ export function Sidebar() {
               ref={menuAnchor}
               type="button"
               variant="ghost"
-              size="xs"
+              size="icon-xs"
+              aria-label={t('shell-account-menu', { defaultValue: 'More' })}
+              title={t('shell-account-menu', { defaultValue: 'More' })}
               aria-haspopup="menu"
               aria-expanded={menuOpen}
               onClick={toggleMenu}
             >
-              {t('shell-account-menu', { defaultValue: 'More' })}
+              <MoreHorizontal className="size-4" aria-hidden />
             </Button>
             {menuMounted && (
               <Suspense fallback={null}>
