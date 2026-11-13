@@ -24,6 +24,7 @@ import { ShareButton } from '@/components/blog/ShareButton';
 import { ArticleTakeaways } from '@/components/blog/ArticleTakeaways';
 import { ArticleBody } from '@/components/reading/ArticleBody';
 import { getPostBySlug } from '@/lib/blog';
+import { getBusiness } from '@/lib/businesses';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
 import { liquidVTName } from '@/lib/view-transition';
@@ -42,6 +43,8 @@ const fetchPost = createServerFn({ method: 'GET' })
         'content',
         'image',
         'tags',
+        'announcement',
+        'business',
       ]);
     } catch {
       throw notFound();
@@ -114,6 +117,8 @@ function BlogPost() {
 
   const tags = (post.tags as string[] | undefined) ?? [];
   const image = post.image as string | undefined;
+  const isAnnouncement = post.announcement === true;
+  const business = getBusiness(typeof post.business === 'string' ? post.business : null);
   const minutes = readingTimeMinutes(post.content as string);
 
   return (
@@ -131,6 +136,11 @@ function BlogPost() {
           className="flex flex-wrap items-center gap-x-4 gap-y-2"
           style={{ viewTransitionName: liquidVTName('blog', slug) }}
         >
+          {isAnnouncement ? (
+            <span className="t-meta">
+              {business.name} · {t('blog-announcement-label', { defaultValue: 'Announcement' })}
+            </span>
+          ) : null}
           <span className="t-meta">{post.date as string}</span>
           {minutes > 0 ? (
             <span className="t-meta">

@@ -12,7 +12,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: mocks.session } } }));
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
-    blogPost: { create: mocks.create, update: mocks.update },
+    // `findUnique` is the edit path's read of the announcement state; a missing post reads as null.
+    blogPost: { create: mocks.create, update: mocks.update, findUnique: vi.fn(async () => null) },
     user: { findMany: mocks.users },
   },
 }));

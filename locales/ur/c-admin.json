@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "ایک خرابی پیش آگئی",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "ایڈمن پر واپس جائیں",
   "back-to-admin-label": "ایڈمن پر واپس جائیں",
   "changes-now-live": "آپ کی تبدیلیاں اب فعال ہیں۔",
@@ -22,6 +26,8 @@
   "live-preview": "لائیو پیش نظارہ",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "میٹا ڈیٹا",
   "new-blog-post": "نئی بلاگ پوسٹ",
   "post-created-successfully": "پوسٹ کامیابی سے بن گئی!",
@@ -31,6 +37,9 @@
   "save-post": "پوسٹ محفوظ کریں",
   "saving": "محفوظ ہو رہا ہے...",
   "show-preview": "پیش نظارہ دکھائیں",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Announce this post",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "سلگ",
   "slug-title": "صرف چھوٹے حروف، اعداد اور ہائفنز",
   "tags-label": "ٹیگز (کوما سے الگ)",
@@ -39,5 +48,7 @@
   "title-placeholder": "میری زبردست پوسٹ",
   "untitled-post": "بلا عنوان پوسٹ",
   "update-post": "پوسٹ اپ ڈیٹ کریں",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image or video",
+  "uploading-media": "Uploading..."
 }

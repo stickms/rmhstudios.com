@@ -17,7 +17,7 @@ const fetchPostForEdit = createServerFn({ method: 'GET' })
   // runs before this loader, so a second session resolution here bought nothing.
   .handler(async ({ data: slug }) => {
     try {
-      const post = await getPostBySlug(slug, ["title", "slug", "date", "description", "image", "tags", "content"]);
+      const post = await getPostBySlug(slug, ["title", "slug", "date", "description", "image", "tags", "content", "announcement", "business", "announcementExpiresAt"]);
       return post;
     } catch {
       throw notFound();
