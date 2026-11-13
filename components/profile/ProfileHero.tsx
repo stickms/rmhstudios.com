@@ -22,6 +22,7 @@ import { getFeaturedProfileLink } from '@/lib/profile/featured-links';
 import { SITE_URL } from '@/lib/seo';
 import { ProfileIdentityExtras } from './plus/ProfileIdentityExtras';
 import type { ProfileData } from './profile-types';
+import { ProfileBanner } from './ProfileBanner';
 import './profile.css';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
@@ -176,11 +177,7 @@ export function ProfileHero({
   return (
     <header className="profile-head">
       {profile.bannerUrl ? (
-        <div
-          className="profile-head__banner"
-          style={{ backgroundImage: `url(${profile.bannerUrl})` }}
-          aria-hidden
-        />
+        <ProfileBanner src={profile.bannerUrl} className="profile-head__banner" />
       ) : null}
 
       <div className="flex items-center gap-4">

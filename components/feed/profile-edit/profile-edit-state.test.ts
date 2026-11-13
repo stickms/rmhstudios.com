@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildBannerUpload,
   buildProfilePatch,
   canSaveDraft,
   cleanLinks,
@@ -166,5 +167,28 @@ describe('links and the PATCH body', () => {
     });
     expect('handle' in body).toBe(false);
     expect(buildProfilePatch(draft({ handle: ' new ' }), true)).toMatchObject({ handle: 'new' });
+  });
+});
+
+describe('buildBannerUpload', () => {
+  const crop = new File(['c'], 'banner.png', { type: 'image/png' });
+  const picture = new Blob(['whole picture'], { type: 'image/jpeg' });
+
+  it('sends a newly chosen picture with its crop, as the source for later re-crops', () => {
+    const form = buildBannerUpload(crop, { blob: picture, kept: false });
+    expect(form.get('banner')).toBeInstanceOf(File);
+    expect((form.get('original') as File).size).toBe(picture.size);
+    expect(form.get('source')).toBeNull();
+  });
+
+  it('sends only the crop when the server already keeps the picture', () => {
+    const form = buildBannerUpload(crop, { blob: picture, kept: true });
+    expect(form.get('original')).toBeNull();
+    expect(form.get('source')).toBe('keep');
+  });
+
+  it('sends the crop alone when there is no picture behind it', () => {
+    const form = buildBannerUpload(crop, null);
+    expect([...form.keys()]).toEqual(['banner']);
   });
 });

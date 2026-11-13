@@ -8,6 +8,8 @@ import {
   coinsToField,
   isDirty,
   songFromInitial,
+  type BannerCropSession,
+  type BannerPicture,
   type EditorSection,
   type HandleStatus,
   type ProfileDraft,
@@ -47,6 +49,10 @@ export function useProfileEditForm(initial: ProfileEditInitial) {
   const [hasCustomAvatar, setHasCustomAvatar] = useState(initial.hasCustomAvatar ?? false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSong, setSelectedSong] = useState<SpotifyTrack | null>(songFromInitial(initial));
+  // Banner cropping. Appended after the states above on purpose (see the note on order).
+  const [bannerCrop, setBannerCrop] = useState<BannerCropSession | null>(null);
+  const [bannerPicture, setBannerPicture] = useState<BannerPicture | null>(null);
+  const [bannerLoading, setBannerLoading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -127,6 +133,12 @@ export function useProfileEditForm(initial: ProfileEditInitial) {
     setError,
     selectedSong,
     setSelectedSong,
+    bannerCrop,
+    setBannerCrop,
+    bannerPicture,
+    setBannerPicture,
+    bannerLoading,
+    setBannerLoading,
     fileInputRef,
     bannerInputRef,
     handleCheckTimeout,
