@@ -1512,7 +1512,14 @@ export function GameCanvas() {
     // them. Remembered because `render()` needs the SAME number: sizing the
     // buffer from a clamped ratio while drawing at the raw one scales the whole
     // playfield.
+    //
+    // Not while the canvas has no box. A phone's menu is a document
+    // (slice-menu.css, "A phone"): the canvas is `display: none` there and the
+    // wrapper is as tall as the whole library, so sizing from it gave a hidden
+    // canvas a buffer the height of the page, and the first frames of the next
+    // run (and the lane layer cached for them) were drawn at that size.
     const sync = () => {
+      if (canvas.getClientRects().length === 0) return;
       const { width, height } = wrapper.getBoundingClientRect();
       if (width > 0 && height > 0) {
         const dpr = gameSurfaceDpr(window);
@@ -1524,6 +1531,9 @@ export function GameCanvas() {
     sync();
     const ro = new ResizeObserver(sync);
     ro.observe(wrapper);
+    // The canvas too: coming back from `display: none` is a resize of the canvas
+    // even when the wrapper happens to be the size it was.
+    ro.observe(canvas);
     // Page zoom and a move to a different-density monitor both change the ratio
     // without resizing the wrapper, so the ResizeObserver alone would leave the
     // buffer at the old resolution.
@@ -3711,9 +3721,20 @@ export function GameCanvas() {
               : `border border-slice-border ${isPortrait ? 'h-full w-full' : 'app-stage'}`
           }`}
         >
+          {/* Out of the flow (`absolute inset-0`), so the wrapper's size never
+              comes from the canvas. In the flow, a replaced element with
+              `height: 100%` falls back to its intrinsic ratio wherever that
+              percentage has nothing definite to resolve against, and the
+              intrinsic ratio of a canvas is its drawing buffer: in a portrait
+              run the stage (a flex item, `min-height: auto`) could not be
+              shorter than the buffer, the buffer was then sized from the stage,
+              and the two only crept together by the wrapper's 2px of border a
+              frame. Starting from a buffer as tall as a phone's library page,
+              the playfield was several screens high through the countdown and
+              beyond, with the lanes' far end and the judgement line off screen. */}
           <canvas
             ref={canvasRef}
-            className="slice-canvas-el w-full h-full cursor-pointer block touch-none select-none"
+            className="slice-canvas-el absolute inset-0 w-full h-full cursor-pointer block touch-none select-none"
             data-jelly-zone="playfield"
           />
 
