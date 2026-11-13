@@ -417,7 +417,7 @@ html.ios-webkit .globe-nav__fade {
   display: flex;
   align-items: stretch;
   justify-content: center;
-  gap: 2px;
+  gap: 6px;
   max-inline-size: calc(100vw - 16px);
   padding: 4px 8px;
   border: 1px solid var(--site-border);
@@ -454,10 +454,9 @@ html.ios-webkit .globe-nav__fade {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-inline-size: 48px;
-  min-block-size: 52px;
-  padding: 6px 7px;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding: 0;
   border: 0;
   border-radius: 999px;
   corner-shape: round;
@@ -503,19 +502,16 @@ html.ios-webkit .globe-nav__fade {
     padding: 8px 4px;
     translate: 0 -50%;
   }
-  .globe-nav .globe-nav__bar-item {
-    min-inline-size: 44px;
-    min-block-size: 44px;
-    padding: 0;
-  }
-  .globe-nav__bar-label {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
+}
+/* The words are each control's name and its tooltip, not drawn (owner, 2026-11-13: "you can remove the text below the
+   icons on the bottom bar"). */
+.globe-nav__bar-label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* The reticle: the circle a destination must be inside to lock, drawn at its true size (RETICLE_FRACTION of the open
