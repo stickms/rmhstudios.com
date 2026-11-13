@@ -13,6 +13,7 @@ import {
   WHATS_NEW_OPEN_EVENT,
   type WhatsNewItemId,
 } from '@/lib/whats-new';
+import { useSitewideAnnouncementStore } from '@/stores/sitewideAnnouncementStore';
 
 /**
  * Card copy, as literal `t()` calls keyed by item id.
@@ -73,6 +74,13 @@ export function WhatsNewModal() {
   const { data: session, isPending } = useSession();
   const consentAnswered = useCookieConsentAnswered();
   const [open, setOpen] = useState(false);
+  const announcementOpen = useSitewideAnnouncementStore((s) => s.open);
+  const setWhatsNewOpen = useSitewideAnnouncementStore((s) => s.setWhatsNewOpen);
+  // Tell the sitewide announcement popup when this dialog is up, so the two never share the screen.
+  useEffect(() => {
+    setWhatsNewOpen(open);
+    return () => setWhatsNewOpen(false);
+  }, [open, setWhatsNewOpen]);
   const copy = releaseCopy(t);
   const changes = CURRENT_RELEASE.items.map((id) => ({
     key: id,
@@ -82,6 +90,8 @@ export function WhatsNewModal() {
 
   useEffect(() => {
     if (isPending) return;
+    // Never over the announcement popup; this re-runs when it closes.
+    if (announcementOpen) return;
     // Consent first (audit AUD-010). This announcement used to mount at the
     // same time as the cookie bar and the language modal, painting over the
     // one surface the visitor is legally required to be able to read.
@@ -96,7 +106,10 @@ export function WhatsNewModal() {
     if (presentedInThisRuntime || !unseen || !canIntroduce) return;
 
     const timer = window.setTimeout(() => {
+      if (useSitewideAnnouncementStore.getState().open) return;
       presentedInThisRuntime = true;
+      // Claim the screen now, not in the effect after render: the announcement's own timer may fire first.
+      useSitewideAnnouncementStore.getState().setWhatsNewOpen(true);
       try {
         localStorage.setItem(STORAGE_KEY, '1');
       } catch {
@@ -106,7 +119,7 @@ export function WhatsNewModal() {
     }, 700);
 
     return () => window.clearTimeout(timer);
-  }, [isPending, session, consentAnswered]);
+  }, [isPending, session, consentAnswered, announcementOpen]);
 
   // Re-open from the command palette. Opening counts as seeing it, which clears
   // the palette's unread dot.
