@@ -555,16 +555,13 @@
   color: var(--site-text, #f5f5f7);
 }
 
-/* The library sits on the glass aurora like every other _site page
-   (museum-vitrine treatment): only the accent glow paints here — no opaque
-   var(--site-bg) base. Double class so this outranks .vibe-screen's opaque
-   fill regardless of which stylesheet the bundler emits first. */
+/* The library sits on the page ground (`--site-bg`) like every other _site page, with nothing painted
+   over it. This rule used to lay an accent radial gradient (a glow at the top right, fading over 31rem)
+   across the whole column, which on the flat Steel page read as a grey spotlight behind the tabs and the
+   first shelves (R1). It stays only to clear `.vibe-screen`'s own opaque fill; the double class outranks
+   that rule whichever stylesheet the bundler emits first. */
 .vibe-screen.lib {
-  background: radial-gradient(
-    circle at 76% 5%,
-    color-mix(in srgb, var(--site-accent, #9b7ad8) 17%, transparent),
-    transparent 31rem
-  );
+  background: transparent;
 }
 
 /* Playlists folded into the library as a first-class section. The

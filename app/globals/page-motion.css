@@ -660,8 +660,9 @@ input[type='number'] {
 }
 
 /* Section 7.3 Eversion is reserved for globe navigation.
-   Existing data-evert markers retain an opacity state layer for menus,
-   selected navigation and cards. Controls never grow a second globe, invert,
+   Existing data-evert markers retain an opacity state layer for menus
+   and selected navigation. The layer sits behind its host's content (z-index -1); the `over` variant
+   that put it above a card's art is gone, because an opaque fill over a picture hides the picture. Controls never grow a second globe, invert,
    or animate a moving origin. No document listeners are needed for this layer. */
 @layer components {
   /* `relative` in this layer so a control's own `absolute`/`fixed` utility still wins. */
@@ -693,10 +694,6 @@ input[type='number'] {
   }
   [data-evert~='select']:is([aria-current='page'], .is-active)::after {
     opacity: 1;
-  }
-  [data-evert~='over']::before {
-    z-index: 3;
-    background: var(--site-surface-hover);
   }
 
   /* Dropdown rows (S5, K3): a menu, select or autocomplete row has no edge or radius of its own; hovering it (or moving

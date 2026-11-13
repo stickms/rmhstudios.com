@@ -68,6 +68,10 @@ export function ListingsMap({
 }: ListingsMapProps) {
   const mapRef = useRef<MapRef | null>(null);
   const [mounted, setMounted] = useState(false);
+  // Set when the map itself has loaded. The first fit used to be lost whenever the results arrived before
+  // the map did: the effect below ran once with no map, and nothing ran it again, so the map sat on its
+  // continent-wide default with every pin off screen.
+  const [ready, setReady] = useState(false);
   // Wire MapLibre's worker up before the canvas mounts, or the map never
   // finishes loading — see lib/maplibre.ts.
   useEffect(() => {
@@ -85,10 +89,9 @@ export function ListingsMap({
     [listings],
   );
 
-  // Fit to the visible pins whenever the result set changes.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || pins.length === 0) return;
+  // The box around the pins, or null when there are none.
+  const bounds = useMemo(() => {
+    if (pins.length === 0) return null;
     let minLng = Infinity,
       minLat = Infinity,
       maxLng = -Infinity,
@@ -99,32 +102,56 @@ export function ListingsMap({
       minLat = Math.min(minLat, l.lat);
       maxLat = Math.max(maxLat, l.lat);
     }
-    if (minLng === maxLng && minLat === maxLat) {
-      map.easeTo({ center: [minLng, minLat], zoom: 13, duration: 500 });
+    return { minLng, minLat, maxLng, maxLat, point: minLng === maxLng && minLat === maxLat };
+  }, [pins]);
+
+  // Fit to the visible pins whenever the result set changes (and once the map exists: see `ready`).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !bounds) return;
+    if (bounds.point) {
+      map.easeTo({ center: [bounds.minLng, bounds.minLat], zoom: 13, duration: 500 });
     } else {
       map.fitBounds(
         [
-          [minLng, minLat],
-          [maxLng, maxLat],
+          [bounds.minLng, bounds.minLat],
+          [bounds.maxLng, bounds.maxLat],
         ],
         { padding: 56, duration: 600, maxZoom: 15 },
       );
     }
-  }, [pins]);
+  }, [bounds, ready]);
 
   const initialCenter = center ?? { lat: 39.5, lng: -98.35 };
 
   return (
-    <div className={`homes-map relative overflow-hidden ${className ??''}`}>
+    <div
+      className={`homes-map relative overflow-hidden rounded-site border border-site-border bg-site-bg-subtle ${className ?? ''}`}
+    >
       {mounted ? (
         <Map
           ref={mapRef}
+          onLoad={() => setReady(true)}
           mapStyle={OSM_STYLE}
-          initialViewState={{
-            longitude: initialCenter.lng,
-            latitude: initialCenter.lat,
-            zoom: center ? 11 : 3.5,
-          }}
+          // Open on the pins when the results are already here, so the map never starts on a continent
+          // and then travels; the effect above handles every later result set.
+          initialViewState={
+            bounds && !bounds.point
+              ? {
+                  bounds: [
+                    [bounds.minLng, bounds.minLat],
+                    [bounds.maxLng, bounds.maxLat],
+                  ],
+                  fitBoundsOptions: { padding: 56, maxZoom: 15 },
+                }
+              : bounds
+                ? { longitude: bounds.minLng, latitude: bounds.minLat, zoom: 13 }
+                : {
+                    longitude: initialCenter.lng,
+                    latitude: initialCenter.lat,
+                    zoom: center ? 11 : 3.5,
+                  }
+          }
           attributionControl={{ compact: true }}
           dragRotate={false}
           touchZoomRotate
@@ -157,10 +184,10 @@ export function ListingsMap({
                     e.stopPropagation();
                     onSelect?.(l.id);
                   }}
-                  className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-semibold ring-1 transition ${
+                  className={`cursor-pointer rounded-site-sm border px-2 py-1 text-xs font-semibold whitespace-nowrap transition-colors duration-(--m1) ${
                     active
-                      ? 'scale-110 bg-site-text text-site-bg ring-2 ring-site-accent'
-                      : 'bg-site-accent text-site-accent-fg ring-site-text hover:ring-2 hover:ring-site-text/70'
+                      ? 'border-site-accent bg-site-accent text-site-accent-fg'
+                      : 'border-site-text bg-site-surface text-site-text hover:bg-site-bg-subtle'
                   }`}
                 >
                   {pinLabel(l)}
@@ -170,7 +197,7 @@ export function ListingsMap({
           })}
         </Map>
       ) : (
-        <div className="h-full min-h-64 w-full bg-site-bg" />
+        <div className="h-full min-h-64 w-full" />
       )}
     </div>
   );

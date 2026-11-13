@@ -11,6 +11,9 @@ import { LIFE_ALIVE } from '../../tf2-game/sim/entity';
 import type { NetRecord } from '../../tf2-game/sim/net-schema';
 import { buyCatalog } from './buy-catalog';
 import { buildCsHud, flashOpacity, FLASH_FADE_SECONDS } from './hud';
+import { AnimSet } from '../../tf2-game/render/entities/animator';
+import { VM_DRAW, VM_FIRE, VM_IDLE, VM_RELOAD, VM_SECONDARY } from '../weapons/base';
+import { viewModelSequence } from './render';
 
 beforeAll(() => {
   setCsWeaponData(WEAPON_DATA_FIXTURE);
@@ -80,5 +83,49 @@ describe('the HUD state', () => {
 
   it('nothing before the round state arrives', () => {
     expect(buildCsHud(ctx({}, me, 0))).toBeNull();
+  });
+});
+
+describe("the view model's sequence for a networked activity", () => {
+  const set = (activities: Record<string, string[]>) =>
+    new AnimSet([], new Float32Array(0), new Float32Array(0), {
+      sequences: Object.values(activities)
+        .flat()
+        .map((name) => ({ name, looping: false, delta: false, post: false, fps: 30, frames: 2, clips: [name] })),
+      activities: Object.fromEntries(
+        Object.entries(activities).map(([act, seqs]) => [act, seqs.map((seq) => ({ seq, weight: 1 }))]),
+      ),
+    });
+  const first = () => 0;
+
+  it('a gun plays the activity it was sent', () => {
+    const glock = set({
+      ACT_VM_IDLE: ['glock_idle'],
+      ACT_VM_PRIMARYATTACK: ['glock_firesingle'],
+      ACT_VM_DRAW: ['glock_draw'],
+      ACT_VM_RELOAD: ['glock_reload'],
+    });
+    expect(viewModelSequence(glock, VM_FIRE, first)?.name).toBe('glock_firesingle');
+    expect(viewModelSequence(glock, VM_RELOAD, first)?.name).toBe('glock_reload');
+    // No secondary attack on this model: the idle, not nothing.
+    expect(viewModelSequence(glock, VM_SECONDARY, first)?.name).toBe('glock_idle');
+  });
+
+  it('a knife swings: its attacks are filed under what they met, not under the attack', () => {
+    // The published default knife's activity table (v_knife_default_ct's anim pack).
+    const knife = set({
+      ACT_VM_DRAW: ['draw'],
+      ACT_VM_IDLE: ['idle1', 'idle2'],
+      ACT_VM_MISSCENTER: ['light_miss1', 'light_miss2'],
+      ACT_VM_HITCENTER: ['light_hit1', 'light_hit2'],
+      ACT_VM_SWINGHIT: ['light_backstab', 'light_backstab2'],
+      ACT_VM_MISSCENTER2: ['heavy_miss1'],
+      ACT_VM_HITCENTER2: ['heavy_hit1'],
+      ACT_VM_SWINGHARD: ['heavy_backstab'],
+    });
+    expect(viewModelSequence(knife, VM_IDLE, first)?.name).toBe('idle1');
+    expect(viewModelSequence(knife, VM_DRAW, first)?.name).toBe('draw');
+    expect(viewModelSequence(knife, VM_FIRE, first)?.name).toBe('light_miss1');
+    expect(viewModelSequence(knife, VM_SECONDARY, first)?.name).toBe('heavy_miss1');
   });
 });

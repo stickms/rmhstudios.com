@@ -110,7 +110,10 @@ export class ModelAsset {
   ) {
     const scene = gltf.scene;
     this.extras = (scene.userData ?? {}) as BodyExtras;
-    const clipFrame = this.extras.source?.clipFrame;
+    // The clips' recorded basis: the model's own, or its anim pack's (a model whose sequences all come
+    // from an include carries none itself).
+    const packExtras = (animPack?.scene.userData ?? {}) as BodyExtras;
+    const clipFrame = this.extras.source?.clipFrame ?? packExtras.source?.clipFrame;
     const knownFrame = clipFrame?.length === 9 && clipFrame.every(Number.isFinite) ? frameMatrixFor(clipFrame) : null;
     this.frame = knownFrame ?? modelFrame(scene).matrix;
     this.templates = materials.map((m) => materialTemplate(m));
@@ -139,7 +142,7 @@ export class ModelAsset {
       });
     }
     const src = animPack ?? gltf;
-    const ax = (animPack ? animPack.scene.userData : this.extras) as BodyExtras;
+    const ax = animPack ? packExtras : this.extras;
     const hasAnims = (ax.sequences?.length ?? 0) > 0 && bones.length > 0;
     this.anim = hasAnims
       ? new AnimSet(this.boneNames, this.restPos, this.restQuat, {
@@ -150,8 +153,13 @@ export class ModelAsset {
           clips: src.animations as unknown as RawClip[],
         })
       : null;
-    // Otherwise the frame is recovered from the bind pose's bounds and then the idle pose's root.
-    if (this.anim && sm && !knownFrame) {
+    // Otherwise the frame is recovered from the bind pose's bounds and then the idle pose's root. Both
+    // steps stand on the hull: it finds the bind frame the idle root's turn is applied to, and it tells a
+    // converter's frame change from an animation that turns the root itself (`checkPosedFrame`). A model
+    // that declares a hull of no size (CS:GO's knife view models, whose sequences all come from an include)
+    // gives neither, so its frame stays the converter's (y, z, x) default, which is the basis its clips
+    // are written in whenever the model has no `ref` sequence.
+    if (this.anim && sm && !knownFrame && !emptyHull(this.extras.source)) {
       const root = bones.findIndex((b) => !(b.parent as { isBone?: boolean } | null)?.isBone);
       const seq = idleSequence(this.anim);
       const clip = seq
@@ -216,6 +224,13 @@ export class ModelAsset {
       max: this.extras.source?.hullMax ?? [24, 24, 82],
     };
   }
+}
+
+/** A hull the MDL declares with no extent on any axis: it can neither find nor check a frame. */
+function emptyHull(src: BodyExtras['source']): boolean {
+  const lo = src?.hullMin;
+  const hi = src?.hullMax;
+  return lo?.length === 3 && hi?.length === 3 && lo.every((v, i) => v === hi[i]);
 }
 
 /** An idle-like absolute sequence (the frame probe of animatedFrame). */

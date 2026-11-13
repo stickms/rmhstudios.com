@@ -19,6 +19,8 @@ import { buildCardSelect } from '@/lib/user-builds-list';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
 import { isTrackableTitle } from '@/lib/games/route-match';
+import { buildEngagement } from '@/lib/ranking/best';
+import { inIdOrder, rankPage, RANK_CANDIDATE_CAP } from '@/lib/ranking/rank-page';
 
 function generateSlug(title: string): string {
   const base = title
@@ -48,6 +50,32 @@ async function ensureUniqueSlug(baseSlug: string, excludeId?: string): Promise<s
     counter++;
     slug = `${baseSlug}-${counter}`;
   }
+}
+
+/** The card the list endpoint returns for one build row read with `buildCardSelect`. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the select is built per viewer, as it was inline
+function cardOf(build: any, currentUserId: string | null) {
+  return {
+    id: build.id,
+    slug: build.slug,
+    title: build.title,
+    description: build.description,
+    thumbnailUrl: build.thumbnailUrl,
+    repoUrl: build.repoUrl,
+    demoUrl: build.demoUrl,
+    visibility: build.visibility,
+    featured: build.featured,
+    technologies: build.technologies,
+    likeCount: build.likeCount,
+    commentCount: build.commentCount,
+    viewCount: build.viewCount,
+    createdAt: build.createdAt.toISOString(),
+    publishedAt: build.publishedAt?.toISOString() ?? null,
+    user: resolveUser(build.user),
+    category: build.category,
+    tags: build.tags.map((t: { name: string }) => t.name),
+    liked: currentUserId ? build.likes?.length > 0 : false,
+  };
 }
 
 export const route = apiRoute('/api/user-builds', {
@@ -118,45 +146,70 @@ export const route = apiRoute('/api/user-builds', {
       });
     }
 
+    if (and.length) where.AND = and;
+
+    // `best` (lib/ranking/best.ts) weighs likes, comments and views against age. Its score moves with the
+    // clock, so it pages by rank offset rather than by keyset: read the signals of everything the filters
+    // match, pick this page's ids, then read the cards for those ids.
+    if (sort === 'best') {
+      const slim = await prisma.userBuild.findMany({
+        where,
+        select: {
+          id: true,
+          likeCount: true,
+          commentCount: true,
+          viewCount: true,
+          publishedAt: true,
+          createdAt: true,
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: RANK_CANDIDATE_CAP,
+      });
+      const { ids, nextCursor } = rankPage(
+        slim.map((b) => ({
+          id: b.id,
+          engagement: buildEngagement(b),
+          createdAt: (b.publishedAt ?? b.createdAt).getTime(),
+        })),
+        'best',
+        cursor,
+        limit,
+      );
+      const rows = await prisma.userBuild.findMany({
+        where: { id: { in: ids } },
+        select: buildCardSelect(currentUserId),
+      });
+      return Response.json({
+        items: inIdOrder(ids, rows).map((build) => cardOf(build, currentUserId)),
+        nextCursor,
+        hasMore: nextCursor !== null,
+      });
+    }
+
+    // The keyset sorts. Each ends on `id`, and the cursor compares the same pair the order does: without
+    // the tiebreak, builds that share a like count, a view count or a publication instant came back in
+    // whatever order the planner chose, and a page boundary inside such a run skipped or repeated rows.
+    const keyset =
+      sort === 'popular'
+        ? ('likeCount' as const)
+        : sort === 'views'
+          ? ('viewCount' as const)
+          : ('createdAt' as const);
     if (cursor) {
       const cursorBuild = await prisma.userBuild.findUnique({
         where: { id: cursor },
-        select: { publishedAt: true, likeCount: true, viewCount: true },
+        select: { createdAt: true, likeCount: true, viewCount: true },
       });
       if (cursorBuild) {
-        if (sort === 'popular') {
-          and.push({
-            OR: [
-              { likeCount: { lt: cursorBuild.likeCount } },
-              { likeCount: cursorBuild.likeCount, id: { lt: cursor } },
-            ],
-          });
-        } else if (sort === 'views') {
-          and.push({
-            OR: [
-              { viewCount: { lt: cursorBuild.viewCount } },
-              { viewCount: cursorBuild.viewCount, id: { lt: cursor } },
-            ],
-          });
-        } else {
-          where.publishedAt = { lt: cursorBuild.publishedAt };
-        }
+        const at = cursorBuild[keyset];
+        and.push({ OR: [{ [keyset]: { lt: at } }, { [keyset]: at, id: { lt: cursor } }] });
+        where.AND = and;
       }
-    }
-
-    if (and.length) where.AND = and;
-
-    // Determine order by
-    let orderBy: Record<string, string>[] = [{ publishedAt: 'desc' }];
-    if (sort === 'popular') {
-      orderBy = [{ likeCount: 'desc' }, { id: 'desc' }];
-    } else if (sort === 'views') {
-      orderBy = [{ viewCount: 'desc' }, { id: 'desc' }];
     }
 
     const builds = await prisma.userBuild.findMany({
       where,
-      orderBy,
+      orderBy: [{ [keyset]: 'desc' }, { id: 'desc' }],
       take: limit + 1,
       select: buildCardSelect(currentUserId),
     });
@@ -164,27 +217,7 @@ export const route = apiRoute('/api/user-builds', {
     const hasMore = builds.length > limit;
     const items = builds.slice(0, limit);
 
-    const mappedItems = items.map((build: any) => ({
-      id: build.id,
-      slug: build.slug,
-      title: build.title,
-      description: build.description,
-      thumbnailUrl: build.thumbnailUrl,
-      repoUrl: build.repoUrl,
-      demoUrl: build.demoUrl,
-      visibility: build.visibility,
-      featured: build.featured,
-      technologies: build.technologies,
-      likeCount: build.likeCount,
-      commentCount: build.commentCount,
-      viewCount: build.viewCount,
-      createdAt: build.createdAt.toISOString(),
-      publishedAt: build.publishedAt?.toISOString() ?? null,
-      user: resolveUser(build.user),
-      category: build.category,
-      tags: build.tags.map((t: { name: string }) => t.name),
-      liked: currentUserId ? build.likes?.length > 0 : false,
-    }));
+    const mappedItems = items.map((build) => cardOf(build, currentUserId));
 
     return Response.json({
       items: mappedItems,

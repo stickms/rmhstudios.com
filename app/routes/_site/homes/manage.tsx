@@ -162,7 +162,7 @@ function HomesManagePage() {
       backLabel={t('homes-back-to-browse', { defaultValue: 'Back to browse' })}
       wide
       headerRight={
-        <Button asChild size="sm" className="min-h-11">
+        <Button asChild>
           <Link
             to="/homes/submit"
             aria-label={t('homes-new-listing', { defaultValue: 'New listing' })}
@@ -183,7 +183,7 @@ function HomesManagePage() {
         aria-label={title}
       />
 
-      <div className="w-full px-4 pt-4 pb-12">
+      <div className="w-full pt-2">
         {tab === 'listings' && (
           <div
             role="tabpanel"

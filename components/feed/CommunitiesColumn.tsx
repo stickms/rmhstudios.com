@@ -7,6 +7,12 @@ import { Button } from '@/components/ui/button';
 import { CommunityListSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
+  DIRECTORY_LIST_CLASS,
+  DirectoryFact,
+  DirectoryItem,
+  DirectoryTag,
+} from '@/components/ui/directory-item';
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -206,7 +212,7 @@ export function CommunitiesColumn({
           }
         />
       ) : (
-        <ul className="flex flex-col gap-3 px-4 pb-12">
+        <ul className={DIRECTORY_LIST_CLASS}>
           {items.map((c) => {
             if (c.locked) {
               // Listed + locked: metadata and the way in, nothing of the content.
@@ -238,50 +244,34 @@ export function CommunitiesColumn({
                     : null;
             return (
               <li key={c.id}>
-                <Link
-                  to={`/c/${c.slug}` as string}
-                  className="flex items-start gap-4 rounded-site relative p-5 transition-[translate,border-color,background-color] duration-site hover:border-site-accent/50 hover:bg-site-surface-hover"
-                >
-                  <div
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-3xl"
-                    style={{ background: (c.color || 'var(--site-accent)') + '22' }}
-                  >
-                    {c.icon || '👥'}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-base font-semibold text-site-text">{c.name}</p>
-                      {roleLabel && (
-                        <span className="shrink-0 rounded-full bg-site-bg-subtle px-2 py-0.5 text-xs font-medium text-site-accent">
-                          {roleLabel}
-                        </span>
-                      )}
-                    </div>
-                    {c.description && (
-                      <p className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">
-                        {c.description}
-                      </p>
-                    )}
-                    <div className="mt-2 flex items-center gap-4 text-xs text-site-text-muted">
-                      <span className="inline-flex items-center gap-1">
+                <DirectoryItem
+                  to={`/c/${c.slug}`}
+                  media={c.icon || '👥'}
+                  mediaStyle={{ background: (c.color || 'var(--site-accent)') + '22' }}
+                  title={c.name}
+                  tag={roleLabel && <DirectoryTag>{roleLabel}</DirectoryTag>}
+                  description={c.description}
+                  meta={
+                    <>
+                      <DirectoryFact>
                         <Users className="h-3.5 w-3.5" />
                         {t('members-stat', {
                           count: c.memberCount,
                           formatted: formatCount(c.memberCount),
                           defaultValue: '{{formatted}} members',
                         })}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
+                      </DirectoryFact>
+                      <DirectoryFact>
                         <MessageSquare className="h-3.5 w-3.5" />
                         {t('posts-stat', {
                           count: c.postCount,
                           formatted: formatCount(c.postCount),
                           defaultValue: '{{formatted}} posts',
                         })}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
+                      </DirectoryFact>
+                    </>
+                  }
+                />
               </li>
             );
           })}

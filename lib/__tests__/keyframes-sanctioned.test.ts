@@ -51,7 +51,6 @@ export const SANCTIONED: Record<string, string> = {
   'kd-sweep-2': 'kaikai-debt sweep',
   'kd-flash-in': 'kaikai-debt flash',
   'rmhcalc-pulse': 'RMHCalculator live indicator',
-  'store-rise': 'creator storefront card rise',
   'rmht-rise': 'RMHTech rise',
   'rmht-spin': 'RMHTech spin',
   'rmht-glow': 'RMHTech glow',
