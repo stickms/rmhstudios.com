@@ -122,6 +122,50 @@ describe('the sidebar never scrolls: the lists give way to the globe and the foo
   });
 });
 
+describe('on desktop the docked globe is part of the sidebar, not a fixed layer (owner, 2026-11-13)', () => {
+  const shell = read('components/shell/site-shell.css');
+  const css = read('components/shell/globe-nav.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const desktop = /@media \(min-width: 1024px\) \{\s*\.globe-nav \{([^}]*)\}/.exec(css)![1]!;
+
+  it('has the sidebar\'s own sticky geometry, so a page that rubber-bands carries both together', () => {
+    const inner = /\.site-sidebar__inner \{([^}]*)\}/.exec(shell)![1]!;
+    for (const rule of ['position: sticky', 'inset-block-start: 16px', 'margin-block-start: 16px', 'block-size: calc(100dvh - 32px)']) {
+      expect(inner, rule).toContain(rule);
+      expect(desktop, rule).toContain(rule);
+    }
+    // The dock and the pin anchor are placed inside that box; nothing of the docked globe is fixed.
+    const dock = /@media \(min-width: 1024px\) \{[\s\S]*?\.globe-nav \.globe-nav__dock \{([^}]*)\}/.exec(css)![1]!;
+    expect(dock).toContain('position: absolute');
+    expect(dock).toContain('inset-block-end: calc(var(--globe-bottom) - 16px)');
+    const pins = /@media \(min-width: 1024px\) \{[\s\S]*?\.globe-nav \.globe-nav__pins \{([^}]*)\}/.exec(css)![1]!;
+    expect(pins).toContain('position: absolute');
+    expect(pins).toContain('inset-block-end: calc(var(--globe-bottom) - 16px + var(--globe-d) / 2)');
+  });
+
+  it('lies over the sidebar\'s cell without taking its pointer, and the columns are placed by name', () => {
+    expect(desktop).toContain('grid-column: 1');
+    expect(desktop).toContain('grid-row: 1');
+    expect(desktop).toContain('pointer-events: none');
+    expect(css).toMatch(/\.globe-nav \.globe-nav__dock \{[^}]*pointer-events: auto;/);
+    expect(shell).toMatch(/\.site-sidebar \{\s*grid-column: 1;\s*grid-row: 1;/);
+    expect(shell).toMatch(/\.site-main \{\s*grid-column: 2;\s*grid-row: 1;/);
+    expect(shell).toMatch(/\.site-margin \{\s*grid-column: 3;\s*grid-row: 1;/);
+    // The globe is a child of the frame (the grid), after the columns, so the tab order is unchanged.
+    const out = html();
+    const frame = out.indexOf('site-shell__frame');
+    expect(out.indexOf('class="site-margin"')).toBeGreaterThan(frame);
+    expect(out.indexOf('class="globe-nav"')).toBeGreaterThan(out.indexOf('class="site-margin"'));
+    expect(out).toMatch(/<\/nav><\/div><\/div>/);
+  });
+
+  it('stays a fixed ball on a phone, 18px above the bottom edge', () => {
+    expect(css).toMatch(/\n\.globe-nav__dock \{\s*position: fixed;/);
+    // Docked it is the floating layer; only the open globe is a top layer.
+    expect(css).toMatch(/\n\.globe-nav__dock \{[^}]*z-index: var\(--z-floating\);/);
+    expect(css).toMatch(/\.globe-nav\[data-open\] \.globe-nav__dock \{\s*z-index: var\(--z-hub-orb-open\);/);
+  });
+});
+
 describe('the sidebar lists exactly the five sections (L4)', () => {
   it('Feed, Explore, Games, Inbox, You, as words, in that order', () => {
     expect(SECTIONS.map((s) => s.id)).toEqual(['front', 'explore', 'games', 'inbox', 'you']);

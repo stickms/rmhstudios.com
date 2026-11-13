@@ -29,7 +29,16 @@
 /* DESKTOP (owner, 2026-11-12: the globe is the liquid globe on desktop too, larger, and it expands when clicked).
    Docked it is a 124px ball at the foot of the sidebar: the frame is capped at 1240px and centred, the sidebar's
    padding is 24px, so its left edge is that far in. Open it travels to the middle of the window and grows to 440px.
-   The sidebar's words still navigate (G9); the globe carries every destination. */
+   The sidebar's words still navigate (G9); the globe carries every destination.
+
+   THE DOCK IS NOT FIXED HERE (owner, 2026-11-13: "globe doesn't seem to follow page overscrolling properly and floats
+   above everything"). A fixed ball stays where it is while the page rubber-bands (a trackpad on macOS, a finger on an
+   iPad), and the sidebar it belongs to is sticky, so the sidebar's button and handle slid out from under it and back.
+   So .globe-nav is a grid item laid over the sidebar's cell with exactly the sticky geometry of .site-sidebar__inner
+   (site-shell.css: 16px off the top, `100dvh - 32px` tall), and the dock and the pin anchor are placed inside it. The
+   two boxes are the same box, so whatever the sidebar does (stick, scroll, bounce) the globe does with it. At rest the
+   ball is where it always was: `--globe-bottom` is still its distance from the bottom of the window, which the
+   opening move is computed from. The box takes no pointer; the ball does. The veil stays fixed: it covers the window. */
 @media (min-width: 1024px) {
   .globe-nav {
     --globe-d: 124px;
@@ -40,10 +49,26 @@
     --globe-shift: calc(50vw - var(--globe-start) - var(--globe-d) / 2);
     --globe-travel: calc(50dvh - var(--globe-bottom) - var(--globe-d) / 2);
     --globe-scale: 3.548;
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    position: sticky;
+    inset-block-start: 16px;
+    margin-block-start: 16px;
+    block-size: calc(100dvh - 32px);
+    z-index: var(--z-floating);
+    pointer-events: none;
+  }
+  .globe-nav[data-open] {
+    z-index: var(--z-hub-orb-open);
   }
   .globe-nav .globe-nav__dock {
-    inset-inline-start: var(--globe-start);
+    position: absolute;
+    inset-inline-start: 24px;
+    /* The box ends 16px above the bottom of the window. */
+    inset-block-end: calc(var(--globe-bottom) - 16px);
     translate: none;
+    pointer-events: auto;
   }
   [dir='rtl'] .globe-nav .globe-nav__dock {
     translate: none;
@@ -52,7 +77,9 @@
     display: none;
   }
   .globe-nav .globe-nav__pins {
-    inset-inline-start: calc(var(--globe-start) + var(--globe-d) / 2);
+    position: absolute;
+    inset-inline-start: calc(24px + var(--globe-d) / 2);
+    inset-block-end: calc(var(--globe-bottom) - 16px + var(--globe-d) / 2);
   }
 }
 
