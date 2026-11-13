@@ -811,7 +811,12 @@ sections? }` (`mapRadarSchema`, additive: the other games' manifests do not carr
   data. The clips' basis comes from the model's `ref` sequence (itself a frame animation) and is
   recorded in the GLB as `source.clipFrame`; the client places such a model by it
   (`model-asset.ts`) instead of guessing the frame from the bind pose's bounds, which for a view model
-  (arms hanging down in the bind pose) is a quarter turn out. The client draws a view model once its
+  (arms hanging down in the bind pose) is a quarter turn out. A model whose sequences all come from an
+  include (the knives) has no clips of its own to record the frame beside, and declares a hull of no size:
+  the converter records the frame in the anim pack's `source.clipFrame`, which the client reads when the
+  model has none, and for a pack published without it a model with an empty hull keeps the (y, z, x)
+  default frame, since neither the bind-bounds match nor the posed-bones check has a hull to work with.
+  The client draws a view model once its
   weapon has clips, with the team's arms bone-merged onto the weapon: the default gloves, and for CT
   the SAS sleeves.
   Players draw their team's published model (`tm_phoenix` / `ctm_sas`) with the game's layered

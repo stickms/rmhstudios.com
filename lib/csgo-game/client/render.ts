@@ -32,6 +32,7 @@ import type { Player } from '../../tf2-game/sim/player';
 import { sourceFovToVertical, type SourceCamera } from '../../tf2-game/render/camera';
 import { SOURCE_UNIT, srcToThree } from '../../tf2-game/render/coords';
 import type { EffectSystem, EntityRenderable, EntityState, RenderContext } from '../../tf2-game/render/entities';
+import type { AnimSet, SequenceDesc } from '../../tf2-game/render/entities/animator';
 import { bool, LightProbe, num, stateAngles, stateOrigin, str } from '../../tf2-game/render/entities/common';
 import { ModelInstance } from '../../tf2-game/render/entities/model-instance';
 import type { ProfileViewModel } from '../../tf2-game/client/game-profile';
@@ -365,7 +366,25 @@ export function csEntityFactory(s: EntityState, fx: EffectSystem): EntityRendera
  */
 export const viewModelAnimated = (inst: ModelInstance): boolean => (inst.animator?.set.sequences.size ?? 0) > 0;
 
+/**
+ * The activities a knife's view model has in place of the two attacks: its slash and its stab are split
+ * by what they met (miss, hit, from behind), which the weapon does not network; the swing through the air
+ * stands for all three.
+ */
+const VM_ATTACK_STAND_INS: Record<string, string[]> = {
+  ACT_VM_PRIMARYATTACK: ['ACT_VM_MISSCENTER', 'ACT_VM_HITCENTER'],
+  ACT_VM_SECONDARYATTACK: ['ACT_VM_MISSCENTER2', 'ACT_VM_HITCENTER2'],
+};
 
+/** The sequence a view model plays for a networked `vmActivity`: the activity's own, a stand-in, the idle. */
+export function viewModelSequence(set: AnimSet, act: number, random: () => number = Math.random): SequenceDesc | null {
+  const name = VM_ACTIVITIES[act] ?? 'ACT_VM_IDLE';
+  for (const n of [name, ...(VM_ATTACK_STAND_INS[name] ?? []), 'ACT_VM_IDLE']) {
+    const seq = set.selectWeightedSequence(n, random);
+    if (seq) return seq;
+  }
+  return set.sequences.values().next().value ?? null;
+}
 
 /**
  * What each team's first-person arms are made of, bone-merged onto the weapon (CS:GO's view models
@@ -469,9 +488,7 @@ export class CsViewModel implements ProfileViewModel {
     const act = (w as CsWeapon & { vmActivity?: number }).vmActivity ?? 0;
     const seqNo = (w as CsWeapon & { vmActivitySeq?: number }).vmActivitySeq ?? 0;
     if (a && (fresh || act !== this.lastAct || seqNo !== this.lastSeq)) {
-      const name = VM_ACTIVITIES[act] ?? 'ACT_VM_IDLE';
-      const seq = a.set.selectWeightedSequence(name) ?? a.set.selectWeightedSequence('ACT_VM_IDLE') ?? a.set.sequences.values().next().value ?? null;
-      a.setSequence(seq, { restart: seqNo !== this.lastSeq || fresh, fade: !fresh });
+      a.setSequence(viewModelSequence(a.set, act), { restart: seqNo !== this.lastSeq || fresh, fade: !fresh });
       this.lastAct = act;
       this.lastSeq = seqNo;
     }
