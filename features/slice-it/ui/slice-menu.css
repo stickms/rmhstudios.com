@@ -3,8 +3,8 @@
    Scheme: docs/game-design-schemes/slice-it.json — tokens live in slice-it.css.
 
    A record sleeve. On a wide screen: a 36px catalogue line on top; below it the
-   sleeve (wordmark, the printed A1/A2/B1/B2 track box, the record you picked) on
-   the left and the tracklist on the right. Below 1024px the sleeve is gone: a
+   tracklist on the left and the sleeve (wordmark, the printed A1/A2/B1/B2 track
+   box, the record you picked) on the right. Below 1024px the sleeve is gone: a
    slim bar carries the wordmark and the nav, and the record opens as a sheet.
    On a phone the nav is the four cells at the foot of the screen, in the flow.
 
@@ -240,7 +240,9 @@
   flex-direction: column;
   flex: 0 0 clamp(380px, 32vw, 440px);
   min-height: 0;
-  border-right: 1px solid var(--slice-border);
+  /* After the list in the row, so the rule is on the edge that faces it; logical,
+     so it follows the sleeve to the other side in a right-to-left locale. */
+  border-inline-start: 1px solid var(--slice-border);
   background: var(--slice-label);
 }
 

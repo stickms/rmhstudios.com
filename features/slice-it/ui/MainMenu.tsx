@@ -485,10 +485,63 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 (S8/S2). One at a time — each is a different mode, not a filter
                 over the same list. Cross-faded, and `mode="wait"` so the
                 outgoing mode is gone before the next one measures itself. */}
+            <div className="slice-menu__col flex min-w-0 flex-1 flex-col overflow-hidden">
+              {/* A phone: the picked record, compact, above the list. */}
+              {isPhone && soloMode === 'library' && selectedSong && (
+                <PhoneRecord
+                  song={selectedSong}
+                  onStart={handleStartGame}
+                  onDetails={() => setSheetOpen(true)}
+                />
+              )}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={soloMode}
+                  className="slice-menu__mode flex min-h-0 flex-1 flex-col"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: DURATION.fast, ease: EASE.standard }}
+                >
+                  {soloMode === 'daily' && (
+                    <DailyPanel
+                      engine={engine}
+                      onPlay={(songId) => startRun(songId)}
+                      onBack={() => setSoloMode('library')}
+                    />
+                  )}
+                  {soloMode === 'setlists' && (
+                    <SetlistPanel
+                      engine={engine}
+                      onPlay={(songId) => startRun(songId)}
+                      onBack={() => setSoloMode('library')}
+                    />
+                  )}
+                  {soloMode === 'library' && (
+                    <SongLibrary
+                      /* PLAY opens the details panel; it does not start the run.
+                         Starting straight from the row dropped the player into a
+                         chart at whatever difficulty and modifiers were left over
+                         from the last song, with nothing in between to look at —
+                         and those controls, plus the score multiplier they add up
+                         to, all live in the panel. `START GAME` there is the
+                         control that commits. */
+                      onSelect={handleSelectSong}
+                      onHighlight={handleSelectSong}
+                      selectedSongId={selectedSong?.id ?? null}
+                      onStopPreviewRef={stopPreviewRef}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
             {/* Wide: the sleeve. The wordmark, the printed track box that is the
                 navigation, and the record you have picked — its cover, its
                 pressings, START. It is on every mode, because the nav lives in
-                it; the record only shows in the library. */}
+                it; the record only shows in the library. On the right of the
+                list, and after it in the document: you pick a track, then you
+                reach what opens for it. */}
             {isWide && (
               <aside className="slice-sleeve" aria-label={t('song-details', { defaultValue: 'Song Details' })}>
                 <div className="slice-sleeve__top">
@@ -540,57 +593,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 </div>
               </aside>
             )}
-
-            <div className="slice-menu__col flex min-w-0 flex-1 flex-col overflow-hidden">
-              {/* A phone: the picked record, compact, above the list. */}
-              {isPhone && soloMode === 'library' && selectedSong && (
-                <PhoneRecord
-                  song={selectedSong}
-                  onStart={handleStartGame}
-                  onDetails={() => setSheetOpen(true)}
-                />
-              )}
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={soloMode}
-                  className="slice-menu__mode flex min-h-0 flex-1 flex-col"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: DURATION.fast, ease: EASE.standard }}
-                >
-                  {soloMode === 'daily' && (
-                    <DailyPanel
-                      engine={engine}
-                      onPlay={(songId) => startRun(songId)}
-                      onBack={() => setSoloMode('library')}
-                    />
-                  )}
-                  {soloMode === 'setlists' && (
-                    <SetlistPanel
-                      engine={engine}
-                      onPlay={(songId) => startRun(songId)}
-                      onBack={() => setSoloMode('library')}
-                    />
-                  )}
-                  {soloMode === 'library' && (
-                    <SongLibrary
-                      /* PLAY opens the details panel; it does not start the run.
-                         Starting straight from the row dropped the player into a
-                         chart at whatever difficulty and modifiers were left over
-                         from the last song, with nothing in between to look at —
-                         and those controls, plus the score multiplier they add up
-                         to, all live in the panel. `START GAME` there is the
-                         control that commits. */
-                      onSelect={handleSelectSong}
-                      onHighlight={handleSelectSong}
-                      selectedSongId={selectedSong?.id ?? null}
-                      onStopPreviewRef={stopPreviewRef}
-                    />
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
 
             {/* Narrow: the details slide over the library. The sheet slides; it
                 used to appear and vanish. A spring, not a duration: this is a
