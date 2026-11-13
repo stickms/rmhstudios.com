@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, memo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { BadgeCheck } from 'lucide-react';
@@ -6,11 +6,18 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { SpineItem } from '@/components/ui/spine';
 import { RMHarkActions } from '@/components/feed/RMHarkActions';
+import { PostMenuTrigger } from '@/components/feed/PostMenuTrigger';
+import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 import { FeedMedia } from '@/components/feed/FeedMedia';
 import { TakeMeterLazy } from '@/components/feed/TakeMeterLazy';
 import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadges';
 import { relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
+import { useLocaleStore } from '@/stores/localeStore';
+
+/** The post menu's rows and dialogs: fetched the first time a row's three dots are used, never with the feed. */
+const loadFeedRowMenu = () => import('@/components/feed/FeedRowMenu');
+const FeedRowMenu = lazy(loadFeedRowMenu);
 
 /** "GAME_ANNOUNCEMENT" → "Game announcement": the last-resort label when a feed category has no translation. */
 function humanizeKicker(raw: string): string {
@@ -31,11 +38,12 @@ function hrefFor(item: FeedItem): string {
  * `t-post`, the picture, and the K8 action words. No box (S1, R3): the row is separated from the next by the spine's rule.
  *
  * A post is the author, text and media inside ONE link to the thread, with the action row beside it, never inside it
- * (an anchor cannot hold buttons). A platform announcement (a game, an app, an article, a study) is the same kind of
+ * (an anchor cannot hold buttons). The three dots at the top end open the post's menu (owner, 2026-11-13): the same
+ * menu the post card and the post page have, in a chunk of its own (`FeedRowMenu`) so the feed does not pay for it. A platform announcement (a game, an app, an article, a study) is the same kind of
  * row with less in it: its kind in `t-meta`, the title, one line, and a text link.
  *
  * **This is deliberately not `components/feed/RMHarkCard`.** They render the same `FeedItem`, but the card owns a heavier
- * interactive post (menus, reactions, translation, view tracking) for the pages that show one post at full size; the home
+ * interactive post (reactions, view tracking, the profile hover card) for the pages that show one post at full size; the home
  * feed keeps this compact row and shares the action words with it. What they must not do is disagree about the same
  * post: the shared pieces are shared for real (`relativeTimeShort`, `RelativeTime`, `UserAvatar`, `RMHarkActions`).
  */
@@ -50,6 +58,14 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
   const external = href.startsWith('http');
   // An optimistic post has a temporary id: there is nothing to open and nothing to like until the server answers.
   const pending = Boolean(item.pending);
+  const menuAnchor = useRef<HTMLButtonElement | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuMounted, setMenuMounted] = useState(false);
+  const locale = useLocaleStore((s) => s.locale);
+  const [made, setTranslation] = useState<{ text: string; locale: string } | null>(null);
+  // A translation is into the site's language: after a change of language it is no longer shown.
+  const translation = made && made.locale === locale ? made.text : null;
+  const hasMenu = isRmhark && !pending && !item.deletedAt;
 
   // The body hard-clamps at five lines, so a long post would end mid-word with nothing to say more existed. Measured
   // once the text is laid out, so short posts get no cue. It is a span, not a link: the body is already one.
@@ -63,7 +79,7 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
 
   const body = isRmhark ? (
     <>
-      <div className="flex items-center gap-2.5">
+      <div className={hasMenu ? 'flex items-center gap-2.5 pe-9' : 'flex items-center gap-2.5'}>
         <UserAvatar
           src={item.user?.image ?? undefined}
           alt=""
@@ -79,6 +95,7 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
                 <span className="sr-only">{t('verified', { defaultValue: 'Verified' })}</span>
               </>
             ) : null}
+            {item.user?.isBot ? <AutomatedBadge /> : null}
           </span>
           <span className="t-meta block truncate">
             {item.user?.handle ? <bdi>{`@${item.user.handle}`}</bdi> : ''}
@@ -100,6 +117,11 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
         <span className="t-body mt-1 block font-medium underline">
           {t('read-more', { defaultValue: 'Read more' })}
         </span>
+      ) : null}
+      {translation ? (
+        <p className="t-body mt-2 border-s border-site-border ps-3 break-words whitespace-pre-wrap">
+          {translation}
+        </p>
       ) : null}
       {pending ? (
         <span className="t-meta mt-2 block">{t('posting', { defaultValue: 'Posting…' })}</span>
@@ -148,6 +170,33 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
           {body}
         </Link>
       )}
+      {hasMenu ? (
+        <div className="feed-row__menu">
+          <PostMenuTrigger
+            ref={menuAnchor}
+            label={t('post-actions', { defaultValue: 'Post actions' })}
+            open={menuOpen}
+            // Warm the chunk on approach, so the first press opens the menu rather than starting a download.
+            onPointerEnter={() => void loadFeedRowMenu()}
+            onFocus={() => void loadFeedRowMenu()}
+            onClick={() => {
+              setMenuMounted(true);
+              setMenuOpen((open) => !open);
+            }}
+          />
+          {menuMounted ? (
+            <Suspense fallback={null}>
+              <FeedRowMenu
+                item={item}
+                open={menuOpen}
+                onClose={() => setMenuOpen(false)}
+                anchorRef={menuAnchor}
+                onTranslation={setTranslation}
+              />
+            </Suspense>
+          ) : null}
+        </div>
+      ) : null}
       {take}
       {isRmhark && !item.locked && !pending && (
         <PostPlusBadges

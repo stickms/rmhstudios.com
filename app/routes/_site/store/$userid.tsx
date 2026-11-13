@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { StorefrontColumn } from '@/components/feed/StorefrontColumn';
 import { getRequestSession } from '@/lib/auth-session.server';
@@ -26,10 +25,7 @@ function StorePage() {
   const { userid } = Route.useParams();
   const { data } = Route.useLoaderData();
   return (
-    <>
-      <PageFrame>
-        <StorefrontColumn key={userid} userid={userid} initialData={data} />
-      </PageFrame>
-    </>
+    // The column draws its own `PageLayout`: its title is the creator's name, which it holds.
+    <StorefrontColumn key={userid} userid={userid} initialData={data} />
   );
 }

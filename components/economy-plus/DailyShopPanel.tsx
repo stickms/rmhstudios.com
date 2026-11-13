@@ -2,6 +2,10 @@
  * The store's "Daily" tab (C2 daily shop, C3 bundles, C6 loadouts). Lazy-loaded
  * when the tab opens, so none of it is in the store route's entry chunk.
  *
+ * Anatomy: today's items as rows on rules (picture, name, rarity, one line, then "Add to bundle"
+ * and the price), the bundle line above them with the tab's one primary (Buy bundle), and the
+ * saved loadouts as rows under their own heading.
+ *
  * Single items are bought through the ordinary `/api/shop/purchase` route at
  * their normal price; only the bundle has its own route.
  */
@@ -9,16 +13,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Check, Layers, Plus, Shirt, Trash2 } from 'lucide-react';
+import { Check, Plus, Trash2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { Preview } from '@/components/feed/ShopColumn';
-import { RARITY_COLORS } from '@/lib/shop/catalog';
+import { CoinAmount } from '@/components/shop/CoinAmount';
+import { ItemPicture } from '@/components/shop/ItemPicture';
+import { RarityMark } from '@/components/shop/RarityMark';
 import {
   BUNDLE_DISCOUNT_PCT,
   BUNDLE_SIZE,
@@ -59,7 +63,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
     mutationFn: (item: DailyShopItem) =>
       apiJson('/api/shop/purchase', { method: 'POST', body: { itemId: item.id } }),
     onSuccess: (_r, item) => {
-      toast.success(t('daily-bought', { defaultValue: 'Purchased {{name}}!', name: item.name }));
+      toast.success(t('daily-bought-item', { defaultValue: 'Bought {{name}}', name: item.name }));
       setSelected((s) => s.filter((id) => id !== item.id));
       refreshOwnership();
     },
@@ -87,7 +91,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
     },
     onSuccess: () => {
       bundleKey.current = null;
-      toast.success(t('bundle-bought', { defaultValue: 'Bundle purchased!' }));
+      toast.success(t('bundle-bought-done', { defaultValue: 'Bundle bought' }));
       setSelected([]);
       refreshOwnership();
     },
@@ -114,9 +118,9 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
 
   if (isLoading || !data) {
     return (
-      <div className="grid grid-cols-1 gap-3 px-3 pb-12 sm:grid-cols-2">
+      <div className="flex flex-col gap-3 pt-4">
         {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="h-36 w-full" />
+          <Skeleton key={i} className="h-16 w-full" />
         ))}
       </div>
     );
@@ -133,17 +137,17 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
   }
 
   return (
-    <div className="space-y-4 px-3 pb-12">
-      <section aria-labelledby="daily-title" className="space-y-3">
-        <div className="flex flex-wrap items-end justify-between gap-2 px-1">
-          <div>
-            <h2 id="daily-title" className="site-section-label">
+    <div className="flex flex-col gap-10 pt-4">
+      <section aria-labelledby="daily-title" className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+          <div className="min-w-0">
+            <h2 id="daily-title" className="t-heading">
               {t('daily-title', { defaultValue: "Today's featured items" })}
             </h2>
-            <p className="mt-1 text-xs text-site-text-muted">
-              {t('daily-sub', {
+            <p className="t-body mt-1 text-site-text-muted">
+              {t('daily-lead', {
                 defaultValue:
-                  'A fresh handful every day at midnight UTC. Everything stays in the full shop at the same price.',
+                  'A new set every day at midnight UTC. Each item stays in the shop at the same price.',
               })}
             </p>
           </div>
@@ -153,19 +157,18 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-y border-site-border py-3">
           <div className="min-w-0">
-            <p className="flex items-center gap-2 text-sm font-semibold text-site-text">
-              <Layers className="size-4" aria-hidden />
-              {t('bundle-title', {
-                defaultValue: 'Build a bundle: pick any {{size}}, save {{pct}}%',
+            <p className="t-body font-medium text-site-text">
+              {t('bundle-line', {
+                defaultValue: 'Bundle any {{size}} and save {{pct}}%',
                 size: BUNDLE_SIZE,
                 pct: BUNDLE_DISCOUNT_PCT,
               })}
             </p>
-            <p className="mt-0.5 text-xs text-site-text-muted" aria-live="polite">
+            <p className="t-body text-site-text-muted" aria-live="polite">
               {bySelected.length === 0
-                ? t('bundle-hint', { defaultValue: 'Tick items below to add them to your bundle.' })
+                ? t('bundle-hint-add', { defaultValue: 'Add items below to build a bundle.' })
                 : t('bundle-progress', {
                     defaultValue: '{{n}} of {{size}} picked',
                     n: bySelected.length,
@@ -175,77 +178,71 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
                 <>
                   {' · '}
                   <s>{listPrice.toLocaleString()}</s>{' '}
-                  <strong className="text-site-text">{discounted.toLocaleString()}</strong>
+                  <span className="font-medium text-site-text">{discounted.toLocaleString()}</span>
                 </>
               ) : null}
             </p>
           </div>
           {signedIn ? (
             <Button
-              variant="default"
-              size="sm"
+              variant="primary"
               disabled={!full}
               loading={bundle.isPending}
               onClick={() => bundle.mutate(selected)}
             >
-              <CoinIcon className="size-4" aria-hidden />
               {full
-                ? t('bundle-buy-price', {
-                    defaultValue: 'Buy bundle · {{price}}',
+                ? t('bundle-buy-for', {
+                    defaultValue: 'Buy bundle for {{price}} coins',
                     price: discounted.toLocaleString(),
                   })
                 : t('bundle-buy', { defaultValue: 'Buy bundle' })}
             </Button>
           ) : (
-            <span className="text-xs text-site-text-muted">
-              {t('daily-signin', { defaultValue: 'Sign in to buy.' })}
-            </span>
+            <Button asChild variant="primary">
+              <a href="/login">{t('daily-sign-in', { defaultValue: 'Sign in to buy' })}</a>
+            </Button>
           )}
         </div>
 
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <ul className="-mt-4">
           {data.items.map((item) => {
             const picked = selected.includes(item.id);
             return (
               <li
                 key={item.id}
-                className={`flex flex-col gap-3 p-4 ${picked ?'ring-2 ring-site-accent':''}`}
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-site-border py-3"
               >
-                <div className="flex items-center gap-3">
-                  <Preview item={{ ...item, equipped: false }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
-                    <span
-                      className="mt-0.5 inline-block rounded-full border px-2 py-0.5 text-xs font-semibold text-site-text"
-                      style={{
-                        background: `${RARITY_COLORS[item.rarity]}2e`,
-                        borderColor: `${RARITY_COLORS[item.rarity]}99`,
-                      }}
-                    >
-                      {item.rarity}
-                    </span>
-                  </div>
-                  {signedIn && !item.owned ? <ShopWishButton itemId={item.id} /> : null}
+                <ItemPicture kind={item.kind} art={item.data} size="thumb" className="w-16" />
+                <div className="min-w-40 flex-1">
+                  <p className="t-body truncate font-medium text-site-text">{item.name}</p>
+                  <p className="t-meta flex items-center gap-2">
+                    <RarityMark rarity={item.rarity} />
+                    <CoinAmount amount={item.price} />
+                  </p>
+                  <p className="t-body line-clamp-2 text-site-text-muted">{item.description}</p>
                 </div>
-                <p className="line-clamp-2 text-xs text-site-text-muted">{item.description}</p>
-                <div className="mt-auto flex items-center justify-between gap-2">
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
                   {item.owned ? (
-                    <Badge variant="success">{t('daily-owned', { defaultValue: 'Owned' })}</Badge>
+                    <p className="t-body inline-flex items-center gap-1 text-site-text">
+                      <Check className="size-4" aria-hidden />
+                      {t('daily-owned', { defaultValue: 'Owned' })}
+                    </p>
                   ) : signedIn ? (
                     <>
+                      <ShopWishButton itemId={item.id} />
                       <Button
-                        variant={picked ? 'default' : 'default'}
-                        size="sm"
+                        variant="default"
                         aria-pressed={picked}
                         disabled={!picked && selected.length >= BUNDLE_SIZE}
                         onClick={() => toggle(item.id)}
                       >
-                        {picked ? <Check /> : <Plus />}
-                        {t('bundle-toggle', { defaultValue: 'Bundle' })}
+                        {picked ? <Check aria-hidden /> : <Plus aria-hidden />}
+                        {picked
+                          ? t('bundle-in', { defaultValue: 'In bundle' })
+                          : t('bundle-add', { defaultValue: 'Add to bundle' })}
                       </Button>
                       <Button
                         variant="default"
-                        size="sm"
                         loading={buy.isPending && buy.variables?.id === item.id}
                         onClick={() => buy.mutate(item)}
                         aria-label={t('daily-buy-aria', {
@@ -254,14 +251,10 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
                           price: item.price,
                         })}
                       >
-                        <CoinIcon className="size-4" aria-hidden /> {item.price.toLocaleString()}
+                        {t('daily-buy', { defaultValue: 'Buy' })}
                       </Button>
                     </>
-                  ) : (
-                    <span className="flex items-center gap-1 text-xs text-site-text-muted">
-                      <CoinIcon className="size-3.5" /> {item.price.toLocaleString()}
-                    </span>
-                  )}
+                  ) : null}
                 </div>
               </li>
             );
@@ -305,11 +298,9 @@ function Countdown({ to, onElapsed }: { to: string; onElapsed: () => void }) {
   const mm = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
   const ss = String(total % 60).padStart(2, '0');
   return (
-    <p className="text-xs tabular-nums text-site-text-muted">
+    <p className="t-meta">
       {t('daily-rotates', { defaultValue: 'Rotates in' })}{' '}
-      <span className="font-semibold text-site-text">
-        <time dateTime={`PT${total}S`}>{`${hh}:${mm}:${ss}`}</time>
-      </span>
+      <time className="text-site-text" dateTime={`PT${total}S`}>{`${hh}:${mm}:${ss}`}</time>
     </p>
   );
 }
@@ -383,21 +374,20 @@ function LoadoutsSection({ onApplied }: { onApplied: () => void }) {
   const loadouts = data?.loadouts ?? [];
 
   return (
-    <section aria-labelledby="loadouts-title" className="space-y-3">
-      <div className="px-1">
-        <h2 id="loadouts-title" className="site-section-label">
+    <section aria-labelledby="loadouts-title" className="flex flex-col gap-4">
+      <div>
+        <h2 id="loadouts-title" className="t-heading">
           {t('lo-title', { defaultValue: 'Your loadouts' })}
         </h2>
-        <p className="mt-1 text-xs text-site-text-muted">
-          {t('lo-sub', {
-            defaultValue:
-              'Save the look you are wearing right now, then switch back to it in one tap.',
+        <p className="t-body mt-1 text-site-text-muted">
+          {t('lo-lead', {
+            defaultValue: 'Save the look you are wearing now, then switch back to it later.',
           })}
         </p>
       </div>
 
       <form
-        className="flex flex-wrap items-center gap-2 p-4"
+        className="flex flex-wrap items-center gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           if (name.trim()) save.mutate();
@@ -408,47 +398,47 @@ function LoadoutsSection({ onApplied }: { onApplied: () => void }) {
           onChange={(e) => setName(e.target.value.slice(0, 40))}
           placeholder={t('lo-name', { defaultValue: 'Name this loadout' })}
           aria-label={t('lo-name', { defaultValue: 'Name this loadout' })}
-          className="min-w-0 flex-1"
+          className="min-w-48 flex-1"
         />
         <Button
           type="submit"
           variant="default"
-          size="sm"
           disabled={!name.trim() || loadouts.length >= LOADOUT_MAX_PRESETS}
           loading={save.isPending}
         >
-          <Shirt /> {t('lo-save', { defaultValue: 'Save current look' })}
+          {t('lo-save', { defaultValue: 'Save current look' })}
         </Button>
       </form>
 
       {isLoading ? (
-        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-16 w-full" />
       ) : loadouts.length === 0 ? (
         <EmptyState
-          icon={Shirt}
           title={t('lo-empty-title', { defaultValue: 'No saved loadouts' })}
-          description={t('lo-empty-desc', {
-            defaultValue: 'Equip your favourite cosmetics in the shop, then save them here.',
+          description={t('lo-empty-text', {
+            defaultValue: 'Equip cosmetics in the shop, then save them here.',
           })}
         />
       ) : (
-        <ul className="space-y-3">
+        <ul className="border-t border-site-border">
           {loadouts.map((l) => (
-            <li key={l.id} className="flex flex-wrap items-center gap-3 p-4">
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-2 text-sm font-semibold text-site-text">
+            <li
+              key={l.id}
+              className="flex flex-wrap items-center gap-3 border-b border-site-border py-3"
+            >
+              <div className="min-w-40 flex-1">
+                <p className="t-body flex items-center gap-2 font-medium text-site-text">
                   <span className="truncate">{l.name}</span>
                   {l.active ? (
                     <Badge variant="success">{t('lo-active', { defaultValue: 'Equipped' })}</Badge>
                   ) : null}
                 </p>
-                <p className="truncate text-xs text-site-text-muted">
+                <p className="t-body truncate text-site-text-muted">
                   {l.items.map((i) => i.name).join(' · ')}
                 </p>
               </div>
               <Button
                 variant="default"
-                size="sm"
                 disabled={l.active}
                 loading={apply.isPending && apply.variables === l.id}
                 onClick={() => apply.mutate(l.id)}
@@ -465,7 +455,7 @@ function LoadoutsSection({ onApplied }: { onApplied: () => void }) {
                 onClick={() => remove.mutate(l.id)}
                 disabled={remove.isPending}
               >
-                <Trash2 />
+                <Trash2 aria-hidden />
               </Button>
             </li>
           ))}

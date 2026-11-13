@@ -13,6 +13,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { PROFILE_BANNER_ASPECT, PROFILE_BANNER_WIDTH } from '@/lib/profile/banner';
 import { ImageCropModal } from './ImageCropModal';
 import { CreatorSection } from './profile-edit/CreatorSection';
 import { EditorPreview } from './profile-edit/EditorPreview';
@@ -221,6 +222,18 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           imageSrc={form.cropSrc}
           onCropDone={assets.handleCropDone}
           onCancel={assets.handleCropCancel}
+        />
+      ) : null}
+
+      {form.bannerCrop ? (
+        <ImageCropModal
+          imageSrc={form.bannerCrop.src}
+          onCropDone={assets.handleBannerCropDone}
+          onCancel={assets.handleBannerCropCancel}
+          aspect={PROFILE_BANNER_ASPECT}
+          cropShape="rect"
+          cover
+          outputWidth={PROFILE_BANNER_WIDTH}
         />
       ) : null}
     </>

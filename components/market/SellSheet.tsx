@@ -18,11 +18,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Tag } from 'lucide-react';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { RARITY_COLORS, type Rarity, type ShopItemKind } from '@/lib/shop/catalog';
+import type { Rarity, ShopItemKind } from '@/lib/shop/catalog';
 import { isTradable, minPriceFor, MAX_PRICE } from '@/lib/market/tradable';
-import { MarketItemPreview } from './ListingCard';
+import { ItemPicture } from '@/components/shop/ItemPicture';
+import { RarityMark } from '@/components/shop/RarityMark';
 import { getShopApi } from '@/lib/shop/shop.contract';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
@@ -60,10 +59,10 @@ export function SellSheet({
     (async () => {
       try {
         const data = await api(getShopApi);
- if (cancelled) return;
- const owned: OwnedItem[] = (data.items ?? []).filter(
- (i: OwnedItem) => i.owned && !i.equipped && isTradable(i.id),
- );
+        if (cancelled) return;
+        const owned: OwnedItem[] = (data.items ?? []).filter(
+          (i: OwnedItem) => i.owned && !i.equipped && isTradable(i.id),
+        );
         setItems(owned);
       } catch {
         if (!cancelled) setItems([]);
@@ -97,7 +96,7 @@ export function SellSheet({
     setBusy(item.id);
     try {
       await api(createListingApi, { body: { itemId: item.id, priceCoins: price } });
-      toast.success(t('market-listed', { name: item.name, defaultValue: 'Listed {{name}}!' }));
+      toast.success(t('market-listed-item', { name: item.name, defaultValue: 'Listed {{name}}' }));
       setItems((prev) => (prev ? prev.filter((i) => i.id !== item.id) : prev));
       onListed?.();
     } catch (e) {
@@ -126,7 +125,6 @@ export function SellSheet({
           </div>
         ) : sorted.length === 0 ? (
           <EmptyState
-            icon={Tag}
             title={t('market-sell-empty-title', { defaultValue: 'Nothing to sell' })}
             description={t('market-sell-empty-desc', {
               defaultValue:
@@ -134,54 +132,59 @@ export function SellSheet({
             })}
           />
         ) : (
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto pe-1">
+          <ul className="border-t border-site-border">
             {sorted.map((item) => (
-              <div
+              <li
                 key={item.id}
-                className="relative flex items-center gap-3 rounded-site p-4"
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-site-border py-3"
               >
-                <MarketItemPreview kind={item.kind} data={item.data} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
-                  <span
-                    className="text-xs font-semibold"
-                    style={{ color: RARITY_COLORS[item.rarity] }}
-                  >
-                    {item.rarity}
-                  </span>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <div className="relative">
-                    <CoinIcon className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2" />
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min={minPriceFor(item.id)}
-                      max={MAX_PRICE}
-                      step={1}
-                      placeholder={String(minPriceFor(item.id))}
-                      aria-label={t('market-price-label', {
-                        name: item.name,
-                        defaultValue: 'Price for {{name}}',
+                <ItemPicture kind={item.kind} art={item.data} size="thumb" className="w-16" />
+                <div className="min-w-32 flex-1">
+                  <p className="t-body truncate font-medium text-site-text">{item.name}</p>
+                  <p className="t-meta flex items-center gap-2">
+                    <RarityMark rarity={item.rarity} />
+                    <span>
+                      {t('market-price-floor', {
+                        min: minPriceFor(item.id).toLocaleString(),
+                        defaultValue: 'from {{min}}',
                       })}
-                      value={prices[item.id] ?? ''}
-                      onChange={(e) => setPrices((p) => ({ ...p, [item.id]: e.target.value }))}
-                      className="h-9 w-28 pl-8"
-                    />
-                  </div>
+                    </span>
+                  </p>
+                </div>
+                <form
+                  className="flex w-full items-center gap-2 sm:w-auto"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void list(item);
+                  }}
+                >
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={minPriceFor(item.id)}
+                    max={MAX_PRICE}
+                    step={1}
+                    placeholder={t('market-price-placeholder', { defaultValue: 'Coins' })}
+                    aria-label={t('market-price-label', {
+                      name: item.name,
+                      defaultValue: 'Price for {{name}}',
+                    })}
+                    value={prices[item.id] ?? ''}
+                    onChange={(e) => setPrices((p) => ({ ...p, [item.id]: e.target.value }))}
+                    className="min-w-0 flex-1 sm:w-28 sm:flex-none"
+                  />
                   <Button
-                    size="sm"
+                    type="submit"
                     variant="default"
                     loading={busy === item.id}
                     disabled={busy !== null}
-                    onClick={() => list(item)}
                   >
                     {t('market-list-action', { defaultValue: 'List' })}
                   </Button>
-                </div>
-              </div>
+                </form>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </DialogContent>
     </Dialog>

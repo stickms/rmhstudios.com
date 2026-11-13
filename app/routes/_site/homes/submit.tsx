@@ -70,7 +70,7 @@ function HomesSubmitPage() {
 
   return (
     <PageLayout title={title} backTo="/homes" backLabel="Back to browse" wide>
-      <div className="w-full max-w-2xl px-4 pt-4 pb-12">
+      <div className="w-full max-w-2xl">
         {isEditing && loading ? (
           <div className="grid place-items-center py-20 text-site-text-muted">
             <Spinner />
@@ -78,7 +78,7 @@ function HomesSubmitPage() {
         ) : isEditing && !listing ? (
           <EmptyState title="You can only edit your own listings." />
         ) : (
-          <div className="rounded-site p-5 sm:p-5">
+          <div>
             <ListingForm listing={listing ?? undefined} />
           </div>
         )}

@@ -1,6 +1,8 @@
+import { IconButton } from '@/components/ui/icon-button';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Bell, BellOff, MapPin, Search, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -28,6 +30,7 @@ function summarize(w: Watch): string {
 }
 
 export function WatchManager() {
+  const { t } = useTranslation('site');
   const [watches, setWatches] = useState<Watch[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -95,20 +98,25 @@ export function WatchManager() {
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="border-t border-site-border">
       {watches.map((w) => (
         <div
           key={w.id}
-          className={`flex items-center justify-between gap-3 rounded-site p-3 transition-colors ${
-            w.active ? '' : 'opacity-60'
-          }`}
+          className="flex items-center justify-between gap-3 border-b border-site-border py-3.5"
         >
           <div className="min-w-0">
-            <div className="truncate font-medium text-site-text">{w.label}</div>
-            <div className="truncate text-xs text-site-text-muted">{summarize(w)}</div>
+            <div className="t-body truncate font-medium text-site-text">
+              {w.label}
+              {!w.active && (
+                <span className="t-meta ms-2">
+                  {t('homes-alert-paused', { defaultValue: 'Paused' })}
+                </span>
+              )}
+            </div>
+            <div className="t-body truncate text-site-text-muted">{summarize(w)}</div>
             {w.locationLabel && (
-              <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-site-text-muted">
-                <MapPin className="h-3 w-3" />
+              <div className="t-meta mt-0.5 flex min-w-0 items-center gap-1">
+                <MapPin className="size-3 shrink-0" aria-hidden />
                 <span className="truncate">
                   {w.locationLabel.split(',')[0]}
                   {w.radiusKm ? ` · ${w.radiusKm} km` : ''}
@@ -117,24 +125,13 @@ export function WatchManager() {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
+            <IconButton
+              icon={w.active ? Bell : BellOff}
+              label={w.active ? 'Pause alert' : 'Resume alert'}
+              aria-pressed={w.active}
               onClick={() => toggle(w)}
-              aria-label={w.active ? 'Pause alert' : 'Resume alert'}
-              className={`grid h-9 w-9 place-items-center rounded-site-sm transition-colors ${
-                w.active ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text'
-              }`}
-            >
-              {w.active ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => remove(w.id)}
-              aria-label="Delete alert"
-              className="grid h-9 w-9 place-items-center rounded-site-sm text-site-text-muted transition-colors hover:text-site-danger"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            />
+            <IconButton icon={Trash2} label="Delete alert" onClick={() => remove(w.id)} />
           </div>
         </div>
       ))}

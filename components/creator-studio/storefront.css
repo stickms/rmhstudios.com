@@ -1,10 +1,16 @@
 /**
  * Create · Storefront styles.
  *
- * The Steam-like store layout used across every Create tab: a big hero
- * banner, a horizontally-scrollable spotlight rail, and a varied catalog mosaic
- * where `.is-wide` tiles span two columns. Mobile-first — the mosaic starts at
- * two columns and the rail scroll-snaps — and shares the site's dark palette.
+ * The store layout used across every Create tab: a hero banner, a rail of a few
+ * featured items, and a catalog mosaic where `.is-wide` tiles span two columns.
+ * Mobile-first: the mosaic starts at two columns.
+ *
+ * A tile is a picture with a caption under it (S3): the art carries the 1px border
+ * and the 8px radius, the caption sits on the page. Hover, focus and press change
+ * the art's border to ink and nothing else. Nothing is laid over the picture and
+ * nothing moves (R1, R5): the description that used to slide up over the art on a
+ * dark gradient, the white glow and the 5% zoom are gone, and so is the state layer
+ * that covered the whole card (see `PrimaryWrapper` in storefront.tsx).
  */
 
 .store {
@@ -50,11 +56,14 @@
   font-size: 0.92rem;
 }
 
-/* ── Shared art block (placeholder, image, badge, glow) ─────────────────────── */
+/* ── Shared art block (placeholder, image, badge) ───────────────────────────── */
 .store-art {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #1c1c1e, #0a0a0a);
+  background: var(--site-bg-subtle);
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  transition: border-color 90ms linear;
 }
 
 .store-art__img {
@@ -63,59 +72,49 @@
   object-fit: cover;
   object-position: top center;
   display: block;
-  /* The catalog is build-time data, so a card's title, tags and CTA paint with
-     the first frame while only the art is still in flight. Starting the art at
-     0 and fading it in over `.store-art`'s gradient makes that arrival a settle
-     rather than a pop — the gradient is the placeholder, so nothing is blank.
-
-     `.is-loaded` is set by the component on `load` (and immediately when a
-     cached image is already `complete`). With scripting off nothing ever sets
-     it, so `__root.tsx`'s <noscript> block forces these visible — the same
-     mechanism already used for scroll reveals. */
+  /* The art arrives after the text. It starts at 0 over `.store-art`'s flat
+     placeholder fill and is shown once it has loaded: `.is-loaded` is set by the
+     component on `load` (and at once when a cached image is already `complete`).
+     With scripting off nothing ever sets it, so `__root.tsx`'s <noscript> block
+     forces these visible. */
   opacity: 0;
-  transition:
-    transform calc(var(--site-transition-speed) * 3) var(--ease-glass),
-    opacity calc(var(--site-transition-speed) * 1.6) var(--ease-out);
+  transition: opacity 160ms linear;
 }
 
 .store-art__img.is-loaded {
   opacity: 1;
 }
 
-/* Reduced motion still wants the image, just not the fade. */
-
 .store-art__placeholder {
   display: grid;
   place-items: center;
   width: 100%;
   height: 100%;
+  background: var(--site-bg-subtle);
 }
 
 .store-art__mark {
   font-size: clamp(1.8rem, 6vw, 3rem);
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.4);
+  color: var(--site-text-muted);
 }
 
 .store-art__badge {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 8px;
+  inset-inline-start: 8px;
   z-index: 3;
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: rgba(245, 245, 247, 0.96);
-  background: rgba(0, 0, 0, 0.6);
-  padding: 3px 9px;
-  border-radius: 9999px;
-  corner-shape: round;
-
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--site-text);
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  padding: 2px 6px;
+  border-radius: var(--site-radius-sm);
   white-space: nowrap;
 }
 
@@ -156,8 +155,6 @@
   margin: 8px 0 22px;
   border-radius: var(--site-radius);
   overflow: hidden;
-  opacity: 0;
-  animation: store-rise 0.6s var(--ease-smooth) both;
 }
 
 .store-hero__link {
@@ -178,10 +175,6 @@
 .store-hero__art .store-art__img {
   position: absolute;
   inset: 0;
-}
-
-.store-hero:hover .store-art__img {
-  transform: scale(1.04);
 }
 
 .store-hero__scrim {
@@ -271,19 +264,6 @@
   color: var(--site-accent-fg);
   font-size: 0.9rem;
   font-weight: 600;
-  transition:
-    transform var(--site-transition-speed) var(--ease-out),
-    background var(--site-transition-speed) var(--ease-out);
-}
-
-.store-hero__link:hover .store-hero__cta {
-  background: var(--site-accent-hover);
-  transform: translateX(2px);
-}
-
-.store-hero__link:active .store-hero__cta {
-  transform: scale(0.97);
-  transition-duration: 80ms;
 }
 
 @media (min-width: 720px) {
@@ -322,68 +302,22 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  border-radius: var(--site-radius);
-  overflow: hidden;
   text-decoration: none;
   color: inherit;
-  background: var(--site-surface);
-  border: 0.5px solid var(--site-border);
-  transition:
-    border-color var(--site-transition-speed) var(--ease-out),
-    box-shadow var(--site-transition-speed) var(--ease-out),
-    transform var(--site-transition-speed) var(--ease-glass);
-}
-
-.store-spot__link:hover {
-  border-color: var(--site-text);
-  box-shadow: none;
-  transform: translateY(-3px);
-}
-
-/* Press cue — snaps in fast, no layout shift. */
-.store-spot__link:active {
-  transform: translateY(-1px) scale(0.985);
-  transition-duration: 80ms;
 }
 
 .store-spot__art {
   aspect-ratio: 16 / 9;
 }
 
-.store-spot__link:hover .store-art__img {
-  transform: scale(1.05);
-}
-
-.store-spot__glow,
-.store-card__glow {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  /* Centred, and it stays centred. The `--mx`/`--my` this used to read were
-     written on every raw `pointermove` (storefront.tsx) — a gradient's position
-     is paint, so following the cursor re-rasterised the whole card at pointer
-     rate. Only opacity animates now, which composites.
-
-     `mix-blend-mode` goes with it: it forces the card into its own stacking
-     context and makes the glow's cost depend on everything painted beneath it,
-     for a soft-light pass nobody can identify once the highlight stopped
-     moving. */
-  background: radial-gradient(
-    320px circle at 50% 50%,
-    rgba(255, 255, 255, 0.18),
-    rgba(255, 255, 255, 0) 60%
-  );
-  opacity: 0;
-  transition: opacity var(--site-transition-speed) var(--ease-out);
-}
-.store-spot__link:hover .store-spot__glow,
-.store-card__link:hover .store-card__glow {
-  opacity: 1;
+/* The one hover, focus and press cue of a tile: its picture's border turns ink (M1). */
+.store-spot__link:is(:hover, :focus-visible, :active) .store-art,
+.store-card__link:is(:hover, :focus-visible, :active) .store-art {
+  border-color: var(--site-text);
 }
 
 .store-spot__body {
-  padding: 12px 14px 14px;
+  padding: 8px 0 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -452,35 +386,14 @@
 
 .store-card {
   position: relative;
-  opacity: 0;
-  animation: store-rise 0.55s var(--ease-smooth) both;
 }
 
 .store-card__link {
   display: flex;
   flex-direction: column;
   height: 100%;
-  border-radius: var(--site-radius-sm);
-  overflow: hidden;
   text-decoration: none;
   color: inherit;
-  border: 0.5px solid var(--site-border);
-  transition:
-    border-color var(--site-transition-speed) var(--ease-out),
-    box-shadow var(--site-transition-speed) var(--ease-out),
-    transform var(--site-transition-speed) var(--ease-glass);
-}
-
-.store-card__link:hover {
-  border-color: var(--site-text);
-  box-shadow: none;
-  transform: translateY(-3px);
-}
-
-/* Press cue — snaps in fast, no layout shift. */
-.store-card__link:active {
-  transform: translateY(-1px) scale(0.985);
-  transition-duration: 80ms;
 }
 
 .store-card__art {
@@ -490,51 +403,8 @@
   aspect-ratio: 16 / 9;
 }
 
-.store-card__link:hover .store-art__img {
-  transform: scale(1.05);
-}
-
-/* Description revealed over the art on hover (narrow tiles only show it here). */
-.store-card__hoverdesc {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 3;
-  padding: 28px 12px 12px;
-  font-size: 0.72rem;
-  line-height: 1.4;
-  /* Sits on a dark scrim over the cover art, so it stays light in every theme. */
-  color: #f5f5f7;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.94) 0%,
-    rgba(0, 0, 0, 0.78) 55%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  transition:
-    opacity var(--site-transition-speed) var(--ease-out),
-    transform 300ms var(--ease-smooth);
-}
-.store-card__link:hover .store-card__hoverdesc {
-  opacity: 1;
-  transform: translateY(0);
-}
-/* Wide tiles show their description in the body, so suppress the overlay. */
-.store-card.is-wide .store-card__hoverdesc {
-  display: none;
-}
-
 .store-card__body {
-  padding: 11px 13px 13px;
+  padding: 8px 0 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -569,11 +439,11 @@
   color: var(--site-text-muted);
 }
 
-/* ⓘ details button (curated builds) — top-right, appears on hover. */
+/* ⓘ details button (curated builds), top corner of the art. */
 .store-card__details {
   position: absolute;
   top: 8px;
-  right: 8px;
+  inset-inline-end: 8px;
   z-index: 4;
   display: grid;
   place-items: center;
@@ -583,19 +453,13 @@
   corner-shape: round;
   color: var(--site-text);
   background: var(--site-surface);
-  border: 0.5px solid var(--site-border);
-
+  border: 1px solid var(--site-border);
   opacity: 0;
-  transform: translateY(-4px);
-  transition:
-    opacity 200ms ease,
-    transform 200ms ease,
-    background var(--site-transition-speed) var(--ease-out);
+  transition: opacity 90ms linear;
 }
 .store-card:hover .store-card__details,
 .store-card:focus-within .store-card__details {
   opacity: 1;
-  transform: translateY(0);
 }
 .store-card__details:hover {
   background: var(--site-surface-hover);
@@ -603,18 +467,6 @@
 @media (hover: none) {
   .store-card__details {
     opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes store-rise {
-  from {
-    opacity: 0;
-    transform: translateY(18px) scale(0.99);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 

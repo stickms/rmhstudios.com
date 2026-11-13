@@ -7,6 +7,7 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { PersonaChatPayload } from '@/lib/persona-chat.server';
 import type { createPersonaBody } from '@/lib/personas/personas-schema';
 import type { ResolvedUser } from '@/lib/user-display';
+import type { CreationSort } from '@/lib/ranking/best';
 
 export interface PersonaListItem {
   id: string;
@@ -28,8 +29,9 @@ export interface MyPersonaItem {
   isPublic: boolean;
 }
 
-/** Public personas (most chatted) plus the viewer's own. Works signed out. */
+/** Public personas, ranked (`sort`, default `best`: lib/ranking/best.ts), plus the viewer's own. Works signed out. */
 export const listPersonasApi = endpoint<{
+  query: { q?: string; sort?: CreationSort };
   res: { personas: PersonaListItem[]; mine: MyPersonaItem[]; signedIn: boolean };
 }>()({ method: 'GET', path: '/api/personas' });
 

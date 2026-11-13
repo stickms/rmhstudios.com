@@ -3,8 +3,8 @@
  *
  * The page-generation surface: a prompt dock (type anything, get a shareable,
  * collaboratively-editable webpage) above a public, searchable, lazy-loaded
- * gallery of every generated page — now laid out as a Steam-style storefront
- * (rotating hero + spotlight rail + varied mosaic) via the shared `Storefront`.
+ * gallery of every generated page, ranked (Best by default; lib/ranking/best.ts)
+ * and laid out as a storefront (hero + spotlight rail + mosaic) via the shared `Storefront`.
  * Each card links to the /v/$slug viewer.
  */
 
@@ -21,6 +21,8 @@ import type { VibeCard } from '@/lib/rmhvibe/vibe.server';
 import { api } from '@/lib/contract/client';
 import { backfillVibeThumbsApi } from '@/lib/rmhvibe/vibe-admin.contract';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
+import { SortSelect, useCreationSortOptions } from '@/components/creator-studio/SortSelect';
+import { DEFAULT_CREATION_SORT, type CreationSort } from '@/lib/ranking/best';
 import '@/components/builds/builds.css';
 import '@/components/creator-studio/storefront.css';
 import '@/components/rmhvibe/vibe.css';
@@ -48,20 +50,15 @@ function timeAgo(iso: string): string {
   return 'just now';
 }
 
-function hueFor(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
-  return h;
-}
-
 export function PagesTab({
   initial,
-  seed,
   fetchGallery,
 }: {
+  /** The first page in the default sort, from the route loader. */
   initial: VibeGallery;
-  seed: number;
-  fetchGallery: (opts: { data: { q?: string; cursor?: string } }) => Promise<VibeGallery>;
+  fetchGallery: (opts: {
+    data: { q?: string; cursor?: string; sort?: CreationSort };
+  }) => Promise<VibeGallery>;
 }) {
   const { t } = useTranslation('v');
   const navigate = useNavigate();
@@ -112,19 +109,28 @@ export function PagesTab({
   }
 
   const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<CreationSort>(DEFAULT_CREATION_SORT);
+  const sortOptions = useCreationSortOptions();
   const [items, setItems] = useState<VibeCard[]>(initial.items);
   const [cursor, setCursor] = useState<string | null>(initial.nextCursor);
   const [loading, setLoading] = useState(false);
   const reqId = useRef(0);
 
-  // Debounced search: refetch from the top whenever the query settles.
+  // Debounced search: refetch from the top whenever the query or the sort settles. The first run is
+  // skipped: the loader already delivered exactly that page, and refetching it a moment later could
+  // only reorder what is on screen.
+  const firstRun = useRef(true);
   useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
     const q = query.trim();
     const id = ++reqId.current;
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetchGallery({ data: { q } });
+        const res = await fetchGallery({ data: { q, sort } });
         if (reqId.current !== id) return;
         setItems(res.items);
         setCursor(res.nextCursor);
@@ -133,21 +139,21 @@ export function PagesTab({
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [query, fetchGallery]);
+  }, [query, sort, fetchGallery]);
 
   const loadMore = useCallback(async () => {
     if (loading || !cursor) return;
     const id = reqId.current;
     setLoading(true);
     try {
-      const res = await fetchGallery({ data: { q: query.trim(), cursor } });
+      const res = await fetchGallery({ data: { q: query.trim(), cursor, sort } });
       if (reqId.current !== id) return; // a search superseded us
       setItems((prev) => [...prev, ...res.items]);
       setCursor(res.nextCursor);
     } finally {
       if (reqId.current === id) setLoading(false);
     }
-  }, [loading, cursor, query, fetchGallery]);
+  }, [loading, cursor, query, sort, fetchGallery]);
 
   // Infinite scroll: fetch the next page when the sentinel scrolls into view.
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -173,7 +179,6 @@ export function PagesTab({
           title,
           description: card.description || undefined,
           coverUrl: card.thumbnailUrl,
-          hue: hueFor(card.slug),
           cta: t('open-page', { defaultValue: 'Open page' }),
           meta: timeAgo(card.createdAt),
           to: `/v/${card.slug}`,
@@ -195,6 +200,7 @@ export function PagesTab({
           placeholder={t('search-placeholder', { defaultValue: 'Search pages...' })}
           aria-label={t('search-aria-label', { defaultValue: 'Search pages' })}
         />
+        <SortSelect value={sort} onChange={setSort} options={sortOptions} />
         {isAdmin && (
           <button
             type="button"
@@ -256,8 +262,7 @@ export function PagesTab({
       <div className="store-pages">
         <Storefront
           items={storeItems}
-          seed={seed}
-          featured={!query.trim()}
+          featured={!query.trim() && sort === DEFAULT_CREATION_SORT}
           toolbar={toolbar}
           emptyLabel={
             query.trim()

@@ -13,7 +13,7 @@ interface KeyInput {
   key: string;
   shiftKey: boolean;
   open: boolean;
-  /** Number of focus stops (the pins, the links under them and the globe button). */
+  /** Number of focus stops (the globe button, the pins and the items of the bar under them). */
   stops: number;
   /** Index of the focused stop, or -1 when focus is outside the nav. */
   active: number;

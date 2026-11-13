@@ -19,6 +19,13 @@ interface ImageCropModalProps {
  onCancel: () => void;
  aspect?: number;
  cropShape?:'rect'|'round';
+ /**
+ * The picture must fill the frame: zooming out stops where the frame is covered, so the
+ * result has no empty bands. Off (the avatar), the whole picture can be shrunk into the frame.
+ */
+ cover?: boolean;
+ /** Scale the result down to at most this many pixels wide. It is never enlarged. */
+ outputWidth?: number;
 }
 
 export function ImageCropModal({
@@ -27,6 +34,8 @@ export function ImageCropModal({
  onCancel,
  aspect = 1,
  cropShape ='round',
+ cover = false,
+ outputWidth,
 }: ImageCropModalProps) {
  const [crop, setCrop] = useState({ x: 0, y: 0 });
  const [zoom, setZoom] = useState(1);
@@ -56,13 +65,14 @@ export function ImageCropModal({
  const onMediaLoaded = useCallback(
  (mediaSize: { naturalWidth: number; naturalHeight: number }) => {
  const { naturalWidth, naturalHeight } = mediaSize;
+ if (cover) return;
  if (naturalWidth && naturalHeight) {
  const min = Math.min(naturalWidth, naturalHeight);
  const max = Math.max(naturalWidth, naturalHeight);
  setMinZoom(min / max);
  }
  },
- [],
+ [cover],
  );
 
  // Compose flip into the transform AFTER translate/rotate/scale so that
@@ -77,7 +87,7 @@ export function ImageCropModal({
  if (!croppedAreaPixels) return;
  setSaving(true);
  try {
- const blob = await getCroppedImg(imageSrc, croppedAreaPixels, rotation, flipH, flipV);
+ const blob = await getCroppedImg(imageSrc, croppedAreaPixels, rotation, flipH, flipV, outputWidth);
  if (blob) onCropDone(blob);
  } catch (e) {
  console.error('Crop failed:', e);
@@ -232,6 +242,7 @@ async function getCroppedImg(
  rotation: number,
  flipH: boolean,
  flipV: boolean,
+ outputWidth?: number,
 ): Promise<Blob | null> {
  const image = await createImage(imageSrc);
  const canvas = document.createElement('canvas');
@@ -261,8 +272,10 @@ async function getCroppedImg(
  const croppedCtx = croppedCanvas.getContext('2d');
  if (!croppedCtx) return null;
 
- croppedCanvas.width = pixelCrop.width;
- croppedCanvas.height = pixelCrop.height;
+ const scale = outputWidth && pixelCrop.width > outputWidth ? outputWidth / pixelCrop.width : 1;
+ croppedCanvas.width = Math.max(1, Math.round(pixelCrop.width * scale));
+ croppedCanvas.height = Math.max(1, Math.round(pixelCrop.height * scale));
+ croppedCtx.imageSmoothingQuality ='high';
 
  croppedCtx.drawImage(
  canvas,
@@ -272,8 +285,8 @@ async function getCroppedImg(
  pixelCrop.height,
  0,
  0,
- pixelCrop.width,
- pixelCrop.height,
+ croppedCanvas.width,
+ croppedCanvas.height,
  );
 
  return new Promise((resolve) => {

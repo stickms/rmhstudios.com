@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { GlobeBar } from './GlobeBar';
 import { GlobeFirstPaint } from './GlobeFirstPaint';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { globeKeyAction } from './globe-nav-state';
 import { SIDEBAR_NAV, isNavGroup, isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
-import { WRITE_HREF } from './sections';
 import { usePathname } from './shell-router-state';
 import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
@@ -32,6 +32,8 @@ const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
  *  - Accessibility (G7): a `<button aria-expanded aria-controls>`; the pins are a `<nav>` of real links; while open,
  *    Tab stays inside and focus returns to the button on close; Escape, the veil or the globe closes it. With
  *    scripting off the same place is a link to `/sections`.
+ *  - UNDER IT, WHILE OPEN, is the account bar (GlobeBar, G3a): the profile or Sign in, search, settings, the edition,
+ *    every section as a list, and Sign out. It replaced the "Write a post" and "All sections" text links.
  *  - It has no canvas, worker or simulation of its own: the one shared renderer (lib/chrome) draws the ball, and the
  *    physics is an idle chunk (`data-globe-live` on the root once it has landed; the pins wait for it).
  */
@@ -136,12 +138,12 @@ export function GlobeNav() {
     wasOpen.current = open;
   }, [open]);
 
-  // Escape closes; Tab is kept inside the nav and the globe button while open (globe-nav-state.ts).
+  // Escape closes; Tab is kept inside the globe button, the pins and the bar while open (globe-nav-state.ts).
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
       const stops = Array.from(
-        rootRef.current?.querySelectorAll<HTMLElement>('[data-pin], [data-globe-button]') ?? [],
+        rootRef.current?.querySelectorAll<HTMLElement>('[data-pin], [data-globe-stop], [data-globe-button]') ?? [],
       );
       const action = globeKeyAction({
         key: event.key,
@@ -272,13 +274,9 @@ export function GlobeNav() {
               : t(nodes[lock].tKey, { defaultValue: nodes[lock].label })
             : ''}
         </span>
-        <Link to={WRITE_HREF} className="globe-nav__write" data-pin="" onClick={() => setOpenAnd(false)}>
-          {t('shell-write-post', { defaultValue: 'Write a post' })}
-        </Link>
-        <Link to="/sections" className="globe-nav__more" data-pin="" onClick={() => setOpenAnd(false)}>
-          {t('shell-all-sections', { defaultValue: 'All sections' })}
-        </Link>
       </nav>
+
+      <GlobeBar open={open} onClose={() => setOpenAnd(false)} />
     </div>
   );
 }

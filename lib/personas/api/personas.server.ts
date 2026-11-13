@@ -6,16 +6,19 @@ import { createPersonaBody } from '@/lib/personas/personas-schema';
 import { createPersonaApi, listPersonasApi } from '@/lib/personas/personas.contract';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { generatePersonaAvatar } from '@/lib/personas/avatar.server';
+import { parseCreationSort, personaEngagement } from '@/lib/ranking/best';
+import { inIdOrder, rankPage, RANK_CANDIDATE_CAP } from '@/lib/ranking/rank-page';
 
 const MAX_PERSONAS = 20;
 
 /**
- * GET  /api/personas — public personas (most chatted) + your own.
+ * GET  /api/personas — the first 50 public personas in ranked order (`?sort=`, default best) + your own.
  * POST /api/personas — create a persona.
  */
 export const route = apiRoute('/api/personas', {
   GET: implement(listPersonasApi, { auth: 'optional' }, async ({ request, session }) => {
-    const q = new URL(request.url).searchParams.get('q')?.trim();
+    const params = new URL(request.url).searchParams;
+    const q = params.get('q')?.trim();
 
     const where = q
       ? {
@@ -27,25 +30,19 @@ export const route = apiRoute('/api/personas', {
         }
       : { isPublic: true };
 
-    const [personas, mine] = await Promise.all([
+    // Ranked, not `chatCount` with no tiebreak: personas that had never been chatted with (most of them)
+    // all tied at zero and came back in whatever order the planner chose.
+    const [slim, mine] = await Promise.all([
       prisma.aiPersona.findMany({
         where,
-        orderBy: { chatCount: 'desc' },
-        take: 50,
-        select: {
-          id: true,
-          name: true,
-          tagline: true,
-          emoji: true,
-          avatarUrl: true,
-          chatCount: true,
-          owner: { select: userDisplaySelect },
-        },
+        select: { id: true, chatCount: true, createdAt: true },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: RANK_CANDIDATE_CAP,
       }),
       session
         ? prisma.aiPersona.findMany({
             where: { ownerId: session.user.id },
-            orderBy: { createdAt: 'desc' },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
             select: {
               id: true,
               name: true,
@@ -58,6 +55,32 @@ export const route = apiRoute('/api/personas', {
           })
         : Promise.resolve([]),
     ]);
+
+    const { ids } = rankPage(
+      slim.map((p) => ({
+        id: p.id,
+        engagement: personaEngagement(p),
+        createdAt: p.createdAt.getTime(),
+      })),
+      parseCreationSort(params.get('sort')),
+      null,
+      50,
+    );
+    const personas = inIdOrder(
+      ids,
+      await prisma.aiPersona.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          name: true,
+          tagline: true,
+          emoji: true,
+          avatarUrl: true,
+          chatCount: true,
+          owner: { select: userDisplaySelect },
+        },
+      }),
+    );
 
     return {
       personas: personas.map((p) => ({

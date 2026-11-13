@@ -30,6 +30,8 @@ import {
   injectVibeStorageShim,
 } from '@/lib/rmhvibe/vibe-bundle.server';
 import { timedAiFetch } from '../ai/timed-fetch.server';
+import { pageEngagement, parseCreationSort, type CreationSort } from '@/lib/ranking/best';
+import { inIdOrder, rankPage, RANK_CANDIDATE_CAP } from '@/lib/ranking/rank-page';
 
 export type VibeMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
@@ -428,7 +430,11 @@ const GALLERY_PAGE_SIZE = 24;
  * lightweight card fields — never `html`/`conversationHistory` — and uses cursor
  * pagination (by id, newest first) for cheap infinite scroll.
  */
-export async function listVibePages(opts: { q?: string; cursor?: string }): Promise<{
+export async function listVibePages(opts: {
+  q?: string;
+  cursor?: string;
+  sort?: CreationSort;
+}): Promise<{
   items: VibeCard[];
   nextCursor: string | null;
 }> {
@@ -448,8 +454,28 @@ export async function listVibePages(opts: { q?: string; cursor?: string }): Prom
       : {}),
   };
 
-  const rows = await prisma.vibePage.findMany({
+  // Ranked, not insertion order (lib/ranking/best.ts): read the signals of everything that matches, pick
+  // this page's ids, then read the cards for those ids. A page has no like or view counter; its
+  // engagement is its version history.
+  const slim = await prisma.vibePage.findMany({
     where,
+    select: { id: true, createdAt: true, _count: { select: { versions: true } } },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: RANK_CANDIDATE_CAP,
+  });
+  const { ids, nextCursor } = rankPage(
+    slim.map((r) => ({
+      id: r.id,
+      createdAt: r.createdAt.getTime(),
+      engagement: pageEngagement({ versionCount: r._count.versions }),
+    })),
+    parseCreationSort(opts.sort),
+    opts.cursor,
+    GALLERY_PAGE_SIZE,
+  );
+
+  const rows = await prisma.vibePage.findMany({
+    where: { id: { in: ids } },
     select: {
       id: true,
       slug: true,
@@ -459,16 +485,10 @@ export async function listVibePages(opts: { q?: string; cursor?: string }): Prom
       thumbnailUrl: true,
       createdAt: true,
     },
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    take: GALLERY_PAGE_SIZE + 1,
-    ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
   });
 
-  const hasMore = rows.length > GALLERY_PAGE_SIZE;
-  const page = hasMore ? rows.slice(0, GALLERY_PAGE_SIZE) : rows;
-
   return {
-    items: page.map((r) => ({
+    items: inIdOrder(ids, rows).map((r) => ({
       slug: r.slug,
       title: r.title,
       description: r.description,
@@ -476,7 +496,7 @@ export async function listVibePages(opts: { q?: string; cursor?: string }): Prom
       thumbnailUrl: r.thumbnailUrl,
       createdAt: r.createdAt.toISOString(),
     })),
-    nextCursor: hasMore ? page[page.length - 1].id : null,
+    nextCursor,
   };
 }
 

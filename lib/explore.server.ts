@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
@@ -10,7 +11,13 @@ import type { FeedItem } from '@/lib/feed-types';
 export interface ExploreResult {
   trendingTags: { tag: string; count: number }[];
   hotPosts: FeedItem[];
-  suggestedUsers: Array<ReturnType<typeof resolveUser> & { followerCount: number }>;
+  suggestedUsers: Array<
+    ReturnType<typeof resolveUser> & {
+      followerCount: number;
+      /** Accounts the viewer follows that follow this one. Absent when signed out or when there are none. */
+      mutuals?: SuggestedMutuals;
+    }
+  >;
   communities: Array<{
     id: string;
     slug: string;
@@ -32,6 +39,58 @@ export interface ExploreResult {
     title: string;
     description: string;
   }>;
+}
+
+/** Why an account is suggested: who, among the accounts the viewer follows, already follows it. */
+export interface SuggestedMutuals {
+  /** Display names of at most {@link MUTUAL_NAMES} of them, the most followed first. */
+  names: string[];
+  /** How many there are in all, the named ones included. */
+  count: number;
+}
+
+/** Names shown in a "Followed by" line before it falls back to a count. */
+const MUTUAL_NAMES = 2;
+
+/**
+ * For each suggested account, the accounts the viewer follows that follow it: a total and at most two names.
+ *
+ * ONE query for the whole page of suggestions (never one per row). It walks the viewer's own follows and probes the
+ * unique `(followerId, followingId)` index once per suggestion, so its cost is the viewer's follow count times the
+ * page size (eight), whatever the suggested accounts' own follower counts are. The window functions do the counting
+ * and the cap in the database, so a suggestion with thousands of mutual followers still returns two rows.
+ */
+async function loadSuggestedMutuals(
+  viewerId: string,
+  suggestedIds: string[],
+  hidden: string[],
+): Promise<Map<string, SuggestedMutuals>> {
+  const out = new Map<string, SuggestedMutuals>();
+  if (!suggestedIds.length) return out;
+  const rows = await prisma.$queryRaw<
+    { followingId: string; total: number; name: string | null; handle: string | null }[]
+  >(Prisma.sql`
+    SELECT m."followingId", m.total, m.name, m.handle FROM (
+      SELECT f."followingId",
+             COALESCE(p."displayName", u.name) AS name,
+             u.handle,
+             COUNT(*) OVER (PARTITION BY f."followingId")::int AS total,
+             ROW_NUMBER() OVER (PARTITION BY f."followingId" ORDER BY u."followerCount" DESC, u.id) AS rn
+      FROM follow mine
+      JOIN follow f ON f."followerId" = mine."followingId" AND f."followingId" = ANY(${suggestedIds}::text[])
+      JOIN "user" u ON u.id = f."followerId"
+      LEFT JOIN user_profile p ON p."userId" = u.id
+      WHERE mine."followerId" = ${viewerId} AND NOT (f."followerId" = ANY(${hidden}::text[]))
+    ) m
+    WHERE m.rn <= ${MUTUAL_NAMES}
+    ORDER BY m."followingId", m.rn`);
+  for (const row of rows ?? []) {
+    const entry = out.get(row.followingId) ?? { names: [], count: Number(row.total) };
+    const name = row.name || (row.handle ? `@${row.handle}` : null);
+    if (name) entry.names.push(name);
+    out.set(row.followingId, entry);
+  }
+  return out;
 }
 
 /** The viewer-independent, shareable slice of the explore payload. */
@@ -226,9 +285,19 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
     ...followedInPool.map((f) => f.followingId),
     ...hidden,
   ]);
-  const suggestedUsers = base.userPool
-    .filter((u) => !excludeIds.has(u.id))
-    .slice(0, SUGGESTED_TAKE);
+  const suggestions = base.userPool.filter((u) => !excludeIds.has(u.id)).slice(0, SUGGESTED_TAKE);
+  // "Followed by …": one grouped query for the page. A failure costs the reason line, never the suggestions.
+  const mutuals = viewerId
+    ? await loadSuggestedMutuals(
+        viewerId,
+        suggestions.map((u) => u.id),
+        hidden,
+      ).catch(() => new Map<string, SuggestedMutuals>())
+    : new Map<string, SuggestedMutuals>();
+  const suggestedUsers = suggestions.map((u) => {
+    const m = mutuals.get(u.id);
+    return m && m.names.length ? { ...u, mutuals: m } : u;
+  });
 
   return {
     trendingTags: base.trendingTags,

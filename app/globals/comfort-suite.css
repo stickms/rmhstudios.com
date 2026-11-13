@@ -766,6 +766,15 @@ html.readable-font body {
       var(--safe-bottom) + var(--site-floating-edge) + var(--vv-follow, 0px) + var(--float-lift-hub)
     );
   }
+  /* A targeted notice is a card in the same bottom-centre lane on a phone: it rides above the orb and the cookie
+     bar too. It used to sit at a fixed 16px, under the docked globe, which painted over its text. */
+  .vibe-app:has([data-floating='hub']) [data-floating='notice'],
+  .vibe-app:has([data-floating='cookie']) [data-floating='notice'] {
+    bottom: calc(
+      var(--safe-bottom) + var(--site-floating-edge) + var(--vv-follow, 0px) + var(--float-lift-hub) +
+        var(--float-lift-cookie)
+    );
+  }
   /* Mini-player rides above the hub orb and the cookie bar. */
   .vibe-app:has([data-floating='hub']) [data-floating='miniplayer'],
   .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {

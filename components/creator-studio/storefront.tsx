@@ -9,15 +9,16 @@
  *   2. a horizontally-scrollable SPOTLIGHT rail of a few featured items, and
  *   3. a varied catalog MOSAIC where some cards are wide and some are narrow.
  *
- * Which items get featured — and which mosaic tiles are wide — is chosen from a
- * `seed`. Routes mint a fresh seed per load, so a refresh re-advertises a
- * different mix of games/apps/personas/pages while staying deterministic between
- * server render and client hydration (no layout flash). When the user is
- * searching/filtering we drop the hero + rail and just show the plain mosaic of
- * results (`featured={false}`).
+ * The storefront never reorders what it is given. The caller's list arrives ranked
+ * (`lib/ranking/best.ts`: Best by default), so the first item is the hero, the next
+ * few the rail and the rest the mosaic, and the same list always draws the same
+ * page. It used to shuffle the list with a seed minted on every load, which put a
+ * different creation in each position on each visit and made the chosen sort
+ * meaningless. When the user is searching or has picked another sort we drop the
+ * hero + rail and show the plain mosaic of results (`featured={false}`).
  *
  * The component is purely presentational: callers map their own data into the
- * common `StoreItem` shape and hand it a `seed`.
+ * common `StoreItem` shape, already in the order it should read.
  */
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
@@ -34,10 +35,8 @@ export type StoreItem = {
   id: string;
   title: string;
   description?: string;
-  /** Cover/thumbnail. When absent we render a tinted gradient placeholder. */
+  /** Cover/thumbnail. When absent we render the flat placeholder with the item's mark. */
   coverUrl?: string | null;
-  /** Deterministic accent hue (0–359) for the gradient placeholder + glow. */
-  hue?: number;
   /** Small pill in the art corner (status / category / like count node). */
   badge?: ReactNode;
   /** Short tag chips, shown on the hero + spotlight cards. */
@@ -57,67 +56,24 @@ export type StoreItem = {
   detailsLabel?: string;
 };
 
-function hueGradient(hue: number | undefined): string {
-  const h = hue ?? 220;
-  return `linear-gradient(150deg, hsl(${h} 42% 24%), hsl(${(h + 40) % 360} 38% 11%))`;
-}
-
 /** Initials/emoji used for the art placeholder when there's no cover. */
 function fallbackMark(item: StoreItem): string {
   if (item.emoji) return item.emoji;
   return item.title.slice(0, 1).toUpperCase();
 }
 
-// ── Seeded helpers (pure; identical on server + client) ─────────────────────
-
-/** mulberry32 — tiny deterministic PRNG. */
-function makeRng(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function seededShuffle<T>(arr: readonly T[], seed: number): T[] {
-  const rng = makeRng(seed || 1);
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+// ── Layout ───────────────────────────────────────────────────────────────────
 
 /**
- * Decide which mosaic tiles are "wide" (span 2 columns) from the seed. We make
- * roughly every third tile wide, offset by the seed, but never two wide tiles
- * back-to-back — that keeps the dense grid from leaving big holes.
+ * Which mosaic tiles are wide (span two columns): the third, and then every fifth.
+ * A fixed function of position, so a list lays out the same way on every visit, and
+ * never two wide tiles in a row, which keeps the dense grid from leaving holes.
  */
-function wideFlags(count: number, seed: number): boolean[] {
-  const rng = makeRng((seed || 1) ^ 0x9e3779b9);
-  const flags: boolean[] = [];
-  let sinceWide = 0;
-  for (let i = 0; i < count; i++) {
-    const wide = sinceWide >= 1 && rng() < 0.34;
-    flags.push(wide);
-    sinceWide = wide ? 0 : sinceWide + 1;
-  }
-  return flags;
+export function isWideTile(index: number): boolean {
+  return index % 5 === 2;
 }
 
 // ── Cards ────────────────────────────────────────────────────────────────────
-
-// `trackPointer` lived here: `getBoundingClientRect()` plus two `setProperty`
-// calls on the RAW `pointermove`, with no rAF, moving the centre of a 320px
-// `radial-gradient`. Deleted — nothing on this site tracks the cursor (the whole
-// class was retired 2026-08-01, design.md §3), and a gradient's position is
-// PAINT: moving one re-rasterises the entire card, at pointer rate, on a page
-// that renders a grid of them. The glow itself stays: its `:hover { opacity: 1 }`
-// and its 240ms transition already existed and are the part that reads.
 
 function PrimaryWrapper({
   item,
@@ -130,13 +86,10 @@ function PrimaryWrapper({
   children: ReactNode;
   ariaLabel?: string;
 }) {
-  const shared = {
-    className,
-    'aria-label': ariaLabel,
-    // A press turns light out of the card from the finger, over its art (globals.css §7.3).
-    'data-evert': 'over',
-    style: { '--card-hue': String(item.hue ?? 220) } as React.CSSProperties,
-  };
+  // No `data-evert` here. `data-evert="over"` laid the shared hover state layer over the whole card,
+  // above its art; when Steel made that layer an opaque `--site-bg-subtle` fill, hovering, focusing or
+  // pressing a card painted a solid block over its thumbnail and its title. A card's hover is its border.
+  const shared = { className, 'aria-label': ariaLabel };
   if (item.to) {
     // Full router-path strings (cast like the rest of the app's dynamic links).
     return (
@@ -153,7 +106,7 @@ function PrimaryWrapper({
 }
 
 /** Pick the cover source — the item's own thumbnail/object image, falling back
- *  to the tinted gradient placeholder when it has none. */
+ *  to the flat placeholder when it has none. */
 function coverFor(item: StoreItem): { src?: string } {
   return { src: item.coverUrl || undefined };
 }
@@ -197,7 +150,7 @@ function Art({
   sizes?: string;
 }) {
   // Covers can 404 — e.g. a vibe screenshot the worker hasn't rendered yet.
-  // Walk src → fallbackSrc → the tinted gradient placeholder instead of ever
+  // Walk src → fallbackSrc → the flat placeholder instead of ever
   // showing a broken image.
   const candidates = [src, fallbackSrc].filter(Boolean) as string[];
   const [idx, setIdx] = useState(0);
@@ -220,8 +173,8 @@ function Art({
   const srcSet = current && useVariants ? variantSrcSet(current) : undefined;
 
   // The card's text comes from the build-time catalog and is painted with the
-  // first frame; only the art arrives over the network. Fading it in over
-  // `.store-art`'s gradient turns that gap into a settle instead of a pop.
+  // first frame; only the art arrives over the network, over `.store-art`'s
+  // flat placeholder fill.
   //
   // An image served from cache can already be `complete` before React attaches
   // `onLoad`, which would leave it stuck at opacity 0 — hence the ref check on
@@ -269,11 +222,7 @@ function Art({
       }}
     />
   ) : (
-    <div
-      className="store-art__placeholder"
-      style={{ backgroundImage: hueGradient(item.hue) }}
-      aria-hidden="true"
-    >
+    <div className="store-art__placeholder" aria-hidden="true">
       <span className="store-art__mark">{fallbackMark(item)}</span>
     </div>
   );
@@ -296,10 +245,7 @@ function TagRow({ tags }: { tags?: string[] }) {
 function HeroCard({ item }: { item: StoreItem }) {
   const { t } = useTranslation('feed');
   return (
-    <div
-      className="store-hero"
-      style={{ '--card-hue': String(item.hue ?? 220) } as React.CSSProperties}
-    >
+    <div className="store-hero">
       <PrimaryWrapper item={item} className="store-hero__link" ariaLabel={item.title}>
         <div className="store-hero__art">
           <Art item={item} {...coverFor(item)} eager sizes="100vw" />
@@ -330,7 +276,6 @@ function SpotlightCard({ item }: { item: StoreItem }) {
         <div className="store-art store-spot__art">
           <Art item={item} {...coverFor(item)} />
           {item.badge && <span className="store-art__badge">{item.badge}</span>}
-          <span className="store-spot__glow" aria-hidden="true" />
         </div>
         <div className="store-spot__body">
           <p className="store-spot__title">{item.title}</p>
@@ -343,20 +288,15 @@ function SpotlightCard({ item }: { item: StoreItem }) {
 }
 
 /** A catalog tile — `wide` ones span two columns and show their description. */
-function MosaicCard({ item, wide, index }: { item: StoreItem; wide: boolean; index: number }) {
+function MosaicCard({ item, wide }: { item: StoreItem; wide: boolean }) {
   const { t } = useTranslation('feed');
   const detailsLabel = item.detailsLabel ?? t('store-details', { defaultValue: 'Details' });
   return (
-    <div
-      className={`store-card ${wide ? 'is-wide' : ''}`}
-      style={{ animationDelay: `${(index % 10) * 45}ms` }}
-    >
-      <PrimaryWrapper item={item} className="store-card__link"ariaLabel={item.title}>
+    <div className={`store-card ${wide ? 'is-wide' : ''}`}>
+      <PrimaryWrapper item={item} className="store-card__link" ariaLabel={item.title}>
         <div className="store-art store-card__art">
           <Art item={item} {...coverFor(item)} />
           {item.badge && <span className="store-art__badge">{item.badge}</span>}
-          <span className="store-card__glow" aria-hidden="true" />
-          {item.description && <p className="store-card__hoverdesc">{item.description}</p>}
         </div>
         <div className="store-card__body">
           <p className="store-card__title">{item.title}</p>
@@ -382,76 +322,31 @@ function MosaicCard({ item, wide, index }: { item: StoreItem; wide: boolean; ind
 
 export function Storefront({
   items,
-  seed,
   featured = true,
   spotlightCount = 4,
   toolbar,
   emptyLabel,
 }: {
+  /** In display order. The storefront does not sort or shuffle. */
   items: StoreItem[];
-  seed: number;
-  /** When false (e.g. an active search), show only the plain mosaic. */
+  /** When false (an active search, a non-default sort), show only the plain mosaic. */
   featured?: boolean;
   spotlightCount?: number;
   /** Optional controls (search/sort/submit) rendered above the storefront. */
   toolbar?: ReactNode;
   emptyLabel?: ReactNode;
 }) {
-  // Stable display order. The seeded arrangement (hero/spotlight pick + mosaic
-  // shuffle) is computed ONCE per item-set and then only APPENDED to as lazy
-  // loading pulls in more items — so scrolling never re-shuffles or re-animates
-  // the cards already on screen. We re-arrange from scratch only when the set is
-  // genuinely replaced (a new search, or a fresh `seed` from a page refresh),
-  // detected by the incoming `items` no longer starting with the same prefix.
-  const orderRef = useRef<{
-    seed: number;
-    featured: boolean;
-    srcIds: string[];
-    displayIds: string[];
-  }>({
-    seed: NaN,
-    featured,
-    srcIds: [],
-    displayIds: [],
-  });
-  const orderedItems = useMemo(() => {
-    const byId = new Map(items.map((it) => [it.id, it]));
-    const srcIds = items.map((it) => it.id);
-    const prev = orderRef.current;
-    // A pure append: same arrangement basis (seed + featured) and the current
-    // list still begins with exactly the previous list. Anything else — a filter,
-    // a search, a reordering, a new seed — falls through to a fresh arrangement.
-    const isAppend =
-      prev.seed === seed &&
-      prev.featured === featured &&
-      prev.srcIds.length > 0 &&
-      srcIds.length >= prev.srcIds.length &&
-      prev.srcIds.every((id, i) => srcIds[i] === id);
-
-    let displayIds: string[];
-    if (isAppend) {
-      const known = new Set(prev.srcIds);
-      const appended = srcIds.filter((id) => !known.has(id));
-      displayIds = [...prev.displayIds, ...appended];
-    } else {
-      displayIds = (featured ? seededShuffle(items, seed) : items).map((it) => it.id);
-    }
-    orderRef.current = { seed, featured, srcIds, displayIds };
-    return displayIds.map((id) => byId.get(id)).filter(Boolean) as StoreItem[];
-  }, [items, seed, featured]);
-
   const { hero, spotlight, mosaic } = useMemo(() => {
-    if (!featured || orderedItems.length < 5) {
-      return { hero: null as StoreItem | null, spotlight: [] as StoreItem[], mosaic: orderedItems };
+    if (!featured || items.length < 5) {
+      return { hero: null as StoreItem | null, spotlight: [] as StoreItem[], mosaic: items };
     }
     return {
-      hero: orderedItems[0],
-      spotlight: orderedItems.slice(1, 1 + spotlightCount),
-      mosaic: orderedItems.slice(1 + spotlightCount),
+      hero: items[0] ?? null,
+      spotlight: items.slice(1, 1 + spotlightCount),
+      mosaic: items.slice(1 + spotlightCount),
     };
-  }, [orderedItems, featured, spotlightCount]);
+  }, [items, featured, spotlightCount]);
 
-  const flags = useMemo(() => wideFlags(mosaic.length, seed), [mosaic.length, seed]);
   const { t } = useTranslation('feed');
 
   return (
@@ -485,7 +380,7 @@ export function Storefront({
           <DeferOnNavigate enabled={Boolean(hero)} minHeight="60vh">
             <div className="store-mosaic">
               {mosaic.map((item, i) => (
-                <MosaicCard key={item.id} item={item} wide={flags[i] ?? false} index={i} />
+                <MosaicCard key={item.id} item={item} wide={isWideTile(i)} />
               ))}
             </div>
           </DeferOnNavigate>

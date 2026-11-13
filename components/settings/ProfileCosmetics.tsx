@@ -5,8 +5,8 @@
  * site chrome), which is why this lives apart from the site-wide Appearance
  * settings. Only owned items are listed; the catalog itself stays in `/shop`.
  *
- * The card/swatch idioms mirror `components/feed/ShopColumn.tsx` on purpose so
- * the shop and this page read as one system.
+ * Each item is a row on a rule with the shop's own picture (`components/shop/ItemPicture`) and
+ * rarity mark, so the shop and this page draw an item the same way.
  */
 
 import { useTranslation } from 'react-i18next';
@@ -17,15 +17,10 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  KIND_LABELS,
-  KIND_ORDER,
-  RARITY_COLORS,
-  RARITY_ORDER,
-  type Rarity,
-  type ShopItemKind,
-} from '@/lib/shop/catalog';
-import { getPremiumTheme } from '@/lib/shop/themes';
+import { KIND_ORDER, RARITY_ORDER, type Rarity, type ShopItemKind } from '@/lib/shop/catalog';
+import { ItemPicture } from '@/components/shop/ItemPicture';
+import { kindLabel } from '@/components/shop/kind-label';
+import { RarityMark } from '@/components/shop/RarityMark';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { getShopApi, equipShopItemApi } from '@/lib/shop/shop.contract';
 import { api } from '@/lib/contract/client';
@@ -43,48 +38,6 @@ interface CosmeticItem {
 
 /** THEME first — it's the most visible change to a profile. */
 const SECTION_ORDER: ShopItemKind[] = ['THEME', ...KIND_ORDER.filter((k) => k !== 'THEME')];
-
-/** Swatch/preview per kind — same visual language as the shop grid. */
-function Preview({ item }: { item: CosmeticItem }) {
-  const { t } = useTranslation('feed');
-  const { kind, data } = item;
-
-  if (kind === 'BADGE' || kind === 'PET') {
-    return (
-      <div className="flex h-12 w-12 items-center justify-center rounded-site-sm bg-site-bg text-2xl">
-        {data.emoji}
-      </div>
-    );
-  }
-  if (kind === 'NAME_COLOR') {
-    return (
-      <div
-        className="flex h-12 items-center justify-center rounded-site-sm px-3 text-sm font-semibold"
-        style={data.gradient ? { background: data.gradient, color: '#fff' } : { color: data.color }}
-      >
-        {t('name-preview', { defaultValue: 'Name' })}
-      </div>
-    );
-  }
-  if (kind === 'AVATAR_FRAME') {
-    return (
-      <div
-        className="h-12 w-12 rounded-full p-[3px]"
-        style={{ background: data.gradient ?? data.color }}
-      >
-        <div className="h-full w-full rounded-full bg-site-bg" />
-      </div>
-    );
-  }
-  // BANNER / POST_FLAIR / THEME. Legacy theme items carry only a `themeId`, so
-  // fall back to the palette gradient that actually backs the profile header.
-  const background =
-    data.gradient ??
-    (kind === 'THEME' ? getPremiumTheme(data.themeId)?.gradient : undefined) ??
-    data.color ??
-    'var(--site-surface)';
-  return <div className="h-12 w-20 rounded-site-sm" style={{ background }} />;
-}
 
 export function ProfileCosmetics() {
   const { t } = useTranslation('feed');
@@ -130,10 +83,8 @@ export function ProfileCosmetics() {
         {[0, 1].map((section) => (
           <div key={section} className="space-y-3">
             <Skeleton className="h-4 w-32" />
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Skeleton className="h-[76px] w-full" />
-              <Skeleton className="h-[76px] w-full" />
-            </div>
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
           </div>
         ))}
       </div>
@@ -185,33 +136,22 @@ export function ProfileCosmetics() {
   return (
     <>
       {sections.map(({ kind, items }) => (
-        <SettingsSection key={kind} title={KIND_LABELS[kind]}>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <SettingsSection key={kind} title={kindLabel(t, kind)}>
+          <ul className="border-t border-site-border">
             {items.map((item) => {
               const busy = equipMutation.isPending && equipMutation.variables?.item.id === item.id;
               return (
-                <div
+                <li
                   key={item.id}
-                  className="surface-press flex items-center gap-3 rounded-site p-4"
-                  // Rarity communicates value through the rim colour, matching
-                  // the shop grid.
-                  style={{
-                    borderColor: `${RARITY_COLORS[item.rarity]}55`,
-                    boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55`,
-                  }}
+                  className="flex items-center gap-3 border-b border-site-border py-3"
                 >
-                  <Preview item={item} />
+                  <ItemPicture kind={item.kind} art={item.data} size="thumb" className="w-16" />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
-                      <span
-                        className="text-xs font-semibold"
-                        style={{ color: RARITY_COLORS[item.rarity] }}
-                      >
-                        {item.rarity}
-                      </span>
-                    </div>
-                    <p className="truncate text-xs text-site-text-muted">{item.description}</p>
+                    <p className="t-body truncate font-medium text-site-text">{item.name}</p>
+                    <p className="t-meta">
+                      <RarityMark rarity={item.rarity} />
+                    </p>
+                    <p className="t-body truncate text-site-text-muted">{item.description}</p>
                   </div>
                   <div className="shrink-0">
                     <Button
@@ -242,10 +182,10 @@ export function ProfileCosmetics() {
                       )}
                     </Button>
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </SettingsSection>
       ))}
     </>

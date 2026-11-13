@@ -284,7 +284,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         )}
 
         <div className="min-w-0 flex-1">
-          {/* Header: name, handle and time on one line; the menu word at the inline end. */}
+          {/* Header: name, handle and time on one line; the three dots at the inline end. */}
           <div className="t-body flex items-center gap-2">
             {item.user ? (
               <ProfileHoverCard userId={item.user.handle || item.user.id}>

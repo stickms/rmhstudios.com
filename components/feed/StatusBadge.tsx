@@ -1,10 +1,13 @@
 import { cn } from'@/lib/utils';
+import { EmojiText } from '@/components/ui/emoji';
 import type { UserStatus } from'@/lib/profile/status';
 
 /**
  * StatusBadge — a small recessed glass pill showing a user's custom status
- * (§10). Emoji render through the global TwemojiProvider. The emoji is
- * decorative; the text carries the meaning.
+ * (§10). The status is drawn with `EmojiText`, so its emoji are Twemoji in the
+ * first paint and stay so when the owner edits it (the global provider only
+ * reaches what it has observed, and only after its chunk has loaded). The
+ * leading emoji is decorative; the text carries the meaning.
  */
 export function StatusBadge({
  status,
@@ -23,10 +26,10 @@ export function StatusBadge({
  >
  {status.emoji ? (
  <span aria-hidden className="text-base leading-none">
- {status.emoji}
+ <EmojiText>{status.emoji}</EmojiText>
  </span>
  ) : null}
- {status.text ? <span className="truncate">{status.text}</span> : null}
+ {status.text ? <EmojiText className="truncate">{status.text}</EmojiText> : null}
  </span>
  );
 }

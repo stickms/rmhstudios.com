@@ -72,9 +72,7 @@ export function MDXEditor({
   const [business, setBusiness] = useState<BusinessId>(
     isBusinessId(initialData?.business) ? initialData.business : DEFAULT_BUSINESS_ID,
   );
-  const [expiresLocal, setExpiresLocal] = useState(
-    isoToLocalInput(initialData?.announcementExpiresAt),
-  );
+  const [expiresLocal, setExpiresLocal] = useState(isoToLocalInput(initialData?.announcementExpiresAt));
 
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);

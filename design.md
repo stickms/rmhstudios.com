@@ -20,7 +20,7 @@ that describe those ([`docs/plasmatic-jelly-design-language.md`](docs/plasmatic-
 
 The plan is executed one phase at a time (its section 16). Phases 1 to 7 are in: the values and
 type classes below are real; every `_site` page sits in `components/shell/SiteShell.tsx` (a sidebar
-of the five sections on desktop, the docked globe on a phone, an optional margin; `/sections` is the
+of the sections on desktop, the docked globe on a phone, an optional margin; `/sections` is the
 no-script list); controls, overlays, the spine and the page recipes are built; phase 6 deleted
 the old material and shell (`components/radial/`, `lib/jelly/`, `lib/liquid/`, `lib/eversion/`, the
 WebAssembly kernels, the glass, jelly and arc stylesheets, the page entrances); and phase 7 removed

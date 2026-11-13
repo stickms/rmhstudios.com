@@ -9,6 +9,7 @@ import {
   uploadBannerApi,
 } from '@/lib/profile.contract';
 import {
+  buildBannerUpload,
   buildProfilePatch,
   type ProfileEditInitial,
   type SavedProfileData,
@@ -33,6 +34,7 @@ export function useProfileSave(
     canSave,
     avatarFile,
     bannerFile,
+    bannerPicture,
     bannerRemoved,
     handleChanged,
     draft,
@@ -64,8 +66,7 @@ export function useProfileSave(
 
       let newBannerUrl: string | null | undefined;
       if (bannerFile) {
-        const bannerForm = new FormData();
-        bannerForm.append('banner', bannerFile);
+        const bannerForm = buildBannerUpload(bannerFile, bannerPicture);
         const bannerData = await api(uploadBannerApi, { body: bannerForm }).catch((e: unknown) => {
           throw new Error(
             serverError(e) ||

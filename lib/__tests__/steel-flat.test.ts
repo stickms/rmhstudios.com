@@ -72,7 +72,7 @@ const FLAT_BASELINE: Record<string, FlatCount> = {
   'components/library/album-viewer.css': { bf: 8, fl: 1, gr: 2 },
   'components/library/book-3d.css': { bf: 0, fl: 0, gr: 5 },
   'components/library/library/catalog-reader.css': { bf: 17, fl: 0, gr: 7 },
-  'components/library/library/sections-refresh.css': { bf: 10, fl: 0, gr: 6 }, // book cover art and the reader's chips over pictures
+  'components/library/library/sections-refresh.css': { bf: 10, fl: 0, gr: 5 }, // book cover art and the reader's chips over pictures
   // Phase 7 (long tail): shared global sheets that carry rules for games and standalone pages, and routes with no
   // recipe yet. Each is removed against section 10's X2 when its page is reviewed.
   'app/globals/base-interaction.css': { bf: 0, fl: 0, gr: 1 }, // .rainbow-text (game headings)
@@ -81,7 +81,7 @@ const FLAT_BASELINE: Record<string, FlatCount> = {
   'app/globals/loader-print-access.css': { bf: 2, fl: 0, gr: 6 }, // `backdrop-filter: none` print resets are not counted
   'app/globals/page-motion.css': { bf: 0, fl: 2, gr: 8 }, // Dream Rift and doctrine skins live in this shared sheet
   'app/globals/tokens-themes.css': { bf: 0, fl: 0, gr: 1 }, // the scroll-fade mask
-  'components/creator-studio/storefront.css': { bf: 0, fl: 0, gr: 6 },
+  'components/creator-studio/storefront.css': { bf: 0, fl: 0, gr: 3 }, // the hero's scrim under its text
   'components/kaikai-debt/kaikai-debt.css': { bf: 0, fl: 0, gr: 5 },
   'components/rmhcalculator/rmhcalculator.css': { bf: 0, fl: 1, gr: 1 },
   'components/rmhtech/rmhtech.css': { bf: 0, fl: 3, gr: 5 },

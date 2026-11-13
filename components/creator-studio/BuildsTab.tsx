@@ -4,7 +4,7 @@
  * Curated/Official builds (the RMH-made games + apps, code-defined) and the
  * community submissions are both rendered through the shared Steam-style
  * `Storefront`: a rotating hero, a featured spotlight rail, and a varied catalog
- * mosaic. Curated builds are split into Games and Apps tabs via
+ * mosaic, in the order the list arrives (Best by default). Curated builds are split into Games and Apps tabs via
  * `CuratedBuildsTab`; community submissions live in their own tab via
  * `UserBuildsTab` (with sorting, search, and lazy infinite-scroll pagination).
  * Each card links to the playable page or the detail page at /builds/$slug.
@@ -18,14 +18,14 @@ import { Plus, Heart } from 'lucide-react';
 import type { CuratedBuild } from '@/lib/builds/curated';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
+import { SortSelect } from '@/components/creator-studio/SortSelect';
 import { api } from '@/lib/contract/client';
 import { listUserBuildsApi } from '@/lib/user-builds.contract';
 import '@/components/builds/builds.css';
 import '@/components/creator-studio/storefront.css';
 import '@/components/rmhvibe/vibe.css';
 
-type UserSort = 'recent' | 'popular' | 'views';
+type UserSort = 'best' | 'recent' | 'popular' | 'views';
 type CuratedSort = 'featured' | 'name';
 
 type UserBuildItem = {
@@ -41,25 +41,17 @@ type UserBuildItem = {
   tags: string[];
 };
 
-function hueFor(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
-  return h;
-}
-
 /**
  * Curated (official) builds for a single kind — used by both the Games and the
  * Apps tab. Handles its own search + sort over the pre-filtered list.
  */
 export function CuratedBuildsTab({
   curated,
-  seed,
   searchPlaceholder,
   emptyLabel,
   afterControls,
 }: {
   curated: CuratedBuild[];
-  seed: number;
   searchPlaceholder?: string;
   emptyLabel?: string;
   /** Secondary context follows search, so catalog controls stay directly below the tabs. */
@@ -91,7 +83,6 @@ export function CuratedBuildsTab({
         title: b.title,
         description: b.description,
         coverUrl: b.thumbnailUrl,
-        hue: b.hue,
         tags: b.tags,
         cta: b.cta,
         badge:
@@ -119,19 +110,14 @@ export function CuratedBuildsTab({
           }
           aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
         />
-        <label className="builds-sort">
-          <span className="sr-only">{t('sort-label', { defaultValue: 'Sort' })}</span>
-          <Select
-            controlSize="sm"
-            value={sort}
-            onChange={(e) => setSort(e.target.value as CuratedSort)}
-            aria-label={t('sort-label', { defaultValue: 'Sort' })}
-            containerClassName="w-36"
-          >
-            <option value="featured">{t('sort-featured', { defaultValue: 'Featured' })}</option>
-            <option value="name">{t('sort-name-az', { defaultValue: 'Name (A–Z)' })}</option>
-          </Select>
-        </label>
+        <SortSelect
+          value={sort}
+          onChange={setSort}
+          options={[
+            { value: 'featured', label: t('sort-featured', { defaultValue: 'Featured' }) },
+            { value: 'name', label: t('sort-name-az', { defaultValue: 'Name (A–Z)' }) },
+          ]}
+        />
       </div>
     </div>
   );
@@ -139,7 +125,6 @@ export function CuratedBuildsTab({
   return (
     <Storefront
       items={items}
-      seed={seed}
       featured={!query.trim() && sort === 'featured'}
       toolbar={
         <>
@@ -159,10 +144,10 @@ export function CuratedBuildsTab({
  * now promoted to its own Create tab. Fetches from /api/user-builds
  * with search, sort, and lazy infinite-scroll pagination.
  */
-export function UserBuildsTab({ seed }: { seed: number }) {
+export function UserBuildsTab() {
   const { t } = useTranslation('builds');
   const [query, setQuery] = useState('');
-  const [userSort, setUserSort] = useState<UserSort>('recent');
+  const [userSort, setUserSort] = useState<UserSort>('best');
 
   const [userItems, setUserItems] = useState<UserBuildItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -226,7 +211,6 @@ export function UserBuildsTab({ seed }: { seed: number }) {
         title: b.title,
         description: b.description,
         coverUrl: b.thumbnailUrl,
-        hue: hueFor(b.id),
         tags: b.tags?.length ? b.tags : b.technologies,
         cta: t('open', { defaultValue: 'Open' }),
         to: `/builds/${b.slug}`,
@@ -266,20 +250,16 @@ export function UserBuildsTab({ seed }: { seed: number }) {
             {t('submit', { defaultValue: 'Submit' })}
           </Link>
         </Button>
-        <label className="builds-sort">
-          <span className="sr-only">{t('sort-label', { defaultValue: 'Sort' })}</span>
-          <Select
-            controlSize="sm"
-            value={userSort}
-            onChange={(e) => setUserSort(e.target.value as UserSort)}
-            aria-label={t('sort-label', { defaultValue: 'Sort' })}
-            containerClassName="w-36"
-          >
-            <option value="recent">{t('sort-recent', { defaultValue: 'Recent' })}</option>
-            <option value="popular">{t('sort-most-liked', { defaultValue: 'Most liked' })}</option>
-            <option value="views">{t('sort-most-viewed', { defaultValue: 'Most viewed' })}</option>
-          </Select>
-        </label>
+        <SortSelect
+          value={userSort}
+          onChange={setUserSort}
+          options={[
+            { value: 'best', label: t('sort-best', { defaultValue: 'Best' }) },
+            { value: 'popular', label: t('sort-most-liked', { defaultValue: 'Most liked' }) },
+            { value: 'views', label: t('sort-most-viewed', { defaultValue: 'Most viewed' }) },
+            { value: 'recent', label: t('sort-newest', { defaultValue: 'Newest' }) },
+          ]}
+        />
       </div>
     </div>
   );
@@ -288,8 +268,7 @@ export function UserBuildsTab({ seed }: { seed: number }) {
     <>
       <Storefront
         items={items}
-        seed={seed}
-        featured={!query.trim() && userSort === 'recent'}
+        featured={!query.trim() && userSort === 'best'}
         toolbar={toolbar}
         emptyLabel={
           isEmpty
