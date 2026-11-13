@@ -344,6 +344,10 @@ export class ModelInstance {
     this.root.removeFromParent();
     for (const m of this.materials.values()) m.dispose();
     this.materials.clear();
+    // The skeleton is this instance's own (cloneSkinned), and three.js gives each a bone texture on the GPU
+    // that only Skeleton.dispose frees. A match makes instances all the time (a weapon drawn, a grenade
+    // thrown, a body): measured on de_dust2, about one bone texture a second was left behind.
+    for (const { mesh } of this.meshes) (mesh as SkinnedMesh).skeleton?.dispose();
     // Geometry and textures belong to the asset (shared by every instance).
   }
 }
