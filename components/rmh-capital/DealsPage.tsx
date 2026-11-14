@@ -366,9 +366,8 @@ export default function DealsPage() {
                 {t('deals-tb-date', { defaultValue: 'Announced November 7, 2026' })}
               </p>
               <h2 className="h2 rv" id="deals-tb-heading">
-                {t('deals-tb-heading', {
-                  defaultValue:
-                    "A $35 million Senior Secured Enlightenment Facility for Bain Capital's acquisition of Tibetan Buddhism",
+                {t('deals-tb-heading-acquisition', {
+                  defaultValue: 'Bain Capital acquires Tibetan Buddhism',
                 })}
               </h2>
               <p className="lede rv d1">
@@ -389,8 +388,9 @@ export default function DealsPage() {
               <div className="fig rv">
                 <Count className="fig-n ink" to={35} pre="$" suf="M" />
                 <span className="fig-k">
-                  {t('deals-tb-fig-size', {
-                    defaultValue: 'Senior Secured Enlightenment Facility',
+                  {t('deals-tb-fig-facility', {
+                    defaultValue:
+                      'Senior Secured Enlightenment Facility supporting the acquisition',
                   })}
                 </span>
               </div>

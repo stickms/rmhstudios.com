@@ -216,16 +216,17 @@ export function DealTombstones() {
             {t('tomb-nvidiamd-parties', { defaultValue: 'AMD and Nvidia' })}
           </h3>
           <p className="tomb-amount steel">
-            <Count to={955} pre="$" />
+            <Count to={955} pre="$" />{' '}
+            <span className="tomb-unit">{t('tomb-unit-billion', { defaultValue: 'billion' })}</span>
           </p>
           <p className="tomb-what">
-            {t('tomb-nvidiamd-what', {
-              defaultValue: 'billion all-stock combination to form NvidiAMD',
+            {t('tomb-nvidiamd-terms', {
+              defaultValue: 'All-stock combination to form NvidiAMD',
             })}
           </p>
           <span className="tomb-rule" />
           <p className="tomb-role">
-            <b>RMHan Stanley</b>
+            <b>RMH Capital</b>
             {t('tomb-nvidiamd-role', { defaultValue: 'Lead financial advisor' })}
           </p>
           <span className="go">
@@ -250,15 +251,17 @@ export function DealTombstones() {
             {t('tomb-buddhism-date', { defaultValue: 'November 7, 2026' })}
           </p>
           <h3 className="tomb-parties">
-            {t('tomb-buddhism-parties', { defaultValue: 'Bain Capital' })}
+            {t('tomb-buddhism-title', {
+              defaultValue: "Bain Capital's acquisition of Tibetan Buddhism",
+            })}
           </h3>
           <p className="tomb-amount steel">
-            <Count to={35} pre="$" />
+            <Count to={35} pre="$" />{' '}
+            <span className="tomb-unit">{t('tomb-unit-million', { defaultValue: 'million' })}</span>
           </p>
           <p className="tomb-what">
-            {t('tomb-buddhism-what', {
-              defaultValue:
-                'million Senior Secured Enlightenment Facility for the acquisition of Tibetan Buddhism',
+            {t('tomb-buddhism-terms', {
+              defaultValue: 'Senior Secured Enlightenment Facility',
             })}
           </p>
           <span className="tomb-rule" />
