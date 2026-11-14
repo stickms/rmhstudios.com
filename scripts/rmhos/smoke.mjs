@@ -910,10 +910,18 @@ async function debugSession({
         )
       )[1],
     );
+  const written = Number(
+    (
+      await vm.waitFor('the entropy byte count', () =>
+        vm.serial0.match(/rmhos-agent: entropy bytes written (\d+)/),
+      )
+    )[1],
+  );
   return {
     vm,
     rng,
     clock,
+    written,
   };
 }
 
@@ -962,7 +970,16 @@ async function rngAndClock() {
         epoch,
       },
     );
+  // The mechanism, asserted directly: entropy with 00 bytes at the start, in the
+  // middle and at the end must still arrive whole (64 bytes in the pool).
+  const zeros = `00${randomBytes(30).toString('hex')}00${randomBytes(31).toString('hex')}00`;
+  if (zeros.length !== 128) throw new Error('test entropy has the wrong length');
+  const z = await debugSession({ entropy: zeros, epoch });
   try {
+    for (const { written } of [a, b, c, z]) {
+      if (written !== 64) throw new Error(`the agent wrote ${written} entropy bytes, expected 64`);
+    }
+    step(a.vm, 'entropy: 64 bytes reach the pool, also with 00 at the start, middle and end');
     step(
       a.vm,
       `urandom after SESSION: A ${a.rng.slice(0, 16)}... B ${b.rng.slice(0, 16)}... A again ${c.rng.slice(0, 16)}...`,
@@ -1017,6 +1034,7 @@ async function rngAndClock() {
         a.vm.destroy(),
         b.vm.destroy(),
         c.vm.destroy(),
+        z.vm.destroy(),
       ],
     );
   }
@@ -1056,6 +1074,10 @@ async function badSessions() {
       `SESSION smoke 1794700000 ${good.slice(2)}`,
       `SESSION smoke abc ${good}`,
       `SESSION smoke 0 ${good}`,
+      `SESSION smoke 1 ${good}`,
+      `SESSION smoke 1577836799 ${good}`,
+      `SESSION smoke 4102444801 ${good}`,
+      `SESSION smoke 99999999999 ${good}`,
       `SESSION smoke 1794700000 ${good.toUpperCase()}`,
       `SESSION smoke 1794700000 ${good} extra`,
     ]) {

@@ -163,6 +163,16 @@ describe('encodeCommand', () => {
     ).toThrow();
   });
 
+  it('rejects an epoch outside 2020-01-01 .. 2100-01-01', () => {
+    const base = { type: 'session' as const, user: 'alice', epoch: 1794700000, entropy: ENTROPY };
+    expect(() => encodeCommand({ ...base, epoch: 1 })).toThrow();
+    expect(() => encodeCommand({ ...base, epoch: 1577836799 })).toThrow();
+    expect(() => encodeCommand({ ...base, epoch: 4102444801 })).toThrow();
+    expect(() => encodeCommand({ ...base, epoch: 99999999999 })).toThrow();
+    expect(encodeCommand({ ...base, epoch: 1577836800 })).toContain(' 1577836800 ');
+    expect(encodeCommand({ ...base, epoch: 4102444800 })).toContain(' 4102444800 ');
+  });
+
   it('rejects values that could inject a second command', () => {
     expect(
       () =>

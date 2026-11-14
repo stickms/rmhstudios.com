@@ -54,6 +54,9 @@ export const SHARE_ARCHIVE_PATH =
 const TOKEN =
   /^[a-z0-9_-]{1,31}$/i;
 
+/** Plausible session clocks: 2020-01-01T00:00:00Z .. 2100-01-01T00:00:00Z (the guest checks the same). */
+const EPOCH_MIN = 1577836800;
+const EPOCH_MAX = 4102444800;
 const ENTROPY =
   /^[0-9a-f]{128}$/;
 
@@ -83,8 +86,10 @@ export function encodeCommand(
         !Number.isSafeInteger(
           c.epoch,
         ) ||
-        c.epoch <=
-          0
+        c.epoch <
+          EPOCH_MIN ||
+        c.epoch >
+          EPOCH_MAX
       )
         throw new Error(
           'invalid epoch',

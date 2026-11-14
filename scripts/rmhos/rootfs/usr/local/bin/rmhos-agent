@@ -55,7 +55,10 @@ set -f
 # smallest thing in Alpine that can issue that ioctl.
 reseed_rng() {
 	bytes=$(printf '%s' "$1" | sed 's/../\\x&/g')
-	printf '%b' "$bytes" >/dev/urandom || return 1
+	# busybox printf writes NUL bytes fine (checked in the guest); the count
+	# below is the guard: all 64 bytes must reach the pool.
+	ENTROPY_WRITTEN=$(printf '%b' "$bytes" | tee /dev/urandom | wc -c)
+	[ "$ENTROPY_WRITTEN" = 64 ] || return 1
 	socat -u /dev/null OPEN:/dev/urandom,rdonly,ioctl-void=0x5207 >/dev/null 2>&1
 }
 
@@ -63,6 +66,7 @@ reseed_rng() {
 # print RNG output and watch the clock. Never in normal runs.
 debug_hooks() {
 	[ -e "$SHARE/debug-rng" ] || return 0
+	log "entropy bytes written $ENTROPY_WRITTEN"
 	log "rng $(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
 	(
 		n=0
@@ -89,7 +93,9 @@ do_session() {
 		reply "ERR bad_user"
 		return
 	fi
+	# Epoch plausibility: 2020-01-01 .. 2100-01-01 (the host enforces the same).
 	if ! printf '%s\n' "$epoch" | grep -Eq '^[1-9][0-9]{0,15}$' ||
+		[ "$epoch" -lt 1577836800 ] || [ "$epoch" -gt 4102444800 ] ||
 		! printf '%s\n' "$entropy" | grep -Eq '^[0-9a-f]{128}$'; then
 		reply "ERR bad_session"
 		return
