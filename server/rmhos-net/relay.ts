@@ -59,16 +59,31 @@ export interface RelayOptions {
     corsOrigin: string;
     fetchImpl?: typeof fetch;
   };
+  /** Injected clock for the CONNECT rate limit. */
+  now?: () => number;
+  /** A lookup that has not answered by then counts as unreachable. Default 5 s. */
+  lookupTimeoutMs?: number;
+  /** CONNECTs allowed per user per window. Default 30 per 10 s. */
+  connectRate?: {
+    max: number;
+    windowMs: number;
+  };
 }
 
 const CONNECT_TIMEOUT_MS = 10_000;
+const LOOKUP_TIMEOUT_MS = 5000;
+const MAX_LOOKUPS_PER_USER = 8;
 const WINDOW = 128;
 const CONTINUE_EVERY = 64;
 const RETRY_MS = 100;
 const MAX_WS_BUFFER =
   1024 *
   1024;
-const MAX_PENDING_BYTES =
+const MAX_STREAM_QUEUE =
+  1024 *
+  1024;
+const MAX_CONN_QUEUE =
+  8 *
   1024 *
   1024;
 const MAX_FRAME_BYTES =
@@ -76,33 +91,123 @@ const MAX_FRAME_BYTES =
   1024;
 const PING_MS = 30_000;
 const SUPERSEDED = 4000;
+const OVER_QUEUE = 4008;
 
+// resolve4/resolve6 query the DNS servers directly with a bounded timeout and no libuv
+// thread (dns.lookup would pin one per stuck query). Every answer is still policy-checked.
+const systemResolver =
+  new dns.promises.Resolver(
+    {
+      timeout:
+        LOOKUP_TIMEOUT_MS,
+      tries: 1,
+    },
+  );
 const defaultResolve: Resolver =
   async (
     host,
   ) => {
-    const records =
-      await dns.promises.lookup(
-        host,
-        {
-          all: true,
-          verbatim: true,
+    const [
+      v4,
+      v6,
+    ] =
+      await Promise.allSettled(
+        [
+          systemResolver.resolve4(
+            host,
+          ),
+          systemResolver.resolve6(
+            host,
+          ),
+        ],
+      );
+    const out: {
+      address: string;
+      family:
+        | 4
+        | 6;
+    }[] =
+      [];
+    if (
+      v4.status ===
+      'fulfilled'
+    )
+      for (const a of v4.value)
+        out.push(
+          {
+            address:
+              a,
+            family: 4,
+          },
+        );
+    if (
+      v6.status ===
+      'fulfilled'
+    )
+      for (const a of v6.value)
+        out.push(
+          {
+            address:
+              a,
+            family: 6,
+          },
+        );
+    if (
+      out.length ===
+      0
+    )
+      throw new Error(
+        'no addresses',
+      );
+    return out;
+  };
+
+function withTimeout<
+  T,
+>(
+  p: Promise<T>,
+  ms: number,
+): Promise<T> {
+  return new Promise<T>(
+    (
+      resolve,
+      reject,
+    ) => {
+      const t =
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                'lookup timeout',
+              ),
+            ),
+          ms,
+        );
+      p.then(
+        (
+          v,
+        ) => {
+          clearTimeout(
+            t,
+          );
+          resolve(
+            v,
+          );
+        },
+        (
+          e,
+        ) => {
+          clearTimeout(
+            t,
+          );
+          reject(
+            e,
+          );
         },
       );
-    return records.map(
-      (
-        r,
-      ) => ({
-        address:
-          r.address,
-        family:
-          r.family ===
-          6
-            ? 6
-            : 4,
-      }),
-    );
-  };
+    },
+  );
+}
 
 const reasonName =
   new Map<
@@ -132,10 +237,13 @@ interface Stream {
   socket: net.Socket | null;
   /** Guest data received before the upstream socket exists. */
   early: Buffer[];
-  earlyBytes: number;
   upQueue: Buffer[];
+  /** Guest bytes accepted but not yet written upstream (early + upQueue). */
+  queuedBytes: number;
   downQueue: Buffer[];
   processedPackets: number;
+  /** DATA packets received beyond what CONTINUE has credited back. */
+  windowUsed: number;
   timer: NodeJS.Timeout | null;
   remoteEnded: boolean;
 }
@@ -149,6 +257,22 @@ function writeHttpError(
     `HTTP/1.1 ${status} ${text}\r\nconnection: close\r\ncontent-length: 0\r\n\r\n`,
   );
   socket.destroy();
+}
+
+function parseTarget(
+  raw:
+    | string
+    | undefined,
+): URL | null {
+  try {
+    return new URL(
+      raw ??
+        '/',
+      'http://hub',
+    );
+  } catch {
+    return null;
+  }
 }
 
 export function createRelayServer(
@@ -169,6 +293,27 @@ export function createRelayServer(
   const log =
     opts.log ??
     (() => {});
+  const now =
+    opts.now ??
+    Date.now;
+  const lookupTimeoutMs =
+    opts.lookupTimeoutMs ??
+    LOOKUP_TIMEOUT_MS;
+  const rate =
+    opts.connectRate ?? {
+      max: 30,
+      windowMs: 10_000,
+    };
+  const timedResolve: Resolver =
+    (
+      host,
+    ) =>
+      withTimeout(
+        resolve(
+          host,
+        ),
+        lookupTimeoutMs,
+      );
   const dohOpts: DohOptions | null =
     opts.doh
       ? {
@@ -176,7 +321,9 @@ export function createRelayServer(
           enabled:
             policy.enabled,
           policy,
-          resolve,
+          meter,
+          resolve:
+            timedResolve,
           upstream:
             opts
               .doh
@@ -207,6 +354,16 @@ export function createRelayServer(
         ) => void;
       }
     >();
+  const lookups =
+    new Map<
+      string,
+      number
+    >();
+  const connectTimes =
+    new Map<
+      string,
+      number[]
+    >();
   const wss =
     new WebSocketServer(
       {
@@ -217,6 +374,68 @@ export function createRelayServer(
       },
     );
 
+  /** Sliding window: at most `rate.max` CONNECTs per user per `rate.windowMs`. */
+  function allowConnect(
+    userId: string,
+  ): boolean {
+    const t =
+      now();
+    const recent =
+      (
+        connectTimes.get(
+          userId,
+        ) ??
+        []
+      ).filter(
+        (
+          x,
+        ) =>
+          x >
+          t -
+            rate.windowMs,
+      );
+    if (
+      recent.length >=
+      rate.max
+    ) {
+      connectTimes.set(
+        userId,
+        recent,
+      );
+      return false;
+    }
+    recent.push(
+      t,
+    );
+    connectTimes.set(
+      userId,
+      recent,
+    );
+    if (
+      connectTimes.size >
+      5000
+    ) {
+      for (const [
+        id,
+        times,
+      ] of connectTimes) {
+        if (
+          (times[
+            times.length -
+              1
+          ] ??
+            0) <=
+          t -
+            rate.windowMs
+        )
+          connectTimes.delete(
+            id,
+          );
+      }
+    }
+    return true;
+  }
+
   const server =
     http.createServer(
       (
@@ -224,11 +443,23 @@ export function createRelayServer(
         res,
       ) => {
         const url =
-          new URL(
-            req.url ??
-              '/',
-            'http://hub',
+          parseTarget(
+            req.url,
           );
+        if (
+          !url
+        ) {
+          res.writeHead(
+            400,
+            {
+              'content-length': 0,
+              connection:
+                'close',
+            },
+          );
+          res.end();
+          return;
+        }
         if (
           req.method ===
             'GET' &&
@@ -302,10 +533,16 @@ export function createRelayServer(
       head,
     ) => {
       const url =
-        new URL(
-          req.url ??
-            '/',
-          'http://hub',
+        parseTarget(
+          req.url,
+        );
+      if (
+        !url
+      )
+        return writeHttpError(
+          socket,
+          400,
+          'Bad Request',
         );
       const path =
         url.pathname.endsWith(
@@ -371,6 +608,8 @@ export function createRelayServer(
         Stream
       >();
     let over = false;
+    /** Guest bytes queued across every stream of this connection. */
+    let connQueued = 0;
 
     const send =
       (
@@ -384,6 +623,16 @@ export function createRelayServer(
             frame,
           );
       };
+
+    function dequeue(
+      s: Stream,
+      bytes: number,
+    ): void {
+      s.queuedBytes -=
+        bytes;
+      connQueued -=
+        bytes;
+    }
 
     /** Remove a stream; the guest is told only when `notify` is set. Never sends DATA afterwards. */
     function closeStream(
@@ -408,6 +657,10 @@ export function createRelayServer(
           s.timer,
         );
       s.socket?.destroy();
+      dequeue(
+        s,
+        s.queuedBytes,
+      );
       s.early.length = 0;
       s.upQueue.length = 0;
       s.downQueue.length = 0;
@@ -484,7 +737,7 @@ export function createRelayServer(
       );
     }
 
-    /** Guest to remote, paced by the user's allowance. */
+    /** Guest to remote, paced by the user's allowance and the upstream socket's own backlog. */
     function pumpUp(
       s: Stream,
     ): void {
@@ -518,7 +771,7 @@ export function createRelayServer(
             0 ||
           sock.writableLength >
             MAX_WS_BUFFER
-        )
+        ) {
           return schedule(
             s,
             () =>
@@ -526,6 +779,7 @@ export function createRelayServer(
                 s,
               ),
           );
+        }
         const chunk =
           s
             .upQueue[0] as Buffer;
@@ -540,6 +794,10 @@ export function createRelayServer(
         );
         s.up +=
           take;
+        dequeue(
+          s,
+          take,
+        );
         sock.write(
           take ===
             chunk.length
@@ -559,13 +817,20 @@ export function createRelayServer(
             s.processedPackets %
               CONTINUE_EVERY ===
             0
-          )
+          ) {
+            s.windowUsed =
+              Math.max(
+                0,
+                s.windowUsed -
+                  CONTINUE_EVERY,
+              );
             send(
               encodeContinue(
                 s.id,
                 WINDOW,
               ),
             );
+          }
         } else {
           s.upQueue[0] =
             chunk.subarray(
@@ -575,7 +840,7 @@ export function createRelayServer(
       }
     }
 
-    /** Remote to guest, paced by the user's allowance and the socket's own backlog. */
+    /** Remote to guest, paced by the user's allowance and the WebSocket's backlog. */
     function pumpDown(
       s: Stream,
     ): void {
@@ -669,6 +934,9 @@ export function createRelayServer(
 
     async function open(
       id: number,
+      streamType:
+        | 'tcp'
+        | 'udp',
       host: string,
       port: number,
     ): Promise<void> {
@@ -685,12 +953,13 @@ export function createRelayServer(
             null,
           early:
             [],
-          earlyBytes: 0,
           upQueue:
             [],
+          queuedBytes: 0,
           downQueue:
             [],
           processedPackets: 0,
+          windowUsed: 0,
           timer:
             null,
           remoteEnded: false,
@@ -703,31 +972,92 @@ export function createRelayServer(
         s,
       );
 
-      let verdict: Verdict;
       if (
+        !allowConnect(
+          userId,
+        ) ||
         meter.dayExhausted(
           userId,
         )
       ) {
-        verdict =
-          {
-            ok: false as const,
-            reason:
-              CLOSE_REASON.throttled,
-          };
-      } else {
+        return closeStream(
+          s,
+          CLOSE_REASON.throttled,
+          true,
+        );
+      }
+      // Only a name costs a lookup; a literal address answers immediately.
+      const needsLookup =
+        net.isIP(
+          host
+            .trim()
+            .replace(
+              /^\[|\]$/g,
+              '',
+            ),
+        ) ===
+        0;
+      if (
+        needsLookup
+      ) {
+        if (
+          (lookups.get(
+            userId,
+          ) ??
+            0) >=
+          MAX_LOOKUPS_PER_USER
+        ) {
+          return closeStream(
+            s,
+            CLOSE_REASON.throttled,
+            true,
+          );
+        }
+        lookups.set(
+          userId,
+          (lookups.get(
+            userId,
+          ) ??
+            0) +
+            1,
+        );
+      }
+      let verdict: Verdict;
+      try {
         verdict =
           await checkConnect(
             policy,
             {
-              streamType:
-                'tcp',
+              streamType,
               port,
               host,
               openStreams,
             },
-            resolve,
+            timedResolve,
           );
+      } finally {
+        if (
+          needsLookup
+        ) {
+          const left =
+            (lookups.get(
+              userId,
+            ) ??
+              1) -
+            1;
+          if (
+            left <=
+            0
+          )
+            lookups.delete(
+              userId,
+            );
+          else
+            lookups.set(
+              userId,
+              left,
+            );
+        }
       }
       if (
         streams.get(
@@ -901,6 +1231,7 @@ export function createRelayServer(
               return;
             void open(
               pkt.streamId,
+              pkt.streamType,
               pkt.host,
               pkt.port,
             ).catch(
@@ -929,20 +1260,45 @@ export function createRelayServer(
               Buffer.from(
                 pkt.payload,
               );
+            // The guest may send at most the window it was credited; more is a flood.
+            s.windowUsed += 1;
+            if (
+              s.windowUsed >
+              WINDOW +
+                CONTINUE_EVERY
+            ) {
+              return closeStream(
+                s,
+                CLOSE_REASON.throttled,
+                true,
+              );
+            }
+            if (
+              s.queuedBytes +
+                buf.length >
+              MAX_STREAM_QUEUE
+            ) {
+              return closeStream(
+                s,
+                CLOSE_REASON.throttled,
+                true,
+              );
+            }
+            if (
+              connQueued +
+                buf.length >
+              MAX_CONN_QUEUE
+            )
+              return handle.shutdown(
+                OVER_QUEUE,
+              );
+            s.queuedBytes +=
+              buf.length;
+            connQueued +=
+              buf.length;
             if (
               !s.socket
             ) {
-              s.earlyBytes +=
-                buf.length;
-              if (
-                s.earlyBytes >
-                MAX_PENDING_BYTES
-              )
-                return closeStream(
-                  s,
-                  CLOSE_REASON.throttled,
-                  true,
-                );
               s.early.push(
                 buf,
               );

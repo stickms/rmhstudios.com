@@ -84,6 +84,46 @@ server.listen(
   },
 );
 
+// An unexpected error must not take the hub (and every user's session) down: log it and keep serving.
+process.on(
+  'uncaughtException',
+  (
+    err,
+  ) => {
+    log(
+      {
+        evt: 'rmhos-net.uncaught',
+        error:
+          err instanceof
+          Error
+            ? err.message
+            : String(
+                err,
+              ),
+      },
+    );
+  },
+);
+process.on(
+  'unhandledRejection',
+  (
+    reason,
+  ) => {
+    log(
+      {
+        evt: 'rmhos-net.unhandled',
+        error:
+          reason instanceof
+          Error
+            ? reason.message
+            : String(
+                reason,
+              ),
+      },
+    );
+  },
+);
+
 function shutdown(): void {
   clearInterval(
     prune,

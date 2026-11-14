@@ -5,6 +5,7 @@ import type {
   ServerResponse,
 } from 'node:http';
 import { verifyNetTicket } from '@features/rmhos/engine/net-ticket.server';
+import type { UsageMeter } from './meter';
 import {
   checkConnect,
   type RelayPolicy,
@@ -24,6 +25,7 @@ export interface DohOptions {
   secret: string;
   enabled: boolean;
   policy: RelayPolicy;
+  meter: UsageMeter;
   resolve: Resolver;
   upstream: string;
   corsOrigin: string;
@@ -285,6 +287,23 @@ export async function handleDohQuery(
         400,
         'empty query',
       );
+    // Queries and answers draw on the same budget as relayed streams.
+    if (
+      opts.meter.dayExhausted(
+        verdict.userId,
+      )
+    ) {
+      return reply(
+        opts,
+        res,
+        429,
+        'daily limit reached',
+      );
+    }
+    opts.meter.consume(
+      verdict.userId,
+      body.length,
+    );
 
     // The upstream must be a public address, same rule as a relayed stream.
     const url =
@@ -369,6 +388,10 @@ export async function handleDohQuery(
         'upstream error',
       );
     }
+    opts.meter.consume(
+      verdict.userId,
+      answer.length,
+    );
     return reply(
       opts,
       res,
