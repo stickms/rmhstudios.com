@@ -6,6 +6,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { SearchField } from '@/components/ui/search-field';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spine, SpineItem } from '@/components/ui/spine';
+import { InboxAvatar } from '@/components/feed/InboxAvatar';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -437,48 +438,52 @@ function ConversationRow({
           : '';
 
   const unread = conv.unreadCount > 0;
+  const isSelf = conv.otherUser.id === currentUserId;
   return (
     <SpineItem dot={unread} className="hover:bg-site-bg-subtle">
       <Link
         to={`/messages/${conv.id}` as string}
-        className="block after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
+        className="flex items-start gap-3 after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
       >
-        <div className="flex items-baseline justify-between gap-3">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <span
-              className={`t-body truncate text-site-text ${unread ? 'font-semibold' : 'font-medium'}`}
-            >
-              {conv.otherUser.id === currentUserId ? (
-                <SavedMessagesLabel />
-              ) : (
-                conv.otherUser.name || t('unknown-user', { defaultValue: 'Unknown' })
+        <InboxAvatar person={conv.otherUser} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span
+                className={`t-body truncate text-site-text ${unread ? 'font-semibold' : 'font-medium'}`}
+              >
+                {isSelf ? (
+                  <SavedMessagesLabel />
+                ) : (
+                  conv.otherUser.name || t('unknown-user', { defaultValue: 'Unknown' })
+                )}
+              </span>
+              {conv.otherUser.username && !isSelf && (
+                <span className="t-meta truncate" dir="ltr">
+                  @{conv.otherUser.username}
+                </span>
               )}
-            </span>
-            {conv.otherUser.username && conv.otherUser.id !== currentUserId && (
-              <span className="t-meta truncate" dir="ltr">
-                @{conv.otherUser.username}
-              </span>
-            )}
-            {conv.otherUser.isBot && <AutomatedBadge />}
+              {conv.otherUser.isBot && <AutomatedBadge />}
+            </div>
+            <div className="flex shrink-0 items-baseline gap-2">
+              {conv.lastMessage && (
+                <span className="t-meta">{formatTime(conv.lastMessage.createdAt)}</span>
+              )}
+              {unread && (
+                <span className="t-meta font-semibold text-site-danger">
+                  {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex shrink-0 items-baseline gap-2">
-            {conv.lastMessage && (
-              <span className="t-meta">{formatTime(conv.lastMessage.createdAt)}</span>
-            )}
-            {unread && (
-              <span className="t-meta font-semibold text-site-danger">
-                {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
-              </span>
-            )}
-          </div>
+          {preview && (
+            <p
+              className={`t-body mt-0.5 truncate ${unread ? 'font-semibold text-site-text' : 'text-site-text-muted'}`}
+            >
+              {preview}
+            </p>
+          )}
         </div>
-        {preview && (
-          <p
-            className={`t-body mt-0.5 truncate ${unread ? 'font-semibold text-site-text' : 'text-site-text-muted'}`}
-          >
-            {preview}
-          </p>
-        )}
       </Link>
     </SpineItem>
   );
