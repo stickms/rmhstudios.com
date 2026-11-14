@@ -111,7 +111,7 @@ COPY lib ./lib/
 # Feature-sliced code (redesign A1): socket handlers and engines live in features/<id>/.
 COPY features ./features/
 
-# Only the Node services still served by compose (socket/rmhbox/rmhtube +
+# Only the Node services still served by compose (socket/rmhbox/rmhtube/rmhos-net +
 # ladder-worker + homes-worker + jobs) are bundled here.
 # status is the Go status binary (built in the go-builder stage); recap, doctrine, the
 # streak-saver, the bot-worker, the vibe thumbnail worker and the Discord bot live in the jobs
@@ -120,6 +120,7 @@ RUN pnpm exec esbuild \
     server/socket-server/index.ts \
     server/rmhbox/index.ts \
     server/rmhtube/index.ts \
+    server/rmhos-net/index.ts \
     server/ladder-worker/index.ts \
     server/homes-worker/index.ts \
     server/jobs/index.ts \
@@ -131,6 +132,7 @@ RUN pnpm exec esbuild \
 RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhbox/index.cjs && \
     test -f dist-server/server/rmhtube/index.cjs && \
+    test -f dist-server/server/rmhos-net/index.cjs && \
     test -f dist-server/server/ladder-worker/index.cjs && \
     test -f dist-server/server/homes-worker/index.cjs && \
     test -f dist-server/server/jobs/index.cjs
@@ -219,7 +221,7 @@ COPY public ./public/
 # server/nitro (referenced by vite.config.ts) and server/rmhbox (reachable via
 # lib/rmhbox) are intentionally kept.
 COPY --exclude=go-services \
-     --exclude=server/socket-server --exclude=server/rmhtube \
+     --exclude=server/socket-server --exclude=server/rmhtube --exclude=server/rmhos-net \
      --exclude=server/recap \
      --exclude=server/bot-worker --exclude=server/doctrine-worker \
      --exclude=server/status --exclude=server/vibe-worker \

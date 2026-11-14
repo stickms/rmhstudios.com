@@ -56,6 +56,7 @@ case "$ENVIRONMENT" in
         PORT_SOCKET=7001
         PORT_RMHBOX=7676
         PORT_RMHTUBE=7003
+        PORT_RMHOS_NET=7009
         PORT_STATUS=7008
         COMPOSE_PROFILES=""
         ;;
@@ -71,6 +72,7 @@ case "$ENVIRONMENT" in
         # PORT_SOCKET=8001
         # PORT_RMHBOX=8676
         # PORT_RMHTUBE=8003
+        # PORT_RMHOS_NET=8009
         # COMPOSE_PROFILES=""
         ;;
     *)
@@ -1221,7 +1223,16 @@ retire_supervisor() {
         return 1
     fi
 }
+# The rmhOS relay hub (rmhos-net) dials the internet for strangers, so it must never start before
+# its network is walled off: the script installs the DOCKER-USER/INPUT drops for the pinned
+# `rmhos-egress` subnet (idempotent, verifies its own result, needs root or `sudo -n`). If it
+# cannot, the deploy fails here, before `up` can start the hub unfirewalled.
 step_start "Starting containers (all services except web)..."
+if ! bash "$REPO_DIR/deploy/rmhos-net/egress-firewall.sh"; then
+    log "ERROR: could not apply the rmhos-net egress firewall; refusing to start the relay hub unfirewalled."
+    update_deploy_status fail "rmhos-net egress firewall could not be applied"
+    exit 1
+fi
 if ! retire_supervisor; then
     log "ERROR: could not remove the old supervisor container; starting jobs now would run two Discord bots."
     update_deploy_status fail "old supervisor container could not be removed"
@@ -1294,8 +1305,13 @@ run_health_checks() {
     check_http "$PORT_RMHBOX"  & local p_rmhbox=$!
     check_http "$PORT_RMHTUBE" & local p_rmhtube=$!
     check_http "$PORT_STATUS"  & local p_status=$!
+    # The relay hub exits without its ticket secret by design, so it is only gated on once one is set.
+    local rmhos_net_job=""
+    if grep -Eq '^RMHOS_NET_TICKET_SECRET=.+' "$ENV_FILE" 2>/dev/null; then
+        check_http "$PORT_RMHOS_NET" & rmhos_net_job="rmhos-net:$!"
+    fi
     wf=$(mktemp); check_workers "${1:-${WORKER_SETTLE_SECONDS:-30}}" > "$wf" & local p_workers=$!
-    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status"; do
+    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status" ${rmhos_net_job:+"$rmhos_net_job"}; do
         wait "${job#*:}" || failed="$failed ${job%%:*}"
     done
     wait "$p_workers" || failed="$failed $(cat "$wf")"
