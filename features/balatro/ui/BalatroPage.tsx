@@ -18,7 +18,7 @@
 
 import { readString, writeString } from '@/lib/core/persist';
 import { Download, LogOut, Maximize, Minimize, RotateCw, Upload, X } from 'lucide-react';
-import { lazy, useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Tooltip } from '@/components/ui/Tooltip';
@@ -36,7 +36,6 @@ import {
   type MpAutoload,
   type MpHost,
 } from '@features/balatro/engine/runtime';
-import { ArrivalSuspense } from '@/components/ui/arrive';
 import './balatro.css';
 
 const MpToolbar = lazy(() => import('./mp/MpToolbar'));
@@ -468,9 +467,9 @@ export default function BalatroPage() {
               </button>
             </Tooltip>
             {mp && (
-              <ArrivalSuspense fallback={null}>
+              <Suspense fallback={null}>
                 <MpToolbar controller={mp} container={frameRef.current} />
-              </ArrivalSuspense>
+              </Suspense>
             )}
             <input
               ref={saveInput}
