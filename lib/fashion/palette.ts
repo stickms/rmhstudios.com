@@ -14,31 +14,49 @@
  * their theme and accent preset.
  */
 
-export const SWATCHES = [
-  'ink',
-  'bone',
-  'slate',
-  'sand',
-  'clay',
-  'moss',
-  'sky',
-  'indigo',
-  'plum',
-  'rose',
-  'ochre',
-  'accent',
-] as const;
+export const SWATCHES =
+  [
+    'ink',
+    'bone',
+    'slate',
+    'sand',
+    'clay',
+    'moss',
+    'sky',
+    'indigo',
+    'plum',
+    'rose',
+    'ochre',
+    'accent',
+  ] as const;
 
-export type SwatchId = (typeof SWATCHES)[number];
+export type SwatchId =
+  (typeof SWATCHES)[number];
 
 /** Tones the figure itself can be drawn in. A subset, so nobody is neon. */
-export const FIGURE_TONES: readonly SwatchId[] = ['bone', 'sand', 'clay', 'ochre', 'slate', 'ink'];
+export const FIGURE_TONES: readonly SwatchId[] =
+  [
+    'bone',
+    'sand',
+    'clay',
+    'ochre',
+    'slate',
+    'ink',
+  ];
 
-export function isSwatch(value: string): value is SwatchId {
-  return (SWATCHES as readonly string[]).includes(value);
+export function isSwatch(
+  value: string,
+): value is SwatchId {
+  return (
+    SWATCHES as readonly string[]
+  ).includes(
+    value,
+  );
 }
 
 /** The CSS custom property a swatch reads from. */
-export function swatchVar(id: SwatchId): string {
+export function swatchVar(
+  id: SwatchId,
+): string {
   return `--rmhfash-swatch-${id}`;
 }

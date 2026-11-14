@@ -1,5 +1,8 @@
 import * as React from 'react';
-import { CalendarClock, X } from 'lucide-react';
+import {
+  CalendarClock,
+  X,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -25,9 +28,13 @@ import { cn } from '@/lib/utils';
 export interface ScheduleControlProps {
   /** `datetime-local` value (`YYYY-MM-DDTHH:mm`). Controlled by the caller. */
   value: string;
-  onChange: (value: string) => void;
+  onChange: (
+    value: string,
+  ) => void;
   /** Receives the chosen time as a UTC ISO instant. */
-  onSubmit: (isoInstant: string) => void;
+  onSubmit: (
+    isoInstant: string,
+  ) => void;
   /** Rendered as a dismiss control when provided. */
   onCancel?: () => void;
   /** Disable the submit button for reasons the control cannot see (empty post…). */
@@ -41,9 +48,15 @@ export interface ScheduleControlProps {
 }
 
 /** The viewer's IANA zone, or `null` where `Intl` cannot say. */
-function viewerTimeZone(): string | null {
+function viewerTimeZone():
+  | string
+  | null {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+    return (
+      Intl.DateTimeFormat().resolvedOptions()
+        .timeZone ||
+      null
+    );
   } catch {
     return null;
   }
@@ -51,9 +64,20 @@ function viewerTimeZone(): string | null {
 
 /** `datetime-local`'s `min`: now, in the viewer's own wall clock. */
 function nowLocalValue(): string {
-  const now = new Date();
-  const offsetMs = now.getTimezoneOffset() * 60_000;
-  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+  const now =
+    new Date();
+  const offsetMs =
+    now.getTimezoneOffset() *
+    60_000;
+  return new Date(
+    now.getTime() -
+      offsetMs,
+  )
+    .toISOString()
+    .slice(
+      0,
+      16,
+    );
 }
 
 export function ScheduleControl({
@@ -67,71 +91,190 @@ export function ScheduleControl({
   id = 'schedule-at',
   className,
 }: ScheduleControlProps) {
-  const { t } = useTranslation('c-ui');
-  const [zone, setZone] = React.useState<string | null>(null);
-  const [min, setMin] = React.useState<string>('');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-ui',
+    );
+  const [
+    zone,
+    setZone,
+  ] =
+    React.useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const [
+    min,
+    setMin,
+  ] =
+    React.useState<string>(
+      '',
+    );
 
   // Resolved after mount: the server's zone is not the viewer's, and rendering
   // one and hydrating the other is a text mismatch React throws the tree away
   // for. Same reason `RelativeTime` defers its clock.
   React.useEffect(() => {
-    setZone(viewerTimeZone());
-    setMin(nowLocalValue());
+    setZone(
+      viewerTimeZone(),
+    );
+    setMin(
+      nowLocalValue(),
+    );
   }, []);
 
-  const parsed = value ? new Date(value) : null;
-  const valid = parsed !== null && !Number.isNaN(parsed.getTime());
-  const inPast = valid && parsed.getTime() <= Date.now();
+  const parsed =
+    value
+      ? new Date(
+          value,
+        )
+      : null;
+  const valid =
+    parsed !==
+      null &&
+    !Number.isNaN(
+      parsed.getTime(),
+    );
+  const inPast =
+    valid &&
+    parsed.getTime() <=
+      Date.now();
 
   return (
     <div
       data-slot="schedule-control"
-      className={cn('surface-field flex flex-wrap items-center gap-2 px-3 py-2', className)}
+      className={cn(
+        'surface-field flex flex-wrap items-center gap-2 px-3 py-2',
+        className,
+      )}
     >
-      <CalendarClock className="size-4 shrink-0 text-site-text-muted" aria-hidden />
-      <label htmlFor={id} className="text-xs text-site-text-muted">
-        {t('schedule-publish-at', { defaultValue: 'Publish at' })}
+      <CalendarClock
+        className="size-4 shrink-0 text-site-text-muted"
+        aria-hidden
+      />
+      <label
+        htmlFor={
+          id
+        }
+        className="text-xs text-site-text-muted"
+      >
+        {t(
+          'schedule-publish-at',
+          {
+            defaultValue:
+              'Publish at',
+          },
+        )}
       </label>
       <input
-        id={id}
+        id={
+          id
+        }
         type="datetime-local"
-        value={value}
-        min={min || undefined}
-        onChange={(e) => onChange(e.target.value)}
+        value={
+          value
+        }
+        min={
+          min ||
+          undefined
+        }
+        onChange={(
+          e,
+        ) =>
+          onChange(
+            e
+              .target
+              .value,
+          )
+        }
         className="rounded-site-sm surface-field px-2 py-1 text-xs text-site-text outline-none transition-colors focus:border-site-accent"
       />
       {zone && (
-        <span className="text-xs text-site-text-muted" title={zone}>
-          {t('schedule-timezone', { zone, defaultValue: 'Times in {{zone}}' })}
+        <span
+          className="text-xs text-site-text-muted"
+          title={
+            zone
+          }
+        >
+          {t(
+            'schedule-timezone',
+            {
+              zone,
+              defaultValue:
+                'Times in {{zone}}',
+            },
+          )}
         </span>
       )}
 
       <Button
         size="sm"
         variant="default"
-        disabled={disabled || !valid || inPast}
-        loading={submitting}
+        disabled={
+          disabled ||
+          !valid ||
+          inPast
+        }
+        loading={
+          submitting
+        }
         onClick={() => {
-          if (!valid || inPast) return;
-          onSubmit(parsed.toISOString());
+          if (
+            !valid ||
+            inPast
+          )
+            return;
+          onSubmit(
+            parsed.toISOString(),
+          );
         }}
       >
-        {submitLabel ?? t('schedule-button', { defaultValue: 'Schedule' })}
+        {submitLabel ??
+          t(
+            'schedule-button',
+            {
+              defaultValue:
+                'Schedule',
+            },
+          )}
       </Button>
 
       {onCancel && (
         <IconButton
-          icon={X}
+          icon={
+            X
+          }
           size="icon-xs"
           variant="ghost"
-          onClick={onCancel}
-          label={t('cancel-scheduling', { defaultValue: 'Cancel scheduling' })}
+          onClick={
+            onCancel
+          }
+          label={t(
+            'cancel-scheduling',
+            {
+              defaultValue:
+                'Cancel scheduling',
+            },
+          )}
         />
       )}
 
       {inPast && (
-        <p role="status" className="basis-full text-xs text-site-danger">
-          {t('schedule-past-error', { defaultValue: 'Pick a time in the future.' })}
+        <p
+          role="status"
+          className="basis-full text-xs text-site-danger"
+        >
+          {t(
+            'schedule-past-error',
+            {
+              defaultValue:
+                'Pick a time in the future.',
+            },
+          )}
         </p>
       )}
     </div>

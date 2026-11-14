@@ -1,7 +1,14 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Loader2, Plus } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronRight,
+  Loader2,
+  Plus,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,10 +26,18 @@ interface SongTableProps {
   sort: LibrarySort;
   dir: SortDirection;
   /** Column header was clicked — `SongLibrary` owns the toggle-direction logic. */
-  onSortChange: (column: LibrarySort) => void;
-  onSelect: (song: SliceSong) => void;
-  onHighlight: (song: SliceSong) => void;
-  selectedSongId: string | null;
+  onSortChange: (
+    column: LibrarySort,
+  ) => void;
+  onSelect: (
+    song: SliceSong,
+  ) => void;
+  onHighlight: (
+    song: SliceSong,
+  ) => void;
+  selectedSongId:
+    | string
+    | null;
   /** Whether "Your best" is meaningful — false disables that column's sort. */
   authed: boolean;
   hasMore: boolean;
@@ -32,7 +47,9 @@ interface SongTableProps {
   readOnly?: boolean;
   /** What the row's primary action does, for its glyph and accessible name.
    *  Mirrors the grid — see `SongLibrary`'s prop of the same name. */
-  selectAction?: 'play' | 'add';
+  selectAction?:
+    | 'play'
+    | 'add';
   /** Scroll container height class — the parent owns layout, this owns rows. */
   className?: string;
 }
@@ -76,52 +93,143 @@ export function SongTable({
   selectAction = 'play',
   className,
 }: SongTableProps) {
-  const { t } = useTranslation('r-slice-it');
-  const scrollRef = React.useRef<HTMLDivElement>(null);
-  const sentinelRef = React.useRef<HTMLTableRowElement>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-slice-it',
+    );
+  const scrollRef =
+    React.useRef<HTMLDivElement>(
+      null,
+    );
+  const sentinelRef =
+    React.useRef<HTMLTableRowElement>(
+      null,
+    );
 
-  const virtualizer = useVirtualizer({
-    count: songs.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: OVERSCAN,
-    getItemKey: (index) => songs[index]?.id ?? index,
-  });
+  const virtualizer =
+    useVirtualizer(
+      {
+        count:
+          songs.length,
+        getScrollElement:
+          () =>
+            scrollRef.current,
+        estimateSize:
+          () =>
+            ROW_HEIGHT,
+        overscan:
+          OVERSCAN,
+        getItemKey:
+          (
+            index,
+          ) =>
+            songs[
+              index
+            ]
+              ?.id ??
+            index,
+      },
+    );
 
-  const virtualRows = virtualizer.getVirtualItems();
+  const virtualRows =
+    virtualizer.getVirtualItems();
   // The first page fades in over the spinner (M9). Not per row: the virtualizer remounts rows on
   // scroll, so a row's own fade would replay every time it came back into view.
-  const arrival = useArrival(songs.length > 0);
-  const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
+  const arrival =
+    useArrival(
+      songs.length >
+        0,
+    );
+  const paddingTop =
+    virtualRows.length >
+    0
+      ? virtualRows[0]
+          .start
+      : 0;
   const paddingBottom =
-    virtualRows.length > 0
-      ? virtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end
+    virtualRows.length >
+    0
+      ? virtualizer.getTotalSize() -
+        virtualRows[
+          virtualRows.length -
+            1
+        ]
+          .end
       : 0;
 
   // Auto-fetch the next page as the scroll nears the bottom — no "Load more"
   // button. A table exists to be scanned, and a button every N rows defeats
   // that the same way pagination would.
   React.useEffect(() => {
-    const sentinel = sentinelRef.current;
-    const root = scrollRef.current;
-    if (!sentinel || !root) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) onLoadMore();
-      },
-      { root, rootMargin: '200px' },
+    const sentinel =
+      sentinelRef.current;
+    const root =
+      scrollRef.current;
+    if (
+      !sentinel ||
+      !root
+    )
+      return;
+    const observer =
+      new IntersectionObserver(
+        (
+          entries,
+        ) => {
+          if (
+            entries[0]
+              .isIntersecting &&
+            hasMore &&
+            !loading
+          )
+            onLoadMore();
+        },
+        {
+          root,
+          rootMargin:
+            '200px',
+        },
+      );
+    observer.observe(
+      sentinel,
     );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasMore, loading, onLoadMore]);
+    return () =>
+      observer.disconnect();
+  }, [
+    hasMore,
+    loading,
+    onLoadMore,
+  ]);
 
-  const ariaSortFor = (key: LibrarySort): 'ascending' | 'descending' | 'none' => {
-    if (sort !== key) return 'none';
-    return dir === 'asc' ? 'ascending' : 'descending';
-  };
+  const ariaSortFor =
+    (
+      key: LibrarySort,
+    ):
+      | 'ascending'
+      | 'descending'
+      | 'none' => {
+      if (
+        sort !==
+        key
+      )
+        return 'none';
+      return dir ===
+        'asc'
+        ? 'ascending'
+        : 'descending';
+    };
 
   return (
-    <div ref={scrollRef} className={cn('overflow-y-auto overflow-x-auto', className)}>
+    <div
+      ref={
+        scrollRef
+      }
+      className={cn(
+        'overflow-y-auto overflow-x-auto',
+        className,
+      )}
+    >
       <table className="w-full text-sm border-collapse">
         {/* `.neumorphic-chrome`, not `.neumorphic-inset`. The head is the one
             surface here that stands ABOVE the list — inset is the pressed
@@ -131,151 +239,335 @@ export function SongTable({
             upward or sideways was clipped off in a straight line. */}
         <thead className="neumorphic-chrome sticky top-0 z-10">
           <tr>
-            {LIBRARY_TABLE_COLUMNS.map((col) => {
-              const disabled = col.requiresAuth && !authed;
-              const active = sort === col.key;
-              const Icon = !active ? ArrowUpDown : dir === 'asc' ? ArrowUp : ArrowDown;
-              return (
-                <th
-                  key={col.key}
-                  scope="col"
-                  aria-sort={ariaSortFor(col.key)}
-                  className={cn(
-                    'p-0 font-bold text-slice-text-muted whitespace-nowrap',
-                    col.numeric ? 'text-right' : 'text-left',
-                  )}
-                >
-                  <button
-                    type="button"
-                    onClick={() => onSortChange(col.key)}
-                    disabled={disabled}
-                    title={
-                      disabled
-                        ? t('table-sort-signin-required', {
-                            defaultValue: 'Sign in to sort by this column',
-                          })
-                        : undefined
+            {LIBRARY_TABLE_COLUMNS.map(
+              (
+                col,
+              ) => {
+                const disabled =
+                  col.requiresAuth &&
+                  !authed;
+                const active =
+                  sort ===
+                  col.key;
+                const Icon =
+                  !active
+                    ? ArrowUpDown
+                    : dir ===
+                        'asc'
+                      ? ArrowUp
+                      : ArrowDown;
+                return (
+                  <th
+                    key={
+                      col.key
                     }
+                    scope="col"
+                    aria-sort={ariaSortFor(
+                      col.key,
+                    )}
                     className={cn(
-                      'flex w-full items-center gap-1 px-3 py-2.5 text-xs uppercase tracking-wide transition-colors touch-target',
-                      col.numeric && 'justify-end',
-                      disabled
-                        ? 'cursor-not-allowed opacity-40'
-                        : 'hover:text-slice-text active:text-blue-500',
-                      active && 'text-slice-text',
+                      'p-0 font-bold text-slice-text-muted whitespace-nowrap',
+                      col.numeric
+                        ? 'text-right'
+                        : 'text-left',
                     )}
                   >
-                    {col.numeric && <Icon className="w-3 h-3 shrink-0" aria-hidden />}
-                    <span className="truncate">
-                      {t(col.labelKey, { defaultValue: col.defaultLabel })}
-                    </span>
-                    {!col.numeric && <Icon className="w-3 h-3 shrink-0" aria-hidden />}
-                  </button>
-                </th>
-              );
-            })}
-            <th scope="col" className="p-0">
-              <span className="sr-only">{t('table-col-actions', { defaultValue: 'Actions' })}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSortChange(
+                          col.key,
+                        )
+                      }
+                      disabled={
+                        disabled
+                      }
+                      title={
+                        disabled
+                          ? t(
+                              'table-sort-signin-required',
+                              {
+                                defaultValue:
+                                  'Sign in to sort by this column',
+                              },
+                            )
+                          : undefined
+                      }
+                      className={cn(
+                        'flex w-full items-center gap-1 px-3 py-2.5 text-xs uppercase tracking-wide transition-colors touch-target',
+                        col.numeric &&
+                          'justify-end',
+                        disabled
+                          ? 'cursor-not-allowed opacity-40'
+                          : 'hover:text-slice-text active:text-blue-500',
+                        active &&
+                          'text-slice-text',
+                      )}
+                    >
+                      {col.numeric && (
+                        <Icon
+                          className="w-3 h-3 shrink-0"
+                          aria-hidden
+                        />
+                      )}
+                      <span className="truncate">
+                        {t(
+                          col.labelKey,
+                          {
+                            defaultValue:
+                              col.defaultLabel,
+                          },
+                        )}
+                      </span>
+                      {!col.numeric && (
+                        <Icon
+                          className="w-3 h-3 shrink-0"
+                          aria-hidden
+                        />
+                      )}
+                    </button>
+                  </th>
+                );
+              },
+            )}
+            <th
+              scope="col"
+              className="p-0"
+            >
+              <span className="sr-only">
+                {t(
+                  'table-col-actions',
+                  {
+                    defaultValue:
+                      'Actions',
+                  },
+                )}
+              </span>
             </th>
           </tr>
         </thead>
-        <tbody className={arrival}>
-          {paddingTop > 0 && (
-            <tr aria-hidden style={{ height: paddingTop }}>
-              <td colSpan={LIBRARY_TABLE_COLUMNS.length + 1} style={{ padding: 0, border: 0 }} />
-            </tr>
-          )}
-
-          {virtualRows.map((virtualRow) => {
-            const song = songs[virtualRow.index];
-            if (!song) return null;
-            const selected = selectedSongId === song.id;
-            return (
-              <tr
-                key={song.id}
-                data-index={virtualRow.index}
-                // `aria-current` is the right attribute here: this is a plain
-                // <table>, and the selection attribute it replaces is only
-                // meaningful on a row inside a `grid`/`treegrid`. "The row whose
-                // details are open" is exactly what `aria-current` means.
-                //
-                // It also keeps the row divider below from reading as an
-                // active-tab underline to `design-consistency.test.ts` §16.2,
-                // which greps source text: every row here carries `border-b`, so
-                // it is a separator, not a state marker.
-                aria-current={selected}
-                onClick={() => onHighlight(song)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') onHighlight(song);
+        <tbody
+          className={
+            arrival
+          }
+        >
+          {paddingTop >
+            0 && (
+            <tr
+              aria-hidden
+              style={{
+                height:
+                  paddingTop,
+              }}
+            >
+              <td
+                colSpan={
+                  LIBRARY_TABLE_COLUMNS.length +
+                  1
+                }
+                style={{
+                  padding: 0,
+                  border: 0,
                 }}
-                tabIndex={0}
-                style={{ height: ROW_HEIGHT }}
-                className={cn(
-                  'cursor-pointer border-b border-slice-shadow-dark/30 transition-colors hover:bg-slice-shadow-dark/20',
-                  selected && 'bg-blue-500/10',
-                )}
-              >
-                <td className="px-3 py-2 min-w-0 max-w-0 w-[32%]">
-                  <span className="block truncate font-bold text-slice-text">{song.title}</span>
-                </td>
-                <td className="px-3 py-2 min-w-0 max-w-0 w-[22%]">
-                  <span className="block truncate text-slice-text-muted">{song.artist}</span>
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums text-slice-text-muted whitespace-nowrap">
-                  {song.bpm > 0 ? Math.round(song.bpm) : '—'}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums text-slice-text-muted whitespace-nowrap">
-                  {formatSongDuration(song.duration)}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums text-slice-text-muted whitespace-nowrap">
-                  {song.bestScore !== null ? song.bestScore.toLocaleString() : '—'}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums text-slice-text-muted whitespace-nowrap">
-                  {song.plays.toLocaleString()}
-                </td>
-                <td className="px-2 py-2 text-right whitespace-nowrap">
-                  {!readOnly && (
-                    <Button
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelect(song);
-                      }}
-                      className="h-8 w-8 rounded-lg bg-blue-500 text-white hover:bg-blue-600 touch-target"
-                      aria-label={
-                        selectAction === 'add'
-                          ? t('add-song', {
-                              defaultValue: 'Add {{title}}',
-                              title: song.title,
-                            })
-                          : t('open-song', {
-                              defaultValue: 'Open {{title}}',
-                              title: song.title,
-                            })
-                      }
-                    >
-                      {selectAction === 'add' ? (
-                        <Plus className="w-3.5 h-3.5" aria-hidden />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5" aria-hidden />
-                      )}
-                    </Button>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-
-          {paddingBottom > 0 && (
-            <tr aria-hidden style={{ height: paddingBottom }}>
-              <td colSpan={LIBRARY_TABLE_COLUMNS.length + 1} style={{ padding: 0, border: 0 }} />
+              />
             </tr>
           )}
 
-          <tr ref={sentinelRef} aria-hidden>
+          {virtualRows.map(
+            (
+              virtualRow,
+            ) => {
+              const song =
+                songs[
+                  virtualRow
+                    .index
+                ];
+              if (
+                !song
+              )
+                return null;
+              const selected =
+                selectedSongId ===
+                song.id;
+              return (
+                <tr
+                  key={
+                    song.id
+                  }
+                  data-index={
+                    virtualRow.index
+                  }
+                  // `aria-current` is the right attribute here: this is a plain
+                  // <table>, and the selection attribute it replaces is only
+                  // meaningful on a row inside a `grid`/`treegrid`. "The row whose
+                  // details are open" is exactly what `aria-current` means.
+                  //
+                  // It also keeps the row divider below from reading as an
+                  // active-tab underline to `design-consistency.test.ts` §16.2,
+                  // which greps source text: every row here carries `border-b`, so
+                  // it is a separator, not a state marker.
+                  aria-current={
+                    selected
+                  }
+                  onClick={() =>
+                    onHighlight(
+                      song,
+                    )
+                  }
+                  onKeyDown={(
+                    e,
+                  ) => {
+                    if (
+                      e.key ===
+                      'Enter'
+                    )
+                      onHighlight(
+                        song,
+                      );
+                  }}
+                  tabIndex={
+                    0
+                  }
+                  style={{
+                    height:
+                      ROW_HEIGHT,
+                  }}
+                  className={cn(
+                    'cursor-pointer border-b border-slice-shadow-dark/30 transition-colors hover:bg-slice-shadow-dark/20',
+                    selected &&
+                      'bg-blue-500/10',
+                  )}
+                >
+                  <td className="px-3 py-2 min-w-0 max-w-0 w-[32%]">
+                    <span className="block truncate font-bold text-slice-text">
+                      {
+                        song.title
+                      }
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 min-w-0 max-w-0 w-[22%]">
+                    <span className="block truncate text-slice-text-muted">
+                      {
+                        song.artist
+                      }
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums text-slice-text-muted whitespace-nowrap">
+                    {song.bpm >
+                    0
+                      ? Math.round(
+                          song.bpm,
+                        )
+                      : '—'}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums text-slice-text-muted whitespace-nowrap">
+                    {formatSongDuration(
+                      song.duration,
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums text-slice-text-muted whitespace-nowrap">
+                    {song.bestScore !==
+                    null
+                      ? song.bestScore.toLocaleString()
+                      : '—'}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums text-slice-text-muted whitespace-nowrap">
+                    {song.plays.toLocaleString()}
+                  </td>
+                  <td className="px-2 py-2 text-right whitespace-nowrap">
+                    {!readOnly && (
+                      <Button
+                        size="icon"
+                        onClick={(
+                          e,
+                        ) => {
+                          e.stopPropagation();
+                          onSelect(
+                            song,
+                          );
+                        }}
+                        className="h-8 w-8 rounded-lg bg-blue-500 text-white hover:bg-blue-600 touch-target"
+                        aria-label={
+                          selectAction ===
+                          'add'
+                            ? t(
+                                'add-song',
+                                {
+                                  defaultValue:
+                                    'Add {{title}}',
+                                  title:
+                                    song.title,
+                                },
+                              )
+                            : t(
+                                'open-song',
+                                {
+                                  defaultValue:
+                                    'Open {{title}}',
+                                  title:
+                                    song.title,
+                                },
+                              )
+                        }
+                      >
+                        {selectAction ===
+                        'add' ? (
+                          <Plus
+                            className="w-3.5 h-3.5"
+                            aria-hidden
+                          />
+                        ) : (
+                          <ChevronRight
+                            className="w-3.5 h-3.5"
+                            aria-hidden
+                          />
+                        )}
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              );
+            },
+          )}
+
+          {paddingBottom >
+            0 && (
+            <tr
+              aria-hidden
+              style={{
+                height:
+                  paddingBottom,
+              }}
+            >
+              <td
+                colSpan={
+                  LIBRARY_TABLE_COLUMNS.length +
+                  1
+                }
+                style={{
+                  padding: 0,
+                  border: 0,
+                }}
+              />
+            </tr>
+          )}
+
+          <tr
+            ref={
+              sentinelRef
+            }
+            aria-hidden
+          >
             <td
-              colSpan={LIBRARY_TABLE_COLUMNS.length + 1}
-              style={{ padding: 0, height: 1, border: 0 }}
+              colSpan={
+                LIBRARY_TABLE_COLUMNS.length +
+                1
+              }
+              style={{
+                padding: 0,
+                height: 1,
+                border: 0,
+              }}
             />
           </tr>
         </tbody>
@@ -283,7 +575,10 @@ export function SongTable({
 
       {loading && (
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="w-4 h-4 animate-spin text-slice-text-light" aria-hidden />
+          <Loader2
+            className="w-4 h-4 animate-spin text-slice-text-light"
+            aria-hidden
+          />
         </div>
       )}
     </div>

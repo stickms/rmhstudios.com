@@ -2,7 +2,16 @@
 import { listProfileLinksApi } from '@/lib/profile-links/profile-links.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const profileLinksQuery = () =>
-  contractQuery(['settings', 'profile-links'], listProfileLinksApi, undefined, {
-    staleTime: 15_000,
-  });
+export const profileLinksQuery =
+  () =>
+    contractQuery(
+      [
+        'settings',
+        'profile-links',
+      ],
+      listProfileLinksApi,
+      undefined,
+      {
+        staleTime: 15_000,
+      },
+    );

@@ -5,17 +5,43 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { cached, invalidateCached, invalidateCachedPrefix } from '@/lib/cached.server';
-import { RANKS, WEEKLY_DECAY_RATE, XP_ACTIONS } from './constants';
+import {
+  cached,
+  invalidateCached,
+  invalidateCachedPrefix,
+} from '@/lib/cached.server';
+import {
+  RANKS,
+  WEEKLY_DECAY_RATE,
+  XP_ACTIONS,
+} from './constants';
 import type { RankDefinition } from './types';
 
 /**
  * Get the rank for a given XP total.
  * Iterates ranks in reverse to find the highest qualifying rank.
  */
-export function getRank(xp: number): RankDefinition {
-  for (let i = RANKS.length - 1; i >= 0; i--) {
-    if (xp >= RANKS[i].minXp) return RANKS[i];
+export function getRank(
+  xp: number,
+): RankDefinition {
+  for (
+    let i =
+      RANKS.length -
+      1;
+    i >=
+    0;
+    i--
+  ) {
+    if (
+      xp >=
+      RANKS[
+        i
+      ]
+        .minXp
+    )
+      return RANKS[
+        i
+      ];
   }
   return RANKS[0];
 }
@@ -23,8 +49,18 @@ export function getRank(xp: number): RankDefinition {
 /**
  * Calculate XP after decay for inactive users.
  */
-export function calculateDecay(currentXp: number, weeksInactive: number): number {
-  return Math.floor(currentXp * Math.pow(1 - WEEKLY_DECAY_RATE, weeksInactive));
+export function calculateDecay(
+  currentXp: number,
+  weeksInactive: number,
+): number {
+  return Math.floor(
+    currentXp *
+      Math.pow(
+        1 -
+          WEEKLY_DECAY_RATE,
+        weeksInactive,
+      ),
+  );
 }
 
 /**
@@ -34,80 +70,163 @@ export function calculateDecay(currentXp: number, weeksInactive: number): number
 export async function awardXp(
   userId: string,
   action: string,
-  metadata?: Record<string, unknown>,
-): Promise<{ totalXp: number; rank: RankDefinition }> {
+  metadata?: Record<
+    string,
+    unknown
+  >,
+): Promise<{
+  totalXp: number;
+  rank: RankDefinition;
+}> {
   // Resolve the XP delta
   let xpDelta: number;
-  if (action === 'PUZZLE_SOLVE_STREAK_BONUS' && metadata?.streak) {
-    xpDelta = XP_ACTIONS.PUZZLE_SOLVE_STREAK_BONUS(metadata.streak as number);
+  if (
+    action ===
+      'PUZZLE_SOLVE_STREAK_BONUS' &&
+    metadata?.streak
+  ) {
+    xpDelta =
+      XP_ACTIONS.PUZZLE_SOLVE_STREAK_BONUS(
+        metadata.streak as number,
+      );
   } else {
-    const staticAction = action as keyof typeof XP_ACTIONS;
-    const value = XP_ACTIONS[staticAction];
-    xpDelta = typeof value === 'number' ? value : 0;
+    const staticAction =
+      action as keyof typeof XP_ACTIONS;
+    const value =
+      XP_ACTIONS[
+        staticAction
+      ];
+    xpDelta =
+      typeof value ===
+      'number'
+        ? value
+        : 0;
   }
 
-  if (xpDelta === 0) return { totalXp: 0, rank: RANKS[0] };
+  if (
+    xpDelta ===
+    0
+  )
+    return {
+      totalXp: 0,
+      rank: RANKS[0],
+    };
 
   // Upsert reputation record
-  const reputation = await prisma.doctrineReputation.upsert({
-    where: { userId },
-    create: {
-      userId,
-      totalXp: xpDelta,
-      lastActiveAt: new Date(),
-    },
-    update: {
-      totalXp: { increment: xpDelta },
-      lastActiveAt: new Date(),
-    },
-  });
+  const reputation =
+    await prisma.doctrineReputation.upsert(
+      {
+        where:
+          {
+            userId,
+          },
+        create:
+          {
+            userId,
+            totalXp:
+              xpDelta,
+            lastActiveAt:
+              new Date(),
+          },
+        update:
+          {
+            totalXp:
+              {
+                increment:
+                  xpDelta,
+              },
+            lastActiveAt:
+              new Date(),
+          },
+      },
+    );
 
   // Log to ledger
-  await prisma.doctrineReputationLedger.create({
-    data: {
-      reputationId: reputation.id,
-      action,
-      xpDelta,
-      reason: `${action} +${xpDelta}XP`,
-      metadata: metadata ? (metadata as Record<string, string | number | boolean>) : undefined,
+  await prisma.doctrineReputationLedger.create(
+    {
+      data: {
+        reputationId:
+          reputation.id,
+        action,
+        xpDelta,
+        reason: `${action} +${xpDelta}XP`,
+        metadata:
+          metadata
+            ? (metadata as Record<
+                string,
+                | string
+                | number
+                | boolean
+              >)
+            : undefined,
+      },
     },
-  });
+  );
 
   // Invalidate cache
-  void invalidateCached(`doctrine:rep:${userId}`);
-  void invalidateCachedPrefix('doctrine:leaderboard');
+  void invalidateCached(
+    `doctrine:rep:${userId}`,
+  );
+  void invalidateCachedPrefix(
+    'doctrine:leaderboard',
+  );
 
-  const rank = getRank(reputation.totalXp);
-  return { totalXp: reputation.totalXp, rank };
+  const rank =
+    getRank(
+      reputation.totalXp,
+    );
+  return {
+    totalXp:
+      reputation.totalXp,
+    rank,
+  };
 }
 
 /**
  * Get user reputation data with caching.
  */
-export async function getReputation(userId: string) {
+export async function getReputation(
+  userId: string,
+) {
   const cacheKey = `doctrine:rep:${userId}`;
   return cached(
     cacheKey,
     60_000,
     async () => {
-      const result = await fetchReputation(userId);
+      const result =
+        await fetchReputation(
+          userId,
+        );
       return result;
     },
-    { l2: false },
+    {
+      l2: false,
+    },
   );
 }
 
-async function fetchReputation(userId: string) {
-  const rep = await prisma.doctrineReputation.findUnique({
-    where: { userId },
-  });
+async function fetchReputation(
+  userId: string,
+) {
+  const rep =
+    await prisma.doctrineReputation.findUnique(
+      {
+        where:
+          {
+            userId,
+          },
+      },
+    );
 
-  if (!rep) {
+  if (
+    !rep
+  ) {
     return {
       totalXp: 0,
       currentStreak: 0,
       longestStreak: 0,
-      lastActiveAt: new Date(),
+      lastActiveAt:
+        new Date(),
       coalitionScore: 1.0,
       sahurCount: 0,
       rank: RANKS[0],
@@ -115,107 +234,268 @@ async function fetchReputation(userId: string) {
   }
 
   return {
-    totalXp: rep.totalXp,
-    currentStreak: rep.currentStreak,
-    longestStreak: rep.longestStreak,
-    lastActiveAt: rep.lastActiveAt,
-    coalitionScore: rep.coalitionScore,
-    sahurCount: rep.sahurCount,
-    rank: getRank(rep.totalXp),
+    totalXp:
+      rep.totalXp,
+    currentStreak:
+      rep.currentStreak,
+    longestStreak:
+      rep.longestStreak,
+    lastActiveAt:
+      rep.lastActiveAt,
+    coalitionScore:
+      rep.coalitionScore,
+    sahurCount:
+      rep.sahurCount,
+    rank: getRank(
+      rep.totalXp,
+    ),
   };
 }
 
 /**
  * Update streak for puzzle completion.
  */
-export async function updateStreak(userId: string): Promise<number> {
-  const rep = await prisma.doctrineReputation.findUnique({
-    where: { userId },
-  });
+export async function updateStreak(
+  userId: string,
+): Promise<number> {
+  const rep =
+    await prisma.doctrineReputation.findUnique(
+      {
+        where:
+          {
+            userId,
+          },
+      },
+    );
 
-  if (!rep) return 0;
+  if (
+    !rep
+  )
+    return 0;
 
-  const now = new Date();
-  const lastActive = new Date(rep.lastActiveAt);
-  const diffDays = Math.floor((now.getTime() - lastActive.getTime()) / 86_400_000);
+  const now =
+    new Date();
+  const lastActive =
+    new Date(
+      rep.lastActiveAt,
+    );
+  const diffDays =
+    Math.floor(
+      (now.getTime() -
+        lastActive.getTime()) /
+        86_400_000,
+    );
 
   let newStreak: number;
-  if (diffDays <= 1) {
+  if (
+    diffDays <=
+    1
+  ) {
     // Continue streak (same day or next day)
-    newStreak = rep.currentStreak + 1;
+    newStreak =
+      rep.currentStreak +
+      1;
   } else {
     // Streak broken
     newStreak = 1;
   }
 
-  const longestStreak = Math.max(rep.longestStreak, newStreak);
+  const longestStreak =
+    Math.max(
+      rep.longestStreak,
+      newStreak,
+    );
 
-  await prisma.doctrineReputation.update({
-    where: { userId },
-    data: {
-      currentStreak: newStreak,
-      longestStreak,
-      lastActiveAt: now,
+  await prisma.doctrineReputation.update(
+    {
+      where:
+        {
+          userId,
+        },
+      data: {
+        currentStreak:
+          newStreak,
+        longestStreak,
+        lastActiveAt:
+          now,
+      },
     },
-  });
+  );
 
-  void invalidateCached(`doctrine:rep:${userId}`);
+  void invalidateCached(
+    `doctrine:rep:${userId}`,
+  );
   return newStreak;
 }
 
 /**
  * Get the reputation leaderboard.
  */
-export async function getReputationLeaderboard(limit = 50) {
+export async function getReputationLeaderboard(
+  limit = 50,
+) {
   const cacheKey = `doctrine:leaderboard:rep:${limit}`;
   return cached(
     cacheKey,
     30_000,
     async () => {
-      const result = await fetchLeaderboard(limit);
+      const result =
+        await fetchLeaderboard(
+          limit,
+        );
       return result;
     },
-    { l2: false },
+    {
+      l2: false,
+    },
   );
 }
 
-async function fetchLeaderboard(limit: number) {
-  const entries = await prisma.doctrineReputation.findMany({
-    take: limit,
-    orderBy: { totalXp: 'desc' },
-    include: {
-      user: {
-        select: { id: true, name: true, handle: true, image: true },
+async function fetchLeaderboard(
+  limit: number,
+) {
+  const entries =
+    await prisma.doctrineReputation.findMany(
+      {
+        take: limit,
+        orderBy:
+          {
+            totalXp:
+              'desc',
+          },
+        include:
+          {
+            user: {
+              select:
+                {
+                  id: true,
+                  name: true,
+                  handle: true,
+                  image: true,
+                },
+            },
+          },
       },
-    },
-  });
+    );
 
-  return entries.map((entry, index) => ({
-    rank: index + 1,
-    userId: entry.userId,
-    user: entry.user,
-    totalXp: entry.totalXp,
-    currentStreak: entry.currentStreak,
-    level: getRank(entry.totalXp),
-  }));
+  return entries.map(
+    (
+      entry,
+      index,
+    ) => ({
+      rank:
+        index +
+        1,
+      userId:
+        entry.userId,
+      user: entry.user,
+      totalXp:
+        entry.totalXp,
+      currentStreak:
+        entry.currentStreak,
+      level:
+        getRank(
+          entry.totalXp,
+        ),
+    }),
+  );
 }
 
 /**
  * Calculate coalition multiplier based on how many RMH products a user is active in.
  */
-export async function calculateCoalitionScore(userId: string): Promise<number> {
-  const [hasAltair, hasPuzzles, hasSliceIt, hasRmhbox, hasSafehouse] = await Promise.all([
-    prisma.altairPlayer.findUnique({ where: { userId }, select: { id: true } }),
-    prisma.dailyPuzzleScore.findFirst({ where: { userId }, select: { id: true } }),
-    prisma.player.findFirst({ where: { userId }, select: { id: true } }),
-    prisma.rMHboxProfile.findUnique({ where: { userId }, select: { id: true } }),
-    prisma.doctrineAccessLog.findFirst({ where: { userId }, select: { id: true } }),
-  ]);
+export async function calculateCoalitionScore(
+  userId: string,
+): Promise<number> {
+  const [
+    hasAltair,
+    hasPuzzles,
+    hasSliceIt,
+    hasRmhbox,
+    hasSafehouse,
+  ] =
+    await Promise.all(
+      [
+        prisma.altairPlayer.findUnique(
+          {
+            where:
+              {
+                userId,
+              },
+            select:
+              {
+                id: true,
+              },
+          },
+        ),
+        prisma.dailyPuzzleScore.findFirst(
+          {
+            where:
+              {
+                userId,
+              },
+            select:
+              {
+                id: true,
+              },
+          },
+        ),
+        prisma.player.findFirst(
+          {
+            where:
+              {
+                userId,
+              },
+            select:
+              {
+                id: true,
+              },
+          },
+        ),
+        prisma.rMHboxProfile.findUnique(
+          {
+            where:
+              {
+                userId,
+              },
+            select:
+              {
+                id: true,
+              },
+          },
+        ),
+        prisma.doctrineAccessLog.findFirst(
+          {
+            where:
+              {
+                userId,
+              },
+            select:
+              {
+                id: true,
+              },
+          },
+        ),
+      ],
+    );
 
-  const activeProducts = [hasAltair, hasPuzzles, hasSliceIt, hasRmhbox, hasSafehouse].filter(
-    Boolean,
-  ).length;
+  const activeProducts =
+    [
+      hasAltair,
+      hasPuzzles,
+      hasSliceIt,
+      hasRmhbox,
+      hasSafehouse,
+    ].filter(
+      Boolean,
+    ).length;
 
   // 1.0x base, +0.15x per additional product, max 2.0x
-  return Math.min(2.0, 1.0 + (activeProducts - 1) * 0.15);
+  return Math.min(
+    2.0,
+    1.0 +
+      (activeProducts -
+        1) *
+        0.15,
+  );
 }

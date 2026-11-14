@@ -42,5 +42,9 @@
     "lib/tf2-loadout/__tests__/stored-cache.test.ts",
     "lib/tf2-loadout/__tests__/warpaint.test.ts"
   ],
-  "references": [{ "path": "./tsconfig.core.json" }]
+  "references": [
+    {
+      "path": "./tsconfig.core.json"
+    }
+  ]
 }

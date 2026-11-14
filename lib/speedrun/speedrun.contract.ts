@@ -8,7 +8,10 @@
  * equality), so a caller states the defaulted `version` / `limit` itself.
  */
 import { endpoint } from '@/lib/contract/endpoint';
-import type { BoardResult, SubmittableReplay } from '@/lib/speedrun/speedrun.server';
+import type {
+  BoardResult,
+  SubmittableReplay,
+} from '@/lib/speedrun/speedrun.server';
 import type {
   SpeedrunCategoryView,
   SpeedrunEntryView,
@@ -19,38 +22,97 @@ import type {
 } from '@/lib/speedrun/types';
 
 /** The boards that exist, plus the games that can have one. Public. */
-export const listSpeedrunCategoriesApi = endpoint<{
-  query: { game?: string | undefined; includeInactive?: '0' | '1' | undefined };
-  res: { categories: SpeedrunCategoryView[]; games: string[] };
-}>()({ method: 'GET', path: '/api/speedrun/categories' });
+export const listSpeedrunCategoriesApi =
+  endpoint<{
+    query: {
+      game?:
+        | string
+        | undefined;
+      includeInactive?:
+        | '0'
+        | '1'
+        | undefined;
+    };
+    res: {
+      categories: SpeedrunCategoryView[];
+      games: string[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/speedrun/categories',
+    },
+  );
 
 /** Admin: open one board, or `{ seed: true }` to open every starter board. */
-export const upsertSpeedrunCategoryApi = endpoint<{
-  body:
-    | {
-        game: string;
-        slug: string;
-        version: string;
-        name: string;
-        rules: string;
-        metric: SpeedrunMetric;
-        active?: boolean | undefined;
-      }
-    | { seed: true };
-  res: { categories: SpeedrunCategoryView[] } | { category: SpeedrunCategoryView };
-}>()({ method: 'POST', path: '/api/speedrun/categories' });
+export const upsertSpeedrunCategoryApi =
+  endpoint<{
+    body:
+      | {
+          game: string;
+          slug: string;
+          version: string;
+          name: string;
+          rules: string;
+          metric: SpeedrunMetric;
+          active?:
+            | boolean
+            | undefined;
+        }
+      | {
+          seed: true;
+        };
+    res:
+      | {
+          categories: SpeedrunCategoryView[];
+        }
+      | {
+          category: SpeedrunCategoryView;
+        };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/speedrun/categories',
+    },
+  );
 
 /** One category's runs; `version: 'all'` returns every version, each labelled. 404 for an unknown category. */
-export const getSpeedrunLeaderboardApi = endpoint<{
-  query: { game: string; slug: string; version: string; limit: number };
-  res: BoardResult;
-}>()({ method: 'GET', path: '/api/speedrun/leaderboard' });
+export const getSpeedrunLeaderboardApi =
+  endpoint<{
+    query: {
+      game: string;
+      slug: string;
+      version: string;
+      limit: number;
+    };
+    res: BoardResult;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/speedrun/leaderboard',
+    },
+  );
 
 /** The caller's own replays for a game that are not on a board yet. */
-export const listSubmittableReplaysApi = endpoint<{
-  query: { game: string; limit: number };
-  res: { replays: SubmittableReplay[] };
-}>()({ method: 'GET', path: '/api/speedrun/replays' });
+export const listSubmittableReplaysApi =
+  endpoint<{
+    query: {
+      game: string;
+      limit: number;
+    };
+    res: {
+      replays: SubmittableReplay[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/speedrun/replays',
+    },
+  );
 
 export interface SubmitSpeedrunRunResult {
   entry: SpeedrunEntryView;
@@ -58,12 +120,25 @@ export interface SubmitSpeedrunRunResult {
     status: SpeedrunStatus;
     tier: VerificationTier;
     reason: SpeedrunRejection | null;
-    message: string | null;
+    message:
+      | string
+      | null;
   };
 }
 
 /** Submit a run: the body names a replay and a category, never a time or score. */
-export const submitSpeedrunRunApi = endpoint<{
-  body: { game: string; slug: string; replayId: string };
-  res: SubmitSpeedrunRunResult;
-}>()({ method: 'POST', path: '/api/speedrun/runs' });
+export const submitSpeedrunRunApi =
+  endpoint<{
+    body: {
+      game: string;
+      slug: string;
+      replayId: string;
+    };
+    res: SubmitSpeedrunRunResult;
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/speedrun/runs',
+    },
+  );

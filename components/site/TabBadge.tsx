@@ -1,4 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { setAppBadgeCount } from '@/lib/useAppBadge';
 import {
   badgedTitle,
@@ -20,46 +24,126 @@ import {
  * writes when the title is missing the right prefix, so its own write is the
  * end of the chain, not a loop.
  */
-export function TabBadge({ count }: { count: number }) {
-  const [enabled, setEnabled] = useState(true);
-  const countRef = useRef(0);
-  const effective = enabled ? count : 0;
-  countRef.current = effective;
+export function TabBadge({
+  count,
+}: {
+  count: number;
+}) {
+  const [
+    enabled,
+    setEnabled,
+  ] =
+    useState(
+      true,
+    );
+  const countRef =
+    useRef(
+      0,
+    );
+  const effective =
+    enabled
+      ? count
+      : 0;
+  countRef.current =
+    effective;
 
   useEffect(() => {
-    setEnabled(readTabBadgePref());
-    const onPref = () => setEnabled(readTabBadgePref());
-    window.addEventListener(TAB_BADGE_PREF_EVENT, onPref);
-    return () => window.removeEventListener(TAB_BADGE_PREF_EVENT, onPref);
+    setEnabled(
+      readTabBadgePref(),
+    );
+    const onPref =
+      () =>
+        setEnabled(
+          readTabBadgePref(),
+        );
+    window.addEventListener(
+      TAB_BADGE_PREF_EVENT,
+      onPref,
+    );
+    return () =>
+      window.removeEventListener(
+        TAB_BADGE_PREF_EVENT,
+        onPref,
+      );
   }, []);
 
   // Title: apply now, and again after any navigation rewrites it.
   useEffect(() => {
-    const apply = () => {
-      const next = badgedTitle(document.title, countRef.current);
-      if (next !== document.title) document.title = next;
-    };
+    const apply =
+      () => {
+        const next =
+          badgedTitle(
+            document.title,
+            countRef.current,
+          );
+        if (
+          next !==
+          document.title
+        )
+          document.title =
+            next;
+      };
     apply();
-    const observer = new MutationObserver(apply);
-    observer.observe(document.head, { childList: true, subtree: true, characterData: true });
+    const observer =
+      new MutationObserver(
+        apply,
+      );
+    observer.observe(
+      document.head,
+      {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      },
+    );
     return () => {
       observer.disconnect();
-      document.title = badgedTitle(document.title, 0);
+      document.title =
+        badgedTitle(
+          document.title,
+          0,
+        );
     };
   }, []);
 
   useEffect(() => {
-    const next = badgedTitle(document.title, effective);
-    if (next !== document.title) document.title = next;
-    setAppBadgeCount(effective);
-  }, [effective]);
+    const next =
+      badgedTitle(
+        document.title,
+        effective,
+      );
+    if (
+      next !==
+      document.title
+    )
+      document.title =
+        next;
+    setAppBadgeCount(
+      effective,
+    );
+  }, [
+    effective,
+  ]);
 
   // Favicon: redraw only on the 0 ↔ non-zero edge.
-  const hasUnread = effective > 0;
+  const hasUnread =
+    effective >
+    0;
   useEffect(() => {
-    void setFaviconDot(hasUnread);
-  }, [hasUnread]);
-  useEffect(() => () => void setFaviconDot(false), []);
+    void setFaviconDot(
+      hasUnread,
+    );
+  }, [
+    hasUnread,
+  ]);
+  useEffect(
+    () =>
+      () =>
+        void setFaviconDot(
+          false,
+        ),
+    [],
+  );
 
   return null;
 }

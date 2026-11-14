@@ -33,7 +33,11 @@
  * not a decoration.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 
 /** Every colour a canvas view draws in, resolved to strings a canvas accepts. */
 export interface StagePaint {
@@ -94,18 +98,27 @@ export interface StageFrame {
  * are finished. Returning `false` (or nothing) is what lets a view that has come
  * to rest stop scheduling frames entirely.
  */
-export type StageRenderer = (ctx: CanvasRenderingContext2D, frame: StageFrame) => boolean | void;
+export type StageRenderer =
+  (
+    ctx: CanvasRenderingContext2D,
+    frame: StageFrame,
+  ) =>
+    | boolean
+    | void;
 
 /**
  * What a view draws with before its first paint resolve, and if the element is
  * gone. Ink and surface only: a palette belongs to the caller's spec.
  */
-const BASE_PAINT: StagePaint = {
-  palette: [],
-  ramp: [],
-  ink: 'rgb(20 20 20)',
-  surface: 'rgb(255 255 255)',
-};
+const BASE_PAINT: StagePaint =
+  {
+    palette:
+      [],
+    ramp: [],
+    ink: 'rgb(20 20 20)',
+    surface:
+      'rgb(255 255 255)',
+  };
 
 /**
  * Read the palette off an element.
@@ -115,21 +128,74 @@ const BASE_PAINT: StagePaint = {
  * the same literals the stylesheet carries, so a failure here is invisible
  * rather than a chart drawn in black.
  */
-function readPaint(el: Element, spec: StagePaintSpec): StagePaint {
-  const cs = getComputedStyle(el);
-  const token = (name: string, fallback: string) => {
-    const value = cs.getPropertyValue(name).trim();
-    return /^(rgb|rgba|#|color\()/i.test(value) ? value : fallback;
-  };
+function readPaint(
+  el: Element,
+  spec: StagePaintSpec,
+): StagePaint {
+  const cs =
+    getComputedStyle(
+      el,
+    );
+  const token =
+    (
+      name: string,
+      fallback: string,
+    ) => {
+      const value =
+        cs
+          .getPropertyValue(
+            name,
+          )
+          .trim();
+      return /^(rgb|rgba|#|color\()/i.test(
+        value,
+      )
+        ? value
+        : fallback;
+    };
   return {
-    palette: spec.palette.map((name, i) => token(name, spec.paletteFallback[i] ?? BASE_PAINT.ink)),
-    ramp: (spec.ramp ?? []).map((name, i) =>
-      token(name, spec.rampFallback?.[i] ?? BASE_PAINT.ink),
+    palette:
+      spec.palette.map(
+        (
+          name,
+          i,
+        ) =>
+          token(
+            name,
+            spec
+              .paletteFallback[
+              i
+            ] ??
+              BASE_PAINT.ink,
+          ),
+      ),
+    ramp: (
+      spec.ramp ??
+      []
+    ).map(
+      (
+        name,
+        i,
+      ) =>
+        token(
+          name,
+          spec
+            .rampFallback?.[
+            i
+          ] ??
+            BASE_PAINT.ink,
+        ),
     ),
     // `color` is already a resolved colour on every engine — it is the one
     // channel that never needs the fallback dance above.
-    ink: cs.color || BASE_PAINT.ink,
-    surface: token('--site-bg', BASE_PAINT.surface),
+    ink:
+      cs.color ||
+      BASE_PAINT.ink,
+    surface:
+      token(
+        '--site-bg',
+        BASE_PAINT.surface,
+      ),
   };
 }
 
@@ -154,172 +220,381 @@ export function useCanvasStage(
   /** Ask for one more frame. Cheap and idempotent — safe to call from an event. */
   invalidate: () => void;
 } {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const renderRef = useRef(render);
-  renderRef.current = render;
-  const animateRef = useRef(animate);
-  animateRef.current = animate;
+  const canvasRef =
+    useRef<HTMLCanvasElement | null>(
+      null,
+    );
+  const renderRef =
+    useRef(
+      render,
+    );
+  renderRef.current =
+    render;
+  const animateRef =
+    useRef(
+      animate,
+    );
+  animateRef.current =
+    animate;
 
   // Held in a ref, not a dependency: a caller that builds its spec inline would
   // otherwise tear down and re-mount the whole loop on every render. The spec is
   // read at the moments the palette is resolved (mount, resize, theme change),
   // which is exactly when a changed one should take effect.
-  const paintSpecRef = useRef(paintSpec);
-  paintSpecRef.current = paintSpec;
+  const paintSpecRef =
+    useRef(
+      paintSpec,
+    );
+  paintSpecRef.current =
+    paintSpec;
 
-  const dirtyRef = useRef(true);
-  const kickRef = useRef<() => void>(() => {});
+  const dirtyRef =
+    useRef(
+      true,
+    );
+  const kickRef =
+    useRef<
+      () => void
+    >(
+      () => {},
+    );
 
-  const invalidate = useCallback(() => {
-    dirtyRef.current = true;
-    kickRef.current();
-  }, []);
+  const invalidate =
+    useCallback(() => {
+      dirtyRef.current = true;
+      kickRef.current();
+    }, []);
 
   // A new `animate` value has to be able to start a stopped loop. The loop
   // itself reads the ref, so this only ever needs to nudge it.
   useEffect(() => {
-    if (animate) kickRef.current();
-  }, [animate]);
+    if (
+      animate
+    )
+      kickRef.current();
+  }, [
+    animate,
+  ]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvas =
+      canvasRef.current;
+    if (
+      !canvas
+    )
+      return;
 
-    let ctx: CanvasRenderingContext2D | null = null;
-    let paint = BASE_PAINT;
-    const frame: StageFrame = { width: 0, height: 0, paint, nowMs: 0, dt: 0 };
+    let ctx: CanvasRenderingContext2D | null =
+      null;
+    let paint =
+      BASE_PAINT;
+    const frame: StageFrame =
+      {
+        width: 0,
+        height: 0,
+        paint,
+        nowMs: 0,
+        dt: 0,
+      };
 
     let raf = 0;
     let last = 0;
     let onScreen = true;
 
     /** Size the backing store. Never called from the frame loop — see the note. */
-    const measure = () => {
-      const rect = canvas.getBoundingClientRect();
-      const width = Math.max(1, Math.round(rect.width));
-      const height = Math.max(1, Math.round(rect.height));
-      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-      const px = Math.round(width * dpr);
-      const py = Math.round(height * dpr);
-      if (canvas.width !== px || canvas.height !== py) {
-        canvas.width = px;
-        canvas.height = py;
-      }
-      ctx = canvas.getContext('2d');
-      if (ctx) {
-        // One transform for the whole view: device pixels out, origin at the
-        // CENTRE — which is where all three renderers project to zero.
-        ctx.setTransform(dpr, 0, 0, dpr, (width * dpr) / 2, (height * dpr) / 2);
-        ctx.lineJoin = 'round';
-      }
-      frame.width = width;
-      frame.height = height;
-      dirtyRef.current = true;
-    };
-
-    const readTheme = () => {
-      paint = readPaint(canvas, paintSpecRef.current);
-      frame.paint = paint;
-      dirtyRef.current = true;
-    };
-
-    const step = (now: number) => {
-      raf = 0;
-      const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
-      last = now;
-
-      let wantsMore = false;
-      if (ctx) {
-        frame.nowMs = now;
-        frame.dt = dt;
-        // Clear in CSS pixels around the centred origin — the transform above
-        // means the canvas spans ±half the box on each axis.
-        ctx.clearRect(-frame.width / 2, -frame.height / 2, frame.width, frame.height);
-        wantsMore = renderRef.current(ctx, frame) === true;
-      }
-      dirtyRef.current = false;
-
-      // The settle condition: schedule another frame only while something is
-      // genuinely moving — either React says so, or the renderer just said it
-      // has not finished. This is what makes the loop bounded rather than
-      // eternal, and it is why these files can be allowlisted honestly.
-      if (wantsMore || animateRef.current || dirtyRef.current) schedule();
-      else last = 0;
-    };
-
-    const schedule = () => {
-      if (raf) return;
-      if (!onScreen || document.visibilityState !== 'visible') return;
-      raf = requestAnimationFrame(step);
-    };
-
-    kickRef.current = schedule;
-
-    const stop = () => {
-      if (raf) cancelAnimationFrame(raf);
-      raf = 0;
-      last = 0;
-    };
-
-    const sync = () => {
-      if (onScreen && document.visibilityState === 'visible') {
+    const measure =
+      () => {
+        const rect =
+          canvas.getBoundingClientRect();
+        const width =
+          Math.max(
+            1,
+            Math.round(
+              rect.width,
+            ),
+          );
+        const height =
+          Math.max(
+            1,
+            Math.round(
+              rect.height,
+            ),
+          );
+        const dpr =
+          Math.min(
+            window.devicePixelRatio ||
+              1,
+            MAX_DPR,
+          );
+        const px =
+          Math.round(
+            width *
+              dpr,
+          );
+        const py =
+          Math.round(
+            height *
+              dpr,
+          );
+        if (
+          canvas.width !==
+            px ||
+          canvas.height !==
+            py
+        ) {
+          canvas.width =
+            px;
+          canvas.height =
+            py;
+        }
+        ctx =
+          canvas.getContext(
+            '2d',
+          );
+        if (
+          ctx
+        ) {
+          // One transform for the whole view: device pixels out, origin at the
+          // CENTRE — which is where all three renderers project to zero.
+          ctx.setTransform(
+            dpr,
+            0,
+            0,
+            dpr,
+            (width *
+              dpr) /
+              2,
+            (height *
+              dpr) /
+              2,
+          );
+          ctx.lineJoin =
+            'round';
+        }
+        frame.width =
+          width;
+        frame.height =
+          height;
         dirtyRef.current = true;
-        schedule();
-      } else {
-        stop();
-      }
-    };
+      };
+
+    const readTheme =
+      () => {
+        paint =
+          readPaint(
+            canvas,
+            paintSpecRef.current,
+          );
+        frame.paint =
+          paint;
+        dirtyRef.current = true;
+      };
+
+    const step =
+      (
+        now: number,
+      ) => {
+        raf = 0;
+        const dt =
+          last
+            ? Math.min(
+                0.05,
+                (now -
+                  last) /
+                  1000,
+              )
+            : 1 /
+              60;
+        last =
+          now;
+
+        let wantsMore = false;
+        if (
+          ctx
+        ) {
+          frame.nowMs =
+            now;
+          frame.dt =
+            dt;
+          // Clear in CSS pixels around the centred origin — the transform above
+          // means the canvas spans ±half the box on each axis.
+          ctx.clearRect(
+            -frame.width /
+              2,
+            -frame.height /
+              2,
+            frame.width,
+            frame.height,
+          );
+          wantsMore =
+            renderRef.current(
+              ctx,
+              frame,
+            ) ===
+            true;
+        }
+        dirtyRef.current = false;
+
+        // The settle condition: schedule another frame only while something is
+        // genuinely moving — either React says so, or the renderer just said it
+        // has not finished. This is what makes the loop bounded rather than
+        // eternal, and it is why these files can be allowlisted honestly.
+        if (
+          wantsMore ||
+          animateRef.current ||
+          dirtyRef.current
+        )
+          schedule();
+        else
+          last = 0;
+      };
+
+    const schedule =
+      () => {
+        if (
+          raf
+        )
+          return;
+        if (
+          !onScreen ||
+          document.visibilityState !==
+            'visible'
+        )
+          return;
+        raf =
+          requestAnimationFrame(
+            step,
+          );
+      };
+
+    kickRef.current =
+      schedule;
+
+    const stop =
+      () => {
+        if (
+          raf
+        )
+          cancelAnimationFrame(
+            raf,
+          );
+        raf = 0;
+        last = 0;
+      };
+
+    const sync =
+      () => {
+        if (
+          onScreen &&
+          document.visibilityState ===
+            'visible'
+        ) {
+          dirtyRef.current = true;
+          schedule();
+        } else {
+          stop();
+        }
+      };
 
     measure();
     readTheme();
 
-    let resizeObserver: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined') {
-      resizeObserver = new ResizeObserver(() => {
-        measure();
-        schedule();
-      });
-      resizeObserver.observe(canvas);
+    let resizeObserver: ResizeObserver | null =
+      null;
+    if (
+      typeof ResizeObserver !==
+      'undefined'
+    ) {
+      resizeObserver =
+        new ResizeObserver(
+          () => {
+            measure();
+            schedule();
+          },
+        );
+      resizeObserver.observe(
+        canvas,
+      );
     }
 
-    let intersectionObserver: IntersectionObserver | null = null;
-    if (typeof IntersectionObserver !== 'undefined') {
-      intersectionObserver = new IntersectionObserver((records) => {
-        onScreen = records.some((record) => record.isIntersecting);
-        sync();
-      });
-      intersectionObserver.observe(canvas);
+    let intersectionObserver: IntersectionObserver | null =
+      null;
+    if (
+      typeof IntersectionObserver !==
+      'undefined'
+    ) {
+      intersectionObserver =
+        new IntersectionObserver(
+          (
+            records,
+          ) => {
+            onScreen =
+              records.some(
+                (
+                  record,
+                ) =>
+                  record.isIntersecting,
+              );
+            sync();
+          },
+        );
+      intersectionObserver.observe(
+        canvas,
+      );
     }
 
     // The theme is a class swap on <html>. Watching for it is what keeps a
     // canvas — which cannot inherit CSS the way an SVG mark does — from staying
     // in the previous theme's ink until the next resize.
-    let themeObserver: MutationObserver | null = null;
-    if (typeof MutationObserver !== 'undefined') {
-      themeObserver = new MutationObserver(() => {
-        readTheme();
-        schedule();
-      });
-      themeObserver.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class'],
-      });
+    let themeObserver: MutationObserver | null =
+      null;
+    if (
+      typeof MutationObserver !==
+      'undefined'
+    ) {
+      themeObserver =
+        new MutationObserver(
+          () => {
+            readTheme();
+            schedule();
+          },
+        );
+      themeObserver.observe(
+        document.documentElement,
+        {
+          attributes: true,
+          attributeFilter:
+            [
+              'class',
+            ],
+        },
+      );
     }
 
-    document.addEventListener('visibilitychange', sync);
+    document.addEventListener(
+      'visibilitychange',
+      sync,
+    );
     sync();
 
     return () => {
       stop();
-      kickRef.current = () => {};
+      kickRef.current =
+        () => {};
       resizeObserver?.disconnect();
       intersectionObserver?.disconnect();
       themeObserver?.disconnect();
-      document.removeEventListener('visibilitychange', sync);
+      document.removeEventListener(
+        'visibilitychange',
+        sync,
+      );
     };
   }, []);
 
-  return { canvasRef, invalidate };
+  return {
+    canvasRef,
+    invalidate,
+  };
 }
 
 /**
@@ -331,7 +606,22 @@ export function pointerOnStage(
   canvas: HTMLCanvasElement,
   clientX: number,
   clientY: number,
-): { x: number; y: number } {
-  const rect = canvas.getBoundingClientRect();
-  return { x: clientX - rect.left - rect.width / 2, y: clientY - rect.top - rect.height / 2 };
+): {
+  x: number;
+  y: number;
+} {
+  const rect =
+    canvas.getBoundingClientRect();
+  return {
+    x:
+      clientX -
+      rect.left -
+      rect.width /
+        2,
+    y:
+      clientY -
+      rect.top -
+      rect.height /
+        2,
+  };
 }

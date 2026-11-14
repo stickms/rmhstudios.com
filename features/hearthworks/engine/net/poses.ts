@@ -19,7 +19,10 @@
  * Pure: no DOM, no clock of its own (the caller passes wall time), so it is unit-tested on fake time.
  */
 
-import { TICK_MS, type World } from '../world';
+import {
+  TICK_MS,
+  type World,
+} from '../world';
 
 /** Draw this far in the past (Source's cl_interp ≈ 2 × the update interval at 20 Hz). */
 export const INTERP_DELAY_MS = 100;
@@ -58,57 +61,197 @@ interface Sample {
 }
 
 export class PoseBuffer {
-  private samples: Sample[] = [];
+  private samples: Sample[] =
+    [];
   private lastYaw = 0;
 
   get size(): number {
-    return this.samples.length;
+    return this
+      .samples
+      .length;
   }
 
   get newestTick(): number {
-    const s = this.samples[this.samples.length - 1];
-    return s ? s.t / TICK_MS : -1;
+    const s =
+      this
+        .samples[
+        this
+          .samples
+          .length -
+          1
+      ];
+    return s
+      ? s.t /
+          TICK_MS
+      : -1;
   }
 
   /**
    * Record where the player stood at `tick`. Tolerates what a network does: a tick that arrives after a newer one
    * is inserted in order, a repeated tick replaces its sample, a gap is simply a longer segment to interpolate.
    */
-  push(tick: number, x: number, z: number): void {
-    if (!Number.isFinite(tick) || !Number.isFinite(x) || !Number.isFinite(z)) return;
-    const t = tick * TICK_MS;
-    const s = this.samples;
-    let at = s.length;
-    while (at > 0 && s[at - 1].t > t) at--;
-    if (at > 0 && s[at - 1].t === t) {
-      s[at - 1].x = x;
-      s[at - 1].z = z;
+  push(
+    tick: number,
+    x: number,
+    z: number,
+  ): void {
+    if (
+      !Number.isFinite(
+        tick,
+      ) ||
+      !Number.isFinite(
+        x,
+      ) ||
+      !Number.isFinite(
+        z,
+      )
+    )
+      return;
+    const t =
+      tick *
+      TICK_MS;
+    const s =
+      this
+        .samples;
+    let at =
+      s.length;
+    while (
+      at >
+        0 &&
+      s[
+        at -
+          1
+      ]
+        .t >
+        t
+    )
+      at--;
+    if (
+      at >
+        0 &&
+      s[
+        at -
+          1
+      ]
+        .t ===
+        t
+    ) {
+      s[
+        at -
+          1
+      ].x =
+        x;
+      s[
+        at -
+          1
+      ].z =
+        z;
       return;
     }
-    if (at === 0 && s.length >= MAX_SAMPLES) return; // older than everything we keep
-    const prev = at > 0 ? s[at - 1] : null;
-    const snap = !!prev && Math.hypot(x - prev.x, z - prev.z) > SNAP_DISTANCE;
-    s.splice(at, 0, { t, x, z, snap });
+    if (
+      at ===
+        0 &&
+      s.length >=
+        MAX_SAMPLES
+    )
+      return; // older than everything we keep
+    const prev =
+      at >
+      0
+        ? s[
+            at -
+              1
+          ]
+        : null;
+    const snap =
+      !!prev &&
+      Math.hypot(
+        x -
+          prev.x,
+        z -
+          prev.z,
+      ) >
+        SNAP_DISTANCE;
+    s.splice(
+      at,
+      0,
+      {
+        t,
+        x,
+        z,
+        snap,
+      },
+    );
     // The sample after an inserted one may now follow a different position: re-judge its jump.
-    const next = s[at + 1];
-    if (next) next.snap = Math.hypot(next.x - x, next.z - z) > SNAP_DISTANCE;
-    if (s.length > MAX_SAMPLES) s.splice(0, s.length - MAX_SAMPLES);
+    const next =
+      s[
+        at +
+          1
+      ];
+    if (
+      next
+    )
+      next.snap =
+        Math.hypot(
+          next.x -
+            x,
+          next.z -
+            z,
+        ) >
+        SNAP_DISTANCE;
+    if (
+      s.length >
+      MAX_SAMPLES
+    )
+      s.splice(
+        0,
+        s.length -
+          MAX_SAMPLES,
+      );
   }
 
   /**
    * The timeline went backwards (a new host's checkpoint is behind what we had applied): everything at or after
    * `tick` belongs to a world that no longer exists. A rewind of more than `REWIND_RESET_TICKS` forgets the track.
    */
-  rewindTo(tick: number): void {
-    const t = tick * TICK_MS;
-    const s = this.samples;
-    const newest = s[s.length - 1];
-    if (!newest) return;
-    if (newest.t - t > REWIND_RESET_TICKS * TICK_MS) {
+  rewindTo(
+    tick: number,
+  ): void {
+    const t =
+      tick *
+      TICK_MS;
+    const s =
+      this
+        .samples;
+    const newest =
+      s[
+        s.length -
+          1
+      ];
+    if (
+      !newest
+    )
+      return;
+    if (
+      newest.t -
+        t >
+      REWIND_RESET_TICKS *
+        TICK_MS
+    ) {
       s.length = 0;
       return;
     }
-    while (s.length > 0 && s[s.length - 1].t >= t) s.pop();
+    while (
+      s.length >
+        0 &&
+      s[
+        s.length -
+          1
+      ]
+        .t >=
+        t
+    )
+      s.pop();
   }
 
   reset(): void {
@@ -116,53 +259,264 @@ export class PoseBuffer {
   }
 
   /** Position at sim time `t` (ms): interpolated inside the data, extrapolated (capped) past it. */
-  private at(t: number): { x: number; z: number; extrapolated: boolean } | null {
-    const s = this.samples;
-    if (s.length === 0) return null;
-    const first = s[0];
-    const newest = s[s.length - 1];
-    if (t <= first.t) return { x: first.x, z: first.z, extrapolated: false };
-    if (t >= newest.t) {
-      const past = Math.min(t - newest.t, EXTRAPOLATE_MAX_MS);
-      if (past <= 0) return { x: newest.x, z: newest.z, extrapolated: false };
-      const v = this.velocityAtNewest();
-      return { x: newest.x + v.x * past, z: newest.z + v.z * past, extrapolated: true };
+  private at(
+    t: number,
+  ): {
+    x: number;
+    z: number;
+    extrapolated: boolean;
+  } | null {
+    const s =
+      this
+        .samples;
+    if (
+      s.length ===
+      0
+    )
+      return null;
+    const first =
+      s[0];
+    const newest =
+      s[
+        s.length -
+          1
+      ];
+    if (
+      t <=
+      first.t
+    )
+      return {
+        x: first.x,
+        z: first.z,
+        extrapolated: false,
+      };
+    if (
+      t >=
+      newest.t
+    ) {
+      const past =
+        Math.min(
+          t -
+            newest.t,
+          EXTRAPOLATE_MAX_MS,
+        );
+      if (
+        past <=
+        0
+      )
+        return {
+          x: newest.x,
+          z: newest.z,
+          extrapolated: false,
+        };
+      const v =
+        this.velocityAtNewest();
+      return {
+        x:
+          newest.x +
+          v.x *
+            past,
+        z:
+          newest.z +
+          v.z *
+            past,
+        extrapolated: true,
+      };
     }
     // The pair around t: s[i-1].t <= t < s[i].t.
-    let i = s.length - 1;
-    while (i > 0 && s[i - 1].t > t) i--;
-    const a = s[i - 1];
-    const b = s[i];
-    if (b.snap) return { x: t - a.t < b.t - t ? a.x : b.x, z: t - a.t < b.t - t ? a.z : b.z, extrapolated: false };
-    const k = (t - a.t) / (b.t - a.t);
-    return { x: a.x + (b.x - a.x) * k, z: a.z + (b.z - a.z) * k, extrapolated: false };
+    let i =
+      s.length -
+      1;
+    while (
+      i >
+        0 &&
+      s[
+        i -
+          1
+      ]
+        .t >
+        t
+    )
+      i--;
+    const a =
+      s[
+        i -
+          1
+      ];
+    const b =
+      s[
+        i
+      ];
+    if (
+      b.snap
+    )
+      return {
+        x:
+          t -
+            a.t <
+          b.t -
+            t
+            ? a.x
+            : b.x,
+        z:
+          t -
+            a.t <
+          b.t -
+            t
+            ? a.z
+            : b.z,
+        extrapolated: false,
+      };
+    const k =
+      (t -
+        a.t) /
+      (b.t -
+        a.t);
+    return {
+      x:
+        a.x +
+        (b.x -
+          a.x) *
+          k,
+      z:
+        a.z +
+        (b.z -
+          a.z) *
+          k,
+      extrapolated: false,
+    };
   }
 
   /** Velocity (tiles per ms) over the window ending at the newest sample, 0 across a teleport. */
-  private velocityAtNewest(): { x: number; z: number } {
-    const s = this.samples;
-    const newest = s[s.length - 1];
-    let i = s.length - 1;
-    while (i > 0 && newest.t - s[i - 1].t <= VELOCITY_WINDOW_MS && !s[i].snap) i--;
-    if (i === s.length - 1 && s.length > 1 && !newest.snap) i = s.length - 2;
-    const old = s[i];
-    const dt = newest.t - old.t;
-    if (dt <= 0 || newest.snap) return { x: 0, z: 0 };
-    return { x: (newest.x - old.x) / dt, z: (newest.z - old.z) / dt };
+  private velocityAtNewest(): {
+    x: number;
+    z: number;
+  } {
+    const s =
+      this
+        .samples;
+    const newest =
+      s[
+        s.length -
+          1
+      ];
+    let i =
+      s.length -
+      1;
+    while (
+      i >
+        0 &&
+      newest.t -
+        s[
+          i -
+            1
+        ]
+          .t <=
+        VELOCITY_WINDOW_MS &&
+      !s[
+        i
+      ]
+        .snap
+    )
+      i--;
+    if (
+      i ===
+        s.length -
+          1 &&
+      s.length >
+        1 &&
+      !newest.snap
+    )
+      i =
+        s.length -
+        2;
+    const old =
+      s[
+        i
+      ];
+    const dt =
+      newest.t -
+      old.t;
+    if (
+      dt <=
+        0 ||
+      newest.snap
+    )
+      return {
+        x: 0,
+        z: 0,
+      };
+    return {
+      x:
+        (newest.x -
+          old.x) /
+        dt,
+      z:
+        (newest.z -
+          old.z) /
+        dt,
+    };
   }
 
   /** The pose to draw when the render clock reads `simRenderMs`. Null until there is a sample. */
-  sample(simRenderMs: number): Pose | null {
-    const p = this.at(simRenderMs);
-    if (!p) return null;
-    const back = this.at(simRenderMs - VELOCITY_WINDOW_MS) ?? p;
-    const dx = p.x - back.x;
-    const dz = p.z - back.z;
-    const dist = Math.hypot(dx, dz);
+  sample(
+    simRenderMs: number,
+  ): Pose | null {
+    const p =
+      this.at(
+        simRenderMs,
+      );
+    if (
+      !p
+    )
+      return null;
+    const back =
+      this.at(
+        simRenderMs -
+          VELOCITY_WINDOW_MS,
+      ) ??
+      p;
+    const dx =
+      p.x -
+      back.x;
+    const dz =
+      p.z -
+      back.z;
+    const dist =
+      Math.hypot(
+        dx,
+        dz,
+      );
     // A teleport inside the window is not a sprint.
-    const speed = dist > SNAP_DISTANCE ? 0 : dist / (VELOCITY_WINDOW_MS / 1000);
-    if (speed > 0.05) this.lastYaw = Math.atan2(dx, dz);
-    return { x: p.x, z: p.z, speed: speed > 0.05 ? speed : 0, yaw: this.lastYaw, extrapolated: p.extrapolated };
+    const speed =
+      dist >
+      SNAP_DISTANCE
+        ? 0
+        : dist /
+          (VELOCITY_WINDOW_MS /
+            1000);
+    if (
+      speed >
+      0.05
+    )
+      this.lastYaw =
+        Math.atan2(
+          dx,
+          dz,
+        );
+    return {
+      x: p.x,
+      z: p.z,
+      speed:
+        speed >
+        0.05
+          ? speed
+          : 0,
+      yaw: this
+        .lastYaw,
+      extrapolated:
+        p.extrapolated,
+    };
   }
 }
 
@@ -171,44 +525,146 @@ export class PoseBuffer {
  * (`observe`), read it each frame for each avatar (`sample`).
  */
 export class RemotePoses {
-  private readonly tracks = new Map<string, PoseBuffer>();
-  private lastTick = -1;
+  private readonly tracks =
+    new Map<
+      string,
+      PoseBuffer
+    >();
+  private lastTick =
+    -1;
   /** wall − sim, smoothed: maps the frame clock onto the host's tick clock without following packet jitter. */
-  private offset: number | null = null;
+  private offset:
+    | number
+    | null =
+    null;
 
-  constructor(private readonly selfId: () => string) {}
+  constructor(
+    private readonly selfId: () => string,
+  ) {}
 
   /** Call every frame with the shown world and the frame clock (ms). Cheap when the tick has not changed. */
-  observe(world: World, wallMs: number): void {
-    if (world.tick === this.lastTick) return;
-    const rewound = world.tick < this.lastTick;
-    this.lastTick = world.tick;
-    if (rewound) for (const track of this.tracks.values()) track.rewindTo(world.tick);
-    const me = this.selfId();
-    const seen = new Set<string>();
-    for (const p of Object.values(world.players)) {
-      if (p.id === me) continue;
-      seen.add(p.id);
-      let track = this.tracks.get(p.id);
-      if (!track) this.tracks.set(p.id, (track = new PoseBuffer()));
-      track.push(world.tick, p.x, p.z);
+  observe(
+    world: World,
+    wallMs: number,
+  ): void {
+    if (
+      world.tick ===
+      this
+        .lastTick
+    )
+      return;
+    const rewound =
+      world.tick <
+      this
+        .lastTick;
+    this.lastTick =
+      world.tick;
+    if (
+      rewound
+    )
+      for (const track of this.tracks.values())
+        track.rewindTo(
+          world.tick,
+        );
+    const me =
+      this.selfId();
+    const seen =
+      new Set<string>();
+    for (const p of Object.values(
+      world.players,
+    )) {
+      if (
+        p.id ===
+        me
+      )
+        continue;
+      seen.add(
+        p.id,
+      );
+      let track =
+        this.tracks.get(
+          p.id,
+        );
+      if (
+        !track
+      )
+        this.tracks.set(
+          p.id,
+          (track =
+            new PoseBuffer()),
+        );
+      track.push(
+        world.tick,
+        p.x,
+        p.z,
+      );
     }
-    for (const id of [...this.tracks.keys()]) if (!seen.has(id)) this.tracks.delete(id);
-    const observed = wallMs - world.tick * TICK_MS;
-    if (this.offset === null || rewound || Math.abs(observed - this.offset) > CLOCK_SNAP_MS) this.offset = observed;
-    else this.offset += (observed - this.offset) * CLOCK_SMOOTH;
+    for (const id of [
+      ...this.tracks.keys(),
+    ])
+      if (
+        !seen.has(
+          id,
+        )
+      )
+        this.tracks.delete(
+          id,
+        );
+    const observed =
+      wallMs -
+      world.tick *
+        TICK_MS;
+    if (
+      this
+        .offset ===
+        null ||
+      rewound ||
+      Math.abs(
+        observed -
+          this
+            .offset,
+      ) >
+        CLOCK_SNAP_MS
+    )
+      this.offset =
+        observed;
+    else
+      this.offset +=
+        (observed -
+          this
+            .offset) *
+        CLOCK_SMOOTH;
   }
 
   /** Where to draw `id` at wall time `wallMs`; null if unknown. */
-  sample(id: string, wallMs: number): Pose | null {
-    const track = this.tracks.get(id);
-    if (!track || this.offset === null) return null;
-    return track.sample(wallMs - this.offset - INTERP_DELAY_MS);
+  sample(
+    id: string,
+    wallMs: number,
+  ): Pose | null {
+    const track =
+      this.tracks.get(
+        id,
+      );
+    if (
+      !track ||
+      this
+        .offset ===
+        null
+    )
+      return null;
+    return track.sample(
+      wallMs -
+        this
+          .offset -
+        INTERP_DELAY_MS,
+    );
   }
 
   reset(): void {
     this.tracks.clear();
-    this.lastTick = -1;
-    this.offset = null;
+    this.lastTick =
+      -1;
+    this.offset =
+      null;
   }
 }

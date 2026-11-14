@@ -3,20 +3,42 @@
  * game's ladder, issuing a challenge and acting on one. Client-safe.
  */
 import { endpoint } from '@/lib/contract/endpoint';
-import type { RankedChallengeRow, RankedOverview } from '@/lib/ranked.server';
+import type {
+  RankedChallengeRow,
+  RankedOverview,
+} from '@/lib/ranked.server';
 import type { RankTier } from '@/lib/ranked/tiers';
 
 /** The viewer's ratings plus pending / active challenges (the games list alone when signed out). */
-export const getRankedOverviewApi = endpoint<{ res: RankedOverview }>()({
-  method: 'GET',
-  path: '/api/ranked',
-});
+export const getRankedOverviewApi =
+  endpoint<{
+    res: RankedOverview;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/ranked',
+    },
+  );
 
 /** Issue a challenge. `opponent` is a user id or handle. */
-export const createRankedChallengeApi = endpoint<{
-  body: { game: string; opponent: string };
-  res: { success: true; id: string };
-}>()({ method: 'POST', path: '/api/ranked' });
+export const createRankedChallengeApi =
+  endpoint<{
+    body: {
+      game: string;
+      opponent: string;
+    };
+    res: {
+      success: true;
+      id: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/ranked',
+    },
+  );
 
 export interface RankedLadderRow {
   rank: number;
@@ -30,20 +52,61 @@ export interface RankedLadderRow {
 }
 
 /** A game's ladder. The query is the schema's output, so the default scope is spelled out by callers. */
-export const getRankedLadderApi = endpoint<{
-  params: { game: string };
-  query: { scope: 'season' | 'lifetime' };
-  res: { game: string; gameName: string; scope: 'season' | 'lifetime'; leaderboard: RankedLadderRow[] };
-}>()({ method: 'GET', path: '/api/ranked/$game/leaderboard' });
+export const getRankedLadderApi =
+  endpoint<{
+    params: {
+      game: string;
+    };
+    query: {
+      scope:
+        | 'season'
+        | 'lifetime';
+    };
+    res: {
+      game: string;
+      gameName: string;
+      scope:
+        | 'season'
+        | 'lifetime';
+      leaderboard: RankedLadderRow[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/ranked/$game/leaderboard',
+    },
+  );
 
 export type RankedChallengeAction =
-  | { action: 'accept' }
-  | { action: 'decline' }
-  | { action: 'report'; result: 'win' | 'loss' | 'draw' };
+  | {
+      action: 'accept';
+    }
+  | {
+      action: 'decline';
+    }
+  | {
+      action: 'report';
+      result:
+        | 'win'
+        | 'loss'
+        | 'draw';
+    };
 
 /** Accept / decline (opponent only) or report a result (either participant). */
-export const actOnRankedChallengeApi = endpoint<{
-  params: { id: string };
-  body: RankedChallengeAction;
-  res: { success: true };
-}>()({ method: 'POST', path: '/api/ranked/challenge/$id' });
+export const actOnRankedChallengeApi =
+  endpoint<{
+    params: {
+      id: string;
+    };
+    body: RankedChallengeAction;
+    res: {
+      success: true;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/ranked/challenge/$id',
+    },
+  );

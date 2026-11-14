@@ -1,5 +1,13 @@
-import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { games } from '@/lib/catalog';
 
@@ -45,7 +53,8 @@ import { games } from '@/lib/catalog';
  * (live viewport) or `svh` (smallest viewport) line that wins everywhere else.
  */
 
-const ROOT = process.cwd();
+const ROOT =
+  process.cwd();
 
 /**
  * The full-screen tier: every game and app that owns its whole viewport, plus
@@ -53,38 +62,58 @@ const ROOT = process.cwd();
  * "all of components/" — the site tier scrolls the document, where centring
  * cannot strand anything and `vh` costs nothing.
  */
-const FULLSCREEN_DIRS = [
-  'altair',
-  'breakpoint',
-  'cursed-logic',
-  'daily-puzzles',
-  'dream-rift',
-  'gabriels-horn',
-  'house-always-wins',
-  'kowloon-knockout',
-  'laundry-sort',
-  'lights-out',
-  'neon-driftway',
-  'nightrail',
-  'rmhbox',
-  'rmhcalculator',
-  'rmhmusic',
-  'rmhstudy',
-  'rmhtube',
-  'rmhtype',
-  'tf2-hud',
-  'shared',
-  'signal-forge',
-  'slice-it',
-  'studio',
-  'synapse-storm',
-  'temple-of-joy',
-  'velum2099',
-  'versecraft',
-  'void-breaker',
-].map((d) =>
-  existsSync(join(ROOT, 'features', d, 'ui')) ? join('features', d, 'ui') : join('components', d),
-);
+const FULLSCREEN_DIRS =
+  [
+    'altair',
+    'breakpoint',
+    'cursed-logic',
+    'daily-puzzles',
+    'dream-rift',
+    'gabriels-horn',
+    'house-always-wins',
+    'kowloon-knockout',
+    'laundry-sort',
+    'lights-out',
+    'neon-driftway',
+    'nightrail',
+    'rmhbox',
+    'rmhcalculator',
+    'rmhmusic',
+    'rmhstudy',
+    'rmhtube',
+    'rmhtype',
+    'tf2-hud',
+    'shared',
+    'signal-forge',
+    'slice-it',
+    'studio',
+    'synapse-storm',
+    'temple-of-joy',
+    'velum2099',
+    'versecraft',
+    'void-breaker',
+  ].map(
+    (
+      d,
+    ) =>
+      existsSync(
+        join(
+          ROOT,
+          'features',
+          d,
+          'ui',
+        ),
+      )
+        ? join(
+            'features',
+            d,
+            'ui',
+          )
+        : join(
+            'components',
+            d,
+          ),
+  );
 
 const POINTER =
   'See app/globals.css §"Full-screen app/game layout helpers" (.app-viewport, ' +
@@ -92,45 +121,150 @@ const POINTER =
   'docs/design-language.md §"The full-screen viewport contract".';
 
 /** Recursively collect sources of the given extensions under `dir`. */
-function collect(dir: string, exts: string[], out: string[] = []): string[] {
+function collect(
+  dir: string,
+  exts: string[],
+  out: string[] = [],
+): string[] {
   let entries;
   try {
-    entries = readdirSync(join(ROOT, dir), { withFileTypes: true });
+    entries =
+      readdirSync(
+        join(
+          ROOT,
+          dir,
+        ),
+        {
+          withFileTypes: true,
+        },
+      );
   } catch {
     return out;
   }
   for (const entry of entries) {
-    const rel = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === 'node_modules' || entry.name === '__tests__') continue;
-      collect(rel, exts, out);
-    } else if (
-      exts.some((e) => entry.name.endsWith(e)) &&
-      !entry.name.endsWith('.test.tsx') &&
-      !entry.name.endsWith('.test.ts')
+    const rel =
+      join(
+        dir,
+        entry.name,
+      );
+    if (
+      entry.isDirectory()
     ) {
-      out.push(rel);
+      if (
+        entry.name ===
+          'node_modules' ||
+        entry.name ===
+          '__tests__'
+      )
+        continue;
+      collect(
+        rel,
+        exts,
+        out,
+      );
+    } else if (
+      exts.some(
+        (
+          e,
+        ) =>
+          entry.name.endsWith(
+            e,
+          ),
+      ) &&
+      !entry.name.endsWith(
+        '.test.tsx',
+      ) &&
+      !entry.name.endsWith(
+        '.test.ts',
+      )
+    ) {
+      out.push(
+        rel,
+      );
     }
   }
   return out;
 }
 
-const TSX = FULLSCREEN_DIRS.flatMap((d) => collect(d, ['.tsx', '.ts']));
-const CSS = [...FULLSCREEN_DIRS.flatMap((d) => collect(d, ['.css'])), join('app', 'globals.css')];
+const TSX =
+  FULLSCREEN_DIRS.flatMap(
+    (
+      d,
+    ) =>
+      collect(
+        d,
+        [
+          '.tsx',
+          '.ts',
+        ],
+      ),
+  );
+const CSS =
+  [
+    ...FULLSCREEN_DIRS.flatMap(
+      (
+        d,
+      ) =>
+        collect(
+          d,
+          [
+            '.css',
+          ],
+        ),
+    ),
+    join(
+      'app',
+      'globals.css',
+    ),
+  ];
 
 /** 1-based line number for a source-string index. */
-function lineAt(src: string, idx: number): number {
+function lineAt(
+  src: string,
+  idx: number,
+): number {
   let line = 1;
-  for (let i = 0; i < idx && i < src.length; i++) if (src[i] === '\n') line++;
+  for (
+    let i = 0;
+    i <
+      idx &&
+    i <
+      src.length;
+    i++
+  )
+    if (
+      src[
+        i
+      ] ===
+      '\n'
+    )
+      line++;
   return line;
 }
 
-type Violation = { file: string; line: number; detail: string };
+type Violation =
+  {
+    file: string;
+    line: number;
+    detail: string;
+  };
 
-function report(label: string, v: Violation[]): string {
+function report(
+  label: string,
+  v: Violation[],
+): string {
   return (
     `\n${label} (${v.length}):\n` +
-    v.map((x) => `  ${x.file}:${x.line} — ${x.detail}`).join('\n') +
+    v
+      .map(
+        (
+          x,
+        ) =>
+          `  ${x.file}:${x.line} — ${x.detail}`,
+      )
+      .join(
+        '\n',
+      ) +
     `\n\n${POINTER}\n`
   );
 }
@@ -151,83 +285,262 @@ function report(label: string, v: Violation[]): string {
  * A class string built somewhere else and passed in as a variable is invisible
  * here, which is the accepted blind spot: the alternative is a JSX parser.
  */
-function classNameValues(src: string): { text: string; index: number }[] {
-  const out: { text: string; index: number }[] = [];
-  const re = /className\s*=\s*/g;
+function classNameValues(
+  src: string,
+): {
+  text: string;
+  index: number;
+}[] {
+  const out: {
+    text: string;
+    index: number;
+  }[] =
+    [];
+  const re =
+    /className\s*=\s*/g;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(src))) {
-    let i = m.index + m[0].length;
-    if (src[i] === '"' || src[i] === "'") {
-      const quote = src[i];
-      const end = src.indexOf(quote, i + 1);
-      if (end === -1) continue;
-      out.push({ text: src.slice(i + 1, end), index: m.index });
+  while (
+    (m =
+      re.exec(
+        src,
+      ))
+  ) {
+    let i =
+      m.index +
+      m[0]
+        .length;
+    if (
+      src[
+        i
+      ] ===
+        '"' ||
+      src[
+        i
+      ] ===
+        "'"
+    ) {
+      const quote =
+        src[
+          i
+        ];
+      const end =
+        src.indexOf(
+          quote,
+          i +
+            1,
+        );
+      if (
+        end ===
+        -1
+      )
+        continue;
+      out.push(
+        {
+          text: src.slice(
+            i +
+              1,
+            end,
+          ),
+          index:
+            m.index,
+        },
+      );
       continue;
     }
-    if (src[i] !== '{') continue;
+    if (
+      src[
+        i
+      ] !==
+      '{'
+    )
+      continue;
     let depth = 0;
-    const start = i;
-    for (; i < src.length; i++) {
-      if (src[i] === '{') depth++;
-      else if (src[i] === '}') {
+    const start =
+      i;
+    for (
+      ;
+      i <
+      src.length;
+      i++
+    ) {
+      if (
+        src[
+          i
+        ] ===
+        '{'
+      )
+        depth++;
+      else if (
+        src[
+          i
+        ] ===
+        '}'
+      ) {
         depth--;
-        if (depth === 0) break;
+        if (
+          depth ===
+          0
+        )
+          break;
       }
     }
-    const expr = src.slice(start, i + 1);
+    const expr =
+      src.slice(
+        start,
+        i +
+          1,
+      );
     // Every quoted segment inside the expression, concatenated: an element's
     // classes are the union of its branches, and a conditional `overflow-y-auto`
     // paired with an unconditional `items-center` is exactly as broken.
-    const parts = expr.match(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g) ?? [];
-    out.push({ text: parts.join(' '), index: m.index });
+    const parts =
+      expr.match(
+        /(['"`])(?:\\.|(?!\1)[^\\])*\1/g,
+      ) ??
+      [];
+    out.push(
+      {
+        text: parts.join(
+          ' ',
+        ),
+        index:
+          m.index,
+      },
+    );
   }
   return out;
 }
 
 function centringViolations(): Violation[] {
-  const out: Violation[] = [];
+  const out: Violation[] =
+    [];
 
   for (const file of TSX) {
-    const src = readFileSync(join(ROOT, file), 'utf8');
-    for (const { text, index } of classNameValues(src)) {
-      const scrolls = /\boverflow-(y-)?auto\b|\boverflow-(y-)?scroll\b/.test(text);
-      if (!scrolls) continue;
+    const src =
+      readFileSync(
+        join(
+          ROOT,
+          file,
+        ),
+        'utf8',
+      );
+    for (const {
+      text,
+      index,
+    } of classNameValues(
+      src,
+    )) {
+      const scrolls =
+        /\boverflow-(y-)?auto\b|\boverflow-(y-)?scroll\b/.test(
+          text,
+        );
+      if (
+        !scrolls
+      )
+        continue;
       // `-safe` variants are the fix; a class string that already has them for
       // the axis it centres on is compliant.
-      const unsafeItems = /\bitems-center\b(?!-safe)/.test(text);
-      const unsafeJustify = /\bjustify-center\b(?!-safe)/.test(text);
-      if (!unsafeItems && !unsafeJustify) continue;
+      const unsafeItems =
+        /\bitems-center\b(?!-safe)/.test(
+          text,
+        );
+      const unsafeJustify =
+        /\bjustify-center\b(?!-safe)/.test(
+          text,
+        );
+      if (
+        !unsafeItems &&
+        !unsafeJustify
+      )
+        continue;
       // `flex`/`grid` only — `items-center` on a non-flex element is inert.
-      if (!/\b(flex|grid)\b/.test(text)) continue;
-      out.push({
-        file,
-        line: lineAt(src, index),
-        detail: `scrolling container centres with ${
-          unsafeItems ? 'items-center' : 'justify-center'
-        } — use the -safe variant so overflow stays reachable`,
-      });
+      if (
+        !/\b(flex|grid)\b/.test(
+          text,
+        )
+      )
+        continue;
+      out.push(
+        {
+          file,
+          line: lineAt(
+            src,
+            index,
+          ),
+          detail: `scrolling container centres with ${
+            unsafeItems
+              ? 'items-center'
+              : 'justify-center'
+          } — use the -safe variant so overflow stays reachable`,
+        },
+      );
     }
   }
 
   for (const file of CSS) {
-    const src = readFileSync(join(ROOT, file), 'utf8');
-    const re = /([.#][^{}]*?)\{([^}]*)\}/g;
+    const src =
+      readFileSync(
+        join(
+          ROOT,
+          file,
+        ),
+        'utf8',
+      );
+    const re =
+      /([.#][^{}]*?)\{([^}]*)\}/g;
     let m: RegExpExecArray | null;
-    while ((m = re.exec(src))) {
-      const body = m[2];
-      if (!/overflow(-y)?:\s*(auto|scroll)/.test(body)) continue;
-      if (!/display:\s*(inline-)?(flex|grid)/.test(body)) continue;
-      if (/safe\s+center/.test(body)) continue;
-      const column = /flex-direction:\s*column/.test(body);
-      const centred = column
-        ? /justify-content:\s*center/.test(body)
-        : /align-items:\s*center/.test(body);
-      if (!centred) continue;
-      out.push({
-        file,
-        line: lineAt(src, m.index),
-        detail: `${m[1].trim()} scrolls but centres on the block axis — use \`safe center\``,
-      });
+    while (
+      (m =
+        re.exec(
+          src,
+        ))
+    ) {
+      const body =
+        m[2];
+      if (
+        !/overflow(-y)?:\s*(auto|scroll)/.test(
+          body,
+        )
+      )
+        continue;
+      if (
+        !/display:\s*(inline-)?(flex|grid)/.test(
+          body,
+        )
+      )
+        continue;
+      if (
+        /safe\s+center/.test(
+          body,
+        )
+      )
+        continue;
+      const column =
+        /flex-direction:\s*column/.test(
+          body,
+        );
+      const centred =
+        column
+          ? /justify-content:\s*center/.test(
+              body,
+            )
+          : /align-items:\s*center/.test(
+              body,
+            );
+      if (
+        !centred
+      )
+        continue;
+      out.push(
+        {
+          file,
+          line: lineAt(
+            src,
+            m.index,
+          ),
+          detail: `${m[1].trim()} scrolls but centres on the block axis — use \`safe center\``,
+        },
+      );
     }
   }
 
@@ -237,48 +550,140 @@ function centringViolations(): Violation[] {
 // ── Rule 2 ──────────────────────────────────────────────────────────────────
 
 /** The object literal enclosing `idx`, from its `{` to the matching `}`. */
-function enclosingObject(src: string, idx: number): string {
-  let start = idx;
+function enclosingObject(
+  src: string,
+  idx: number,
+): string {
+  let start =
+    idx;
   let depth = 0;
-  for (let i = idx; i >= 0; i--) {
-    if (src[i] === '}') depth++;
-    else if (src[i] === '{') {
-      if (depth === 0) {
-        start = i;
+  for (
+    let i =
+      idx;
+    i >=
+    0;
+    i--
+  ) {
+    if (
+      src[
+        i
+      ] ===
+      '}'
+    )
+      depth++;
+    else if (
+      src[
+        i
+      ] ===
+      '{'
+    ) {
+      if (
+        depth ===
+        0
+      ) {
+        start =
+          i;
         break;
       }
       depth--;
     }
   }
   depth = 0;
-  for (let i = start; i < src.length; i++) {
-    if (src[i] === '{') depth++;
-    else if (src[i] === '}') {
+  for (
+    let i =
+      start;
+    i <
+    src.length;
+    i++
+  ) {
+    if (
+      src[
+        i
+      ] ===
+      '{'
+    )
+      depth++;
+    else if (
+      src[
+        i
+      ] ===
+      '}'
+    ) {
       depth--;
-      if (depth === 0) return src.slice(start, i + 1);
+      if (
+        depth ===
+        0
+      )
+        return src.slice(
+          start,
+          i +
+            1,
+        );
     }
   }
-  return src.slice(start);
+  return src.slice(
+    start,
+  );
 }
 
 function aspectViolations(): Violation[] {
-  const out: Violation[] = [];
+  const out: Violation[] =
+    [];
   for (const file of TSX) {
-    const src = readFileSync(join(ROOT, file), 'utf8');
-    const re = /\baspectRatio\s*:/g;
+    const src =
+      readFileSync(
+        join(
+          ROOT,
+          file,
+        ),
+        'utf8',
+      );
+    const re =
+      /\baspectRatio\s*:/g;
     let m: RegExpExecArray | null;
-    while ((m = re.exec(src))) {
-      const obj = enclosingObject(src, m.index);
-      const clamped = /\bmaxHeight\s*:/.test(obj) || /\bmaxWidth\s*:/.test(obj);
-      const bothAxes = /\bwidth\s*:/.test(obj) && /\bheight\s*:/.test(obj);
-      if (!clamped && !bothAxes) continue;
-      out.push({
-        file,
-        line: lineAt(src, m.index),
-        detail: bothAxes
-          ? 'aspectRatio with BOTH width and height definite — the ratio is ignored entirely'
-          : 'aspectRatio beside a max-width/max-height clamp — the clamp breaks the ratio',
-      });
+    while (
+      (m =
+        re.exec(
+          src,
+        ))
+    ) {
+      const obj =
+        enclosingObject(
+          src,
+          m.index,
+        );
+      const clamped =
+        /\bmaxHeight\s*:/.test(
+          obj,
+        ) ||
+        /\bmaxWidth\s*:/.test(
+          obj,
+        );
+      const bothAxes =
+        /\bwidth\s*:/.test(
+          obj,
+        ) &&
+        /\bheight\s*:/.test(
+          obj,
+        );
+      if (
+        !clamped &&
+        !bothAxes
+      )
+        continue;
+      out.push(
+        {
+          file,
+          line: lineAt(
+            src,
+            m.index,
+          ),
+          detail:
+            bothAxes
+              ? 'aspectRatio with BOTH width and height definite — the ratio is ignored entirely'
+              : 'aspectRatio beside a max-width/max-height clamp — the clamp breaks the ratio',
+        },
+      );
     }
   }
   return out;
@@ -287,26 +692,69 @@ function aspectViolations(): Violation[] {
 // ── Rule 3 ──────────────────────────────────────────────────────────────────
 
 function viewportUnitViolations(): Violation[] {
-  const out: Violation[] = [];
+  const out: Violation[] =
+    [];
   for (const file of CSS) {
-    const src = readFileSync(join(ROOT, file), 'utf8');
-    const lines = src.split('\n');
-    lines.forEach((line, i) => {
-      const m = /(min-height|max-height|height)\s*:\s*100vh\s*;/.exec(line);
-      if (!m) return;
-      // The convention is the fallback PAIR: this `vh` line, then the same
-      // property in `dvh`/`svh` immediately after. Look a few lines ahead so an
-      // explanatory comment between the two is allowed, and match the unit
-      // anywhere in the value — the live-viewport line is often an expression
-      // (`calc(100dvh - var(--kb-inset, 0px))`), not a bare length.
-      const ahead = lines.slice(i + 1, i + 8).join('\n');
-      if (new RegExp(`${m[1]}\\s*:[^;]*100(dvh|svh|lvh)`).test(ahead)) return;
-      out.push({
-        file,
-        line: i + 1,
-        detail: `${m[1]}: 100vh with no dvh/svh line after it — on a phone this is the LARGEST viewport`,
-      });
-    });
+    const src =
+      readFileSync(
+        join(
+          ROOT,
+          file,
+        ),
+        'utf8',
+      );
+    const lines =
+      src.split(
+        '\n',
+      );
+    lines.forEach(
+      (
+        line,
+        i,
+      ) => {
+        const m =
+          /(min-height|max-height|height)\s*:\s*100vh\s*;/.exec(
+            line,
+          );
+        if (
+          !m
+        )
+          return;
+        // The convention is the fallback PAIR: this `vh` line, then the same
+        // property in `dvh`/`svh` immediately after. Look a few lines ahead so an
+        // explanatory comment between the two is allowed, and match the unit
+        // anywhere in the value — the live-viewport line is often an expression
+        // (`calc(100dvh - var(--kb-inset, 0px))`), not a bare length.
+        const ahead =
+          lines
+            .slice(
+              i +
+                1,
+              i +
+                8,
+            )
+            .join(
+              '\n',
+            );
+        if (
+          new RegExp(
+            `${m[1]}\\s*:[^;]*100(dvh|svh|lvh)`,
+          ).test(
+            ahead,
+          )
+        )
+          return;
+        out.push(
+          {
+            file,
+            line:
+              i +
+              1,
+            detail: `${m[1]}: 100vh with no dvh/svh line after it — on a phone this is the LARGEST viewport`,
+          },
+        );
+      },
+    );
   }
   return out;
 }
@@ -329,63 +777,174 @@ function viewportUnitViolations(): Violation[] {
  * Keyed by the catalog (`lib/catalog`), so a new game cannot ship
  * without one. A game's runtime lives in `components/<id>` unless listed here.
  */
-const GAME_DIRS: Record<string, string[]> = {
-  // Half-Life 2 / Portal mount the shared game surface (components/tf2-game/GameCanvas).
-  'half-life-2': ['components/sp-game', 'components/tf2-game'],
-  portal: ['components/sp-game', 'components/tf2-game'],
-  csgo: ['components/csgo-game', 'components/tf2-game'],
-};
+const GAME_DIRS: Record<
+  string,
+  string[]
+> =
+  {
+    // Half-Life 2 / Portal mount the shared game surface (components/tf2-game/GameCanvas).
+    'half-life-2':
+      [
+        'components/sp-game',
+        'components/tf2-game',
+      ],
+    portal:
+      [
+        'components/sp-game',
+        'components/tf2-game',
+      ],
+    csgo: [
+      'components/csgo-game',
+      'components/tf2-game',
+    ],
+  };
 
 function catalogGameIds(): string[] {
-  return games.map((g) => g.id);
+  return games.map(
+    (
+      g,
+    ) =>
+      g.id,
+  );
 }
 
 function gamesWithoutPlayfield(): string[] {
-  return catalogGameIds().filter((id) => {
-    const files = (
-      GAME_DIRS[id] ?? [
-        existsSync(join(ROOT, 'features', id, 'ui'))
-          ? join('features', id, 'ui')
-          : join('components', id),
-      ]
-    ).flatMap((d) => collect(d, ['.tsx']));
-    return !files.some((file) =>
-      /data-jelly-zone=["']playfield["']/.test(readFileSync(join(ROOT, file), 'utf8')),
-    );
-  });
+  return catalogGameIds().filter(
+    (
+      id,
+    ) => {
+      const files =
+        (
+          GAME_DIRS[
+            id
+          ] ?? [
+            existsSync(
+              join(
+                ROOT,
+                'features',
+                id,
+                'ui',
+              ),
+            )
+              ? join(
+                  'features',
+                  id,
+                  'ui',
+                )
+              : join(
+                  'components',
+                  id,
+                ),
+          ]
+        ).flatMap(
+          (
+            d,
+          ) =>
+            collect(
+              d,
+              [
+                '.tsx',
+              ],
+            ),
+        );
+      return !files.some(
+        (
+          file,
+        ) =>
+          /data-jelly-zone=["']playfield["']/.test(
+            readFileSync(
+              join(
+                ROOT,
+                file,
+              ),
+              'utf8',
+            ),
+          ),
+      );
+    },
+  );
 }
 
 describe('full-screen viewport contract — games and apps', () => {
   it('scans a non-trivial set of full-screen sources', () => {
     // Guards the walkers themselves: a bad path would make every rule below
     // pass vacuously, which is the failure mode of this kind of test.
-    expect(TSX.length).toBeGreaterThan(200);
-    expect(CSS.length).toBeGreaterThan(10);
-    expect(CSS).toContain(join('app', 'globals.css'));
+    expect(
+      TSX.length,
+    ).toBeGreaterThan(
+      200,
+    );
+    expect(
+      CSS.length,
+    ).toBeGreaterThan(
+      10,
+    );
+    expect(
+      CSS,
+    ).toContain(
+      join(
+        'app',
+        'globals.css',
+      ),
+    );
   });
 
   it('a scrolling container never centres unsafely (overflow stays reachable)', () => {
-    const v = centringViolations();
-    expect(v, report('Unsafe centring in a scrolling container', v)).toEqual([]);
+    const v =
+      centringViolations();
+    expect(
+      v,
+      report(
+        'Unsafe centring in a scrolling container',
+        v,
+      ),
+    ).toEqual(
+      [],
+    );
   });
 
   it('aspect-ratio is never paired with a clamp that would break it', () => {
-    const v = aspectViolations();
-    expect(v, report('aspect-ratio defeated by a definite/clamped axis', v)).toEqual([]);
+    const v =
+      aspectViolations();
+    expect(
+      v,
+      report(
+        'aspect-ratio defeated by a definite/clamped axis',
+        v,
+      ),
+    ).toEqual(
+      [],
+    );
   });
 
   it('every 100vh game surface offers a dvh/svh reading too', () => {
-    const v = viewportUnitViolations();
-    expect(v, report('Raw 100vh with no live-viewport fallback', v)).toEqual([]);
+    const v =
+      viewportUnitViolations();
+    expect(
+      v,
+      report(
+        'Raw 100vh with no live-viewport fallback',
+        v,
+      ),
+    ).toEqual(
+      [],
+    );
   });
 
   it('every catalog game declares a jelly play-field zone', () => {
     // Guard the walker: an empty catalog would pass vacuously.
-    expect(catalogGameIds().length).toBeGreaterThan(15);
+    expect(
+      catalogGameIds()
+        .length,
+    ).toBeGreaterThan(
+      15,
+    );
     expect(
       gamesWithoutPlayfield(),
       'add data-jelly-zone="playfield" to these games\' stage or canvas (Rule 4)',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   // In the flow, a canvas with `height: 100%` falls back to the ratio of its own
@@ -394,13 +953,44 @@ describe('full-screen viewport contract — games and apps', () => {
   // several screens tall through the countdown (the buffer started at the height
   // of the library page) with the lanes and the judgement line off screen.
   it("Slice It's playfield canvas is out of the flow, so its buffer never sizes its own box", () => {
-    const src = readFileSync(join(ROOT, 'features/slice-it/ui/GameCanvas.tsx'), 'utf8');
-    const canvas = /<canvas\s+ref=\{canvasRef\}\s+className="([^"]*)"/.exec(src);
-    expect(canvas, 'the playfield <canvas ref={canvasRef}> was not found').not.toBeNull();
-    const classes = (canvas?.[1] ?? '').split(/\s+/);
-    expect(classes).toContain('slice-canvas-el');
-    expect(classes).toContain('absolute');
-    expect(classes).toContain('inset-0');
+    const src =
+      readFileSync(
+        join(
+          ROOT,
+          'features/slice-it/ui/GameCanvas.tsx',
+        ),
+        'utf8',
+      );
+    const canvas =
+      /<canvas\s+ref=\{canvasRef\}\s+className="([^"]*)"/.exec(
+        src,
+      );
+    expect(
+      canvas,
+      'the playfield <canvas ref={canvasRef}> was not found',
+    ).not.toBeNull();
+    const classes =
+      (
+        canvas?.[1] ??
+        ''
+      ).split(
+        /\s+/,
+      );
+    expect(
+      classes,
+    ).toContain(
+      'slice-canvas-el',
+    );
+    expect(
+      classes,
+    ).toContain(
+      'absolute',
+    );
+    expect(
+      classes,
+    ).toContain(
+      'inset-0',
+    );
   });
 });
 

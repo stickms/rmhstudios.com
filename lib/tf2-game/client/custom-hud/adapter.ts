@@ -33,22 +33,48 @@ import {
   TF_CLASS_SPY,
   TF_TEAM_BLUE,
 } from '../../core/constants';
-import { formatClock, type HudLocalPlayer, type HudState } from '../hud-state';
+import {
+  formatClock,
+  type HudLocalPlayer,
+  type HudState,
+} from '../hud-state';
 
 /** ETFClass → the editor's class id. */
-export const CLASS_ID: Readonly<Record<number, Tf2Class>> = {
-  [TF_CLASS_SCOUT]: 'scout',
-  [TF_CLASS_SNIPER]: 'sniper',
-  [TF_CLASS_SOLDIER]: 'soldier',
-  [TF_CLASS_DEMOMAN]: 'demoman',
-  [TF_CLASS_MEDIC]: 'medic',
-  [TF_CLASS_HEAVYWEAPONS]: 'heavy',
-  [TF_CLASS_PYRO]: 'pyro',
-  [TF_CLASS_SPY]: 'spy',
-  [TF_CLASS_ENGINEER]: 'engineer',
-};
+export const CLASS_ID: Readonly<
+  Record<
+    number,
+    Tf2Class
+  >
+> =
+  {
+    [TF_CLASS_SCOUT]:
+      'scout',
+    [TF_CLASS_SNIPER]:
+      'sniper',
+    [TF_CLASS_SOLDIER]:
+      'soldier',
+    [TF_CLASS_DEMOMAN]:
+      'demoman',
+    [TF_CLASS_MEDIC]:
+      'medic',
+    [TF_CLASS_HEAVYWEAPONS]:
+      'heavy',
+    [TF_CLASS_PYRO]:
+      'pyro',
+    [TF_CLASS_SPY]:
+      'spy',
+    [TF_CLASS_ENGINEER]:
+      'engineer',
+  };
 
-export const teamOf = (team: number): Team => (team === TF_TEAM_BLUE ? 'blue' : 'red');
+export const teamOf =
+  (
+    team: number,
+  ): Team =>
+    team ===
+    TF_TEAM_BLUE
+      ? 'blue'
+      : 'red';
 
 /**
  * The editor weapon (lib/tf2-hud/game-state.ts `WEAPONS`) whose HUD the local player's loadout shows.
@@ -58,46 +84,159 @@ export const teamOf = (team: number): Team => (team === TF_TEAM_BLUE ? 'blue' : 
  * get an id the editor has no meter for (`stock-<class>`), so no weapon meter is drawn — the editor's
  * own default for the Sniper is the Hitman's Heatmaker focus meter, which the stock rifle does not have.
  */
-export function weaponFor(local: HudLocalPlayer, cls: Tf2Class): string {
-  const m = local.meters;
+export function weaponFor(
+  local: HudLocalPlayer,
+  cls: Tf2Class,
+): string {
+  const m =
+    local.meters;
   // An unlock with a meter of its own (client/item-meters.ts) shows the editor's meter for it.
-  const item = m.items?.find((i) => ITEM_METER_WEAPONS[i.kind]);
-  if (item) return ITEM_METER_WEAPONS[item.kind];
-  if (cls === 'medic') return 'medigun';
-  if (cls === 'demoman' && m.stickyCount !== null) return 'stickies';
-  if (cls === 'spy' && m.cloak !== null) return 'cloak';
+  const item =
+    m.items?.find(
+      (
+        i,
+      ) =>
+        ITEM_METER_WEAPONS[
+          i
+            .kind
+        ],
+    );
+  if (
+    item
+  )
+    return ITEM_METER_WEAPONS[
+      item
+        .kind
+    ];
+  if (
+    cls ===
+    'medic'
+  )
+    return 'medigun';
+  if (
+    cls ===
+      'demoman' &&
+    m.stickyCount !==
+      null
+  )
+    return 'stickies';
+  if (
+    cls ===
+      'spy' &&
+    m.cloak !==
+      null
+  )
+    return 'cloak';
   return `stock-${cls}`;
 }
 
 /** Item meter kinds (HudItemMeter.kind) → the editor weapon (lib/tf2-hud/game-state.ts WEAPONS) showing that meter. */
-const ITEM_METER_WEAPONS: Readonly<Record<string, string>> = {
-  jarate: 'jarate',
-  bonk: 'bonk',
-  cleaver: 'cleaver',
-  sodapopper: 'sodapopper',
-  'buff-banner': 'buff-banner',
-  'gas-passer': 'gas-passer',
-  phlog: 'phlog',
-  raygun: 'raygun',
-  pomson: 'pomson',
-  shield: 'shield',
-  eyelander: 'eyelander',
-  sandvich: 'sandvich',
-  huntsman: 'huntsman',
-};
+const ITEM_METER_WEAPONS: Readonly<
+  Record<
+    string,
+    string
+  >
+> =
+  {
+    jarate:
+      'jarate',
+    bonk: 'bonk',
+    cleaver:
+      'cleaver',
+    sodapopper:
+      'sodapopper',
+    'buff-banner':
+      'buff-banner',
+    'gas-passer':
+      'gas-passer',
+    phlog:
+      'phlog',
+    raygun:
+      'raygun',
+    pomson:
+      'pomson',
+    shield:
+      'shield',
+    eyelander:
+      'eyelander',
+    sandvich:
+      'sandvich',
+    huntsman:
+      'huntsman',
+  };
 
-const pct = (v: number | null | undefined): number =>
-  v === null || v === undefined ? 0 : Math.max(0, Math.min(100, v * 100));
+const pct =
+  (
+    v:
+      | number
+      | null
+      | undefined,
+  ): number =>
+    v ===
+      null ||
+    v ===
+      undefined
+      ? 0
+      : Math.max(
+          0,
+          Math.min(
+            100,
+            v *
+              100,
+          ),
+        );
 
 /** The weapon / item meter (0–100) the editor's `meter` field drives for this loadout. */
-export function meterFor(local: HudLocalPlayer, cls: Tf2Class): number {
-  const m = local.meters;
-  const item = m.items?.find((i) => ITEM_METER_WEAPONS[i.kind]);
-  if (item) return pct(item.value);
-  if (cls === 'spy') return pct(m.cloak);
-  if (cls === 'demoman') return pct(m.stickyCharge);
-  if (cls === 'sniper') return pct(m.sniperCharge);
-  if (cls === 'heavy') return pct(m.minigunSpin);
+export function meterFor(
+  local: HudLocalPlayer,
+  cls: Tf2Class,
+): number {
+  const m =
+    local.meters;
+  const item =
+    m.items?.find(
+      (
+        i,
+      ) =>
+        ITEM_METER_WEAPONS[
+          i
+            .kind
+        ],
+    );
+  if (
+    item
+  )
+    return pct(
+      item.value,
+    );
+  if (
+    cls ===
+    'spy'
+  )
+    return pct(
+      m.cloak,
+    );
+  if (
+    cls ===
+    'demoman'
+  )
+    return pct(
+      m.stickyCharge,
+    );
+  if (
+    cls ===
+    'sniper'
+  )
+    return pct(
+      m.sniperCharge,
+    );
+  if (
+    cls ===
+    'heavy'
+  )
+    return pct(
+      m.minigunSpin,
+    );
   return 0;
 }
 
@@ -105,28 +244,99 @@ export function meterFor(local: HudLocalPlayer, cls: Tf2Class): number {
 export const DAMAGE_EVENT_SECONDS = 1.5;
 
 /** The transient events (`EVENTS`/`SITUATIONS` in game-state.ts) that are on right now. */
-export function eventsFor(state: HudState): string[] {
-  const out: string[] = [];
-  const local = state.local;
-  if (local && state.damageNumbers.some((d) => state.now - d.at <= DAMAGE_EVENT_SECONDS))
-    out.push('damage');
-  if (local && state.match.flags.some((f) => f.carriedByLocal)) out.push('flag');
-  if (state.match.roundState === 'stalemate') out.push('stalemate');
+export function eventsFor(
+  state: HudState,
+): string[] {
+  const out: string[] =
+    [];
+  const local =
+    state.local;
+  if (
+    local &&
+    state.damageNumbers.some(
+      (
+        d,
+      ) =>
+        state.now -
+          d.at <=
+        DAMAGE_EVENT_SECONDS,
+    )
+  )
+    out.push(
+      'damage',
+    );
+  if (
+    local &&
+    state.match.flags.some(
+      (
+        f,
+      ) =>
+        f.carriedByLocal,
+    )
+  )
+    out.push(
+      'flag',
+    );
+  if (
+    state
+      .match
+      .roundState ===
+    'stalemate'
+  )
+    out.push(
+      'stalemate',
+    );
   return out;
 }
 
 /** The round clock the editor's `roundSeconds` stands for: the main timer, or the running KOTH clock. */
-export function roundSecondsOf(state: HudState): number {
-  const m = state.match;
-  if (m.timer) return Math.max(0, Math.ceil(m.timer.remaining));
-  if (m.koth) {
+export function roundSecondsOf(
+  state: HudState,
+): number {
+  const m =
+    state.match;
+  if (
+    m.timer
+  )
+    return Math.max(
+      0,
+      Math.ceil(
+        m
+          .timer
+          .remaining,
+      ),
+    );
+  if (
+    m.koth
+  ) {
     const running =
-      m.koth.active === TF_TEAM_BLUE
-        ? m.koth.blue
-        : m.koth.active
-          ? m.koth.red
-          : Math.max(m.koth.red, m.koth.blue);
-    return Math.max(0, Math.ceil(running));
+      m
+        .koth
+        .active ===
+      TF_TEAM_BLUE
+        ? m
+            .koth
+            .blue
+        : m
+              .koth
+              .active
+          ? m
+              .koth
+              .red
+          : Math.max(
+              m
+                .koth
+                .red,
+              m
+                .koth
+                .blue,
+            );
+    return Math.max(
+      0,
+      Math.ceil(
+        running,
+      ),
+    );
   }
   return 0;
 }
@@ -135,58 +345,164 @@ export function roundSecondsOf(state: HudState): number {
  * HudState → TestState. A spectator (no team or class yet) maps to the editor's defaults with the
  * match's numbers, so menus and the scoreboard still read the real scores.
  */
-export function toTestState(state: HudState): TestState {
-  const m = state.match;
-  const ctf = m.mode === 'ctf';
-  const timer = m.timer;
-  const common = {
-    redScore: ctf ? m.redFlagCaps : m.redScore,
-    blueScore: ctf ? m.blueFlagCaps : m.blueScore,
-    roundSeconds: roundSecondsOf(state),
-    // Generic progress bars (the round timer's ring): how much of the round is left.
-    progress: timer && timer.length > 0 ? pct(timer.remaining / timer.length) : 0,
-    events: eventsFor(state),
-  };
-  const local = state.local;
-  const cls = local ? CLASS_ID[local.cls] : undefined;
-  if (!local || !cls) {
+export function toTestState(
+  state: HudState,
+): TestState {
+  const m =
+    state.match;
+  const ctf =
+    m.mode ===
+    'ctf';
+  const timer =
+    m.timer;
+  const common =
+    {
+      redScore:
+        ctf
+          ? m.redFlagCaps
+          : m.redScore,
+      blueScore:
+        ctf
+          ? m.blueFlagCaps
+          : m.blueScore,
+      roundSeconds:
+        roundSecondsOf(
+          state,
+        ),
+      // Generic progress bars (the round timer's ring): how much of the round is left.
+      progress:
+        timer &&
+        timer.length >
+          0
+          ? pct(
+              timer.remaining /
+                timer.length,
+            )
+          : 0,
+      events:
+        eventsFor(
+          state,
+        ),
+    };
+  const local =
+    state.local;
+  const cls =
+    local
+      ? CLASS_ID[
+          local
+            .cls
+        ]
+      : undefined;
+  if (
+    !local ||
+    !cls
+  ) {
     return {
       ...DEFAULT_TEST_STATE,
-      playerName: local?.name ?? DEFAULT_TEST_STATE.playerName,
-      team: local ? teamOf(local.team) : DEFAULT_TEST_STATE.team,
+      playerName:
+        local?.name ??
+        DEFAULT_TEST_STATE.playerName,
+      team: local
+        ? teamOf(
+            local.team,
+          )
+        : DEFAULT_TEST_STATE.team,
       ...common,
     };
   }
-  const ammo = local.ammo;
+  const ammo =
+    local.ammo;
   const clip =
-    ammo.kind === 'clip' ? Math.max(0, ammo.clip) : ammo.kind === 'reserve-only' ? ammo.reserve : 0;
-  const reserve = ammo.kind === 'none' ? 0 : ammo.reserve;
-  const eng = local.engineer;
+    ammo.kind ===
+    'clip'
+      ? Math.max(
+          0,
+          ammo.clip,
+        )
+      : ammo.kind ===
+          'reserve-only'
+        ? ammo.reserve
+        : 0;
+  const reserve =
+    ammo.kind ===
+    'none'
+      ? 0
+      : ammo.reserve;
+  const eng =
+    local.engineer;
   return {
-    playerClass: cls,
-    team: teamOf(local.team),
-    health: local.alive ? Math.max(0, local.health) : 0,
-    maxHealth: local.maxHealth,
-    ammoClip: clip,
-    ammoReserve: reserve,
-    metal: eng?.metal ?? 0,
-    charge: pct(local.meters.uber),
-    playerName: local.name,
+    playerClass:
+      cls,
+    team: teamOf(
+      local.team,
+    ),
+    health:
+      local.alive
+        ? Math.max(
+            0,
+            local.health,
+          )
+        : 0,
+    maxHealth:
+      local.maxHealth,
+    ammoClip:
+      clip,
+    ammoReserve:
+      reserve,
+    metal:
+      eng?.metal ??
+      0,
+    charge:
+      pct(
+        local
+          .meters
+          .uber,
+      ),
+    playerName:
+      local.name,
     currency: 0,
-    weapon: weaponFor(local, cls),
-    pipes: local.meters.stickyCount ?? 0,
-    meter: meterFor(local, cls),
-    sentryLevel: eng?.sentry.exists ? Math.max(1, eng.sentry.level) : 0,
+    weapon:
+      weaponFor(
+        local,
+        cls,
+      ),
+    pipes:
+      local
+        .meters
+        .stickyCount ??
+      0,
+    meter:
+      meterFor(
+        local,
+        cls,
+      ),
+    sentryLevel:
+      eng
+        ?.sentry
+        .exists
+        ? Math.max(
+            1,
+            eng
+              .sentry
+              .level,
+          )
+        : 0,
     ...common,
   };
 }
 
-const WIN_REASON: Readonly<Record<number, string>> = {
-  1: 'captured all control points',
-  2: 'captured the enemy intelligence',
-  3: 'defended until time ran out',
-  4: 'killed the enemy team',
-};
+const WIN_REASON: Readonly<
+  Record<
+    number,
+    string
+  >
+> =
+  {
+    1: 'captured all control points',
+    2: 'captured the enemy intelligence',
+    3: 'defended until time ran out',
+    4: 'killed the enemy team',
+  };
 
 /**
  * The editor's `%variable%` table for a test state, plus what only the live game knows. Keys are
@@ -194,51 +510,205 @@ const WIN_REASON: Readonly<Record<number, string>> = {
  */
 export function liveVars(
   state: HudState,
-  test: TestState = toTestState(state),
-): Map<string, string> {
-  const vars = varsFromState(test);
-  const local = state.local;
-  const m = state.match;
-  if (local?.respawnIn !== null && local?.respawnIn !== undefined)
-    vars.set('respawntime', String(Math.max(0, Math.ceil(local.respawnIn))));
-  if (m.timer) {
-    vars.set('timer', formatClock(m.timer.remaining));
-    vars.set('timeleft', formatClock(m.timer.remaining));
+  test: TestState = toTestState(
+    state,
+  ),
+): Map<
+  string,
+  string
+> {
+  const vars =
+    varsFromState(
+      test,
+    );
+  const local =
+    state.local;
+  const m =
+    state.match;
+  if (
+    local?.respawnIn !==
+      null &&
+    local?.respawnIn !==
+      undefined
+  )
+    vars.set(
+      'respawntime',
+      String(
+        Math.max(
+          0,
+          Math.ceil(
+            local.respawnIn,
+          ),
+        ),
+      ),
+    );
+  if (
+    m.timer
+  ) {
+    vars.set(
+      'timer',
+      formatClock(
+        m
+          .timer
+          .remaining,
+      ),
+    );
+    vars.set(
+      'timeleft',
+      formatClock(
+        m
+          .timer
+          .remaining,
+      ),
+    );
   }
-  if (m.koth) {
-    vars.set('redtimer', formatClock(m.koth.red));
-    vars.set('bluetimer', formatClock(m.koth.blue));
+  if (
+    m.koth
+  ) {
+    vars.set(
+      'redtimer',
+      formatClock(
+        m
+          .koth
+          .red,
+      ),
+    );
+    vars.set(
+      'bluetimer',
+      formatClock(
+        m
+          .koth
+          .blue,
+      ),
+    );
   }
-  const fc = state.freezecam;
-  if (fc) {
-    vars.set('killername', fc.killerName);
-    vars.set('nemesisname', fc.dominated ? fc.killerName : '');
+  const fc =
+    state.freezecam;
+  if (
+    fc
+  ) {
+    vars.set(
+      'killername',
+      fc.killerName,
+    );
+    vars.set(
+      'nemesisname',
+      fc.dominated
+        ? fc.killerName
+        : '',
+    );
   }
-  const spec = local?.spectating;
-  if (spec) {
-    vars.set('spectargetname', spec.name);
-    vars.set('playername', spec.name);
+  const spec =
+    local?.spectating;
+  if (
+    spec
+  ) {
+    vars.set(
+      'spectargetname',
+      spec.name,
+    );
+    vars.set(
+      'playername',
+      spec.name,
+    );
     // The watched player's target ID (CSpectatorTargetID): name, and no extra line.
-    vars.set('targetname', spec.name);
-    vars.set('targetdata', '');
+    vars.set(
+      'targetname',
+      spec.name,
+    );
+    vars.set(
+      'targetdata',
+      '',
+    );
   }
-  const win = m.win;
-  if (win) {
-    const red = win.team === 2;
-    vars.set('winningteamlabel', win.team === 0 ? 'STALEMATE' : red ? 'RED WINS!' : 'BLU WINS!');
-    vars.set('advancingteamlabel', '');
+  const win =
+    m.win;
+  if (
+    win
+  ) {
+    const red =
+      win.team ===
+      2;
+    vars.set(
+      'winningteamlabel',
+      win.team ===
+        0
+        ? 'STALEMATE'
+        : red
+          ? 'RED WINS!'
+          : 'BLU WINS!',
+    );
+    vars.set(
+      'advancingteamlabel',
+      '',
+    );
     vars.set(
       'winreasonlabel',
-      win.team === 0 ? '' : `${red ? 'RED' : 'BLU'} ${WIN_REASON[win.reason] ?? 'won the round'}`,
+      win.team ===
+        0
+        ? ''
+        : `${red ? 'RED' : 'BLU'} ${WIN_REASON[win.reason] ?? 'won the round'}`,
     );
-    vars.set('detailslabel', '');
-    vars.set('topplayerslabel', win.top.length ? 'TOP PLAYERS THIS ROUND' : '');
-    vars.set('redteamscore', String(win.redScore));
-    vars.set('blueteamscore', String(win.blueScore));
+    vars.set(
+      'detailslabel',
+      '',
+    );
+    vars.set(
+      'topplayerslabel',
+      win
+        .top
+        .length
+        ? 'TOP PLAYERS THIS ROUND'
+        : '',
+    );
+    vars.set(
+      'redteamscore',
+      String(
+        win.redScore,
+      ),
+    );
+    vars.set(
+      'blueteamscore',
+      String(
+        win.blueScore,
+      ),
+    );
   }
-  vars.set('redteamname', 'RED');
-  vars.set('blueteamname', 'BLU');
-  vars.set('red_alive', String(state.scoreboard.filter((r) => r.team === 2 && !r.dead).length));
-  vars.set('blue_alive', String(state.scoreboard.filter((r) => r.team === 3 && !r.dead).length));
+  vars.set(
+    'redteamname',
+    'RED',
+  );
+  vars.set(
+    'blueteamname',
+    'BLU',
+  );
+  vars.set(
+    'red_alive',
+    String(
+      state.scoreboard.filter(
+        (
+          r,
+        ) =>
+          r.team ===
+            2 &&
+          !r.dead,
+      )
+        .length,
+    ),
+  );
+  vars.set(
+    'blue_alive',
+    String(
+      state.scoreboard.filter(
+        (
+          r,
+        ) =>
+          r.team ===
+            3 &&
+          !r.dead,
+      )
+        .length,
+    ),
+  );
   return vars;
 }

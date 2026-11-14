@@ -38,11 +38,18 @@ import { activeModifierKeys } from './modifiers';
 import type { Modifiers } from './types';
 
 /** The pools, in escalating order. Stored as a `VARCHAR(16)` on the board row. */
-export const MOD_POOLS = ['none', 'standard', 'challenge'] as const;
-export type ModPool = (typeof MOD_POOLS)[number];
+export const MOD_POOLS =
+  [
+    'none',
+    'standard',
+    'challenge',
+  ] as const;
+export type ModPool =
+  (typeof MOD_POOLS)[number];
 
 /** The default a row falls back to when nothing better is known. */
-export const DEFAULT_MOD_POOL: ModPool = 'none';
+export const DEFAULT_MOD_POOL: ModPool =
+  'none';
 
 /**
  * Modifiers that change what the player can see, or how tight the judgement
@@ -55,20 +62,21 @@ export const DEFAULT_MOD_POOL: ModPool = 'none';
  * runs in either direction — the bonus would make them dominate, and stripping
  * the bonus would make them pointless.
  */
-export const CHALLENGE_MODIFIERS = [
-  'invisible',
-  'spin',
-  'strictTiming',
-  // A9. Lenient Timing widens every window by 1.4x, so it belongs here for the
-  // same reason Strict does — it changes what a press resolves to. It is
-  // unranked and pays no bonus, but "unranked" is a separate axis from "which
-  // board": a run that never reaches the board still has to be classified, or
-  // the backfill and `poolOfStoredRow` disagree about a row nothing filed.
-  'lenientTiming',
-  'oneTrack',
-  'switching',
-  'bombs',
-] as const satisfies readonly (keyof Modifiers)[];
+export const CHALLENGE_MODIFIERS =
+  [
+    'invisible',
+    'spin',
+    'strictTiming',
+    // A9. Lenient Timing widens every window by 1.4x, so it belongs here for the
+    // same reason Strict does — it changes what a press resolves to. It is
+    // unranked and pays no bonus, but "unranked" is a separate axis from "which
+    // board": a run that never reaches the board still has to be classified, or
+    // the backfill and `poolOfStoredRow` disagree about a row nothing filed.
+    'lenientTiming',
+    'oneTrack',
+    'switching',
+    'bombs',
+  ] as const satisfies readonly (keyof Modifiers)[];
 
 /**
  * The pool a run belongs to.
@@ -84,17 +92,45 @@ export const CHALLENGE_MODIFIERS = [
  * Accepts a partial set (a `modifiers` JSON blob written before a flag existed)
  * because that is what the backfill and every historical row hand it.
  */
-export function poolOf(modifiers: Partial<Modifiers> | null | undefined): ModPool {
-  if (!modifiers) return 'none';
+export function poolOf(
+  modifiers:
+    | Partial<Modifiers>
+    | null
+    | undefined,
+): ModPool {
+  if (
+    !modifiers
+  )
+    return 'none';
 
-  if (CHALLENGE_MODIFIERS.some((key) => modifiers[key] === true)) return 'challenge';
+  if (
+    CHALLENGE_MODIFIERS.some(
+      (
+        key,
+      ) =>
+        modifiers[
+          key
+        ] ===
+        true,
+    )
+  )
+    return 'challenge';
 
   // `activeModifierKeys` is the same "what differs from the defaults" list the
   // badges are built from, so a modifier that is worth showing to a player is
   // exactly one that is worth splitting a board on. It already excludes
   // `difficulty`, which is its own key column.
-  const active = activeModifierKeys({ ...EMPTY_MODIFIERS, ...modifiers });
-  return active.length === 0 ? 'none' : 'standard';
+  const active =
+    activeModifierKeys(
+      {
+        ...EMPTY_MODIFIERS,
+        ...modifiers,
+      },
+    );
+  return active.length ===
+    0
+    ? 'none'
+    : 'standard';
 }
 
 /**
@@ -105,18 +141,20 @@ export function poolOf(modifiers: Partial<Modifiers> | null | undefined): ModPoo
  * time bomb the moment a default stops being "off", because then a row that
  * simply omitted a key would inherit an *active* modifier it never had.
  */
-const EMPTY_MODIFIERS: Modifiers = {
-  invisible: false,
-  speed: 1,
-  suddenDeath: false,
-  bombs: false,
-  switching: false,
-  spin: false,
-  strictTiming: false,
-  oneTrack: false,
-  healthGauge: false,
-  difficulty: 'normal',
-};
+const EMPTY_MODIFIERS: Modifiers =
+  {
+    invisible: false,
+    speed: 1,
+    suddenDeath: false,
+    bombs: false,
+    switching: false,
+    spin: false,
+    strictTiming: false,
+    oneTrack: false,
+    healthGauge: false,
+    difficulty:
+      'normal',
+  };
 
 /**
  * The pool for a **stored leaderboard row**, from the two things such a row
@@ -136,24 +174,55 @@ const EMPTY_MODIFIERS: Modifiers = {
  * day. Both are consulted; either one saying "not 1.0x" is enough.
  */
 export function poolOfStoredRow(row: {
-  modifiers: Partial<Modifiers> | null | undefined;
-  speedMod?: number | null;
+  modifiers:
+    | Partial<Modifiers>
+    | null
+    | undefined;
+  speedMod?:
+    | number
+    | null;
 }): ModPool {
-  const modifiers = row.modifiers ?? {};
+  const modifiers =
+    row.modifiers ??
+    {};
 
-  if (CHALLENGE_MODIFIERS.some((key) => modifiers[key] === true)) return 'challenge';
-
-  const speedColumn = typeof row.speedMod === 'number' ? row.speedMod : 1;
-  const speedJson = typeof modifiers.speed === 'number' ? modifiers.speed : 1;
   if (
-    modifiers.suddenDeath === true ||
+    CHALLENGE_MODIFIERS.some(
+      (
+        key,
+      ) =>
+        modifiers[
+          key
+        ] ===
+        true,
+    )
+  )
+    return 'challenge';
+
+  const speedColumn =
+    typeof row.speedMod ===
+    'number'
+      ? row.speedMod
+      : 1;
+  const speedJson =
+    typeof modifiers.speed ===
+    'number'
+      ? modifiers.speed
+      : 1;
+  if (
+    modifiers.suddenDeath ===
+      true ||
     // M6. Perfect-or-die sits beside Sudden Death for the same reason: all it
     // can do is end the run early. It never reveals, moves or re-times a note,
     // so a run that survived it is a run of the same chart played the same way.
-    modifiers.perfectionist === true ||
-    modifiers.healthGauge === true ||
-    speedColumn !== 1 ||
-    speedJson !== 1
+    modifiers.perfectionist ===
+      true ||
+    modifiers.healthGauge ===
+      true ||
+    speedColumn !==
+      1 ||
+    speedJson !==
+      1
   ) {
     return 'standard';
   }
@@ -167,19 +236,47 @@ export function poolOfStoredRow(row: {
  * `normal`. An unrecognised value falls back rather than being trusted, because
  * the column is part of a unique key and a typo would mint a board of one.
  */
-export function difficultyOfStoredRow(modifiers: Partial<Modifiers> | null | undefined): string {
-  const raw = modifiers?.difficulty;
-  return typeof raw === 'string' && (DIFFICULTIES as readonly string[]).includes(raw)
+export function difficultyOfStoredRow(
+  modifiers:
+    | Partial<Modifiers>
+    | null
+    | undefined,
+): string {
+  const raw =
+    modifiers?.difficulty;
+  return typeof raw ===
+    'string' &&
+    (
+      DIFFICULTIES as readonly string[]
+    ).includes(
+      raw,
+    )
     ? raw
     : 'normal';
 }
 
 /** Narrow an arbitrary string (a DB column, a query param) to a pool. */
-export function isModPool(value: unknown): value is ModPool {
-  return typeof value === 'string' && (MOD_POOLS as readonly string[]).includes(value);
+export function isModPool(
+  value: unknown,
+): value is ModPool {
+  return (
+    typeof value ===
+      'string' &&
+    (
+      MOD_POOLS as readonly string[]
+    ).includes(
+      value,
+    )
+  );
 }
 
 /** Coerce anything to a pool, defaulting rather than throwing. */
-export function toModPool(value: unknown): ModPool {
-  return isModPool(value) ? value : DEFAULT_MOD_POOL;
+export function toModPool(
+  value: unknown,
+): ModPool {
+  return isModPool(
+    value,
+  )
+    ? value
+    : DEFAULT_MOD_POOL;
 }

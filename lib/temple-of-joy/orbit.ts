@@ -14,7 +14,9 @@ import { SOURCES } from './data/sources';
 import type { Quat } from '../device-attitude';
 import type { SourceId } from './types';
 
-const DEG = Math.PI / 180;
+const DEG =
+  Math.PI /
+  180;
 
 /**
  * Perspective, as a multiple of the stage width — the same constant the nav
@@ -25,8 +27,15 @@ const DEG = Math.PI / 180;
 export const PERSP = 3.1;
 
 /** Foreshortening at depth `z` on the unit sphere (z = 1 front, −1 back). */
-export function kAt(z: number): number {
-  return PERSP / (PERSP - z * 0.5);
+export function kAt(
+  z: number,
+): number {
+  return (
+    PERSP /
+    (PERSP -
+      z *
+        0.5)
+  );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -87,39 +96,84 @@ export interface GlobePlace {
  * without leaving the stage, and the hub cannot shrink without the field
  * looking like eight marbles rather than a temple with a congregation.
  */
-export function layoutGlobes(count: number, spin = 0): GlobePlace[] {
-  const globes = Math.max(1, Math.floor(count));
-  const out: GlobePlace[] = [
-    {
-      index: 0,
-      cx: 0,
-      cy: 0,
-      r: globes > 1 ? HUB_RADIUS : SOLO_RADIUS,
-      phase: 0,
-      detailed: true,
-    },
-  ];
+export function layoutGlobes(
+  count: number,
+  spin = 0,
+): GlobePlace[] {
+  const globes =
+    Math.max(
+      1,
+      Math.floor(
+        count,
+      ),
+    );
+  const out: GlobePlace[] =
+    [
+      {
+        index: 0,
+        cx: 0,
+        cy: 0,
+        r:
+          globes >
+          1
+            ? HUB_RADIUS
+            : SOLO_RADIUS,
+        phase: 0,
+        detailed: true,
+      },
+    ];
 
-  const satellites = globes - 1;
-  for (let i = 0; i < satellites; i++) {
+  const satellites =
+    globes -
+    1;
+  for (
+    let i = 0;
+    i <
+    satellites;
+    i++
+  ) {
     // −90° puts the first satellite straight up.
-    const phase = (i * 360) / satellites - 90 + spin;
-    out.push({
-      index: i + 1,
-      cx: Math.cos(phase * DEG) * RING_RADIUS,
-      cy: Math.sin(phase * DEG) * RING_RADIUS,
-      r: SATELLITE_RADIUS,
-      phase,
-      detailed: false,
-    });
+    const phase =
+      (i *
+        360) /
+        satellites -
+      90 +
+      spin;
+    out.push(
+      {
+        index:
+          i +
+          1,
+        cx:
+          Math.cos(
+            phase *
+              DEG,
+          ) *
+          RING_RADIUS,
+        cy:
+          Math.sin(
+            phase *
+              DEG,
+          ) *
+          RING_RADIUS,
+        r: SATELLITE_RADIUS,
+        phase,
+        detailed: false,
+      },
+    );
   }
 
   return out;
 }
 
 /** The hub's radius for a field of `count` globes — what the renderer eases to. */
-export function hubRadius(count: number): number {
-  return count > 1 ? HUB_RADIUS : SOLO_RADIUS;
+export function hubRadius(
+  count: number,
+): number {
+  return count >
+    1
+    ? HUB_RADIUS
+    : SOLO_RADIUS;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -136,8 +190,25 @@ export function hubRadius(count: number): number {
  * places is the entire point of putting it on a lane. Two hand-kept copies of
  * "six and seven" would have drifted the first time either was tuned.
  */
-export const MERIDIANS = [0, 30, 60, 90, 120, 150];
-export const PARALLELS = [-60, -40, -20, 0, 20, 40, 60];
+export const MERIDIANS =
+  [
+    0,
+    30,
+    60,
+    90,
+    120,
+    150,
+  ];
+export const PARALLELS =
+  [
+    -60,
+    -40,
+    -20,
+    0,
+    20,
+    40,
+    60,
+  ];
 
 /**
  * A ring of the cage, as points on the unit sphere.
@@ -152,26 +223,116 @@ export const PARALLELS = [-60, -40, -20, 0, 20, 40, 60];
  * Y points DOWN, matching the screen-handed axes the 2D projection uses.
  */
 export function ringPoints(
-  kind: 'meridian' | 'parallel',
+  kind:
+    | 'meridian'
+    | 'parallel',
   angle: number,
   samples: number,
 ): Float32Array {
-  const out = new Float32Array((samples + 1) * 3);
-  const c = Math.cos(angle * DEG);
-  const s = Math.sin(angle * DEG);
+  const out =
+    new Float32Array(
+      (samples +
+        1) *
+        3,
+    );
+  const c =
+    Math.cos(
+      angle *
+        DEG,
+    );
+  const s =
+    Math.sin(
+      angle *
+        DEG,
+    );
 
   // u, v: the plane the circle lies in. oy: how far it is lifted up the axis.
-  const [ux, uy, uz] = kind === 'meridian' ? [c, 0, -s] : [c, 0, 0];
-  const [vx, vy, vz] = kind === 'meridian' ? [0, 1, 0] : [0, 0, c];
-  const oy = kind === 'meridian' ? 0 : -s;
+  const [
+    ux,
+    uy,
+    uz,
+  ] =
+    kind ===
+    'meridian'
+      ? [
+          c,
+          0,
+          -s,
+        ]
+      : [
+          c,
+          0,
+          0,
+        ];
+  const [
+    vx,
+    vy,
+    vz,
+  ] =
+    kind ===
+    'meridian'
+      ? [
+          0,
+          1,
+          0,
+        ]
+      : [
+          0,
+          0,
+          c,
+        ];
+  const oy =
+    kind ===
+    'meridian'
+      ? 0
+      : -s;
 
-  for (let i = 0; i <= samples; i++) {
-    const theta = (i / samples) * Math.PI * 2;
-    const ct = Math.cos(theta);
-    const st = Math.sin(theta);
-    out[i * 3] = ux * ct + vx * st;
-    out[i * 3 + 1] = uy * ct + vy * st + oy;
-    out[i * 3 + 2] = uz * ct + vz * st;
+  for (
+    let i = 0;
+    i <=
+    samples;
+    i++
+  ) {
+    const theta =
+      (i /
+        samples) *
+      Math.PI *
+      2;
+    const ct =
+      Math.cos(
+        theta,
+      );
+    const st =
+      Math.sin(
+        theta,
+      );
+    out[
+      i *
+        3
+    ] =
+      ux *
+        ct +
+      vx *
+        st;
+    out[
+      i *
+        3 +
+        1
+    ] =
+      uy *
+        ct +
+      vy *
+        st +
+      oy;
+    out[
+      i *
+        3 +
+        2
+    ] =
+      uz *
+        ct +
+      vz *
+        st;
   }
   return out;
 }
@@ -203,11 +364,37 @@ export function ringPoints(
  * @returns degrees, in the globe renderer's own sense: `yaw` about the vertical
  * (right is positive), `pitch` about the horizontal (down is positive).
  */
-export function tiltAngles(q: Quat): { yaw: number; pitch: number } {
-  const [x, y, , w] = q;
-  const pitch = (2 * Math.atan2(x, w)) / DEG;
-  const yaw = (2 * Math.atan2(y, w)) / DEG;
-  return { yaw, pitch };
+export function tiltAngles(
+  q: Quat,
+): {
+  yaw: number;
+  pitch: number;
+} {
+  const [
+    x,
+    y,
+    ,
+    w,
+  ] =
+    q;
+  const pitch =
+    (2 *
+      Math.atan2(
+        x,
+        w,
+      )) /
+    DEG;
+  const yaw =
+    (2 *
+      Math.atan2(
+        y,
+        w,
+      )) /
+    DEG;
+  return {
+    yaw,
+    pitch,
+  };
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -247,7 +434,12 @@ export interface Pin {
  */
 const LAT_SPAN = 0.7;
 /** Golden angle — the classic even-ish spherical distribution. */
-const GOLDEN_DEG = 180 * (3 - Math.sqrt(5));
+const GOLDEN_DEG =
+  180 *
+  (3 -
+    Math.sqrt(
+      5,
+    ));
 
 /**
  * Place one globe's assigned sources on its surface.
@@ -257,25 +449,68 @@ const GOLDEN_DEG = 180 * (3 - Math.sqrt(5));
  * rearranges once, deterministically, instead of every icon jumping to a new
  * random home on every render.
  */
-function placeOnSphere(ids: SourceId[], globe: number): Pin[] {
-  const n = ids.length;
-  return ids.map((id, i) => {
-    const sinLat = n <= 1 ? 0 : (1 - (2 * (i + 0.5)) / n) * LAT_SPAN;
-    const lat = Math.asin(sinLat) / DEG;
-    const lon = ((i * GOLDEN_DEG) % 360) - 180;
-    const cl = Math.cos(lat * DEG);
-    return {
+function placeOnSphere(
+  ids: SourceId[],
+  globe: number,
+): Pin[] {
+  const n =
+    ids.length;
+  return ids.map(
+    (
       id,
-      globe,
-      lat,
-      lon,
-      // Screen-handed: x right, y DOWN, z toward the viewer — the same axes CSS
-      // 3D uses, so the projection and the drawn wireframe agree.
-      bx: cl * Math.sin(lon * DEG),
-      by: -Math.sin(lat * DEG),
-      bz: cl * Math.cos(lon * DEG),
-    };
-  });
+      i,
+    ) => {
+      const sinLat =
+        n <=
+        1
+          ? 0
+          : (1 -
+              (2 *
+                (i +
+                  0.5)) /
+                n) *
+            LAT_SPAN;
+      const lat =
+        Math.asin(
+          sinLat,
+        ) /
+        DEG;
+      const lon =
+        ((i *
+          GOLDEN_DEG) %
+          360) -
+        180;
+      const cl =
+        Math.cos(
+          lat *
+            DEG,
+        );
+      return {
+        id,
+        globe,
+        lat,
+        lon,
+        // Screen-handed: x right, y DOWN, z toward the viewer — the same axes CSS
+        // 3D uses, so the projection and the drawn wireframe agree.
+        bx:
+          cl *
+          Math.sin(
+            lon *
+              DEG,
+          ),
+        by: -Math.sin(
+          lat *
+            DEG,
+        ),
+        bz:
+          cl *
+          Math.cos(
+            lon *
+              DEG,
+          ),
+      };
+    },
+  );
 }
 
 /**
@@ -288,7 +523,12 @@ function placeOnSphere(ids: SourceId[], globe: number): Pin[] {
  * rather than the newest one sitting empty until you buy more sources.
  */
 export function placePins(
-  owned: Partial<Record<SourceId, number>>,
+  owned: Partial<
+    Record<
+      SourceId,
+      number
+    >
+  >,
   globes: number,
   /**
    * How many pins the field can carry. Defaults to the ceiling; the renderer
@@ -297,26 +537,103 @@ export function placePins(
    */
   limit = MAX_PINS,
 ): Pin[] {
-  const count = Math.max(1, Math.floor(globes));
-  const cap = Math.max(1, Math.min(MAX_PINS, Math.floor(limit)));
+  const count =
+    Math.max(
+      1,
+      Math.floor(
+        globes,
+      ),
+    );
+  const cap =
+    Math.max(
+      1,
+      Math.min(
+        MAX_PINS,
+        Math.floor(
+          limit,
+        ),
+      ),
+    );
 
   // Deepest first — see MAX_PINS.
-  const held: { id: SourceId; ladder: number }[] = [];
-  for (let i = SOURCES.length - 1; i >= 0; i--) {
-    const source = SOURCES[i]!;
-    if ((owned[source.id] ?? 0) > 0) held.push({ id: source.id, ladder: i });
+  const held: {
+    id: SourceId;
+    ladder: number;
+  }[] =
+    [];
+  for (
+    let i =
+      SOURCES.length -
+      1;
+    i >=
+    0;
+    i--
+  ) {
+    const source =
+      SOURCES[
+        i
+      ]!;
+    if (
+      (owned[
+        source
+          .id
+      ] ??
+        0) >
+      0
+    )
+      held.push(
+        {
+          id: source.id,
+          ladder:
+            i,
+        },
+      );
   }
 
-  const byGlobe: SourceId[][] = Array.from({ length: count }, () => []);
+  const byGlobe: SourceId[][] =
+    Array.from(
+      {
+        length:
+          count,
+      },
+      () => [],
+    );
   let placed = 0;
-  for (const { id, ladder } of held) {
-    if (placed >= cap) break;
-    const globe = ladder % count;
-    const bucket = byGlobe[globe]!;
-    if (bucket.length >= MAX_PINS_PER_GLOBE) continue;
-    bucket.push(id);
+  for (const {
+    id,
+    ladder,
+  } of held) {
+    if (
+      placed >=
+      cap
+    )
+      break;
+    const globe =
+      ladder %
+      count;
+    const bucket =
+      byGlobe[
+        globe
+      ]!;
+    if (
+      bucket.length >=
+      MAX_PINS_PER_GLOBE
+    )
+      continue;
+    bucket.push(
+      id,
+    );
     placed++;
   }
 
-  return byGlobe.flatMap((ids, globe) => placeOnSphere(ids, globe));
+  return byGlobe.flatMap(
+    (
+      ids,
+      globe,
+    ) =>
+      placeOnSphere(
+        ids,
+        globe,
+      ),
+  );
 }

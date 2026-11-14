@@ -40,30 +40,32 @@ import type { Modifiers } from './types';
  * the literal's own — fully required — inferred shape while still checking it
  * against `Modifiers`.
  */
-export const DEFAULT_MODIFIERS = {
-  invisible: false,
-  speed: 1.0,
-  suddenDeath: false,
-  bombs: false,
-  switching: false,
-  spin: false,
-  strictTiming: false,
-  oneTrack: false,
-  // Off. The gauge is a thing a player asks for, never a thing that happens to
-  // them — a run that can end early is a different game, and the default has to
-  // be the one where finishing the song is guaranteed.
-  healthGauge: false,
-  difficulty: 'normal',
-  // A9 / M6 — both off by default, same reasoning as `healthGauge` above: a run
-  // that plays on different windows, or that can end on a GREAT, is a thing a
-  // player opts into.
-  lenientTiming: false,
-  perfectionist: false,
-  noFail: false,
-  assist: false,
-  sRandom: false,
-  tapHolds: false,
-} satisfies Modifiers;
+export const DEFAULT_MODIFIERS =
+  {
+    invisible: false,
+    speed: 1.0,
+    suddenDeath: false,
+    bombs: false,
+    switching: false,
+    spin: false,
+    strictTiming: false,
+    oneTrack: false,
+    // Off. The gauge is a thing a player asks for, never a thing that happens to
+    // them — a run that can end early is a different game, and the default has to
+    // be the one where finishing the song is guaranteed.
+    healthGauge: false,
+    difficulty:
+      'normal',
+    // A9 / M6 — both off by default, same reasoning as `healthGauge` above: a run
+    // that plays on different windows, or that can end on a GREAT, is a thing a
+    // player opts into.
+    lenientTiming: false,
+    perfectionist: false,
+    noFail: false,
+    assist: false,
+    sRandom: false,
+    tapHolds: false,
+  } satisfies Modifiers;
 
 /**
  * Every field is `.optional()` before its transform, and that is load-bearing.
@@ -75,22 +77,65 @@ export const DEFAULT_MODIFIERS = {
  * the outer `.catch()` swallows the failure, and every field silently reverts
  * to its default — including the one the caller was setting.
  */
-const optionalUnknown = z.unknown().optional();
+const optionalUnknown =
+  z
+    .unknown()
+    .optional();
 
 /** Speed, rounded to the 0.1 steps the slider offers and clamped to range. */
-const SpeedZ = optionalUnknown.transform((raw) => {
-  const n = typeof raw === 'number' && Number.isFinite(raw) ? raw : 1;
-  const stepped = Math.round(n * 10) / 10;
-  return Math.min(MAX_SPEED, Math.max(MIN_SPEED, stepped));
-});
+const SpeedZ =
+  optionalUnknown.transform(
+    (
+      raw,
+    ) => {
+      const n =
+        typeof raw ===
+          'number' &&
+        Number.isFinite(
+          raw,
+        )
+          ? raw
+          : 1;
+      const stepped =
+        Math.round(
+          n *
+            10,
+        ) /
+        10;
+      return Math.min(
+        MAX_SPEED,
+        Math.max(
+          MIN_SPEED,
+          stepped,
+        ),
+      );
+    },
+  );
 
-const BoolZ = optionalUnknown.transform((raw) => raw === true);
+const BoolZ =
+  optionalUnknown.transform(
+    (
+      raw,
+    ) =>
+      raw ===
+      true,
+  );
 
-const DifficultyZ = optionalUnknown.transform((raw): Difficulty =>
-  typeof raw === 'string' && (DIFFICULTIES as readonly string[]).includes(raw)
-    ? (raw as Difficulty)
-    : 'normal',
-);
+const DifficultyZ =
+  optionalUnknown.transform(
+    (
+      raw,
+    ): Difficulty =>
+      typeof raw ===
+        'string' &&
+      (
+        DIFFICULTIES as readonly string[]
+      ).includes(
+        raw,
+      )
+        ? (raw as Difficulty)
+        : 'normal',
+  );
 
 /**
  * Parses anything into a valid {@link Modifiers}.
@@ -99,29 +144,51 @@ const DifficultyZ = optionalUnknown.transform((raw): Difficulty =>
  * — `null`, a string, an array — which the previous socket handler also
  * tolerated by falling back to defaults.
  */
-export const ModifiersZ: z.ZodType<Modifiers> = z
-  .object({
-    invisible: BoolZ,
-    speed: SpeedZ,
-    suddenDeath: BoolZ,
-    bombs: BoolZ,
-    switching: BoolZ,
-    spin: BoolZ,
-    strictTiming: BoolZ,
-    oneTrack: BoolZ,
-    healthGauge: BoolZ,
-    difficulty: DifficultyZ,
-    // A9 / M6 — `BoolZ` already defaults a missing or malformed key to `false`
-    // (see its definition above), which is exactly the safe-when-absent
-    // behaviour a new field needs to avoid a `store.ts` migration.
-    lenientTiming: BoolZ,
-    perfectionist: BoolZ,
-    noFail: BoolZ,
-    assist: BoolZ,
-    sRandom: BoolZ,
-    tapHolds: BoolZ,
-  })
-  .catch(() => ({ ...DEFAULT_MODIFIERS }));
+export const ModifiersZ: z.ZodType<Modifiers> =
+  z
+    .object(
+      {
+        invisible:
+          BoolZ,
+        speed:
+          SpeedZ,
+        suddenDeath:
+          BoolZ,
+        bombs:
+          BoolZ,
+        switching:
+          BoolZ,
+        spin: BoolZ,
+        strictTiming:
+          BoolZ,
+        oneTrack:
+          BoolZ,
+        healthGauge:
+          BoolZ,
+        difficulty:
+          DifficultyZ,
+        // A9 / M6 — `BoolZ` already defaults a missing or malformed key to `false`
+        // (see its definition above), which is exactly the safe-when-absent
+        // behaviour a new field needs to avoid a `store.ts` migration.
+        lenientTiming:
+          BoolZ,
+        perfectionist:
+          BoolZ,
+        noFail:
+          BoolZ,
+        assist:
+          BoolZ,
+        sRandom:
+          BoolZ,
+        tapHolds:
+          BoolZ,
+      },
+    )
+    .catch(
+      () => ({
+        ...DEFAULT_MODIFIERS,
+      }),
+    );
 
 /**
  * Coerce an arbitrary value into a valid modifier set.
@@ -129,9 +196,20 @@ export const ModifiersZ: z.ZodType<Modifiers> = z
  * Prefer this over `ModifiersZ.parse` at call sites that already have a
  * `try`-free style — it cannot throw.
  */
-export function normalizeModifiers(raw: unknown): Modifiers {
-  const parsed = ModifiersZ.safeParse(raw);
-  return parsed.success ? applyExclusions(parsed.data) : { ...DEFAULT_MODIFIERS };
+export function normalizeModifiers(
+  raw: unknown,
+): Modifiers {
+  const parsed =
+    ModifiersZ.safeParse(
+      raw,
+    );
+  return parsed.success
+    ? applyExclusions(
+        parsed.data,
+      )
+    : {
+        ...DEFAULT_MODIFIERS,
+      };
 }
 
 /**
@@ -153,24 +231,55 @@ export function normalizeModifiers(raw: unknown): Modifiers {
  * Death is dropped — Perfectionist is the strictly harder claim, and keeps
  * its own, larger bonus (`MODIFIER_BONUSES.perfectionist`).
  */
-export function applyExclusions(modifiers: Modifiers): Modifiers {
-  let result = modifiers;
-  if (result.switching && result.oneTrack) {
-    result = { ...result, switching: false };
+export function applyExclusions(
+  modifiers: Modifiers,
+): Modifiers {
+  let result =
+    modifiers;
+  if (
+    result.switching &&
+    result.oneTrack
+  ) {
+    result =
+      {
+        ...result,
+        switching: false,
+      };
   }
-  if (result.strictTiming && result.lenientTiming) {
-    result = { ...result, lenientTiming: false };
+  if (
+    result.strictTiming &&
+    result.lenientTiming
+  ) {
+    result =
+      {
+        ...result,
+        lenientTiming: false,
+      };
   }
-  if (result.perfectionist && result.suddenDeath) {
-    result = { ...result, suddenDeath: false };
+  if (
+    result.perfectionist &&
+    result.suddenDeath
+  ) {
+    result =
+      {
+        ...result,
+        suddenDeath: false,
+      };
   }
   // A1 — No Fail says "nothing ends this run early"; Sudden Death and
   // Perfectionist say the opposite. The assist wins rather than the challenge:
   // a player who ticked No Fail asked for a run they can finish, and silently
   // honouring the mod that ends it at note one would be the cruellest possible
   // reading of the two.
-  if (result.noFail) {
-    result = { ...result, suddenDeath: false, perfectionist: false };
+  if (
+    result.noFail
+  ) {
+    result =
+      {
+        ...result,
+        suddenDeath: false,
+        perfectionist: false,
+      };
   }
   return result;
 }
@@ -186,16 +295,27 @@ export function applyExclusions(modifiers: Modifiers): Modifiers {
  * punishes the player for needing it, which is the design mistake this list
  * exists to avoid.
  */
-export const ASSIST_MODIFIERS = [
-  'noFail',
-  'assist',
-  'lenientTiming',
-  'tapHolds',
-] as const satisfies readonly (keyof Modifiers)[];
+export const ASSIST_MODIFIERS =
+  [
+    'noFail',
+    'assist',
+    'lenientTiming',
+    'tapHolds',
+  ] as const satisfies readonly (keyof Modifiers)[];
 
 /** True when a run's settings allow it onto a leaderboard at all. */
-export function isRankedModifierSet(modifiers: Partial<Modifiers>): boolean {
-  return !ASSIST_MODIFIERS.some((key) => modifiers[key] === true);
+export function isRankedModifierSet(
+  modifiers: Partial<Modifiers>,
+): boolean {
+  return !ASSIST_MODIFIERS.some(
+    (
+      key,
+    ) =>
+      modifiers[
+        key
+      ] ===
+      true,
+  );
 }
 
 /**
@@ -211,16 +331,38 @@ export function isRankedModifierSet(modifiers: Partial<Modifiers>): boolean {
  * One function so the results screen's label, the client's submit guard and
  * the server's refusal can never disagree about what counts.
  */
-export type UnrankedReason = 'speed' | 'lenient' | 'assist' | 'practice';
+export type UnrankedReason =
+  | 'speed'
+  | 'lenient'
+  | 'assist'
+  | 'practice';
 
 export function unrankedReason(
   modifiers: Partial<Modifiers>,
   practiceAids: boolean,
 ): UnrankedReason | null {
-  if (typeof modifiers.speed === 'number' && modifiers.speed < RANKED_MIN_SPEED) return 'speed';
-  if (modifiers.lenientTiming === true) return 'lenient';
-  if (!isRankedModifierSet(modifiers)) return 'assist';
-  if (practiceAids) return 'practice';
+  if (
+    typeof modifiers.speed ===
+      'number' &&
+    modifiers.speed <
+      RANKED_MIN_SPEED
+  )
+    return 'speed';
+  if (
+    modifiers.lenientTiming ===
+    true
+  )
+    return 'lenient';
+  if (
+    !isRankedModifierSet(
+      modifiers,
+    )
+  )
+    return 'assist';
+  if (
+    practiceAids
+  )
+    return 'practice';
   return null;
 }
 
@@ -240,16 +382,24 @@ export function unrankedReason(
  * to zero in a race costs the run its multiplier bonus and nothing else, so a
  * player who wants the tension can race with it and nobody ends up spectating.
  */
-export function forMultiplayer(modifiers: Modifiers): Modifiers {
-  return applyExclusions({
-    ...modifiers,
-    speed: Math.max(MULTIPLAYER_MIN_SPEED, modifiers.speed),
-    suddenDeath: false,
-    // M6 — Perfectionist is dropped for exactly the reason Sudden Death is:
-    // ending a race at note one and then spectating four minutes of other
-    // people's scores is not a mode anyone chose by ticking a box.
-    perfectionist: false,
-  });
+export function forMultiplayer(
+  modifiers: Modifiers,
+): Modifiers {
+  return applyExclusions(
+    {
+      ...modifiers,
+      speed:
+        Math.max(
+          MULTIPLAYER_MIN_SPEED,
+          modifiers.speed,
+        ),
+      suddenDeath: false,
+      // M6 — Perfectionist is dropped for exactly the reason Sudden Death is:
+      // ending a race at note one and then spectating four minutes of other
+      // people's scores is not a mode anyone chose by ticking a box.
+      perfectionist: false,
+    },
+  );
 }
 
 /**
@@ -274,44 +424,137 @@ export function visibilityAlpha(
   /** V10 — the lane cover's height, 0 (no cover) to `MAX_LANE_COVER`. */
   coverFraction: number,
 ): number {
-  switch (mode) {
+  switch (
+    mode
+  ) {
     case 'fadeIn':
       // Invisible at spawn, fades in on approach (IIDX SUDDEN+): the opposite
       // read to fadeOut, testing a late read instead of a memorised one.
-      if (travelRatio > 0.55) return 0;
-      if (travelRatio > 0.35) return 1 - (travelRatio - 0.35) / 0.2;
+      if (
+        travelRatio >
+        0.55
+      )
+        return 0;
+      if (
+        travelRatio >
+        0.35
+      )
+        return (
+          1 -
+          (travelRatio -
+            0.35) /
+            0.2
+        );
       return 1;
     case 'flashlight':
       // Only a narrow ring around the judgement line is ever visible.
-      return travelRatio < 0.15 ? 1 : 0;
+      return travelRatio <
+        0.15
+        ? 1
+        : 0;
     case 'laneCover':
       // The literal cover (V10): hidden until the note clears the covered
       // fraction of the approach. `coverFraction` is what the player drags.
-      return travelRatio > 1 - coverFraction ? 0 : 1;
+      return travelRatio >
+        1 -
+          coverFraction
+        ? 0
+        : 1;
     case 'fadeOut':
     default:
       // The original `invisible` behaviour, preserved bit-for-bit: fully
       // visible until 20% of the approach remains, gone below 8%.
-      if (travelRatio < 0.08) return 0;
-      if (travelRatio < 0.2) return (travelRatio - 0.08) / 0.12;
+      if (
+        travelRatio <
+        0.08
+      )
+        return 0;
+      if (
+        travelRatio <
+        0.2
+      )
+        return (
+          (travelRatio -
+            0.08) /
+          0.12
+        );
       return 1;
   }
 }
 
 /** A compact label list for badges — only what differs from the defaults. */
-export function activeModifierKeys(modifiers: Modifiers): (keyof Modifiers)[] {
-  const keys: (keyof Modifiers)[] = [];
-  if (modifiers.invisible) keys.push('invisible');
-  if (modifiers.bombs) keys.push('bombs');
-  if (modifiers.switching) keys.push('switching');
-  if (modifiers.spin) keys.push('spin');
-  if (modifiers.strictTiming) keys.push('strictTiming');
-  if (modifiers.oneTrack) keys.push('oneTrack');
-  if (modifiers.healthGauge) keys.push('healthGauge');
-  if (modifiers.suddenDeath) keys.push('suddenDeath');
-  if (modifiers.lenientTiming) keys.push('lenientTiming');
-  if (modifiers.perfectionist) keys.push('perfectionist');
-  if (modifiers.speed !== 1) keys.push('speed');
+export function activeModifierKeys(
+  modifiers: Modifiers,
+): (keyof Modifiers)[] {
+  const keys: (keyof Modifiers)[] =
+    [];
+  if (
+    modifiers.invisible
+  )
+    keys.push(
+      'invisible',
+    );
+  if (
+    modifiers.bombs
+  )
+    keys.push(
+      'bombs',
+    );
+  if (
+    modifiers.switching
+  )
+    keys.push(
+      'switching',
+    );
+  if (
+    modifiers.spin
+  )
+    keys.push(
+      'spin',
+    );
+  if (
+    modifiers.strictTiming
+  )
+    keys.push(
+      'strictTiming',
+    );
+  if (
+    modifiers.oneTrack
+  )
+    keys.push(
+      'oneTrack',
+    );
+  if (
+    modifiers.healthGauge
+  )
+    keys.push(
+      'healthGauge',
+    );
+  if (
+    modifiers.suddenDeath
+  )
+    keys.push(
+      'suddenDeath',
+    );
+  if (
+    modifiers.lenientTiming
+  )
+    keys.push(
+      'lenientTiming',
+    );
+  if (
+    modifiers.perfectionist
+  )
+    keys.push(
+      'perfectionist',
+    );
+  if (
+    modifiers.speed !==
+    1
+  )
+    keys.push(
+      'speed',
+    );
   return keys;
 }
 
@@ -326,21 +569,67 @@ export function activeModifierKeys(modifiers: Modifiers): (keyof Modifiers)[] {
  */
 export function legalFor(
   modifiers: Modifiers,
-  map: { incompatible?: { key: string; reason: string }[] } | null | undefined,
+  map:
+    | {
+        incompatible?: {
+          key: string;
+          reason: string;
+        }[];
+      }
+    | null
+    | undefined,
 ): Modifiers {
-  let out = modifiers;
-  for (const { key } of map?.incompatible ?? []) {
-    if (typeof out[key as keyof Modifiers] === 'boolean' && out[key as keyof Modifiers]) {
-      out = { ...out, [key]: false };
+  let out =
+    modifiers;
+  for (const {
+    key,
+  } of map?.incompatible ??
+    []) {
+    if (
+      typeof out[
+        key as keyof Modifiers
+      ] ===
+        'boolean' &&
+      out[
+        key as keyof Modifiers
+      ]
+    ) {
+      out =
+        {
+          ...out,
+          [key]: false,
+        };
     }
   }
-  return applyExclusions(out);
+  return applyExclusions(
+    out,
+  );
 }
 
 /** The reason a chart gives for refusing a modifier, for the UI to show. */
 export function incompatibleReason(
   key: keyof Modifiers,
-  map: { incompatible?: { key: string; reason: string }[] } | null | undefined,
-): string | null {
-  return map?.incompatible?.find((entry) => entry.key === key)?.reason ?? null;
+  map:
+    | {
+        incompatible?: {
+          key: string;
+          reason: string;
+        }[];
+      }
+    | null
+    | undefined,
+):
+  | string
+  | null {
+  return (
+    map?.incompatible?.find(
+      (
+        entry,
+      ) =>
+        entry.key ===
+        key,
+    )
+      ?.reason ??
+    null
+  );
 }

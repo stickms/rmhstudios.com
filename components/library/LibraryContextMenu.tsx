@@ -5,13 +5,23 @@
  * actions in a stylized popup. Closes on selection, Escape, outside click,
  * scroll, or resize, and clamps itself inside the viewport.
  */
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import '@/components/library/library.css';
 
-export type MenuPos = { x: number; y: number };
+export type MenuPos =
+  {
+    x: number;
+    y: number;
+  };
 
 export type MenuItem =
   | {
@@ -23,20 +33,43 @@ export type MenuItem =
       disabled?: boolean;
       active?: boolean;
     }
-  | { type: 'separator' }
-  | { type: 'label'; label: string };
+  | {
+      type: 'separator';
+    }
+  | {
+      type: 'label';
+      label: string;
+    };
 
 /** Open-state + position helper for a single trigger. */
 export function useContextMenu() {
-  const [pos, setPos] = useState<MenuPos | null>(null);
+  const [
+    pos,
+    setPos,
+  ] =
+    useState<MenuPos | null>(
+      null,
+    );
   return {
     pos,
-    openAt: (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setPos({ x: e.clientX, y: e.clientY });
-    },
-    close: () => setPos(null),
+    openAt:
+      (
+        e: React.MouseEvent,
+      ) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setPos(
+          {
+            x: e.clientX,
+            y: e.clientY,
+          },
+        );
+      },
+    close:
+      () =>
+        setPos(
+          null,
+        ),
   };
 }
 
@@ -51,26 +84,87 @@ export function LibraryContextMenu({
   items: MenuItem[];
   label?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [coords, setCoords] = useState<MenuPos>(pos ?? { x: 0, y: 0 });
+  const ref =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const [
+    coords,
+    setCoords,
+  ] =
+    useState<MenuPos>(
+      pos ?? {
+        x: 0,
+        y: 0,
+      },
+    );
   // Keyed by the pointer position rather than a flag, because `pos` is what the
   // caller nulls to close — holding the last one is what leaves the menu
   // something to be anchored at while it plays its exit.
-  const { present, state } = usePopPresence(pos);
+  const {
+    present,
+    state,
+  } =
+    usePopPresence(
+      pos,
+    );
 
   useEffect(() => {
-    if (pos) setCoords(pos);
-  }, [pos]);
+    if (
+      pos
+    )
+      setCoords(
+        pos,
+      );
+  }, [
+    pos,
+  ]);
 
   // Keep the menu fully on-screen.
   useLayoutEffect(() => {
-    if (!pos || !ref.current) return;
-    const r = ref.current.getBoundingClientRect();
-    const x = Math.max(8, Math.min(pos.x, window.innerWidth - r.width - 8));
-    const y = Math.max(8, Math.min(pos.y, window.innerHeight - r.height - 8));
-    if (x !== coords.x || y !== coords.y) setCoords({ x, y });
+    if (
+      !pos ||
+      !ref.current
+    )
+      return;
+    const r =
+      ref.current.getBoundingClientRect();
+    const x =
+      Math.max(
+        8,
+        Math.min(
+          pos.x,
+          window.innerWidth -
+            r.width -
+            8,
+        ),
+      );
+    const y =
+      Math.max(
+        8,
+        Math.min(
+          pos.y,
+          window.innerHeight -
+            r.height -
+            8,
+        ),
+      );
+    if (
+      x !==
+        coords.x ||
+      y !==
+        coords.y
+    )
+      setCoords(
+        {
+          x,
+          y,
+        },
+      );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pos]);
+  }, [
+    pos,
+  ]);
 
   // The clamp above only moves the menu — a menu taller than the viewport still
   // hangs off the bottom with its last items unreachable, and it knows nothing
@@ -80,60 +174,181 @@ export function LibraryContextMenu({
   // §7.1) and the clamp has to survive that window, or it snaps back to its
   // unclamped position for the length of its own exit. The listeners below stay
   // on `pos` — a menu that is visibly leaving has already stopped listening.
-  useMenuViewportFit(present, ref, [coords.x, coords.y]);
+  useMenuViewportFit(
+    present,
+    ref,
+    [
+      coords.x,
+      coords.y,
+    ],
+  );
 
   useEffect(() => {
-    if (!pos) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('scroll', onClose, true);
-    window.addEventListener('resize', onClose);
+    if (
+      !pos
+    )
+      return;
+    const onKey =
+      (
+        e: KeyboardEvent,
+      ) =>
+        e.key ===
+          'Escape' &&
+        onClose();
+    const onDown =
+      (
+        e: MouseEvent,
+      ) => {
+        if (
+          ref.current &&
+          !ref.current.contains(
+            e.target as Node,
+          )
+        )
+          onClose();
+      };
+    document.addEventListener(
+      'keydown',
+      onKey,
+    );
+    document.addEventListener(
+      'mousedown',
+      onDown,
+    );
+    window.addEventListener(
+      'scroll',
+      onClose,
+      true,
+    );
+    window.addEventListener(
+      'resize',
+      onClose,
+    );
     return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('scroll', onClose, true);
-      window.removeEventListener('resize', onClose);
+      document.removeEventListener(
+        'keydown',
+        onKey,
+      );
+      document.removeEventListener(
+        'mousedown',
+        onDown,
+      );
+      window.removeEventListener(
+        'scroll',
+        onClose,
+        true,
+      );
+      window.removeEventListener(
+        'resize',
+        onClose,
+      );
     };
-  }, [pos, onClose]);
+  }, [
+    pos,
+    onClose,
+  ]);
 
-  if (!present || typeof document === 'undefined') return null;
+  if (
+    !present ||
+    typeof document ===
+      'undefined'
+  )
+    return null;
 
   return createPortal(
     <div
-      ref={ref}
+      ref={
+        ref
+      }
       className="lib-ctx surface-overlay"
       data-slot="context-menu"
       data-motion="pop"
-      data-state={state}
+      data-state={
+        state
+      }
       role="menu"
-      aria-label={label}
-      style={{ left: coords.x, top: coords.y }}
-      onContextMenu={(e) => e.preventDefault()}
+      aria-label={
+        label
+      }
+      style={{
+        left: coords.x,
+        top: coords.y,
+      }}
+      onContextMenu={(
+        e,
+      ) =>
+        e.preventDefault()
+      }
     >
-      {items.map((item, i) => {
-        if (item.type === 'separator') return <div key={i} className="lib-ctx__sep" role="separator" />;
-        if (item.type === 'label') return <div key={i} className="lib-ctx__label">{item.label}</div>;
-        return (
-          <button
-            key={i}
-            type="button"
-            role="menuitem"
-            className={`lib-ctx__item${item.danger ? ' is-danger' : ''}${item.active ? ' is-active' : ''}`}
-            disabled={item.disabled}
-            onClick={() => {
-              item.onSelect();
-              onClose();
-            }}
-          >
-            {item.icon && <span className="lib-ctx__icon" aria-hidden="true">{item.icon}</span>}
-            <span className="lib-ctx__text">{item.label}</span>
-          </button>
-        );
-      })}
+      {items.map(
+        (
+          item,
+          i,
+        ) => {
+          if (
+            item.type ===
+            'separator'
+          )
+            return (
+              <div
+                key={
+                  i
+                }
+                className="lib-ctx__sep"
+                role="separator"
+              />
+            );
+          if (
+            item.type ===
+            'label'
+          )
+            return (
+              <div
+                key={
+                  i
+                }
+                className="lib-ctx__label"
+              >
+                {
+                  item.label
+                }
+              </div>
+            );
+          return (
+            <button
+              key={
+                i
+              }
+              type="button"
+              role="menuitem"
+              className={`lib-ctx__item${item.danger ? ' is-danger' : ''}${item.active ? ' is-active' : ''}`}
+              disabled={
+                item.disabled
+              }
+              onClick={() => {
+                item.onSelect();
+                onClose();
+              }}
+            >
+              {item.icon && (
+                <span
+                  className="lib-ctx__icon"
+                  aria-hidden="true"
+                >
+                  {
+                    item.icon
+                  }
+                </span>
+              )}
+              <span className="lib-ctx__text">
+                {
+                  item.label
+                }
+              </span>
+            </button>
+          );
+        },
+      )}
     </div>,
     document.body,
   );

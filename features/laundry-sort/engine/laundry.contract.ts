@@ -4,12 +4,36 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { LeaderboardRow } from '@features/laundry-sort/api/laundry-sort.leaderboard.server';
 import type { laundryScoreBody } from './score-schema';
 
-export const submitLaundryScoreApi = endpoint<{
-  body: z.infer<typeof laundryScoreBody>;
-  res: { ok: true; personalBest: boolean };
-}>()({ method: 'POST', path: '/api/laundry-sort/score' });
+export const submitLaundryScoreApi =
+  endpoint<{
+    body: z.infer<
+      typeof laundryScoreBody
+    >;
+    res: {
+      ok: true;
+      personalBest: boolean;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/laundry-sort/score',
+    },
+  );
 
-export const laundryLeaderboardApi = endpoint<{
-  query: { mode?: 'solo' | 'versus'; limit?: number };
-  res: LeaderboardRow[];
-}>()({ method: 'GET', path: '/api/laundry-sort/leaderboard' });
+export const laundryLeaderboardApi =
+  endpoint<{
+    query: {
+      mode?:
+        | 'solo'
+        | 'versus';
+      limit?: number;
+    };
+    res: LeaderboardRow[];
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/laundry-sort/leaderboard',
+    },
+  );

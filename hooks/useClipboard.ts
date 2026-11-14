@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 /**
  * Copy text to the clipboard with a self-resetting `copied` flag.
@@ -13,61 +18,130 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * <button onClick={() => copy(roomCode)}>{copied ? 'Copied' : 'Copy'}</button>
  * ```
  */
-export function useClipboard({ resetMs = 2000 }: { resetMs?: number } = {}) {
-  const [copied, setCopied] = useState(false);
-  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+export function useClipboard({
+  resetMs = 2000,
+}: {
+  resetMs?: number;
+} = {}) {
+  const [
+    copied,
+    setCopied,
+  ] =
+    useState(
+      false,
+    );
+  const timeout =
+    useRef<ReturnType<
+      typeof setTimeout
+    > | null>(
+      null,
+    );
 
   useEffect(
-    () => () => {
-      if (timeout.current) clearTimeout(timeout.current);
-    },
+    () =>
+      () => {
+        if (
+          timeout.current
+        )
+          clearTimeout(
+            timeout.current,
+          );
+      },
     [],
   );
 
-  const copy = useCallback(
-    async (text: string): Promise<boolean> => {
-      let ok: boolean;
-      const legacyCopy = (): boolean => {
-        const el = document.createElement('textarea');
-        el.value = text;
-        el.setAttribute('readonly', '');
-        el.style.position = 'fixed';
-        el.style.opacity = '0';
-        document.body.appendChild(el);
-        el.select();
+  const copy =
+    useCallback(
+      async (
+        text: string,
+      ): Promise<boolean> => {
+        let ok: boolean;
+        const legacyCopy =
+          (): boolean => {
+            const el =
+              document.createElement(
+                'textarea',
+              );
+            el.value =
+              text;
+            el.setAttribute(
+              'readonly',
+              '',
+            );
+            el.style.position =
+              'fixed';
+            el.style.opacity =
+              '0';
+            document.body.appendChild(
+              el,
+            );
+            el.select();
+            try {
+              return document.execCommand(
+                'copy',
+              );
+            } finally {
+              document.body.removeChild(
+                el,
+              );
+            }
+          };
         try {
-          return document.execCommand('copy');
-        } finally {
-          document.body.removeChild(el);
-        }
-      };
-      try {
-        if (navigator?.clipboard?.writeText) {
-          await navigator.clipboard.writeText(text);
-          ok = true;
-        } else {
-          // Fallback for insecure contexts / older browsers.
-          ok = legacyCopy();
-        }
-      } catch {
-        // writeText rejects when the permission is denied or the document lost
-        // focus; execCommand can still succeed inside the same user gesture.
-        try {
-          ok = legacyCopy();
+          if (
+            navigator
+              ?.clipboard
+              ?.writeText
+          ) {
+            await navigator.clipboard.writeText(
+              text,
+            );
+            ok = true;
+          } else {
+            // Fallback for insecure contexts / older browsers.
+            ok =
+              legacyCopy();
+          }
         } catch {
-          ok = false;
+          // writeText rejects when the permission is denied or the document lost
+          // focus; execCommand can still succeed inside the same user gesture.
+          try {
+            ok =
+              legacyCopy();
+          } catch {
+            ok = false;
+          }
         }
-      }
 
-      if (ok) {
-        setCopied(true);
-        if (timeout.current) clearTimeout(timeout.current);
-        timeout.current = setTimeout(() => setCopied(false), resetMs);
-      }
-      return ok;
-    },
-    [resetMs],
-  );
+        if (
+          ok
+        ) {
+          setCopied(
+            true,
+          );
+          if (
+            timeout.current
+          )
+            clearTimeout(
+              timeout.current,
+            );
+          timeout.current =
+            setTimeout(
+              () =>
+                setCopied(
+                  false,
+                ),
+              resetMs,
+            );
+        }
+        return ok;
+      },
+      [
+        resetMs,
+      ],
+    );
 
-  return { copied, copy };
+  return {
+    copied,
+    copy,
+  };
 }

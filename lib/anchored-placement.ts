@@ -23,15 +23,22 @@ export interface PlacementBounds {
   right: number;
 }
 
-export type PlacementSide = 'top' | 'bottom';
-export type PlacementAlign = 'start' | 'end';
+export type PlacementSide =
+  | 'top'
+  | 'bottom';
+export type PlacementAlign =
+  | 'start'
+  | 'end';
 
 export interface PlacementInput {
   anchor: AnchorRect;
   /** The panel's height with no cap applied. */
   panelHeight: number;
   bounds: PlacementBounds;
-  viewport: { width: number; height: number };
+  viewport: {
+    width: number;
+    height: number;
+  };
   /** Preferred side. Kept whenever it can hold the whole panel. */
   side: PlacementSide;
   align: PlacementAlign;
@@ -75,33 +82,92 @@ export function resolveAnchoredPlacement({
   gap,
   panelWidth,
 }: PlacementInput): Placement {
-  const roomAbove = anchor.top - gap - bounds.top;
-  const roomBelow = bounds.bottom - anchor.bottom - gap;
-  const preferredRoom = side === 'top' ? roomAbove : roomBelow;
+  const roomAbove =
+    anchor.top -
+    gap -
+    bounds.top;
+  const roomBelow =
+    bounds.bottom -
+    anchor.bottom -
+    gap;
+  const preferredRoom =
+    side ===
+    'top'
+      ? roomAbove
+      : roomBelow;
   const resolved: PlacementSide =
-    preferredRoom >= panelHeight ? side : roomAbove > roomBelow ? 'top' : 'bottom';
-  const room = resolved === 'top' ? roomAbove : roomBelow;
+    preferredRoom >=
+    panelHeight
+      ? side
+      : roomAbove >
+          roomBelow
+        ? 'top'
+        : 'bottom';
+  const room =
+    resolved ===
+    'top'
+      ? roomAbove
+      : roomBelow;
 
   // The near edge first (never past the bound on the aligned side), then the far
   // edge: pull the panel back toward the aligned side until it fits, but never
   // past that near bound — a panel wider than the bounds keeps its near edge in.
-  const nearMin = align === 'end' ? viewport.width - bounds.right : bounds.left;
+  const nearMin =
+    align ===
+    'end'
+      ? viewport.width -
+        bounds.right
+      : bounds.left;
   const preferredInset =
-    align === 'end'
-      ? Math.max(nearMin, viewport.width - anchor.right)
-      : Math.max(nearMin, anchor.left);
+    align ===
+    'end'
+      ? Math.max(
+          nearMin,
+          viewport.width -
+            anchor.right,
+        )
+      : Math.max(
+          nearMin,
+          anchor.left,
+        );
   const farLimit =
-    panelWidth === undefined
+    panelWidth ===
+    undefined
       ? Infinity
-      : align === 'end'
-        ? viewport.width - bounds.left - panelWidth
-        : bounds.right - panelWidth;
-  const inset = Math.max(nearMin, Math.min(preferredInset, farLimit));
+      : align ===
+          'end'
+        ? viewport.width -
+          bounds.left -
+          panelWidth
+        : bounds.right -
+          panelWidth;
+  const inset =
+    Math.max(
+      nearMin,
+      Math.min(
+        preferredInset,
+        farLimit,
+      ),
+    );
 
   return {
     side: resolved,
-    offset: resolved === 'top' ? viewport.height - anchor.top + gap : anchor.bottom + gap,
+    offset:
+      resolved ===
+      'top'
+        ? viewport.height -
+          anchor.top +
+          gap
+        : anchor.bottom +
+          gap,
     inset,
-    maxHeight: Math.max(0, Math.min(panelHeight, room)),
+    maxHeight:
+      Math.max(
+        0,
+        Math.min(
+          panelHeight,
+          room,
+        ),
+      ),
   };
 }

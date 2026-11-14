@@ -29,8 +29,16 @@
  * The two halves are a pair; neither is safe alone.
  */
 
-import { BOMB_CONVERSION_RATE, SWITCH_CONVERSION_RATE, type Difficulty } from './constants';
-import type { BeatMap, Modifiers, Slice } from './types';
+import {
+  BOMB_CONVERSION_RATE,
+  SWITCH_CONVERSION_RATE,
+  type Difficulty,
+} from './constants';
+import type {
+  BeatMap,
+  Modifiers,
+  Slice,
+} from './types';
 
 /* ─── G7: the chart-native mine marker ───────────────────────────────────── */
 
@@ -54,14 +62,25 @@ import type { BeatMap, Modifiers, Slice } from './types';
  * is why {@link isChartNativeMine} is the only reader and it is used in exactly
  * one place.
  */
-export const CHART_MINE_ID_PREFIX = 'mine:';
+export const CHART_MINE_ID_PREFIX =
+  'mine:';
 
 /** True for a `BOMB` the charter placed (G7), false for a converted note. */
-export function isChartNativeMine(slice: Pick<Slice, 'id' | 'type'>): boolean {
+export function isChartNativeMine(
+  slice: Pick<
+    Slice,
+    | 'id'
+    | 'type'
+  >,
+): boolean {
   return (
-    slice.type === 'BOMB' &&
-    typeof slice.id === 'string' &&
-    slice.id.startsWith(CHART_MINE_ID_PREFIX)
+    slice.type ===
+      'BOMB' &&
+    typeof slice.id ===
+      'string' &&
+    slice.id.startsWith(
+      CHART_MINE_ID_PREFIX,
+    )
   );
 }
 
@@ -73,22 +92,71 @@ export function isChartNativeMine(slice: Pick<Slice, 'id' | 'type'>): boolean {
  * preview render, a test. Converted bombs are untouched: they only exist when
  * the modifier that produced them is on.
  */
-export function withoutChartMines(slices: Slice[]): Slice[] {
-  return slices.filter((slice) => !isChartNativeMine(slice));
+export function withoutChartMines(
+  slices: Slice[],
+): Slice[] {
+  return slices.filter(
+    (
+      slice,
+    ) =>
+      !isChartNativeMine(
+        slice,
+      ),
+  );
 }
 
 /** mulberry32 seeded from a string — small, fast, and stable across engines. */
-export function createSeededRandom(seed: string): () => number {
+export function createSeededRandom(
+  seed: string,
+): () => number {
   let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+  for (
+    let i = 0;
+    i <
+    seed.length;
+    i++
+  ) {
+    h =
+      (Math.imul(
+        31,
+        h,
+      ) +
+        seed.charCodeAt(
+          i,
+        )) |
+      0;
   }
   return () => {
     h |= 0;
-    h = (h + 0x6d2b79f5) | 0;
-    let t = Math.imul(h ^ (h >>> 15), 1 | h);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    h =
+      (h +
+        0x6d2b79f5) |
+      0;
+    let t =
+      Math.imul(
+        h ^
+          (h >>>
+            15),
+        1 |
+          h,
+      );
+    t =
+      (t +
+        Math.imul(
+          t ^
+            (t >>>
+              7),
+          61 |
+            t,
+        )) ^
+      t;
+    return (
+      ((t ^
+        (t >>>
+          14)) >>>
+        0) /
+      4294967296
+    );
   };
 }
 
@@ -97,14 +165,25 @@ export function createSeededRandom(seed: string): () => number {
  * is in it, and nothing else is — so two players who chose the same settings
  * get the same notes, and a retry reproduces the run you just lost.
  */
-export function chartSeed(songId: string, modifiers: Modifiers): string {
+export function chartSeed(
+  songId: string,
+  modifiers: Modifiers,
+): string {
   return [
     songId,
     modifiers.difficulty,
-    modifiers.bombs ? 'b' : '-',
-    modifiers.switching ? 's' : '-',
-    modifiers.oneTrack ? 'o' : '-',
-  ].join(':');
+    modifiers.bombs
+      ? 'b'
+      : '-',
+    modifiers.switching
+      ? 's'
+      : '-',
+    modifiers.oneTrack
+      ? 'o'
+      : '-',
+  ].join(
+    ':',
+  );
 }
 
 /**
@@ -120,17 +199,60 @@ export function chartSeed(songId: string, modifiers: Modifiers): string {
  * request and the store ever disagree about the tier, the honest failure is
  * "you played the wrong difficulty", not "the song had no notes in it".
  */
-export function resolveSlices(map: BeatMap, difficulty: Difficulty): Slice[] {
-  const source = map.slices;
-  if (Array.isArray(source)) return source.map((s) => ({ ...s }));
+export function resolveSlices(
+  map: BeatMap,
+  difficulty: Difficulty,
+): Slice[] {
+  const source =
+    map.slices;
+  if (
+    Array.isArray(
+      source,
+    )
+  )
+    return source.map(
+      (
+        s,
+      ) => ({
+        ...s,
+      }),
+    );
 
-  const byDifficulty = source as Partial<Record<Difficulty, Slice[]>>;
+  const byDifficulty =
+    source as Partial<
+      Record<
+        Difficulty,
+        Slice[]
+      >
+    >;
   const picked =
-    byDifficulty[difficulty] ??
+    byDifficulty[
+      difficulty
+    ] ??
     byDifficulty.normal ??
-    Object.values(byDifficulty).find((list) => Array.isArray(list));
-  if (!Array.isArray(picked)) return [];
-  return picked.map((s) => ({ ...s }));
+    Object.values(
+      byDifficulty,
+    ).find(
+      (
+        list,
+      ) =>
+        Array.isArray(
+          list,
+        ),
+    );
+  if (
+    !Array.isArray(
+      picked,
+    )
+  )
+    return [];
+  return picked.map(
+    (
+      s,
+    ) => ({
+      ...s,
+    }),
+  );
 }
 
 /**
@@ -161,20 +283,49 @@ export function applyChartModifiers(
   // G7. The whole opt-in guarantee, in one line: a mine the charter placed is
   // part of the stored chart, and the stored chart is not what gets played
   // unless the player asked for bombs.
-  let out = modifiers.bombs ? slices : withoutChartMines(slices);
+  let out =
+    modifiers.bombs
+      ? slices
+      : withoutChartMines(
+          slices,
+        );
 
   // M5 — before every lane transform below, because a hold that has become a
   // tap is a different shape for the switching/one-track passes to reason
   // about. The tail is DROPPED, never converted to a second tap: adding notes
   // would make an accessibility modifier harder than the chart it simplifies.
-  if (modifiers.tapHolds) {
-    out = out.map((slice) =>
-      slice.type === 'LONG' ? { ...slice, type: 'STANDARD' as const, duration: undefined } : slice,
-    );
+  if (
+    modifiers.tapHolds
+  ) {
+    out =
+      out.map(
+        (
+          slice,
+        ) =>
+          slice.type ===
+          'LONG'
+            ? {
+                ...slice,
+                type: 'STANDARD' as const,
+                duration:
+                  undefined,
+              }
+            : slice,
+      );
   }
 
-  if (modifiers.oneTrack) {
-    out = out.map((slice) => ({ ...slice, lane: 0 }));
+  if (
+    modifiers.oneTrack
+  ) {
+    out =
+      out.map(
+        (
+          slice,
+        ) => ({
+          ...slice,
+          lane: 0,
+        }),
+      );
   }
 
   // M2 — S-Random. Grouped by TIMESTAMP, not applied per slice: a chord is two
@@ -185,63 +336,228 @@ export function applyChartModifiers(
   //
   // Runs after `oneTrack` so the two do not fight: collapsing to one lane and
   // then re-scattering would quietly undo an explicit choice.
-  if (modifiers.sRandom && !modifiers.oneTrack) {
-    const laneCount = Math.max(
-      2,
-      out.reduce((n, s) => Math.max(n, s.lane + 1), 0),
-    );
-    const byTime = new Map<number, Slice[]>();
+  if (
+    modifiers.sRandom &&
+    !modifiers.oneTrack
+  ) {
+    const laneCount =
+      Math.max(
+        2,
+        out.reduce(
+          (
+            n,
+            s,
+          ) =>
+            Math.max(
+              n,
+              s.lane +
+                1,
+            ),
+          0,
+        ),
+      );
+    const byTime =
+      new Map<
+        number,
+        Slice[]
+      >();
     for (const slice of out) {
-      const key = Math.round(slice.time * 1000);
-      byTime.set(key, [...(byTime.get(key) ?? []), slice]);
+      const key =
+        Math.round(
+          slice.time *
+            1000,
+        );
+      byTime.set(
+        key,
+        [
+          ...(byTime.get(
+            key,
+          ) ??
+            []),
+          slice,
+        ],
+      );
     }
-    const reassigned = new Map<string, number>();
+    const reassigned =
+      new Map<
+        string,
+        number
+      >();
     for (const group of byTime.values()) {
-      const lanes = [...Array(laneCount).keys()];
+      const lanes =
+        [
+          ...Array(
+            laneCount,
+          ).keys(),
+        ];
       // Fisher-Yates from the run's own seeded stream, so the same settings
       // twice produce the same chart — `chartSeed` already folds the modifier
       // set in, and a replay could not otherwise be verified against it.
-      for (let i = lanes.length - 1; i > 0; i--) {
-        const j = Math.floor(random() * (i + 1));
-        [lanes[i], lanes[j]] = [lanes[j], lanes[i]];
+      for (
+        let i =
+          lanes.length -
+          1;
+        i >
+        0;
+        i--
+      ) {
+        const j =
+          Math.floor(
+            random() *
+              (i +
+                1),
+          );
+        [
+          lanes[
+            i
+          ],
+          lanes[
+            j
+          ],
+        ] =
+          [
+            lanes[
+              j
+            ],
+            lanes[
+              i
+            ],
+          ];
       }
-      group.forEach((slice, index) => reassigned.set(slice.id, lanes[index % lanes.length]));
-    }
-    out = out.map((slice) => ({ ...slice, lane: reassigned.get(slice.id) ?? slice.lane }));
-  }
-
-  if (modifiers.switching && !modifiers.oneTrack) {
-    const longNotes = out.filter((s) => s.type === 'LONG');
-    out = out.map((slice) => {
-      if (slice.type === 'BOMB' || slice.type === 'LONG') return slice;
-      if (random() >= SWITCH_CONVERSION_RATE) return slice;
-
-      const destLane = slice.lane === 0 ? 1 : 0;
-      // A small buffer either side, so a switch never lands in the fraction of
-      // a second before or after a hold where the lane is effectively occupied.
-      const buffer = 0.1;
-      const conflicts = longNotes.some(
-        (long) =>
-          long.lane === destLane &&
-          slice.time >= long.time - buffer &&
-          slice.time <= long.time + (long.duration ?? 0) + buffer,
+      group.forEach(
+        (
+          slice,
+          index,
+        ) =>
+          reassigned.set(
+            slice.id,
+            lanes[
+              index %
+                lanes.length
+            ],
+          ),
       );
-      if (conflicts) return slice;
-      return { ...slice, type: 'SWITCH' as const, duration: undefined };
-    });
+    }
+    out =
+      out.map(
+        (
+          slice,
+        ) => ({
+          ...slice,
+          lane:
+            reassigned.get(
+              slice.id,
+            ) ??
+            slice.lane,
+        }),
+      );
   }
 
-  if (modifiers.bombs) {
-    out = out.map((slice) => {
-      if (slice.type === 'SWITCH' || slice.type === 'LONG') return slice;
-      // G7. A chart-native mine is already a bomb; converting it again is a
-      // no-op that would still burn a draw from the PRNG and shift every
-      // conversion after it. Skipping keeps a mined chart's converted bombs in
-      // the same places an unmined chart's would be.
-      if (slice.type === 'BOMB') return slice;
-      if (random() >= BOMB_CONVERSION_RATE) return slice;
-      return { ...slice, type: 'BOMB' as const, duration: undefined };
-    });
+  if (
+    modifiers.switching &&
+    !modifiers.oneTrack
+  ) {
+    const longNotes =
+      out.filter(
+        (
+          s,
+        ) =>
+          s.type ===
+          'LONG',
+      );
+    out =
+      out.map(
+        (
+          slice,
+        ) => {
+          if (
+            slice.type ===
+              'BOMB' ||
+            slice.type ===
+              'LONG'
+          )
+            return slice;
+          if (
+            random() >=
+            SWITCH_CONVERSION_RATE
+          )
+            return slice;
+
+          const destLane =
+            slice.lane ===
+            0
+              ? 1
+              : 0;
+          // A small buffer either side, so a switch never lands in the fraction of
+          // a second before or after a hold where the lane is effectively occupied.
+          const buffer = 0.1;
+          const conflicts =
+            longNotes.some(
+              (
+                long,
+              ) =>
+                long.lane ===
+                  destLane &&
+                slice.time >=
+                  long.time -
+                    buffer &&
+                slice.time <=
+                  long.time +
+                    (long.duration ??
+                      0) +
+                    buffer,
+            );
+          if (
+            conflicts
+          )
+            return slice;
+          return {
+            ...slice,
+            type: 'SWITCH' as const,
+            duration:
+              undefined,
+          };
+        },
+      );
+  }
+
+  if (
+    modifiers.bombs
+  ) {
+    out =
+      out.map(
+        (
+          slice,
+        ) => {
+          if (
+            slice.type ===
+              'SWITCH' ||
+            slice.type ===
+              'LONG'
+          )
+            return slice;
+          // G7. A chart-native mine is already a bomb; converting it again is a
+          // no-op that would still burn a draw from the PRNG and shift every
+          // conversion after it. Skipping keeps a mined chart's converted bombs in
+          // the same places an unmined chart's would be.
+          if (
+            slice.type ===
+            'BOMB'
+          )
+            return slice;
+          if (
+            random() >=
+            BOMB_CONVERSION_RATE
+          )
+            return slice;
+          return {
+            ...slice,
+            type: 'BOMB' as const,
+            duration:
+              undefined,
+          };
+        },
+      );
   }
 
   return out;
@@ -251,17 +567,50 @@ export function applyChartModifiers(
  * The whole preparation, in one call: resolve the difficulty variant, then
  * rewrite it under the run's modifiers with a seed derived from both.
  */
-export function prepareChart(map: BeatMap, modifiers: Modifiers): Slice[] {
-  const base = resolveSlices(map, modifiers.difficulty);
-  const random = createSeededRandom(chartSeed(map.id, modifiers));
-  return applyChartModifiers(base, modifiers, random).map((slice) => ({
-    ...slice,
-    hit: false,
-    hitTime: undefined,
-  }));
+export function prepareChart(
+  map: BeatMap,
+  modifiers: Modifiers,
+): Slice[] {
+  const base =
+    resolveSlices(
+      map,
+      modifiers.difficulty,
+    );
+  const random =
+    createSeededRandom(
+      chartSeed(
+        map.id,
+        modifiers,
+      ),
+    );
+  return applyChartModifiers(
+    base,
+    modifiers,
+    random,
+  ).map(
+    (
+      slice,
+    ) => ({
+      ...slice,
+      hit: false,
+      hitTime:
+        undefined,
+    }),
+  );
 }
 
 /** Notes that count toward accuracy — bombs and silent notes never do. */
-export function scorableNoteCount(slices: Slice[]): number {
-  return slices.filter((s) => s.type !== 'BOMB' && s.type !== 'SILENT').length;
+export function scorableNoteCount(
+  slices: Slice[],
+): number {
+  return slices.filter(
+    (
+      s,
+    ) =>
+      s.type !==
+        'BOMB' &&
+      s.type !==
+        'SILENT',
+  )
+    .length;
 }

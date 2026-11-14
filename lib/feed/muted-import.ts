@@ -12,21 +12,53 @@ export const MAX_MUTED_WORDS = 100;
 export const MAX_MUTED_WORD_LEN = 50;
 
 /** The file contents for downloading `words`. */
-export function serializeMutedWords(words: string[]): string {
-  return words.join('\n') + (words.length ? '\n' : '');
+export function serializeMutedWords(
+  words: string[],
+): string {
+  return (
+    words.join(
+      '\n',
+    ) +
+    (words.length
+      ? '\n'
+      : '')
+  );
 }
 
-function splitEntries(text: string): string[] {
-  const trimmed = text.trim();
-  if (trimmed.startsWith('[')) {
+function splitEntries(
+  text: string,
+): string[] {
+  const trimmed =
+    text.trim();
+  if (
+    trimmed.startsWith(
+      '[',
+    )
+  ) {
     try {
-      const parsed: unknown = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) return parsed.filter((x): x is string => typeof x === 'string');
+      const parsed: unknown =
+        JSON.parse(
+          trimmed,
+        );
+      if (
+        Array.isArray(
+          parsed,
+        )
+      )
+        return parsed.filter(
+          (
+            x,
+          ): x is string =>
+            typeof x ===
+            'string',
+        );
     } catch {
       // Not JSON after all — fall through to plain-text splitting.
     }
   }
-  return trimmed.split(/[\n\r,;]+/);
+  return trimmed.split(
+    /[\n\r,;]+/,
+  );
 }
 
 /**
@@ -37,17 +69,52 @@ function splitEntries(text: string): string[] {
 export function mergeImportedWords(
   current: string[],
   fileText: string,
-): { words: string[]; added: number } {
-  const seen = new Set(current);
-  const words = [...current];
+): {
+  words: string[];
+  added: number;
+} {
+  const seen =
+    new Set(
+      current,
+    );
+  const words =
+    [
+      ...current,
+    ];
   let added = 0;
-  for (const raw of splitEntries(fileText)) {
-    if (words.length >= MAX_MUTED_WORDS) break;
-    const w = raw.trim().toLowerCase().slice(0, MAX_MUTED_WORD_LEN);
-    if (!w || seen.has(w)) continue;
-    seen.add(w);
-    words.push(w);
+  for (const raw of splitEntries(
+    fileText,
+  )) {
+    if (
+      words.length >=
+      MAX_MUTED_WORDS
+    )
+      break;
+    const w =
+      raw
+        .trim()
+        .toLowerCase()
+        .slice(
+          0,
+          MAX_MUTED_WORD_LEN,
+        );
+    if (
+      !w ||
+      seen.has(
+        w,
+      )
+    )
+      continue;
+    seen.add(
+      w,
+    );
+    words.push(
+      w,
+    );
     added++;
   }
-  return { words, added };
+  return {
+    words,
+    added,
+  };
 }

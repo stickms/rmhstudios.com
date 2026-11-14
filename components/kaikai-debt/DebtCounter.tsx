@@ -1,7 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Receipt, TrendingUp } from 'lucide-react';
+import {
+  Receipt,
+  TrendingUp,
+} from 'lucide-react';
 import {
   ANNUAL_INTEREST_RATE,
   describeVelocity,
@@ -21,16 +28,45 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
  * interpolating an English noun into a translated sentence leaves "every second"
  * in English in all sixteen locales.
  */
-function unitLabel(unit: VelocityUnit, t: TFunction): string {
-  switch (unit) {
+function unitLabel(
+  unit: VelocityUnit,
+  t: TFunction,
+): string {
+  switch (
+    unit
+  ) {
     case 'minute':
-      return t('counter.unit.minute', { defaultValue: 'minute' });
+      return t(
+        'counter.unit.minute',
+        {
+          defaultValue:
+            'minute',
+        },
+      );
     case 'hour':
-      return t('counter.unit.hour', { defaultValue: 'hour' });
+      return t(
+        'counter.unit.hour',
+        {
+          defaultValue:
+            'hour',
+        },
+      );
     case 'day':
-      return t('counter.unit.day', { defaultValue: 'day' });
+      return t(
+        'counter.unit.day',
+        {
+          defaultValue:
+            'day',
+        },
+      );
     default:
-      return t('counter.unit.second', { defaultValue: 'second' });
+      return t(
+        'counter.unit.second',
+        {
+          defaultValue:
+            'second',
+        },
+      );
   }
 }
 
@@ -100,95 +136,232 @@ const REDUCED_INTERVAL_MS = 1_000;
  * but on a 1s interval rather than every frame, and without the blur-fast
  * fractional digits. The information stays; the strobing goes.
  */
-export function DebtCounter({ basisCents, asOfMs }: DebtCounterProps) {
-  const { t } = useTranslation('c-kaikai-debt');
-  const reducedMotion = useReducedMotion();
+export function DebtCounter({
+  basisCents,
+  asOfMs,
+}: DebtCounterProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-kaikai-debt',
+    );
+  const reducedMotion =
+    useReducedMotion();
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dollarsRef = useRef<HTMLSpanElement>(null);
-  const microRef = useRef<HTMLSpanElement>(null);
+  const containerRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const dollarsRef =
+    useRef<HTMLSpanElement>(
+      null,
+    );
+  const microRef =
+    useRef<HTMLSpanElement>(
+      null,
+    );
 
   // Read inside the effect rather than as a dependency: the loop should pick up
   // a new basis without being torn down and restarted on every SSE event.
-  const basisRef = useRef(basisCents);
-  basisRef.current = basisCents;
+  const basisRef =
+    useRef(
+      basisCents,
+    );
+  basisRef.current =
+    basisCents;
 
-  const initial = projectDebtCents(basisCents, asOfMs);
-  const [velocity, setVelocity] = useState(() => describeVelocity(basisCents, asOfMs));
+  const initial =
+    projectDebtCents(
+      basisCents,
+      asOfMs,
+    );
+  const [
+    velocity,
+    setVelocity,
+  ] =
+    useState(
+      () =>
+        describeVelocity(
+          basisCents,
+          asOfMs,
+        ),
+    );
 
   useEffect(() => {
-    const container = containerRef.current;
-    let interval: ReturnType<typeof setInterval> | null = null;
+    const container =
+      containerRef.current;
+    let interval: ReturnType<
+      typeof setInterval
+    > | null =
+      null;
     let lastVelocityAt = 0;
     let onScreen = true;
 
-    const paint = () => {
-      const now = Date.now();
-      const cents = projectDebtCents(basisRef.current, now);
-      const whole = Math.floor(cents);
+    const paint =
+      () => {
+        const now =
+          Date.now();
+        const cents =
+          projectDebtCents(
+            basisRef.current,
+            now,
+          );
+        const whole =
+          Math.floor(
+            cents,
+          );
 
-      if (dollarsRef.current) dollarsRef.current.textContent = formatDebt(whole);
-      if (microRef.current) {
-        // The sub-cent remainder — the part that is genuinely too fast to read,
-        // which is what makes the number look alive rather than merely large.
-        // How many digits is derived from the total, not fixed: with no opening
-        // balance the counter has to be legible at $12 and at $2M, and the
-        // growth rate differs by five orders of magnitude between them.
-        microRef.current.textContent = formatMicroDigits(cents, odometerDecimals(cents));
-      }
+        if (
+          dollarsRef.current
+        )
+          dollarsRef.current.textContent =
+            formatDebt(
+              whole,
+            );
+        if (
+          microRef.current
+        ) {
+          // The sub-cent remainder — the part that is genuinely too fast to read,
+          // which is what makes the number look alive rather than merely large.
+          // How many digits is derived from the total, not fixed: with no opening
+          // balance the counter has to be legible at $12 and at $2M, and the
+          // growth rate differs by five orders of magnitude between them.
+          microRef.current.textContent =
+            formatMicroDigits(
+              cents,
+              odometerDecimals(
+                cents,
+              ),
+            );
+        }
 
-      // The velocity readout is prose, not an odometer. Once a second is plenty,
-      // and it goes through state because it is rendered with a translated
-      // string around it.
-      if (now - lastVelocityAt > 1_000) {
-        lastVelocityAt = now;
-        setVelocity(describeVelocity(basisRef.current, now));
-      }
-    };
+        // The velocity readout is prose, not an odometer. Once a second is plenty,
+        // and it goes through state because it is rendered with a translated
+        // string around it.
+        if (
+          now -
+            lastVelocityAt >
+          1_000
+        ) {
+          lastVelocityAt =
+            now;
+          setVelocity(
+            describeVelocity(
+              basisRef.current,
+              now,
+            ),
+          );
+        }
+      };
 
-    const stop = () => {
-      if (interval) clearInterval(interval);
-      interval = null;
-    };
+    const stop =
+      () => {
+        if (
+          interval
+        )
+          clearInterval(
+            interval,
+          );
+        interval =
+          null;
+      };
 
-    const start = () => {
-      if (interval) return;
-      // Repaint on the way in, so a counter coming back into view is correct
-      // before the first tick rather than one interval later.
-      paint();
-      interval = setInterval(paint, reducedMotion ? REDUCED_INTERVAL_MS : PAINT_INTERVAL_MS);
-    };
+    const start =
+      () => {
+        if (
+          interval
+        )
+          return;
+        // Repaint on the way in, so a counter coming back into view is correct
+        // before the first tick rather than one interval later.
+        paint();
+        interval =
+          setInterval(
+            paint,
+            reducedMotion
+              ? REDUCED_INTERVAL_MS
+              : PAINT_INTERVAL_MS,
+          );
+      };
 
     /** Run only when the odometer is both visible and in a foreground tab. */
-    const sync = () => {
-      if (onScreen && document.visibilityState === 'visible') start();
-      else stop();
-    };
+    const sync =
+      () => {
+        if (
+          onScreen &&
+          document.visibilityState ===
+            'visible'
+        )
+          start();
+        else
+          stop();
+      };
 
-    let observer: IntersectionObserver | null = null;
-    if (container && typeof IntersectionObserver !== 'undefined') {
-      observer = new IntersectionObserver((records) => {
-        onScreen = records.some((r) => r.isIntersecting);
-        sync();
-      });
-      observer.observe(container);
+    let observer: IntersectionObserver | null =
+      null;
+    if (
+      container &&
+      typeof IntersectionObserver !==
+        'undefined'
+    ) {
+      observer =
+        new IntersectionObserver(
+          (
+            records,
+          ) => {
+            onScreen =
+              records.some(
+                (
+                  r,
+                ) =>
+                  r.isIntersecting,
+              );
+            sync();
+          },
+        );
+      observer.observe(
+        container,
+      );
     }
 
-    document.addEventListener('visibilitychange', sync);
+    document.addEventListener(
+      'visibilitychange',
+      sync,
+    );
     sync();
 
     return () => {
       stop();
       observer?.disconnect();
-      document.removeEventListener('visibilitychange', sync);
+      document.removeEventListener(
+        'visibilitychange',
+        sync,
+      );
     };
-  }, [reducedMotion]);
+  }, [
+    reducedMotion,
+  ]);
 
   return (
-    <div ref={containerRef} className="relative flex flex-col items-center gap-3 py-6 text-center">
+    <div
+      ref={
+        containerRef
+      }
+      className="relative flex flex-col items-center gap-3 py-6 text-center"
+    >
       <p className="site-kicker flex items-center gap-2 text-site-text-muted">
-        <Receipt className="size-4" aria-hidden />
-        {t('counter.kicker', { defaultValue: 'Kaikai currently owes' })}
+        <Receipt
+          className="size-4"
+          aria-hidden
+        />
+        {t(
+          'counter.kicker',
+          {
+            defaultValue:
+              'Kaikai currently owes',
+          },
+        )}
       </p>
 
       {/* One live region for the whole readout, and `off` rather than `polite`:
@@ -199,10 +372,31 @@ export function DebtCounter({ basisCents, asOfMs }: DebtCounterProps) {
         className="kd-odometer font-display text-[clamp(2.1rem,9vw,4.75rem)] leading-none font-bold text-site-text"
         aria-live="off"
       >
-        <span ref={dollarsRef}>{formatDebt(Math.floor(initial))}</span>
+        <span
+          ref={
+            dollarsRef
+          }
+        >
+          {formatDebt(
+            Math.floor(
+              initial,
+            ),
+          )}
+        </span>
         {!reducedMotion && (
-          <span className="kd-odometer__micro align-super" ref={microRef} aria-hidden>
-            {formatMicroDigits(initial, odometerDecimals(initial))}
+          <span
+            className="kd-odometer__micro align-super"
+            ref={
+              microRef
+            }
+            aria-hidden
+          >
+            {formatMicroDigits(
+              initial,
+              odometerDecimals(
+                initial,
+              ),
+            )}
           </span>
         )}
       </p>
@@ -212,34 +406,73 @@ export function DebtCounter({ basisCents, asOfMs }: DebtCounterProps) {
           stranded on the far left of an empty row. Inline, it wraps with the
           words it belongs to. */}
       <p className="text-center text-sm text-pretty text-site-text-muted">
-        <TrendingUp className="mr-1.5 inline size-4 align-[-0.2em] text-site-accent" aria-hidden />
-        {initial <= 0
-          ? t('counter.clean', {
-              defaultValue:
-                'He owes nothing yet. Interest compounds at {{percent}}% a year on whatever gets logged.',
-              percent: Math.round(ANNUAL_INTEREST_RATE * 100),
-            })
-          : t('counter.velocityRate', {
-              defaultValue:
-                '+{{rate}} every {{unit}} — {{percent}}% a year, compounded continuously',
-              rate: formatDebt(velocity.cents),
-              unit: unitLabel(velocity.unit, t),
-              percent: Math.round(ANNUAL_INTEREST_RATE * 100),
-            })}
+        <TrendingUp
+          className="mr-1.5 inline size-4 align-[-0.2em] text-site-accent"
+          aria-hidden
+        />
+        {initial <=
+        0
+          ? t(
+              'counter.clean',
+              {
+                defaultValue:
+                  'He owes nothing yet. Interest compounds at {{percent}}% a year on whatever gets logged.',
+                percent:
+                  Math.round(
+                    ANNUAL_INTEREST_RATE *
+                      100,
+                  ),
+              },
+            )
+          : t(
+              'counter.velocityRate',
+              {
+                defaultValue:
+                  '+{{rate}} every {{unit}} — {{percent}}% a year, compounded continuously',
+                rate: formatDebt(
+                  velocity.cents,
+                ),
+                unit: unitLabel(
+                  velocity.unit,
+                  t,
+                ),
+                percent:
+                  Math.round(
+                    ANNUAL_INTEREST_RATE *
+                      100,
+                  ),
+              },
+            )}
       </p>
 
       <p className="sr-only">
-        {initial <= 0
-          ? t('counter.screenReaderClean', {
-              defaultValue: 'Kaikai owes nothing yet. Nothing is accruing.',
-            })
-          : t('counter.screenReaderRate', {
-              defaultValue:
-                'Kaikai owes approximately {{amount}}, growing by {{rate}} every {{unit}}. The figure updates continuously.',
-              amount: formatDebt(initial),
-              rate: formatDebt(velocity.cents),
-              unit: unitLabel(velocity.unit, t),
-            })}
+        {initial <=
+        0
+          ? t(
+              'counter.screenReaderClean',
+              {
+                defaultValue:
+                  'Kaikai owes nothing yet. Nothing is accruing.',
+              },
+            )
+          : t(
+              'counter.screenReaderRate',
+              {
+                defaultValue:
+                  'Kaikai owes approximately {{amount}}, growing by {{rate}} every {{unit}}. The figure updates continuously.',
+                amount:
+                  formatDebt(
+                    initial,
+                  ),
+                rate: formatDebt(
+                  velocity.cents,
+                ),
+                unit: unitLabel(
+                  velocity.unit,
+                  t,
+                ),
+              },
+            )}
       </p>
     </div>
   );

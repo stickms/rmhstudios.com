@@ -7,19 +7,75 @@ import { z } from 'zod';
 
 import { NOTIFY_CATEGORIES } from './categories';
 
-const channelSchema = z.object({
-  inapp: z.boolean().optional(),
-  push: z.boolean().optional(),
-  email: z.boolean().optional(),
-});
+const channelSchema =
+  z.object(
+    {
+      inapp:
+        z
+          .boolean()
+          .optional(),
+      push: z
+        .boolean()
+        .optional(),
+      email:
+        z
+          .boolean()
+          .optional(),
+    },
+  );
 
-export const notifPrefsSchema = z.object({
-  // partialRecord: any subset of categories may be present, unknown keys rejected.
-  matrix: z.partialRecord(z.enum(NOTIFY_CATEGORIES), channelSchema).optional(),
-  quietStart: z.number().int().min(0).max(1439).nullable().optional(),
-  quietEnd: z.number().int().min(0).max(1439).nullable().optional(),
-  tz: z.string().max(40).nullable().optional(),
-  emailDigest: z.boolean().optional(),
-});
+export const notifPrefsSchema =
+  z.object(
+    {
+      // partialRecord: any subset of categories may be present, unknown keys rejected.
+      matrix:
+        z
+          .partialRecord(
+            z.enum(
+              NOTIFY_CATEGORIES,
+            ),
+            channelSchema,
+          )
+          .optional(),
+      quietStart:
+        z
+          .number()
+          .int()
+          .min(
+            0,
+          )
+          .max(
+            1439,
+          )
+          .nullable()
+          .optional(),
+      quietEnd:
+        z
+          .number()
+          .int()
+          .min(
+            0,
+          )
+          .max(
+            1439,
+          )
+          .nullable()
+          .optional(),
+      tz: z
+        .string()
+        .max(
+          40,
+        )
+        .nullable()
+        .optional(),
+      emailDigest:
+        z
+          .boolean()
+          .optional(),
+    },
+  );
 
-export type NotifPrefsInput = z.infer<typeof notifPrefsSchema>;
+export type NotifPrefsInput =
+  z.infer<
+    typeof notifPrefsSchema
+  >;

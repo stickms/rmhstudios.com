@@ -6,14 +6,32 @@
 
 import { startListenWorker } from '@/lib/tf2-game/client/net/listen-worker-host';
 import { csCheckpointCatalog } from '../checkpoint-catalog';
-import { hasCsWeaponData, loadCsWeaponData, setCsWeaponData } from '../index';
+import {
+  hasCsWeaponData,
+  loadCsWeaponData,
+  setCsWeaponData,
+} from '../index';
 
-startListenWorker({
-  csgo: {
-    prepare: async (loader) => {
-      // Installed before anything builds a CS player (a migrated match's restore included).
-      if (!hasCsWeaponData()) setCsWeaponData(await loadCsWeaponData(loader));
+startListenWorker(
+  {
+    csgo: {
+      prepare:
+        async (
+          loader,
+        ) => {
+          // Installed before anything builds a CS player (a migrated match's restore included).
+          if (
+            !hasCsWeaponData()
+          )
+            setCsWeaponData(
+              await loadCsWeaponData(
+                loader,
+              ),
+            );
+        },
+      checkpointCatalog:
+        async () =>
+          csCheckpointCatalog(),
     },
-    checkpointCatalog: async () => csCheckpointCatalog(),
   },
-});
+);

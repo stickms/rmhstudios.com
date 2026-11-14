@@ -7,124 +7,406 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
-import { fetchJson, serverError } from '@/lib/http';
+import {
+  fetchJson,
+  serverError,
+} from '@/lib/http';
 import { uploadChallengeSampleApi } from '@/lib/creator/challenge-upload.contract';
 
-const DAY = 24 * 60 * 60_000;
+const DAY =
+  24 *
+  60 *
+  60_000;
 // <input type="datetime-local"> wants local wall-clock time without a zone.
-const local = (ms: number) => {
-  const d = new Date(ms - new Date(ms).getTimezoneOffset() * 60_000);
-  return d.toISOString().slice(0, 16);
-};
+const local =
+  (
+    ms: number,
+  ) => {
+    const d =
+      new Date(
+        ms -
+          new Date(
+            ms,
+          ).getTimezoneOffset() *
+            60_000,
+      );
+    return d
+      .toISOString()
+      .slice(
+        0,
+        16,
+      );
+  };
 
 /** /admin/studio-challenges — start a weekly sample-flip challenge (F12). */
 export function AdminChallengePage() {
-  const { t } = useTranslation('f-creative');
-  const now = Date.now();
-  const [title, setTitle] = useState('');
-  const [brief, setBrief] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [startsAt, setStartsAt] = useState(local(now));
-  const [endsAt, setEndsAt] = useState(local(now + 5 * DAY));
-  const [votingEndsAt, setVotingEndsAt] = useState(local(now + 7 * DAY));
-  const [busy, setBusy] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-creative',
+    );
+  const now =
+    Date.now();
+  const [
+    title,
+    setTitle,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    brief,
+    setBrief,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    file,
+    setFile,
+  ] =
+    useState<File | null>(
+      null,
+    );
+  const [
+    startsAt,
+    setStartsAt,
+  ] =
+    useState(
+      local(
+        now,
+      ),
+    );
+  const [
+    endsAt,
+    setEndsAt,
+  ] =
+    useState(
+      local(
+        now +
+          5 *
+            DAY,
+      ),
+    );
+  const [
+    votingEndsAt,
+    setVotingEndsAt,
+  ] =
+    useState(
+      local(
+        now +
+          7 *
+            DAY,
+      ),
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
 
-  const create = async () => {
-    if (!file) return;
-    setBusy(true);
-    try {
-      const form = new FormData();
-      form.set('audio', file);
-      const data = await api(uploadChallengeSampleApi, { body: form }).catch((e: unknown) => {
-        throw new Error(serverError(e) ?? 'Upload failed');
-      });
-      if (!data.key) throw new Error('Upload failed');
-      await fetchJson('/api/admin/studio-challenges', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          brief,
-          sampleKey: data.key,
-          sampleName: file.name.slice(0, 120),
-          startsAt: new Date(startsAt).toISOString(),
-          endsAt: new Date(endsAt).toISOString(),
-          votingEndsAt: new Date(votingEndsAt).toISOString(),
-        }),
-      });
-      toast.success(t('admin-created', { defaultValue: 'Challenge created' }));
-      setTitle('');
-      setBrief('');
-      setFile(null);
-    } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : t('admin-error', { defaultValue: 'Something went wrong' }),
+  const create =
+    async () => {
+      if (
+        !file
+      )
+        return;
+      setBusy(
+        true,
       );
-    } finally {
-      setBusy(false);
-    }
-  };
+      try {
+        const form =
+          new FormData();
+        form.set(
+          'audio',
+          file,
+        );
+        const data =
+          await api(
+            uploadChallengeSampleApi,
+            {
+              body: form,
+            },
+          ).catch(
+            (
+              e: unknown,
+            ) => {
+              throw new Error(
+                serverError(
+                  e,
+                ) ??
+                  'Upload failed',
+              );
+            },
+          );
+        if (
+          !data.key
+        )
+          throw new Error(
+            'Upload failed',
+          );
+        await fetchJson(
+          '/api/admin/studio-challenges',
+          {
+            method:
+              'POST',
+            headers:
+              {
+                'Content-Type':
+                  'application/json',
+              },
+            body: JSON.stringify(
+              {
+                title,
+                brief,
+                sampleKey:
+                  data.key,
+                sampleName:
+                  file.name.slice(
+                    0,
+                    120,
+                  ),
+                startsAt:
+                  new Date(
+                    startsAt,
+                  ).toISOString(),
+                endsAt:
+                  new Date(
+                    endsAt,
+                  ).toISOString(),
+                votingEndsAt:
+                  new Date(
+                    votingEndsAt,
+                  ).toISOString(),
+              },
+            ),
+          },
+        );
+        toast.success(
+          t(
+            'admin-created',
+            {
+              defaultValue:
+                'Challenge created',
+            },
+          ),
+        );
+        setTitle(
+          '',
+        );
+        setBrief(
+          '',
+        );
+        setFile(
+          null,
+        );
+      } catch (e) {
+        toast.error(
+          e instanceof
+            Error
+            ? e.message
+            : t(
+                'admin-error',
+                {
+                  defaultValue:
+                    'Something went wrong',
+                },
+              ),
+        );
+      } finally {
+        setBusy(
+          false,
+        );
+      }
+    };
 
-  const dateField = (label: string, value: string, set: (v: string) => void) => (
-    <label className="block t-label">
-      {label}
-      <Input
-        type="datetime-local"
-        className="mt-2"
-        value={value}
-        onChange={(e) => set(e.target.value)}
-      />
-    </label>
-  );
+  const dateField =
+    (
+      label: string,
+      value: string,
+      set: (
+        v: string,
+      ) => void,
+    ) => (
+      <label className="block t-label">
+        {
+          label
+        }
+        <Input
+          type="datetime-local"
+          className="mt-2"
+          value={
+            value
+          }
+          onChange={(
+            e,
+          ) =>
+            set(
+              e
+                .target
+                .value,
+            )
+          }
+        />
+      </label>
+    );
 
   return (
     <PageLayout
-      title={t('admin-page-title', { defaultValue: 'Studio sample flip' })}
-      description={t('admin-page-desc', {
-        defaultValue: 'Post a sample and a window; members submit flips and vote.',
-      })}
+      title={t(
+        'admin-page-title',
+        {
+          defaultValue:
+            'Studio sample flip',
+        },
+      )}
+      description={t(
+        'admin-page-desc',
+        {
+          defaultValue:
+            'Post a sample and a window; members submit flips and vote.',
+        },
+      )}
       wide
       backTo="/admin"
-      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+      backLabel={t(
+        'back-to-admin',
+        {
+          defaultValue:
+            'Back to admin',
+        },
+      )}
     >
       <AdminBody width="narrow">
         <div className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
           <Input
-            placeholder={t('admin-title', { defaultValue: 'Challenge title' })}
-            maxLength={120}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t(
+              'admin-title',
+              {
+                defaultValue:
+                  'Challenge title',
+              },
+            )}
+            maxLength={
+              120
+            }
+            value={
+              title
+            }
+            onChange={(
+              e,
+            ) =>
+              setTitle(
+                e
+                  .target
+                  .value,
+              )
+            }
           />
           <Textarea
-            placeholder={t('admin-brief', { defaultValue: 'Brief and rules' })}
-            maxLength={1000}
-            value={brief}
-            onChange={(e) => setBrief(e.target.value)}
+            placeholder={t(
+              'admin-brief',
+              {
+                defaultValue:
+                  'Brief and rules',
+              },
+            )}
+            maxLength={
+              1000
+            }
+            value={
+              brief
+            }
+            onChange={(
+              e,
+            ) =>
+              setBrief(
+                e
+                  .target
+                  .value,
+              )
+            }
           />
           <label className="block t-label">
-            {t('admin-sample', { defaultValue: 'Sample audio (WAV or MP3, up to 8 MB)' })}
+            {t(
+              'admin-sample',
+              {
+                defaultValue:
+                  'Sample audio (WAV or MP3, up to 8 MB)',
+              },
+            )}
             <input
               type="file"
               accept="audio/*"
               className="mt-2 block t-body"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              onChange={(
+                e,
+              ) =>
+                setFile(
+                  e
+                    .target
+                    .files?.[0] ??
+                    null,
+                )
+              }
             />
           </label>
           <div className="grid gap-3 sm:grid-cols-3">
-            {dateField(t('admin-starts', { defaultValue: 'Opens' }), startsAt, setStartsAt)}
-            {dateField(t('admin-ends', { defaultValue: 'Submissions close' }), endsAt, setEndsAt)}
             {dateField(
-              t('admin-voting', { defaultValue: 'Voting ends' }),
+              t(
+                'admin-starts',
+                {
+                  defaultValue:
+                    'Opens',
+                },
+              ),
+              startsAt,
+              setStartsAt,
+            )}
+            {dateField(
+              t(
+                'admin-ends',
+                {
+                  defaultValue:
+                    'Submissions close',
+                },
+              ),
+              endsAt,
+              setEndsAt,
+            )}
+            {dateField(
+              t(
+                'admin-voting',
+                {
+                  defaultValue:
+                    'Voting ends',
+                },
+              ),
               votingEndsAt,
               setVotingEndsAt,
             )}
           </div>
           <Button
             variant="default"
-            disabled={busy || !title.trim() || !file}
-            onClick={() => void create()}
+            disabled={
+              busy ||
+              !title.trim() ||
+              !file
+            }
+            onClick={() =>
+              void create()
+            }
           >
-            {t('admin-create', { defaultValue: 'Start challenge' })}
+            {t(
+              'admin-create',
+              {
+                defaultValue:
+                  'Start challenge',
+              },
+            )}
           </Button>
         </div>
       </AdminBody>

@@ -1,193 +1,1491 @@
 # Steel: design scheme and implementation plan (2026-11-11)
 
-Status: **approved direction; phases 1 to 7 are implemented** (section 17 is the
-ledger, section 18 the open decisions and the gaps found along the way). This
-document is the single source for the redesign's look and layout. It is written
-to be executed by a coding agent one phase at a time.
+Status:
+**approved
+direction;
+phases
+1
+to
+7
+are
+implemented**
+(section
+17
+is
+the
+ledger,
+section
+18
+the
+open
+decisions
+and
+the
+gaps
+found
+along
+the
+way).
+This
+document
+is
+the
+single
+source
+for
+the
+redesign's
+look
+and
+layout.
+It
+is
+written
+to
+be
+executed
+by
+a
+coding
+agent
+one
+phase
+at
+a
+time.
 
-It replaces **Part N ("the new identity, Broadsheet")** and Appendices A to C of
+It
+replaces
+**Part
+N
+("the
+new
+identity,
+Broadsheet")**
+and
+Appendices
+A
+to
+C
+of
 [`2026-11-11-broadsheet-redesign-audit.md`](2026-11-11-broadsheet-redesign-audit.md).
-Parts P (performance), S (structure), B (backend, deploy, CI) and Q (quality) of
-that audit still stand and are not repeated here. Where the two disagree about
-how something looks, this document wins.
+Parts
+P
+(performance),
+S
+(structure),
+B
+(backend,
+deploy,
+CI)
+and
+Q
+(quality)
+of
+that
+audit
+still
+stand
+and
+are
+not
+repeated
+here.
+Where
+the
+two
+disagree
+about
+how
+something
+looks,
+this
+document
+wins.
 
 ## 0. How to read this
 
-- Every rule has an ID (`R1`, `T3`, `G5`). Cite the ID in commits and reviews.
-- "Must" is a requirement. "Default" is what to do unless a page has a stated reason.
-- Values are exact. Do not round, substitute or "improve" them.
-- Code blocks are reference implementations taken from the approved mockups.
-  Class names in them are the mockup's; section 15 says what they become in the repo.
-- Section 16 is the order of work. Each phase ends with checks that must pass.
-- Section 18 lists decisions that are still open. Do not guess them; ask.
+- Every
+  rule
+  has
+  an
+  ID
+  (`R1`,
+  `T3`,
+  `G5`).
+  Cite
+  the
+  ID
+  in
+  commits
+  and
+  reviews.
+- "Must"
+  is
+  a
+  requirement.
+  "Default"
+  is
+  what
+  to
+  do
+  unless
+  a
+  page
+  has
+  a
+  stated
+  reason.
+- Values
+  are
+  exact.
+  Do
+  not
+  round,
+  substitute
+  or
+  "improve"
+  them.
+- Code
+  blocks
+  are
+  reference
+  implementations
+  taken
+  from
+  the
+  approved
+  mockups.
+  Class
+  names
+  in
+  them
+  are
+  the
+  mockup's;
+  section
+  15
+  says
+  what
+  they
+  become
+  in
+  the
+  repo.
+- Section
+  16
+  is
+  the
+  order
+  of
+  work.
+  Each
+  phase
+  ends
+  with
+  checks
+  that
+  must
+  pass.
+- Section
+  18
+  lists
+  decisions
+  that
+  are
+  still
+  open.
+  Do
+  not
+  guess
+  them;
+  ask.
 
 ## 1. The scheme in one paragraph
 
-Steel is a flat, neutral page set in one typeface and divided by hairline rules.
-There are no cards, gradients, blurs or shadows on content. Polished chrome is
-the only material, and it appears in exactly three places: the navigation globe,
-the toggle thumb and the slider thumb. The two thumbs are flat grey until the
-pointer comes near, then become chrome. Whenever an element is chrome, its
-surface is a ray-traced reflection of the page around it, pointer included.
-Content hangs on a thin vertical line
-called the spine. On a phone the globe is the only navigator. The result should
-read as a professional tool that happens to have one remarkable object in it.
+Steel
+is
+a
+flat,
+neutral
+page
+set
+in
+one
+typeface
+and
+divided
+by
+hairline
+rules.
+There
+are
+no
+cards,
+gradients,
+blurs
+or
+shadows
+on
+content.
+Polished
+chrome
+is
+the
+only
+material,
+and
+it
+appears
+in
+exactly
+three
+places:
+the
+navigation
+globe,
+the
+toggle
+thumb
+and
+the
+slider
+thumb.
+The
+two
+thumbs
+are
+flat
+grey
+until
+the
+pointer
+comes
+near,
+then
+become
+chrome.
+Whenever
+an
+element
+is
+chrome,
+its
+surface
+is
+a
+ray-traced
+reflection
+of
+the
+page
+around
+it,
+pointer
+included.
+Content
+hangs
+on
+a
+thin
+vertical
+line
+called
+the
+spine.
+On
+a
+phone
+the
+globe
+is
+the
+only
+navigator.
+The
+result
+should
+read
+as
+a
+professional
+tool
+that
+happens
+to
+have
+one
+remarkable
+object
+in
+it.
 
 ### The five rules
 
-| ID | Rule |
-| --- | --- |
-| R1 | **Flat first.** Page, surfaces and content use solid colours from the tokens in section 2. No gradient, blur, glow or translucency outside the chrome elements in R2. |
-| R2 | **Chrome in three places.** The globe, the toggle thumb, the slider thumb. Nothing else is chrome: not buttons, bars, cards, avatars or icons. |
-| R3 | **Rules before boxes.** Separate things with a 1px rule or with space. A bordered box is for a control (button, field) or a picture, not for a group of content. |
-| R4 | **One ink primary per view.** One solid-ink button marks the main action. Everything else is a bordered or borderless button. |
-| R5 | **Nothing moves at rest.** No idle animation, frame loop, canvas, worker or observer runs for decoration. Motion is a response to input and ends within 360 ms. The chrome renderer (4.3) obeys this: it draws a frame only when input changed something. |
+| ID  | Rule                                                                                                                                                                                                                                                      |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | **Flat first.** Page, surfaces and content use solid colours from the tokens in section 2. No gradient, blur, glow or translucency outside the chrome elements in R2.                                                                                     |
+| R2  | **Chrome in three places.** The globe, the toggle thumb, the slider thumb. Nothing else is chrome: not buttons, bars, cards, avatars or icons.                                                                                                            |
+| R3  | **Rules before boxes.** Separate things with a 1px rule or with space. A bordered box is for a control (button, field) or a picture, not for a group of content.                                                                                          |
+| R4  | **One ink primary per view.** One solid-ink button marks the main action. Everything else is a bordered or borderless button.                                                                                                                             |
+| R5  | **Nothing moves at rest.** No idle animation, frame loop, canvas, worker or observer runs for decoration. Motion is a response to input and ends within 360 ms. The chrome renderer (4.3) obeys this: it draws a frame only when input changed something. |
 
 ## 2. Tokens
 
-The repo's `--site-*` token names stay, so existing Tailwind utilities
-(`bg-site-bg`, `text-site-text-muted`, `border-site-border`, `rounded-site`)
-keep working. Only the values change. The two editions keep their class names:
-Day is `.style-default`, Night is `.style-graphite`.
+The
+repo's
+`--site-*`
+token
+names
+stay,
+so
+existing
+Tailwind
+utilities
+(`bg-site-bg`,
+`text-site-text-muted`,
+`border-site-border`,
+`rounded-site`)
+keep
+working.
+Only
+the
+values
+change.
+The
+two
+editions
+keep
+their
+class
+names:
+Day
+is
+`.style-default`,
+Night
+is
+`.style-graphite`.
 
-| Token | Day | Night | Use |
-| --- | --- | --- | --- |
-| `--site-bg` | `#fafafa` | `#0b0d10` | The page |
-| `--site-surface` | `#ffffff` | `#111418` | Controls and overlays only |
-| `--site-bg-subtle` | `#f0f2f4` | `#161a1f` | Hover fill, picture placeholder |
-| `--site-surface-hover` | `#f0f2f4` | `#161a1f` | Same value as above; kept for existing utilities |
-| `--site-border` | `#e3e6e9` | `#22272d` | Every rule and control border |
-| `--site-text` | `#0b0d10` | `#eef1f4` | Ink |
-| `--site-text-muted` | `#606873` | `#8b949e` | Secondary text, inactive tabs |
-| `--site-accent` | `#0b0d10` | `#eef1f4` | Same as ink. There is no accent colour. |
-| `--site-accent-fg` | `#fafafa` | `#0b0d10` | Text on an ink fill |
-| `--site-danger` | `#c40016` | `#f2555a` | Errors, unread counts, destructive actions |
-| `--site-success` | `#167d3a` | `#3fb26b` | Confirmation only |
-| `--site-radius` | `8px` | `8px` | Controls, pictures |
-| `--site-radius-sm` | `4px` | `4px` | Tags, small chips |
-| `--chrome-flat` | `#737c87` | `#6b7480` | A chrome thumb at rest |
+| Token                       | Day                                                      | Night                                                       | Use                                                 |
+| --------------------------- | -------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------- |
+| `--site-bg`                 | `#fafafa`                                                | `#0b0d10`                                                   | The page                                            |
+| `--site-surface`            | `#ffffff`                                                | `#111418`                                                   | Controls and overlays only                          |
+| `--site-bg-subtle`          | `#f0f2f4`                                                | `#161a1f`                                                   | Hover fill, picture placeholder                     |
+| `--site-surface-hover`      | `#f0f2f4`                                                | `#161a1f`                                                   | Same value as above; kept for existing utilities    |
+| `--site-border`             | `#e3e6e9`                                                | `#22272d`                                                   | Every rule and control border                       |
+| `--site-text`               | `#0b0d10`                                                | `#eef1f4`                                                   | Ink                                                 |
+| `--site-text-muted`         | `#606873`                                                | `#8b949e`                                                   | Secondary text, inactive tabs                       |
+| `--site-accent`             | `#0b0d10`                                                | `#eef1f4`                                                   | Same as ink. There is no accent colour.             |
+| `--site-accent-fg`          | `#fafafa`                                                | `#0b0d10`                                                   | Text on an ink fill                                 |
+| `--site-danger`             | `#c40016`                                                | `#f2555a`                                                   | Errors, unread counts, destructive actions          |
+| `--site-success`            | `#167d3a`                                                | `#3fb26b`                                                   | Confirmation only                                   |
+| `--site-radius`             | `8px`                                                    | `8px`                                                       | Controls, pictures                                  |
+| `--site-radius-sm`          | `4px`                                                    | `4px`                                                       | Tags, small chips                                   |
+| `--chrome-flat`             | `#737c87`                                                | `#6b7480`                                                   | A chrome thumb at rest                              |
 | `--chrome-1` … `--chrome-6` | `#fff` `#dfe5ea` `#8e99a6` `#1a2029` `#59636f` `#bcc5ce` | `#aab4bf` `#55606c` `#1c222a` `#030405` `#20262e` `#5b6672` | The six stops of the chrome gradient, top to bottom |
 
 Notes:
 
-- T1. `--site-text-muted` on `--site-bg` is at least 5.5:1 in both editions. Do not introduce a lighter grey for text.
-- T2. Night's danger and success values and `--chrome-flat` were chosen for contrast and have not been seen in a mockup. Check them on a real screen in phase 1.
-- T3. Delete every `--site-glass-*`, `--site-jelly-*`, `--site-arc-*` and `--site-shadow*` token. Nothing in Steel reads them.
-- T4. There are no shadow tokens. The only shadows in the system are on the globe (section 8) and on overlays (`0 8px 24px rgba(0,0,0,.12)`, Night `.5`).
+- T1.
+  `--site-text-muted`
+  on
+  `--site-bg`
+  is
+  at
+  least
+  5.5:1
+  in
+  both
+  editions.
+  Do
+  not
+  introduce
+  a
+  lighter
+  grey
+  for
+  text.
+- T2.
+  Night's
+  danger
+  and
+  success
+  values
+  and
+  `--chrome-flat`
+  were
+  chosen
+  for
+  contrast
+  and
+  have
+  not
+  been
+  seen
+  in
+  a
+  mockup.
+  Check
+  them
+  on
+  a
+  real
+  screen
+  in
+  phase 1.
+- T3.
+  Delete
+  every
+  `--site-glass-*`,
+  `--site-jelly-*`,
+  `--site-arc-*`
+  and
+  `--site-shadow*`
+  token.
+  Nothing
+  in
+  Steel
+  reads
+  them.
+- T4.
+  There
+  are
+  no
+  shadow
+  tokens.
+  The
+  only
+  shadows
+  in
+  the
+  system
+  are
+  on
+  the
+  globe
+  (section 8)
+  and
+  on
+  overlays
+  (`0 8px 24px rgba(0,0,0,.12)`,
+  Night
+  `.5`).
 
 ## 3. Type
 
-One family: **Geist** (already self-hosted, `--site-font-body`). **Geist Mono**
-(`--site-font-mono`) for timestamps, counts and small data. `--site-font-display`
-is set to the same stack as body; there is no display face.
+One
+family:
+**Geist**
+(already
+self-hosted,
+`--site-font-body`).
+**Geist
+Mono**
+(`--site-font-mono`)
+for
+timestamps,
+counts
+and
+small
+data.
+`--site-font-display`
+is
+set
+to
+the
+same
+stack
+as
+body;
+there
+is
+no
+display
+face.
 
-| Class | Size / line | Weight | Tracking | Use |
-| --- | --- | --- | --- | --- |
-| `t-title` | 28 / 1.1 | 600 | -0.025em | The page's name. One per page. |
-| `t-heading` | 17 / 1.3 | 600 | -0.01em | A section inside a page |
-| `t-body` | 14 / 1.45 | 400 | 0 | Default text and controls |
-| `t-post` | 15 / 1.5 | 400 | 0 | Post text |
-| `t-prose` | 16 / 1.6 | 400 | 0 | Long reading: articles, patch notes |
-| `t-label` | 13 / 1.3 | 600, muted | 0 | Spine station, sidebar group heading |
-| `t-meta` | 12 / 1.3, mono | 400, muted | 0 | Time, kind, handle metadata |
+| Class       | Size / line    | Weight     | Tracking | Use                                  |
+| ----------- | -------------- | ---------- | -------- | ------------------------------------ |
+| `t-title`   | 28 / 1.1       | 600        | -0.025em | The page's name. One per page.       |
+| `t-heading` | 17 / 1.3       | 600        | -0.01em  | A section inside a page              |
+| `t-body`    | 14 / 1.45      | 400        | 0        | Default text and controls            |
+| `t-post`    | 15 / 1.5       | 400        | 0        | Post text                            |
+| `t-prose`   | 16 / 1.6       | 400        | 0        | Long reading: articles, patch notes  |
+| `t-label`   | 13 / 1.3       | 600, muted | 0        | Spine station, sidebar group heading |
+| `t-meta`    | 12 / 1.3, mono | 400, muted | 0        | Time, kind, handle metadata          |
 
-- Y1. Weights used: 400, 500 (controls), 600. Never 700 or above.
-- Y2. No letterspaced capitals anywhere. Labels are sentence case.
-- Y3. Links inside running text are underlined. Navigation words are not.
+- Y1.
+  Weights
+  used:
+  400,
+  500
+  (controls), 600.
+  Never
+  700
+  or
+  above.
+- Y2.
+  No
+  letterspaced
+  capitals
+  anywhere.
+  Labels
+  are
+  sentence
+  case.
+- Y3.
+  Links
+  inside
+  running
+  text
+  are
+  underlined.
+  Navigation
+  words
+  are
+  not.
 
 ## 4. The chrome material
 
-Chrome is a vertical six-stop gradient with a hard horizon just below the
-middle: bright sky, dark ground, a light bounce at the bottom.
+Chrome
+is
+a
+vertical
+six-stop
+gradient
+with
+a
+hard
+horizon
+just
+below
+the
+middle:
+bright
+sky,
+dark
+ground,
+a
+light
+bounce
+at
+the
+bottom.
 
 ```css
 /* C1: the chrome gradient */
-background: linear-gradient(180deg,
-  var(--chrome-1) 0, var(--chrome-2) 30%, var(--chrome-3) 49%,
-  var(--chrome-4) 50.5%, var(--chrome-5) 76%, var(--chrome-6) 100%);
+background: linear-gradient(
+  180deg,
+  var(
+      --chrome-1
+    )
+    0,
+  var(
+      --chrome-2
+    )
+    30%,
+  var(
+      --chrome-3
+    )
+    49%,
+  var(
+      --chrome-4
+    )
+    50.5%,
+  var(
+      --chrome-5
+    )
+    76%,
+  var(
+      --chrome-6
+    )
+    100%
+);
 ```
 
 ### 4.1 Flat until approached (toggle and slider thumbs)
 
-- C2. At rest a thumb is a flat `--chrome-flat` pill with no shadow.
-- C3. It becomes chrome when any of these is true: the pointer is within 20px of the control, the pointer is over the control's row, the control has keyboard focus, or it is being pressed.
-- C4. The change takes 280 ms, ease, in both directions.
-- C5. On touch devices there is no hover, so the thumb is chrome only while pressed or focused.
+- C2.
+  At
+  rest
+  a
+  thumb
+  is
+  a
+  flat
+  `--chrome-flat`
+  pill
+  with
+  no
+  shadow.
+- C3.
+  It
+  becomes
+  chrome
+  when
+  any
+  of
+  these
+  is
+  true:
+  the
+  pointer
+  is
+  within
+  20px
+  of
+  the
+  control,
+  the
+  pointer
+  is
+  over
+  the
+  control's
+  row,
+  the
+  control
+  has
+  keyboard
+  focus,
+  or
+  it
+  is
+  being
+  pressed.
+- C4.
+  The
+  change
+  takes
+  280
+  ms,
+  ease,
+  in
+  both
+  directions.
+- C5.
+  On
+  touch
+  devices
+  there
+  is
+  no
+  hover,
+  so
+  the
+  thumb
+  is
+  chrome
+  only
+  while
+  pressed
+  or
+  focused.
 
-One registered number, `--c`, runs from 0 to 1. Every gradient stop is mixed
-from the flat colour by it, so the browser animates a single value and paints
-nothing as chrome until it is needed.
+One
+registered
+number,
+`--c`,
+runs
+from
+0
+to 1.
+Every
+gradient
+stop
+is
+mixed
+from
+the
+flat
+colour
+by
+it,
+so
+the
+browser
+animates
+a
+single
+value
+and
+paints
+nothing
+as
+chrome
+until
+it
+is
+needed.
 
 ```css
-@property --c { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --c {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
 
-.tog, .sl { transition: --c .28s ease; }
-.tog:hover, .tog:active, .tog:has(:focus-visible), .row:hover .tog,
-.sl:hover, .sl:active, .sl:focus-visible, .row:hover .sl { --c: 1; }
+.tog,
+.sl {
+  transition: --c
+    0.28s
+    ease;
+}
+.tog:hover,
+.tog:active,
+.tog:has(
+  :focus-visible
+),
+.row:hover
+  .tog,
+.sl:hover,
+.sl:active,
+.sl:focus-visible,
+.row:hover
+  .sl {
+  --c: 1;
+}
 
 /* each stop: color-mix(in srgb, <chrome stop> calc(var(--c) * 100%), var(--chrome-flat)) */
 /* thumb outline, also driven by --c: */
-box-shadow: 0 0 0 1px rgba(0,0,0,calc(.45 * var(--c))), 0 1px 2px rgba(0,0,0,calc(.3 * var(--c)));
+box-shadow:
+  0
+    0
+    0
+    1px
+    rgba(
+      0,
+      0,
+      0,
+      calc(
+        0.45 *
+          var(
+            --c
+          )
+      )
+    ),
+  0
+    1px
+    2px
+    rgba(
+      0,
+      0,
+      0,
+      calc(
+        0.3 *
+          var(
+            --c
+          )
+      )
+    );
 ```
 
-- C6. The 20px proximity zone is a transparent `::before` on the control with `inset: -20px`. Do not use a pointer-move listener for this.
-- C7. Browsers without `@property` get the same change as an instant switch. That is acceptable; do not add a script fallback.
+- C6.
+  The
+  20px
+  proximity
+  zone
+  is
+  a
+  transparent
+  `::before`
+  on
+  the
+  control
+  with
+  `inset: -20px`.
+  Do
+  not
+  use
+  a
+  pointer-move
+  listener
+  for
+  this.
+- C7.
+  Browsers
+  without
+  `@property`
+  get
+  the
+  same
+  change
+  as
+  an
+  instant
+  switch.
+  That
+  is
+  acceptable;
+  do
+  not
+  add
+  a
+  script
+  fallback.
 
 ### 4.2 The globe's chrome
 
-The globe is always chrome; it never starts flat (decided, see section 18).
-Its first paint is static, shown before the renderer in 4.3 has drawn and
-wherever WebGL is unavailable.
+The
+globe
+is
+always
+chrome;
+it
+never
+starts
+flat
+(decided,
+see
+section
+18).
+Its
+first
+paint
+is
+static,
+shown
+before
+the
+renderer
+in
+4.3
+has
+drawn
+and
+wherever
+WebGL
+is
+unavailable.
 
-**Owner amendment, 2026-11-12.** The first paint is drawn to look like the
-body's first frame, and the body fades in over it: the swap in one frame is
-gone. The background is a mirror ball showing the page with the room as a soft
-disc, a window highlight and a thin limb; one rule serves both editions:
+**Owner
+amendment,
+2026-11-12.**
+The
+first
+paint
+is
+drawn
+to
+look
+like
+the
+body's
+first
+frame,
+and
+the
+body
+fades
+in
+over
+it:
+the
+swap
+in
+one
+frame
+is
+gone.
+The
+background
+is
+a
+mirror
+ball
+showing
+the
+page
+with
+the
+room
+as
+a
+soft
+disc,
+a
+window
+highlight
+and
+a
+thin
+limb;
+one
+rule
+serves
+both
+editions:
 
 ```css
 background:
-  radial-gradient(ellipse 14% 10% at 30% 24%, #fff 0 50%, rgba(255,255,255,0) 100%),
-  radial-gradient(circle at 50% 50%,
-    color-mix(in srgb, var(--chrome-2) 80%, var(--site-bg)) 0,
-    color-mix(in srgb, var(--chrome-2) 65%, var(--site-bg)) 36%,
-    var(--site-bg) 46%, var(--site-bg) 90%,
-    color-mix(in srgb, var(--chrome-flat) 40%, var(--site-bg)) 100%);
-box-shadow: inset 0 0 6px 0 rgba(0,0,0,.3), 0 0 0 1px rgba(0,0,0,.25);
+  radial-gradient(
+    ellipse
+      14%
+      10%
+      at
+      30%
+      24%,
+    #fff
+      0
+      50%,
+    rgba(
+        255,
+        255,
+        255,
+        0
+      )
+      100%
+  ),
+  radial-gradient(
+    circle
+      at
+      50%
+      50%,
+    color-mix(
+        in
+          srgb,
+        var(
+            --chrome-2
+          )
+          80%,
+        var(
+          --site-bg
+        )
+      )
+      0,
+    color-mix(
+        in
+          srgb,
+        var(
+            --chrome-2
+          )
+          65%,
+        var(
+          --site-bg
+        )
+      )
+      36%,
+    var(
+        --site-bg
+      )
+      46%,
+    var(
+        --site-bg
+      )
+      90%,
+    color-mix(
+        in
+          srgb,
+        var(
+            --chrome-flat
+          )
+          40%,
+        var(
+          --site-bg
+        )
+      )
+      100%
+  );
+box-shadow:
+  inset
+    0
+    0
+    6px
+    0
+    rgba(
+      0,
+      0,
+      0,
+      0.3
+    ),
+  0
+    0
+    0
+    1px
+    rgba(
+      0,
+      0,
+      0,
+      0.25
+    );
 ```
 
-On it, `components/shell/GlobeFirstPaint.tsx` server-renders the cage
-(parallels every 20 degrees, meridians every 30) and one dot per destination
-at the engine's starting pose, with the shader's own sizes, so the dots are
-already where the body draws them. When the body's first frame is ready the
-canvas fades in over 280 ms and the first paint then leaves in 80 ms (360 ms
-in all). The canvas is transparent before that, so the flat program is never
+On
+it,
+`components/shell/GlobeFirstPaint.tsx`
+server-renders
+the
+cage
+(parallels
+every
+20
+degrees,
+meridians
+every 30)
+and
+one
+dot
+per
+destination
+at
+the
+engine's
+starting
+pose,
+with
+the
+shader's
+own
+sizes,
+so
+the
+dots
+are
+already
+where
+the
+body
+draws
+them.
+When
+the
+body's
+first
+frame
+is
+ready
+the
+canvas
+fades
+in
+over
+280
+ms
+and
+the
+first
+paint
+then
+leaves
+in
+80
+ms
+(360
+ms
+in
+all).
+The
+canvas
+is
+transparent
+before
+that,
+so
+the
+flat
+program
+is
+never
 seen.
 
 ### 4.3 Ray-traced reflection (required for every chrome element)
 
-Every chrome element shows a real reflection of the page: the globes always,
-the toggle and slider thumbs whenever they are chrome (`--c > 0`). This is not
-an optional tier and there is no user setting for it. The CSS gradients in 4.1
-and 4.2 remain underneath as the first paint and the fallback.
+Every
+chrome
+element
+shows
+a
+real
+reflection
+of
+the
+page:
+the
+globes
+always,
+the
+toggle
+and
+slider
+thumbs
+whenever
+they
+are
+chrome
+(`--c > 0`).
+This
+is
+not
+an
+optional
+tier
+and
+there
+is
+no
+user
+setting
+for
+it.
+The
+CSS
+gradients
+in
+4.1
+and
+4.2
+remain
+underneath
+as
+the
+first
+paint
+and
+the
+fallback.
 
 **Architecture**
 
-- V1. One module, `lib/chrome/`, owns one WebGL context for the whole site tier. No chrome element creates its own context.
-- V2. Each chrome element holds a small 2D `<canvas>` laid exactly over it. The renderer draws that element's reflection into the shared WebGL canvas and copies it across with `drawImage`. Backing size is the element's CSS size × `min(devicePixelRatio, 2)`; the phone globe's canvas is sized for its open state (288px) so it stays sharp when expanded.
-- V3. A thumb's canvas has `opacity: var(--c)`, so the flat-to-chrome change in 4.1 is still one animated number. A thumb whose `--c` is 0 is skipped entirely by the renderer.
-- V4. The module loads at idle after hydration, never in the critical path, and registers elements through a `data-chrome` attribute (`"ball"` or `"pill"`). Components do not import it.
+- V1.
+  One
+  module,
+  `lib/chrome/`,
+  owns
+  one
+  WebGL
+  context
+  for
+  the
+  whole
+  site
+  tier.
+  No
+  chrome
+  element
+  creates
+  its
+  own
+  context.
+- V2.
+  Each
+  chrome
+  element
+  holds
+  a
+  small
+  2D
+  `<canvas>`
+  laid
+  exactly
+  over
+  it.
+  The
+  renderer
+  draws
+  that
+  element's
+  reflection
+  into
+  the
+  shared
+  WebGL
+  canvas
+  and
+  copies
+  it
+  across
+  with
+  `drawImage`.
+  Backing
+  size
+  is
+  the
+  element's
+  CSS
+  size
+  ×
+  `min(devicePixelRatio, 2)`;
+  the
+  phone
+  globe's
+  canvas
+  is
+  sized
+  for
+  its
+  open
+  state
+  (288px)
+  so
+  it
+  stays
+  sharp
+  when
+  expanded.
+- V3.
+  A
+  thumb's
+  canvas
+  has
+  `opacity: var(--c)`,
+  so
+  the
+  flat-to-chrome
+  change
+  in
+  4.1
+  is
+  still
+  one
+  animated
+  number.
+  A
+  thumb
+  whose
+  `--c`
+  is
+  0
+  is
+  skipped
+  entirely
+  by
+  the
+  renderer.
+- V4.
+  The
+  module
+  loads
+  at
+  idle
+  after
+  hydration,
+  never
+  in
+  the
+  critical
+  path,
+  and
+  registers
+  elements
+  through
+  a
+  `data-chrome`
+  attribute
+  (`"ball"`
+  or
+  `"pill"`).
+  Components
+  do
+  not
+  import
+  it.
 
-**The picture of the page (the environment)**
+**The
+picture
+of
+the
+page
+(the
+environment)**
 
-- V5. The environment is a half-resolution 2D canvas painted from layout, not a screenshot: each visible element's background and borders from its rectangle and computed colours, each text node with `fillText` line by line using the line boxes from `Range.getClientRects()`, the spine line and dots, field values and placeholders. No `html2canvas`, no SVG `foreignObject`.
-- V6. Chrome elements, their overlays and anything with `opacity: 0` are left out. The open globe's veil and pins are included, so the open globe reflects its own menu.
-- V7. Paint the scrolling content once into a tall canvas (cap 8192 device pixels; beyond that, paint the window around the viewport and repaint when the viewport leaves it). Scrolling then only changes an offset uniform. Do **not** repaint the environment on every scroll frame; the mockups do, for brevity, and that is not acceptable in production.
-- V8. Repaint when content changes: after a feed page is appended, on route change, on edition change, on resize, after fonts load. Drive this from those events. Do not use a `MutationObserver`.
+- V5.
+  The
+  environment
+  is
+  a
+  half-resolution
+  2D
+  canvas
+  painted
+  from
+  layout,
+  not
+  a
+  screenshot:
+  each
+  visible
+  element's
+  background
+  and
+  borders
+  from
+  its
+  rectangle
+  and
+  computed
+  colours,
+  each
+  text
+  node
+  with
+  `fillText`
+  line
+  by
+  line
+  using
+  the
+  line
+  boxes
+  from
+  `Range.getClientRects()`,
+  the
+  spine
+  line
+  and
+  dots,
+  field
+  values
+  and
+  placeholders.
+  No
+  `html2canvas`,
+  no
+  SVG
+  `foreignObject`.
+- V6.
+  Chrome
+  elements,
+  their
+  overlays
+  and
+  anything
+  with
+  `opacity: 0`
+  are
+  left
+  out.
+  The
+  open
+  globe's
+  veil
+  and
+  pins
+  are
+  included,
+  so
+  the
+  open
+  globe
+  reflects
+  its
+  own
+  menu.
+- V7.
+  Paint
+  the
+  scrolling
+  content
+  once
+  into
+  a
+  tall
+  canvas
+  (cap
+  8192
+  device
+  pixels;
+  beyond
+  that,
+  paint
+  the
+  window
+  around
+  the
+  viewport
+  and
+  repaint
+  when
+  the
+  viewport
+  leaves
+  it).
+  Scrolling
+  then
+  only
+  changes
+  an
+  offset
+  uniform.
+  Do
+  **not**
+  repaint
+  the
+  environment
+  on
+  every
+  scroll
+  frame;
+  the
+  mockups
+  do,
+  for
+  brevity,
+  and
+  that
+  is
+  not
+  acceptable
+  in
+  production.
+- V8.
+  Repaint
+  when
+  content
+  changes:
+  after
+  a
+  feed
+  page
+  is
+  appended,
+  on
+  route
+  change,
+  on
+  edition
+  change,
+  on
+  resize,
+  after
+  fonts
+  load.
+  Drive
+  this
+  from
+  those
+  events.
+  Do
+  not
+  use
+  a
+  `MutationObserver`.
 
-**The shader**
+**The
+shader**
 
-One fragment shader handles balls and pills. For a pixel at offset `p` from the
-element's centre, with half-size `hs` and corner radius `r = min(hs.x, hs.y)`:
+One
+fragment
+shader
+handles
+balls
+and
+pills.
+For
+a
+pixel
+at
+offset
+`p`
+from
+the
+element's
+centre,
+with
+half-size
+`hs`
+and
+corner
+radius
+`r = min(hs.x, hs.y)`:
 
 ```glsl
 vec2 q = clamp(p, -(hs - r), hs - r);          // nearest point on the shape's axis (the centre, for a ball)
@@ -202,376 +1500,2803 @@ float t = r * (1.4 + n.z) / (-dz);
 vec2 pos = centre + p + t * R.xy;              // sample the environment at pos / pageSize
 ```
 
-Then, in order: draw the pointer as a small arrow at its page position; darken
-the hit by a contact shadow `mix(.55, 1., smoothstep(1., 2.2, length(pos - centre - q) / r))`;
-fade distant hits into the room with `smoothstep(32.*r, 7.*r, t)`; blend page
-and room across `smoothstep(0., -.25, dz)`; brighten the rim by
-`pow(1. - n.z, 4.) * .4`; add one glint at `dot(n, normalize(vec3(-.5,-.6,.62))) > .975`;
-multiply by `.9 + .1 * n.z`; antialias the edge with `smoothstep(1., .94, sqrt(r2))`.
+Then,
+in
+order:
+draw
+the
+pointer
+as
+a
+small
+arrow
+at
+its
+page
+position;
+darken
+the
+hit
+by
+a
+contact
+shadow
+`mix(.55, 1., smoothstep(1., 2.2, length(pos - centre - q) / r))`;
+fade
+distant
+hits
+into
+the
+room
+with
+`smoothstep(32.*r, 7.*r, t)`;
+blend
+page
+and
+room
+across
+`smoothstep(0., -.25, dz)`;
+brighten
+the
+rim
+by
+`pow(1. - n.z, 4.) * .4`;
+add
+one
+glint
+at
+`dot(n, normalize(vec3(-.5,-.6,.62))) > .975`;
+multiply
+by
+`.9 + .1 * n.z`;
+antialias
+the
+edge
+with
+`smoothstep(1., .94, sqrt(r2))`.
 
-Room colours: Day `lo (.83,.88,.92)` `hi (.95,.97,.99)`; Night `lo (.07,.08,.10)` `hi (.20,.23,.27)`.
-Pointer arrow: dark with a light outline in Day, light with a dark outline in Night.
-There is no dark horizon band and no reflection of a viewer; both were tried and rejected.
+Room
+colours:
+Day
+`lo (.83,.88,.92)`
+`hi (.95,.97,.99)`;
+Night
+`lo (.07,.08,.10)`
+`hi (.20,.23,.27)`.
+Pointer
+arrow:
+dark
+with
+a
+light
+outline
+in
+Day,
+light
+with
+a
+dark
+outline
+in
+Night.
+There
+is
+no
+dark
+horizon
+band
+and
+no
+reflection
+of
+a
+viewer;
+both
+were
+tried
+and
+rejected.
 
-**When it draws**
+**When
+it
+draws**
 
-- V9. One `requestAnimationFrame` is requested per change and coalesced: scroll, pointer move, a control changing, focus moving, the globe opening or closing (redraw each frame for the 360 ms of M4, then stop). With no input, no frame is scheduled.
-- V10. One passive `pointermove` listener on the document feeds the pointer position. It is used for the reflected pointer only; proximity stays in CSS (C6).
-- V11. On `webglcontextlost`, hide the canvases (the CSS gradient shows) and rebuild on restore. If WebGL is unavailable, do nothing; the page is complete without it.
-- V12. `prefers-reduced-motion` does not disable reflections; a reflection that follows your own scrolling is not animation.
-- V13. Budget, to be measured in phase 2 on a mid-range phone and recorded in the ledger: a redraw of the docked globe under 2 ms; an environment repaint under 8 ms and never during a scroll frame (V7); the module under 6 kB gzip.
+- V9.
+  One
+  `requestAnimationFrame`
+  is
+  requested
+  per
+  change
+  and
+  coalesced:
+  scroll,
+  pointer
+  move,
+  a
+  control
+  changing,
+  focus
+  moving,
+  the
+  globe
+  opening
+  or
+  closing
+  (redraw
+  each
+  frame
+  for
+  the
+  360
+  ms
+  of
+  M4,
+  then
+  stop).
+  With
+  no
+  input,
+  no
+  frame
+  is
+  scheduled.
+- V10.
+  One
+  passive
+  `pointermove`
+  listener
+  on
+  the
+  document
+  feeds
+  the
+  pointer
+  position.
+  It
+  is
+  used
+  for
+  the
+  reflected
+  pointer
+  only;
+  proximity
+  stays
+  in
+  CSS
+  (C6).
+- V11.
+  On
+  `webglcontextlost`,
+  hide
+  the
+  canvases
+  (the
+  CSS
+  gradient
+  shows)
+  and
+  rebuild
+  on
+  restore.
+  If
+  WebGL
+  is
+  unavailable,
+  do
+  nothing;
+  the
+  page
+  is
+  complete
+  without
+  it.
+- V12.
+  `prefers-reduced-motion`
+  does
+  not
+  disable
+  reflections;
+  a
+  reflection
+  that
+  follows
+  your
+  own
+  scrolling
+  is
+  not
+  animation.
+- V13.
+  Budget,
+  to
+  be
+  measured
+  in
+  phase
+  2
+  on
+  a
+  mid-range
+  phone
+  and
+  recorded
+  in
+  the
+  ledger:
+  a
+  redraw
+  of
+  the
+  docked
+  globe
+  under
+  2
+  ms;
+  an
+  environment
+  repaint
+  under
+  8
+  ms
+  and
+  never
+  during
+  a
+  scroll
+  frame
+  (V7);
+  the
+  module
+  under
+  6
+  kB
+  gzip.
 
 ## 5. Surfaces
 
-- S1. Content sits directly on `--site-bg`. There is no card surface.
-- S2. A list is rows separated by `border-bottom: 1px solid var(--site-border)`.
-- S3. Columns are separated by a 1px vertical rule in the same colour.
-- S4. Pictures and placeholders: `--site-bg-subtle` fill, 1px border, 8px radius.
-- S5. Overlays (menus, dialogs, popovers) are the only raised surface: `--site-surface`, 1px border, 8px radius, the overlay shadow from T4. No backdrop blur. The scrim behind a dialog is `--site-bg` at 80% opacity.
-- S6. The existing role classes are remapped, not kept as materials: `surface-card` and `surface-panel` become "no background, no border"; `surface-field` and `surface-press` become the flat control surface; `surface-overlay` becomes S5; `surface-chrome` (bars) becomes `--site-bg` with a 1px rule on its inner edge.
+- S1.
+  Content
+  sits
+  directly
+  on
+  `--site-bg`.
+  There
+  is
+  no
+  card
+  surface.
+- S2.
+  A
+  list
+  is
+  rows
+  separated
+  by
+  `border-bottom: 1px solid var(--site-border)`.
+- S3.
+  Columns
+  are
+  separated
+  by
+  a
+  1px
+  vertical
+  rule
+  in
+  the
+  same
+  colour.
+- S4.
+  Pictures
+  and
+  placeholders:
+  `--site-bg-subtle`
+  fill,
+  1px
+  border,
+  8px
+  radius.
+- S5.
+  Overlays
+  (menus,
+  dialogs,
+  popovers)
+  are
+  the
+  only
+  raised
+  surface:
+  `--site-surface`,
+  1px
+  border,
+  8px
+  radius,
+  the
+  overlay
+  shadow
+  from
+  T4.
+  No
+  backdrop
+  blur.
+  The
+  scrim
+  behind
+  a
+  dialog
+  is
+  `--site-bg`
+  at
+  80%
+  opacity.
+- S6.
+  The
+  existing
+  role
+  classes
+  are
+  remapped,
+  not
+  kept
+  as
+  materials:
+  `surface-card`
+  and
+  `surface-panel`
+  become
+  "no
+  background,
+  no
+  border";
+  `surface-field`
+  and
+  `surface-press`
+  become
+  the
+  flat
+  control
+  surface;
+  `surface-overlay`
+  becomes
+  S5;
+  `surface-chrome`
+  (bars)
+  becomes
+  `--site-bg`
+  with
+  a
+  1px
+  rule
+  on
+  its
+  inner
+  edge.
 
 ## 6. Controls
 
-All controls are 8px radius, 1px border, 500 weight, 14px text. Heights: 36px
-with a fine pointer, 44px on touch (`@media (pointer: coarse)`).
+All
+controls
+are
+8px
+radius,
+1px
+border,
+500
+weight,
+14px
+text.
+Heights:
+36px
+with
+a
+fine
+pointer,
+44px
+on
+touch
+(`@media (pointer: coarse)`).
 
-| ID | Control | Spec |
-| --- | --- | --- |
-| K1 | Button, default | `--site-surface` fill, `--site-border` border, ink text. Hover: `--site-bg-subtle` fill. |
-| K2 | Button, primary | Ink fill, `--site-accent-fg` text. Hover: 88% opacity. One per view (R4). |
-| K3 | Button, ghost | No border, no fill. Hover: `--site-bg-subtle`. |
-| K4 | Field | 40px high, `--site-surface` fill, 1px border, 12px side padding, muted placeholder. A composer field inside a row has no border and no fill. |
-| K5 | Tabs | Words on a rule. 22px gap, 10px vertical padding. Inactive: muted, 500. Active: ink with a 2px ink underline sitting on the rule. No pills, no segment backgrounds. |
-| K6 | Toggle | Track 44 × 16px, 8px radius, `--site-border`; ink when on. Thumb 22 × 12px pill, 6px radius, 2px inset, slides 18px in 140 ms. Chrome per section 4.1. Hit area 44 × 44px. |
-| K7 | Slider | Track 2px, `--site-border`. Thumb 22 × 10px pill, 5px radius. Chrome per section 4.1. Hit area 44px high. |
-| K8 | Post actions | A 16px line icon in muted ink with its count beside it in 13px (a heart for Like, the two arrows for Repost, a speech bubble for Reply), 28px apart; the word is the control's accessible name and hover title. A post's other actions are behind three dots at its top end, and every "More" that opens a menu is the same three dots. On: ink (a filled heart, a heavier stroke, the count at 600). No colour change, no counter animation. (Owner, 2026-11-13: "add a three dots menu to posts on the main feed, and change more to use those dots as well (try using more minimal icons across the UI instead of text or in addition to text)"; this replaces "plain words, no icon-only buttons in the feed".) |
-| K9 | Tag | 11px, 500, muted, 1px border, 4px radius, `1px 6px` padding. |
-| K10 | Focus | `outline: 2px solid var(--site-text); outline-offset: 2px` on every focusable element. Owner amendment, 2026-11-12: on a text field the ring sits on the field's border (`outline-offset: -1px`) so it does not read as a second, heavier box; a text field with no box (the home composer, the reply field, the full composer) shows no ring at all: its caret is the focus mark. |
-| K11 | Avatar | A circle. No ring, no status glow. Online state is a text label, not a dot alone. |
+| ID  | Control         | Spec                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| K1  | Button, default | `--site-surface` fill, `--site-border` border, ink text. Hover: `--site-bg-subtle` fill.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| K2  | Button, primary | Ink fill, `--site-accent-fg` text. Hover: 88% opacity. One per view (R4).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| K3  | Button, ghost   | No border, no fill. Hover: `--site-bg-subtle`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| K4  | Field           | 40px high, `--site-surface` fill, 1px border, 12px side padding, muted placeholder. A composer field inside a row has no border and no fill.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| K5  | Tabs            | Words on a rule. 22px gap, 10px vertical padding. Inactive: muted, 500. Active: ink with a 2px ink underline sitting on the rule. No pills, no segment backgrounds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| K6  | Toggle          | Track 44 × 16px, 8px radius, `--site-border`; ink when on. Thumb 22 × 12px pill, 6px radius, 2px inset, slides 18px in 140 ms. Chrome per section 4.1. Hit area 44 × 44px.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| K7  | Slider          | Track 2px, `--site-border`. Thumb 22 × 10px pill, 5px radius. Chrome per section 4.1. Hit area 44px high.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| K8  | Post actions    | A 16px line icon in muted ink with its count beside it in 13px (a heart for Like, the two arrows for Repost, a speech bubble for Reply), 28px apart; the word is the control's accessible name and hover title. A post's other actions are behind three dots at its top end, and every "More" that opens a menu is the same three dots. On: ink (a filled heart, a heavier stroke, the count at 600). No colour change, no counter animation. (Owner, 2026-11-13: "add a three dots menu to posts on the main feed, and change more to use those dots as well (try using more minimal icons across the UI instead of text or in addition to text)"; this replaces "plain words, no icon-only buttons in the feed".) |
+| K9  | Tag             | 11px, 500, muted, 1px border, 4px radius, `1px 6px` padding.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| K10 | Focus           | `outline: 2px solid var(--site-text); outline-offset: 2px` on every focusable element. Owner amendment, 2026-11-12: on a text field the ring sits on the field's border (`outline-offset: -1px`) so it does not read as a second, heavier box; a text field with no box (the home composer, the reply field, the full composer) shows no ring at all: its caret is the focus mark.                                                                                                                                                                                                                                                                                                                                  |
+| K11 | Avatar          | A circle. No ring, no status glow. Online state is a text label, not a dot alone.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
-Reference CSS for K6 and K7:
+Reference
+CSS
+for
+K6
+and
+K7:
 
 ```css
-.tog { position: relative; display: inline-block; width: 44px; height: 16px; flex: none; }
-.tog::before { content: ''; position: absolute; inset: -20px; }            /* proximity zone, C6 */
-.tog input { position: absolute; opacity: 0; inset: -14px 0; width: 100%; height: 44px; margin: 0; cursor: pointer; z-index: 1; }
-.tog i { position: absolute; inset: 0; border-radius: 8px; background: var(--site-border); transition: background .12s; }
-.tog i::after { content: ''; position: absolute; left: 2px; top: 2px; width: 22px; height: 12px; border-radius: 6px;
-  background: /* C1 mixed by --c */; transition: translate .14s ease; }
-.tog input:checked + i { background: var(--site-text); }
-.tog input:checked + i::after { translate: 18px 0; }
+.tog {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 16px;
+  flex: none;
+}
+.tog::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+} /* proximity zone, C6 */
+.tog
+  input {
+  position: absolute;
+  opacity: 0;
+  inset: -14px
+    0;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+.tog
+  i {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: var(
+    --site-border
+  );
+  transition: background
+    0.12s;
+}
+.tog
+  i::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 22px;
+  height: 12px;
+  border-radius: 6px;
+  background: /* C1 mixed by --c */;
+  transition: translate
+    0.14s
+    ease;
+}
+.tog
+  input:checked
+  + i {
+  background: var(
+    --site-text
+  );
+}
+.tog
+  input:checked
+  + i::after {
+  translate: 18px
+    0;
+}
 
-.sl { appearance: none; width: 100%; height: 44px; margin: -10px 0; background: none; cursor: pointer; }
-.sl::-webkit-slider-runnable-track, .sl::-moz-range-track { height: 2px; background: var(--site-border); }
-.sl::-webkit-slider-thumb { appearance: none; width: 22px; height: 10px; margin-top: -4px; border-radius: 5px; border: 0;
-  background: /* C1 mixed by --c */; }
+.sl {
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  margin: -10px
+    0;
+  background: none;
+  cursor: pointer;
+}
+.sl::-webkit-slider-runnable-track,
+.sl::-moz-range-track {
+  height: 2px;
+  background: var(
+    --site-border
+  );
+}
+.sl::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 10px;
+  margin-top: -4px;
+  border-radius: 5px;
+  border: 0;
+  background: /* C1 mixed by --c */;
+}
 /* repeat the thumb rule for ::-moz-range-thumb in a SEPARATE rule; grouped vendor selectors invalidate each other */
 ```
 
 ## 7. The spine
 
-The spine is a 1px vertical line down the left of a content column. Items hang
-on it with a dot; section headings ("stations") hang on it with a hollow dot.
-It is the system's one structural signature and appears on every content page.
+The
+spine
+is
+a
+1px
+vertical
+line
+down
+the
+left
+of
+a
+content
+column.
+Items
+hang
+on
+it
+with
+a
+dot;
+section
+headings
+("stations")
+hang
+on
+it
+with
+a
+hollow
+dot.
+It
+is
+the
+system's
+one
+structural
+signature
+and
+appears
+on
+every
+content
+page.
 
 ```css
-.sp { position: relative; padding-left: 20px; }
-.sp::before { content: ''; position: absolute; left: 4px; top: 6px; bottom: 0; width: 1px; background: var(--site-border); }
+.sp {
+  position: relative;
+  padding-left: 20px;
+}
+.sp::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  bottom: 0;
+  width: 1px;
+  background: var(
+    --site-border
+  );
+}
 
-.it { position: relative; padding: 14px 0; border-bottom: 1px solid var(--site-border); }
-.it::before { content: ''; position: absolute; left: -18.5px; top: 21px; width: 6px; height: 6px; border-radius: 50%;
-  background: var(--site-text); box-shadow: 0 0 0 3px var(--site-bg); }      /* the dot, with a gap cut in the line */
-.it.nb::before { display: none; }                                            /* an item with no dot (prose, a form) */
+.it {
+  position: relative;
+  padding: 14px
+    0;
+  border-bottom: 1px
+    solid
+    var(
+      --site-border
+    );
+}
+.it::before {
+  content: '';
+  position: absolute;
+  left: -18.5px;
+  top: 21px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(
+    --site-text
+  );
+  box-shadow: 0
+    0
+    0
+    3px
+    var(
+      --site-bg
+    );
+} /* the dot, with a gap cut in the line */
+.it.nb::before {
+  display: none;
+} /* an item with no dot (prose, a form) */
 
-.st { position: relative; padding: 22px 0 8px; font-weight: 600; font-size: 13px; color: var(--site-text-muted); }
-.st::before { content: ''; position: absolute; left: -20.5px; top: 25px; width: 8px; height: 8px; border-radius: 50%;
-  background: var(--site-bg); border: 1px solid var(--site-text-muted); }    /* the station: a hollow dot */
+.st {
+  position: relative;
+  padding: 22px
+    0
+    8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(
+    --site-text-muted
+  );
+}
+.st::before {
+  content: '';
+  position: absolute;
+  left: -20.5px;
+  top: 25px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(
+    --site-bg
+  );
+  border: 1px
+    solid
+    var(
+      --site-text-muted
+    );
+} /* the station: a hollow dot */
 ```
 
-- P1. The spine is pure CSS. It measures nothing and runs no script.
-- P2. One spine per column. A nested spine is allowed only for replies to a reply, indented 8px, at most one level deep.
-- P3. A dot marks a discrete item (a post, a row, a message from someone else). Running prose and forms hang without a dot (`.nb`).
-- P4. What the spine means on each page is fixed by the recipes in section 10. Do not invent a new meaning per feature.
-- P5. In RTL locales (`ar`, `ur`) the spine moves to the right: use logical properties (`padding-inline-start`, `inset-inline-start`).
+- P1.
+  The
+  spine
+  is
+  pure
+  CSS.
+  It
+  measures
+  nothing
+  and
+  runs
+  no
+  script.
+- P2.
+  One
+  spine
+  per
+  column.
+  A
+  nested
+  spine
+  is
+  allowed
+  only
+  for
+  replies
+  to
+  a
+  reply,
+  indented
+  8px,
+  at
+  most
+  one
+  level
+  deep.
+- P3.
+  A
+  dot
+  marks
+  a
+  discrete
+  item
+  (a
+  post,
+  a
+  row,
+  a
+  message
+  from
+  someone
+  else).
+  Running
+  prose
+  and
+  forms
+  hang
+  without
+  a
+  dot
+  (`.nb`).
+- P4.
+  What
+  the
+  spine
+  means
+  on
+  each
+  page
+  is
+  fixed
+  by
+  the
+  recipes
+  in
+  section 10.
+  Do
+  not
+  invent
+  a
+  new
+  meaning
+  per
+  feature.
+- P5.
+  In
+  RTL
+  locales
+  (`ar`,
+  `ur`)
+  the
+  spine
+  moves
+  to
+  the
+  right:
+  use
+  logical
+  properties
+  (`padding-inline-start`,
+  `inset-inline-start`).
 
-React surface (new, `components/ui/spine.tsx`):
+React
+surface
+(new,
+`components/ui/spine.tsx`):
 
 ```tsx
-export function Spine({ children, className }: { children: ReactNode; className?: string });      // <div class="spine">
-export function SpineItem({ dot = true, as = 'div', ...props }: SpineItemProps);                   // <article|div class="spine-item">
-export function SpineStation({ children }: { children: ReactNode });                               // <h2 class="spine-station t-label">
+export function Spine({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}); // <div class="spine">
+export function SpineItem({
+  dot = true,
+  as = 'div',
+  ...props
+}: SpineItemProps); // <article|div class="spine-item">
+export function SpineStation({
+  children,
+}: {
+  children: ReactNode;
+}); // <h2 class="spine-station t-label">
 ```
 
-`SpineStation` renders a real heading so the page outline is correct for screen readers.
+`SpineStation`
+renders
+a
+real
+heading
+so
+the
+page
+outline
+is
+correct
+for
+screen
+readers.
 
 ## 8. The globe
 
 ### 8.1 Phone (below 1024px): the only navigator
 
-There is no tab bar, no hamburger and no bottom nav. Behaviour matches the
-current globe, re-skinned in chrome.
+There
+is
+no
+tab
+bar,
+no
+hamburger
+and
+no
+bottom
+nav.
+Behaviour
+matches
+the
+current
+globe,
+re-skinned
+in
+chrome.
 
-| State | Spec |
-| --- | --- |
-| G1 Docked | 64px chrome globe, centred, 18px above the bottom edge plus `env(safe-area-inset-bottom)`, following Safari's toolbar with `var(--vv-follow, 0px)` as today. It shows its destinations as dots on the sphere, which turn with it (a white disc in a light grey outline one CSS pixel wide, no dark ring: owner, 2026-11-13); the icons appear only when it opens (owner, 2026-11-12, replacing the 13px dot grid and the icons that rode the docked ball). The page fades into `--site-bg` over the last 130px so content never collides with it. |
-| G2 Opening | On tap the same element translates to the vertical middle and scales to 288px (4.5×) in 360 ms, `cubic-bezier(.2,0,0,1)`. The dots fade out in 200 ms. The page behind is covered by `--site-bg` at 96% opacity (a flat veil, no blur). |
-| G3 Open | The five sections sit on the globe as pins: Front, Explore, Games, Inbox, You. The current section is in the centre, larger (44px high, `--site-bg` fill, ink text, 600); the other four sit around it (36px high, ink fill, `--site-accent-fg` text). "Write a post" is an underlined text link below the globe. Pins fade in 180 ms after a 160 ms delay. |
+| State       | Spec                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G1 Docked   | 64px chrome globe, centred, 18px above the bottom edge plus `env(safe-area-inset-bottom)`, following Safari's toolbar with `var(--vv-follow, 0px)` as today. It shows its destinations as dots on the sphere, which turn with it (a white disc in a light grey outline one CSS pixel wide, no dark ring: owner, 2026-11-13); the icons appear only when it opens (owner, 2026-11-12, replacing the 13px dot grid and the icons that rode the docked ball). The page fades into `--site-bg` over the last 130px so content never collides with it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| G2 Opening  | On tap the same element translates to the vertical middle and scales to 288px (4.5×) in 360 ms, `cubic-bezier(.2,0,0,1)`. The dots fade out in 200 ms. The page behind is covered by `--site-bg` at 96% opacity (a flat veil, no blur).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| G3 Open     | The five sections sit on the globe as pins: Front, Explore, Games, Inbox, You. The current section is in the centre, larger (44px high, `--site-bg` fill, ink text, 600); the other four sit around it (36px high, ink fill, `--site-accent-fg` text). "Write a post" is an underlined text link below the globe. Pins fade in 180 ms after a 160 ms delay.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | G3a The bar | **Owner amendment, 2026-11-13: "when the liquid globe is open re-add something like our old bottom bar with log in/settings/etc (you can remove the 'write a post' from the globe menu)".** While the globe is open, one flat row sits at the bottom of the window: the signed-in avatar as the link to the viewer's profile (or "Sign in"), Search (the command palette), Settings, and Sign out when signed in. The edition toggle and "All sections" were items and were removed (owner, 2026-11-13: "remove the light dark toggle and 'all sections' from that pill too"); the edition is set in Settings, Appearance. Each item is a 20px icon in a 44px target; its word is its accessible name and tooltip and is not drawn (owner, 2026-11-13: "you can remove the text below the icons on the bottom bar"). The items sit on one pill, `--site-surface` with the 1px border and no shadow (owner, 2026-11-13: "add a pill background behind the icons and buttons on the bottom bar when the globe is open"). It fades with the menu (180 ms, opacity only), is `inert` while closed, comes after the pins in the tab order, and floats `18px + env(safe-area-inset-bottom) + var(--vv-follow, 0px)` above the bottom edge, never flush to it. On a window too short to hold it under the globe (480px tall or less; 660px or less from 1024px wide) it is a column of icons at the inline end. It replaces G3's two links: "Write a post" is no longer in the globe menu (the sidebar's button and the home composer write a post), and "All sections" is no longer linked from the globe. |
-| G4 Closing | Tapping the globe, the veil, or pressing Escape reverses G2. Choosing a pin navigates immediately and the globe returns to the dock while the next page renders. |
+| G4 Closing  | Tapping the globe, the veil, or pressing Escape reverses G2. Choosing a pin navigates immediately and the globe returns to the dock while the next page renders.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
-Pin positions in a 390 × 844 viewport, as centre points (scale proportionally
-from the globe's centre for other sizes): current `195,422` · upper left
-`118,338` · upper right `272,338` · lower left `118,506` · lower right
-`272,506` · write link `195,606`.
+Pin
+positions
+in
+a
+390
+×
+844
+viewport,
+as
+centre
+points
+(scale
+proportionally
+from
+the
+globe's
+centre
+for
+other
+sizes):
+current
+`195,422`
+·
+upper
+left
+`118,338`
+·
+upper
+right
+`272,338`
+·
+lower
+left
+`118,506`
+·
+lower
+right
+`272,506`
+·
+write
+link
+`195,606`.
 
-Reference CSS (mockup uses a hidden checkbox as the state; production uses a
-button and a `data-open` attribute, see G7):
+Reference
+CSS
+(mockup
+uses
+a
+hidden
+checkbox
+as
+the
+state;
+production
+uses
+a
+button
+and
+a
+`data-open`
+attribute,
+see
+G7):
 
 ```css
-.globe { position: absolute; left: 50%; bottom: 18px; z-index: 5; transform: translate(-50%, 0);
-  transition: transform .36s cubic-bezier(.2,0,0,1); }
-.globe .orb { --d: 64px; box-shadow: inset 0 0 8px 1px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.4), 0 14px 14px -8px rgba(0,0,0,.35); }
-.globe .orb::after { content: ''; position: absolute; inset: 13px; border-radius: 50%; transition: opacity .2s;
-  background: radial-gradient(circle, #fff 0 1.6px, rgba(0,0,0,.55) 2px 3px, transparent 3.5px) 0 0 / 13px 13px; }
-[data-open] .globe { transform: translate(-50%, -372px) scale(4.5); }
-[data-open] .globe .orb::after { opacity: 0; }
-.veil { position: absolute; inset: 0; z-index: 3; background: var(--site-bg); opacity: 0; pointer-events: none; transition: opacity .2s; }
-[data-open] .veil { opacity: .96; pointer-events: auto; }
+.globe {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 5;
+  transform: translate(
+    -50%,
+    0
+  );
+  transition: transform
+    0.36s
+    cubic-bezier(
+      0.2,
+      0,
+      0,
+      1
+    );
+}
+.globe
+  .orb {
+  --d: 64px;
+  box-shadow:
+    inset
+      0
+      0
+      8px
+      1px
+      rgba(
+        0,
+        0,
+        0,
+        0.5
+      ),
+    0
+      0
+      0
+      1px
+      rgba(
+        0,
+        0,
+        0,
+        0.4
+      ),
+    0
+      14px
+      14px -8px
+      rgba(
+        0,
+        0,
+        0,
+        0.35
+      );
+}
+.globe
+  .orb::after {
+  content: '';
+  position: absolute;
+  inset: 13px;
+  border-radius: 50%;
+  transition: opacity
+    0.2s;
+  background: radial-gradient(
+      circle,
+      #fff
+        0
+        1.6px,
+      rgba(
+          0,
+          0,
+          0,
+          0.55
+        )
+        2px
+        3px,
+      transparent
+        3.5px
+    )
+    0
+    0 /
+    13px
+    13px;
+}
+[data-open]
+  .globe {
+  transform: translate(
+      -50%,
+      -372px
+    )
+    scale(
+      4.5
+    );
+}
+[data-open]
+  .globe
+  .orb::after {
+  opacity: 0;
+}
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: var(
+    --site-bg
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity
+    0.2s;
+}
+[data-open]
+  .veil {
+  opacity: 0.96;
+  pointer-events: auto;
+}
 ```
 
-- G5a. **Owner amendment, 2026-11-12: the chrome globe keeps the liquid globe's physics and rotation logic; only the material changed** (this also settles D1). `lib/globe/engine.ts` is those laws lifted out of `LiquidGlobe.tsx` unchanged (free trackball, drag to turn, release to coast on friction, the settle spring and magnet, the reticle lock and hold-to-go dwell, the scroll kick, the idle drift, the poke's ripple and wobble, the dough body), on the shared primitives `lib/trackball`, `lib/fluid` and `lib/dough`. `lib/globe/view.ts` binds them to the ball; `lib/globe/shader.ts` is the chrome reflection on a surface that turns, ripples and dents, drawn by the one shared renderer (still one context, no worker). The five sections are fixed on the sphere and projected; the cage is dots docked and engraved lines open. It loads at idle; before that, and with scripting off, G1 to G4 below are the whole globe. Consequences: the idle drift is the one ambient motion on a Steel page (a 15 Hz tick, 7 on handhelds; stopped when hidden, unfocused, off screen, `data-jelly-motion='still'` or reduced motion), so "nothing at rest" is measured with motion reduced and the drift is bounded separately (`testing/e2e/steel-rest.mjs`); and phase 6 must KEEP `lib/dough.ts`, `lib/fluid.ts` and `lib/trackball.ts`.
-- G5b. **Owner amendment, 2026-11-12 (second): "basically keep the original liquid globe, just with the new material".** The globe carries EVERY destination the liquid globe did (`lib/sidebar-nav`), not five words: docked they are dots on the sphere that orbit as it drifts and scrolls; open they are icon pins with names, the locked one inverted with a dwell ring. It is one element for phone and desktop: on desktop a 124px ball at the foot of the sidebar that grows to 440px in the middle of the window when clicked (this replaces G9's "not needed to navigate" and G10's 72px link; the words "RMH Studios" are the link home). The first section is named "Feed", not "Front".
-- G5c. **Owner amendment, 2026-11-13: "globe doesn't seem to follow page overscrolling properly and floats above everything".** On desktop the docked globe is not a fixed layer. Its box is a grid item over the sidebar's cell with the sidebar's own sticky geometry (16px off the top, `100dvh - 32px` tall), and the ball and the pin anchor are placed inside it, so when the page rubber-bands the globe moves with the sidebar it belongs to instead of staying behind while the sidebar's button and handle slide under it. At rest it is where it was (130px above the bottom of the window). On a phone it stays the one fixed element (G1), following Safari's toolbar. Docked, the globe is below every overlay (dialogs, sheets, menus, the command palette, tooltips and toasts are body-level, above the isolated shell); the cookie notice, the mini-player and a targeted notice ride above it in the floating stack; only the open globe is a top layer.
-- G5. The globe is markup and CSS at first paint and with scripting off. Its reflection comes from the shared chrome renderer (4.3); it has no context, worker, simulation or frame loop of its own. This replaces the current always-mounted `LiquidGlobe`.
-- G6. Animate `transform` and `opacity` only. The globe is scaled, never resized, so nothing lays out during the move.
-- G7. Accessibility: the globe is a `<button aria-expanded aria-controls>` labelled "Open navigation". The pins are a `<nav>` of real links. Open traps focus inside the nav and restores it to the button on close. With scripting off, the button is a link to a plain `/sections` page listing the same destinations.
-- G8. Unread counts (Inbox) show as a small `--site-danger` number on the pin when open and a 8px danger dot at the globe's upper right when docked, with a visually hidden text equivalent.
+- G5a.
+  **Owner
+  amendment,
+  2026-11-12:
+  the
+  chrome
+  globe
+  keeps
+  the
+  liquid
+  globe's
+  physics
+  and
+  rotation
+  logic;
+  only
+  the
+  material
+  changed**
+  (this
+  also
+  settles
+  D1).
+  `lib/globe/engine.ts`
+  is
+  those
+  laws
+  lifted
+  out
+  of
+  `LiquidGlobe.tsx`
+  unchanged
+  (free
+  trackball,
+  drag
+  to
+  turn,
+  release
+  to
+  coast
+  on
+  friction,
+  the
+  settle
+  spring
+  and
+  magnet,
+  the
+  reticle
+  lock
+  and
+  hold-to-go
+  dwell,
+  the
+  scroll
+  kick,
+  the
+  idle
+  drift,
+  the
+  poke's
+  ripple
+  and
+  wobble,
+  the
+  dough
+  body),
+  on
+  the
+  shared
+  primitives
+  `lib/trackball`,
+  `lib/fluid`
+  and
+  `lib/dough`.
+  `lib/globe/view.ts`
+  binds
+  them
+  to
+  the
+  ball;
+  `lib/globe/shader.ts`
+  is
+  the
+  chrome
+  reflection
+  on
+  a
+  surface
+  that
+  turns,
+  ripples
+  and
+  dents,
+  drawn
+  by
+  the
+  one
+  shared
+  renderer
+  (still
+  one
+  context,
+  no
+  worker).
+  The
+  five
+  sections
+  are
+  fixed
+  on
+  the
+  sphere
+  and
+  projected;
+  the
+  cage
+  is
+  dots
+  docked
+  and
+  engraved
+  lines
+  open.
+  It
+  loads
+  at
+  idle;
+  before
+  that,
+  and
+  with
+  scripting
+  off,
+  G1
+  to
+  G4
+  below
+  are
+  the
+  whole
+  globe.
+  Consequences:
+  the
+  idle
+  drift
+  is
+  the
+  one
+  ambient
+  motion
+  on
+  a
+  Steel
+  page
+  (a
+  15
+  Hz
+  tick,
+  7
+  on
+  handhelds;
+  stopped
+  when
+  hidden,
+  unfocused,
+  off
+  screen,
+  `data-jelly-motion='still'`
+  or
+  reduced
+  motion),
+  so
+  "nothing
+  at
+  rest"
+  is
+  measured
+  with
+  motion
+  reduced
+  and
+  the
+  drift
+  is
+  bounded
+  separately
+  (`testing/e2e/steel-rest.mjs`);
+  and
+  phase
+  6
+  must
+  KEEP
+  `lib/dough.ts`,
+  `lib/fluid.ts`
+  and
+  `lib/trackball.ts`.
+- G5b.
+  **Owner
+  amendment,
+  2026-11-12
+  (second):
+  "basically
+  keep
+  the
+  original
+  liquid
+  globe,
+  just
+  with
+  the
+  new
+  material".**
+  The
+  globe
+  carries
+  EVERY
+  destination
+  the
+  liquid
+  globe
+  did
+  (`lib/sidebar-nav`),
+  not
+  five
+  words:
+  docked
+  they
+  are
+  dots
+  on
+  the
+  sphere
+  that
+  orbit
+  as
+  it
+  drifts
+  and
+  scrolls;
+  open
+  they
+  are
+  icon
+  pins
+  with
+  names,
+  the
+  locked
+  one
+  inverted
+  with
+  a
+  dwell
+  ring.
+  It
+  is
+  one
+  element
+  for
+  phone
+  and
+  desktop:
+  on
+  desktop
+  a
+  124px
+  ball
+  at
+  the
+  foot
+  of
+  the
+  sidebar
+  that
+  grows
+  to
+  440px
+  in
+  the
+  middle
+  of
+  the
+  window
+  when
+  clicked
+  (this
+  replaces
+  G9's
+  "not
+  needed
+  to
+  navigate"
+  and
+  G10's
+  72px
+  link;
+  the
+  words
+  "RMH
+  Studios"
+  are
+  the
+  link
+  home).
+  The
+  first
+  section
+  is
+  named
+  "Feed",
+  not
+  "Front".
+- G5c.
+  **Owner
+  amendment,
+  2026-11-13:
+  "globe
+  doesn't
+  seem
+  to
+  follow
+  page
+  overscrolling
+  properly
+  and
+  floats
+  above
+  everything".**
+  On
+  desktop
+  the
+  docked
+  globe
+  is
+  not
+  a
+  fixed
+  layer.
+  Its
+  box
+  is
+  a
+  grid
+  item
+  over
+  the
+  sidebar's
+  cell
+  with
+  the
+  sidebar's
+  own
+  sticky
+  geometry
+  (16px
+  off
+  the
+  top,
+  `100dvh - 32px`
+  tall),
+  and
+  the
+  ball
+  and
+  the
+  pin
+  anchor
+  are
+  placed
+  inside
+  it,
+  so
+  when
+  the
+  page
+  rubber-bands
+  the
+  globe
+  moves
+  with
+  the
+  sidebar
+  it
+  belongs
+  to
+  instead
+  of
+  staying
+  behind
+  while
+  the
+  sidebar's
+  button
+  and
+  handle
+  slide
+  under
+  it.
+  At
+  rest
+  it
+  is
+  where
+  it
+  was
+  (130px
+  above
+  the
+  bottom
+  of
+  the
+  window).
+  On
+  a
+  phone
+  it
+  stays
+  the
+  one
+  fixed
+  element
+  (G1),
+  following
+  Safari's
+  toolbar.
+  Docked,
+  the
+  globe
+  is
+  below
+  every
+  overlay
+  (dialogs,
+  sheets,
+  menus,
+  the
+  command
+  palette,
+  tooltips
+  and
+  toasts
+  are
+  body-level,
+  above
+  the
+  isolated
+  shell);
+  the
+  cookie
+  notice,
+  the
+  mini-player
+  and
+  a
+  targeted
+  notice
+  ride
+  above
+  it
+  in
+  the
+  floating
+  stack;
+  only
+  the
+  open
+  globe
+  is
+  a
+  top
+  layer.
+- G5.
+  The
+  globe
+  is
+  markup
+  and
+  CSS
+  at
+  first
+  paint
+  and
+  with
+  scripting
+  off.
+  Its
+  reflection
+  comes
+  from
+  the
+  shared
+  chrome
+  renderer
+  (4.3);
+  it
+  has
+  no
+  context,
+  worker,
+  simulation
+  or
+  frame
+  loop
+  of
+  its
+  own.
+  This
+  replaces
+  the
+  current
+  always-mounted
+  `LiquidGlobe`.
+- G6.
+  Animate
+  `transform`
+  and
+  `opacity`
+  only.
+  The
+  globe
+  is
+  scaled,
+  never
+  resized,
+  so
+  nothing
+  lays
+  out
+  during
+  the
+  move.
+- G7.
+  Accessibility:
+  the
+  globe
+  is
+  a
+  `<button aria-expanded aria-controls>`
+  labelled
+  "Open
+  navigation".
+  The
+  pins
+  are
+  a
+  `<nav>`
+  of
+  real
+  links.
+  Open
+  traps
+  focus
+  inside
+  the
+  nav
+  and
+  restores
+  it
+  to
+  the
+  button
+  on
+  close.
+  With
+  scripting
+  off,
+  the
+  button
+  is
+  a
+  link
+  to
+  a
+  plain
+  `/sections`
+  page
+  listing
+  the
+  same
+  destinations.
+- G8.
+  Unread
+  counts
+  (Inbox)
+  show
+  as
+  a
+  small
+  `--site-danger`
+  number
+  on
+  the
+  pin
+  when
+  open
+  and
+  a
+  8px
+  danger
+  dot
+  at
+  the
+  globe's
+  upper
+  right
+  when
+  docked,
+  with
+  a
+  visually
+  hidden
+  text
+  equivalent.
 
 ### 8.2 Desktop (1024px and up)
 
-- G9. Navigation is the word list in the left sidebar (section 9). The globe is not needed to navigate.
-- G10. A 72px chrome globe sits at the bottom of the left sidebar, with a soft contact shadow (`0 16px 16px -9px rgba(0,0,0,.35)`). It links to the front page. It is the brand mark; no other logo graphic appears in the sidebar, only the words "RMH Studios" at the top.
+- G9.
+  Navigation
+  is
+  the
+  word
+  list
+  in
+  the
+  left
+  sidebar
+  (section
+  9).
+  The
+  globe
+  is
+  not
+  needed
+  to
+  navigate.
+- G10.
+  A
+  72px
+  chrome
+  globe
+  sits
+  at
+  the
+  bottom
+  of
+  the
+  left
+  sidebar,
+  with
+  a
+  soft
+  contact
+  shadow
+  (`0 16px 16px -9px rgba(0,0,0,.35)`).
+  It
+  links
+  to
+  the
+  front
+  page.
+  It
+  is
+  the
+  brand
+  mark;
+  no
+  other
+  logo
+  graphic
+  appears
+  in
+  the
+  sidebar,
+  only
+  the
+  words
+  "RMH
+  Studios"
+  at
+  the
+  top.
 
 ### 8.3 Reflection
 
-Both globes are ray-traced at all times, per section 4.3. The phone globe keeps
-reflecting through the open animation and, once open, reflects the veil and its
-own pins.
+Both
+globes
+are
+ray-traced
+at
+all
+times,
+per
+section
+4.3.
+The
+phone
+globe
+keeps
+reflecting
+through
+the
+open
+animation
+and,
+once
+open,
+reflects
+the
+veil
+and
+its
+own
+pins.
 
 ## 9. Layout
 
-| ID | Rule |
-| --- | --- |
-| L1 | **Phone (< 1024px):** one column, 18px side padding, 16px top padding plus `env(safe-area-inset-top)`. No fixed header. The page title scrolls with the page. The globe is the only fixed element. |
-| L2 | **Desktop (≥ 1024px):** a three-column frame capped at 1240px and centred: sidebar 220px · content `1fr` · margin 320px. Columns are divided by 1px rules that run the full height. |
-| L3 | **Desktop, no margin (1024–1279px, or pages that do not need one):** sidebar 220px · content `1fr`. Catalogue and settings use this at every width. |
-| L4 | **Sidebar,** top to bottom, 22px top and 24px side padding: the words "RMH Studios" (15px, 600) · the sections as words: Feed, Explore, Games, Inbox (15px; current is ink 600, others muted; 7px vertical padding) · the primary "Write a post" button · the account row: the signed-in handle with a 28px avatar, one link to the viewer's own profile and ink 600 there, with three dots beside it for the account menu · the globe, pushed to the bottom (G10). No icons beside the words. "You" is not one of the words (owner, 2026-11-13: "get rid of 'you' on the sidebar since people can just click on their icon/avatar in the bottom left"); it stays a section on `/sections`, and on a phone the open globe's bar leads to the profile (G3a). |
-| L5 | **Content column:** 40px side padding in the three-column frame, 48px in the two-column one. Reading content (feed, thread, article, settings) is capped at 640px wide. Grids may use the full column. |
-| L6 | **Margin column:** 22px top and 24px side padding. A search field, then at most two short lists, each under a `t-label` heading, rows on rules. Nothing in the margin is a card. The one picture is a 32px avatar beside each person in "Who to follow", whose row is the avatar, the name, the handle and, where accounts the viewer follows already follow them, one line naming up to two (owner, 2026-11-13: "recommended users on the sidebar should have an avatar (maybe also show followed by mutuals)"; this replaces "nothing carries a picture"). Its content loads after the main column. |
-| L7 | Vertical rhythm: 14px inside a row, 22px above a station, 26px above a page title on desktop. |
-| L8 | Full-screen games and apps are outside this shell and keep their own look, as today. |
+| ID  | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L1  | **Phone (< 1024px):** one column, 18px side padding, 16px top padding plus `env(safe-area-inset-top)`. No fixed header. The page title scrolls with the page. The globe is the only fixed element.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| L2  | **Desktop (≥ 1024px):** a three-column frame capped at 1240px and centred: sidebar 220px · content `1fr` · margin 320px. Columns are divided by 1px rules that run the full height.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| L3  | **Desktop, no margin (1024–1279px, or pages that do not need one):** sidebar 220px · content `1fr`. Catalogue and settings use this at every width.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| L4  | **Sidebar,** top to bottom, 22px top and 24px side padding: the words "RMH Studios" (15px, 600) · the sections as words: Feed, Explore, Games, Inbox (15px; current is ink 600, others muted; 7px vertical padding) · the primary "Write a post" button · the account row: the signed-in handle with a 28px avatar, one link to the viewer's own profile and ink 600 there, with three dots beside it for the account menu · the globe, pushed to the bottom (G10). No icons beside the words. "You" is not one of the words (owner, 2026-11-13: "get rid of 'you' on the sidebar since people can just click on their icon/avatar in the bottom left"); it stays a section on `/sections`, and on a phone the open globe's bar leads to the profile (G3a). |
+| L5  | **Content column:** 40px side padding in the three-column frame, 48px in the two-column one. Reading content (feed, thread, article, settings) is capped at 640px wide. Grids may use the full column.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| L6  | **Margin column:** 22px top and 24px side padding. A search field, then at most two short lists, each under a `t-label` heading, rows on rules. Nothing in the margin is a card. The one picture is a 32px avatar beside each person in "Who to follow", whose row is the avatar, the name, the handle and, where accounts the viewer follows already follow them, one line naming up to two (owner, 2026-11-13: "recommended users on the sidebar should have an avatar (maybe also show followed by mutuals)"; this replaces "nothing carries a picture"). Its content loads after the main column.                                                                                                                                                       |
+| L7  | Vertical rhythm: 14px inside a row, 22px above a station, 26px above a page title on desktop.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| L8  | Full-screen games and apps are outside this shell and keep their own look, as today.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
-The shell is markup and CSS grid. It must render complete with scripting off (R5).
+The
+shell
+is
+markup
+and
+CSS
+grid.
+It
+must
+render
+complete
+with
+scripting
+off
+(R5).
 
 ## 10. Page recipes
 
-Each recipe says what the spine means on that page and what the one primary is.
+Each
+recipe
+says
+what
+the
+spine
+means
+on
+that
+page
+and
+what
+the
+one
+primary
+is.
 
-| Page | Spine | Primary | Structure |
-| --- | --- | --- | --- |
-| **Home** (the feed; this is `/`) | One dot per post, newest first | Post | Title "Today" (phone only) · tabs "For you / Following" · on desktop a one-line composer row (avatar, borderless field, Post) · the feed |
-| **Post and replies** | The reply thread; replies to a reply on one nested spine | Reply | The post at 19px with its picture and time · a reply field as the first, dotless item · replies |
-| **Profile** | The person's history | Follow | Avatar 64px, name as title, handle, one-line bio, Message and Follow · stations by period ("This week", "Last week") · posts and one-line activity rows mixed |
-| **Games and apps** | None on desktop (a 4-column grid of picture tiles); on a phone, an index with stations per group | none | Title "Play" · search field · tabs "All / Games / Apps" · tiles: 16:10 picture, name, kind in `t-meta` |
-| **Game page** | The page's outline | Play | Picture · name as title with kind beside the Play button · stations "Playing now", "Leaderboard", "What changed", "Talk" |
-| **Article** | The table of contents | none | Title · byline · each section heading is a station; paragraphs are dotless items in `t-prose` |
-| **Conversation** | One dot per message from the other person; days are stations | Send | Their messages hang on the spine, left aligned; yours are right aligned with an ink fill and no dot · a message field fixed above the globe (the one exception to "only the globe is fixed" on a phone) |
-| **Inbox** | One dot per unread thread | none | Rows: a 40px avatar, name, last line, time. Unread rows have the dot and 600 weight; read rows have no dot. The avatar is the person in a conversation and the actor in a notification (owner, 2026-11-14: "In private messages show user avatars in both notifications and in the dm list"); a row with no person (Saved Messages, a system notification) has a 40px picture placeholder with an icon in its place, so every row's text starts at the same place (`components/feed/InboxAvatar.tsx`). |
-| **Explore** | Stations per kind | none | Search field · "Open lobbies" · "People" (rows with a Follow button) · "Talked about" (posts) · "From the studio" |
-| **Settings** | Stations per group | Save (only in a group with a form) | Stations "Look", "Alerts", "Account" · each setting is a row: name, optional one-line explanation, control on the right |
+| Page                             | Spine                                                                                            | Primary                            | Structure                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Home** (the feed; this is `/`) | One dot per post, newest first                                                                   | Post                               | Title "Today" (phone only) · tabs "For you / Following" · on desktop a one-line composer row (avatar, borderless field, Post) · the feed                                                                                                                                                                                                                                                                                                                                                               |
+| **Post and replies**             | The reply thread; replies to a reply on one nested spine                                         | Reply                              | The post at 19px with its picture and time · a reply field as the first, dotless item · replies                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **Profile**                      | The person's history                                                                             | Follow                             | Avatar 64px, name as title, handle, one-line bio, Message and Follow · stations by period ("This week", "Last week") · posts and one-line activity rows mixed                                                                                                                                                                                                                                                                                                                                          |
+| **Games and apps**               | None on desktop (a 4-column grid of picture tiles); on a phone, an index with stations per group | none                               | Title "Play" · search field · tabs "All / Games / Apps" · tiles: 16:10 picture, name, kind in `t-meta`                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Game page**                    | The page's outline                                                                               | Play                               | Picture · name as title with kind beside the Play button · stations "Playing now", "Leaderboard", "What changed", "Talk"                                                                                                                                                                                                                                                                                                                                                                               |
+| **Article**                      | The table of contents                                                                            | none                               | Title · byline · each section heading is a station; paragraphs are dotless items in `t-prose`                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Conversation**                 | One dot per message from the other person; days are stations                                     | Send                               | Their messages hang on the spine, left aligned; yours are right aligned with an ink fill and no dot · a message field fixed above the globe (the one exception to "only the globe is fixed" on a phone)                                                                                                                                                                                                                                                                                                |
+| **Inbox**                        | One dot per unread thread                                                                        | none                               | Rows: a 40px avatar, name, last line, time. Unread rows have the dot and 600 weight; read rows have no dot. The avatar is the person in a conversation and the actor in a notification (owner, 2026-11-14: "In private messages show user avatars in both notifications and in the dm list"); a row with no person (Saved Messages, a system notification) has a 40px picture placeholder with an icon in its place, so every row's text starts at the same place (`components/feed/InboxAvatar.tsx`). |
+| **Explore**                      | Stations per kind                                                                                | none                               | Search field · "Open lobbies" · "People" (rows with a Follow button) · "Talked about" (posts) · "From the studio"                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Settings**                     | Stations per group                                                                               | Save (only in a group with a form) | Stations "Look", "Alerts", "Account" · each setting is a row: name, optional one-line explanation, control on the right                                                                                                                                                                                                                                                                                                                                                                                |
 
-- X1. The home route renders the feed directly. There is no landing page, hero, masthead or "stories" block above it for signed-in or signed-out visitors.
-- X2. A page not listed here picks the closest recipe. If none fits, it is a titled page of rows on rules with no spine, and the gap is recorded in section 18.
+- X1.
+  The
+  home
+  route
+  renders
+  the
+  feed
+  directly.
+  There
+  is
+  no
+  landing
+  page,
+  hero,
+  masthead
+  or
+  "stories"
+  block
+  above
+  it
+  for
+  signed-in
+  or
+  signed-out
+  visitors.
+- X2.
+  A
+  page
+  not
+  listed
+  here
+  picks
+  the
+  closest
+  recipe.
+  If
+  none
+  fits,
+  it
+  is
+  a
+  titled
+  page
+  of
+  rows
+  on
+  rules
+  with
+  no
+  spine,
+  and
+  the
+  gap
+  is
+  recorded
+  in
+  section 18.
 
 ## 11. Motion
 
-| ID | What | Duration, curve |
-| --- | --- | --- |
-| M1 | Hover and press fills | 90 ms, ease |
-| M2 | Tab underline, toggle slide | 140 ms, ease |
-| M3 | Chrome activation (`--c`) | 280 ms, ease |
-| M4 | Globe open and close | 360 ms, `cubic-bezier(.2,0,0,1)` |
-| M5 | Overlay in and out | 160 ms opacity, no scale, no slide |
+| ID  | What                        | Duration, curve                    |
+| --- | --------------------------- | ---------------------------------- |
+| M1  | Hover and press fills       | 90 ms, ease                        |
+| M2  | Tab underline, toggle slide | 140 ms, ease                       |
+| M3  | Chrome activation (`--c`)   | 280 ms, ease                       |
+| M4  | Globe open and close        | 360 ms, `cubic-bezier(.2,0,0,1)`   |
+| M5  | Overlay in and out          | 160 ms opacity, no scale, no slide |
 
-- M6. Nothing else animates (other than M9). No page entrances, no list staggers, no hover lifts, no springs, no parallax, no skeleton shimmer (a skeleton is a still `--site-bg-subtle` block).
-- M7. `prefers-reduced-motion: reduce` turns M3 and M4 into instant changes. The globe still opens.
-- M8. Route changes swap content with no transition. Speed comes from preloading (audit Part P), not from animation.
-- M9. Content that arrives after the view has painted fades in: 160 ms, `ease`, opacity only, no slide, no scale, no stagger. "Arrives" means it replaces a loading state the reader could see: a skeleton, a spinner, a Suspense fallback, a blank gap, or the end of a list that more rows are appended to (the next page, a live post). Posts, announcements, panels and lazy sections all qualify; the router's pending page giving way to the real one does too (M8 still holds for a navigation that never showed it). Content on the first paint never fades (that is a page entrance, M6). The loading state holds the content's shape so nothing shifts when it lands; the fade is for the swap, not a substitute for reserving space. One class carries it (`.arrive`, set by `components/ui/arrive.tsx`); `lib/__tests__/arrival-coverage.test.ts` holds it. Added by the owner, 2026-11-14.
+- M6.
+  Nothing
+  else
+  animates
+  (other
+  than
+  M9).
+  No
+  page
+  entrances,
+  no
+  list
+  staggers,
+  no
+  hover
+  lifts,
+  no
+  springs,
+  no
+  parallax,
+  no
+  skeleton
+  shimmer
+  (a
+  skeleton
+  is
+  a
+  still
+  `--site-bg-subtle`
+  block).
+- M7.
+  `prefers-reduced-motion: reduce`
+  turns
+  M3
+  and
+  M4
+  into
+  instant
+  changes.
+  The
+  globe
+  still
+  opens.
+- M8.
+  Route
+  changes
+  swap
+  content
+  with
+  no
+  transition.
+  Speed
+  comes
+  from
+  preloading
+  (audit
+  Part
+  P),
+  not
+  from
+  animation.
+- M9.
+  Content
+  that
+  arrives
+  after
+  the
+  view
+  has
+  painted
+  fades
+  in:
+  160
+  ms,
+  `ease`,
+  opacity
+  only,
+  no
+  slide,
+  no
+  scale,
+  no
+  stagger.
+  "Arrives"
+  means
+  it
+  replaces
+  a
+  loading
+  state
+  the
+  reader
+  could
+  see:
+  a
+  skeleton,
+  a
+  spinner,
+  a
+  Suspense
+  fallback,
+  a
+  blank
+  gap,
+  or
+  the
+  end
+  of
+  a
+  list
+  that
+  more
+  rows
+  are
+  appended
+  to
+  (the
+  next
+  page,
+  a
+  live
+  post).
+  Posts,
+  announcements,
+  panels
+  and
+  lazy
+  sections
+  all
+  qualify;
+  the
+  router's
+  pending
+  page
+  giving
+  way
+  to
+  the
+  real
+  one
+  does
+  too
+  (M8
+  still
+  holds
+  for
+  a
+  navigation
+  that
+  never
+  showed
+  it).
+  Content
+  on
+  the
+  first
+  paint
+  never
+  fades
+  (that
+  is
+  a
+  page
+  entrance,
+  M6).
+  The
+  loading
+  state
+  holds
+  the
+  content's
+  shape
+  so
+  nothing
+  shifts
+  when
+  it
+  lands;
+  the
+  fade
+  is
+  for
+  the
+  swap,
+  not
+  a
+  substitute
+  for
+  reserving
+  space.
+  One
+  class
+  carries
+  it
+  (`.arrive`,
+  set
+  by
+  `components/ui/arrive.tsx`);
+  `lib/__tests__/arrival-coverage.test.ts`
+  holds
+  it.
+  Added
+  by
+  the
+  owner,
+  2026-11-14.
 
 ## 12. Accessibility
 
-- A1. Every text pair meets 4.5:1 and every control boundary 3:1, in both editions.
-- A2. State is never colour alone: active tabs have the underline, "on" actions change weight, unread rows have the dot and the weight.
-- A3. Touch targets are 44 × 44px even where the visible control is smaller (K6, K7).
-- A4. The globe follows G7. Tabs, toggles and sliders use the existing Radix or native primitives; only their styles change.
-- A5. A skip link to the content column remains the first focusable element.
-- A6. Test Day and Night at 390px and 1280px wide, and once in `ar` for the mirrored spine.
+- A1.
+  Every
+  text
+  pair
+  meets
+  4.5:1
+  and
+  every
+  control
+  boundary
+  3:1,
+  in
+  both
+  editions.
+- A2.
+  State
+  is
+  never
+  colour
+  alone:
+  active
+  tabs
+  have
+  the
+  underline,
+  "on"
+  actions
+  change
+  weight,
+  unread
+  rows
+  have
+  the
+  dot
+  and
+  the
+  weight.
+- A3.
+  Touch
+  targets
+  are
+  44
+  ×
+  44px
+  even
+  where
+  the
+  visible
+  control
+  is
+  smaller
+  (K6,
+  K7).
+- A4.
+  The
+  globe
+  follows
+  G7.
+  Tabs,
+  toggles
+  and
+  sliders
+  use
+  the
+  existing
+  Radix
+  or
+  native
+  primitives;
+  only
+  their
+  styles
+  change.
+- A5.
+  A
+  skip
+  link
+  to
+  the
+  content
+  column
+  remains
+  the
+  first
+  focusable
+  element.
+- A6.
+  Test
+  Day
+  and
+  Night
+  at
+  390px
+  and
+  1280px
+  wide,
+  and
+  once
+  in
+  `ar`
+  for
+  the
+  mirrored
+  spine.
 
 ## 13. Performance budget
 
-- B1. The shell (sidebar, margin frame, spine, docked globe) renders complete with scripting off. The only script attached to it is the chrome renderer, loaded at idle (V4).
-- B2. No `backdrop-filter`, `filter`, `mix-blend-mode` or `mask` on any site-tier element.
-- B3. The site tier creates exactly one WebGL context (the chrome renderer) and no worker, `MutationObserver` or decorative `ResizeObserver`. No `requestAnimationFrame` callback is pending while the page is at rest.
-- B4. Fonts: Geist and Geist Mono only, self-hosted as today. Remove any other face from the site tier.
-- B5. The site-tier CSS should get smaller in every phase. Record the built `globals` stylesheet size before phase 1 and after each phase in the ledger (section 17).
-- B6. Deleting the glass, jelly, arc and liquid-globe code is part of the work, not a follow-up (section 15.3).
+- B1.
+  The
+  shell
+  (sidebar,
+  margin
+  frame,
+  spine,
+  docked
+  globe)
+  renders
+  complete
+  with
+  scripting
+  off.
+  The
+  only
+  script
+  attached
+  to
+  it
+  is
+  the
+  chrome
+  renderer,
+  loaded
+  at
+  idle
+  (V4).
+- B2.
+  No
+  `backdrop-filter`,
+  `filter`,
+  `mix-blend-mode`
+  or
+  `mask`
+  on
+  any
+  site-tier
+  element.
+- B3.
+  The
+  site
+  tier
+  creates
+  exactly
+  one
+  WebGL
+  context
+  (the
+  chrome
+  renderer)
+  and
+  no
+  worker,
+  `MutationObserver`
+  or
+  decorative
+  `ResizeObserver`.
+  No
+  `requestAnimationFrame`
+  callback
+  is
+  pending
+  while
+  the
+  page
+  is
+  at
+  rest.
+- B4.
+  Fonts:
+  Geist
+  and
+  Geist
+  Mono
+  only,
+  self-hosted
+  as
+  today.
+  Remove
+  any
+  other
+  face
+  from
+  the
+  site
+  tier.
+- B5.
+  The
+  site-tier
+  CSS
+  should
+  get
+  smaller
+  in
+  every
+  phase.
+  Record
+  the
+  built
+  `globals`
+  stylesheet
+  size
+  before
+  phase
+  1
+  and
+  after
+  each
+  phase
+  in
+  the
+  ledger
+  (section
+  17).
+- B6.
+  Deleting
+  the
+  glass,
+  jelly,
+  arc
+  and
+  liquid-globe
+  code
+  is
+  part
+  of
+  the
+  work,
+  not
+  a
+  follow-up
+  (section
+  15.3).
 
 ## 14. Words
 
-Say the specific thing in short sentences. No exclamation marks, no "seamless /
-powerful / unleash", no emoji in site chrome, no invented numbers. Buttons are a
-verb or a verb and a noun ("Post", "Write a post", "Join"). An error says what
-happened and what to do next. Every string goes through `t()` with a new key
-when the wording changes.
+Say
+the
+specific
+thing
+in
+short
+sentences.
+No
+exclamation
+marks,
+no
+"seamless
+/
+powerful
+/
+unleash",
+no
+emoji
+in
+site
+chrome,
+no
+invented
+numbers.
+Buttons
+are
+a
+verb
+or
+a
+verb
+and
+a
+noun
+("Post",
+"Write
+a
+post",
+"Join").
+An
+error
+says
+what
+happened
+and
+what
+to
+do
+next.
+Every
+string
+goes
+through
+`t()`
+with
+a
+new
+key
+when
+the
+wording
+changes.
 
 ## 15. Implementation map
 
-Base branch is `main`. An uncommitted "Broadsheet" working tree may exist in
-some sessions; it is superseded. Take nothing from it without checking it
-against this document.
+Base
+branch
+is
+`main`.
+An
+uncommitted
+"Broadsheet"
+working
+tree
+may
+exist
+in
+some
+sessions;
+it
+is
+superseded.
+Take
+nothing
+from
+it
+without
+checking
+it
+against
+this
+document.
 
 ### 15.1 Add
 
-| File | Contents |
-| --- | --- |
-| `app/styles/steel-chrome.css` | `@property --c`, the chrome stop tokens, the mixed gradient as a utility (`chrome-thumb`), the globe background (`chrome-globe`) |
-| `lib/chrome/renderer.ts`, `environment.ts`, `shader.ts`, `index.ts` | Section 4.3: the one WebGL context, the page painter, the shader, and registration by `data-chrome` |
-| `lib/chrome/__tests__/` | The painter skips chrome elements and `opacity: 0` subtrees; a thumb with `--c: 0` is not drawn; no frame is pending after input stops |
-| `components/ui/spine.tsx` + styles | Section 7 |
-| `components/shell/SiteShell.tsx` | The frame from section 9: sidebar, content slot, optional margin slot |
-| `components/shell/Sidebar.tsx` | L4, with the desktop globe (G10) |
-| `components/shell/GlobeNav.tsx` + `globe-nav.css` | Section 8.1. A button, a nav, CSS state. No canvas. |
-| `components/shell/__tests__/` | The shell renders with no client hooks; the globe exposes `aria-expanded`; the sidebar lists the sections as words and its account row is "You" |
-| `app/routes/_site/sections.tsx` | The no-script destination list (G7) |
+| File                                                                | Contents                                                                                                                                        |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/styles/steel-chrome.css`                                       | `@property --c`, the chrome stop tokens, the mixed gradient as a utility (`chrome-thumb`), the globe background (`chrome-globe`)                |
+| `lib/chrome/renderer.ts`, `environment.ts`, `shader.ts`, `index.ts` | Section 4.3: the one WebGL context, the page painter, the shader, and registration by `data-chrome`                                             |
+| `lib/chrome/__tests__/`                                             | The painter skips chrome elements and `opacity: 0` subtrees; a thumb with `--c: 0` is not drawn; no frame is pending after input stops          |
+| `components/ui/spine.tsx` + styles                                  | Section 7                                                                                                                                       |
+| `components/shell/SiteShell.tsx`                                    | The frame from section 9: sidebar, content slot, optional margin slot                                                                           |
+| `components/shell/Sidebar.tsx`                                      | L4, with the desktop globe (G10)                                                                                                                |
+| `components/shell/GlobeNav.tsx` + `globe-nav.css`                   | Section 8.1. A button, a nav, CSS state. No canvas.                                                                                             |
+| `components/shell/__tests__/`                                       | The shell renders with no client hooks; the globe exposes `aria-expanded`; the sidebar lists the sections as words and its account row is "You" |
+| `app/routes/_site/sections.tsx`                                     | The no-script destination list (G7)                                                                                                             |
 
 ### 15.2 Change
 
-| File | Change |
-| --- | --- |
-| `app/globals/tokens-themes.css` | Replace token values per section 2 in `:root`, `.style-default`, `.style-graphite`. Remove the tokens listed in T3. Set `--site-font-display` to the body stack. |
-| `app/globals.css` | Drop the imports of `glass-roles.css`, `jelly-material.css`, `jelly-arcs.css`, `jelly-coverage.css`, `jelly-group.css`. Import the new styles. |
-| `components/ui/button.tsx`, `input.tsx`, `textarea.tsx`, `select.tsx`, `search-field.tsx` | K1 to K4. Variants reduce to `default`, `primary`, `ghost`, `danger`. |
-| `components/ui/tabs.tsx` | K5. One appearance only. |
-| `components/ui/switch.tsx`, `slider.tsx` | K6, K7 with `chrome-thumb`. |
-| `components/ui/card.tsx`, `widget-frame.tsx` | Render no background and no border (S1); keep the component API so call sites compile, then remove call sites page by page. |
-| `components/ui/dialog.tsx`, `sheet.tsx`, `menu.tsx`, `overlay-panel.tsx`, `anchored-menu.tsx` | S5. |
-| `components/ui/skeleton.tsx`, `spinner.tsx`, `radial-loader.tsx` | Still blocks (M6); one plain spinner. |
-| `components/feed/*` | Posts become `SpineItem`s per section 10. Actions per K8. |
-| `app/routes/_site.tsx` (or the current layout route) | Mount `SiteShell` in place of `RadialShell`. |
-| `app/routes/_site/index.tsx` | Render the feed directly (X1). |
-| `lib/motion.ts` | Reduce to the durations in section 11. |
-| `design.md`, `docs/design-language.md`, root `CLAUDE.md` design sections | Rewrite to describe Steel. Same commit as phase 1. |
+| File                                                                                          | Change                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/globals/tokens-themes.css`                                                               | Replace token values per section 2 in `:root`, `.style-default`, `.style-graphite`. Remove the tokens listed in T3. Set `--site-font-display` to the body stack. |
+| `app/globals.css`                                                                             | Drop the imports of `glass-roles.css`, `jelly-material.css`, `jelly-arcs.css`, `jelly-coverage.css`, `jelly-group.css`. Import the new styles.                   |
+| `components/ui/button.tsx`, `input.tsx`, `textarea.tsx`, `select.tsx`, `search-field.tsx`     | K1 to K4. Variants reduce to `default`, `primary`, `ghost`, `danger`.                                                                                            |
+| `components/ui/tabs.tsx`                                                                      | K5. One appearance only.                                                                                                                                         |
+| `components/ui/switch.tsx`, `slider.tsx`                                                      | K6, K7 with `chrome-thumb`.                                                                                                                                      |
+| `components/ui/card.tsx`, `widget-frame.tsx`                                                  | Render no background and no border (S1); keep the component API so call sites compile, then remove call sites page by page.                                      |
+| `components/ui/dialog.tsx`, `sheet.tsx`, `menu.tsx`, `overlay-panel.tsx`, `anchored-menu.tsx` | S5.                                                                                                                                                              |
+| `components/ui/skeleton.tsx`, `spinner.tsx`, `radial-loader.tsx`                              | Still blocks (M6); one plain spinner.                                                                                                                            |
+| `components/feed/*`                                                                           | Posts become `SpineItem`s per section 10. Actions per K8.                                                                                                        |
+| `app/routes/_site.tsx` (or the current layout route)                                          | Mount `SiteShell` in place of `RadialShell`.                                                                                                                     |
+| `app/routes/_site/index.tsx`                                                                  | Render the feed directly (X1).                                                                                                                                   |
+| `lib/motion.ts`                                                                               | Reduce to the durations in section 11.                                                                                                                           |
+| `design.md`, `docs/design-language.md`, root `CLAUDE.md` design sections                      | Rewrite to describe Steel. Same commit as phase 1.                                                                                                               |
 
 ### 15.3 Delete (after the phase that removes the last use; confirm with a search first)
 
-- `components/radial/` in full, including `LiquidGlobe`, the eversion code, the globe worker and its protocol, `jelly-glass.ts`.
-- `lib/liquid/`, `lib/jelly/` and the WebAssembly kernels, with their build steps and tests. NOT `lib/dough.ts`, `lib/fluid.ts` or `lib/trackball.ts`: the chrome globe runs on them (G5a); only the dough's optional WebAssembly path goes.
-- `app/glass-roles.css`, `app/jelly-material.css`, `app/jelly-material/`, `app/jelly-arcs.css`, `app/jelly-coverage.css`, `components/ui/jelly-group.*`, `components/ui/glass-filter.tsx`.
-- `app/globals/page-motion.css`, `components-reveal.css` and `lib/page-transition*` where they only serve entrances and reveals.
-- `app/routes/jelly.tsx` and any other material demo routes.
-- Docs that describe the deleted systems move under a "historical" note in `docs/README.md`; do not leave them reading as current.
+- `components/radial/`
+  in
+  full,
+  including
+  `LiquidGlobe`,
+  the
+  eversion
+  code,
+  the
+  globe
+  worker
+  and
+  its
+  protocol,
+  `jelly-glass.ts`.
+- `lib/liquid/`,
+  `lib/jelly/`
+  and
+  the
+  WebAssembly
+  kernels,
+  with
+  their
+  build
+  steps
+  and
+  tests.
+  NOT
+  `lib/dough.ts`,
+  `lib/fluid.ts`
+  or
+  `lib/trackball.ts`:
+  the
+  chrome
+  globe
+  runs
+  on
+  them
+  (G5a);
+  only
+  the
+  dough's
+  optional
+  WebAssembly
+  path
+  goes.
+- `app/glass-roles.css`,
+  `app/jelly-material.css`,
+  `app/jelly-material/`,
+  `app/jelly-arcs.css`,
+  `app/jelly-coverage.css`,
+  `components/ui/jelly-group.*`,
+  `components/ui/glass-filter.tsx`.
+- `app/globals/page-motion.css`,
+  `components-reveal.css`
+  and
+  `lib/page-transition*`
+  where
+  they
+  only
+  serve
+  entrances
+  and
+  reveals.
+- `app/routes/jelly.tsx`
+  and
+  any
+  other
+  material
+  demo
+  routes.
+- Docs
+  that
+  describe
+  the
+  deleted
+  systems
+  move
+  under
+  a
+  "historical"
+  note
+  in
+  `docs/README.md`;
+  do
+  not
+  leave
+  them
+  reading
+  as
+  current.
 
 ## 16. Order of work
 
-Each phase is one pull request. Run `pnpm check:consistency --base main`,
-`pnpm exec tsc --noEmit`, `pnpm test` and `pnpm build` before opening it.
+Each
+phase
+is
+one
+pull
+request.
+Run
+`pnpm check:consistency --base main`,
+`pnpm exec tsc --noEmit`,
+`pnpm test`
+and
+`pnpm build`
+before
+opening
+it.
 
-| Phase | Work | Done when |
-| --- | --- | --- |
-| 1. Tokens and type | Section 2 and 3 values; remove dead tokens; rewrite `design.md` and the design sections of `CLAUDE.md`; update the lint rules and gates in section 17 | Both editions render every existing page legibly (it will look unfinished); no reference to a removed token remains; gates pass |
-| 2. Controls and chrome | Section 6 on `components/ui/`; `steel-chrome.css`; overlays (S5); the chrome renderer (4.3) | Settings page shows flat thumbs that turn into ray-traced chrome on approach and reflect the row and the pointer; the V13 budgets are measured and recorded; one primary per view on the ten recipe pages; keyboard focus visible everywhere |
-| 3. Shell | `SiteShell`, `Sidebar`, `GlobeNav`, `/sections`; swap out `RadialShell` | Shell renders with scripting off; phone has only the globe fixed; globe opens, traps focus, closes on Escape, and reflects the page in every state; exactly one WebGL context and no worker exist on any `_site` page, and no frame is pending at rest (assert in a test) |
-| 4. Spine and home | `Spine` primitives; home becomes the feed (X1); post, thread | Home, thread match section 10 at 390px and 1280px in both editions |
-| 5. Remaining recipes | Profile, catalogue, game, article, conversation, inbox, explore, settings | Each matches its row in section 10; `card` call sites on these pages are gone |
-| 6. Deletion | Section 15.3 | Build output no longer contains the deleted modules; site-tier CSS and JS sizes recorded in the ledger are lower than before phase 1 |
-| 7. Long tail | Every other `_site` route against X2; i18n extract; docs | `pnpm audit:pages` reports no drift; all 16 locales build |
+| Phase                  | Work                                                                                                                                                  | Done when                                                                                                                                                                                                                                                                 |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Tokens and type     | Section 2 and 3 values; remove dead tokens; rewrite `design.md` and the design sections of `CLAUDE.md`; update the lint rules and gates in section 17 | Both editions render every existing page legibly (it will look unfinished); no reference to a removed token remains; gates pass                                                                                                                                           |
+| 2. Controls and chrome | Section 6 on `components/ui/`; `steel-chrome.css`; overlays (S5); the chrome renderer (4.3)                                                           | Settings page shows flat thumbs that turn into ray-traced chrome on approach and reflect the row and the pointer; the V13 budgets are measured and recorded; one primary per view on the ten recipe pages; keyboard focus visible everywhere                              |
+| 3. Shell               | `SiteShell`, `Sidebar`, `GlobeNav`, `/sections`; swap out `RadialShell`                                                                               | Shell renders with scripting off; phone has only the globe fixed; globe opens, traps focus, closes on Escape, and reflects the page in every state; exactly one WebGL context and no worker exist on any `_site` page, and no frame is pending at rest (assert in a test) |
+| 4. Spine and home      | `Spine` primitives; home becomes the feed (X1); post, thread                                                                                          | Home, thread match section 10 at 390px and 1280px in both editions                                                                                                                                                                                                        |
+| 5. Remaining recipes   | Profile, catalogue, game, article, conversation, inbox, explore, settings                                                                             | Each matches its row in section 10; `card` call sites on these pages are gone                                                                                                                                                                                             |
+| 6. Deletion            | Section 15.3                                                                                                                                          | Build output no longer contains the deleted modules; site-tier CSS and JS sizes recorded in the ledger are lower than before phase 1                                                                                                                                      |
+| 7. Long tail           | Every other `_site` route against X2; i18n extract; docs                                                                                              | `pnpm audit:pages` reports no drift; all 16 locales build                                                                                                                                                                                                                 |
 
-Phases 2 and 3 can run in parallel. Phase 6 must not start before 5 is merged.
+Phases
+2
+and
+3
+can
+run
+in
+parallel.
+Phase
+6
+must
+not
+start
+before
+5
+is
+merged.
 
 ## 17. Gates and ledger
 
-Update these in phase 1 so the rules above are enforced rather than remembered:
+Update
+these
+in
+phase
+1
+so
+the
+rules
+above
+are
+enforced
+rather
+than
+remembered:
 
-- `eslint-local-rules/no-raw-palette-color.js`, `no-hardcoded-radius.js`: allow only the tokens in section 2.
-- Add a rule or a test in `lib/__tests__/design-consistency.test.ts` that fails on `backdrop-filter`, `filter:` and gradient backgrounds in site-tier CSS, with `steel-chrome.css` and `globe-nav.css` as the only allowed files (R1, R2, B2).
-- Add a test that the site tier creates at most one WebGL context and no worker, and that no animation frame is pending once input stops (B3, V9).
-- Keep the existing tab-strip, `transition-all` and dead-animate rules.
+- `eslint-local-rules/no-raw-palette-color.js`,
+  `no-hardcoded-radius.js`:
+  allow
+  only
+  the
+  tokens
+  in
+  section 2.
+- Add
+  a
+  rule
+  or
+  a
+  test
+  in
+  `lib/__tests__/design-consistency.test.ts`
+  that
+  fails
+  on
+  `backdrop-filter`,
+  `filter:`
+  and
+  gradient
+  backgrounds
+  in
+  site-tier
+  CSS,
+  with
+  `steel-chrome.css`
+  and
+  `globe-nav.css`
+  as
+  the
+  only
+  allowed
+  files
+  (R1,
+  R2,
+  B2).
+- Add
+  a
+  test
+  that
+  the
+  site
+  tier
+  creates
+  at
+  most
+  one
+  WebGL
+  context
+  and
+  no
+  worker,
+  and
+  that
+  no
+  animation
+  frame
+  is
+  pending
+  once
+  input
+  stops
+  (B3,
+  V9).
+- Keep
+  the
+  existing
+  tab-strip,
+  `transition-all`
+  and
+  dead-animate
+  rules.
 
-Ledger (fill in as phases merge):
+Ledger
+(fill
+in
+as
+phases
+merge):
 
-| Phase | PR | Site CSS (gzip) | Site JS on `/` (gzip) | Notes |
-| --- | --- | --- | --- | --- |
-| before | — | 51,222 B | 320,349 B (brotli) | `main` at f0126ec7c. CSS: the built `site-tier-*.css`, 351,951 B raw, `gzip -9`; 39,834 B brotli (the budget script's number). JS: `check-bundle-budget.ts --json` reports the static closure of the client entry in raw and brotli only, no gzip: 1,128,360 B raw, 320,349 B brotli, 79 chunks. |
-| 1 | | 43,144 B | 319,872 B (brotli) | CSS 268,976 B raw (-23.6%), `gzip -9` -15.8%, brotli 34,536 B. JS 1,126,288 B raw, 319,872 B brotli (-477 B; phase 1 adds no script). Budgets pass unchanged. Same metrics as the row above. |
-| 2 | | 43,116 B | 317,364 B (brotli) | Controls (section 6), overlays (S5), motion reduced to M1-M5, and the chrome renderer (4.3). Critical path 1,121,351 B raw. V13: `lib/chrome` is 5.8 kB gzip (gate: under 6); the environment paint runs in idle slices of about 6 ms (9-29 ms in total on a 524-element page in headless Chromium, 70-120 ms at 4x CPU throttle), never during scrolling; zero frames at rest measured in a browser. NOT measured: the under-2 ms globe redraw. This container has no GPU (software GL reported 27-50 ms for a 288 px globe at 2x); it needs a real mid-range phone. |
-| 3 | | 43,116 B | 312,951 B (brotli) | Shell (section 9), phone globe (8.1), `/sections`; the old shell is no longer mounted. Site-tier CSS is byte-identical to phase 2 (the shell's own CSS, 8,156 B raw and 2,168 B gzip, is a route chunk). JS critical path 1,102,921 B raw (phase 2: 1,121,351), entry 448,717 B raw, 72 chunks; `lib/wasm` and the jelly pointer left the site path. `steel-rest.mjs`: zero rAF at rest, one WebGL context, zero workers on `/`, `/terms`, `/settings`; the globe opens, closes on Escape and frames stop. |
-| 4 | | 42,725 B | 313,033 B (brotli) | Spine primitives (section 7) and home/thread on them; the radial feed, the classic feed column and the FAB are deleted. Site CSS 264,623 B raw (phase 3: same-size sheet, 43,116 gzip), brotli 34,282 B. JS critical path 1,102,869 B raw, entry 448,665 B raw, 72 chunks (phase 3: 1,102,921 raw, 312,951 brotli, so JS is flat: the removed feed code left the route chunk and the spine and K8 rows replaced it). Budgets pass unchanged. `steel-rest.mjs` passes (zero rAF at rest, one WebGL context, zero workers). |
-| 5 | | 42,225 B | 312,579 B (brotli) | Settings, inbox, conversation, explore, profile and article on the spine (section 10); catalogue and game page NOT done (the `/games` library is a native Steel-exempt Steam-palette app, L8; see the phase 5 report). Site CSS 259,827 B raw (phase 4: 264,623), `gzip -9` 42,225 B (phase 4: 42,725), brotli 33,811 B (phase 4: 34,282). JS critical path 1,102,457 B raw (phase 4: 1,102,869), 312,579 B brotli (phase 4: 313,033), entry 448,186 B raw, 72 chunks. Budgets pass unchanged. `steel-rest.mjs` passes (zero rAF at rest, one WebGL context, zero workers, globe opens and closes). The article and profile content stays server-rendered; the wasm kernels and chrome renderer are untouched. |
-| 6 | | 40,188 B | 309,620 B (brotli) | Deletion (section 15.3): `components/radial`, `lib/jelly`, `lib/liquid`, `lib/eversion`, the WebAssembly kernels, the page entrances and scroll reveals, the settings that configured them, and the stylesheet rules and tokens of the old shell (about 82,000 lines removed). Site CSS 249,570 B raw (phase 5: 259,827), `gzip -9` 40,188 B (phase 5: 42,225; before phase 1: 51,222), brotli 32,190 B (phase 5: 33,811). JS critical path 1,093,213 B raw (phase 5: 1,102,457), 309,620 B brotli (phase 5: 312,579; before phase 1: 320,349), entry 442,305 B raw, 73 chunks. The JS barely moved because the deleted runtime was already off the critical path; its cost was in lazy chunks, the build and the tree. Budgets lowered to measured plus about 2% (site CSS 33,000 B brotli, entry 451,000 raw, critical path 1,115,000 raw and 316,000 brotli; islands re-measured plus 3%). The build output holds no `jelly-glass`, `LiquidGlobe` (outside elections), eversion module or kernel `.wasm`. `steel-rest.mjs` passes and now runs in CI (`steel-rest` job, nightly and manual). |
-| 7 | | 39,841 B | 309,514 B (brotli) | Long tail (X2) and the dead names phase 6 left. Site CSS 244,086 B raw (phase 6: 249,570), `gzip -9` 39,841 B (phase 6: 40,188; before phase 1: 51,222), brotli 31,942 B (phase 6: 32,190). JS critical path 1,091,976 B raw (phase 6: 1,093,213), 309,514 B brotli (phase 6: 309,620; before phase 1: 320,349), entry 441,074 B raw (phase 6: 442,305), 73 chunks. Budgets lowered to measured plus about 2% (site CSS 32,600 B brotli, entry 450,000 raw, critical path 1,114,000 raw and 315,700 brotli). Removed: the `Reveal`, `RevealGroup` and `RevealItem` wrappers and their dead `u-reveal` classes (86 call sites), `data-jelly*` (other than `data-jelly-motion` and the app tier's `playfield` zone), `data-fluid-press`, `glass-refract`, `glass-liquid`, `glass-bevel-sm`, `ScrollScene`, `useScrollProgress`, the `LIFT_CARD` hover lift and the What's new modal's hero art. The `glass-*` role classes became the S6 `surface-*` names: 349 `_site`-only files lost `surface-card`/`surface-panel` entirely. News article moved under `_site`. `pnpm audit:pages --strict --full` on all 132 static routes: 0 findings (the only allowlist entries are the Steam-palette `/games` library's own sticky top bar on `/apps`, `/builds` and `/user-builds`). `steel-rest.mjs` passes (zero rAF at rest, one WebGL context, zero workers, globe opens and closes). `pnpm i18n:extract` and `i18n:translate` were deliberately not run (owner rule: translation happens later with another tool); new English keys were added by hand and are in `KNOWN_UNTRANSLATED`. |
+| Phase  | PR  | Site CSS (gzip) | Site JS on `/` (gzip) | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------ | --- | --------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| before | —   | 51,222 B        | 320,349 B (brotli)    | `main` at f0126ec7c. CSS: the built `site-tier-*.css`, 351,951 B raw, `gzip -9`; 39,834 B brotli (the budget script's number). JS: `check-bundle-budget.ts --json` reports the static closure of the client entry in raw and brotli only, no gzip: 1,128,360 B raw, 320,349 B brotli, 79 chunks.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 1      |     | 43,144 B        | 319,872 B (brotli)    | CSS 268,976 B raw (-23.6%), `gzip -9` -15.8%, brotli 34,536 B. JS 1,126,288 B raw, 319,872 B brotli (-477 B; phase 1 adds no script). Budgets pass unchanged. Same metrics as the row above.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 2      |     | 43,116 B        | 317,364 B (brotli)    | Controls (section 6), overlays (S5), motion reduced to M1-M5, and the chrome renderer (4.3). Critical path 1,121,351 B raw. V13: `lib/chrome` is 5.8 kB gzip (gate: under 6); the environment paint runs in idle slices of about 6 ms (9-29 ms in total on a 524-element page in headless Chromium, 70-120 ms at 4x CPU throttle), never during scrolling; zero frames at rest measured in a browser. NOT measured: the under-2 ms globe redraw. This container has no GPU (software GL reported 27-50 ms for a 288 px globe at 2x); it needs a real mid-range phone.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 3      |     | 43,116 B        | 312,951 B (brotli)    | Shell (section 9), phone globe (8.1), `/sections`; the old shell is no longer mounted. Site-tier CSS is byte-identical to phase 2 (the shell's own CSS, 8,156 B raw and 2,168 B gzip, is a route chunk). JS critical path 1,102,921 B raw (phase 2: 1,121,351), entry 448,717 B raw, 72 chunks; `lib/wasm` and the jelly pointer left the site path. `steel-rest.mjs`: zero rAF at rest, one WebGL context, zero workers on `/`, `/terms`, `/settings`; the globe opens, closes on Escape and frames stop.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 4      |     | 42,725 B        | 313,033 B (brotli)    | Spine primitives (section 7) and home/thread on them; the radial feed, the classic feed column and the FAB are deleted. Site CSS 264,623 B raw (phase 3: same-size sheet, 43,116 gzip), brotli 34,282 B. JS critical path 1,102,869 B raw, entry 448,665 B raw, 72 chunks (phase 3: 1,102,921 raw, 312,951 brotli, so JS is flat: the removed feed code left the route chunk and the spine and K8 rows replaced it). Budgets pass unchanged. `steel-rest.mjs` passes (zero rAF at rest, one WebGL context, zero workers).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 5      |     | 42,225 B        | 312,579 B (brotli)    | Settings, inbox, conversation, explore, profile and article on the spine (section 10); catalogue and game page NOT done (the `/games` library is a native Steel-exempt Steam-palette app, L8; see the phase 5 report). Site CSS 259,827 B raw (phase 4: 264,623), `gzip -9` 42,225 B (phase 4: 42,725), brotli 33,811 B (phase 4: 34,282). JS critical path 1,102,457 B raw (phase 4: 1,102,869), 312,579 B brotli (phase 4: 313,033), entry 448,186 B raw, 72 chunks. Budgets pass unchanged. `steel-rest.mjs` passes (zero rAF at rest, one WebGL context, zero workers, globe opens and closes). The article and profile content stays server-rendered; the wasm kernels and chrome renderer are untouched.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 6      |     | 40,188 B        | 309,620 B (brotli)    | Deletion (section 15.3): `components/radial`, `lib/jelly`, `lib/liquid`, `lib/eversion`, the WebAssembly kernels, the page entrances and scroll reveals, the settings that configured them, and the stylesheet rules and tokens of the old shell (about 82,000 lines removed). Site CSS 249,570 B raw (phase 5: 259,827), `gzip -9` 40,188 B (phase 5: 42,225; before phase 1: 51,222), brotli 32,190 B (phase 5: 33,811). JS critical path 1,093,213 B raw (phase 5: 1,102,457), 309,620 B brotli (phase 5: 312,579; before phase 1: 320,349), entry 442,305 B raw, 73 chunks. The JS barely moved because the deleted runtime was already off the critical path; its cost was in lazy chunks, the build and the tree. Budgets lowered to measured plus about 2% (site CSS 33,000 B brotli, entry 451,000 raw, critical path 1,115,000 raw and 316,000 brotli; islands re-measured plus 3%). The build output holds no `jelly-glass`, `LiquidGlobe` (outside elections), eversion module or kernel `.wasm`. `steel-rest.mjs` passes and now runs in CI (`steel-rest` job, nightly and manual).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 7      |     | 39,841 B        | 309,514 B (brotli)    | Long tail (X2) and the dead names phase 6 left. Site CSS 244,086 B raw (phase 6: 249,570), `gzip -9` 39,841 B (phase 6: 40,188; before phase 1: 51,222), brotli 31,942 B (phase 6: 32,190). JS critical path 1,091,976 B raw (phase 6: 1,093,213), 309,514 B brotli (phase 6: 309,620; before phase 1: 320,349), entry 441,074 B raw (phase 6: 442,305), 73 chunks. Budgets lowered to measured plus about 2% (site CSS 32,600 B brotli, entry 450,000 raw, critical path 1,114,000 raw and 315,700 brotli). Removed: the `Reveal`, `RevealGroup` and `RevealItem` wrappers and their dead `u-reveal` classes (86 call sites), `data-jelly*` (other than `data-jelly-motion` and the app tier's `playfield` zone), `data-fluid-press`, `glass-refract`, `glass-liquid`, `glass-bevel-sm`, `ScrollScene`, `useScrollProgress`, the `LIFT_CARD` hover lift and the What's new modal's hero art. The `glass-*` role classes became the S6 `surface-*` names: 349 `_site`-only files lost `surface-card`/`surface-panel` entirely. News article moved under `_site`. `pnpm audit:pages --strict --full` on all 132 static routes: 0 findings (the only allowlist entries are the Steam-palette `/games` library's own sticky top bar on `/apps`, `/builds` and `/user-builds`). `steel-rest.mjs` passes (zero rAF at rest, one WebGL context, zero workers, globe opens and closes). `pnpm i18n:extract` and `i18n:translate` were deliberately not run (owner rule: translation happens later with another tool); new English keys were added by hand and are in `KNOWN_UNTRANSLATED`. |
 
 ## 18. Open decisions
 
-Do not resolve these by assumption.
+Do
+not
+resolve
+these
+by
+assumption.
 
-| ID | Question | Default until answered |
-| --- | --- | --- |
-| D1 | Should the open phone globe be the CSS globe in this document, or the existing WebGL globe re-skinned in chrome and loaded only on open? | CSS globe (G5). The WebGL one is deleted in phase 6. |
-| D3 | Should the desktop sidebar globe open a menu or a command palette? | No. It links to the front page (G10). |
-| D5 | Does any state need a colour beyond danger and success (for example a "live" marker)? | No. "Live" is a text label. |
-| D6 | Signed-out home: the public feed, or a sign-in prompt above it? | The public feed with a one-line sign-in row where the composer would be. |
+| ID  | Question                                                                                                                                 | Default until answered                                                   |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| D1  | Should the open phone globe be the CSS globe in this document, or the existing WebGL globe re-skinned in chrome and loaded only on open? | CSS globe (G5). The WebGL one is deleted in phase 6.                     |
+| D3  | Should the desktop sidebar globe open a menu or a command palette?                                                                       | No. It links to the front page (G10).                                    |
+| D5  | Does any state need a colour beyond danger and success (for example a "live" marker)?                                                    | No. "Live" is a text label.                                              |
+| D6  | Signed-out home: the public feed, or a sign-in prompt above it?                                                                          | The public feed with a one-line sign-in row where the composer would be. |
 
-Gaps found by phase 7 (X2: no recipe in section 10 fits, so the page is a titled page of rows on rules with no spine until
-answered). Recorded 2026-11-12; none was resolved by assumption.
+Gaps
+found
+by
+phase
+7
+(X2:
+no
+recipe
+in
+section
+10
+fits,
+so
+the
+page
+is
+a
+titled
+page
+of
+rows
+on
+rules
+with
+no
+spine
+until
+answered).
+Recorded
+2026-11-12;
+none
+was
+resolved
+by
+assumption.
 
-| ID | Question | Default until answered |
-| --- | --- | --- |
-| D7 | Catalogues of things you buy or open (Store and Shop product tiles, the membership plans, RMHHomes listings, rideshare vehicle classes, the Library's shelves and collections): a grid of picture tiles like Games and apps, or rows? | A column of rows on rules; where a tile has a picture it keeps the picture (S4) and loses its box. The Shop and Library still draw tiles with their own spacing |
-| D8 | Inline notices (an error, a warning or a success banner above a form): the pages use a tinted box (`bg-site-danger/10` with a coloured border). R1 forbids translucency and R3 forbids a box around a group | Left as they are on about 15 forms. Proposed: a row on a rule with the danger or success colour on a 2px inline-start rule and the words doing the work |
-| D9 | Rarity and tier chips (bronze, silver, gold, platinum on achievements, the shop and the leaderboard) use extra colours | Kept; D5 allows no colour beyond danger and success, so this needs an answer |
-| D10 | Dashboards and data tables (admin, analytics, RMHLadder, tournaments, the creator studio) | Rows on rules with `t-meta` figures. No chart styling has been designed |
-| D11 | The theme studio and accent presets still write `--site-*` overrides. The accent picker offers six colours although Steel has no accent colour | Left working; the picker is on Settings, Look. Decide whether two fixed editions replace them |
-| D12 | Route changes still run a view-transition morph on news cards (`liquidOpen`, `lib/view-transition.ts`), against M8 | Left; the article page keeps the matching name |
+| ID  | Question                                                                                                                                                                                                                              | Default until answered                                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D7  | Catalogues of things you buy or open (Store and Shop product tiles, the membership plans, RMHHomes listings, rideshare vehicle classes, the Library's shelves and collections): a grid of picture tiles like Games and apps, or rows? | A column of rows on rules; where a tile has a picture it keeps the picture (S4) and loses its box. The Shop and Library still draw tiles with their own spacing |
+| D8  | Inline notices (an error, a warning or a success banner above a form): the pages use a tinted box (`bg-site-danger/10` with a coloured border). R1 forbids translucency and R3 forbids a box around a group                           | Left as they are on about 15 forms. Proposed: a row on a rule with the danger or success colour on a 2px inline-start rule and the words doing the work         |
+| D9  | Rarity and tier chips (bronze, silver, gold, platinum on achievements, the shop and the leaderboard) use extra colours                                                                                                                | Kept; D5 allows no colour beyond danger and success, so this needs an answer                                                                                    |
+| D10 | Dashboards and data tables (admin, analytics, RMHLadder, tournaments, the creator studio)                                                                                                                                             | Rows on rules with `t-meta` figures. No chart styling has been designed                                                                                         |
+| D11 | The theme studio and accent presets still write `--site-*` overrides. The accent picker offers six colours although Steel has no accent colour                                                                                        | Left working; the picker is on Settings, Look. Decide whether two fixed editions replace them                                                                   |
+| D12 | Route changes still run a view-transition morph on news cards (`liquidOpen`, `lib/view-transition.ts`), against M8                                                                                                                    | Left; the article page keeps the matching name                                                                                                                  |
 
-Decided (2026-11-11), recorded so they are not reopened:
+Decided
+(2026-11-11),
+recorded
+so
+they
+are
+not
+reopened:
 
-- The globe is always chrome. Only the toggle and slider thumbs start flat (4.1, 4.2).
-- Every chrome element is ray-traced whenever it is chrome. It is required, not a later tier, and has no setting (4.3).
+- The
+  globe
+  is
+  always
+  chrome.
+  Only
+  the
+  toggle
+  and
+  slider
+  thumbs
+  start
+  flat
+  (4.1,
+  4.2).
+- Every
+  chrome
+  element
+  is
+  ray-traced
+  whenever
+  it
+  is
+  chrome.
+  It
+  is
+  required,
+  not
+  a
+  later
+  tier,
+  and
+  has
+  no
+  setting
+  (4.3).
 
 ## Appendix A. Token map, current to Steel
 
-| Current on `main` | Steel |
-| --- | --- |
-| `--site-surface` (translucent white) | Opaque `--site-surface`; used for controls and overlays only |
-| `--site-surface-opaque` | Removed; use `--site-surface` |
-| `--site-border-bright` | Removed; use `--site-text` for an ink rule |
-| `--site-text-dim` | Removed; use `--site-text-muted` |
-| `--site-accent-dim` | Removed; use `--site-bg-subtle` |
-| `--site-glass-*`, `--site-jelly-*`, `--site-arc-*` | Removed |
-| `--site-shadow`, `--site-shadow-sm` | Removed |
-| `--site-radius: 32px`, `--site-radius-sm: 24px` | `8px`, `4px` |
-| `--site-control-radius` | `8px` |
-| `--site-font-display` | Same stack as `--site-font-body` |
+| Current on `main`                                  | Steel                                                        |
+| -------------------------------------------------- | ------------------------------------------------------------ |
+| `--site-surface` (translucent white)               | Opaque `--site-surface`; used for controls and overlays only |
+| `--site-surface-opaque`                            | Removed; use `--site-surface`                                |
+| `--site-border-bright`                             | Removed; use `--site-text` for an ink rule                   |
+| `--site-text-dim`                                  | Removed; use `--site-text-muted`                             |
+| `--site-accent-dim`                                | Removed; use `--site-bg-subtle`                              |
+| `--site-glass-*`, `--site-jelly-*`, `--site-arc-*` | Removed                                                      |
+| `--site-shadow`, `--site-shadow-sm`                | Removed                                                      |
+| `--site-radius: 32px`, `--site-radius-sm: 24px`    | `8px`, `4px`                                                 |
+| `--site-control-radius`                            | `8px`                                                        |
+| `--site-font-display`                              | Same stack as `--site-font-body`                             |
 
 ## Appendix B. Do and do not
 
-| Do | Do not |
-| --- | --- |
-| Separate rows with a 1px rule | Wrap a group of content in a bordered or filled box |
-| Use ink for the one primary button | Make a button, bar or badge chrome |
-| Mark "on" with weight and an underline | Mark "on" with colour alone |
-| Hang content on the spine per section 10 | Add a second decorative line, timeline or connector |
-| Let the globe be the only fixed thing on a phone | Add a top bar, tab bar or floating action button |
-| Keep the thumb flat until approached | Run a pointer-move listener to detect proximity |
-| Reflect the page with the one shared renderer | Give a chrome element its own WebGL context, or fake the reflection with a moving gradient |
-| Delete the old material code in phase 6 | Leave it behind a flag |
+| Do                                               | Do not                                                                                     |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Separate rows with a 1px rule                    | Wrap a group of content in a bordered or filled box                                        |
+| Use ink for the one primary button               | Make a button, bar or badge chrome                                                         |
+| Mark "on" with weight and an underline           | Mark "on" with colour alone                                                                |
+| Hang content on the spine per section 10         | Add a second decorative line, timeline or connector                                        |
+| Let the globe be the only fixed thing on a phone | Add a top bar, tab bar or floating action button                                           |
+| Keep the thumb flat until approached             | Run a pointer-move listener to detect proximity                                            |
+| Reflect the page with the one shared renderer    | Give a chrome element its own WebGL context, or fake the reflection with a moving gradient |
+| Delete the old material code in phase 6          | Leave it behind a flag                                                                     |

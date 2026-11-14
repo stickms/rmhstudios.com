@@ -2,7 +2,20 @@
 import { endpoint } from '@/lib/contract/endpoint';
 
 /** Schedule erasure (30-day grace). 400 `{ error }` when the confirmation does not match. */
-export const deleteAccountApi = endpoint<{
-  body: { confirm: string };
-  res: { success: true; scheduledAt: string; graceDays: number };
-}>()({ method: 'POST', path: '/api/account/delete' });
+export const deleteAccountApi =
+  endpoint<{
+    body: {
+      confirm: string;
+    };
+    res: {
+      success: true;
+      scheduledAt: string;
+      graceDays: number;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/account/delete',
+    },
+  );

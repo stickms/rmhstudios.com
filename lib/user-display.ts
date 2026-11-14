@@ -7,7 +7,10 @@
  */
 
 import type { Prisma } from '@prisma/client';
-import { resolveEquippedCosmetics, type EquippedCosmetics } from '@/lib/shop/equipped';
+import {
+  resolveEquippedCosmetics,
+  type EquippedCosmetics,
+} from '@/lib/shop/equipped';
 
 /**
  * ## Why these are the only three `User` selects
@@ -34,26 +37,36 @@ import { resolveEquippedCosmetics, type EquippedCosmetics } from '@/lib/shop/equ
  * `satisfies` catches a field renamed in the schema at compile time instead of
  * at query time.
  */
-export const userDisplaySelect = {
-  id: true,
-  name: true,
-  image: true,
-  username: true,
-  handle: true,
-  isVerified: true,
-  isAdmin: true,
-  isBot: true,
-  profile: {
-    select: {
-      displayName: true,
-      customImage: true,
-    },
-  },
-  inventory: {
-    where: { equipped: true },
-    select: { itemId: true },
-  },
-} as const satisfies Prisma.UserSelect;
+export const userDisplaySelect =
+  {
+    id: true,
+    name: true,
+    image: true,
+    username: true,
+    handle: true,
+    isVerified: true,
+    isAdmin: true,
+    isBot: true,
+    profile:
+      {
+        select:
+          {
+            displayName: true,
+            customImage: true,
+          },
+      },
+    inventory:
+      {
+        where:
+          {
+            equipped: true,
+          },
+        select:
+          {
+            itemId: true,
+          },
+      },
+  } as const satisfies Prisma.UserSelect;
 
 /**
  * Profile headers: everything `userDisplaySelect` resolves, plus the
@@ -64,13 +77,14 @@ export const userDisplaySelect = {
  * nothing extra — which is the point: a profile header that runs three
  * `COUNT(*)`s because it started from `userDisplaySelect` is the alternative.
  */
-export const userProfileSelect = {
-  ...userDisplaySelect,
-  followerCount: true,
-  followingCount: true,
-  postCount: true,
-  createdAt: true,
-} as const satisfies Prisma.UserSelect;
+export const userProfileSelect =
+  {
+    ...userDisplaySelect,
+    followerCount: true,
+    followingCount: true,
+    postCount: true,
+    createdAt: true,
+  } as const satisfies Prisma.UserSelect;
 
 /**
  * The minimum that renders a clickable author chip: a link target and a label.
@@ -80,43 +94,83 @@ export const userProfileSelect = {
  * "who reacted" popovers. If the surface draws an avatar, it wants
  * `userDisplaySelect` instead.
  */
-export const userChipSelect = {
-  id: true,
-  handle: true,
-  name: true,
-  image: true,
-} as const satisfies Prisma.UserSelect;
+export const userChipSelect =
+  {
+    id: true,
+    handle: true,
+    name: true,
+    image: true,
+  } as const satisfies Prisma.UserSelect;
 
-type UserWithProfile = {
-  name: string | null;
-  image: string | null;
-  isVerified?: boolean;
-  isAdmin?: boolean;
-  isBot?: boolean;
-  profile?: { displayName?: string | null; customImage?: string | null } | null;
-};
+type UserWithProfile =
+  {
+    name:
+      | string
+      | null;
+    image:
+      | string
+      | null;
+    isVerified?: boolean;
+    isAdmin?: boolean;
+    isBot?: boolean;
+    profile?: {
+      displayName?:
+        | string
+        | null;
+      customImage?:
+        | string
+        | null;
+    } | null;
+  };
 
-export function resolveUserDisplay(user: UserWithProfile) {
+export function resolveUserDisplay(
+  user: UserWithProfile,
+) {
   return {
-    name: user.profile?.displayName ?? user.name,
-    image: user.profile?.customImage ?? user.image,
+    name:
+      user
+        .profile
+        ?.displayName ??
+      user.name,
+    image:
+      user
+        .profile
+        ?.customImage ??
+      user.image,
   };
 }
 
-type UserWithProfileAndId = UserWithProfile & {
-  id: string;
-  username: string | null;
-  handle?: string | null;
-  inventory?: { itemId: string }[] | null;
-};
+type UserWithProfileAndId =
+  UserWithProfile & {
+    id: string;
+    username:
+      | string
+      | null;
+    handle?:
+      | string
+      | null;
+    inventory?:
+      | {
+          itemId: string;
+        }[]
+      | null;
+  };
 
 /** The viewer-independent display shape returned by {@link resolveUser}. */
 export interface ResolvedUser {
   id: string;
-  name: string | null;
-  image: string | null;
-  username: string | null;
-  handle: string | null;
+  name:
+    | string
+    | null;
+  image:
+    | string
+    | null;
+  username:
+    | string
+    | null;
+  handle:
+    | string
+    | null;
   isVerified: boolean;
   isAdmin: boolean;
   /** Flagged automated account (D4). */
@@ -129,19 +183,55 @@ export interface ResolvedUser {
  * with custom fields resolved. `cosmetics` is the equipped shop styling (name
  * color, avatar frame, badge, …) when the row joined in `inventory`.
  */
-export function resolveUser(user: UserWithProfileAndId): ResolvedUser {
-  const cosmetics = user.inventory
-    ? resolveEquippedCosmetics(user.inventory.map((i) => i.itemId))
-    : undefined;
+export function resolveUser(
+  user: UserWithProfileAndId,
+): ResolvedUser {
+  const cosmetics =
+    user.inventory
+      ? resolveEquippedCosmetics(
+          user.inventory.map(
+            (
+              i,
+            ) =>
+              i.itemId,
+          ),
+        )
+      : undefined;
   return {
     id: user.id,
-    name: user.profile?.displayName ?? user.name,
-    image: user.profile?.customImage ?? user.image,
-    username: user.username,
-    handle: user.handle ?? null,
-    isVerified: user.isVerified ?? false,
-    isAdmin: user.isAdmin ?? false,
-    isBot: user.isBot ?? false,
-    ...(cosmetics && Object.keys(cosmetics).length > 0 ? { cosmetics } : {}),
+    name:
+      user
+        .profile
+        ?.displayName ??
+      user.name,
+    image:
+      user
+        .profile
+        ?.customImage ??
+      user.image,
+    username:
+      user.username,
+    handle:
+      user.handle ??
+      null,
+    isVerified:
+      user.isVerified ??
+      false,
+    isAdmin:
+      user.isAdmin ??
+      false,
+    isBot:
+      user.isBot ??
+      false,
+    ...(cosmetics &&
+    Object.keys(
+      cosmetics,
+    )
+      .length >
+      0
+      ? {
+          cosmetics,
+        }
+      : {}),
   };
 }

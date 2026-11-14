@@ -9,18 +9,51 @@ import AppShell from '@/components/shared/AppShell';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { reconnectNow } from '@/lib/rmhtube/socket';
 
-export default function RmhTubeShell({ children }: { children: React.ReactNode }) {
-  const theme = useRmhTubeStore((s) => s.settings.theme);
-  const status = useRmhTubeStore((s) => s.connectionStatus);
-  const peersWaiting = useRmhTubeStore((s) => s.peersWaiting);
+export default function RmhTubeShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const theme =
+    useRmhTubeStore(
+      (
+        s,
+      ) =>
+        s
+          .settings
+          .theme,
+    );
+  const status =
+    useRmhTubeStore(
+      (
+        s,
+      ) =>
+        s.connectionStatus,
+    );
+  const peersWaiting =
+    useRmhTubeStore(
+      (
+        s,
+      ) =>
+        s.peersWaiting,
+    );
 
   return (
     <AppShell
       appClassName="rmhtube-theme"
-      theme={theme}
-      realtime={{ status, peersWaiting, onRetry: reconnectNow }}
+      theme={
+        theme
+      }
+      realtime={{
+        status,
+        peersWaiting,
+        onRetry:
+          reconnectNow,
+      }}
     >
-      {children}
+      {
+        children
+      }
     </AppShell>
   );
 }

@@ -8,14 +8,28 @@
  */
 
 export interface ChannelState {
-  models: Record<string, { src: string; size: number }>;
+  models: Record<
+    string,
+    {
+      src: string;
+      size: number;
+    }
+  >;
 }
 
 export interface PendingChannel {
   /** `wanted.json`: every file the converter wants published, by source hash. */
-  wanted: Record<string, { src: string }>;
+  wanted: Record<
+    string,
+    {
+      src: string;
+    }
+  >;
   /** Raw size of each file the converter wrote this run (an upper bound: Brotli only shrinks). */
-  localSizes: Record<string, number>;
+  localSizes: Record<
+    string,
+    number
+  >;
 }
 
 export interface ChannelUsage {
@@ -36,13 +50,29 @@ export interface DedupeOptions {
   seen: Set<string>;
 }
 
-const firstSeen = (name: string, dedupe?: DedupeOptions): boolean => {
-  if (!dedupe) return true;
-  const key = dedupe.root + name;
-  if (dedupe.seen.has(key)) return false;
-  dedupe.seen.add(key);
-  return true;
-};
+const firstSeen =
+  (
+    name: string,
+    dedupe?: DedupeOptions,
+  ): boolean => {
+    if (
+      !dedupe
+    )
+      return true;
+    const key =
+      dedupe.root +
+      name;
+    if (
+      dedupe.seen.has(
+        key,
+      )
+    )
+      return false;
+    dedupe.seen.add(
+      key,
+    );
+    return true;
+  };
 
 /** Stored bytes now: every object the state lists (stale ones too — they stay until pruned). */
 export function storedUsage(
@@ -52,12 +82,32 @@ export function storedUsage(
 ): ChannelUsage {
   let bytes = 0;
   let files = 0;
-  for (const [file, m] of Object.entries(state.models)) {
-    if (!firstSeen(file, dedupe)) continue;
+  for (const [
+    file,
+    m,
+  ] of Object.entries(
+    state.models,
+  )) {
+    if (
+      !firstSeen(
+        file,
+        dedupe,
+      )
+    )
+      continue;
     files++;
-    bytes += Number.isFinite(m.size) ? m.size : 0;
+    bytes +=
+      Number.isFinite(
+        m.size,
+      )
+        ? m.size
+        : 0;
   }
-  return { name, files, bytes };
+  return {
+    name,
+    files,
+    bytes,
+  };
 }
 
 /**
@@ -70,40 +120,158 @@ export function projectedUsage(
   pending: PendingChannel,
   dedupe?: DedupeOptions,
 ): ChannelUsage {
-  const sizes = new Map<string, number>();
-  for (const [file, m] of Object.entries(state.models)) sizes.set(file, m.size || 0);
-  for (const [file, w] of Object.entries(pending.wanted)) {
-    const published = state.models[file];
-    if (published && published.src === w.src) continue;
-    const local = pending.localSizes[file];
-    if (local !== undefined) sizes.set(file, local);
+  const sizes =
+    new Map<
+      string,
+      number
+    >();
+  for (const [
+    file,
+    m,
+  ] of Object.entries(
+    state.models,
+  ))
+    sizes.set(
+      file,
+      m.size ||
+        0,
+    );
+  for (const [
+    file,
+    w,
+  ] of Object.entries(
+    pending.wanted,
+  )) {
+    const published =
+      state
+        .models[
+        file
+      ];
+    if (
+      published &&
+      published.src ===
+        w.src
+    )
+      continue;
+    const local =
+      pending
+        .localSizes[
+        file
+      ];
+    if (
+      local !==
+      undefined
+    )
+      sizes.set(
+        file,
+        local,
+      );
   }
   let bytes = 0;
   let files = 0;
-  for (const [file, s] of sizes) {
-    if (!firstSeen(file, dedupe)) continue;
+  for (const [
+    file,
+    s,
+  ] of sizes) {
+    if (
+      !firstSeen(
+        file,
+        dedupe,
+      )
+    )
+      continue;
     files++;
-    bytes += s;
+    bytes +=
+      s;
   }
-  return { name, files, bytes };
+  return {
+    name,
+    files,
+    bytes,
+  };
 }
 
-export const GB = 1024 ** 3;
+export const GB =
+  1024 **
+  3;
 
-export function overBudget(usages: readonly ChannelUsage[], budgetGb: number) {
-  const total = usages.reduce((sum, u) => sum + u.bytes, 0);
-  return { total, budget: budgetGb * GB, over: total > budgetGb * GB };
+export function overBudget(
+  usages: readonly ChannelUsage[],
+  budgetGb: number,
+) {
+  const total =
+    usages.reduce(
+      (
+        sum,
+        u,
+      ) =>
+        sum +
+        u.bytes,
+      0,
+    );
+  return {
+    total,
+    budget:
+      budgetGb *
+      GB,
+    over:
+      total >
+      budgetGb *
+        GB,
+  };
 }
 
-export function formatUsage(usages: readonly ChannelUsage[], budgetGb: number): string {
-  const mb = (b: number) => (b / 1024 / 1024).toFixed(1).padStart(9) + ' MiB';
-  const { total, over } = overBudget(usages, budgetGb);
-  const width = Math.max(8, ...usages.map((u) => u.name.length));
-  const lines = usages.map(
-    (u) => `${u.name.padEnd(width)} ${String(u.files).padStart(7)} files ${mb(u.bytes)}`,
-  );
+export function formatUsage(
+  usages: readonly ChannelUsage[],
+  budgetGb: number,
+): string {
+  const mb =
+    (
+      b: number,
+    ) =>
+      (
+        b /
+        1024 /
+        1024
+      )
+        .toFixed(
+          1,
+        )
+        .padStart(
+          9,
+        ) +
+      ' MiB';
+  const {
+    total,
+    over,
+  } =
+    overBudget(
+      usages,
+      budgetGb,
+    );
+  const width =
+    Math.max(
+      8,
+      ...usages.map(
+        (
+          u,
+        ) =>
+          u
+            .name
+            .length,
+      ),
+    );
+  const lines =
+    usages.map(
+      (
+        u,
+      ) =>
+        `${u.name.padEnd(width)} ${String(u.files).padStart(7)} files ${mb(u.bytes)}`,
+    );
   lines.push(
     `${'total'.padEnd(width)} ${' '.repeat(13)} ${mb(total)}  of ${budgetGb} GB budget${over ? '  — OVER BUDGET' : ''}`,
   );
-  return lines.join('\n');
+  return lines.join(
+    '\n',
+  );
 }

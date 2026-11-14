@@ -4,83 +4,205 @@
  * minutes — and mounts the two things that depend on it. With nothing active it
  * renders nothing and never loads another chunk.
  */
-import { readJson, readString, writeString } from '@/lib/core/persist';
-import { Suspense, lazy, useEffect, useState } from 'react';
+import {
+  readJson,
+  readString,
+  writeString,
+} from '@/lib/core/persist';
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useState,
+} from 'react';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';
-import { FOOLS_FLAG_KEY, FOOLS_OFF_KEY } from '@/lib/delight/season';
+import {
+  FOOLS_FLAG_KEY,
+  FOOLS_OFF_KEY,
+} from '@/lib/delight/season';
 import type { DelightConfig } from '@/lib/delight/shared';
 import { api } from '@/lib/contract/client';
 import { delightConfigApi } from '@/lib/site-reads.contract';
 
-const CFG_KEY = 'rmh-delight-cfg';
-const TTL_MS = 10 * 60_000;
+const CFG_KEY =
+  'rmh-delight-cfg';
+const TTL_MS =
+  10 *
+  60_000;
 
-const HuntMarker = lazy(() => import('@/components/delight/HuntMarker'));
-const FoolsPill = lazy(() => import('@/components/delight/FoolsPill'));
+const HuntMarker =
+  lazy(
+    () =>
+      import('@/components/delight/HuntMarker'),
+  );
+const FoolsPill =
+  lazy(
+    () =>
+      import('@/components/delight/FoolsPill'),
+  );
 
 function readCache(): DelightConfig | null {
-  const c = readJson<(DelightConfig & { at: number }) | null>(CFG_KEY, null);
-  return c && Date.now() - c.at < TTL_MS ? c : null;
+  const c =
+    readJson<
+      | (DelightConfig & {
+          at: number;
+        })
+      | null
+    >(
+      CFG_KEY,
+      null,
+    );
+  return c &&
+    Date.now() -
+      c.at <
+      TTL_MS
+    ? c
+    : null;
 }
 
 export function DelightMount() {
-  const idle = useIdleReady();
-  const { data: session } = useSession();
-  const [cfg, setCfg] = useState<DelightConfig | null>(null);
-  const [fools, setFools] = useState(false);
+  const idle =
+    useIdleReady();
+  const {
+    data: session,
+  } =
+    useSession();
+  const [
+    cfg,
+    setCfg,
+  ] =
+    useState<DelightConfig | null>(
+      null,
+    );
+  const [
+    fools,
+    setFools,
+  ] =
+    useState(
+      false,
+    );
 
   useEffect(() => {
-    if (!idle) return;
+    if (
+      !idle
+    )
+      return;
     let alive = true;
-    const apply = (c: DelightConfig) => {
-      if (!alive) return;
-      setCfg(c);
-      // Storage blocked: the class simply is not remembered.
-      writeString(FOOLS_FLAG_KEY, c.fools ? '1' : '0');
-      const off = readString(FOOLS_OFF_KEY) === '1';
-      document.documentElement.classList.toggle('fools', c.fools && !off);
-      setFools(c.fools && !off);
-    };
-    const cached = readCache();
-    if (cached) {
-      apply(cached);
+    const apply =
+      (
+        c: DelightConfig,
+      ) => {
+        if (
+          !alive
+        )
+          return;
+        setCfg(
+          c,
+        );
+        // Storage blocked: the class simply is not remembered.
+        writeString(
+          FOOLS_FLAG_KEY,
+          c.fools
+            ? '1'
+            : '0',
+        );
+        const off =
+          readString(
+            FOOLS_OFF_KEY,
+          ) ===
+          '1';
+        document.documentElement.classList.toggle(
+          'fools',
+          c.fools &&
+            !off,
+        );
+        setFools(
+          c.fools &&
+            !off,
+        );
+      };
+    const cached =
+      readCache();
+    if (
+      cached
+    ) {
+      apply(
+        cached,
+      );
       return () => {
         alive = false;
       };
     }
-    api(delightConfigApi)
-      .then((c) => {
-        try {
-          localStorage.setItem(CFG_KEY, JSON.stringify({ ...c, at: Date.now() }));
-        } catch {
-          /* ignore */
-        }
-        apply(c);
-      })
-      .catch(() => {});
+    api(
+      delightConfigApi,
+    )
+      .then(
+        (
+          c,
+        ) => {
+          try {
+            localStorage.setItem(
+              CFG_KEY,
+              JSON.stringify(
+                {
+                  ...c,
+                  at: Date.now(),
+                },
+              ),
+            );
+          } catch {
+            /* ignore */
+          }
+          apply(
+            c,
+          );
+        },
+      )
+      .catch(
+        () => {},
+      );
     return () => {
       alive = false;
     };
-  }, [idle]);
+  }, [
+    idle,
+  ]);
 
-  if (!cfg) return null;
+  if (
+    !cfg
+  )
+    return null;
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        null
+      }
+    >
       {fools && (
         <FoolsPill
           onOff={() => {
             try {
-              localStorage.setItem(FOOLS_OFF_KEY, '1');
+              localStorage.setItem(
+                FOOLS_OFF_KEY,
+                '1',
+              );
             } catch {
               /* ignore */
             }
-            document.documentElement.classList.remove('fools');
-            setFools(false);
+            document.documentElement.classList.remove(
+              'fools',
+            );
+            setFools(
+              false,
+            );
           }}
         />
       )}
-      {cfg.hunt && session && <HuntMarker />}
+      {cfg.hunt &&
+        session && (
+          <HuntMarker />
+        )}
     </Suspense>
   );
 }

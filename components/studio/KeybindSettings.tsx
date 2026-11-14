@@ -1,6 +1,13 @@
-import { useState, useCallback, useEffect } from 'react';
+import {
+  useState,
+  useCallback,
+  useEffect,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { RotateCcw, AlertTriangle } from 'lucide-react';
+import {
+  RotateCcw,
+  AlertTriangle,
+} from 'lucide-react';
 import { useStudioStore } from '@/lib/studio/store';
 import {
   KEYBIND_ACTIONS,
@@ -11,61 +18,183 @@ import {
 } from '@/lib/studio/keybinds';
 
 export function KeybindSettings() {
-  const { t } = useTranslation("c-studio");
-  const { settings, setKeybindOverride, resetKeybinds } = useStudioStore();
-  const [rebindingAction, setRebindingAction] = useState<string | null>(null);
-  const [conflict, setConflict] = useState<string | null>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-studio',
+    );
+  const {
+    settings,
+    setKeybindOverride,
+    resetKeybinds,
+  } =
+    useStudioStore();
+  const [
+    rebindingAction,
+    setRebindingAction,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const [
+    conflict,
+    setConflict,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
 
-  const keybindMap = resolveKeybinds(settings.keybindOverrides);
-  const categories = getKeybindsByCategory();
+  const keybindMap =
+    resolveKeybinds(
+      settings.keybindOverrides,
+    );
+  const categories =
+    getKeybindsByCategory();
 
   // Listen for key capture when rebinding
   useEffect(() => {
-    if (!rebindingAction) return;
+    if (
+      !rebindingAction
+    )
+      return;
 
-    const handler = (e: KeyboardEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const handler =
+      (
+        e: KeyboardEvent,
+      ) => {
+        e.preventDefault();
+        e.stopPropagation();
 
-      if (e.key === 'Escape') {
-        setRebindingAction(null);
-        setConflict(null);
-        return;
-      }
+        if (
+          e.key ===
+          'Escape'
+        ) {
+          setRebindingAction(
+            null,
+          );
+          setConflict(
+            null,
+          );
+          return;
+        }
 
-      // Skip modifier-only presses
-      if (['Control', 'Meta', 'Alt', 'Shift'].includes(e.key)) return;
+        // Skip modifier-only presses
+        if (
+          [
+            'Control',
+            'Meta',
+            'Alt',
+            'Shift',
+          ].includes(
+            e.key,
+          )
+        )
+          return;
 
-      const keyString = eventToKeyString(e);
-      const conflicts = findConflicts(rebindingAction, keyString, keybindMap);
+        const keyString =
+          eventToKeyString(
+            e,
+          );
+        const conflicts =
+          findConflicts(
+            rebindingAction,
+            keyString,
+            keybindMap,
+          );
 
-      if (conflicts.length > 0) {
-        const conflictAction = KEYBIND_ACTIONS.find((a) => a.id === conflicts[0]);
-        setConflict(t("conflicts-with", { defaultValue: "Conflicts with: {{name}}", name: conflictAction?.label || conflicts[0] }));
-        // Still set it — user can resolve later
-      } else {
-        setConflict(null);
-      }
+        if (
+          conflicts.length >
+          0
+        ) {
+          const conflictAction =
+            KEYBIND_ACTIONS.find(
+              (
+                a,
+              ) =>
+                a.id ===
+                conflicts[0],
+            );
+          setConflict(
+            t(
+              'conflicts-with',
+              {
+                defaultValue:
+                  'Conflicts with: {{name}}',
+                name:
+                  conflictAction?.label ||
+                  conflicts[0],
+              },
+            ),
+          );
+          // Still set it — user can resolve later
+        } else {
+          setConflict(
+            null,
+          );
+        }
 
-      setKeybindOverride(rebindingAction, [keyString]);
-      setRebindingAction(null);
-    };
+        setKeybindOverride(
+          rebindingAction,
+          [
+            keyString,
+          ],
+        );
+        setRebindingAction(
+          null,
+        );
+      };
 
-    window.addEventListener('keydown', handler, true);
-    return () => window.removeEventListener('keydown', handler, true);
-  }, [rebindingAction, keybindMap, setKeybindOverride]);
+    window.addEventListener(
+      'keydown',
+      handler,
+      true,
+    );
+    return () =>
+      window.removeEventListener(
+        'keydown',
+        handler,
+        true,
+      );
+  }, [
+    rebindingAction,
+    keybindMap,
+    setKeybindOverride,
+  ]);
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-app-border px-4 py-2">
-        <span className="text-sm font-medium text-app-text">{t("keyboard-shortcuts", { defaultValue: "Keyboard Shortcuts" })}</span>
+        <span className="text-sm font-medium text-app-text">
+          {t(
+            'keyboard-shortcuts',
+            {
+              defaultValue:
+                'Keyboard Shortcuts',
+            },
+          )}
+        </span>
         <button
-          onClick={resetKeybinds}
+          onClick={
+            resetKeybinds
+          }
           className="flex items-center gap-1.5 rounded-app-sm px-2 py-1 text-xs text-app-text-muted hover:bg-app-surface-hover hover:text-app-text"
         >
           <RotateCcw className="h-3 w-3" />
-          {t("reset-all", { defaultValue: "Reset All" })}
+          {t(
+            'reset-all',
+            {
+              defaultValue:
+                'Reset All',
+            },
+          )}
         </button>
       </div>
 
@@ -73,50 +202,106 @@ export function KeybindSettings() {
       {conflict && (
         <div className="flex items-center gap-2 bg-app-warning/15 px-4 py-1.5 text-xs text-app-warning">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-          {conflict}
+          {
+            conflict
+          }
         </div>
       )}
 
       {/* Keybind list */}
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-(--app-border)">
-        {Object.entries(categories).map(([category, actions]) => (
-          <div key={category}>
-            <div className="bg-app-surface px-4 py-1.5 text-xs font-semibold text-app-text-muted">
-              {category}
-            </div>
-            {actions.map((action) => {
-              const keys = keybindMap[action.id] || action.defaultKeys;
-              const isRebinding = rebindingAction === action.id;
-              const isOverridden = action.id in settings.keybindOverrides;
+        {Object.entries(
+          categories,
+        ).map(
+          ([
+            category,
+            actions,
+          ]) => (
+            <div
+              key={
+                category
+              }
+            >
+              <div className="bg-app-surface px-4 py-1.5 text-xs font-semibold text-app-text-muted">
+                {
+                  category
+                }
+              </div>
+              {actions.map(
+                (
+                  action,
+                ) => {
+                  const keys =
+                    keybindMap[
+                      action
+                        .id
+                    ] ||
+                    action.defaultKeys;
+                  const isRebinding =
+                    rebindingAction ===
+                    action.id;
+                  const isOverridden =
+                    action.id in
+                    settings.keybindOverrides;
 
-              return (
-                <div
-                  key={action.id}
-                  className="flex items-center justify-between px-4 py-1.5 hover:bg-app-surface-hover"
-                >
-                  <span className="text-xs text-app-text">{action.label}</span>
-                  <button
-                    onClick={() => setRebindingAction(isRebinding ? null : action.id)}
-                    className={`min-w-[80px] rounded-app-sm px-2 py-0.5 text-right font-mono text-xs ${
-                      isRebinding
-                        ? 'animate-pulse bg-app-accent-dim text-app-accent'
-                        : isOverridden
-                        ? 'bg-app-accent-dim text-app-accent hover:bg-app-accent-dim'
-                        : 'bg-app-surface-hover text-app-text-muted hover:bg-app-surface-hover'
-                    }`}
-                  >
-                    {isRebinding ? t("press-a-key", { defaultValue: "Press a key..." }) : keys.join(', ')}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        ))}
+                  return (
+                    <div
+                      key={
+                        action.id
+                      }
+                      className="flex items-center justify-between px-4 py-1.5 hover:bg-app-surface-hover"
+                    >
+                      <span className="text-xs text-app-text">
+                        {
+                          action.label
+                        }
+                      </span>
+                      <button
+                        onClick={() =>
+                          setRebindingAction(
+                            isRebinding
+                              ? null
+                              : action.id,
+                          )
+                        }
+                        className={`min-w-[80px] rounded-app-sm px-2 py-0.5 text-right font-mono text-xs ${
+                          isRebinding
+                            ? 'animate-pulse bg-app-accent-dim text-app-accent'
+                            : isOverridden
+                              ? 'bg-app-accent-dim text-app-accent hover:bg-app-accent-dim'
+                              : 'bg-app-surface-hover text-app-text-muted hover:bg-app-surface-hover'
+                        }`}
+                      >
+                        {isRebinding
+                          ? t(
+                              'press-a-key',
+                              {
+                                defaultValue:
+                                  'Press a key...',
+                              },
+                            )
+                          : keys.join(
+                              ', ',
+                            )}
+                      </button>
+                    </div>
+                  );
+                },
+              )}
+            </div>
+          ),
+        )}
       </div>
 
       {/* Footer hint */}
       <div className="border-t border-app-border px-4 py-2 text-xs text-app-text-muted">
-        {t("footer-hint", { defaultValue: "Click a shortcut to rebind. Press Escape to cancel. Purple = customized." })}
+        {t(
+          'footer-hint',
+          {
+            defaultValue:
+              'Click a shortcut to rebind. Press Escape to cancel. Purple = customized.',
+          },
+        )}
       </div>
     </div>
   );

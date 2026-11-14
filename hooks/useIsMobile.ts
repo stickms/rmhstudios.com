@@ -1,15 +1,35 @@
-import { useState, useEffect, useSyncExternalStore } from "react";
+import {
+  useState,
+  useEffect,
+  useSyncExternalStore,
+} from 'react';
 
-const MOBILE_QUERY = "(max-width: 767px)";
+const MOBILE_QUERY =
+  '(max-width: 767px)';
 
-function subscribe(callback: () => void) {
-  const mql = window.matchMedia(MOBILE_QUERY);
-  mql.addEventListener("change", callback);
-  return () => mql.removeEventListener("change", callback);
+function subscribe(
+  callback: () => void,
+) {
+  const mql =
+    window.matchMedia(
+      MOBILE_QUERY,
+    );
+  mql.addEventListener(
+    'change',
+    callback,
+  );
+  return () =>
+    mql.removeEventListener(
+      'change',
+      callback,
+    );
 }
 
 function getSnapshot() {
-  return window.matchMedia(MOBILE_QUERY).matches;
+  return window.matchMedia(
+    MOBILE_QUERY,
+  )
+    .matches;
 }
 
 function getServerSnapshot() {
@@ -23,5 +43,9 @@ function getServerSnapshot() {
  * not on every pixel of resize.
  */
 export function useIsMobile() {
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 }

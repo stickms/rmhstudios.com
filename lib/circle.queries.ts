@@ -2,5 +2,15 @@
 import { getCircleApi } from '@/lib/circle.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const circleQuery = () =>
-  contractQuery(['circle'], getCircleApi, undefined, { staleTime: 15_000 });
+export const circleQuery =
+  () =>
+    contractQuery(
+      [
+        'circle',
+      ],
+      getCircleApi,
+      undefined,
+      {
+        staleTime: 15_000,
+      },
+    );

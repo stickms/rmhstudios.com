@@ -23,16 +23,28 @@
  *     on the c_model's `unusual_<n>` attachments, drawn in the view model's pass).
  *   - Hidden when zoomed, dead or spectating (the caller says so with `visible`).
  */
-import { Matrix4, PerspectiveCamera, Scene, Vector3, type WebGLRenderer } from 'three';
+import {
+  Matrix4,
+  PerspectiveCamera,
+  Scene,
+  Vector3,
+  type WebGLRenderer,
+} from 'three';
 import { CLASS_DATA } from '../../data/classes';
 import { TF_TEAM_BLUE } from '../../core/constants';
 import type { PublicItem } from '../../sim/items/loadout';
 import { vmActivityName } from '../../sim/weapons/constants';
-import { sourceFovToVertical, type SourceCamera } from '../camera';
+import {
+  sourceFovToVertical,
+  type SourceCamera,
+} from '../camera';
 import { SOURCE_UNIT } from '../coords';
 import type { Vec3Like } from '../lighting';
 import { angleVectors } from '../coords';
-import { LightProbe, type RenderContext } from './common';
+import {
+  LightProbe,
+  type RenderContext,
+} from './common';
 import type { EffectSystem } from './effects';
 import {
   heldModelName,
@@ -61,54 +73,203 @@ export class BobState {
   lateralBob = 0;
 
   /** Advances with the player's 2D speed at time `now` (seconds). */
-  calc(speed2d: number, now: number): void {
-    const dtime = now - this.lastBobTime;
-    if (dtime <= 0) {
-      this.lastBobTime = now;
+  calc(
+    speed2d: number,
+    now: number,
+  ): void {
+    const dtime =
+      now -
+      this
+        .lastBobTime;
+    if (
+      dtime <=
+      0
+    ) {
+      this.lastBobTime =
+        now;
       return;
     }
-    const maxDelta = Math.max(0, dtime * 320);
-    let speed = Math.min(this.lastSpeed + maxDelta, Math.max(this.lastSpeed - maxDelta, speed2d));
-    speed = Math.max(-320, Math.min(320, speed));
-    this.lastSpeed = speed;
-    const bobOffset = speed / 320;
-    this.bobTime += dtime * bobOffset;
-    this.lastBobTime = now;
-    const phase = (cycleLen: number) => {
-      let c = this.bobTime - Math.trunc(this.bobTime / cycleLen) * cycleLen;
-      c /= cycleLen;
-      return c < CL_BOBUP
-        ? (Math.PI * c) / CL_BOBUP
-        : Math.PI + (Math.PI * (c - CL_BOBUP)) / (1 - CL_BOBUP);
-    };
-    let v = speed * 0.005;
-    v = v * 0.3 + v * 0.7 * Math.sin(phase(CL_BOBCYCLE));
-    this.verticalBob = Math.max(-7, Math.min(4, v));
-    let l = speed * 0.005;
-    l = l * 0.3 + l * 0.7 * Math.sin(phase(CL_BOBCYCLE * 2));
-    this.lateralBob = Math.max(-7, Math.min(4, l));
+    const maxDelta =
+      Math.max(
+        0,
+        dtime *
+          320,
+      );
+    let speed =
+      Math.min(
+        this
+          .lastSpeed +
+          maxDelta,
+        Math.max(
+          this
+            .lastSpeed -
+            maxDelta,
+          speed2d,
+        ),
+      );
+    speed =
+      Math.max(
+        -320,
+        Math.min(
+          320,
+          speed,
+        ),
+      );
+    this.lastSpeed =
+      speed;
+    const bobOffset =
+      speed /
+      320;
+    this.bobTime +=
+      dtime *
+      bobOffset;
+    this.lastBobTime =
+      now;
+    const phase =
+      (
+        cycleLen: number,
+      ) => {
+        let c =
+          this
+            .bobTime -
+          Math.trunc(
+            this
+              .bobTime /
+              cycleLen,
+          ) *
+            cycleLen;
+        c /=
+          cycleLen;
+        return c <
+          CL_BOBUP
+          ? (Math.PI *
+              c) /
+              CL_BOBUP
+          : Math.PI +
+              (Math.PI *
+                (c -
+                  CL_BOBUP)) /
+                (1 -
+                  CL_BOBUP);
+      };
+    let v =
+      speed *
+      0.005;
+    v =
+      v *
+        0.3 +
+      v *
+        0.7 *
+        Math.sin(
+          phase(
+            CL_BOBCYCLE,
+          ),
+        );
+    this.verticalBob =
+      Math.max(
+        -7,
+        Math.min(
+          4,
+          v,
+        ),
+      );
+    let l =
+      speed *
+      0.005;
+    l =
+      l *
+        0.3 +
+      l *
+        0.7 *
+        Math.sin(
+          phase(
+            CL_BOBCYCLE *
+              2,
+          ),
+        );
+    this.lateralBob =
+      Math.max(
+        -7,
+        Math.min(
+          4,
+          l,
+        ),
+      );
   }
 
   /** AddViewModelBobHelper: offsets origin/angles (Source units / degrees) in place. */
   apply(
-    origin: { x: number; y: number; z: number },
-    angles: { x: number; y: number; z: number },
+    origin: {
+      x: number;
+      y: number;
+      z: number;
+    },
+    angles: {
+      x: number;
+      y: number;
+      z: number;
+    },
   ): void {
-    const fwd = [0, 0, 0];
-    const right = [0, 0, 0];
-    angleVectors(angles.x, angles.y, angles.z, fwd, right);
-    const v = this.verticalBob;
-    origin.x += fwd[0] * v * 0.4;
-    origin.y += fwd[1] * v * 0.4;
-    origin.z += fwd[2] * v * 0.4;
-    origin.z += v * 0.1;
-    angles.z += v * 0.5;
-    angles.x -= v * 0.4;
-    angles.y -= this.lateralBob * 0.3;
-    const l = this.lateralBob * 0.2;
-    origin.x += right[0] * l;
-    origin.y += right[1] * l;
-    origin.z += right[2] * l;
+    const fwd =
+      [
+        0,
+        0,
+        0,
+      ];
+    const right =
+      [
+        0,
+        0,
+        0,
+      ];
+    angleVectors(
+      angles.x,
+      angles.y,
+      angles.z,
+      fwd,
+      right,
+    );
+    const v =
+      this
+        .verticalBob;
+    origin.x +=
+      fwd[0] *
+      v *
+      0.4;
+    origin.y +=
+      fwd[1] *
+      v *
+      0.4;
+    origin.z +=
+      fwd[2] *
+      v *
+      0.4;
+    origin.z +=
+      v *
+      0.1;
+    angles.z +=
+      v *
+      0.5;
+    angles.x -=
+      v *
+      0.4;
+    angles.y -=
+      this
+        .lateralBob *
+      0.3;
+    const l =
+      this
+        .lateralBob *
+      0.2;
+    origin.x +=
+      right[0] *
+      l;
+    origin.y +=
+      right[1] *
+      l;
+    origin.z +=
+      right[2] *
+      l;
   }
 }
 
@@ -134,133 +295,418 @@ export interface ViewModelInput {
 }
 
 /** Fire activities that flash the muzzle. */
-const FIRE_ACTIVITIES = new Set(['ACT_VM_PRIMARYATTACK', 'ACT_VM_SECONDARYATTACK']);
+const FIRE_ACTIVITIES =
+  new Set(
+    [
+      'ACT_VM_PRIMARYATTACK',
+      'ACT_VM_SECONDARYATTACK',
+    ],
+  );
 
 export class ViewModelRenderer {
-  readonly scene = new Scene();
+  readonly scene =
+    new Scene();
   readonly camera: PerspectiveCamera;
-  private arms: ModelInstance | null = null;
-  private armsModel = '';
-  private weapon: ModelInstance | null = null;
-  private weaponModel = '';
-  private weaponItem: ItemInstance | null = null;
-  private lastSeq = -1;
-  private lastAct = -1;
-  private lastDef = -2;
-  private readonly bob = new BobState();
-  private readonly probe = new LightProbe();
+  private arms: ModelInstance | null =
+    null;
+  private armsModel =
+    '';
+  private weapon: ModelInstance | null =
+    null;
+  private weaponModel =
+    '';
+  private weaponItem: ItemInstance | null =
+    null;
+  private lastSeq =
+    -1;
+  private lastAct =
+    -1;
+  private lastDef =
+    -2;
+  private readonly bob =
+    new BobState();
+  private readonly probe =
+    new LightProbe();
   private barrelAngle = 0;
   private barrelSpeed = 0;
   private barrelTarget = 0;
   private visible = false;
-  private weaponFxKey = '';
-  fov = VIEWMODEL_FOV;
-  private readonly origin = { x: 0, y: 0, z: 0 };
-  private readonly angles = { x: 0, y: 0, z: 0 };
+  private weaponFxKey =
+    '';
+  fov =
+    VIEWMODEL_FOV;
+  private readonly origin =
+    {
+      x: 0,
+      y: 0,
+      z: 0,
+    };
+  private readonly angles =
+    {
+      x: 0,
+      y: 0,
+      z: 0,
+    };
 
-  constructor(private readonly effects: EffectSystem | null) {
-    this.camera = new PerspectiveCamera(
-      sourceFovToVertical(VIEWMODEL_FOV),
-      16 / 9,
-      1 * SOURCE_UNIT,
-      2048 * SOURCE_UNIT,
-    );
-    this.scene.name = 'viewmodel';
-    if (effects) this.scene.add(effects.vmGroup);
+  constructor(
+    private readonly effects: EffectSystem | null,
+  ) {
+    this.camera =
+      new PerspectiveCamera(
+        sourceFovToVertical(
+          VIEWMODEL_FOV,
+        ),
+        16 /
+          9,
+        1 *
+          SOURCE_UNIT,
+        2048 *
+          SOURCE_UNIT,
+      );
+    this.scene.name =
+      'viewmodel';
+    if (
+      effects
+    )
+      this.scene.add(
+        effects.vmGroup,
+      );
   }
 
-  update(inp: ViewModelInput, ctx: RenderContext): void {
-    const cls = CLASS_DATA[inp.cls];
-    this.visible = inp.visible && !!cls;
-    if (!cls) return this.hide();
+  update(
+    inp: ViewModelInput,
+    ctx: RenderContext,
+  ): void {
+    const cls =
+      CLASS_DATA[
+        inp
+          .cls
+      ];
+    this.visible =
+      inp.visible &&
+      !!cls;
+    if (
+      !cls
+    )
+      return this.hide();
     // Arms.
-    if (cls.handsModel !== this.armsModel || !this.arms) {
-      const asset = ctx.models.peek(cls.handsModel);
-      if (!asset) return this.hide();
+    if (
+      cls.handsModel !==
+        this
+          .armsModel ||
+      !this
+        .arms
+    ) {
+      const asset =
+        ctx.models.peek(
+          cls.handsModel,
+        );
+      if (
+        !asset
+      )
+        return this.hide();
       this.arms?.dispose();
-      this.arms = new ModelInstance(asset, { fog: ctx.lighting?.shared });
-      this.scene.add(this.arms.root);
-      this.armsModel = cls.handsModel;
-      this.weapon = null;
-      this.weaponItem = null;
-      this.weaponModel = '';
-      this.lastSeq = -1;
+      this.arms =
+        new ModelInstance(
+          asset,
+          {
+            fog: ctx
+              .lighting
+              ?.shared,
+          },
+        );
+      this.scene.add(
+        this
+          .arms
+          .root,
+      );
+      this.armsModel =
+        cls.handsModel;
+      this.weapon =
+        null;
+      this.weaponItem =
+        null;
+      this.weaponModel =
+        '';
+      this.lastSeq =
+        -1;
     }
-    const arms = this.arms;
-    const look = weaponLook(inp.defindex, inp.cls);
-    const name = heldModelName(ctx.loadout, look, inp.cls, inp.item);
-    const part = name ? ctx.loadout!.peek(name) : null;
-    if (part) {
+    const arms =
+      this
+        .arms;
+    const look =
+      weaponLook(
+        inp.defindex,
+        inp.cls,
+      );
+    const name =
+      heldModelName(
+        ctx.loadout,
+        look,
+        inp.cls,
+        inp.item,
+      );
+    const part =
+      name
+        ? ctx.loadout!.peek(
+            name,
+          )
+        : null;
+    if (
+      part
+    ) {
       const key = `loadout:${name}`;
-      if (key !== this.weaponModel) {
+      if (
+        key !==
+        this
+          .weaponModel
+      ) {
         this.dropWeapon();
-        const item = new ItemInstance(part, arms.uniforms);
-        if (item.attachTo(arms)) {
-          this.weaponItem = item;
-          this.weapon = item.inst;
-        } else item.dispose();
-        this.weaponModel = key;
+        const item =
+          new ItemInstance(
+            part,
+            arms.uniforms,
+          );
+        if (
+          item.attachTo(
+            arms,
+          )
+        ) {
+          this.weaponItem =
+            item;
+          this.weapon =
+            item.inst;
+        } else
+          item.dispose();
+        this.weaponModel =
+          key;
       }
-      this.weaponItem?.dress({ festive: inp.item?.festive, entry: inp.item, team: inp.team });
+      this.weaponItem?.dress(
+        {
+          festive:
+            inp
+              .item
+              ?.festive,
+          entry:
+            inp.item,
+          team: inp.team,
+        },
+      );
     } else {
-      const w = look?.stock;
-      const vmModel = w?.attachToHands ? (w.viewModel ?? '') : '';
-      if (vmModel !== this.weaponModel) {
-        const asset = vmModel ? ctx.models.peek(vmModel) : null;
-        if (asset !== undefined) {
+      const w =
+        look?.stock;
+      const vmModel =
+        w?.attachToHands
+          ? (w.viewModel ??
+            '')
+          : '';
+      if (
+        vmModel !==
+        this
+          .weaponModel
+      ) {
+        const asset =
+          vmModel
+            ? ctx.models.peek(
+                vmModel,
+              )
+            : null;
+        if (
+          asset !==
+          undefined
+        ) {
           this.dropWeapon();
-          this.weaponModel = vmModel;
-          if (asset) {
-            this.weapon = new ModelInstance(asset, {
-              uniforms: paintUniforms(arms.uniforms),
-              noAnim: true,
-            });
-            arms.attach(this.weapon);
+          this.weaponModel =
+            vmModel;
+          if (
+            asset
+          ) {
+            this.weapon =
+              new ModelInstance(
+                asset,
+                {
+                  uniforms:
+                    paintUniforms(
+                      arms.uniforms,
+                    ),
+                  noAnim: true,
+                },
+              );
+            arms.attach(
+              this
+                .weapon,
+            );
           }
         }
       }
     }
-    const skin = inp.team === TF_TEAM_BLUE ? 1 : 0;
-    arms.setSkin(skin);
-    if (!this.weaponItem) this.weapon?.setSkin(skin);
-    if (this.weapon) setSheenUniforms(this.weapon.uniforms, inp.item?.sheen, inp.team, ctx.time);
+    const skin =
+      inp.team ===
+      TF_TEAM_BLUE
+        ? 1
+        : 0;
+    arms.setSkin(
+      skin,
+    );
+    if (
+      !this
+        .weaponItem
+    )
+      this.weapon?.setSkin(
+        skin,
+      );
+    if (
+      this
+        .weapon
+    )
+      setSheenUniforms(
+        this
+          .weapon
+          .uniforms,
+        inp
+          .item
+          ?.sheen,
+        inp.team,
+        ctx.time,
+      );
     // Activity → sequence.
     if (
-      inp.vmActivitySeq !== this.lastSeq ||
-      inp.defindex !== this.lastDef ||
-      inp.vmActivity !== this.lastAct
+      inp.vmActivitySeq !==
+        this
+          .lastSeq ||
+      inp.defindex !==
+        this
+          .lastDef ||
+      inp.vmActivity !==
+        this
+          .lastAct
     ) {
-      const restart = inp.vmActivitySeq !== this.lastSeq;
-      this.lastSeq = inp.vmActivitySeq;
-      this.lastDef = inp.defindex;
-      this.lastAct = inp.vmActivity;
-      this.playActivity(vmActivityName(inp.vmActivity), inp, ctx, restart);
+      const restart =
+        inp.vmActivitySeq !==
+        this
+          .lastSeq;
+      this.lastSeq =
+        inp.vmActivitySeq;
+      this.lastDef =
+        inp.defindex;
+      this.lastAct =
+        inp.vmActivity;
+      this.playActivity(
+        vmActivityName(
+          inp.vmActivity,
+        ),
+        inp,
+        ctx,
+        restart,
+      );
     }
-    this.updateWeaponEffect(this.visible ? inp.item : undefined);
-    if (!this.visible) return this.hide();
+    this.updateWeaponEffect(
+      this
+        .visible
+        ? inp.item
+        : undefined,
+    );
+    if (
+      !this
+        .visible
+    )
+      return this.hide();
     arms.root.visible = true;
     // Placement: eye + bob (no lag in TF2).
-    this.origin.x = inp.eyeOrigin.x;
-    this.origin.y = inp.eyeOrigin.y;
-    this.origin.z = inp.eyeOrigin.z;
-    this.angles.x = inp.eyeAngles.x;
-    this.angles.y = inp.eyeAngles.y;
-    this.angles.z = inp.eyeAngles.z;
-    this.bob.calc(Math.hypot(inp.velocity.x, inp.velocity.y), ctx.time);
-    this.bob.apply(this.origin, this.angles);
-    arms.place(this.origin, this.angles);
-    const u = arms.uniforms;
-    u.uCloak.value = Math.min(0.85, inp.invis ?? 0);
-    (u.uGlow.value as Vector3).set(0, 0, 0);
-    if (inp.crit)
-      (u.uGlow.value as Vector3)
-        .set(inp.team === TF_TEAM_BLUE ? 0.15 : 0.9, 0.2, inp.team === TF_TEAM_BLUE ? 0.9 : 0.12)
-        .multiplyScalar(0.5);
-    if (inp.uber) arms.setSkin(skin + 2);
-    this.probe.update(ctx, u, inp.eyeOrigin, 0);
-    arms.animate(ctx.dt);
+    this.origin.x =
+      inp.eyeOrigin.x;
+    this.origin.y =
+      inp.eyeOrigin.y;
+    this.origin.z =
+      inp.eyeOrigin.z;
+    this.angles.x =
+      inp.eyeAngles.x;
+    this.angles.y =
+      inp.eyeAngles.y;
+    this.angles.z =
+      inp.eyeAngles.z;
+    this.bob.calc(
+      Math.hypot(
+        inp
+          .velocity
+          .x,
+        inp
+          .velocity
+          .y,
+      ),
+      ctx.time,
+    );
+    this.bob.apply(
+      this
+        .origin,
+      this
+        .angles,
+    );
+    arms.place(
+      this
+        .origin,
+      this
+        .angles,
+    );
+    const u =
+      arms.uniforms;
+    u.uCloak.value =
+      Math.min(
+        0.85,
+        inp.invis ??
+          0,
+      );
+    (
+      u
+        .uGlow
+        .value as Vector3
+    ).set(
+      0,
+      0,
+      0,
+    );
+    if (
+      inp.crit
+    )
+      (
+        u
+          .uGlow
+          .value as Vector3
+      )
+        .set(
+          inp.team ===
+            TF_TEAM_BLUE
+            ? 0.15
+            : 0.9,
+          0.2,
+          inp.team ===
+            TF_TEAM_BLUE
+            ? 0.9
+            : 0.12,
+        )
+        .multiplyScalar(
+          0.5,
+        );
+    if (
+      inp.uber
+    )
+      arms.setSkin(
+        skin +
+          2,
+      );
+    this.probe.update(
+      ctx,
+      u,
+      inp.eyeOrigin,
+      0,
+    );
+    arms.animate(
+      ctx.dt,
+    );
     arms.applyPose();
-    this.spinBarrel(ctx.dt);
+    this.spinBarrel(
+      ctx.dt,
+    );
     arms.updateMatrices();
   }
 
@@ -270,99 +716,305 @@ export class ViewModelRenderer {
     ctx: RenderContext,
     restart: boolean,
   ): void {
-    const arms = this.arms;
-    const anim = arms?.animator;
-    if (!anim || !base) return;
-    const w = weaponLook(inp.defindex, inp.cls);
+    const arms =
+      this
+        .arms;
+    const anim =
+      arms?.animator;
+    if (
+      !anim ||
+      !base
+    )
+      return;
+    const w =
+      weaponLook(
+        inp.defindex,
+        inp.cls,
+      );
     // Item table → s_viewmodelacttable → base; loops re-sent keep their cycle (vm-anim.ts).
-    playVmActivity(anim, base, w, restart);
+    playVmActivity(
+      anim,
+      base,
+      w,
+      restart,
+    );
     // Minigun barrel (SDK CTFMinigun::SendWeaponAnim).
-    if (base === 'ACT_MP_ATTACK_STAND_PREFIRE' || base === 'ACT_VM_PRIMARYATTACK')
+    if (
+      base ===
+        'ACT_MP_ATTACK_STAND_PREFIRE' ||
+      base ===
+        'ACT_VM_PRIMARYATTACK'
+    )
       this.barrelTarget = 20;
-    else if (base === 'ACT_MP_ATTACK_STAND_POSTFIRE') this.barrelTarget = 0;
+    else if (
+      base ===
+      'ACT_MP_ATTACK_STAND_POSTFIRE'
+    )
+      this.barrelTarget = 0;
     // Muzzle flash for the local shooter.
-    if (restart && FIRE_ACTIVITIES.has(base) && this.effects && w?.muzzleFlash) {
-      this.effects.oneShot(w.muzzleFlash, { entity: VIEWMODEL_ENTITY, attachment: 'muzzle' }, 'vm');
+    if (
+      restart &&
+      FIRE_ACTIVITIES.has(
+        base,
+      ) &&
+      this
+        .effects &&
+      w?.muzzleFlash
+    ) {
+      this.effects.oneShot(
+        w.muzzleFlash,
+        {
+          entity:
+            VIEWMODEL_ENTITY,
+          attachment:
+            'muzzle',
+        },
+        'vm',
+      );
     }
     void ctx;
   }
 
   /** The held weapon's unusual effect on its `unusual_<n>` attachments, in the view-model pass. */
-  private updateWeaponEffect(item: ViewModelInput['item']): void {
-    const fx = this.effects;
-    if (!fx) return;
-    const system = weaponEffect(item);
-    const key = system && this.weapon?.asset.attachments.has('unusual_0') ? `wfx:vm:${system}` : '';
-    if (key !== this.weaponFxKey) {
-      if (this.weaponFxKey) fx.stop(this.weaponFxKey);
-      this.weaponFxKey = key;
+  private updateWeaponEffect(
+    item: ViewModelInput['item'],
+  ): void {
+    const fx =
+      this
+        .effects;
+    if (
+      !fx
+    )
+      return;
+    const system =
+      weaponEffect(
+        item,
+      );
+    const key =
+      system &&
+      this.weapon?.asset.attachments.has(
+        'unusual_0',
+      )
+        ? `wfx:vm:${system}`
+        : '';
+    if (
+      key !==
+      this
+        .weaponFxKey
+    ) {
+      if (
+        this
+          .weaponFxKey
+      )
+        fx.stop(
+          this
+            .weaponFxKey,
+        );
+      this.weaponFxKey =
+        key;
     }
-    if (key && system)
-      fx.loop(key, system, { entity: VIEWMODEL_ENTITY, schemaPrefix: WEAPON_ATTACHMENT }, 'vm');
+    if (
+      key &&
+      system
+    )
+      fx.loop(
+        key,
+        system,
+        {
+          entity:
+            VIEWMODEL_ENTITY,
+          schemaPrefix:
+            WEAPON_ATTACHMENT,
+        },
+        'vm',
+      );
   }
 
-  private spinBarrel(dt: number): void {
+  private spinBarrel(
+    dt: number,
+  ): void {
     const accel = 6;
-    if (this.barrelSpeed < this.barrelTarget)
-      this.barrelSpeed = Math.min(this.barrelTarget, this.barrelSpeed + accel * dt);
-    else this.barrelSpeed = Math.max(this.barrelTarget, this.barrelSpeed - accel * dt);
-    this.barrelAngle += this.barrelSpeed * dt;
-    const barrel = this.weapon?.bone('barrel');
-    if (barrel) barrel.quaternion.setFromAxisAngle(Z, this.barrelAngle);
+    if (
+      this
+        .barrelSpeed <
+      this
+        .barrelTarget
+    )
+      this.barrelSpeed =
+        Math.min(
+          this
+            .barrelTarget,
+          this
+            .barrelSpeed +
+            accel *
+              dt,
+        );
+    else
+      this.barrelSpeed =
+        Math.max(
+          this
+            .barrelTarget,
+          this
+            .barrelSpeed -
+            accel *
+              dt,
+        );
+    this.barrelAngle +=
+      this
+        .barrelSpeed *
+      dt;
+    const barrel =
+      this.weapon?.bone(
+        'barrel',
+      );
+    if (
+      barrel
+    )
+      barrel.quaternion.setFromAxisAngle(
+        Z,
+        this
+          .barrelAngle,
+      );
   }
 
   private dropWeapon(): void {
     this.weaponItem?.dispose();
-    if (!this.weaponItem) this.weapon?.dispose();
-    this.weaponItem = null;
-    this.weapon = null;
+    if (
+      !this
+        .weaponItem
+    )
+      this.weapon?.dispose();
+    this.weaponItem =
+      null;
+    this.weapon =
+      null;
   }
 
   private hide(): void {
-    if (this.arms) this.arms.root.visible = false;
-    if (this.weaponFxKey) this.effects?.stop(this.weaponFxKey);
-    this.weaponFxKey = '';
+    if (
+      this
+        .arms
+    )
+      this.arms.root.visible = false;
+    if (
+      this
+        .weaponFxKey
+    )
+      this.effects?.stop(
+        this
+          .weaponFxKey,
+      );
+    this.weaponFxKey =
+      '';
   }
 
   /** A view-model attachment (three world space: the view model shares the world camera's view). */
-  attachment(name: string, out: Matrix4): boolean {
-    if (!this.arms || !this.visible) return false;
-    if (name.startsWith(WEAPON_ATTACHMENT))
-      return !!this.weapon?.attachmentMatrix(name.slice(WEAPON_ATTACHMENT.length), out);
-    return this.arms.attachmentMatrix(name, out);
+  attachment(
+    name: string,
+    out: Matrix4,
+  ): boolean {
+    if (
+      !this
+        .arms ||
+      !this
+        .visible
+    )
+      return false;
+    if (
+      name.startsWith(
+        WEAPON_ATTACHMENT,
+      )
+    )
+      return !!this.weapon?.attachmentMatrix(
+        name.slice(
+          WEAPON_ATTACHMENT.length,
+        ),
+        out,
+      );
+    return this.arms.attachmentMatrix(
+      name,
+      out,
+    );
   }
 
   /** Draws the view model over the world (call after WorldRenderer.render). */
-  render(renderer: WebGLRenderer, cam: SourceCamera): void {
-    if (!this.visible || !this.arms) return;
-    const c = this.camera;
-    c.position.copy(cam.camera.position);
-    c.quaternion.copy(cam.camera.quaternion);
-    c.aspect = cam.camera.aspect;
-    const vfov = sourceFovToVertical(this.fov);
-    if (c.fov !== vfov) c.fov = vfov;
+  render(
+    renderer: WebGLRenderer,
+    cam: SourceCamera,
+  ): void {
+    if (
+      !this
+        .visible ||
+      !this
+        .arms
+    )
+      return;
+    const c =
+      this
+        .camera;
+    c.position.copy(
+      cam
+        .camera
+        .position,
+    );
+    c.quaternion.copy(
+      cam
+        .camera
+        .quaternion,
+    );
+    c.aspect =
+      cam.camera.aspect;
+    const vfov =
+      sourceFovToVertical(
+        this
+          .fov,
+      );
+    if (
+      c.fov !==
+      vfov
+    )
+      c.fov =
+        vfov;
     c.updateProjectionMatrix();
-    c.updateMatrixWorld(true);
-    c.layers.enable(1);
-    const autoClear = renderer.autoClear;
+    c.updateMatrixWorld(
+      true,
+    );
+    c.layers.enable(
+      1,
+    );
+    const autoClear =
+      renderer.autoClear;
     renderer.autoClear = false;
     renderer.clearDepth();
-    renderer.render(this.scene, c);
-    renderer.autoClear = autoClear;
+    renderer.render(
+      this
+        .scene,
+      c,
+    );
+    renderer.autoClear =
+      autoClear;
   }
 
   get instance(): ModelInstance | null {
-    return this.arms;
+    return this
+      .arms;
   }
 
   dispose(): void {
     this.arms?.dispose();
-    this.arms = null;
+    this.arms =
+      null;
     this.scene.clear();
   }
 }
 
 /** The entity id effects use to follow the view model. */
-export const VIEWMODEL_ENTITY = -2;
+export const VIEWMODEL_ENTITY =
+  -2;
 
-const Z = new Vector3(0, 0, 1);
+const Z =
+  new Vector3(
+    0,
+    0,
+    1,
+  );

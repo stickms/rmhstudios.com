@@ -62,7 +62,11 @@ import './anchored-menu.css';
 
 // useLayoutEffect warns during SSR; a menu only ever opens from a client
 // interaction, so the visual result is identical either way.
-const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+const useIsoLayoutEffect =
+  typeof window !==
+  'undefined'
+    ? useLayoutEffect
+    : useEffect;
 
 /** Gap between the trigger and the panel. */
 const TRIGGER_GAP = 4;
@@ -76,14 +80,32 @@ const EDGE_MARGIN = 12;
 const TYPEAHEAD_MS = 1000;
 
 /** The rows the keyboard may land on, in document order, minus the disabled. */
-function enabledItems(panel: HTMLElement | null): HTMLElement[] {
-  if (!panel) return [];
-  return [...panel.querySelectorAll<HTMLElement>(`[${MENU_ITEM_ATTR}]`)].filter(
-    (el) =>
-      !(el as HTMLButtonElement).disabled &&
-      el.getAttribute('aria-disabled') !== 'true' &&
+function enabledItems(
+  panel: HTMLElement | null,
+): HTMLElement[] {
+  if (
+    !panel
+  )
+    return [];
+  return [
+    ...panel.querySelectorAll<HTMLElement>(
+      `[${MENU_ITEM_ATTR}]`,
+    ),
+  ].filter(
+    (
+      el,
+    ) =>
+      !(
+        el as HTMLButtonElement
+      )
+        .disabled &&
+      el.getAttribute(
+        'aria-disabled',
+      ) !==
+        'true' &&
       // A row inside a collapsed section is still in the DOM.
-      el.offsetParent !== null,
+      el.offsetParent !==
+        null,
   );
 }
 
@@ -106,7 +128,10 @@ export interface AnchoredMenuProps {
    * a tool** rather than rows (a search field over a grid of results) is
    * `dialog`: it is not modal, and the name comes from `label`.
    */
-  role?: 'menu' | 'listbox' | 'dialog';
+  role?:
+    | 'menu'
+    | 'listbox'
+    | 'dialog';
   /**
    * Move focus into the panel on open, and hand it back on close. On by
    * default, because that is what `role="menu"` promises.
@@ -124,13 +149,21 @@ export interface AnchoredMenuProps {
   children: ReactNode;
 }
 
-function samePlacement(a: Placement | null, b: Placement) {
+function samePlacement(
+  a: Placement | null,
+  b: Placement,
+) {
   return (
-    a !== null &&
-    a.side === b.side &&
-    a.offset === b.offset &&
-    a.inset === b.inset &&
-    a.maxHeight === b.maxHeight
+    a !==
+      null &&
+    a.side ===
+      b.side &&
+    a.offset ===
+      b.offset &&
+    a.inset ===
+      b.inset &&
+    a.maxHeight ===
+      b.maxHeight
   );
 }
 
@@ -146,8 +179,17 @@ export function AnchoredMenu({
   className,
   children,
 }: AnchoredMenuProps) {
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const [placement, setPlacement] = useState<Placement | null>(null);
+  const panelRef =
+    useRef<HTMLDivElement | null>(
+      null,
+    );
+  const [
+    placement,
+    setPlacement,
+  ] =
+    useState<Placement | null>(
+      null,
+    );
 
   // Opened from inside a modal Radix dialog (the composer, edit-post), the panel portals to
   // <body>, OUTSIDE the dialog's DOM, so to the dialog it is "outside" in three ways.
@@ -158,56 +200,163 @@ export function AnchoredMenu({
   // registry in context and this is a no-op. The third (stacking above the z-50 dialog and
   // its scrim, with pointer events back on the body Radix made inert) is `data-in-dialog`
   // below, styled in anchored-menu.css.
-  const [panelNode, setPanelNode] = useState<HTMLDivElement | null>(null);
-  const setPanel = useCallback((node: HTMLDivElement | null) => {
-    panelRef.current = node;
-    setPanelNode(node);
-  }, []);
-  useFocusScopeBranch(panelNode);
-  const [inDialog, setInDialog] = useState(false);
+  const [
+    panelNode,
+    setPanelNode,
+  ] =
+    useState<HTMLDivElement | null>(
+      null,
+    );
+  const setPanel =
+    useCallback(
+      (
+        node: HTMLDivElement | null,
+      ) => {
+        panelRef.current =
+          node;
+        setPanelNode(
+          node,
+        );
+      },
+      [],
+    );
+  useFocusScopeBranch(
+    panelNode,
+  );
+  const [
+    inDialog,
+    setInDialog,
+  ] =
+    useState(
+      false,
+    );
 
-  const measure = useCallback(() => {
-    const panel = panelRef.current;
-    const anchor = anchorRef.current;
-    if (!panel || !anchor) return;
+  const measure =
+    useCallback(() => {
+      const panel =
+        panelRef.current;
+      const anchor =
+        anchorRef.current;
+      if (
+        !panel ||
+        !anchor
+      )
+        return;
 
-    const rect = anchor.getBoundingClientRect();
-    const rootStyle = getComputedStyle(document.documentElement);
-    const safe = (name: string) => parseFloat(rootStyle.getPropertyValue(name)) || 0;
-    const bounds = {
-      top: EDGE_MARGIN + safe('--safe-top'),
-      bottom: window.innerHeight - EDGE_MARGIN - safe('--safe-bottom'),
-      left: EDGE_MARGIN + safe('--safe-left'),
-      right: window.innerWidth - EDGE_MARGIN - safe('--safe-right'),
-    };
+      const rect =
+        anchor.getBoundingClientRect();
+      const rootStyle =
+        getComputedStyle(
+          document.documentElement,
+        );
+      const safe =
+        (
+          name: string,
+        ) =>
+          parseFloat(
+            rootStyle.getPropertyValue(
+              name,
+            ),
+          ) ||
+          0;
+      const bounds =
+        {
+          top:
+            EDGE_MARGIN +
+            safe(
+              '--safe-top',
+            ),
+          bottom:
+            window.innerHeight -
+            EDGE_MARGIN -
+            safe(
+              '--safe-bottom',
+            ),
+          left:
+            EDGE_MARGIN +
+            safe(
+              '--safe-left',
+            ),
+          right:
+            window.innerWidth -
+            EDGE_MARGIN -
+            safe(
+              '--safe-right',
+            ),
+        };
 
-    // Natural height, free of the cap the previous pass applied. Read inside
-    // the same layout effect as the write, so nothing paints in between, and
-    // RESTORED rather than removed — a re-measure that resolves to the same
-    // placement produces no re-render, so React would never put the cap back.
-    const prevMax = panel.style.getPropertyValue('--anchored-menu-max-h');
-    panel.style.setProperty('--anchored-menu-max-h', 'none');
-    const natural = panel.offsetHeight;
-    if (prevMax) panel.style.setProperty('--anchored-menu-max-h', prevMax);
-    else panel.style.removeProperty('--anchored-menu-max-h');
+      // Natural height, free of the cap the previous pass applied. Read inside
+      // the same layout effect as the write, so nothing paints in between, and
+      // RESTORED rather than removed — a re-measure that resolves to the same
+      // placement produces no re-render, so React would never put the cap back.
+      const prevMax =
+        panel.style.getPropertyValue(
+          '--anchored-menu-max-h',
+        );
+      panel.style.setProperty(
+        '--anchored-menu-max-h',
+        'none',
+      );
+      const natural =
+        panel.offsetHeight;
+      if (
+        prevMax
+      )
+        panel.style.setProperty(
+          '--anchored-menu-max-h',
+          prevMax,
+        );
+      else
+        panel.style.removeProperty(
+          '--anchored-menu-max-h',
+        );
 
-    // The anchor's WIDTH, published for callers that must match it. An
-    // autocomplete's list is the field's list and has to be exactly as wide as
-    // the field; a menu is sized by its own content and ignores this.
-    panel.style.setProperty('--anchored-menu-anchor-w', `${Math.round(rect.width)}px`);
+      // The anchor's WIDTH, published for callers that must match it. An
+      // autocomplete's list is the field's list and has to be exactly as wide as
+      // the field; a menu is sized by its own content and ignores this.
+      panel.style.setProperty(
+        '--anchored-menu-anchor-w',
+        `${Math.round(rect.width)}px`,
+      );
 
-    const next = resolveAnchoredPlacement({
-      anchor: rect,
-      panelHeight: natural,
-      panelWidth: panel.offsetWidth,
-      bounds,
-      viewport: { width: window.innerWidth, height: window.innerHeight },
+      const next =
+        resolveAnchoredPlacement(
+          {
+            anchor:
+              rect,
+            panelHeight:
+              natural,
+            panelWidth:
+              panel.offsetWidth,
+            bounds,
+            viewport:
+              {
+                width:
+                  window.innerWidth,
+                height:
+                  window.innerHeight,
+              },
+            side,
+            align,
+            gap: TRIGGER_GAP,
+          },
+        );
+      setPlacement(
+        (
+          prev,
+        ) =>
+          samePlacement(
+            prev,
+            next,
+          )
+            ? prev
+            : next,
+      );
+    }, [
+      anchorRef,
       side,
       align,
-      gap: TRIGGER_GAP,
-    });
-    setPlacement((prev) => (samePlacement(prev, next) ? prev : next));
-  }, [anchorRef, side, align]);
+    ]);
 
   // Resolved in a LAYOUT effect, so the placement React renders with is the
   // real one before anything paints. The last placement is deliberately NOT
@@ -215,108 +364,295 @@ export function AnchoredMenu({
   // placement reset would teleport it to the unplaced corner for the length of
   // its own close. The next open re-measures here before paint anyway.
   useIsoLayoutEffect(() => {
-    if (!open) return;
-    setInDialog(!!anchorRef.current?.closest('[role="dialog"]'));
+    if (
+      !open
+    )
+      return;
+    setInDialog(
+      !!anchorRef.current?.closest(
+        '[role="dialog"]',
+      ),
+    );
     measure();
-  }, [open, measure, anchorRef]);
+  }, [
+    open,
+    measure,
+    anchorRef,
+  ]);
 
   // Re-anchor while open. The trigger scrolls with the page and the panel does
   // not, so a page scroll has to move it; a scroll INSIDE the panel must not.
   useEffect(() => {
-    if (!open) return;
+    if (
+      !open
+    )
+      return;
     let frame = 0;
-    const schedule = (e?: Event) => {
-      if (e?.target instanceof Node && panelRef.current?.contains(e.target)) return;
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        measure();
-      });
-    };
+    const schedule =
+      (
+        e?: Event,
+      ) => {
+        if (
+          e?.target instanceof
+            Node &&
+          panelRef.current?.contains(
+            e.target,
+          )
+        )
+          return;
+        if (
+          frame
+        )
+          return;
+        frame =
+          requestAnimationFrame(
+            () => {
+              frame = 0;
+              measure();
+            },
+          );
+      };
     // Capture, so a scrolling ancestor that is not the document still reaches us.
-    window.addEventListener('scroll', schedule, { passive: true, capture: true });
-    window.addEventListener('resize', schedule);
-    window.visualViewport?.addEventListener('resize', schedule);
+    window.addEventListener(
+      'scroll',
+      schedule,
+      {
+        passive: true,
+        capture: true,
+      },
+    );
+    window.addEventListener(
+      'resize',
+      schedule,
+    );
+    window.visualViewport?.addEventListener(
+      'resize',
+      schedule,
+    );
     // And when the panel itself changes size. A lazy panel (the emoji picker)
     // opens on a Skeleton and swaps its real content in a moment later; measured
     // only on open, it kept the skeleton's width for the edge clamp and the
     // skeleton's height as its cap. The re-measure is stable: it restores the cap
     // it reads past, and an unchanged placement does not re-render.
     const resize =
-      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => schedule());
-    if (resize && panelNode) resize.observe(panelNode);
+      typeof ResizeObserver ===
+      'undefined'
+        ? null
+        : new ResizeObserver(
+            () =>
+              schedule(),
+          );
+    if (
+      resize &&
+      panelNode
+    )
+      resize.observe(
+        panelNode,
+      );
     return () => {
-      if (frame) cancelAnimationFrame(frame);
+      if (
+        frame
+      )
+        cancelAnimationFrame(
+          frame,
+        );
       resize?.disconnect();
-      window.removeEventListener('scroll', schedule, { capture: true });
-      window.removeEventListener('resize', schedule);
-      window.visualViewport?.removeEventListener('resize', schedule);
+      window.removeEventListener(
+        'scroll',
+        schedule,
+        {
+          capture: true,
+        },
+      );
+      window.removeEventListener(
+        'resize',
+        schedule,
+      );
+      window.visualViewport?.removeEventListener(
+        'resize',
+        schedule,
+      );
     };
-  }, [open, measure, panelNode]);
+  }, [
+    open,
+    measure,
+    panelNode,
+  ]);
 
   // The shared bloom (globals.css §7.1) plays on mount and on `data-state`, so
   // all this needs is to stay mounted long enough for the close — and to say
   // which corner it grew out of, which `placement.side` has already decided.
-  const { present, state } = usePopPresence(open);
+  const {
+    present,
+    state,
+  } =
+    usePopPresence(
+      open,
+    );
 
   // Roving focus, the half of `role="menu"` that is a keyboard contract rather
   // than a label. Bound to the PANEL rather than to the document: a menu is not
   // modal, and a document-level Down-arrow handler would hijack the arrow keys
   // of whatever else is focused while the menu happens to be open.
-  const typeahead = useRef({ query: '', at: 0 });
-  const onPanelKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    const items = enabledItems(panelRef.current);
-    if (items.length === 0) return;
-    const current = items.indexOf(document.activeElement as HTMLElement);
+  const typeahead =
+    useRef(
+      {
+        query:
+          '',
+        at: 0,
+      },
+    );
+  const onPanelKeyDown =
+    useCallback(
+      (
+        e: React.KeyboardEvent<HTMLDivElement>,
+      ) => {
+        const items =
+          enabledItems(
+            panelRef.current,
+          );
+        if (
+          items.length ===
+          0
+        )
+          return;
+        const current =
+          items.indexOf(
+            document.activeElement as HTMLElement,
+          );
 
-    const focusAt = (index: number) => {
-      e.preventDefault();
-      // `preventScroll` because the panel is position:fixed — it is in view by
-      // construction, so the browser's focus scroll can only drag the page
-      // underneath it. The row is brought into the panel's own scroll instead.
-      const el = items[(index + items.length) % items.length];
-      el.focus({ preventScroll: true });
-      el.scrollIntoView({ block: 'nearest' });
-    };
+        const focusAt =
+          (
+            index: number,
+          ) => {
+            e.preventDefault();
+            // `preventScroll` because the panel is position:fixed — it is in view by
+            // construction, so the browser's focus scroll can only drag the page
+            // underneath it. The row is brought into the panel's own scroll instead.
+            const el =
+              items[
+                (index +
+                  items.length) %
+                  items.length
+              ];
+            el.focus(
+              {
+                preventScroll: true,
+              },
+            );
+            el.scrollIntoView(
+              {
+                block:
+                  'nearest',
+              },
+            );
+          };
 
-    switch (e.key) {
-      case 'ArrowDown':
-        return focusAt(current + 1);
-      case 'ArrowUp':
-        // From nowhere, Up enters at the BOTTOM — the platform behaviour, and
-        // the reason `current === -1` is not just treated as 0 here.
-        return focusAt(current === -1 ? items.length - 1 : current - 1);
-      case 'Home':
-        return focusAt(0);
-      case 'End':
-        return focusAt(items.length - 1);
-      case 'Tab':
-        // Tab is a dismissal, not a way through the rows. Let the browser move
-        // focus onward from the trigger, which the close effect restores it to.
-        onClose();
-        return;
-      default:
-        break;
-    }
+        switch (
+          e.key
+        ) {
+          case 'ArrowDown':
+            return focusAt(
+              current +
+                1,
+            );
+          case 'ArrowUp':
+            // From nowhere, Up enters at the BOTTOM — the platform behaviour, and
+            // the reason `current === -1` is not just treated as 0 here.
+            return focusAt(
+              current ===
+                -1
+                ? items.length -
+                    1
+                : current -
+                    1,
+            );
+          case 'Home':
+            return focusAt(
+              0,
+            );
+          case 'End':
+            return focusAt(
+              items.length -
+                1,
+            );
+          case 'Tab':
+            // Tab is a dismissal, not a way through the rows. Let the browser move
+            // focus onward from the trigger, which the close effect restores it to.
+            onClose();
+            return;
+          default:
+            break;
+        }
 
-    // Typeahead. Single printable characters only — modified keys are shortcuts,
-    // and a space is a row's own activation, not the start of a search.
-    if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey || e.key === ' ') return;
-    const now = performance.now();
-    const state = typeahead.current;
-    state.query = (now - state.at > TYPEAHEAD_MS ? '' : state.query) + e.key.toLowerCase();
-    state.at = now;
-    // Search from the row AFTER the focused one and wrap, so repeating a letter
-    // cycles through the rows that start with it instead of sticking on the first.
-    const from = current + 1;
-    for (let i = 0; i < items.length; i++) {
-      const item = items[(from + i) % items.length];
-      if ((item.textContent ?? '').trim().toLowerCase().startsWith(state.query)) {
-        focusAt(items.indexOf(item));
-        return;
-      }
-    }
-  }, [onClose]);
+        // Typeahead. Single printable characters only — modified keys are shortcuts,
+        // and a space is a row's own activation, not the start of a search.
+        if (
+          e
+            .key
+            .length !==
+            1 ||
+          e.ctrlKey ||
+          e.metaKey ||
+          e.altKey ||
+          e.key ===
+            ' '
+        )
+          return;
+        const now =
+          performance.now();
+        const state =
+          typeahead.current;
+        state.query =
+          (now -
+            state.at >
+          TYPEAHEAD_MS
+            ? ''
+            : state.query) +
+          e.key.toLowerCase();
+        state.at =
+          now;
+        // Search from the row AFTER the focused one and wrap, so repeating a letter
+        // cycles through the rows that start with it instead of sticking on the first.
+        const from =
+          current +
+          1;
+        for (
+          let i = 0;
+          i <
+          items.length;
+          i++
+        ) {
+          const item =
+            items[
+              (from +
+                i) %
+                items.length
+            ];
+          if (
+            (
+              item.textContent ??
+              ''
+            )
+              .trim()
+              .toLowerCase()
+              .startsWith(
+                state.query,
+              )
+          ) {
+            focusAt(
+              items.indexOf(
+                item,
+              ),
+            );
+            return;
+          }
+        }
+      },
+      [
+        onClose,
+      ],
+    );
 
   // Escape closes and hands focus back; an outside press closes. `pointerdown`
   // (not click) so the panel dismisses before the press lands on what is under
@@ -329,34 +665,100 @@ export function AnchoredMenu({
   // picker. Radix dismisses only when the event is not `defaultPrevented`, so a
   // WINDOW capture listener (the first stop of any key event) marks it.
   useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      e.stopPropagation();
-      onClose();
-    };
-    const onDown = (e: PointerEvent) => {
-      const target = e.target as Node | null;
-      if (!target) return;
-      if (panelRef.current?.contains(target)) return;
-      if (anchorRef.current?.contains(target)) return;
-      onClose();
-    };
+    if (
+      !open
+    )
+      return;
+    const onKey =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          e.key !==
+          'Escape'
+        )
+          return;
+        e.stopPropagation();
+        onClose();
+      };
+    const onDown =
+      (
+        e: PointerEvent,
+      ) => {
+        const target =
+          e.target as Node | null;
+        if (
+          !target
+        )
+          return;
+        if (
+          panelRef.current?.contains(
+            target,
+          )
+        )
+          return;
+        if (
+          anchorRef.current?.contains(
+            target,
+          )
+        )
+          return;
+        onClose();
+      };
     // Inside a dialog, claim Escape before the dialog sees it (see above). Only
     // `preventDefault`: the event still travels on, so the field the menu belongs
     // to (an @mention list's textarea) still gets its own Escape.
-    const claimEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') e.preventDefault();
-    };
-    if (inDialog) window.addEventListener('keydown', claimEscape, true);
-    document.addEventListener('keydown', onKey, true);
-    document.addEventListener('pointerdown', onDown, true);
+    const claimEscape =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          e.key ===
+          'Escape'
+        )
+          e.preventDefault();
+      };
+    if (
+      inDialog
+    )
+      window.addEventListener(
+        'keydown',
+        claimEscape,
+        true,
+      );
+    document.addEventListener(
+      'keydown',
+      onKey,
+      true,
+    );
+    document.addEventListener(
+      'pointerdown',
+      onDown,
+      true,
+    );
     return () => {
-      window.removeEventListener('keydown', claimEscape, true);
-      document.removeEventListener('keydown', onKey, true);
-      document.removeEventListener('pointerdown', onDown, true);
+      window.removeEventListener(
+        'keydown',
+        claimEscape,
+        true,
+      );
+      document.removeEventListener(
+        'keydown',
+        onKey,
+        true,
+      );
+      document.removeEventListener(
+        'pointerdown',
+        onDown,
+        true,
+      );
     };
-  }, [open, onClose, anchorRef, inDialog]);
+  }, [
+    open,
+    onClose,
+    anchorRef,
+    inDialog,
+  ]);
 
   // The panel lives at the end of <body>, so it is nowhere near its trigger in
   // the tab order — move focus in on open and hand it back on close, or a
@@ -365,34 +767,71 @@ export function AnchoredMenu({
   // focus, but once the user has clicked into its search field, Escape removed
   // the field and left focus on <body> (inside a dialog, outside its trap).
   useEffect(() => {
-    if (!open) return;
-    const trigger = anchorRef.current;
+    if (
+      !open
+    )
+      return;
+    const trigger =
+      anchorRef.current;
     // Captured now: by cleanup time React may already have detached the node.
-    const panel = panelRef.current;
+    const panel =
+      panelRef.current;
     // A few frames of retry, for a menu inside a dialog: the dialog's focus trap
     // learns about the panel (the branch registered above) on its own next
     // render, and until then it snaps focus straight back out. The trap acts
     // synchronously in `focusin`, so "did it stick" is known right after focus().
     let tries = 4;
     let raf = 0;
-    const focusIn = () => {
-      const el = panelRef.current;
-      if (!el) return;
-      // `preventScroll` because the panel is position:fixed — it is in view by
-      // construction, so the browser's focus scroll can only drag the page
-      // underneath it.
-      // Rows first, then any other focusable the panel opens with (a filter
-      // field at the top of a picker, which is where the keyboard wants to be).
-      (enabledItems(el)[0] ??
-        el.querySelector<HTMLElement>('input, button:not(:disabled), a[href]') ??
-        el).focus({ preventScroll: true });
-      if (!el.contains(document.activeElement) && --tries > 0) {
-        raf = requestAnimationFrame(focusIn);
-      }
-    };
-    if (focusOnOpen) raf = requestAnimationFrame(focusIn);
+    const focusIn =
+      () => {
+        const el =
+          panelRef.current;
+        if (
+          !el
+        )
+          return;
+        // `preventScroll` because the panel is position:fixed — it is in view by
+        // construction, so the browser's focus scroll can only drag the page
+        // underneath it.
+        // Rows first, then any other focusable the panel opens with (a filter
+        // field at the top of a picker, which is where the keyboard wants to be).
+        (
+          enabledItems(
+            el,
+          )[0] ??
+          el.querySelector<HTMLElement>(
+            'input, button:not(:disabled), a[href]',
+          ) ??
+          el
+        ).focus(
+          {
+            preventScroll: true,
+          },
+        );
+        if (
+          !el.contains(
+            document.activeElement,
+          ) &&
+          --tries >
+            0
+        ) {
+          raf =
+            requestAnimationFrame(
+              focusIn,
+            );
+        }
+      };
+    if (
+      focusOnOpen
+    )
+      raf =
+        requestAnimationFrame(
+          focusIn,
+        );
     return () => {
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(
+        raf,
+      );
       // Reclaim focus only if the closing menu is what held it. Two shapes of
       // that: the panel is still attached and contains it, or — the ordinary
       // case, since React detaches the portal before this cleanup runs — the
@@ -400,28 +839,65 @@ export function AnchoredMenu({
       // second check the Escape path silently strands the keyboard at the top
       // of the document. Focus that landed somewhere real (the textarea, a
       // modal the row opened, a page navigated to) is left alone.
-      const active = document.activeElement;
-      const orphaned = !active || active === document.body;
-      if (orphaned || panel?.contains(active)) trigger?.focus?.();
+      const active =
+        document.activeElement;
+      const orphaned =
+        !active ||
+        active ===
+          document.body;
+      if (
+        orphaned ||
+        panel?.contains(
+          active,
+        )
+      )
+        trigger?.focus?.();
     };
-  }, [open, anchorRef, focusOnOpen]);
+  }, [
+    open,
+    anchorRef,
+    focusOnOpen,
+  ]);
 
-  const style: CSSProperties = placement
-    ? ({
-        top: placement.side === 'bottom' ? placement.offset : undefined,
-        bottom: placement.side === 'top' ? placement.offset : undefined,
-        left: align === 'start' ? placement.inset : undefined,
-        right: align === 'end' ? placement.inset : undefined,
-        '--anchored-menu-max-h': `${placement.maxHeight}px`,
-      } as CSSProperties)
-    : // First pass: mounted so it can be measured, invisible so the unplaced
-      // corner never paints. The placement effect resolves it before paint.
-      { top: 0, left: 0, visibility: 'hidden' };
+  const style: CSSProperties =
+    placement
+      ? ({
+          top:
+            placement.side ===
+            'bottom'
+              ? placement.offset
+              : undefined,
+          bottom:
+            placement.side ===
+            'top'
+              ? placement.offset
+              : undefined,
+          left:
+            align ===
+            'start'
+              ? placement.inset
+              : undefined,
+          right:
+            align ===
+            'end'
+              ? placement.inset
+              : undefined,
+          '--anchored-menu-max-h': `${placement.maxHeight}px`,
+        } as CSSProperties)
+      : // First pass: mounted so it can be measured, invisible so the unplaced
+        // corner never paints. The placement effect resolves it before paint.
+        {
+          top: 0,
+          left: 0,
+          visibility:
+            'hidden',
+        };
 
   return (
     <>
       {present &&
-        typeof document !== 'undefined' &&
+        typeof document !==
+          'undefined' &&
         createPortal(
           // The panel DOES carry an interactive role and `tabIndex={-1}`. The
           // rule fires only because `role` is a prop (`menu | listbox`) and so
@@ -429,30 +905,58 @@ export function AnchoredMenu({
           // and the union type is what stops a caller passing anything else.
           // eslint-disable-next-line jsx-a11y/no-static-element-interactions
           <div
-            ref={setPanel}
-            role={role}
-            aria-label={label}
-            tabIndex={-1}
+            ref={
+              setPanel
+            }
+            role={
+              role
+            }
+            aria-label={
+              label
+            }
+            tabIndex={
+              -1
+            }
             // Themes restyle through `[data-slot]` (components/CLAUDE.md), and
             // the panel portals out of the shell — this is how one reaches it.
             data-slot="anchored-menu"
-            data-side={placement?.side ?? side}
+            data-side={
+              placement?.side ??
+              side
+            }
             // Which corner the bloom unfurls from — read by the `--motion-origin`
             // rules in anchored-menu.css. The side is whatever the collision
             // check above settled on, so a menu that flipped to open upward also
             // grows upward out of its trigger.
-            data-align={align}
-            data-in-dialog={inDialog ? '' : undefined}
+            data-align={
+              align
+            }
+            data-in-dialog={
+              inDialog
+                ? ''
+                : undefined
+            }
             data-motion="pop"
-            data-state={state}
-            onKeyDown={onPanelKeyDown}
+            data-state={
+              state
+            }
+            onKeyDown={
+              onPanelKeyDown
+            }
             // `py-1.5`, no side padding: the rows are plain text with a hover
             // glow (components/ui/menu.tsx), and this panel (`overflow-y: auto`,
             // anchored-menu.css) supplies the only curve.
-            className={cn('anchored-menu surface-overlay py-1.5', className)}
-            style={style}
+            className={cn(
+              'anchored-menu surface-overlay py-1.5',
+              className,
+            )}
+            style={
+              style
+            }
           >
-            {children}
+            {
+              children
+            }
           </div>,
           document.body,
         )}

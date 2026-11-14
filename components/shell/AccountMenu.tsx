@@ -1,9 +1,22 @@
-import { useCallback, useRef, type RefObject } from 'react';
+import {
+  useCallback,
+  useRef,
+  type RefObject,
+} from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { LayoutGrid, LogOut, Settings, User, Wallet } from 'lucide-react';
+import {
+  LayoutGrid,
+  LogOut,
+  Settings,
+  User,
+  Wallet,
+} from 'lucide-react';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { MenuItem, MenuSeparator } from '@/components/ui/menu';
+import {
+  MenuItem,
+  MenuSeparator,
+} from '@/components/ui/menu';
 
 interface AccountMenuProps {
   open: boolean;
@@ -17,56 +30,173 @@ interface AccountMenuProps {
  * plus the way to the sections the five words do not name. One overlay (S5); a row is an icon and a word, like the
  * post menu's (owner, 2026-11-13).
  */
-export function AccountMenu({ open, onClose, anchorRef, profileHref }: AccountMenuProps) {
-  const { t } = useTranslation('feed');
-  const navigate = useNavigate();
-  const signingOut = useRef(false);
+export function AccountMenu({
+  open,
+  onClose,
+  anchorRef,
+  profileHref,
+}: AccountMenuProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const navigate =
+    useNavigate();
+  const signingOut =
+    useRef(
+      false,
+    );
 
-  const signOut = useCallback(async () => {
-    if (signingOut.current) return;
-    signingOut.current = true;
-    // Loaded on the click: the auth client (and its passkey and Stripe plugins) stays off every page that only reads
-    // who is signed in (third-pass audit RT1).
-    try {
-      const { authClient } = await import('@/lib/auth-client');
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            onClose();
-            void navigate({ to: '/' });
-            window.location.reload();
+  const signOut =
+    useCallback(async () => {
+      if (
+        signingOut.current
+      )
+        return;
+      signingOut.current = true;
+      // Loaded on the click: the auth client (and its passkey and Stripe plugins) stays off every page that only reads
+      // who is signed in (third-pass audit RT1).
+      try {
+        const {
+          authClient,
+        } =
+          await import('@/lib/auth-client');
+        await authClient.signOut(
+          {
+            fetchOptions:
+              {
+                onSuccess:
+                  () => {
+                    onClose();
+                    void navigate(
+                      {
+                        to: '/',
+                      },
+                    );
+                    window.location.reload();
+                  },
+              },
           },
-        },
-      });
-    } finally {
-      // Also when the chunk could not be fetched: the next click tries again.
-      signingOut.current = false;
-    }
-  }, [navigate, onClose]);
+        );
+      } finally {
+        // Also when the chunk could not be fetched: the next click tries again.
+        signingOut.current = false;
+      }
+    }, [
+      navigate,
+      onClose,
+    ]);
 
   return (
     <AnchoredMenu
-      open={open}
-      onClose={onClose}
-      anchorRef={anchorRef}
-      label={t('shell-account-menu-label', { defaultValue: 'Account' })}
+      open={
+        open
+      }
+      onClose={
+        onClose
+      }
+      anchorRef={
+        anchorRef
+      }
+      label={t(
+        'shell-account-menu-label',
+        {
+          defaultValue:
+            'Account',
+        },
+      )}
       side="top"
       align="start"
     >
-      <MenuItem icon={User} href={profileHref} onClick={onClose}>
-        {t('profile', { defaultValue: 'Profile' })}
+      <MenuItem
+        icon={
+          User
+        }
+        href={
+          profileHref
+        }
+        onClick={
+          onClose
+        }
+      >
+        {t(
+          'profile',
+          {
+            defaultValue:
+              'Profile',
+          },
+        )}
       </MenuItem>
-      <MenuItem icon={Wallet} href="/predictions" onClick={onClose}>
-        {t('nav-wallet', { defaultValue: 'Wallet' })}
+      <MenuItem
+        icon={
+          Wallet
+        }
+        href="/predictions"
+        onClick={
+          onClose
+        }
+      >
+        {t(
+          'nav-wallet',
+          {
+            defaultValue:
+              'Wallet',
+          },
+        )}
       </MenuItem>
-      <MenuItem icon={Settings} href="/settings" onClick={onClose}>
-        {t('settings', { defaultValue: 'Settings' })}
+      <MenuItem
+        icon={
+          Settings
+        }
+        href="/settings"
+        onClick={
+          onClose
+        }
+      >
+        {t(
+          'settings',
+          {
+            defaultValue:
+              'Settings',
+          },
+        )}
       </MenuItem>
-      <MenuItem icon={LayoutGrid} href="/sections" onClick={onClose}>
-        {t('shell-all-sections', { defaultValue: 'All sections' })}
+      <MenuItem
+        icon={
+          LayoutGrid
+        }
+        href="/sections"
+        onClick={
+          onClose
+        }
+      >
+        {t(
+          'shell-all-sections',
+          {
+            defaultValue:
+              'All sections',
+          },
+        )}
       </MenuItem>
       <MenuSeparator />
-      <MenuItem icon={LogOut} onClick={signOut}>{t('sign-out', { defaultValue: 'Sign out' })}</MenuItem>
+      <MenuItem
+        icon={
+          LogOut
+        }
+        onClick={
+          signOut
+        }
+      >
+        {t(
+          'sign-out',
+          {
+            defaultValue:
+              'Sign out',
+          },
+        )}
+      </MenuItem>
     </AnchoredMenu>
   );
 }

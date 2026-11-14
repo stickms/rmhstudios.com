@@ -1,6 +1,17 @@
-import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
+import {
+  readFileSync,
+  readdirSync,
+} from 'node:fs';
+import {
+  join,
+  relative,
+  sep,
+} from 'node:path';
 import { LOCALES } from '@/lib/i18n/config';
 import { LOCALE_LOADERS } from '@/lib/i18n/resources';
 
@@ -21,51 +32,127 @@ import { LOCALE_LOADERS } from '@/lib/i18n/resources';
  * and fail fast the moment someone reintroduces a static locale import.
  */
 
-const ROOT = process.cwd();
+const ROOT =
+  process.cwd();
 
 // A per-locale catalog specifier: `resources.<locale>` (the full per-language
 // module, incl. `resources.en`) or a raw `locales/<locale>/…` JSON path.
 // `resources.en-core` (and any other `resources.<locale>-…` split) matches too.
-const LOCALE_ALT = LOCALES.join('|');
-const CATALOG_SPECIFIER = new RegExp(
-  `(?:resources\\.(?:${LOCALE_ALT})(?![\\w])|(?:^|/)locales/(?:${LOCALE_ALT})/)`,
-);
+const LOCALE_ALT =
+  LOCALES.join(
+    '|',
+  );
+const CATALOG_SPECIFIER =
+  new RegExp(
+    `(?:resources\\.(?:${LOCALE_ALT})(?![\\w])|(?:^|/)locales/(?:${LOCALE_ALT})/)`,
+  );
 
 /**
  * The catalog specifiers a source STATICALLY imports — via `import … from "x"`,
  * a bare `import "x"`, or `export … from "x"`. A dynamic `import("x")` (the
  * code-splitting mechanism we WANT) is intentionally not reported.
  */
-function staticCatalogImports(src: string): string[] {
-  const hits: string[] = [];
-  const strRe = /["'`]([^"'`\n]+)["'`]/g;
+function staticCatalogImports(
+  src: string,
+): string[] {
+  const hits: string[] =
+    [];
+  const strRe =
+    /["'`]([^"'`\n]+)["'`]/g;
   let m: RegExpExecArray | null;
-  while ((m = strRe.exec(src))) {
-    const spec = m[1];
-    if (!CATALOG_SPECIFIER.test(spec)) continue;
-    const before = src.slice(Math.max(0, m.index - 24), m.index);
-    const isDynamicImport = /\bimport\s*\(\s*$/.test(before); // import("x")
-    const isStaticImport = /\bfrom\s*$/.test(before) || /\bimport\s*$/.test(before);
-    if (!isDynamicImport && isStaticImport) hits.push(spec);
+  while (
+    (m =
+      strRe.exec(
+        src,
+      ))
+  ) {
+    const spec =
+      m[1];
+    if (
+      !CATALOG_SPECIFIER.test(
+        spec,
+      )
+    )
+      continue;
+    const before =
+      src.slice(
+        Math.max(
+          0,
+          m.index -
+            24,
+        ),
+        m.index,
+      );
+    const isDynamicImport =
+      /\bimport\s*\(\s*$/.test(
+        before,
+      ); // import("x")
+    const isStaticImport =
+      /\bfrom\s*$/.test(
+        before,
+      ) ||
+      /\bimport\s*$/.test(
+        before,
+      );
+    if (
+      !isDynamicImport &&
+      isStaticImport
+    )
+      hits.push(
+        spec,
+      );
   }
   return hits;
 }
 
 /** Recursively collect .ts/.tsx files under `dir`, skipping node_modules/tests. */
-function collectSources(dir: string, out: string[] = []): string[] {
+function collectSources(
+  dir: string,
+  out: string[] = [],
+): string[] {
   let entries;
   try {
-    entries = readdirSync(dir, { withFileTypes: true });
+    entries =
+      readdirSync(
+        dir,
+        {
+          withFileTypes: true,
+        },
+      );
   } catch {
     return out;
   }
   for (const entry of entries) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === 'node_modules' || entry.name === '__tests__') continue;
-      collectSources(full, out);
-    } else if (/\.(ts|tsx)$/.test(entry.name) && !/\.test\.[tj]sx?$/.test(entry.name)) {
-      out.push(full);
+    const full =
+      join(
+        dir,
+        entry.name,
+      );
+    if (
+      entry.isDirectory()
+    ) {
+      if (
+        entry.name ===
+          'node_modules' ||
+        entry.name ===
+          '__tests__'
+      )
+        continue;
+      collectSources(
+        full,
+        out,
+      );
+    } else if (
+      /\.(ts|tsx)$/.test(
+        entry.name,
+      ) &&
+      !/\.test\.[tj]sx?$/.test(
+        entry.name,
+      )
+    ) {
+      out.push(
+        full,
+      );
     }
   }
   return out;
@@ -81,87 +168,320 @@ function collectSources(dir: string, out: string[] = []): string[] {
  *    browser.
  *  - `routeTree.gen.ts` — generated.
  */
-function isExcludedFromClientScan(relPath: string): boolean {
-  const p = relPath.split(sep).join('/');
+function isExcludedFromClientScan(
+  relPath: string,
+): boolean {
+  const p =
+    relPath
+      .split(
+        sep,
+      )
+      .join(
+        '/',
+      );
   return (
-    /\.server\.[tj]sx?$/.test(p) ||
-    p.startsWith('lib/i18n/resources.') ||
-    p.startsWith('app/routes/api/') ||
-    p.endsWith('routeTree.gen.ts')
+    /\.server\.[tj]sx?$/.test(
+      p,
+    ) ||
+    p.startsWith(
+      'lib/i18n/resources.',
+    ) ||
+    p.startsWith(
+      'app/routes/api/',
+    ) ||
+    p.endsWith(
+      'routeTree.gen.ts',
+    )
   );
 }
 
 describe('i18n code-splitting (only the selected locale reaches the client)', () => {
   it('LOCALE_LOADERS has exactly one lazy loader per locale', () => {
-    expect(Object.keys(LOCALE_LOADERS).sort()).toEqual([...LOCALES].sort());
+    expect(
+      Object.keys(
+        LOCALE_LOADERS,
+      ).sort(),
+    ).toEqual(
+      [
+        ...LOCALES,
+      ].sort(),
+    );
     for (const locale of LOCALES) {
-      expect(typeof LOCALE_LOADERS[locale]).toBe('function');
+      expect(
+        typeof LOCALE_LOADERS[
+          locale
+        ],
+      ).toBe(
+        'function',
+      );
     }
   });
 
   it('the client loader (resources.ts) statically imports no catalog; every locale is dynamic', () => {
-    const src = readFileSync(join(ROOT, 'lib/i18n/resources.ts'), 'utf8');
+    const src =
+      readFileSync(
+        join(
+          ROOT,
+          'lib/i18n/resources.ts',
+        ),
+        'utf8',
+      );
     // No per-locale catalog is statically imported here — they must all be
     // reached via the dynamic import() loaders in LOCALE_LOADERS.
-    expect(staticCatalogImports(src)).toEqual([]);
+    expect(
+      staticCatalogImports(
+        src,
+      ),
+    ).toEqual(
+      [],
+    );
     // And there is a dynamic import() for every locale (the split points).
     for (const locale of LOCALES) {
-      expect(src).toMatch(new RegExp(`import\\([^)]*resources\\.${locale}\\b`));
+      expect(
+        src,
+      ).toMatch(
+        new RegExp(
+          `import\\([^)]*resources\\.${locale}\\b`,
+        ),
+      );
     }
   });
 
   it('every generated resources.<locale>.ts is a namespace -> dynamic import() map (one chunk per namespace)', () => {
     for (const locale of LOCALES) {
-      const src = readFileSync(join(ROOT, `lib/i18n/resources.${locale}.ts`), 'utf8');
+      const src =
+        readFileSync(
+          join(
+            ROOT,
+            `lib/i18n/resources.${locale}.ts`,
+          ),
+          'utf8',
+        );
       // No JSON is imported statically: that would pull the whole locale into one chunk.
-      expect(src, locale).not.toMatch(/^\s*import\s+\w+\s+from\s+["']@\/locales\//m);
-      expect(staticCatalogImports(src), locale).toEqual([]);
-      const entries = [...src.matchAll(/^\s*"([^"]+)": \(\) => import\("@\/locales\/([a-z]+)\/([^"]+)\.json"\),$/gm)];
-      expect(entries.length, locale).toBeGreaterThan(0);
-      for (const [, ns, dir, file] of entries) {
-        expect(dir, `${locale}:${ns}`).toBe(locale);
-        expect(file, `${locale}:${ns}`).toBe(ns);
+      expect(
+        src,
+        locale,
+      ).not.toMatch(
+        /^\s*import\s+\w+\s+from\s+["']@\/locales\//m,
+      );
+      expect(
+        staticCatalogImports(
+          src,
+        ),
+        locale,
+      ).toEqual(
+        [],
+      );
+      const entries =
+        [
+          ...src.matchAll(
+            /^\s*"([^"]+)": \(\) => import\("@\/locales\/([a-z]+)\/([^"]+)\.json"\),$/gm,
+          ),
+        ];
+      expect(
+        entries.length,
+        locale,
+      ).toBeGreaterThan(
+        0,
+      );
+      for (const [
+        ,
+        ns,
+        dir,
+        file,
+      ] of entries) {
+        expect(
+          dir,
+          `${locale}:${ns}`,
+        ).toBe(
+          locale,
+        );
+        expect(
+          file,
+          `${locale}:${ns}`,
+        ).toBe(
+          ns,
+        );
       }
       // Every namespace line is such a thunk (nothing else slipped into the map).
-      const lines = src.split('\n').filter((l) => /^\s*"[^"]+":/.test(l));
-      expect(lines.length, locale).toBe(entries.length);
+      const lines =
+        src
+          .split(
+            '\n',
+          )
+          .filter(
+            (
+              l,
+            ) =>
+              /^\s*"[^"]+":/.test(
+                l,
+              ),
+          );
+      expect(
+        lines.length,
+        locale,
+      ).toBe(
+        entries.length,
+      );
     }
   });
 
   it('the client never loads a whole locale: no module outside resources*/server code calls LOCALE_LOADERS', () => {
-    const files = [
-      ...collectSources(join(ROOT, 'app')),
-      ...collectSources(join(ROOT, 'components')),
-      ...collectSources(join(ROOT, 'hooks')),
-      ...collectSources(join(ROOT, 'stores')),
-      ...collectSources(join(ROOT, 'features')),
-      ...collectSources(join(ROOT, 'lib')),
-    ];
-    const offenders = files
-      .map((f) => relative(ROOT, f))
-      .filter((rel) => !isExcludedFromClientScan(rel) && readFileSync(join(ROOT, rel), 'utf8').includes('LOCALE_LOADERS'))
-      .filter((rel) => rel !== 'lib/i18n/resources.ts');
-    expect(offenders).toEqual([]);
+    const files =
+      [
+        ...collectSources(
+          join(
+            ROOT,
+            'app',
+          ),
+        ),
+        ...collectSources(
+          join(
+            ROOT,
+            'components',
+          ),
+        ),
+        ...collectSources(
+          join(
+            ROOT,
+            'hooks',
+          ),
+        ),
+        ...collectSources(
+          join(
+            ROOT,
+            'stores',
+          ),
+        ),
+        ...collectSources(
+          join(
+            ROOT,
+            'features',
+          ),
+        ),
+        ...collectSources(
+          join(
+            ROOT,
+            'lib',
+          ),
+        ),
+      ];
+    const offenders =
+      files
+        .map(
+          (
+            f,
+          ) =>
+            relative(
+              ROOT,
+              f,
+            ),
+        )
+        .filter(
+          (
+            rel,
+          ) =>
+            !isExcludedFromClientScan(
+              rel,
+            ) &&
+            readFileSync(
+              join(
+                ROOT,
+                rel,
+              ),
+              'utf8',
+            ).includes(
+              'LOCALE_LOADERS',
+            ),
+        )
+        .filter(
+          (
+            rel,
+          ) =>
+            rel !==
+            'lib/i18n/resources.ts',
+        );
+    expect(
+      offenders,
+    ).toEqual(
+      [],
+    );
   });
 
   it('no client-shipped module statically imports a per-locale catalog', () => {
-    const files = [
-      ...collectSources(join(ROOT, 'app')),
-      ...collectSources(join(ROOT, 'components')),
-      ...collectSources(join(ROOT, 'hooks')),
-      ...collectSources(join(ROOT, 'stores')),
-      ...collectSources(join(ROOT, 'features')),
-      ...collectSources(join(ROOT, 'lib')),
-    ];
-    const offenders: string[] = [];
+    const files =
+      [
+        ...collectSources(
+          join(
+            ROOT,
+            'app',
+          ),
+        ),
+        ...collectSources(
+          join(
+            ROOT,
+            'components',
+          ),
+        ),
+        ...collectSources(
+          join(
+            ROOT,
+            'hooks',
+          ),
+        ),
+        ...collectSources(
+          join(
+            ROOT,
+            'stores',
+          ),
+        ),
+        ...collectSources(
+          join(
+            ROOT,
+            'features',
+          ),
+        ),
+        ...collectSources(
+          join(
+            ROOT,
+            'lib',
+          ),
+        ),
+      ];
+    const offenders: string[] =
+      [];
     for (const file of files) {
-      const rel = relative(ROOT, file);
-      if (isExcludedFromClientScan(rel)) continue;
-      const bad = staticCatalogImports(readFileSync(file, 'utf8'));
-      if (bad.length) offenders.push(`${rel} → ${bad.join(', ')}`);
+      const rel =
+        relative(
+          ROOT,
+          file,
+        );
+      if (
+        isExcludedFromClientScan(
+          rel,
+        )
+      )
+        continue;
+      const bad =
+        staticCatalogImports(
+          readFileSync(
+            file,
+            'utf8',
+          ),
+        );
+      if (
+        bad.length
+      )
+        offenders.push(
+          `${rel} → ${bad.join(', ')}`,
+        );
     }
     // A non-empty list means a locale catalog would be statically bundled and
     // shipped to every visitor. Move the import behind LOCALE_LOADERS instead.
-    expect(offenders).toEqual([]);
+    expect(
+      offenders,
+    ).toEqual(
+      [],
+    );
   });
 });

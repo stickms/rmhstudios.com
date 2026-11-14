@@ -12,12 +12,22 @@ import { defineFeature } from '@/lib/core/feature';
  * `server/index.ts` also owns the refund-on-shutdown contract (`server/casino-shutdown.ts`): the hub's
  * `shutdown()` runs `CASINO_SHUTDOWN_REFUNDS` in order before `io.close()`.
  */
-export default defineFeature({
-  id: 'casino',
-  kind: 'game',
-  basePath: '/predictions',
-  delivery: 'shell',
-  routes: ['lib/api/routes/casino.rooms.server.ts'],
-  namespaces: ['c-rmhcoins'],
-  listed: false,
-});
+export default defineFeature(
+  {
+    id: 'casino',
+    kind: 'game',
+    basePath:
+      '/predictions',
+    delivery:
+      'shell',
+    routes:
+      [
+        'lib/api/routes/casino.rooms.server.ts',
+      ],
+    namespaces:
+      [
+        'c-rmhcoins',
+      ],
+    listed: false,
+  },
+);

@@ -53,36 +53,120 @@ export interface Calibration {
 export const MIN_FOR_PROFILE = 20;
 const BINS = 10;
 
-export function calibrate(forecasts: readonly Forecast[]): Calibration {
-  const valid = forecasts.filter((f) => Number.isFinite(f.p));
-  const n = valid.length;
-  if (n === 0) return { n: 0, brier: 0, skill: 0, buckets: [], enough: false };
+export function calibrate(
+  forecasts: readonly Forecast[],
+): Calibration {
+  const valid =
+    forecasts.filter(
+      (
+        f,
+      ) =>
+        Number.isFinite(
+          f.p,
+        ),
+    );
+  const n =
+    valid.length;
+  if (
+    n ===
+    0
+  )
+    return {
+      n: 0,
+      brier: 0,
+      skill: 0,
+      buckets:
+        [],
+      enough: false,
+    };
 
   let sq = 0;
-  const sums = Array.from({ length: BINS }, () => ({ count: 0, p: 0, yes: 0 }));
+  const sums =
+    Array.from(
+      {
+        length:
+          BINS,
+      },
+      () => ({
+        count: 0,
+        p: 0,
+        yes: 0,
+      }),
+    );
   for (const f of valid) {
-    const p = clamp01(f.p);
-    const o = f.outcome ? 1 : 0;
-    sq += (p - o) ** 2;
-    const bin = Math.min(BINS - 1, Math.floor(p * BINS));
-    const s = sums[bin]!;
+    const p =
+      clamp01(
+        f.p,
+      );
+    const o =
+      f.outcome
+        ? 1
+        : 0;
+    sq +=
+      (p -
+        o) **
+      2;
+    const bin =
+      Math.min(
+        BINS -
+          1,
+        Math.floor(
+          p *
+            BINS,
+        ),
+      );
+    const s =
+      sums[
+        bin
+      ]!;
     s.count++;
-    s.p += p;
-    s.yes += o;
+    s.p +=
+      p;
+    s.yes +=
+      o;
   }
-  const brier = sq / n;
-  const buckets = sums.flatMap((s, i) =>
-    s.count === 0
-      ? []
-      : [
-          {
-            from: i / BINS,
-            to: (i + 1) / BINS,
-            count: s.count,
-            meanForecast: s.p / s.count,
-            observed: s.yes / s.count,
-          },
-        ],
-  );
-  return { n, brier, skill: 1 - brier / 0.25, buckets, enough: n >= MIN_FOR_PROFILE };
+  const brier =
+    sq /
+    n;
+  const buckets =
+    sums.flatMap(
+      (
+        s,
+        i,
+      ) =>
+        s.count ===
+        0
+          ? []
+          : [
+              {
+                from:
+                  i /
+                  BINS,
+                to:
+                  (i +
+                    1) /
+                  BINS,
+                count:
+                  s.count,
+                meanForecast:
+                  s.p /
+                  s.count,
+                observed:
+                  s.yes /
+                  s.count,
+              },
+            ],
+    );
+  return {
+    n,
+    brier,
+    skill:
+      1 -
+      brier /
+        0.25,
+    buckets,
+    enough:
+      n >=
+      MIN_FOR_PROFILE,
+  };
 }

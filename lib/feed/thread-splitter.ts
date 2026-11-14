@@ -32,50 +32,155 @@ export interface SplitOptions {
 
 /** A chunk must keep at least this share of its budget before a soft cut is taken. */
 const MIN_FILL = 0.4;
-const EXPLICIT_BREAK = /^\s*---\s*$/m;
-const SENTENCE_END = /[.!?…]["')\]]?(?=\s)/g;
+const EXPLICIT_BREAK =
+  /^\s*---\s*$/m;
+const SENTENCE_END =
+  /[.!?…]["')\]]?(?=\s)/g;
 
-function isHighSurrogate(code: number): boolean {
-  return code >= 0xd800 && code <= 0xdbff;
+function isHighSurrogate(
+  code: number,
+): boolean {
+  return (
+    code >=
+      0xd800 &&
+    code <=
+      0xdbff
+  );
 }
 
 /** Index to cut `text` at so the head is at most `budget` long. */
-function cutIndex(text: string, budget: number): number {
-  const window = text.slice(0, budget + 1);
-  const floor = Math.floor(budget * MIN_FILL);
+function cutIndex(
+  text: string,
+  budget: number,
+): number {
+  const window =
+    text.slice(
+      0,
+      budget +
+        1,
+    );
+  const floor =
+    Math.floor(
+      budget *
+        MIN_FILL,
+    );
 
-  const para = window.lastIndexOf('\n\n', budget);
-  if (para >= floor) return para;
+  const para =
+    window.lastIndexOf(
+      '\n\n',
+      budget,
+    );
+  if (
+    para >=
+    floor
+  )
+    return para;
 
-  let sentence = -1;
-  for (const m of window.matchAll(SENTENCE_END)) {
-    const end = m.index + m[0].length;
-    if (end <= budget) sentence = end;
+  let sentence =
+    -1;
+  for (const m of window.matchAll(
+    SENTENCE_END,
+  )) {
+    const end =
+      m.index +
+      m[0]
+        .length;
+    if (
+      end <=
+      budget
+    )
+      sentence =
+        end;
   }
-  if (sentence >= floor) return sentence;
+  if (
+    sentence >=
+    floor
+  )
+    return sentence;
 
-  for (let i = Math.min(budget, window.length - 1); i >= floor; i--) {
-    if (/\s/.test(window[i]!)) return i;
+  for (
+    let i =
+      Math.min(
+        budget,
+        window.length -
+          1,
+      );
+    i >=
+    floor;
+    i--
+  ) {
+    if (
+      /\s/.test(
+        window[
+          i
+        ]!,
+      )
+    )
+      return i;
   }
 
   // Hard cut: never split a surrogate pair.
-  return isHighSurrogate(text.charCodeAt(budget - 1)) ? budget - 1 : budget;
+  return isHighSurrogate(
+    text.charCodeAt(
+      budget -
+        1,
+    ),
+  )
+    ? budget -
+        1
+    : budget;
 }
 
-function splitSection(section: string, budget: number): string[] {
-  const out: string[] = [];
-  let rest = section.trim();
-  while (rest.length > budget) {
-    const at = cutIndex(rest, budget);
-    const head = rest.slice(0, at).trimEnd();
-    if (head) out.push(head);
-    rest = rest.slice(at).trimStart();
+function splitSection(
+  section: string,
+  budget: number,
+): string[] {
+  const out: string[] =
+    [];
+  let rest =
+    section.trim();
+  while (
+    rest.length >
+    budget
+  ) {
+    const at =
+      cutIndex(
+        rest,
+        budget,
+      );
+    const head =
+      rest
+        .slice(
+          0,
+          at,
+        )
+        .trimEnd();
+    if (
+      head
+    )
+      out.push(
+        head,
+      );
+    rest =
+      rest
+        .slice(
+          at,
+        )
+        .trimStart();
   }
-  if (rest) out.push(rest);
+  if (
+    rest
+  )
+    out.push(
+      rest,
+    );
   return out;
 }
 
-function suffix(k: number, n: number): string {
+function suffix(
+  k: number,
+  n: number,
+): string {
   return ` ${k}/${n}`;
 }
 
@@ -83,27 +188,104 @@ function suffix(k: number, n: number): string {
  * Split `text` into posts. Returns `[]` for blank input and a single
  * un-numbered post when everything fits in one.
  */
-export function splitThread(text: string, opts: SplitOptions = {}): string[] {
-  const max = opts.max ?? MAX_RMHARK_LENGTH;
-  const numbered = opts.numbered ?? true;
-  const sections = text
-    .split(EXPLICIT_BREAK)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (sections.length === 0) return [];
-  if (sections.length === 1 && sections[0]!.length <= max) return [sections[0]!];
+export function splitThread(
+  text: string,
+  opts: SplitOptions = {},
+): string[] {
+  const max =
+    opts.max ??
+    MAX_RMHARK_LENGTH;
+  const numbered =
+    opts.numbered ??
+    true;
+  const sections =
+    text
+      .split(
+        EXPLICIT_BREAK,
+      )
+      .map(
+        (
+          s,
+        ) =>
+          s.trim(),
+      )
+      .filter(
+        Boolean,
+      );
+  if (
+    sections.length ===
+    0
+  )
+    return [];
+  if (
+    sections.length ===
+      1 &&
+    sections[0]!
+      .length <=
+      max
+  )
+    return [
+      sections[0]!,
+    ];
 
   // The suffix width depends on N, and N depends on the suffix width. Start
   // by guessing one digit and widen until the guess is stable — it converges
   // in at most a couple of passes because widening only ever adds chunks.
   let digits = 1;
   for (;;) {
-    const reserve = numbered ? suffix(10 ** digits - 1, 10 ** digits - 1).length : 0;
-    const budget = Math.max(1, max - reserve);
-    const chunks = sections.flatMap((s) => splitSection(s, budget));
-    const needed = String(chunks.length).length;
-    if (!numbered) return chunks;
-    if (needed <= digits) return chunks.map((c, i) => c + suffix(i + 1, chunks.length));
-    digits = needed;
+    const reserve =
+      numbered
+        ? suffix(
+            10 **
+              digits -
+              1,
+            10 **
+              digits -
+              1,
+          )
+            .length
+        : 0;
+    const budget =
+      Math.max(
+        1,
+        max -
+          reserve,
+      );
+    const chunks =
+      sections.flatMap(
+        (
+          s,
+        ) =>
+          splitSection(
+            s,
+            budget,
+          ),
+      );
+    const needed =
+      String(
+        chunks.length,
+      ).length;
+    if (
+      !numbered
+    )
+      return chunks;
+    if (
+      needed <=
+      digits
+    )
+      return chunks.map(
+        (
+          c,
+          i,
+        ) =>
+          c +
+          suffix(
+            i +
+              1,
+            chunks.length,
+          ),
+      );
+    digits =
+      needed;
   }
 }

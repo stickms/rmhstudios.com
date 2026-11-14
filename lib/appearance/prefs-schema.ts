@@ -9,18 +9,73 @@
  * `./prefs` before moving anything back.
  */
 import { z } from 'zod';
-import { DENSITIES, COLOR_VISION_MODES, JELLY_MOTION_LEVELS, HEX_RE } from '@/lib/appearance/prefs';
+import {
+  DENSITIES,
+  COLOR_VISION_MODES,
+  JELLY_MOTION_LEVELS,
+  HEX_RE,
+} from '@/lib/appearance/prefs';
 
-export const appearanceComfortSchema = z.object({
-  fontScale: z
-    .union([z.literal(875), z.literal(1000), z.literal(1125), z.literal(1250)])
-    .nullable()
-    .optional(),
-  density: z.enum(DENSITIES).nullable().optional(),
-  readableFont: z.boolean().optional(),
-  customAccent: z.string().regex(HEX_RE).nullable().optional(),
-  colorVision: z.enum(COLOR_VISION_MODES).nullable().optional(),
-  jellyMotion: z.enum(JELLY_MOTION_LEVELS).nullable().optional(),
-});
+export const appearanceComfortSchema =
+  z.object(
+    {
+      fontScale:
+        z
+          .union(
+            [
+              z.literal(
+                875,
+              ),
+              z.literal(
+                1000,
+              ),
+              z.literal(
+                1125,
+              ),
+              z.literal(
+                1250,
+              ),
+            ],
+          )
+          .nullable()
+          .optional(),
+      density:
+        z
+          .enum(
+            DENSITIES,
+          )
+          .nullable()
+          .optional(),
+      readableFont:
+        z
+          .boolean()
+          .optional(),
+      customAccent:
+        z
+          .string()
+          .regex(
+            HEX_RE,
+          )
+          .nullable()
+          .optional(),
+      colorVision:
+        z
+          .enum(
+            COLOR_VISION_MODES,
+          )
+          .nullable()
+          .optional(),
+      jellyMotion:
+        z
+          .enum(
+            JELLY_MOTION_LEVELS,
+          )
+          .nullable()
+          .optional(),
+    },
+  );
 
-export type AppearanceComfortInput = z.infer<typeof appearanceComfortSchema>;
+export type AppearanceComfortInput =
+  z.infer<
+    typeof appearanceComfortSchema
+  >;

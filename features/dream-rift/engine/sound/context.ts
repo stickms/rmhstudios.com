@@ -10,8 +10,10 @@
 
 import { getAudioContext } from '@/lib/shared/platform';
 
-let master: GainNode | null = null;
-let masterCtx: AudioContext | null = null;
+let master: GainNode | null =
+  null;
+let masterCtx: AudioContext | null =
+  null;
 
 /**
  * The shared master gain node (everything mixes through this), or `null` when
@@ -19,13 +21,25 @@ let masterCtx: AudioContext | null = null;
  * after a user gesture is enough to bring the whole graph online.
  */
 export function getMasterGain(): GainNode | null {
-    const ctx = getAudioContext();
-    if (!ctx) return null;
-    if (!master || masterCtx !== ctx) {
-        masterCtx = ctx;
-        master = ctx.createGain();
-        master.gain.value = 1;
-        master.connect(ctx.destination);
-    }
-    return master;
+  const ctx =
+    getAudioContext();
+  if (
+    !ctx
+  )
+    return null;
+  if (
+    !master ||
+    masterCtx !==
+      ctx
+  ) {
+    masterCtx =
+      ctx;
+    master =
+      ctx.createGain();
+    master.gain.value = 1;
+    master.connect(
+      ctx.destination,
+    );
+  }
+  return master;
 }

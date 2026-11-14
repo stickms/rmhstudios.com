@@ -13,12 +13,24 @@ interface SpinnerProps {
  * `<Loader2 className="h-6 w-6 animate-spin text-site-accent" />` repeated across feed components so size and colour
  * stay consistent. It renders `RadialLoader`, a ring in the ink colour.
  */
-export function Spinner({ size = 24, className, label }: SpinnerProps) {
+export function Spinner({
+  size = 24,
+  className,
+  label,
+}: SpinnerProps) {
   return (
     <RadialLoader
-      size={size}
-      label={label ?? 'Loading'}
-      className={cn('text-site-accent', className)}
+      size={
+        size
+      }
+      label={
+        label ??
+        'Loading'
+      }
+      className={cn(
+        'text-site-accent',
+        className,
+      )}
     />
   );
 }

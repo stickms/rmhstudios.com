@@ -19,18 +19,44 @@ export function WidgetEditSheet({
   onOpenChange,
 }: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (
+    open: boolean,
+  ) => void;
 }) {
-  const { t } = useTranslation('c-layout');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-layout',
+    );
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet
+      open={
+        open
+      }
+      onOpenChange={
+        onOpenChange
+      }
+    >
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>{t('edit-layout', { defaultValue: 'Edit layout' })}</SheetTitle>
+          <SheetTitle>
+            {t(
+              'edit-layout',
+              {
+                defaultValue:
+                  'Edit layout',
+              },
+            )}
+          </SheetTitle>
           <SheetDescription>
-            {t('edit-layout-desc', {
-              defaultValue: 'Reorder, add, or remove the widgets on your home page.',
-            })}
+            {t(
+              'edit-layout-desc',
+              {
+                defaultValue:
+                  'Reorder, add, or remove the widgets on your home page.',
+              },
+            )}
           </SheetDescription>
         </SheetHeader>
         <div className="pt-2">

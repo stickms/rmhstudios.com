@@ -11,17 +11,31 @@
  * and stay testable.
  */
 
-export type Tier = 'free' | 'starter' | 'pro' | 'enterprise';
+export type Tier =
+  | 'free'
+  | 'starter'
+  | 'pro'
+  | 'enterprise';
 
-export const TIER_RANK: Record<Tier, number> = {
-  free: 0,
-  starter: 1,
-  pro: 2,
-  enterprise: 3,
-};
+export const TIER_RANK: Record<
+  Tier,
+  number
+> =
+  {
+    free: 0,
+    starter: 1,
+    pro: 2,
+    enterprise: 3,
+  };
 
 /** Subscription statuses that grant entitlement. */
-const ACTIVE_STATUSES = new Set(['active', 'trialing']);
+const ACTIVE_STATUSES =
+  new Set(
+    [
+      'active',
+      'trialing',
+    ],
+  );
 
 /**
  * Narrow an arbitrary string to a {@link Tier}, or `null` if it isn't one.
@@ -33,16 +47,34 @@ const ACTIVE_STATUSES = new Set(['active', 'trialing']);
  * snapshot from an older build is exactly such a value. Callers get `null` and
  * choose; they must not silently treat it as `free`.
  */
-export function parseTier(value: string | null | undefined): Tier | null {
+export function parseTier(
+  value:
+    | string
+    | null
+    | undefined,
+): Tier | null {
   // `hasOwn`, not `in`: `'toString' in TIER_RANK` is true via the prototype
   // chain, which would hand back a "tier" whose rank is `undefined` and make
   // every rank comparison downstream quietly false.
-  return value && Object.hasOwn(TIER_RANK, value) ? (value as Tier) : null;
+  return value &&
+    Object.hasOwn(
+      TIER_RANK,
+      value,
+    )
+    ? (value as Tier)
+    : null;
 }
 
 /** Map a Stripe/Prisma plan name to a tier. Unknown -> free. */
-export function mapPlanToTier(plan: string | null | undefined): Tier {
-  switch (plan) {
+export function mapPlanToTier(
+  plan:
+    | string
+    | null
+    | undefined,
+): Tier {
+  switch (
+    plan
+  ) {
     case 'starter':
       return 'starter';
     case 'pro':
@@ -56,25 +88,65 @@ export function mapPlanToTier(plan: string | null | undefined): Tier {
 
 /** Resolve the entitled tier for a single subscription record. Fails closed to free. */
 export function tierFromSubscription(
-  sub: { plan?: string | null; status?: string | null } | null | undefined,
+  sub:
+    | {
+        plan?:
+          | string
+          | null;
+        status?:
+          | string
+          | null;
+      }
+    | null
+    | undefined,
 ): Tier {
-  if (!sub || !sub.status || !ACTIVE_STATUSES.has(sub.status)) return 'free';
-  return mapPlanToTier(sub.plan);
+  if (
+    !sub ||
+    !sub.status ||
+    !ACTIVE_STATUSES.has(
+      sub.status,
+    )
+  )
+    return 'free';
+  return mapPlanToTier(
+    sub.plan,
+  );
 }
 
 /** HARD-R (plan id `starter`) and above get programmatic RMH API access. */
-export function hasApiAccess(tier: Tier): boolean {
-  return TIER_RANK[tier] >= TIER_RANK.starter;
+export function hasApiAccess(
+  tier: Tier,
+): boolean {
+  return (
+    TIER_RANK[
+      tier
+    ] >=
+    TIER_RANK.starter
+  );
 }
 
 /** Image upload via the developer API — starter and above. */
-export function hasApiImageUpload(tier: Tier): boolean {
-  return TIER_RANK[tier] >= TIER_RANK.starter;
+export function hasApiImageUpload(
+  tier: Tier,
+): boolean {
+  return (
+    TIER_RANK[
+      tier
+    ] >=
+    TIER_RANK.starter
+  );
 }
 
 /** Pro and above (incl. enterprise) get the profile badge. */
-export function hasBadge(tier: Tier): boolean {
-  return TIER_RANK[tier] >= TIER_RANK.pro;
+export function hasBadge(
+  tier: Tier,
+): boolean {
+  return (
+    TIER_RANK[
+      tier
+    ] >=
+    TIER_RANK.pro
+  );
 }
 
 /**
@@ -90,6 +162,13 @@ export function hasBadge(tier: Tier): boolean {
  * have to be remembered — and forgetting it means a paying member sees ads,
  * which is the failure nobody notices until they complain.
  */
-export function hasAdFree(tier: Tier): boolean {
-  return TIER_RANK[tier] >= TIER_RANK.starter;
+export function hasAdFree(
+  tier: Tier,
+): boolean {
+  return (
+    TIER_RANK[
+      tier
+    ] >=
+    TIER_RANK.starter
+  );
 }

@@ -24,22 +24,50 @@ export interface BotWorkerSettingsInput {
 }
 
 /** Inclusive bounds — identical to the bot-worker's `clampSettings`. */
-export const BOT_SETTINGS_BOUNDS = {
-  targetBotCount: { min: 0, max: 1000 },
-  createBatch: { min: 1, max: 50 },
-  createIntervalMin: { min: 5, max: 1440 },
-  postRateMultiplier: { min: 0, max: 10 },
-  maxPostsPerTick: { min: 1, max: 60 },
-} as const satisfies Record<keyof BotWorkerSettingsInput, { min: number; max: number }>;
+export const BOT_SETTINGS_BOUNDS =
+  {
+    targetBotCount:
+      {
+        min: 0,
+        max: 1000,
+      },
+    createBatch:
+      {
+        min: 1,
+        max: 50,
+      },
+    createIntervalMin:
+      {
+        min: 5,
+        max: 1440,
+      },
+    postRateMultiplier:
+      {
+        min: 0,
+        max: 10,
+      },
+    maxPostsPerTick:
+      {
+        min: 1,
+        max: 60,
+      },
+  } as const satisfies Record<
+    keyof BotWorkerSettingsInput,
+    {
+      min: number;
+      max: number;
+    }
+  >;
 
 /** The worker built-in defaults, used until an admin saves. */
-export const DEFAULT_BOT_SETTINGS: BotWorkerSettingsInput = {
-  targetBotCount: 20,
-  createBatch: 6,
-  createIntervalMin: 120,
-  postRateMultiplier: 1,
-  maxPostsPerTick: 5,
-};
+export const DEFAULT_BOT_SETTINGS: BotWorkerSettingsInput =
+  {
+    targetBotCount: 20,
+    createBatch: 6,
+    createIntervalMin: 120,
+    postRateMultiplier: 1,
+    maxPostsPerTick: 5,
+  };
 
 /** The worker's post tick (BOT_POST_TICK_MS default). */
 export const BOT_POST_TICK_MINUTES = 5;
@@ -51,20 +79,68 @@ const DEFAULT_POSTS_PER_DAY = 5;
  * ACTIVITY line (or, for legacy personas, the whole text) against the habit
  * labels. Unmatched personas default to 5/day.
  */
-export function habitPostsPerDay(persona: string | null | undefined): number {
-  const text = persona ?? '';
-  const activity = text.split('\n').find((line) => line.startsWith('ACTIVITY:')) ?? text;
-  const lower = activity.toLowerCase();
+export function habitPostsPerDay(
+  persona:
+    | string
+    | null
+    | undefined,
+): number {
+  const text =
+    persona ??
+    '';
+  const activity =
+    text
+      .split(
+        '\n',
+      )
+      .find(
+        (
+          line,
+        ) =>
+          line.startsWith(
+            'ACTIVITY:',
+          ),
+      ) ??
+    text;
+  const lower =
+    activity.toLowerCase();
   // Same precedence as the original switch: chatty, lurker, bursty, then default.
-  if (/very online|frequently/.test(lower)) return 9;
-  if (/rare poster|only chimes in/.test(lower)) return 2;
-  if (/flurry|goes quiet/.test(lower)) return 6;
+  if (
+    /very online|frequently/.test(
+      lower,
+    )
+  )
+    return 9;
+  if (
+    /rare poster|only chimes in/.test(
+      lower,
+    )
+  )
+    return 2;
+  if (
+    /flurry|goes quiet/.test(
+      lower,
+    )
+  )
+    return 6;
   return DEFAULT_POSTS_PER_DAY;
 }
 
 /** Habit ids by rate, for the admin page's pool breakdown. */
-export function habitIdForRate(perDay: number): string {
-  return POSTING_HABITS.find((h) => h.postsPerDay === perDay)?.id ?? 'steady';
+export function habitIdForRate(
+  perDay: number,
+): string {
+  return (
+    POSTING_HABITS.find(
+      (
+        h,
+      ) =>
+        h.postsPerDay ===
+        perDay,
+    )
+      ?.id ??
+    'steady'
+  );
 }
 
 export interface PostingEstimate {
@@ -79,8 +155,23 @@ export interface PostingEstimate {
 }
 
 /** Sum of every bot's base posts/day (at a ×1 multiplier). */
-export function basePostsPerDay(personas: ReadonlyArray<string | null>): number {
-  return personas.reduce((sum, p) => sum + habitPostsPerDay(p), 0);
+export function basePostsPerDay(
+  personas: ReadonlyArray<
+    | string
+    | null
+  >,
+): number {
+  return personas.reduce(
+    (
+      sum,
+      p,
+    ) =>
+      sum +
+      habitPostsPerDay(
+        p,
+      ),
+    0,
+  );
 }
 
 /**
@@ -90,28 +181,62 @@ export function basePostsPerDay(personas: ReadonlyArray<string | null>): number 
  */
 export function projectPosting(
   basePerDay: number,
-  settings: Pick<BotWorkerSettingsInput, 'postRateMultiplier' | 'maxPostsPerTick'>,
+  settings: Pick<
+    BotWorkerSettingsInput,
+    | 'postRateMultiplier'
+    | 'maxPostsPerTick'
+  >,
   tickMinutes: number = BOT_POST_TICK_MINUTES,
 ): PostingEstimate {
-  const demandPerDay = basePerDay * settings.postRateMultiplier;
-  const capacityPerDay = settings.maxPostsPerTick * ((24 * 60) / tickMinutes);
+  const demandPerDay =
+    basePerDay *
+    settings.postRateMultiplier;
+  const capacityPerDay =
+    settings.maxPostsPerTick *
+    ((24 *
+      60) /
+      tickMinutes);
   return {
     demandPerDay,
     capacityPerDay,
-    expectedPerDay: Math.min(demandPerDay, capacityPerDay),
+    expectedPerDay:
+      Math.min(
+        demandPerDay,
+        capacityPerDay,
+      ),
     // Per-tick arrivals are bursty, so the cap starts dropping posts a little
     // before average demand reaches it.
-    capped: demandPerDay > capacityPerDay * 0.8,
+    capped:
+      demandPerDay >
+      capacityPerDay *
+        0.8,
   };
 }
 
 /** Average posts/day of a freshly rolled bot (habits are picked uniformly). */
 export const AVERAGE_HABIT_POSTS_PER_DAY =
-  POSTING_HABITS.reduce((sum, h) => sum + h.postsPerDay, 0) / POSTING_HABITS.length;
+  POSTING_HABITS.reduce(
+    (
+      sum,
+      h,
+    ) =>
+      sum +
+      h.postsPerDay,
+    0,
+  ) /
+  POSTING_HABITS.length;
 
 /** Bots minted per hour while the pool is below target. */
 export function botsMintedPerHour(
-  settings: Pick<BotWorkerSettingsInput, 'createBatch' | 'createIntervalMin'>,
+  settings: Pick<
+    BotWorkerSettingsInput,
+    | 'createBatch'
+    | 'createIntervalMin'
+  >,
 ): number {
-  return settings.createBatch * (60 / settings.createIntervalMin);
+  return (
+    settings.createBatch *
+    (60 /
+      settings.createIntervalMin)
+  );
 }

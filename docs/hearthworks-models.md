@@ -1,16 +1,163 @@
 # Hearthworks character models
 
-Hearthworks draws every person (the player, customers, farmhands, the police, other players, the wardrobe preview)
-through one component, `SkinFigure` (`features/hearthworks/ui/scene/SkinFigure.tsx`). If the skin has a **skinned
-model** and it has loaded, the person is that model with real skeletal animation. Otherwise it is the
-**procedural figure** (`Figure.tsx`, built from `features/hearthworks/engine/skins/looks.ts`). The fallback is automatic and
-total, so the game is complete with no model at all.
+Hearthworks
+draws
+every
+person
+(the
+player,
+customers,
+farmhands,
+the
+police,
+other
+players,
+the
+wardrobe
+preview)
+through
+one
+component,
+`SkinFigure`
+(`features/hearthworks/ui/scene/SkinFigure.tsx`).
+If
+the
+skin
+has
+a
+**skinned
+model**
+and
+it
+has
+loaded,
+the
+person
+is
+that
+model
+with
+real
+skeletal
+animation.
+Otherwise
+it
+is
+the
+**procedural
+figure**
+(`Figure.tsx`,
+built
+from
+`features/hearthworks/engine/skins/looks.ts`).
+The
+fallback
+is
+automatic
+and
+total,
+so
+the
+game
+is
+complete
+with
+no
+model
+at
+all.
 
-**No model data lives in this repository.** The characters are Valve's (Half-Life 2, Team Fortress 2). They are loaded
-at run time from the site's own asset channels in Cloudflare R2 (`hl2-game/mdl/`, `tf2-game/mdl/`, ...), the ones the
-Source games on this site already use (docs/tf2-game.md "Game assets" and "Models"), which `tf2-assets-sync.yml`
-builds from retail installs downloaded with SteamCMD. `features/hearthworks/engine/skins/models.manifest.json` (bundled into the app, not fetched: `/models/` is an R2-hosted
-static directory and the app origin serves nothing there) only says which model, which skin and which sequences. Credits and provenance: `public/models/hearthworks/CREDITS.md`.
+**No
+model
+data
+lives
+in
+this
+repository.**
+The
+characters
+are
+Valve's
+(Half-Life
+2,
+Team
+Fortress
+2).
+They
+are
+loaded
+at
+run
+time
+from
+the
+site's
+own
+asset
+channels
+in
+Cloudflare
+R2
+(`hl2-game/mdl/`,
+`tf2-game/mdl/`,
+...),
+the
+ones
+the
+Source
+games
+on
+this
+site
+already
+use
+(docs/tf2-game.md
+"Game
+assets"
+and
+"Models"),
+which
+`tf2-assets-sync.yml`
+builds
+from
+retail
+installs
+downloaded
+with
+SteamCMD.
+`features/hearthworks/engine/skins/models.manifest.json`
+(bundled
+into
+the
+app,
+not
+fetched:
+`/models/`
+is
+an
+R2-hosted
+static
+directory
+and
+the
+app
+origin
+serves
+nothing
+there)
+only
+says
+which
+model,
+which
+skin
+and
+which
+sequences.
+Credits
+and
+provenance:
+`public/models/hearthworks/CREDITS.md`.
 
 ## The contract (manifest v2)
 
@@ -35,180 +182,1835 @@ static directory and the app origin serves nothing there) only says which model,
         "shoot": "shootp1",
         "reload": "reload_pistol",
         "hurt": "Fear_Reaction",
-        "death": { "clip": "cit_door", "trim": [12, 52] },
+        "death": {
+          "clip": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        },
         "interact": "tiefidget"
       }
     },
-    "breen": { "provenance": "stand-in", "reason": "models/breen.mdl is not in the hl2 asset channel." }
+    "breen": {
+      "provenance": "stand-in",
+      "reason": "models/breen.mdl is not in the hl2 asset channel."
+    }
   }
 }
 ```
 
-- `<skinId>` is a key of `SKINS` in `features/hearthworks/engine/skins/catalog.ts`. Unknown ids are ignored.
-- `game` is the asset channel (`tf2` | `hl2` | `portal` | `csgo`); `mdl` is the model's path in that channel's index
-  (`models/<path>.mdl`, lower case). Paths and URLs anywhere else are rejected.
-- `skin` is the model's material family: TF2 classes **RED = 0, BLU = 1** (the others are invulnerable and zombie
-  skins); HL2 models have one. Default 0.
-- `height` (optional) is metres standing; omitted, it is measured from the standing pose at load. `yaw` (default 0) is
-  radians added to face +Z (channel models already do). `handBone` is the right-hand bone as the GLB names it
-  (`valvebiped.bip01_r_hand`, `bip_hand_r`) or `null`.
-- `clips` maps a logical clip to a **Source sequence** in the model's anim pack: a glTF animation name, as a string or
-  as `{ "clip": name, "trim": [firstFrame, lastFrame] }` (30 fps source frames; a knock-down cut out of a longer
-  sequence). **`idle` and `walk` are required**; the rest are optional (absent / `null` = the model lacks it).
-  - A **blend set** is named with its cell: `walk_all@4`. Source blend spaces are samples of the movement direction;
-    the forward cell is the one whose `movement[0].vector` (Source units, +X forward) is `[1, 0, 0]`: **`@4` for HL2
-    (`move_yaw = 0`, 8 cells over -180..180), `@7` for TF2 (a 3x3 `move_y` x `move_x` grid)**. Check a new one by reading
-    `extras.movement` of the cells in the pack's JSON.
-  - A **delta** sequence (Source's additive layers: flinch, recoil; `extras.delta`) is accepted: the loader rebases it
-    onto the standing pose, so it is a full-body clip like any other.
-  - TF2 has no walk cycle: `walk` and `run` name the same forward run cell and the animator slows it to the ground
+- `<skinId>`
+  is
+  a
+  key
+  of
+  `SKINS`
+  in
+  `features/hearthworks/engine/skins/catalog.ts`.
+  Unknown
+  ids
+  are
+  ignored.
+- `game`
+  is
+  the
+  asset
+  channel
+  (`tf2`
+  |
+  `hl2`
+  |
+  `portal`
+  |
+  `csgo`);
+  `mdl`
+  is
+  the
+  model's
+  path
+  in
+  that
+  channel's
+  index
+  (`models/<path>.mdl`,
+  lower
+  case).
+  Paths
+  and
+  URLs
+  anywhere
+  else
+  are
+  rejected.
+- `skin`
+  is
+  the
+  model's
+  material
+  family:
+  TF2
+  classes
+  **RED
+  =
+  0,
+  BLU
+  =
+  1**
+  (the
+  others
+  are
+  invulnerable
+  and
+  zombie
+  skins);
+  HL2
+  models
+  have
+  one.
+  Default 0.
+- `height`
+  (optional)
+  is
+  metres
+  standing;
+  omitted,
+  it
+  is
+  measured
+  from
+  the
+  standing
+  pose
+  at
+  load.
+  `yaw`
+  (default 0)
+  is
+  radians
+  added
+  to
+  face
+  +Z
+  (channel
+  models
+  already
+  do).
+  `handBone`
+  is
+  the
+  right-hand
+  bone
+  as
+  the
+  GLB
+  names
+  it
+  (`valvebiped.bip01_r_hand`,
+  `bip_hand_r`)
+  or
+  `null`.
+- `clips`
+  maps
+  a
+  logical
+  clip
+  to
+  a
+  **Source
+  sequence**
+  in
+  the
+  model's
+  anim
+  pack:
+  a
+  glTF
+  animation
+  name,
+  as
+  a
+  string
+  or
+  as
+  `{ "clip": name, "trim": [firstFrame, lastFrame] }`
+  (30
+  fps
+  source
+  frames;
+  a
+  knock-down
+  cut
+  out
+  of
+  a
+  longer
+  sequence).
+  **`idle`
+  and
+  `walk`
+  are
+  required**;
+  the
+  rest
+  are
+  optional
+  (absent
+  /
+  `null`
+  =
+  the
+  model
+  lacks
+  it).
+  - A
+    **blend
+    set**
+    is
+    named
+    with
+    its
+    cell:
+    `walk_all@4`.
+    Source
+    blend
+    spaces
+    are
+    samples
+    of
+    the
+    movement
+    direction;
+    the
+    forward
+    cell
+    is
+    the
+    one
+    whose
+    `movement[0].vector`
+    (Source
+    units,
+    +X
+    forward)
+    is
+    `[1, 0, 0]`:
+    **`@4`
+    for
+    HL2
+    (`move_yaw = 0`,
+    8
+    cells
+    over
+    -180..180),
+    `@7`
+    for
+    TF2
+    (a
+    3x3
+    `move_y`
+    x
+    `move_x`
+    grid)**.
+    Check
+    a
+    new
+    one
+    by
+    reading
+    `extras.movement`
+    of
+    the
+    cells
+    in
+    the
+    pack's
+    JSON.
+  - A
+    **delta**
+    sequence
+    (Source's
+    additive
+    layers:
+    flinch,
+    recoil;
+    `extras.delta`)
+    is
+    accepted:
+    the
+    loader
+    rebases
+    it
+    onto
+    the
+    standing
+    pose,
+    so
+    it
+    is
+    a
+    full-body
+    clip
+    like
+    any
+    other.
+  - TF2
+    has
+    no
+    walk
+    cycle:
+    `walk`
+    and
+    `run`
+    name
+    the
+    same
+    forward
+    run
+    cell
+    and
+    the
+    animator
+    slows
+    it
+    to
+    the
+    ground
     speed.
-- `hold: { pos?: [x,y,z], rot?: [x,y,z] }` (optional) nudges a held prop after it has been aligned to the hand (world
-  units, radians).
-- `provenance` is `steam-r2` for a model entry. A skin with no source in any channel is
-  `{ "provenance": "stand-in", "reason": "..." }`: it is listed for readers and keeps the procedural figure. Omitting
-  the skin does the same.
-- `note` is free text for people reading the file.
+- `hold: { pos?: [x,y,z], rot?: [x,y,z] }`
+  (optional)
+  nudges
+  a
+  held
+  prop
+  after
+  it
+  has
+  been
+  aligned
+  to
+  the
+  hand
+  (world
+  units,
+  radians).
+- `provenance`
+  is
+  `steam-r2`
+  for
+  a
+  model
+  entry.
+  A
+  skin
+  with
+  no
+  source
+  in
+  any
+  channel
+  is
+  `{ "provenance": "stand-in", "reason": "..." }`:
+  it
+  is
+  listed
+  for
+  readers
+  and
+  keeps
+  the
+  procedural
+  figure.
+  Omitting
+  the
+  skin
+  does
+  the
+  same.
+- `note`
+  is
+  free
+  text
+  for
+  people
+  reading
+  the
+  file.
 
-The manifest is validated per entry with zod (`features/hearthworks/engine/skins/model-manifest.ts`): a bad entry is dropped, a
-wrong `version` (the retired v1 `file` manifest included), invalid JSON means "no models". Nothing here ever
+The
+manifest
+is
+validated
+per
+entry
+with
+zod
+(`features/hearthworks/engine/skins/model-manifest.ts`):
+a
+bad
+entry
+is
+dropped,
+a
+wrong
+`version`
+(the
+retired
+v1
+`file`
+manifest
+included),
+invalid
+JSON
+means
+"no
+models".
+Nothing
+here
+ever
 throws.
 
 ## Loading a model
 
-`loadSkinModel` (`features/hearthworks/engine/skins/model-loader.ts`):
+`loadSkinModel`
+(`features/hearthworks/engine/skins/model-loader.ts`):
 
-1. **Index.** `GET /api/<game>-game/assets/mdl/index.json` (`model-index.ts`), once per game, cached. Entries are
-   `models/<path>.mdl -> { glb: '<sha1>.glb', anims: '<sha1>.glb', skins, bones, ... }`. A 404 (no R2 behind the route:
-   local dev, a channel never synced), a network error, bad JSON or a model the index does not list means "no model"
-   for that skin; a missing index is asked again after 60 s, not once per figure. Only the pure URL helpers of
-   `lib/tf2-game/assets/urls.ts` are imported (`gameAssetUrl`): same origin, so the production CSP needs nothing new.
-2. **Download** the **mesh GLB** (skinned mesh + skeleton; its textures are separate content-addressed
-   `tex/<sha1>.webp` files referenced as `../tex/...`, fetched by the GLTF loader) and the **anim pack** (skeleton +
-   every Source sequence of the model as a glTF animation, `extras: { fps, frames, looping, delta, movement[],
-   groundSpeed }`, raw 3-14 MB, brotli on the wire). Caps: mesh 8 MB, pack 24 MB decoded, 60 s each.
-3. **Cut the pack before parsing it** (`clip-tools.ts filterGlbAnimations`): the GLB's JSON is rewritten to list only
-   the sequences the manifest names, and the accessors and buffer views nothing reads any more are dropped (a human
-   pack lists ~1500 animations and ~50 000 accessors, 10 MB of JSON). The other ~1000 sequences are never decoded.
-4. **Skin family.** `applySkinFamily` swaps each primitive's material by its skin-reference slot
-   (`scene.userData.skins[skin][slot]`, `-1` hides it). Body groups: only submodel 0 of each group is kept (a Soldier's
-   rocket and medals are submodel 1).
-5. **Clips** (`prepareModel`): each named sequence becomes one clip named after its slot, trimmed if asked, limited to
-   the bones the mesh has, rebased if it is a delta layer, and kept **in place**: any horizontal travel of the root
-   (pelvis) bone is removed (`keepInPlace`: the straight line from the first key to the last, so sway and bounce stay;
-   the HL2 and TF2 gaits carry no root travel, but `cit_door`'s knock-down moves the body 2 m and a TF2 death flings
-   it back). A static pose (single keys) gets the sequence's length as its duration.
-6. **Standing pose.** The channel's bind pose is a T-pose in Source axes. The posed clips are in the Y-up, +Z-forward
-   frame (the converter re-expresses them), so the template's bones are put into the idle clip at t=0: clones start
-   standing, the height and the foot offset are measured from that pose, and no axis fix-up is needed.
-7. **Hand.** `handRef` is the hand bone's rotation in the aiming pose (the middle of `shoot`, else the standing
-   pose); a held prop is rotated by its inverse, so it points where the model aims and follows the hand otherwise.
+1. **Index.**
+   `GET /api/<game>-game/assets/mdl/index.json`
+   (`model-index.ts`),
+   once
+   per
+   game,
+   cached.
+   Entries
+   are
+   `models/<path>.mdl -> { glb: '<sha1>.glb', anims: '<sha1>.glb', skins, bones, ... }`.
+   A
+   404
+   (no
+   R2
+   behind
+   the
+   route:
+   local
+   dev,
+   a
+   channel
+   never
+   synced),
+   a
+   network
+   error,
+   bad
+   JSON
+   or
+   a
+   model
+   the
+   index
+   does
+   not
+   list
+   means
+   "no
+   model"
+   for
+   that
+   skin;
+   a
+   missing
+   index
+   is
+   asked
+   again
+   after
+   60
+   s,
+   not
+   once
+   per
+   figure.
+   Only
+   the
+   pure
+   URL
+   helpers
+   of
+   `lib/tf2-game/assets/urls.ts`
+   are
+   imported
+   (`gameAssetUrl`):
+   same
+   origin,
+   so
+   the
+   production
+   CSP
+   needs
+   nothing
+   new.
+2. **Download**
+   the
+   **mesh
+   GLB**
+   (skinned
+   mesh +
+   skeleton;
+   its
+   textures
+   are
+   separate
+   content-addressed
+   `tex/<sha1>.webp`
+   files
+   referenced
+   as
+   `../tex/...`,
+   fetched
+   by
+   the
+   GLTF
+   loader)
+   and
+   the
+   **anim
+   pack**
+   (skeleton +
+   every
+   Source
+   sequence
+   of
+   the
+   model
+   as
+   a
+   glTF
+   animation,
+   `extras: { fps, frames, looping, delta, movement[], groundSpeed }`,
+   raw
+   3-14
+   MB,
+   brotli
+   on
+   the
+   wire).
+   Caps:
+   mesh
+   8
+   MB,
+   pack
+   24
+   MB
+   decoded,
+   60
+   s
+   each.
+3. **Cut
+   the
+   pack
+   before
+   parsing
+   it**
+   (`clip-tools.ts filterGlbAnimations`):
+   the
+   GLB's
+   JSON
+   is
+   rewritten
+   to
+   list
+   only
+   the
+   sequences
+   the
+   manifest
+   names,
+   and
+   the
+   accessors
+   and
+   buffer
+   views
+   nothing
+   reads
+   any
+   more
+   are
+   dropped
+   (a
+   human
+   pack
+   lists
+   ~1500
+   animations
+   and
+   ~50
+   000
+   accessors,
+   10
+   MB
+   of
+   JSON).
+   The
+   other
+   ~1000
+   sequences
+   are
+   never
+   decoded.
+4. **Skin
+   family.**
+   `applySkinFamily`
+   swaps
+   each
+   primitive's
+   material
+   by
+   its
+   skin-reference
+   slot
+   (`scene.userData.skins[skin][slot]`,
+   `-1`
+   hides
+   it).
+   Body
+   groups:
+   only
+   submodel
+   0
+   of
+   each
+   group
+   is
+   kept
+   (a
+   Soldier's
+   rocket
+   and
+   medals
+   are
+   submodel
+   1).
+5. **Clips**
+   (`prepareModel`):
+   each
+   named
+   sequence
+   becomes
+   one
+   clip
+   named
+   after
+   its
+   slot,
+   trimmed
+   if
+   asked,
+   limited
+   to
+   the
+   bones
+   the
+   mesh
+   has,
+   rebased
+   if
+   it
+   is
+   a
+   delta
+   layer,
+   and
+   kept
+   **in
+   place**:
+   any
+   horizontal
+   travel
+   of
+   the
+   root
+   (pelvis)
+   bone
+   is
+   removed
+   (`keepInPlace`:
+   the
+   straight
+   line
+   from
+   the
+   first
+   key
+   to
+   the
+   last,
+   so
+   sway
+   and
+   bounce
+   stay;
+   the
+   HL2
+   and
+   TF2
+   gaits
+   carry
+   no
+   root
+   travel,
+   but
+   `cit_door`'s
+   knock-down
+   moves
+   the
+   body
+   2
+   m
+   and
+   a
+   TF2
+   death
+   flings
+   it
+   back).
+   A
+   static
+   pose
+   (single
+   keys)
+   gets
+   the
+   sequence's
+   length
+   as
+   its
+   duration.
+6. **Standing
+   pose.**
+   The
+   channel's
+   bind
+   pose
+   is
+   a
+   T-pose
+   in
+   Source
+   axes.
+   The
+   posed
+   clips
+   are
+   in
+   the
+   Y-up,
+   +Z-forward
+   frame
+   (the
+   converter
+   re-expresses
+   them),
+   so
+   the
+   template's
+   bones
+   are
+   put
+   into
+   the
+   idle
+   clip
+   at
+   t=0:
+   clones
+   start
+   standing,
+   the
+   height
+   and
+   the
+   foot
+   offset
+   are
+   measured
+   from
+   that
+   pose,
+   and
+   no
+   axis
+   fix-up
+   is
+   needed.
+7. **Hand.**
+   `handRef`
+   is
+   the
+   hand
+   bone's
+   rotation
+   in
+   the
+   aiming
+   pose
+   (the
+   middle
+   of
+   `shoot`,
+   else
+   the
+   standing
+   pose);
+   a
+   held
+   prop
+   is
+   rotated
+   by
+   its
+   inverse,
+   so
+   it
+   points
+   where
+   the
+   model
+   aims
+   and
+   follows
+   the
+   hand
+   otherwise.
 
-The result is a **template**; each person is a `SkeletonUtils.clone` of it (own skeleton, shared geometry, materials
-and textures). One person never costs a second download.
+The
+result
+is
+a
+**template**;
+each
+person
+is
+a
+`SkeletonUtils.clone`
+of
+it
+(own
+skeleton,
+shared
+geometry,
+materials
+and
+textures).
+One
+person
+never
+costs
+a
+second
+download.
 
-Bundle cost: `three`'s GLTFLoader (already used by the TF2 loadout viewer), `lib/tf2-loadout/gltf-loader.ts` (a 20-line
-subclass) and `lib/tf2-game/assets/urls.ts` + `paths.ts` + `versions.ts` types only. No server module is imported.
+Bundle
+cost:
+`three`'s
+GLTFLoader
+(already
+used
+by
+the
+TF2
+loadout
+viewer),
+`lib/tf2-loadout/gltf-loader.ts`
+(a
+20-line
+subclass)
+and
+`lib/tf2-game/assets/urls.ts` +
+`paths.ts` +
+`versions.ts`
+types
+only.
+No
+server
+module
+is
+imported.
 
 ## Clip fallbacks
 
-A model that lacks a clip uses the first available in its chain:
+A
+model
+that
+lacks
+a
+clip
+uses
+the
+first
+available
+in
+its
+chain:
 
-| asked for | chain |
-| --- | --- |
-| `run` | run → walk → idle |
-| `walk` | walk → idle |
-| `shoot`, `reload`, `interact`, `hurt` | itself → idle (the one-shot is simply skipped: the body keeps doing what it was) |
-| `death` | death → hurt → idle, **and the figure topples over** unless the model has a death of its own |
-| `jump`, `fall` | itself → idle |
+| asked for                             | chain                                                                                        |
+| ------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `run`                                 | run → walk → idle                                                                            |
+| `walk`                                | walk → idle                                                                                  |
+| `shoot`, `reload`, `interact`, `hurt` | itself → idle (the one-shot is simply skipped: the body keeps doing what it was)             |
+| `death`                               | death → hurt → idle, **and the figure topples over** unless the model has a death of its own |
+| `jump`, `fall`                        | itself → idle                                                                                |
 
-A name in the manifest that the pack does not contain counts as missing. A pack without `idle` or `walk`, or a mesh with
-nothing skinned in it, is refused and the procedural figure is used.
+A
+name
+in
+the
+manifest
+that
+the
+pack
+does
+not
+contain
+counts
+as
+missing.
+A
+pack
+without
+`idle`
+or
+`walk`,
+or
+a
+mesh
+with
+nothing
+skinned
+in
+it,
+is
+refused
+and
+the
+procedural
+figure
+is
+used.
 
 ## How it animates
 
-`features/hearthworks/engine/skins/animator.ts` (`CharacterAnimator`, one `AnimationMixer` per person) turns a plain mutable
-`FigureDrive` (`speed`, `air`, `dead`, `busy`, `triggers`) into action weights. The owner fills the drive every frame:
+`features/hearthworks/engine/skins/animator.ts`
+(`CharacterAnimator`,
+one
+`AnimationMixer`
+per
+person)
+turns
+a
+plain
+mutable
+`FigureDrive`
+(`speed`,
+`air`,
+`dead`,
+`busy`,
+`triggers`)
+into
+action
+weights.
+The
+owner
+fills
+the
+drive
+every
+frame:
 
-- **Locomotion:** `locomotionBlend(speed)` from `features/hearthworks/engine/avatar/controller.ts` gives idle/walk/run weights.
-  Walk and run share one stride phase, advanced by `strideCadence(speed)`, so the playback rate follows the ground
-  speed (feet do not skate) and the two clips' feet land together while they blend. Weights are smoothed, so a speed
-  that jumps does not pop.
-- **Air:** `jump` / `fall` replace locomotion while the avatar rises or drops (vertical velocity with hysteresis,
-  `airFromVelocity`). Each restarts from its first frame.
-- **One-shots:** `shoot`, `reload`, `hurt`, `interact` play once on top and fade out; a newer one interrupts the
-  older. They come from world events (`features/hearthworks/ui/scene/figure-events.ts`: your shots, reloads, wounds
-  and chores; an officer's shots and wounds). `busy` (a farmhand working) keeps replaying `interact`.
-- **Death:** plays once and holds its last frame (a downed player; a fallen officer lies where it fell for a few
+- **Locomotion:**
+  `locomotionBlend(speed)`
+  from
+  `features/hearthworks/engine/avatar/controller.ts`
+  gives
+  idle/walk/run
+  weights.
+  Walk
+  and
+  run
+  share
+  one
+  stride
+  phase,
+  advanced
+  by
+  `strideCadence(speed)`,
+  so
+  the
+  playback
+  rate
+  follows
+  the
+  ground
+  speed
+  (feet
+  do
+  not
+  skate)
+  and
+  the
+  two
+  clips'
+  feet
+  land
+  together
+  while
+  they
+  blend.
+  Weights
+  are
+  smoothed,
+  so
+  a
+  speed
+  that
+  jumps
+  does
+  not
+  pop.
+- **Air:**
+  `jump`
+  /
+  `fall`
+  replace
+  locomotion
+  while
+  the
+  avatar
+  rises
+  or
+  drops
+  (vertical
+  velocity
+  with
+  hysteresis,
+  `airFromVelocity`).
+  Each
+  restarts
+  from
+  its
+  first
+  frame.
+- **One-shots:**
+  `shoot`,
+  `reload`,
+  `hurt`,
+  `interact`
+  play
+  once
+  on
+  top
+  and
+  fade
+  out;
+  a
+  newer
+  one
+  interrupts
+  the
+  older.
+  They
+  come
+  from
+  world
+  events
+  (`features/hearthworks/ui/scene/figure-events.ts`:
+  your
+  shots,
+  reloads,
+  wounds
+  and
+  chores;
+  an
+  officer's
+  shots
+  and
+  wounds).
+  `busy`
+  (a
+  farmhand
+  working)
+  keeps
+  replaying
+  `interact`.
+- **Death:**
+  plays
+  once
+  and
+  holds
+  its
+  last
+  frame
+  (a
+  downed
+  player;
+  a
+  fallen
+  officer
+  lies
+  where
+  it
+  fell
+  for
+  a
+  few
   seconds).
-- All envelopes are exponential approaches, so a state flipped mid-blend turns around from where it is.
-- Held props (the sidearm) ride `handBone`, rotated so they point forward in the aiming pose whatever the bone's axes
-  are; without a hand bone they hang at the hip.
+- All
+  envelopes
+  are
+  exponential
+  approaches,
+  so
+  a
+  state
+  flipped
+  mid-blend
+  turns
+  around
+  from
+  where
+  it
+  is.
+- Held
+  props
+  (the
+  sidearm)
+  ride
+  `handBone`,
+  rotated
+  so
+  they
+  point
+  forward
+  in
+  the
+  aiming
+  pose
+  whatever
+  the
+  bone's
+  axes
+  are;
+  without
+  a
+  hand
+  bone
+  they
+  hang
+  at
+  the
+  hip.
 
-**Size:** a model is scaled so its height equals the procedural figure's height (`figureWorldHeight` in
-`features/hearthworks/engine/skins/figure-scale.ts`, ≈ 0.38 world units × the skin's `look.height`), keeping the contract of a
-person ≈ 0.4 tile and a door 0.44. Change `FIGURE_SCALE` there, not in a model.
+**Size:**
+a
+model
+is
+scaled
+so
+its
+height
+equals
+the
+procedural
+figure's
+height
+(`figureWorldHeight`
+in
+`features/hearthworks/engine/skins/figure-scale.ts`,
+≈
+0.38
+world
+units
+×
+the
+skin's
+`look.height`),
+keeping
+the
+contract
+of
+a
+person
+≈
+0.4
+tile
+and
+a
+door
+0.44.
+Change
+`FIGURE_SCALE`
+there,
+not
+in
+a
+model.
 
 ## Who is a model, who is procedural
 
-One registry per scene (`FigureRegistry`, mounted as `FigureSystem` in `Scene.tsx`) holds every person and is advanced
-by **one** `useFrame` for the whole crowd. Every few ticks per second it ranks people by distance to the camera focus
-(`planBudget`, `figure-budget.ts`):
+One
+registry
+per
+scene
+(`FigureRegistry`,
+mounted
+as
+`FigureSystem`
+in
+`Scene.tsx`)
+holds
+every
+person
+and
+is
+advanced
+by
+**one**
+`useFrame`
+for
+the
+whole
+crowd.
+Every
+few
+ticks
+per
+second
+it
+ranks
+people
+by
+distance
+to
+the
+camera
+focus
+(`planBudget`,
+`figure-budget.ts`):
 
-| tier | what | default |
-| --- | --- | --- |
-| full | mixer updates every frame | nearest 24 |
-| slow | mixer updates every 0.1 s | next 16 |
+| tier   | what                                                    | default                |
+| ------ | ------------------------------------------------------- | ---------------------- |
+| full   | mixer updates every frame                               | nearest 24             |
+| slow   | mixer updates every 0.1 s                               | next 16                |
 | frozen | holds its last pose (off-screen, or past the slow ring) | up to 48 models in all |
-| proc | procedural figure | everyone beyond |
+| proc   | procedural figure                                       | everyone beyond        |
 
-The player's own avatar and the wardrobe preview are *pinned*: always a full-rate model. A model at the edge keeps its
-place for a few ranks of hysteresis so the edge does not flicker. A person is only downloaded when it earns a model.
+The
+player's
+own
+avatar
+and
+the
+wardrobe
+preview
+are
+_pinned_:
+always
+a
+full-rate
+model.
+A
+model
+at
+the
+edge
+keeps
+its
+place
+for
+a
+few
+ranks
+of
+hysteresis
+so
+the
+edge
+does
+not
+flicker.
+A
+person
+is
+only
+downloaded
+when
+it
+earns
+a
+model.
 
-Memory: one model per skin is loaded once; each person is a `SkeletonUtils.clone` that shares geometry, materials and
-textures and owns only its skeleton. Templates are reference counted and evicted least-recently-used past 10 models /
-48 MB (`model-loader.ts`, the size is the mesh GLB plus the kept keyframes); instances dispose their skeleton and mixer
-on unmount. At most two models load at once (each is two downloads), the player's own skin jumps the queue. A typical
-skin costs 0.1-0.7 MB of mesh and textures plus 0.6-2.3 MB of anim pack on the wire (brotli; immutable, so the
-browser's HTTP cache serves a second visit).
+Memory:
+one
+model
+per
+skin
+is
+loaded
+once;
+each
+person
+is
+a
+`SkeletonUtils.clone`
+that
+shares
+geometry,
+materials
+and
+textures
+and
+owns
+only
+its
+skeleton.
+Templates
+are
+reference
+counted
+and
+evicted
+least-recently-used
+past
+10
+models
+/
+48
+MB
+(`model-loader.ts`,
+the
+size
+is
+the
+mesh
+GLB
+plus
+the
+kept
+keyframes);
+instances
+dispose
+their
+skeleton
+and
+mixer
+on
+unmount.
+At
+most
+two
+models
+load
+at
+once
+(each
+is
+two
+downloads),
+the
+player's
+own
+skin
+jumps
+the
+queue.
+A
+typical
+skin
+costs
+0.1-0.7
+MB
+of
+mesh
+and
+textures
+plus
+0.6-2.3
+MB
+of
+anim
+pack
+on
+the
+wire
+(brotli;
+immutable,
+so
+the
+browser's
+HTTP
+cache
+serves
+a
+second
+visit).
 
-Models are **not** used (procedural everywhere) when the device is low-end (`isLowEndCapability()`, `lib/low-end.ts`), when
-`navigator.deviceMemory` ≤ 2, when `localStorage['hw-models'] === 'off'`, after a lost WebGL context, for a skin whose
-model threw while rendering (an error boundary marks it bad for the visit), for a skin the index does not list, when the
-asset route has no index (local dev without R2), and for anyone past the budget.
+Models
+are
+**not**
+used
+(procedural
+everywhere)
+when
+the
+device
+is
+low-end
+(`isLowEndCapability()`,
+`lib/low-end.ts`),
+when
+`navigator.deviceMemory`
+≤
+2,
+when
+`localStorage['hw-models'] === 'off'`,
+after
+a
+lost
+WebGL
+context,
+for
+a
+skin
+whose
+model
+threw
+while
+rendering
+(an
+error
+boundary
+marks
+it
+bad
+for
+the
+visit),
+for
+a
+skin
+the
+index
+does
+not
+list,
+when
+the
+asset
+route
+has
+no
+index
+(local
+dev
+without
+R2),
+and
+for
+anyone
+past
+the
+budget.
 
 ## Adding or changing a skin
 
-1. Add the skin to `features/hearthworks/engine/skins/catalog.ts` (and a stand-in look in `looks.ts`) if it is new.
-2. Find its model in the channel's `mdl/index.json` (`curl https://rmhstudios.com/api/<game>-game/assets/mdl/index.json`).
-   A model that is not there is not available: use a `stand-in` entry, do not substitute another model.
-3. Add its entry to `models.manifest.json`: `game`, `mdl`, `skin`, `handBone`, and the sequences for `idle` and `walk` at least.
-   To find sequence names, open the pack named by the index (`anims`) and read its animation names, `extras.delta`
-   (a delta layer is rebased for you), `extras.movement` (the forward cell of a blend set) and `extras.frames`.
-   Prefer a sequence whose last pose is where you want a one-shot to end (death lying down, not mid-flip).
-4. If a held prop sits wrongly in the hand, set `hold.pos` / `hold.rot` for that entry.
-5. Look at it with the browser check below, then in the wardrobe preview and the third-person view with the shot,
-   hurt and death events.
+1. Add
+   the
+   skin
+   to
+   `features/hearthworks/engine/skins/catalog.ts`
+   (and
+   a
+   stand-in
+   look
+   in
+   `looks.ts`)
+   if
+   it
+   is
+   new.
+2. Find
+   its
+   model
+   in
+   the
+   channel's
+   `mdl/index.json`
+   (`curl https://rmhstudios.com/api/<game>-game/assets/mdl/index.json`).
+   A
+   model
+   that
+   is
+   not
+   there
+   is
+   not
+   available:
+   use
+   a
+   `stand-in`
+   entry,
+   do
+   not
+   substitute
+   another
+   model.
+3. Add
+   its
+   entry
+   to
+   `models.manifest.json`:
+   `game`,
+   `mdl`,
+   `skin`,
+   `handBone`,
+   and
+   the
+   sequences
+   for
+   `idle`
+   and
+   `walk`
+   at
+   least.
+   To
+   find
+   sequence
+   names,
+   open
+   the
+   pack
+   named
+   by
+   the
+   index
+   (`anims`)
+   and
+   read
+   its
+   animation
+   names,
+   `extras.delta`
+   (a
+   delta
+   layer
+   is
+   rebased
+   for
+   you),
+   `extras.movement`
+   (the
+   forward
+   cell
+   of
+   a
+   blend
+   set)
+   and
+   `extras.frames`.
+   Prefer
+   a
+   sequence
+   whose
+   last
+   pose
+   is
+   where
+   you
+   want
+   a
+   one-shot
+   to
+   end
+   (death
+   lying
+   down,
+   not
+   mid-flip).
+4. If
+   a
+   held
+   prop
+   sits
+   wrongly
+   in
+   the
+   hand,
+   set
+   `hold.pos`
+   /
+   `hold.rot`
+   for
+   that
+   entry.
+5. Look
+   at
+   it
+   with
+   the
+   browser
+   check
+   below,
+   then
+   in
+   the
+   wardrobe
+   preview
+   and
+   the
+   third-person
+   view
+   with
+   the
+   shot,
+   hurt
+   and
+   death
+   events.
 
 ## Testing
 
-Unit tests (`features/hearthworks/engine/skins/__tests__/`) build a small skinned, animated character **in code**
-(`fixture-model.ts`; `fixture-glb.ts` exports it with `GLTFExporter` as a model channel's mesh GLB and a many-animation
-pack, with a fake channel behind `fetch`, so the real GLTFLoader path is tested). No Valve content is in the repo or
-the tests. They cover manifest v2 validation, the index (404 / missing model / retry), pack filtering and pruning,
-clip selection (blend cells, trim windows, delta rebasing, in-place, static poses), skin families, clip fallback, the
-blend weights and playback rates, one-shots, death, mixer disposal, the budget and registry, motion estimation for other
-players, and model loading, cloning and cache eviction.
+Unit
+tests
+(`features/hearthworks/engine/skins/__tests__/`)
+build
+a
+small
+skinned,
+animated
+character
+**in
+code**
+(`fixture-model.ts`;
+`fixture-glb.ts`
+exports
+it
+with
+`GLTFExporter`
+as
+a
+model
+channel's
+mesh
+GLB
+and
+a
+many-animation
+pack,
+with
+a
+fake
+channel
+behind
+`fetch`,
+so
+the
+real
+GLTFLoader
+path
+is
+tested).
+No
+Valve
+content
+is
+in
+the
+repo
+or
+the
+tests.
+They
+cover
+manifest
+v2
+validation,
+the
+index
+(404
+/
+missing
+model
+/
+retry),
+pack
+filtering
+and
+pruning,
+clip
+selection
+(blend
+cells,
+trim
+windows,
+delta
+rebasing,
+in-place,
+static
+poses),
+skin
+families,
+clip
+fallback,
+the
+blend
+weights
+and
+playback
+rates,
+one-shots,
+death,
+mixer
+disposal,
+the
+budget
+and
+registry,
+motion
+estimation
+for
+other
+players,
+and
+model
+loading,
+cloning
+and
+cache
+eviction.
 
-For a real-browser check against the **live** channels:
+For
+a
+real-browser
+check
+against
+the
+**live**
+channels:
 
 ```bash
 NODE_USE_ENV_PROXY=1 pnpm exec tsx testing/hearthworks-models/run.ts --out /tmp/hw-shots [--skins gman,scout] [--views front,three,side]
 ```
 
-It bundles `testing/hearthworks-models/page/entry.tsx` (the production `SkinFigure` on a ground plane with the world axes:
-red is +Z, the way a person must face), serves it with a pass-through from the asset routes to `https://rmhstudios.com`
-(`HW_ASSET_ORIGIN` to change), opens each skin in Chromium (swiftshader), waits for the model to arrive and screenshots it
-idle from several sides and in every state the game drives (walk, run, jump, fall, shoot, reload, hurt, interact, death).
-Look for: upright, feet on the ground, facing the red axis, textured, the TF2 team colour, the prop in the right hand, the
-body staying put while it walks. `CHROMIUM_PATH` picks a browser when the repo's Playwright wants a newer one.
+It
+bundles
+`testing/hearthworks-models/page/entry.tsx`
+(the
+production
+`SkinFigure`
+on
+a
+ground
+plane
+with
+the
+world
+axes:
+red
+is
++Z,
+the
+way
+a
+person
+must
+face),
+serves
+it
+with
+a
+pass-through
+from
+the
+asset
+routes
+to
+`https://rmhstudios.com`
+(`HW_ASSET_ORIGIN`
+to
+change),
+opens
+each
+skin
+in
+Chromium
+(swiftshader),
+waits
+for
+the
+model
+to
+arrive
+and
+screenshots
+it
+idle
+from
+several
+sides
+and
+in
+every
+state
+the
+game
+drives
+(walk,
+run,
+jump,
+fall,
+shoot,
+reload,
+hurt,
+interact,
+death).
+Look
+for:
+upright,
+feet
+on
+the
+ground,
+facing
+the
+red
+axis,
+textured,
+the
+TF2
+team
+colour,
+the
+prop
+in
+the
+right
+hand,
+the
+body
+staying
+put
+while
+it
+walks.
+`CHROMIUM_PATH`
+picks
+a
+browser
+when
+the
+repo's
+Playwright
+wants
+a
+newer
+one.

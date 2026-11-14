@@ -7,53 +7,121 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, Crosshair, Globe, LayoutDashboard, Shirt } from 'lucide-react';
+import {
+  ArrowRight,
+  Crosshair,
+  Globe,
+  LayoutDashboard,
+  Shirt,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import Tf2Logo from './Tf2Logo';
 
 export default function Tf2HubLanding() {
-  const { t } = useTranslation('c-tf2-hud');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
 
-  const tools = [
-    {
-      to: '/tf2/play',
-      icon: Crosshair,
-      title: t('hub-play-title', { defaultValue: 'Play' }),
-      body: t('hub-play-body', {
-        defaultValue:
-          'Team Fortress 2 in your browser: join a server, host a room with bots for your friends, or practise offline against bots. All nine classes, the stock weapons and the classic maps.',
-      }),
-      cta: t('hub-play-cta', { defaultValue: 'Find a game' }),
-    },
-    {
-      to: '/tf2/hud-editor',
-      icon: LayoutDashboard,
-      title: t('hub-hud-title', { defaultValue: 'HUD Editor' }),
-      body: t('hub-hud-body', {
-        defaultValue:
-          'Edit every .res file with a live, resolution-accurate preview. Test health, ammo and class states, diff against the default HUD, then download a ready-to-install zip.',
-      }),
-      cta: t('hub-hud-cta', { defaultValue: 'Open the HUD Editor' }),
-    },
-    {
-      to: '/tf2/loadout',
-      icon: Shirt,
-      title: t('hub-loadout-title', { defaultValue: 'Loadout Builder' }),
-      body: t('hub-loadout-body', {
-        defaultValue:
-          'Plan weapons, cosmetics, paints, unusual effects and taunts for every class from the game’s live item list. Keep a loadout per class and share your favourites.',
-      }),
-      cta: t('hub-loadout-cta', { defaultValue: 'Open the Loadout Builder' }),
-    },
-  ] as const;
+  const tools =
+    [
+      {
+        to: '/tf2/play',
+        icon: Crosshair,
+        title:
+          t(
+            'hub-play-title',
+            {
+              defaultValue:
+                'Play',
+            },
+          ),
+        body: t(
+          'hub-play-body',
+          {
+            defaultValue:
+              'Team Fortress 2 in your browser: join a server, host a room with bots for your friends, or practise offline against bots. All nine classes, the stock weapons and the classic maps.',
+          },
+        ),
+        cta: t(
+          'hub-play-cta',
+          {
+            defaultValue:
+              'Find a game',
+          },
+        ),
+      },
+      {
+        to: '/tf2/hud-editor',
+        icon: LayoutDashboard,
+        title:
+          t(
+            'hub-hud-title',
+            {
+              defaultValue:
+                'HUD Editor',
+            },
+          ),
+        body: t(
+          'hub-hud-body',
+          {
+            defaultValue:
+              'Edit every .res file with a live, resolution-accurate preview. Test health, ammo and class states, diff against the default HUD, then download a ready-to-install zip.',
+          },
+        ),
+        cta: t(
+          'hub-hud-cta',
+          {
+            defaultValue:
+              'Open the HUD Editor',
+          },
+        ),
+      },
+      {
+        to: '/tf2/loadout',
+        icon: Shirt,
+        title:
+          t(
+            'hub-loadout-title',
+            {
+              defaultValue:
+                'Loadout Builder',
+            },
+          ),
+        body: t(
+          'hub-loadout-body',
+          {
+            defaultValue:
+              'Plan weapons, cosmetics, paints, unusual effects and taunts for every class from the game’s live item list. Keep a loadout per class and share your favourites.',
+          },
+        ),
+        cta: t(
+          'hub-loadout-cta',
+          {
+            defaultValue:
+              'Open the Loadout Builder',
+          },
+        ),
+      },
+    ] as const;
 
   return (
     <div className="app-page min-h-dvh bg-app-bg text-app-text">
       <Tf2Header
-        heading={false}
+        heading={
+          false
+        }
         title="RMH TF2 Hub"
-        backLabel={t('apps', { defaultValue: 'Apps' })}
+        backLabel={t(
+          'apps',
+          {
+            defaultValue:
+              'Apps',
+          },
+        )}
         backHref="/apps"
       />
       <main className="mx-auto w-full max-w-4xl px-4 pb-16">
@@ -61,62 +129,126 @@ export default function Tf2HubLanding() {
           <h1 className="tf2hud-title text-5xl text-app-text sm:text-7xl">
             <Tf2Logo
               className="mb-2 h-20 sm:h-24"
-              label={t('game-name', { defaultValue: 'Team Fortress 2' })}
+              label={t(
+                'game-name',
+                {
+                  defaultValue:
+                    'Team Fortress 2',
+                },
+              )}
             />
-            {t('hub-hero-word', { defaultValue: 'Hub' })}
+            {t(
+              'hub-hero-word',
+              {
+                defaultValue:
+                  'Hub',
+              },
+            )}
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-app-text-muted">
-            {t('hub-hero-body', {
-              defaultValue: 'Tools for Team Fortress 2 players, right in your browser.',
-            })}
+            {t(
+              'hub-hero-body',
+              {
+                defaultValue:
+                  'Tools for Team Fortress 2 players, right in your browser.',
+              },
+            )}
           </p>
         </section>
 
         <ul className="grid gap-4 sm:grid-cols-2">
-          {tools.map((tool) => (
-            <li key={tool.to} className="contents">
-              <Link
-                to={tool.to}
-                className={`group flex flex-col gap-3 rounded-app border border-app-border bg-app-bg-subtle p-6 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-app-accent hover:bg-app-surface-hover${tool.to === '/tf2/play' ? ' sm:col-span-2' : ''}`}
+          {tools.map(
+            (
+              tool,
+            ) => (
+              <li
+                key={
+                  tool.to
+                }
+                className="contents"
               >
-                <tool.icon className="size-8 text-app-accent-text" aria-hidden />
-                <h2 className="tf2hud-title text-3xl">{tool.title}</h2>
-                <p className="text-sm text-app-text-muted">{tool.body}</p>
-                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-app-accent-text">
-                  {tool.cta}
-                  <ArrowRight className="size-4 rtl-flip" aria-hidden />
-                </span>
-              </Link>
-            </li>
-          ))}
+                <Link
+                  to={
+                    tool.to
+                  }
+                  className={`group flex flex-col gap-3 rounded-app border border-app-border bg-app-bg-subtle p-6 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-app-accent hover:bg-app-surface-hover${tool.to === '/tf2/play' ? ' sm:col-span-2' : ''}`}
+                >
+                  <tool.icon
+                    className="size-8 text-app-accent-text"
+                    aria-hidden
+                  />
+                  <h2 className="tf2hud-title text-3xl">
+                    {
+                      tool.title
+                    }
+                  </h2>
+                  <p className="text-sm text-app-text-muted">
+                    {
+                      tool.body
+                    }
+                  </p>
+                  <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-app-accent-text">
+                    {
+                      tool.cta
+                    }
+                    <ArrowRight
+                      className="size-4 rtl-flip"
+                      aria-hidden
+                    />
+                  </span>
+                </Link>
+              </li>
+            ),
+          )}
         </ul>
 
         <div className="mt-4">
           <Link
             to="/tf2/workshop"
-            search={{ type: 'huds' }}
+            search={{
+              type: 'huds',
+            }}
             className="flex items-center gap-3 rounded-app border border-app-border bg-app-bg-subtle p-4 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-app-accent hover:bg-app-surface-hover"
           >
-            <Globe className="size-5 shrink-0 text-app-accent-text" aria-hidden />
+            <Globe
+              className="size-5 shrink-0 text-app-accent-text"
+              aria-hidden
+            />
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">
-                {t('hub-workshop-title', { defaultValue: 'Workshop' })}
+                {t(
+                  'hub-workshop-title',
+                  {
+                    defaultValue:
+                      'Workshop',
+                  },
+                )}
               </span>
               <span className="block text-xs text-app-text-muted">
-                {t('hub-workshop-body', {
-                  defaultValue: 'Browse HUDs and loadouts shared by the community.',
-                })}
+                {t(
+                  'hub-workshop-body',
+                  {
+                    defaultValue:
+                      'Browse HUDs and loadouts shared by the community.',
+                  },
+                )}
               </span>
             </span>
-            <ArrowRight className="size-4 shrink-0 rtl-flip" aria-hidden />
+            <ArrowRight
+              className="size-4 shrink-0 rtl-flip"
+              aria-hidden
+            />
           </Link>
         </div>
 
         <p className="mt-10 text-center text-xs text-app-text-dim">
-          {t('legal', {
-            defaultValue:
-              'Team Fortress 2 is a trademark of Valve Corporation. This is an unofficial fan tool.',
-          })}
+          {t(
+            'legal',
+            {
+              defaultValue:
+                'Team Fortress 2 is a trademark of Valve Corporation. This is an unofficial fan tool.',
+            },
+          )}
         </p>
       </main>
     </div>

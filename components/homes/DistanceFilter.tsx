@@ -17,11 +17,25 @@
  * request and updates as the slider moves.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Info, MapPin, Plus, Trash2 } from 'lucide-react';
+import {
+  Info,
+  MapPin,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { toast } from '@/lib/toast';
-import { formatDistance, milesToKm, type DistanceUnit } from '@/lib/homes/distance';
+import {
+  formatDistance,
+  milesToKm,
+  type DistanceUnit,
+} from '@/lib/homes/distance';
 import {
   addSavedPlace,
   loadSavedPlaces,
@@ -36,7 +50,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { LocationSearch, type HomesPlace } from './LocationSearch';
+import {
+  LocationSearch,
+  type HomesPlace,
+} from './LocationSearch';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
@@ -47,96 +64,314 @@ export interface DistanceFilterProps {
    * when the filter is off — the page should then show every result rather than
    * none.
    */
-  onChange?: (place: SavedPlace | null, maxKm: number) => void;
+  onChange?: (
+    place: SavedPlace | null,
+    maxKm: number,
+  ) => void;
 }
 
 /** Slider stops, in the display unit. Kept coarse — this is a rough cut. */
 const MAX_STOP = 50;
 
-export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
-  const { t } = useTranslation('site');
-  const [places, setPlaces] = useState<SavedPlace[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [radius, setRadius] = useState(10);
-  const [adding, setAdding] = useState(false);
-  const [draftLabel, setDraftLabel] = useState('');
-  const [draftQuery, setDraftQuery] = useState('');
-  const [draftPlace, setDraftPlace] = useState<HomesPlace | null>(null);
+export function DistanceFilter({
+  unit = 'mi',
+  onChange,
+}: DistanceFilterProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
+  const [
+    places,
+    setPlaces,
+  ] =
+    useState<
+      SavedPlace[]
+    >(
+      [],
+    );
+  const [
+    activeId,
+    setActiveId,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const [
+    radius,
+    setRadius,
+  ] =
+    useState(
+      10,
+    );
+  const [
+    adding,
+    setAdding,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    draftLabel,
+    setDraftLabel,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    draftQuery,
+    setDraftQuery,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    draftPlace,
+    setDraftPlace,
+  ] =
+    useState<HomesPlace | null>(
+      null,
+    );
   // Saved places are read from storage after mount and take the empty line's place.
-  const placesArrival = useArrival(places.length > 0);
+  const placesArrival =
+    useArrival(
+      places.length >
+        0,
+    );
 
   // localStorage is browser-only; reading it in the initial state would break
   // hydration.
   useEffect(() => {
-    setPlaces(loadSavedPlaces());
+    setPlaces(
+      loadSavedPlaces(),
+    );
   }, []);
 
-  const maxKm = useMemo(() => (unit === 'mi' ? milesToKm(radius) : radius), [unit, radius]);
-  const active = useMemo(() => places.find((p) => p.id === activeId) ?? null, [places, activeId]);
+  const maxKm =
+    useMemo(
+      () =>
+        unit ===
+        'mi'
+          ? milesToKm(
+              radius,
+            )
+          : radius,
+      [
+        unit,
+        radius,
+      ],
+    );
+  const active =
+    useMemo(
+      () =>
+        places.find(
+          (
+            p,
+          ) =>
+            p.id ===
+            activeId,
+        ) ??
+        null,
+      [
+        places,
+        activeId,
+      ],
+    );
 
-  const emit = useCallback(
-    (place: SavedPlace | null, km: number) => {
-      onChange?.(place, km);
-    },
-    [onChange],
-  );
+  const emit =
+    useCallback(
+      (
+        place: SavedPlace | null,
+        km: number,
+      ) => {
+        onChange?.(
+          place,
+          km,
+        );
+      },
+      [
+        onChange,
+      ],
+    );
 
-  const selectPlace = useCallback(
-    (id: string | null) => {
-      setActiveId(id);
-      const place = id ? (places.find((p) => p.id === id) ?? null) : null;
-      emit(place, maxKm);
-    },
-    [places, maxKm, emit],
-  );
+  const selectPlace =
+    useCallback(
+      (
+        id:
+          | string
+          | null,
+      ) => {
+        setActiveId(
+          id,
+        );
+        const place =
+          id
+            ? (places.find(
+                (
+                  p,
+                ) =>
+                  p.id ===
+                  id,
+              ) ??
+              null)
+            : null;
+        emit(
+          place,
+          maxKm,
+        );
+      },
+      [
+        places,
+        maxKm,
+        emit,
+      ],
+    );
 
-  const changeRadius = useCallback(
-    (next: number) => {
-      setRadius(next);
-      emit(active, unit === 'mi' ? milesToKm(next) : next);
-    },
-    [active, emit, unit],
-  );
+  const changeRadius =
+    useCallback(
+      (
+        next: number,
+      ) => {
+        setRadius(
+          next,
+        );
+        emit(
+          active,
+          unit ===
+            'mi'
+            ? milesToKm(
+                next,
+              )
+            : next,
+        );
+      },
+      [
+        active,
+        emit,
+        unit,
+      ],
+    );
 
-  const savePlace = useCallback(() => {
-    if (!draftPlace) {
-      toast.error(
-        t('homes.distanceNeedPlace', { defaultValue: 'Pick a location from the suggestions.' }),
-      );
-      return;
-    }
-    const place = makeSavedPlace({
-      label: draftLabel || draftPlace.label,
-      lat: draftPlace.lat,
-      lng: draftPlace.lng,
-    });
-    if (!place) {
-      toast.error(t('homes.distanceBadPlace', { defaultValue: 'That place could not be saved.' }));
-      return;
-    }
-    const next = addSavedPlace(places, place);
-    setPlaces(next);
-    persistSavedPlaces(next);
-    setActiveId(place.id);
-    emit(place, maxKm);
-    setAdding(false);
-    setDraftLabel('');
-    setDraftQuery('');
-    setDraftPlace(null);
-  }, [draftPlace, draftLabel, places, maxKm, emit, t]);
-
-  const deletePlace = useCallback(
-    (id: string) => {
-      const next = removeSavedPlace(places, id);
-      setPlaces(next);
-      persistSavedPlaces(next);
-      if (activeId === id) {
-        setActiveId(null);
-        emit(null, maxKm);
+  const savePlace =
+    useCallback(() => {
+      if (
+        !draftPlace
+      ) {
+        toast.error(
+          t(
+            'homes.distanceNeedPlace',
+            {
+              defaultValue:
+                'Pick a location from the suggestions.',
+            },
+          ),
+        );
+        return;
       }
-    },
-    [places, activeId, maxKm, emit],
-  );
+      const place =
+        makeSavedPlace(
+          {
+            label:
+              draftLabel ||
+              draftPlace.label,
+            lat: draftPlace.lat,
+            lng: draftPlace.lng,
+          },
+        );
+      if (
+        !place
+      ) {
+        toast.error(
+          t(
+            'homes.distanceBadPlace',
+            {
+              defaultValue:
+                'That place could not be saved.',
+            },
+          ),
+        );
+        return;
+      }
+      const next =
+        addSavedPlace(
+          places,
+          place,
+        );
+      setPlaces(
+        next,
+      );
+      persistSavedPlaces(
+        next,
+      );
+      setActiveId(
+        place.id,
+      );
+      emit(
+        place,
+        maxKm,
+      );
+      setAdding(
+        false,
+      );
+      setDraftLabel(
+        '',
+      );
+      setDraftQuery(
+        '',
+      );
+      setDraftPlace(
+        null,
+      );
+    }, [
+      draftPlace,
+      draftLabel,
+      places,
+      maxKm,
+      emit,
+      t,
+    ]);
+
+  const deletePlace =
+    useCallback(
+      (
+        id: string,
+      ) => {
+        const next =
+          removeSavedPlace(
+            places,
+            id,
+          );
+        setPlaces(
+          next,
+        );
+        persistSavedPlaces(
+          next,
+        );
+        if (
+          activeId ===
+          id
+        ) {
+          setActiveId(
+            null,
+          );
+          emit(
+            null,
+            maxKm,
+          );
+        }
+      },
+      [
+        places,
+        activeId,
+        maxKm,
+        emit,
+      ],
+    );
 
   return (
     <section
@@ -145,21 +380,52 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
       data-slot="distance-filter"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <MapPin className="size-4 text-site-accent" aria-hidden />
-        <h2 id="homes-distance-heading" className="text-sm font-semibold text-site-text">
-          {t('homes.distanceTitle', { defaultValue: 'Distance from a place' })}
+        <MapPin
+          className="size-4 text-site-accent"
+          aria-hidden
+        />
+        <h2
+          id="homes-distance-heading"
+          className="text-sm font-semibold text-site-text"
+        >
+          {t(
+            'homes.distanceTitle',
+            {
+              defaultValue:
+                'Distance from a place',
+            },
+          )}
         </h2>
-        {places.length < MAX_SAVED_PLACES && (
+        {places.length <
+          MAX_SAVED_PLACES && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => setAdding((v) => !v)}
+            onClick={() =>
+              setAdding(
+                (
+                  v,
+                ) =>
+                  !v,
+              )
+            }
             className="ml-auto min-h-11"
-            aria-expanded={adding}
+            aria-expanded={
+              adding
+            }
           >
-            <Plus className="size-4" aria-hidden />
-            {t('homes.distanceAdd', { defaultValue: 'Add a place' })}
+            <Plus
+              className="size-4"
+              aria-hidden
+            />
+            {t(
+              'homes.distanceAdd',
+              {
+                defaultValue:
+                  'Add a place',
+              },
+            )}
           </Button>
         )}
       </div>
@@ -168,88 +434,210 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
         <div className="mt-3 grid gap-3 border-t border-site-border pt-3">
           <div>
             <Label htmlFor="homes-place-label">
-              {t('homes.distanceLabel', { defaultValue: 'Call it' })}
+              {t(
+                'homes.distanceLabel',
+                {
+                  defaultValue:
+                    'Call it',
+                },
+              )}
             </Label>
             <Input
               id="homes-place-label"
-              maxLength={MAX_PLACE_LABEL_LENGTH}
-              placeholder={t('homes.distanceLabelHint', { defaultValue: 'Work, campus, Mom’s' })}
-              value={draftLabel}
-              onChange={(e) => setDraftLabel(e.target.value)}
+              maxLength={
+                MAX_PLACE_LABEL_LENGTH
+              }
+              placeholder={t(
+                'homes.distanceLabelHint',
+                {
+                  defaultValue:
+                    'Work, campus, Mom’s',
+                },
+              )}
+              value={
+                draftLabel
+              }
+              onChange={(
+                e,
+              ) =>
+                setDraftLabel(
+                  e
+                    .target
+                    .value,
+                )
+              }
               className="mt-2"
             />
           </div>
           <div>
             <span className="mb-2 block text-sm font-medium text-site-text">
-              {t('homes.distanceWhere', { defaultValue: 'Where is it?' })}
+              {t(
+                'homes.distanceWhere',
+                {
+                  defaultValue:
+                    'Where is it?',
+                },
+              )}
             </span>
             <LocationSearch
-              value={draftQuery}
-              onQueryChange={(q) => {
-                setDraftQuery(q);
-                setDraftPlace(null);
+              value={
+                draftQuery
+              }
+              onQueryChange={(
+                q,
+              ) => {
+                setDraftQuery(
+                  q,
+                );
+                setDraftPlace(
+                  null,
+                );
               }}
-              onSelect={(p) => {
-                setDraftPlace(p);
-                setDraftQuery(p.label);
-                if (!draftLabel) setDraftLabel(p.label.split(',')[0] ?? p.label);
+              onSelect={(
+                p,
+              ) => {
+                setDraftPlace(
+                  p,
+                );
+                setDraftQuery(
+                  p.label,
+                );
+                if (
+                  !draftLabel
+                )
+                  setDraftLabel(
+                    p.label.split(
+                      ',',
+                    )[0] ??
+                      p.label,
+                  );
               }}
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" onClick={savePlace} className="min-h-11">
-              {t('homes.distanceSave', { defaultValue: 'Save place' })}
+            <Button
+              type="button"
+              size="sm"
+              onClick={
+                savePlace
+              }
+              className="min-h-11"
+            >
+              {t(
+                'homes.distanceSave',
+                {
+                  defaultValue:
+                    'Save place',
+                },
+              )}
             </Button>
             <Button
               type="button"
               size="sm"
               variant="ghost"
-              onClick={() => setAdding(false)}
+              onClick={() =>
+                setAdding(
+                  false,
+                )
+              }
               className="min-h-11"
             >
-              {t('homes.distanceCancel', { defaultValue: 'Cancel' })}
+              {t(
+                'homes.distanceCancel',
+                {
+                  defaultValue:
+                    'Cancel',
+                },
+              )}
             </Button>
           </div>
         </div>
       )}
 
-      {places.length > 0 ? (
+      {places.length >
+      0 ? (
         <>
           <div
-            className={cn('mt-3 flex flex-wrap gap-2', placesArrival)}
+            className={cn(
+              'mt-3 flex flex-wrap gap-2',
+              placesArrival,
+            )}
             role="group"
-            aria-label={t('homes.distancePlaces', { defaultValue: 'Saved places' })}
+            aria-label={t(
+              'homes.distancePlaces',
+              {
+                defaultValue:
+                  'Saved places',
+              },
+            )}
           >
-            {places.map((place) => {
-              const isActive = place.id === activeId;
-              return (
-                <span key={place.id} className="inline-flex items-center">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={isActive ? 'default' : 'default'}
-                    aria-pressed={isActive}
-                    onClick={() => selectPlace(isActive ? null : place.id)}
-                    className="min-h-11 rounded-r-none"
+            {places.map(
+              (
+                place,
+              ) => {
+                const isActive =
+                  place.id ===
+                  activeId;
+                return (
+                  <span
+                    key={
+                      place.id
+                    }
+                    className="inline-flex items-center"
                   >
-                    {place.label}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon-sm"
-                    variant="default"
-                    onClick={() => deletePlace(place.id)}
-                    aria-label={t('homes.distanceRemove', {
-                      defaultValue: 'Remove {{label}}',
-                      label: place.label,
-                    })}
-                    className="min-h-11 rounded-l-none border-l-0"
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </span>
-              );
-            })}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={
+                        isActive
+                          ? 'default'
+                          : 'default'
+                      }
+                      aria-pressed={
+                        isActive
+                      }
+                      onClick={() =>
+                        selectPlace(
+                          isActive
+                            ? null
+                            : place.id,
+                        )
+                      }
+                      className="min-h-11 rounded-r-none"
+                    >
+                      {
+                        place.label
+                      }
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="default"
+                      onClick={() =>
+                        deletePlace(
+                          place.id,
+                        )
+                      }
+                      aria-label={t(
+                        'homes.distanceRemove',
+                        {
+                          defaultValue:
+                            'Remove {{label}}',
+                          label:
+                            place.label,
+                        },
+                      )}
+                      className="min-h-11 rounded-l-none border-l-0"
+                    >
+                      <Trash2
+                        className="size-4"
+                        aria-hidden
+                      />
+                    </Button>
+                  </span>
+                );
+              },
+            )}
           </div>
 
           {active && (
@@ -258,18 +646,41 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
                 id="homes-distance-radius-label"
                 className="mb-2 block text-sm font-medium text-site-text"
               >
-                {t('homes.distanceWithin', {
-                  defaultValue: 'Within {{distance}} of {{label}}',
-                  distance: formatDistance(maxKm, unit),
-                  label: active.label,
-                })}
+                {t(
+                  'homes.distanceWithin',
+                  {
+                    defaultValue:
+                      'Within {{distance}} of {{label}}',
+                    distance:
+                      formatDistance(
+                        maxKm,
+                        unit,
+                      ),
+                    label:
+                      active.label,
+                  },
+                )}
               </span>
               <Slider
-                min={1}
-                max={MAX_STOP}
-                step={1}
-                value={[radius]}
-                onValueChange={([v]) => changeRadius(v)}
+                min={
+                  1
+                }
+                max={
+                  MAX_STOP
+                }
+                step={
+                  1
+                }
+                value={[
+                  radius,
+                ]}
+                onValueChange={([
+                  v,
+                ]) =>
+                  changeRadius(
+                    v,
+                  )
+                }
                 aria-labelledby="homes-distance-radius-label"
               />
             </div>
@@ -278,21 +689,30 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
       ) : (
         !adding && (
           <p className="mt-3 text-sm text-site-text-muted">
-            {t('homes.distanceEmpty', {
-              defaultValue:
-                'Save a place like “work” to sort and filter homes by how far they are.',
-            })}
+            {t(
+              'homes.distanceEmpty',
+              {
+                defaultValue:
+                  'Save a place like “work” to sort and filter homes by how far they are.',
+              },
+            )}
           </p>
         )
       )}
 
       <p className="mt-4 flex items-start gap-2 text-xs text-site-text-muted">
-        <Info className="mt-px size-3 shrink-0" aria-hidden />
+        <Info
+          className="mt-px size-3 shrink-0"
+          aria-hidden
+        />
         <span>
-          {t('homes.distanceCaveat', {
-            defaultValue:
-              'Straight-line distance, as the crow flies — not a travel time. Real journeys are longer, and traffic, transit and rivers are not counted.',
-          })}
+          {t(
+            'homes.distanceCaveat',
+            {
+              defaultValue:
+                'Straight-line distance, as the crow flies — not a travel time. Real journeys are longer, and traffic, transit and rivers are not counted.',
+            },
+          )}
         </span>
       </p>
     </section>

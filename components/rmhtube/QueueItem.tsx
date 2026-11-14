@@ -3,8 +3,15 @@
  * voting (Phase 3.5), and remove button.
  */
 
-import { X, GripVertical, Play, ThumbsUp, ListPlus, Radio } from 'lucide-react';
-import { useTranslation } from "react-i18next";
+import {
+  X,
+  GripVertical,
+  Play,
+  ThumbsUp,
+  ListPlus,
+  Radio,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import type { ClientQueueItem } from '@/lib/rmhtube/types';
 
@@ -21,8 +28,23 @@ interface QueueItemProps {
   onAddToPlaylist?: () => void;
 }
 
-export default function QueueItem({ item, isActive, canControl, canRemove, queueVoting, onRemove, onPlay, onVote, onAddToPlaylist }: QueueItemProps) {
-  const { t } = useTranslation("c-rmhtube");
+export default function QueueItem({
+  item,
+  isActive,
+  canControl,
+  canRemove,
+  queueVoting,
+  onRemove,
+  onPlay,
+  onVote,
+  onAddToPlaylist,
+}: QueueItemProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhtube',
+    );
   return (
     <div
       className={`flex items-center gap-3 p-2 rounded-app-sm transition-colors ${
@@ -41,7 +63,9 @@ export default function QueueItem({ item, isActive, canControl, canRemove, queue
       {/* Thumbnail */}
       {item.thumbnailUrl ? (
         <img
-          src={item.thumbnailUrl}
+          src={
+            item.thumbnailUrl
+          }
           alt=""
           className="shrink-0 w-16 h-9 rounded-app-sm object-cover bg-app-surface"
         />
@@ -52,22 +76,59 @@ export default function QueueItem({ item, isActive, canControl, canRemove, queue
       )}
 
       {/* Info */}
-      <div className="flex-1 min-w-0" onClick={canControl ? onPlay : undefined} role={canControl ? 'button' : undefined}>
-        <p className={`text-sm font-medium truncate ${canControl ? 'cursor-pointer hover:text-app-accent' : ''} text-app-text`}>
-          {item.title}
+      <div
+        className="flex-1 min-w-0"
+        onClick={
+          canControl
+            ? onPlay
+            : undefined
+        }
+        role={
+          canControl
+            ? 'button'
+            : undefined
+        }
+      >
+        <p
+          className={`text-sm font-medium truncate ${canControl ? 'cursor-pointer hover:text-app-accent' : ''} text-app-text`}
+        >
+          {
+            item.title
+          }
         </p>
         <p className="flex items-center gap-1.5 text-xs text-app-text-dim">
-          <span className="truncate">{item.addedByName}</span>
-          <span aria-hidden>·</span>
+          <span className="truncate">
+            {
+              item.addedByName
+            }
+          </span>
+          <span
+            aria-hidden
+          >
+            ·
+          </span>
           {/* A broadcast has no runtime to show, and `--:--` reads as missing
               data rather than as what it is. */}
           {item.live ? (
             <span className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide text-app-danger">
-              <Radio className="h-3 w-3" aria-hidden />
-              {t("live", { defaultValue: "Live" })}
+              <Radio
+                className="h-3 w-3"
+                aria-hidden
+              />
+              {t(
+                'live',
+                {
+                  defaultValue:
+                    'Live',
+                },
+              )}
             </span>
           ) : (
-            <span>{formatDuration(item.duration)}</span>
+            <span>
+              {formatDuration(
+                item.duration,
+              )}
+            </span>
           )}
         </p>
       </div>
@@ -75,25 +136,48 @@ export default function QueueItem({ item, isActive, canControl, canRemove, queue
       {/* Vote (Phase 3.5) */}
       {queueVoting && (
         <button
-          onClick={onVote}
+          onClick={
+            onVote
+          }
           className={`shrink-0 flex items-center gap-1 rounded-app-sm px-1.5 py-1 text-xs transition-colors ${
             item.votedByMe
               ? 'text-app-accent bg-app-accent-dim'
               : 'text-app-text-dim hover:text-app-accent hover:bg-app-accent-dim'
           }`}
-          title={t("vote-for-this-item", { defaultValue: "Vote for this item" })}
+          title={t(
+            'vote-for-this-item',
+            {
+              defaultValue:
+                'Vote for this item',
+            },
+          )}
         >
           <ThumbsUp className="h-3.5 w-3.5" />
-          {item.votes > 0 && <span>{item.votes}</span>}
+          {item.votes >
+            0 && (
+            <span>
+              {
+                item.votes
+              }
+            </span>
+          )}
         </button>
       )}
 
       {/* Add to playlist */}
       {onAddToPlaylist && (
         <button
-          onClick={onAddToPlaylist}
+          onClick={
+            onAddToPlaylist
+          }
           className="shrink-0 rounded-app-sm p-1 transition-colors text-app-text-dim hover:text-app-accent hover:bg-app-accent-dim"
-          title={t("add-to-playlist", { defaultValue: "Add to playlist" })}
+          title={t(
+            'add-to-playlist',
+            {
+              defaultValue:
+                'Add to playlist',
+            },
+          )}
         >
           <ListPlus className="h-3.5 w-3.5" />
         </button>
@@ -102,9 +186,17 @@ export default function QueueItem({ item, isActive, canControl, canRemove, queue
       {/* Remove */}
       {canRemove && (
         <button
-          onClick={onRemove}
+          onClick={
+            onRemove
+          }
           className="shrink-0 rounded-app-sm p-1 transition-colors text-app-text-dim hover:text-app-danger hover:bg-app-danger-dim"
-          title={t("remove-from-queue", { defaultValue: "Remove from queue" })}
+          title={t(
+            'remove-from-queue',
+            {
+              defaultValue:
+                'Remove from queue',
+            },
+          )}
         >
           <X className="h-3.5 w-3.5" />
         </button>

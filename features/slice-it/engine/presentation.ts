@@ -35,30 +35,122 @@ export const ENVELOPE_BANDS = 8;
  * @param frames  Per-analysis-frame magnitudes, already log-frequency binned.
  * @param frameHz The analyser's own frame rate (hop rate), not the target.
  */
-export function spectrumEnvelope(frames: Float32Array[], frameHz: number): Uint8Array {
-  if (frames.length === 0 || frameHz <= 0) return new Uint8Array(0);
+export function spectrumEnvelope(
+  frames: Float32Array[],
+  frameHz: number,
+): Uint8Array {
+  if (
+    frames.length ===
+      0 ||
+    frameHz <=
+      0
+  )
+    return new Uint8Array(
+      0,
+    );
 
-  const outFrames = Math.max(1, Math.round((frames.length / frameHz) * ENVELOPE_HZ));
-  const out = new Uint8Array(outFrames * ENVELOPE_BANDS);
+  const outFrames =
+    Math.max(
+      1,
+      Math.round(
+        (frames.length /
+          frameHz) *
+          ENVELOPE_HZ,
+      ),
+    );
+  const out =
+    new Uint8Array(
+      outFrames *
+        ENVELOPE_BANDS,
+    );
 
   // Peak, not mean, when several analysis frames collapse into one output
   // frame. A mean smears transients into mush, and transients are the only
   // thing a backdrop at 30 Hz can actually show.
-  const peaks = new Float32Array(outFrames * ENVELOPE_BANDS);
-  for (let i = 0; i < frames.length; i++) {
-    const target = Math.min(outFrames - 1, Math.floor((i / frameHz) * ENVELOPE_HZ));
-    const frame = frames[i];
-    const bandWidth = frame.length / ENVELOPE_BANDS;
-    for (let band = 0; band < ENVELOPE_BANDS; band++) {
-      const from = Math.floor(band * bandWidth);
-      const to = Math.max(from + 1, Math.floor((band + 1) * bandWidth));
+  const peaks =
+    new Float32Array(
+      outFrames *
+        ENVELOPE_BANDS,
+    );
+  for (
+    let i = 0;
+    i <
+    frames.length;
+    i++
+  ) {
+    const target =
+      Math.min(
+        outFrames -
+          1,
+        Math.floor(
+          (i /
+            frameHz) *
+            ENVELOPE_HZ,
+        ),
+      );
+    const frame =
+      frames[
+        i
+      ];
+    const bandWidth =
+      frame.length /
+      ENVELOPE_BANDS;
+    for (
+      let band = 0;
+      band <
+      ENVELOPE_BANDS;
+      band++
+    ) {
+      const from =
+        Math.floor(
+          band *
+            bandWidth,
+        );
+      const to =
+        Math.max(
+          from +
+            1,
+          Math.floor(
+            (band +
+              1) *
+              bandWidth,
+          ),
+        );
       let peak = 0;
-      for (let bin = from; bin < to && bin < frame.length; bin++) {
-        const value = frame[bin];
-        if (value > peak) peak = value;
+      for (
+        let bin =
+          from;
+        bin <
+          to &&
+        bin <
+          frame.length;
+        bin++
+      ) {
+        const value =
+          frame[
+            bin
+          ];
+        if (
+          value >
+          peak
+        )
+          peak =
+            value;
       }
-      const index = target * ENVELOPE_BANDS + band;
-      if (peak > peaks[index]) peaks[index] = peak;
+      const index =
+        target *
+          ENVELOPE_BANDS +
+        band;
+      if (
+        peak >
+        peaks[
+          index
+        ]
+      )
+        peaks[
+          index
+        ] =
+          peak;
     }
   }
 
@@ -66,9 +158,34 @@ export function spectrumEnvelope(frames: Float32Array[], frameHz: number): Uint8
   // A quiet master and a loud one should both fill the backdrop; the envelope
   // describes the shape of this song, not its mastering level.
   let max = 0;
-  for (const value of peaks) if (value > max) max = value;
-  if (max <= 0) return out;
-  for (let i = 0; i < peaks.length; i++) out[i] = Math.round((peaks[i] / max) * 255);
+  for (const value of peaks)
+    if (
+      value >
+      max
+    )
+      max =
+        value;
+  if (
+    max <=
+    0
+  )
+    return out;
+  for (
+    let i = 0;
+    i <
+    peaks.length;
+    i++
+  )
+    out[
+      i
+    ] =
+      Math.round(
+        (peaks[
+          i
+        ] /
+          max) *
+          255,
+      );
   return out;
 }
 
@@ -86,43 +203,133 @@ export function spectrumEnvelope(frames: Float32Array[], frameHz: number): Uint8
 export function sampleEnvelope(
   envelope: Uint8Array,
   seconds: number,
-  into: Uint8Array = new Uint8Array(ENVELOPE_BANDS),
+  into: Uint8Array = new Uint8Array(
+    ENVELOPE_BANDS,
+  ),
 ): Uint8Array {
-  into.fill(0);
-  if (envelope.length === 0 || seconds < 0) return into;
-  const frame = Math.floor(seconds * ENVELOPE_HZ);
-  const offset = frame * ENVELOPE_BANDS;
-  if (offset + ENVELOPE_BANDS > envelope.length) return into;
-  for (let band = 0; band < ENVELOPE_BANDS; band++) into[band] = envelope[offset + band];
+  into.fill(
+    0,
+  );
+  if (
+    envelope.length ===
+      0 ||
+    seconds <
+      0
+  )
+    return into;
+  const frame =
+    Math.floor(
+      seconds *
+        ENVELOPE_HZ,
+    );
+  const offset =
+    frame *
+    ENVELOPE_BANDS;
+  if (
+    offset +
+      ENVELOPE_BANDS >
+    envelope.length
+  )
+    return into;
+  for (
+    let band = 0;
+    band <
+    ENVELOPE_BANDS;
+    band++
+  )
+    into[
+      band
+    ] =
+      envelope[
+        offset +
+          band
+      ];
   return into;
 }
 
 /** Base64 for transport — the envelope rides in JSON alongside the chart. */
-export function encodeEnvelope(envelope: Uint8Array): string {
-  let binary = '';
-  for (const byte of envelope) binary += String.fromCharCode(byte);
-  return typeof btoa === 'function' ? btoa(binary) : Buffer.from(envelope).toString('base64');
+export function encodeEnvelope(
+  envelope: Uint8Array,
+): string {
+  let binary =
+    '';
+  for (const byte of envelope)
+    binary +=
+      String.fromCharCode(
+        byte,
+      );
+  return typeof btoa ===
+    'function'
+    ? btoa(
+        binary,
+      )
+    : Buffer.from(
+        envelope,
+      ).toString(
+        'base64',
+      );
 }
 
-export function decodeEnvelope(encoded: string | null | undefined): Uint8Array {
-  if (!encoded) return new Uint8Array(0);
+export function decodeEnvelope(
+  encoded:
+    | string
+    | null
+    | undefined,
+): Uint8Array {
+  if (
+    !encoded
+  )
+    return new Uint8Array(
+      0,
+    );
   try {
-    if (typeof atob === 'function') {
-      const binary = atob(encoded);
-      const out = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+    if (
+      typeof atob ===
+      'function'
+    ) {
+      const binary =
+        atob(
+          encoded,
+        );
+      const out =
+        new Uint8Array(
+          binary.length,
+        );
+      for (
+        let i = 0;
+        i <
+        binary.length;
+        i++
+      )
+        out[
+          i
+        ] =
+          binary.charCodeAt(
+            i,
+          );
       return out;
     }
-    return new Uint8Array(Buffer.from(encoded, 'base64'));
+    return new Uint8Array(
+      Buffer.from(
+        encoded,
+        'base64',
+      ),
+    );
   } catch {
     // A corrupt envelope is a missing backdrop, never a failed run.
-    return new Uint8Array(0);
+    return new Uint8Array(
+      0,
+    );
   }
 }
 
 /* ─── V7 — stage backdrops ───────────────────────────────────────────────── */
 
-export type BackdropId = 'none' | 'pulse' | 'bars' | 'aurora';
+export type BackdropId =
+  | 'none'
+  | 'pulse'
+  | 'bars'
+  | 'aurora';
 
 export interface BackdropState {
   /** 0–1. Overall brightness/scale of the backdrop treatment. */
@@ -148,16 +355,52 @@ export function backdropState(options: {
   /** False when the gauge is off, which is the default — see `G1`. */
   healthEnabled: boolean;
 }): BackdropState {
-  const { combo, healthEnabled } = options;
-  const healthMax = options.healthMax > 0 ? options.healthMax : 1;
-  const health = clamp01(options.health / healthMax);
-  const comboTerm = Math.min(1, Math.max(0, combo) / 200);
+  const {
+    combo,
+    healthEnabled,
+  } =
+    options;
+  const healthMax =
+    options.healthMax >
+    0
+      ? options.healthMax
+      : 1;
+  const health =
+    clamp01(
+      options.health /
+        healthMax,
+    );
+  const comboTerm =
+    Math.min(
+      1,
+      Math.max(
+        0,
+        combo,
+      ) /
+        200,
+    );
 
   // With the gauge off there is no danger to describe, so combo carries the
   // whole signal rather than the backdrop sitting permanently at 60%.
-  if (!healthEnabled) return { intensity: comboTerm, danger: 0 };
+  if (
+    !healthEnabled
+  )
+    return {
+      intensity:
+        comboTerm,
+      danger: 0,
+    };
 
-  return { intensity: health * 0.6 + comboTerm * 0.4, danger: 1 - health };
+  return {
+    intensity:
+      health *
+        0.6 +
+      comboTerm *
+        0.4,
+    danger:
+      1 -
+      health,
+  };
 }
 
 /**
@@ -172,7 +415,12 @@ export function backdropVisible(options: {
   glow: boolean;
   reducedFlash: boolean;
 }): boolean {
-  return options.backdrop !== 'none' && options.glow && !options.reducedFlash;
+  return (
+    options.backdrop !==
+      'none' &&
+    options.glow &&
+    !options.reducedFlash
+  );
 }
 
 /**
@@ -183,12 +431,32 @@ export function backdropVisible(options: {
  * from someone's local storage, and every consumer needs one place that turns
  * an arbitrary string back into something drawable.
  */
-export const BACKDROP_IDS = ['none', 'pulse', 'bars', 'aurora'] as const;
+export const BACKDROP_IDS =
+  [
+    'none',
+    'pulse',
+    'bars',
+    'aurora',
+  ] as const;
 
 /** Narrow an arbitrary persisted string back to a backdrop. */
-export function resolveBackdrop(id: string | null | undefined): BackdropId {
-  if (!id) return 'none';
-  return (BACKDROP_IDS as readonly string[]).includes(id) ? (id as BackdropId) : 'none';
+export function resolveBackdrop(
+  id:
+    | string
+    | null
+    | undefined,
+): BackdropId {
+  if (
+    !id
+  )
+    return 'none';
+  return (
+    BACKDROP_IDS as readonly string[]
+  ).includes(
+    id,
+  )
+    ? (id as BackdropId)
+    : 'none';
 }
 
 /* ─── V7 — reading the music the backdrops react to ──────────────────────── */
@@ -233,10 +501,31 @@ export const BACKDROP_LEVEL_WINDOW = 0.06;
  * in a chorus. The curve is a stand-in for a proper dB mapping, which would
  * need a floor to keep silence from mapping to −∞.
  */
-export function backdropLevel(envelope: Uint8Array, rate: number, seconds: number): number {
-  if (!(seconds >= 0)) return 0;
-  const half = BACKDROP_LEVEL_WINDOW / 2;
-  return Math.sqrt(envelopePeak(envelope, rate, seconds - half, seconds + half));
+export function backdropLevel(
+  envelope: Uint8Array,
+  rate: number,
+  seconds: number,
+): number {
+  if (
+    !(
+      seconds >=
+      0
+    )
+  )
+    return 0;
+  const half =
+    BACKDROP_LEVEL_WINDOW /
+    2;
+  return Math.sqrt(
+    envelopePeak(
+      envelope,
+      rate,
+      seconds -
+        half,
+      seconds +
+        half,
+    ),
+  );
 }
 
 /**
@@ -258,19 +547,63 @@ export function backdropBars(
   toSeconds: number,
   into: Float32Array,
 ): boolean {
-  into.fill(0);
-  const count = into.length;
-  if (count === 0 || envelope.length === 0 || !(rate > 0)) return false;
-  if (!(toSeconds > fromSeconds)) return false;
+  into.fill(
+    0,
+  );
+  const count =
+    into.length;
+  if (
+    count ===
+      0 ||
+    envelope.length ===
+      0 ||
+    !(
+      rate >
+      0
+    )
+  )
+    return false;
+  if (
+    !(
+      toSeconds >
+      fromSeconds
+    )
+  )
+    return false;
 
-  const step = (toSeconds - fromSeconds) / count;
-  for (let i = 0; i < count; i++) {
-    const start = fromSeconds + i * step;
+  const step =
+    (toSeconds -
+      fromSeconds) /
+    count;
+  for (
+    let i = 0;
+    i <
+    count;
+    i++
+  ) {
+    const start =
+      fromSeconds +
+      i *
+        step;
     // Peak over the bucket, not the sample at its centre: one bar covers ~47 ms
     // of a 5 ms curve, and nearest-sampling that aliases — the bar field
     // shimmers as it scrolls instead of moving with the music. The same
     // reasoning `envelopePeak` itself documents.
-    into[i] = start < 0 ? 0 : Math.sqrt(envelopePeak(envelope, rate, start, start + step));
+    into[
+      i
+    ] =
+      start <
+      0
+        ? 0
+        : Math.sqrt(
+            envelopePeak(
+              envelope,
+              rate,
+              start,
+              start +
+                step,
+            ),
+          );
   }
   return true;
 }
@@ -296,14 +629,39 @@ export const BACKDROP_ATTACK_TAU = 0.045;
 export const BACKDROP_RELEASE_TAU = 0.34;
 
 /** One frame of envelope following. Frame-rate independent, like {@link approachEnergy}. */
-export function approachLevel(current: number, target: number, dt: number): number {
-  return lag(current, target, dt, target >= current ? BACKDROP_ATTACK_TAU : BACKDROP_RELEASE_TAU);
+export function approachLevel(
+  current: number,
+  target: number,
+  dt: number,
+): number {
+  return lag(
+    current,
+    target,
+    dt,
+    target >=
+      current
+      ? BACKDROP_ATTACK_TAU
+      : BACKDROP_RELEASE_TAU,
+  );
 }
 
 // eslint-disable-next-line no-restricted-syntax -- clamp01 maps non-finite to 0
-function clamp01(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(1, value));
+function clamp01(
+  value: number,
+): number {
+  if (
+    !Number.isFinite(
+      value,
+    )
+  )
+    return 0;
+  return Math.max(
+    0,
+    Math.min(
+      1,
+      value,
+    ),
+  );
 }
 
 /**
@@ -314,10 +672,42 @@ function clamp01(value: number): number {
  * Shared by the two followers here so there is one definition of what "eases
  * toward" means on this screen rather than two that can drift apart.
  */
-function lag(current: number, target: number, dt: number, tau: number): number {
-  if (!Number.isFinite(dt) || dt <= 0 || !(tau > 0)) return clamp01(current);
-  const k = 1 - Math.exp(-dt / tau);
-  return clamp01(current + (clamp01(target) - clamp01(current)) * k);
+function lag(
+  current: number,
+  target: number,
+  dt: number,
+  tau: number,
+): number {
+  if (
+    !Number.isFinite(
+      dt,
+    ) ||
+    dt <=
+      0 ||
+    !(
+      tau >
+      0
+    )
+  )
+    return clamp01(
+      current,
+    );
+  const k =
+    1 -
+    Math.exp(
+      -dt /
+        tau,
+    );
+  return clamp01(
+    current +
+      (clamp01(
+        target,
+      ) -
+        clamp01(
+          current,
+        )) *
+        k,
+  );
 }
 
 /* ─── V13 — playfield energy ─────────────────────────────────────────────── */
@@ -353,9 +743,24 @@ export const ENERGY_HALF_COMBO = 260;
  * the difference between 20 and 80 combo is a run finding its feet and should
  * be visible, while the difference between 800 and 900 is not information.
  */
-export function comboEnergy(combo: number): number {
-  if (!Number.isFinite(combo) || combo <= 0) return 0;
-  return 1 - Math.exp(-combo / ENERGY_HALF_COMBO);
+export function comboEnergy(
+  combo: number,
+): number {
+  if (
+    !Number.isFinite(
+      combo,
+    ) ||
+    combo <=
+      0
+  )
+    return 0;
+  return (
+    1 -
+    Math.exp(
+      -combo /
+        ENERGY_HALF_COMBO,
+    )
+  );
 }
 
 /** Seconds for the lit state to close ~63% of a gap while the combo climbs. */
@@ -385,6 +790,18 @@ export const ENERGY_FALL_TAU = 0.9;
  * backdrops do carry one, which is why they sit behind their own switch and
  * behind {@link backdropVisible} on top of it.
  */
-export function approachEnergy(current: number, target: number, dt: number): number {
-  return lag(current, target, dt, target >= current ? ENERGY_RISE_TAU : ENERGY_FALL_TAU);
+export function approachEnergy(
+  current: number,
+  target: number,
+  dt: number,
+): number {
+  return lag(
+    current,
+    target,
+    dt,
+    target >=
+      current
+      ? ENERGY_RISE_TAU
+      : ENERGY_FALL_TAU,
+  );
 }

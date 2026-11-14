@@ -24,24 +24,90 @@
  */
 
 import { getPrismaClient } from '../../../server/socket-server/prisma-client';
-import type { StakeFate, StakeKeys } from './stake-keys';
+import type {
+  StakeFate,
+  StakeKeys,
+} from './stake-keys';
 
 /** The fate of each stake that has one. Throws if the ledger cannot be read. */
-export async function readStakeFates(keys: StakeKeys, stakeIds: Iterable<string>): Promise<Map<string, StakeFate>> {
-  const byKey = new Map<string, [stakeId: string, fate: StakeFate]>();
+export async function readStakeFates(
+  keys: StakeKeys,
+  stakeIds: Iterable<string>,
+): Promise<
+  Map<
+    string,
+    StakeFate
+  >
+> {
+  const byKey =
+    new Map<
+      string,
+      [
+        stakeId: string,
+        fate: StakeFate,
+      ]
+    >();
   for (const id of stakeIds) {
-    byKey.set(keys.returned(id), [id, 'returned']);
-    byKey.set(keys.payout(id), [id, 'paid']);
+    byKey.set(
+      keys.returned(
+        id,
+      ),
+      [
+        id,
+        'returned',
+      ],
+    );
+    byKey.set(
+      keys.payout(
+        id,
+      ),
+      [
+        id,
+        'paid',
+      ],
+    );
   }
-  const fates = new Map<string, StakeFate>();
-  if (byKey.size === 0) return fates;
-  const rows = await getPrismaClient().coinTransaction.findMany({
-    where: { idempotencyKey: { in: [...byKey.keys()] } },
-    select: { idempotencyKey: true },
-  });
+  const fates =
+    new Map<
+      string,
+      StakeFate
+    >();
+  if (
+    byKey.size ===
+    0
+  )
+    return fates;
+  const rows =
+    await getPrismaClient().coinTransaction.findMany(
+      {
+        where:
+          {
+            idempotencyKey:
+              {
+                in: [
+                  ...byKey.keys(),
+                ],
+              },
+          },
+        select:
+          {
+            idempotencyKey: true,
+          },
+      },
+    );
   for (const row of rows) {
-    const hit = byKey.get(row.idempotencyKey ?? '');
-    if (hit) fates.set(hit[0], hit[1]);
+    const hit =
+      byKey.get(
+        row.idempotencyKey ??
+          '',
+      );
+    if (
+      hit
+    )
+      fates.set(
+        hit[0],
+        hit[1],
+      );
   }
   return fates;
 }

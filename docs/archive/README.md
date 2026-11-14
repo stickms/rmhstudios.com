@@ -1,12 +1,84 @@
 # docs/archive
 
-Historical snapshots: dated audits, performance and security reviews, and the
-original rewrite design. They describe the repository **at the time of writing**
-and are **not maintained**; numbers, file paths and recommendations in them may
-no longer match the code. They are excluded from the published Sphinx site
-(`exclude_patterns` in `docs/conf.py`) but kept in git for provenance.
+Historical
+snapshots:
+dated
+audits,
+performance
+and
+security
+reviews,
+and
+the
+original
+rewrite
+design.
+They
+describe
+the
+repository
+**at
+the
+time
+of
+writing**
+and
+are
+**not
+maintained**;
+numbers,
+file
+paths
+and
+recommendations
+in
+them
+may
+no
+longer
+match
+the
+code.
+They
+are
+excluded
+from
+the
+published
+Sphinx
+site
+(`exclude_patterns`
+in
+`docs/conf.py`)
+but
+kept
+in
+git
+for
+provenance.
 
-For current facts read the living docs (`docs/architecture.md`,
-`docs/testing.md`, `docs/design-language.md`, ...) and the generated
-[`docs/_generated/facts.json`](../_generated/facts.json). Files are grouped by
-the year they were written (`2026/`).
+For
+current
+facts
+read
+the
+living
+docs
+(`docs/architecture.md`,
+`docs/testing.md`,
+`docs/design-language.md`,
+...)
+and
+the
+generated
+[`docs/_generated/facts.json`](../_generated/facts.json).
+Files
+are
+grouped
+by
+the
+year
+they
+were
+written
+(`2026/`).

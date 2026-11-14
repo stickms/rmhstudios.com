@@ -1,49 +1,87 @@
 import type { ReactionSummary } from '@/lib/social/reactions';
 
 export type FeedItemType =
-  | "rmhark"
-  | "game_announcement"
-  | "app_announcement"
-  | "news"
-  | "blog"
-  | "research"
-  | "election_announcement";
+  | 'rmhark'
+  | 'game_announcement'
+  | 'app_announcement'
+  | 'news'
+  | 'blog'
+  | 'research'
+  | 'election_announcement';
 
 /** The live-results payload of an `election_announcement` card (see lib/elections/feed.ts). */
 export interface FeedElection {
   /** Election Day, YYYY-MM-DD. */
   date: string;
-  phase: "upcoming" | "election-day" | "counting" | "archive";
+  phase:
+    | 'upcoming'
+    | 'election-day'
+    | 'counting'
+    | 'archive';
   live: boolean;
   called: number;
   total: number;
   /** One row per chamber that has a score to show. `basis` says what the numbers are. */
   chambers: {
-    office: "president" | "senate" | "house" | "governor";
+    office:
+      | 'president'
+      | 'senate'
+      | 'house'
+      | 'governor';
     name: string;
     dem: number;
     gop: number;
     toWin: number;
-    basis: "results" | "current";
-    controlledBy: "DEM" | "GOP" | "OTH" | null;
+    basis:
+      | 'results'
+      | 'current';
+    controlledBy:
+      | 'DEM'
+      | 'GOP'
+      | 'OTH'
+      | null;
   }[];
 }
 
 export interface UserCosmetics {
-  nameColor?: { color?: string; gradient?: string };
-  avatarFrame?: { color?: string; gradient?: string };
-  badge?: { emoji?: string };
-  banner?: { gradient?: string };
-  postFlair?: { className?: string; color?: string; gradient?: string };
-  pet?: { emoji?: string };
+  nameColor?: {
+    color?: string;
+    gradient?: string;
+  };
+  avatarFrame?: {
+    color?: string;
+    gradient?: string;
+  };
+  badge?: {
+    emoji?: string;
+  };
+  banner?: {
+    gradient?: string;
+  };
+  postFlair?: {
+    className?: string;
+    color?: string;
+    gradient?: string;
+  };
+  pet?: {
+    emoji?: string;
+  };
 }
 
 export interface FeedItemUser {
   id: string;
-  name?: string | null;
-  username?: string | null;
-  handle?: string | null;
-  image?: string | null;
+  name?:
+    | string
+    | null;
+  username?:
+    | string
+    | null;
+  handle?:
+    | string
+    | null;
+  image?:
+    | string
+    | null;
   isVerified?: boolean;
   isAdmin?: boolean;
   isBot?: boolean;
@@ -64,7 +102,9 @@ export interface FeedPoll {
   totalVotes: number;
   options: FeedPollOption[];
   myVotes?: string[]; // option IDs the current user voted for
-  closesAt?: string | null; // scheduled close time, if any
+  closesAt?:
+    | string
+    | null; // scheduled close time, if any
 }
 
 export interface FeedItem {
@@ -95,7 +135,9 @@ export interface FeedItem {
   threadReplyCount?: number;
 
   // Soft deletions
-  deletedAt?: string | null;
+  deletedAt?:
+    | string
+    | null;
   deletedByAdmin?: boolean;
 
   /**
@@ -114,7 +156,10 @@ export interface FeedItem {
   /** Content warning: render media/text behind a click-to-reveal overlay. */
   isSensitive?: boolean;
   /** Who can reply to this post. */
-  replyControl?: "EVERYONE" | "FOLLOWING" | "MENTIONED";
+  replyControl?:
+    | 'EVERYONE'
+    | 'FOLLOWING'
+    | 'MENTIONED';
   /** Take meter (X6): readers vote agree/disagree. The split is NOT in the payload. */
   isTake?: boolean;
   /** X3 — at least one context note is visible; the notes load lazily. */
@@ -122,7 +167,11 @@ export interface FeedItem {
   /** F14 — the post carries a runnable code snippet; it loads only on click. */
   hasEmbed?: boolean;
   /** N1: community post flair (community feeds only). */
-  communityFlair?: { id: string; name: string; color: string };
+  communityFlair?: {
+    id: string;
+    name: string;
+    color: string;
+  };
   /** posts-plus X5: id of the series this post is a part of (details load lazily). */
   seriesId?: string;
   /** posts-plus X8: ISO time after which the post disappears (author-chosen TTL). */
@@ -146,12 +195,12 @@ export interface FeedItem {
 }
 
 export type FeedFilter =
-  | "all"
-  | "rmhark"
-  | "game"
-  | "app"
-  | "news"
-  | "blog"
-  | "research"
-  | "other"
-  | "friends";
+  | 'all'
+  | 'rmhark'
+  | 'game'
+  | 'app'
+  | 'news'
+  | 'blog'
+  | 'research'
+  | 'other'
+  | 'friends';

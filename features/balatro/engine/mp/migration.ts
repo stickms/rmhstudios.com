@@ -20,20 +20,50 @@
  * hosts: a network split it survived) demotes itself and rejoins.
  */
 
-import { checkpointUsable, refRebuild } from './referee/checkpoint';
-import type { Id, RefCheckpoint, StartedMatch } from './types';
+import {
+  checkpointUsable,
+  refRebuild,
+} from './referee/checkpoint';
+import type {
+  Id,
+  RefCheckpoint,
+  StartedMatch,
+} from './types';
 
 /** Gap left between the old host's `hs` and the new host's first one. */
 export const HS_MIGRATION_GAP = 10_000;
 
-export function successorHs(lastSeenHs: number): number {
-  return Math.max(0, Math.floor(lastSeenHs)) + HS_MIGRATION_GAP;
+export function successorHs(
+  lastSeenHs: number,
+): number {
+  return (
+    Math.max(
+      0,
+      Math.floor(
+        lastSeenHs,
+      ),
+    ) +
+    HS_MIGRATION_GAP
+  );
 }
 
 export interface TakeoverCache {
-  lives: Record<Id, number>;
-  teamLives?: { A?: number; B?: number };
-  pairing?: { pairing: Record<Id, Id | ''>; ante: number } | null;
+  lives: Record<
+    Id,
+    number
+  >;
+  teamLives?: {
+    A?: number;
+    B?: number;
+  };
+  pairing?: {
+    pairing: Record<
+      Id,
+      | Id
+      | ''
+    >;
+    ante: number;
+  } | null;
   forfeited?: Id[];
 }
 
@@ -44,15 +74,43 @@ export function takeoverCheckpoint(
   cache: TakeoverCache,
   at: number,
   rngSeed: number,
-): { checkpoint: RefCheckpoint; rebuilt: boolean } {
-  if (checkpointUsable(held, match)) return { checkpoint: held, rebuilt: false };
-  const checkpoint = refRebuild(match, {
-    at,
-    rngSeed,
-    lives: cache.lives,
-    teamLives: cache.teamLives,
-    forfeited: cache.forfeited,
-    ...(cache.pairing ? { pairing: cache.pairing } : {}),
-  });
-  return { checkpoint, rebuilt: true };
+): {
+  checkpoint: RefCheckpoint;
+  rebuilt: boolean;
+} {
+  if (
+    checkpointUsable(
+      held,
+      match,
+    )
+  )
+    return {
+      checkpoint:
+        held,
+      rebuilt: false,
+    };
+  const checkpoint =
+    refRebuild(
+      match,
+      {
+        at,
+        rngSeed,
+        lives:
+          cache.lives,
+        teamLives:
+          cache.teamLives,
+        forfeited:
+          cache.forfeited,
+        ...(cache.pairing
+          ? {
+              pairing:
+                cache.pairing,
+            }
+          : {}),
+      },
+    );
+  return {
+    checkpoint,
+    rebuilt: true,
+  };
 }

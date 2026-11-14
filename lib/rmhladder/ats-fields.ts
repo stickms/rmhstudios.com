@@ -20,7 +20,10 @@
  * Client-safe: pure data plus one assembly function, no Prisma, no network.
  */
 
-import type { AnswerBank, EssayAnswer } from './answer-bank';
+import type {
+  AnswerBank,
+  EssayAnswer,
+} from './answer-bank';
 
 /* -------------------------------------------------------------------------- */
 /* Platforms                                                                  */
@@ -29,37 +32,79 @@ import type { AnswerBank, EssayAnswer } from './answer-bank';
 /** Mirrors the `LadderPlatform` enum. Kept as a local union so this module
  *  stays importable from client code without pulling in the Prisma client. */
 export type AtsPlatform =
-  'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters' | 'workday' | 'manual' | 'generic';
+  | 'greenhouse'
+  | 'lever'
+  | 'ashby'
+  | 'smartrecruiters'
+  | 'workday'
+  | 'manual'
+  | 'generic';
 
-export const ATS_PLATFORMS: readonly AtsPlatform[] = [
-  'greenhouse',
-  'lever',
-  'ashby',
-  'smartrecruiters',
-  'workday',
-  'manual',
-  'generic',
-] as const;
+export const ATS_PLATFORMS: readonly AtsPlatform[] =
+  [
+    'greenhouse',
+    'lever',
+    'ashby',
+    'smartrecruiters',
+    'workday',
+    'manual',
+    'generic',
+  ] as const;
 
-const PLATFORM_LABELS: Record<AtsPlatform, string> = {
-  greenhouse: 'Greenhouse',
-  lever: 'Lever',
-  ashby: 'Ashby',
-  smartrecruiters: 'SmartRecruiters',
-  workday: 'Workday',
-  manual: 'Company site',
-  generic: 'Company site',
-};
+const PLATFORM_LABELS: Record<
+  AtsPlatform,
+  string
+> =
+  {
+    greenhouse:
+      'Greenhouse',
+    lever:
+      'Lever',
+    ashby:
+      'Ashby',
+    smartrecruiters:
+      'SmartRecruiters',
+    workday:
+      'Workday',
+    manual:
+      'Company site',
+    generic:
+      'Company site',
+  };
 
-export function atsPlatformLabel(platform: AtsPlatform): string {
-  return PLATFORM_LABELS[platform] ?? PLATFORM_LABELS.generic;
+export function atsPlatformLabel(
+  platform: AtsPlatform,
+): string {
+  return (
+    PLATFORM_LABELS[
+      platform
+    ] ??
+    PLATFORM_LABELS.generic
+  );
 }
 
 /** Normalize whatever the job row carries into a platform we have an order for. */
-export function resolveAtsPlatform(value: string | null | undefined): AtsPlatform {
-  if (!value) return 'generic';
-  const key = value.toLowerCase().trim();
-  return (ATS_PLATFORMS as readonly string[]).includes(key) ? (key as AtsPlatform) : 'generic';
+export function resolveAtsPlatform(
+  value:
+    | string
+    | null
+    | undefined,
+): AtsPlatform {
+  if (
+    !value
+  )
+    return 'generic';
+  const key =
+    value
+      .toLowerCase()
+      .trim();
+  return (
+    ATS_PLATFORMS as readonly string[]
+  ).includes(
+    key,
+  )
+    ? (key as AtsPlatform)
+    : 'generic';
 }
 
 /* -------------------------------------------------------------------------- */
@@ -98,20 +143,104 @@ interface FieldDef {
   sensitive: boolean;
 }
 
-const FIELD_DEFS: Record<Exclude<PacketFieldKey, 'essay'>, FieldDef> = {
-  fullName: { label: 'Full name', kind: 'text', sensitive: false },
-  email: { label: 'Email', kind: 'text', sensitive: true },
-  phone: { label: 'Phone', kind: 'text', sensitive: true },
-  resume: { label: 'Resume', kind: 'file', sensitive: false },
-  coverLetter: { label: 'Cover letter', kind: 'longtext', sensitive: false },
-  linkedinUrl: { label: 'LinkedIn', kind: 'text', sensitive: false },
-  portfolioUrl: { label: 'Portfolio / GitHub', kind: 'text', sensitive: false },
-  locationPreference: { label: 'Location', kind: 'text', sensitive: false },
-  workAuthorization: { label: 'Work authorization', kind: 'text', sensitive: true },
-  needsSponsorship: { label: 'Requires sponsorship', kind: 'choice', sensitive: true },
-  salaryExpectation: { label: 'Salary expectation', kind: 'text', sensitive: true },
-  noticePeriod: { label: 'Notice period', kind: 'text', sensitive: false },
-  referralName: { label: 'Referred by', kind: 'text', sensitive: false },
+const FIELD_DEFS: Record<
+  Exclude<
+    PacketFieldKey,
+    'essay'
+  >,
+  FieldDef
+> = {
+  fullName:
+    {
+      label:
+        'Full name',
+      kind: 'text',
+      sensitive: false,
+    },
+  email:
+    {
+      label:
+        'Email',
+      kind: 'text',
+      sensitive: true,
+    },
+  phone:
+    {
+      label:
+        'Phone',
+      kind: 'text',
+      sensitive: true,
+    },
+  resume:
+    {
+      label:
+        'Resume',
+      kind: 'file',
+      sensitive: false,
+    },
+  coverLetter:
+    {
+      label:
+        'Cover letter',
+      kind: 'longtext',
+      sensitive: false,
+    },
+  linkedinUrl:
+    {
+      label:
+        'LinkedIn',
+      kind: 'text',
+      sensitive: false,
+    },
+  portfolioUrl:
+    {
+      label:
+        'Portfolio / GitHub',
+      kind: 'text',
+      sensitive: false,
+    },
+  locationPreference:
+    {
+      label:
+        'Location',
+      kind: 'text',
+      sensitive: false,
+    },
+  workAuthorization:
+    {
+      label:
+        'Work authorization',
+      kind: 'text',
+      sensitive: true,
+    },
+  needsSponsorship:
+    {
+      label:
+        'Requires sponsorship',
+      kind: 'choice',
+      sensitive: true,
+    },
+  salaryExpectation:
+    {
+      label:
+        'Salary expectation',
+      kind: 'text',
+      sensitive: true,
+    },
+  noticePeriod:
+    {
+      label:
+        'Notice period',
+      kind: 'text',
+      sensitive: false,
+    },
+  referralName:
+    {
+      label:
+        'Referred by',
+      kind: 'text',
+      sensitive: false,
+    },
 };
 
 /**
@@ -125,134 +254,151 @@ const FIELD_DEFS: Record<Exclude<PacketFieldKey, 'essay'>, FieldDef> = {
  * `essay` always sits last: the repeated free-text questions live at the bottom
  * of every one of these forms, and their own order comes from the user's bank.
  */
-export const ATS_FIELD_ORDER: Record<AtsPlatform, readonly PacketFieldKey[]> = {
-  // Greenhouse: identity, then attachments, then the links and the questions.
-  greenhouse: [
-    'fullName',
-    'email',
-    'phone',
-    'resume',
-    'coverLetter',
-    'linkedinUrl',
-    'portfolioUrl',
-    'locationPreference',
-    'workAuthorization',
-    'needsSponsorship',
-    'salaryExpectation',
-    'noticePeriod',
-    'referralName',
-    'essay',
-  ],
-  // Lever puts the profile links immediately under the resume, and asks about
-  // referral early because its referral flow is a first-class field.
-  lever: [
-    'fullName',
-    'email',
-    'phone',
-    'resume',
-    'linkedinUrl',
-    'portfolioUrl',
-    'referralName',
-    'coverLetter',
-    'locationPreference',
-    'workAuthorization',
-    'needsSponsorship',
-    'salaryExpectation',
-    'noticePeriod',
-    'essay',
-  ],
-  // Ashby leads with the resume (it parses it to prefill), then confirms
-  // details, and treats the cover letter as optional near the end.
-  ashby: [
-    'fullName',
-    'email',
-    'resume',
-    'phone',
-    'linkedinUrl',
-    'portfolioUrl',
-    'locationPreference',
-    'workAuthorization',
-    'needsSponsorship',
-    'salaryExpectation',
-    'noticePeriod',
-    'coverLetter',
-    'referralName',
-    'essay',
-  ],
-  // SmartRecruiters asks for location as part of the identity block.
-  smartrecruiters: [
-    'fullName',
-    'email',
-    'phone',
-    'locationPreference',
-    'resume',
-    'linkedinUrl',
-    'portfolioUrl',
-    'coverLetter',
-    'workAuthorization',
-    'needsSponsorship',
-    'noticePeriod',
-    'salaryExpectation',
-    'referralName',
-    'essay',
-  ],
-  // Workday's wizard front-loads contact + eligibility before attachments.
-  workday: [
-    'fullName',
-    'email',
-    'phone',
-    'locationPreference',
-    'workAuthorization',
-    'needsSponsorship',
-    'resume',
-    'coverLetter',
-    'linkedinUrl',
-    'portfolioUrl',
-    'salaryExpectation',
-    'noticePeriod',
-    'referralName',
-    'essay',
-  ],
-  // No adapter knowledge — a neutral, conventional order.
-  manual: [
-    'fullName',
-    'email',
-    'phone',
-    'resume',
-    'coverLetter',
-    'linkedinUrl',
-    'portfolioUrl',
-    'locationPreference',
-    'workAuthorization',
-    'needsSponsorship',
-    'salaryExpectation',
-    'noticePeriod',
-    'referralName',
-    'essay',
-  ],
-  generic: [
-    'fullName',
-    'email',
-    'phone',
-    'resume',
-    'coverLetter',
-    'linkedinUrl',
-    'portfolioUrl',
-    'locationPreference',
-    'workAuthorization',
-    'needsSponsorship',
-    'salaryExpectation',
-    'noticePeriod',
-    'referralName',
-    'essay',
-  ],
-};
+export const ATS_FIELD_ORDER: Record<
+  AtsPlatform,
+  readonly PacketFieldKey[]
+> =
+  {
+    // Greenhouse: identity, then attachments, then the links and the questions.
+    greenhouse:
+      [
+        'fullName',
+        'email',
+        'phone',
+        'resume',
+        'coverLetter',
+        'linkedinUrl',
+        'portfolioUrl',
+        'locationPreference',
+        'workAuthorization',
+        'needsSponsorship',
+        'salaryExpectation',
+        'noticePeriod',
+        'referralName',
+        'essay',
+      ],
+    // Lever puts the profile links immediately under the resume, and asks about
+    // referral early because its referral flow is a first-class field.
+    lever:
+      [
+        'fullName',
+        'email',
+        'phone',
+        'resume',
+        'linkedinUrl',
+        'portfolioUrl',
+        'referralName',
+        'coverLetter',
+        'locationPreference',
+        'workAuthorization',
+        'needsSponsorship',
+        'salaryExpectation',
+        'noticePeriod',
+        'essay',
+      ],
+    // Ashby leads with the resume (it parses it to prefill), then confirms
+    // details, and treats the cover letter as optional near the end.
+    ashby:
+      [
+        'fullName',
+        'email',
+        'resume',
+        'phone',
+        'linkedinUrl',
+        'portfolioUrl',
+        'locationPreference',
+        'workAuthorization',
+        'needsSponsorship',
+        'salaryExpectation',
+        'noticePeriod',
+        'coverLetter',
+        'referralName',
+        'essay',
+      ],
+    // SmartRecruiters asks for location as part of the identity block.
+    smartrecruiters:
+      [
+        'fullName',
+        'email',
+        'phone',
+        'locationPreference',
+        'resume',
+        'linkedinUrl',
+        'portfolioUrl',
+        'coverLetter',
+        'workAuthorization',
+        'needsSponsorship',
+        'noticePeriod',
+        'salaryExpectation',
+        'referralName',
+        'essay',
+      ],
+    // Workday's wizard front-loads contact + eligibility before attachments.
+    workday:
+      [
+        'fullName',
+        'email',
+        'phone',
+        'locationPreference',
+        'workAuthorization',
+        'needsSponsorship',
+        'resume',
+        'coverLetter',
+        'linkedinUrl',
+        'portfolioUrl',
+        'salaryExpectation',
+        'noticePeriod',
+        'referralName',
+        'essay',
+      ],
+    // No adapter knowledge — a neutral, conventional order.
+    manual:
+      [
+        'fullName',
+        'email',
+        'phone',
+        'resume',
+        'coverLetter',
+        'linkedinUrl',
+        'portfolioUrl',
+        'locationPreference',
+        'workAuthorization',
+        'needsSponsorship',
+        'salaryExpectation',
+        'noticePeriod',
+        'referralName',
+        'essay',
+      ],
+    generic:
+      [
+        'fullName',
+        'email',
+        'phone',
+        'resume',
+        'coverLetter',
+        'linkedinUrl',
+        'portfolioUrl',
+        'locationPreference',
+        'workAuthorization',
+        'needsSponsorship',
+        'salaryExpectation',
+        'noticePeriod',
+        'referralName',
+        'essay',
+      ],
+  };
 
 /** Every key an order is expected to contain. Used by the ordering test. */
-export const ALL_PACKET_FIELD_KEYS: readonly PacketFieldKey[] = [
-  ...(Object.keys(FIELD_DEFS) as Exclude<PacketFieldKey, 'essay'>[]),
-  'essay',
-];
+export const ALL_PACKET_FIELD_KEYS: readonly PacketFieldKey[] =
+  [
+    ...(Object.keys(
+      FIELD_DEFS,
+    ) as Exclude<
+      PacketFieldKey,
+      'essay'
+    >[]),
+    'essay',
+  ];
 
 /* -------------------------------------------------------------------------- */
 /* The packet                                                                 */
@@ -273,16 +419,28 @@ export interface PacketField {
 }
 
 export interface PacketApplicant {
-  fullName: string | null;
-  email: string | null;
-  phone: string | null;
+  fullName:
+    | string
+    | null;
+  email:
+    | string
+    | null;
+  phone:
+    | string
+    | null;
 }
 
 export interface PacketApplication {
   /** Free-text name of the resume version selected for this application. */
-  resumeVersion: string | null;
-  coverLetter: string | null;
-  referralName: string | null;
+  resumeVersion:
+    | string
+    | null;
+  coverLetter:
+    | string
+    | null;
+  referralName:
+    | string
+    | null;
 }
 
 export interface BuildPacketInput {
@@ -292,21 +450,43 @@ export interface BuildPacketInput {
   platform: AtsPlatform;
 }
 
-function boolWord(value: boolean | null): string {
-  if (value === null) return '';
-  return value ? 'Yes' : 'No';
+function boolWord(
+  value:
+    | boolean
+    | null,
+): string {
+  if (
+    value ===
+    null
+  )
+    return '';
+  return value
+    ? 'Yes'
+    : 'No';
 }
 
-function essayFields(essays: readonly EssayAnswer[]): PacketField[] {
-  return essays.map((essay, i) => ({
-    id: `essay:${i}`,
-    key: 'essay' as const,
-    label: essay.question,
-    value: essay.answer,
-    kind: 'longtext' as const,
-    filled: essay.answer.trim().length > 0,
-    sensitive: false,
-  }));
+function essayFields(
+  essays: readonly EssayAnswer[],
+): PacketField[] {
+  return essays.map(
+    (
+      essay,
+      i,
+    ) => ({
+      id: `essay:${i}`,
+      key: 'essay' as const,
+      label:
+        essay.question,
+      value:
+        essay.answer,
+      kind: 'longtext' as const,
+      filled:
+        essay.answer.trim()
+          .length >
+        0,
+      sensitive: false,
+    }),
+  );
 }
 
 /**
@@ -317,44 +497,110 @@ function essayFields(essays: readonly EssayAnswer[]): PacketField[] {
  * doing this in our product instead of in the form; a silently shorter list
  * just moves the surprise to the employer's page.
  */
-export function buildApplicationPacket(input: BuildPacketInput): PacketField[] {
-  const { bank, applicant, application, platform } = input;
+export function buildApplicationPacket(
+  input: BuildPacketInput,
+): PacketField[] {
+  const {
+    bank,
+    applicant,
+    application,
+    platform,
+  } =
+    input;
 
-  const values: Record<Exclude<PacketFieldKey, 'essay'>, string> = {
-    fullName: applicant.fullName ?? '',
-    email: applicant.email ?? '',
-    phone: applicant.phone ?? '',
-    resume: application.resumeVersion ?? '',
-    coverLetter: application.coverLetter ?? '',
-    linkedinUrl: bank.linkedinUrl ?? '',
-    portfolioUrl: bank.portfolioUrl ?? '',
-    locationPreference: bank.locationPreference ?? '',
-    workAuthorization: bank.workAuthorization ?? '',
-    needsSponsorship: boolWord(bank.needsSponsorship),
-    salaryExpectation: bank.salaryExpectation ?? '',
-    noticePeriod: bank.noticePeriod ?? '',
-    referralName: application.referralName ?? '',
+  const values: Record<
+    Exclude<
+      PacketFieldKey,
+      'essay'
+    >,
+    string
+  > = {
+    fullName:
+      applicant.fullName ??
+      '',
+    email:
+      applicant.email ??
+      '',
+    phone:
+      applicant.phone ??
+      '',
+    resume:
+      application.resumeVersion ??
+      '',
+    coverLetter:
+      application.coverLetter ??
+      '',
+    linkedinUrl:
+      bank.linkedinUrl ??
+      '',
+    portfolioUrl:
+      bank.portfolioUrl ??
+      '',
+    locationPreference:
+      bank.locationPreference ??
+      '',
+    workAuthorization:
+      bank.workAuthorization ??
+      '',
+    needsSponsorship:
+      boolWord(
+        bank.needsSponsorship,
+      ),
+    salaryExpectation:
+      bank.salaryExpectation ??
+      '',
+    noticePeriod:
+      bank.noticePeriod ??
+      '',
+    referralName:
+      application.referralName ??
+      '',
   };
 
-  const order = ATS_FIELD_ORDER[platform] ?? ATS_FIELD_ORDER.generic;
+  const order =
+    ATS_FIELD_ORDER[
+      platform
+    ] ??
+    ATS_FIELD_ORDER.generic;
 
-  const fields: PacketField[] = [];
+  const fields: PacketField[] =
+    [];
   for (const key of order) {
-    if (key === 'essay') {
-      fields.push(...essayFields(bank.essays));
+    if (
+      key ===
+      'essay'
+    ) {
+      fields.push(
+        ...essayFields(
+          bank.essays,
+        ),
+      );
       continue;
     }
-    const def = FIELD_DEFS[key];
-    const value = values[key];
-    fields.push({
-      id: key,
-      key,
-      label: def.label,
-      value,
-      kind: def.kind,
-      filled: value.trim().length > 0,
-      sensitive: def.sensitive,
-    });
+    const def =
+      FIELD_DEFS[
+        key
+      ];
+    const value =
+      values[
+        key
+      ];
+    fields.push(
+      {
+        id: key,
+        key,
+        label:
+          def.label,
+        value,
+        kind: def.kind,
+        filled:
+          value.trim()
+            .length >
+          0,
+        sensitive:
+          def.sensitive,
+      },
+    );
   }
   return fields;
 }
@@ -364,6 +610,17 @@ export function buildApplicationPacket(input: BuildPacketInput): PacketField[] {
  * scratch buffer than copy field by field. Unfilled fields are marked rather
  * than omitted, for the same reason they are kept above.
  */
-export function packetAsText(fields: readonly PacketField[]): string {
-  return fields.map((f) => `${f.label}:\n${f.filled ? f.value : '(not set)'}`).join('\n\n');
+export function packetAsText(
+  fields: readonly PacketField[],
+): string {
+  return fields
+    .map(
+      (
+        f,
+      ) =>
+        `${f.label}:\n${f.filled ? f.value : '(not set)'}`,
+    )
+    .join(
+      '\n\n',
+    );
 }

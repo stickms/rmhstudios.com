@@ -3,25 +3,62 @@
  * into the inputs `swiss.ts` wants, and turns final standings into placements
  * and prize amounts. Kept free of I/O so the money path is unit-testable.
  */
-import { standings, type Standing, type SwissResult } from './swiss';
-import { rakeOf, TOURNAMENT_PAYOUT_SPLITS } from '@/lib/wager/constants';
+import {
+  standings,
+  type Standing,
+  type SwissResult,
+} from './swiss';
+import {
+  rakeOf,
+  TOURNAMENT_PAYOUT_SPLITS,
+} from '@/lib/wager/constants';
 
 export interface SwissMatchRow {
-  entrantAId: string | null;
-  entrantBId: string | null;
-  winnerEntrantId: string | null;
+  entrantAId:
+    | string
+    | null;
+  entrantBId:
+    | string
+    | null;
+  winnerEntrantId:
+    | string
+    | null;
   state: string;
 }
 
 /** Completed matches as Swiss results; a missing opponent is a bye (a win). */
-export function resultsFromMatches(matches: readonly SwissMatchRow[]): SwissResult[] {
-  const out: SwissResult[] = [];
+export function resultsFromMatches(
+  matches: readonly SwissMatchRow[],
+): SwissResult[] {
+  const out: SwissResult[] =
+    [];
   for (const m of matches) {
-    if (m.state !== 'COMPLETE' || !m.winnerEntrantId) continue;
-    const a = m.entrantAId ?? m.entrantBId;
-    if (!a) continue;
-    const b = m.entrantAId && m.entrantBId ? m.entrantBId : null;
-    out.push({ a, b, winner: m.winnerEntrantId });
+    if (
+      m.state !==
+        'COMPLETE' ||
+      !m.winnerEntrantId
+    )
+      continue;
+    const a =
+      m.entrantAId ??
+      m.entrantBId;
+    if (
+      !a
+    )
+      continue;
+    const b =
+      m.entrantAId &&
+      m.entrantBId
+        ? m.entrantBId
+        : null;
+    out.push(
+      {
+        a,
+        b,
+        winner:
+          m.winnerEntrantId,
+      },
+    );
   }
   return out;
 }
@@ -31,7 +68,12 @@ export function swissTable(
   entrantIdsBySeed: readonly string[],
   matches: readonly SwissMatchRow[],
 ): Standing[] {
-  return standings(entrantIdsBySeed, resultsFromMatches(matches));
+  return standings(
+    entrantIdsBySeed,
+    resultsFromMatches(
+      matches,
+    ),
+  );
 }
 
 /**
@@ -42,18 +84,79 @@ export function computePayouts(
   prizePoolCoins: number,
   rakeBps: number,
   entrantCount: number,
-): { payouts: number[]; rake: number } {
-  const bucketKey = Object.keys(TOURNAMENT_PAYOUT_SPLITS)
-    .map(Number)
-    .filter((k) => k <= entrantCount)
-    .sort((a, b) => b - a)[0];
-  const split = TOURNAMENT_PAYOUT_SPLITS[bucketKey ?? 2] ?? [10_000];
-  const rake = rakeOf(prizePoolCoins, rakeBps);
-  const pool = prizePoolCoins - rake;
-  const payouts = split.map((bps) => Math.floor((pool * bps) / 10_000));
-  const distributed = payouts.reduce((s, p) => s + p, 0);
-  if (payouts.length > 0) payouts[0] += pool - distributed;
-  return { payouts, rake };
+): {
+  payouts: number[];
+  rake: number;
+} {
+  const bucketKey =
+    Object.keys(
+      TOURNAMENT_PAYOUT_SPLITS,
+    )
+      .map(
+        Number,
+      )
+      .filter(
+        (
+          k,
+        ) =>
+          k <=
+          entrantCount,
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          b -
+          a,
+      )[0];
+  const split =
+    TOURNAMENT_PAYOUT_SPLITS[
+      bucketKey ??
+        2
+    ] ?? [
+      10_000,
+    ];
+  const rake =
+    rakeOf(
+      prizePoolCoins,
+      rakeBps,
+    );
+  const pool =
+    prizePoolCoins -
+    rake;
+  const payouts =
+    split.map(
+      (
+        bps,
+      ) =>
+        Math.floor(
+          (pool *
+            bps) /
+            10_000,
+        ),
+    );
+  const distributed =
+    payouts.reduce(
+      (
+        s,
+        p,
+      ) =>
+        s +
+        p,
+      0,
+    );
+  if (
+    payouts.length >
+    0
+  )
+    payouts[0] +=
+      pool -
+      distributed;
+  return {
+    payouts,
+    rake,
+  };
 }
 
 export interface Settlement {
@@ -69,7 +172,34 @@ export function swissSettlement(
   prizePoolCoins: number,
   rakeBps: number,
 ): Settlement[] {
-  const table = swissTable(entrantIdsBySeed, matches);
-  const { payouts } = computePayouts(prizePoolCoins, rakeBps, table.length);
-  return table.map((s, i) => ({ entrantId: s.id, placement: i + 1, amount: payouts[i] ?? 0 }));
+  const table =
+    swissTable(
+      entrantIdsBySeed,
+      matches,
+    );
+  const {
+    payouts,
+  } =
+    computePayouts(
+      prizePoolCoins,
+      rakeBps,
+      table.length,
+    );
+  return table.map(
+    (
+      s,
+      i,
+    ) => ({
+      entrantId:
+        s.id,
+      placement:
+        i +
+        1,
+      amount:
+        payouts[
+          i
+        ] ??
+        0,
+    }),
+  );
 }

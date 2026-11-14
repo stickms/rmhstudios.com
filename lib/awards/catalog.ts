@@ -17,26 +17,100 @@ export interface AwardDef {
   recipientShareBps: number;
 }
 
-export const AWARD_CATALOG: AwardDef[] = [
-  { id: 'bronze', name: 'Bronze', emoji: '🥉', priceCoins: 100, recipientShareBps: 6000 },
-  { id: 'silver', name: 'Silver', emoji: '🥈', priceCoins: 250, recipientShareBps: 6000 },
-  { id: 'gold', name: 'Gold', emoji: '🥇', priceCoins: 500, recipientShareBps: 6000 },
-  { id: 'star', name: 'Star', emoji: '⭐', priceCoins: 150, recipientShareBps: 6000 },
-  { id: 'heart', name: 'Heart', emoji: '❤️', priceCoins: 120, recipientShareBps: 6000 },
-  { id: 'rocket', name: 'Rocket', emoji: '🚀', priceCoins: 300, recipientShareBps: 6000 },
-];
+export const AWARD_CATALOG: AwardDef[] =
+  [
+    {
+      id: 'bronze',
+      name: 'Bronze',
+      emoji:
+        '🥉',
+      priceCoins: 100,
+      recipientShareBps: 6000,
+    },
+    {
+      id: 'silver',
+      name: 'Silver',
+      emoji:
+        '🥈',
+      priceCoins: 250,
+      recipientShareBps: 6000,
+    },
+    {
+      id: 'gold',
+      name: 'Gold',
+      emoji:
+        '🥇',
+      priceCoins: 500,
+      recipientShareBps: 6000,
+    },
+    {
+      id: 'star',
+      name: 'Star',
+      emoji:
+        '⭐',
+      priceCoins: 150,
+      recipientShareBps: 6000,
+    },
+    {
+      id: 'heart',
+      name: 'Heart',
+      emoji:
+        '❤️',
+      priceCoins: 120,
+      recipientShareBps: 6000,
+    },
+    {
+      id: 'rocket',
+      name: 'Rocket',
+      emoji:
+        '🚀',
+      priceCoins: 300,
+      recipientShareBps: 6000,
+    },
+  ];
 
-const AWARD_MAP = new Map(AWARD_CATALOG.map((a) => [a.id, a]));
-export function getAward(id: string): AwardDef | null {
-  return AWARD_MAP.get(id) ?? null;
+const AWARD_MAP =
+  new Map(
+    AWARD_CATALOG.map(
+      (
+        a,
+      ) => [
+        a.id,
+        a,
+      ],
+    ),
+  );
+export function getAward(
+  id: string,
+): AwardDef | null {
+  return (
+    AWARD_MAP.get(
+      id,
+    ) ??
+    null
+  );
 }
 
-export const AWARD_ENTITY_TYPES = ['rmhark', 'comment', 'build', 'guide', 'review'] as const;
-export type AwardEntityType = (typeof AWARD_ENTITY_TYPES)[number];
+export const AWARD_ENTITY_TYPES =
+  [
+    'rmhark',
+    'comment',
+    'build',
+    'guide',
+    'review',
+  ] as const;
+export type AwardEntityType =
+  (typeof AWARD_ENTITY_TYPES)[number];
 
 /** Recipient share (floored) for an award price. */
-export function recipientShare(def: AwardDef): number {
-  return Math.floor((def.priceCoins * def.recipientShareBps) / 10000);
+export function recipientShare(
+  def: AwardDef,
+): number {
+  return Math.floor(
+    (def.priceCoins *
+      def.recipientShareBps) /
+      10000,
+  );
 }
 
 /** A grouped award summary for rendering the badge row. */

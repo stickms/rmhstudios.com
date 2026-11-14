@@ -8,9 +8,23 @@ import { z } from 'zod';
 import { PRESENCE_VISIBILITIES } from './presence-types';
 
 /** zod for the presence-privacy PUT (settings → privacy). */
-export const presencePrivacySchema = z.object({
-  presenceVisibility: z.enum(PRESENCE_VISIBILITIES).optional(),
-  presenceDetail: z.boolean().optional(),
-});
+export const presencePrivacySchema =
+  z.object(
+    {
+      presenceVisibility:
+        z
+          .enum(
+            PRESENCE_VISIBILITIES,
+          )
+          .optional(),
+      presenceDetail:
+        z
+          .boolean()
+          .optional(),
+    },
+  );
 
-export type PresencePrivacyInput = z.infer<typeof presencePrivacySchema>;
+export type PresencePrivacyInput =
+  z.infer<
+    typeof presencePrivacySchema
+  >;

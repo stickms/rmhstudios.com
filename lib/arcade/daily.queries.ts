@@ -2,5 +2,18 @@
 import { getDailyMutatorApi } from '@/lib/arcade/arcade.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const dailyMutatorQuery = () =>
-  contractQuery(['arcade', 'daily'], getDailyMutatorApi, { retries: 0 }, { staleTime: 15_000 });
+export const dailyMutatorQuery =
+  () =>
+    contractQuery(
+      [
+        'arcade',
+        'daily',
+      ],
+      getDailyMutatorApi,
+      {
+        retries: 0,
+      },
+      {
+        staleTime: 15_000,
+      },
+    );

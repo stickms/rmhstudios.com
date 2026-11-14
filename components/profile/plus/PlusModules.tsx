@@ -1,6 +1,9 @@
 import { lazy } from 'react';
 import { ArrivalSuspense } from '@/components/ui/arrive';
-import type { ProfileModule, PlusModuleKind } from '@/lib/profile/modules';
+import type {
+  ProfileModule,
+  PlusModuleKind,
+} from '@/lib/profile/modules';
 
 /**
  * The P05 profile showcase modules (Top Four, /now, stamp wall, webrings,
@@ -9,14 +12,44 @@ import type { ProfileModule, PlusModuleKind } from '@/lib/profile/modules';
  * chunk beyond that — a profile with only a /now block does not download the
  * stamp wall or the report dialog.
  */
-const TopFourModule = lazy(() => import('./TopFourModule'));
-const NowModule = lazy(() => import('./NowModule'));
-const StampWallModule = lazy(() => import('./StampWallModule'));
-const WebringStripModule = lazy(() => import('./WebringStripModule'));
-const EndorsementsModule = lazy(() => import('./EndorsementsModule'));
-const VisitorCounterModule = lazy(() => import('./VisitorCounterModule'));
+const TopFourModule =
+  lazy(
+    () =>
+      import('./TopFourModule'),
+  );
+const NowModule =
+  lazy(
+    () =>
+      import('./NowModule'),
+  );
+const StampWallModule =
+  lazy(
+    () =>
+      import('./StampWallModule'),
+  );
+const WebringStripModule =
+  lazy(
+    () =>
+      import('./WebringStripModule'),
+  );
+const EndorsementsModule =
+  lazy(
+    () =>
+      import('./EndorsementsModule'),
+  );
+const VisitorCounterModule =
+  lazy(
+    () =>
+      import('./VisitorCounterModule'),
+  );
 
-export type PlusModule = Extract<ProfileModule, { kind: PlusModuleKind }>;
+export type PlusModule =
+  Extract<
+    ProfileModule,
+    {
+      kind: PlusModuleKind;
+    }
+  >;
 
 export default function PlusModules({
   module,
@@ -31,18 +64,82 @@ export default function PlusModules({
 }) {
   return (
     <ArrivalSuspense>
-      {module.kind === 'top-four' ? (
-        <TopFourModule title={title} items={module.config.items} isOwner={isOwner} />
-      ) : module.kind === 'now' ? (
-        <NowModule title={title} userId={userId} isOwner={isOwner} />
-      ) : module.kind === 'stamps' ? (
-        <StampWallModule title={title} userId={userId} isOwner={isOwner} />
-      ) : module.kind === 'webrings' ? (
-        <WebringStripModule title={title} userId={userId} isOwner={isOwner} />
-      ) : module.kind === 'endorsements' ? (
-        <EndorsementsModule title={title} userId={userId} isOwner={isOwner} />
+      {module.kind ===
+      'top-four' ? (
+        <TopFourModule
+          title={
+            title
+          }
+          items={
+            module
+              .config
+              .items
+          }
+          isOwner={
+            isOwner
+          }
+        />
+      ) : module.kind ===
+        'now' ? (
+        <NowModule
+          title={
+            title
+          }
+          userId={
+            userId
+          }
+          isOwner={
+            isOwner
+          }
+        />
+      ) : module.kind ===
+        'stamps' ? (
+        <StampWallModule
+          title={
+            title
+          }
+          userId={
+            userId
+          }
+          isOwner={
+            isOwner
+          }
+        />
+      ) : module.kind ===
+        'webrings' ? (
+        <WebringStripModule
+          title={
+            title
+          }
+          userId={
+            userId
+          }
+          isOwner={
+            isOwner
+          }
+        />
+      ) : module.kind ===
+        'endorsements' ? (
+        <EndorsementsModule
+          title={
+            title
+          }
+          userId={
+            userId
+          }
+          isOwner={
+            isOwner
+          }
+        />
       ) : (
-        <VisitorCounterModule title={title} userId={userId} />
+        <VisitorCounterModule
+          title={
+            title
+          }
+          userId={
+            userId
+          }
+        />
       )}
     </ArrivalSuspense>
   );

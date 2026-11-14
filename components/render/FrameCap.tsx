@@ -1,14 +1,22 @@
 import { useEffect } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import { FrameCap as FrameCapClock, markFrameCapped } from '@/lib/render/frame-cap';
+import {
+  useFrame,
+  useThree,
+} from '@react-three/fiber';
+import {
+  FrameCap as FrameCapClock,
+  markFrameCapped,
+} from '@/lib/render/frame-cap';
 
 interface Props {
-    /**
-     * Frames per second to render at, or `null` for every display frame (the
-     * same cadence as `frameloop="always"`). Typically
-     * `menuOpen ? MENU_BACKDROP_FPS : null` — see `lib/render/frame-cap.ts`.
-     */
-    fps: number | null;
+  /**
+   * Frames per second to render at, or `null` for every display frame (the
+   * same cadence as `frameloop="always"`). Typically
+   * `menuOpen ? MENU_BACKDROP_FPS : null` — see `lib/render/frame-cap.ts`.
+   */
+  fps:
+    | number
+    | null;
 }
 
 /**
@@ -27,32 +35,90 @@ interface Props {
  * step keeps its speed at the lower rate. A hidden tab still stops: the browser
  * runs no rAF callbacks in a background tab.
  */
-export default function FrameCap({ fps }: Props) {
-    const gl = useThree((s) => s.gl);
-    const invalidate = useThree((s) => s.invalidate);
+export default function FrameCap({
+  fps,
+}: Props) {
+  const gl =
+    useThree(
+      (
+        s,
+      ) =>
+        s.gl,
+    );
+  const invalidate =
+    useThree(
+      (
+        s,
+      ) =>
+        s.invalidate,
+    );
 
-    useFrame(() => {
-        if (fps === null) invalidate();
-    });
+  useFrame(
+    () => {
+      if (
+        fps ===
+        null
+      )
+        invalidate();
+    },
+  );
 
-    useEffect(() => {
-        markFrameCapped(gl, fps !== null);
-        if (fps === null) {
-            invalidate();
-            return () => markFrameCapped(gl, false);
-        }
-        const clock = new FrameCapClock();
-        let id = 0;
-        const tick = (timestamp: number) => {
-            if (clock.tick(timestamp, 0, fps) !== null) invalidate();
-            id = requestAnimationFrame(tick);
-        };
-        id = requestAnimationFrame(tick);
-        return () => {
-            cancelAnimationFrame(id);
-            markFrameCapped(gl, false);
-        };
-    }, [fps, gl, invalidate]);
+  useEffect(() => {
+    markFrameCapped(
+      gl,
+      fps !==
+        null,
+    );
+    if (
+      fps ===
+      null
+    ) {
+      invalidate();
+      return () =>
+        markFrameCapped(
+          gl,
+          false,
+        );
+    }
+    const clock =
+      new FrameCapClock();
+    let id = 0;
+    const tick =
+      (
+        timestamp: number,
+      ) => {
+        if (
+          clock.tick(
+            timestamp,
+            0,
+            fps,
+          ) !==
+          null
+        )
+          invalidate();
+        id =
+          requestAnimationFrame(
+            tick,
+          );
+      };
+    id =
+      requestAnimationFrame(
+        tick,
+      );
+    return () => {
+      cancelAnimationFrame(
+        id,
+      );
+      markFrameCapped(
+        gl,
+        false,
+      );
+    };
+  }, [
+    fps,
+    gl,
+    invalidate,
+  ]);
 
-    return null;
+  return null;
 }

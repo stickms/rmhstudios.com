@@ -6,8 +6,18 @@
  * (`rmh_ws`, `rmh_ws4`, `rmh_ws2_a`, `rmh_perf_template`, `rmh_perf_build`). A name with a `prod`
  * segment is refused even if it fits the shape.
  */
-const ALLOWED = /^rmh_(perf|ws\d*)(_[a-z0-9]+)*$/;
+const ALLOWED =
+  /^rmh_(perf|ws\d*)(_[a-z0-9]+)*$/;
 
-export function isPerfSeedDbName(name: string): boolean {
-  return ALLOWED.test(name) && !/(^|_)prod/.test(name);
+export function isPerfSeedDbName(
+  name: string,
+): boolean {
+  return (
+    ALLOWED.test(
+      name,
+    ) &&
+    !/(^|_)prod/.test(
+      name,
+    )
+  );
 }

@@ -15,12 +15,25 @@ import { canUse } from '@/lib/entitlements/features';
 import type { Tier } from '@/lib/entitlements/tiers';
 
 /** The two soft-deletable models. */
-export type TrashKind = 'post' | 'comment';
+export type TrashKind =
+  | 'post'
+  | 'comment';
 
-export const TRASH_KINDS: readonly TrashKind[] = ['post', 'comment'];
+export const TRASH_KINDS: readonly TrashKind[] =
+  [
+    'post',
+    'comment',
+  ];
 
-export function isTrashKind(value: unknown): value is TrashKind {
-  return value === 'post' || value === 'comment';
+export function isTrashKind(
+  value: unknown,
+): value is TrashKind {
+  return (
+    value ===
+      'post' ||
+    value ===
+      'comment'
+  );
 }
 
 /**
@@ -30,7 +43,10 @@ export function isTrashKind(value: unknown): value is TrashKind {
  * Only `'author'` is restorable: a moderator removal that the moderated account
  * could undo is not a moderation system.
  */
-export type DeletedBy = 'author' | 'moderator' | 'system';
+export type DeletedBy =
+  | 'author'
+  | 'moderator'
+  | 'system';
 
 /**
  * Resolve the discriminator for a row, including rows written before the column
@@ -46,20 +62,38 @@ export type DeletedBy = 'author' | 'moderator' | 'system';
  * it is the fallback — and it fails **closed**, toward `'moderator'`.
  */
 export function resolveDeletedBy(row: {
-  deletedBy?: string | null;
-  deletedByAdmin?: boolean | null;
+  deletedBy?:
+    | string
+    | null;
+  deletedByAdmin?:
+    | boolean
+    | null;
 }): DeletedBy {
   // An admin takedown wins over whatever was there before: a post the author
   // deleted and a moderator then took down (report resolve) keeps
   // `deletedBy: 'author'` on legacy rows, and must not become restorable.
-  if (row.deletedByAdmin) return 'moderator';
-  if (row.deletedBy === 'author' || row.deletedBy === 'moderator' || row.deletedBy === 'system') {
+  if (
+    row.deletedByAdmin
+  )
+    return 'moderator';
+  if (
+    row.deletedBy ===
+      'author' ||
+    row.deletedBy ===
+      'moderator' ||
+    row.deletedBy ===
+      'system'
+  ) {
     return row.deletedBy;
   }
   // `null` is the legacy author delete (see above). Any other value — notably
   // `AUTOMOD_HOLD`, a post AutoMod is holding for review — is a removal the
   // author did not make, and fails closed.
-  if (row.deletedBy == null) return 'author';
+  if (
+    row.deletedBy ==
+    null
+  )
+    return 'author';
   return 'system';
 }
 
@@ -68,7 +102,8 @@ export function resolveDeletedBy(row: {
  * Lives here (pure) so the bin can exclude held posts; re-exported as
  * `HELD_BY` from `lib/communities/automod.server.ts`.
  */
-export const AUTOMOD_HOLD = 'automod_hold';
+export const AUTOMOD_HOLD =
+  'automod_hold';
 
 /**
  * The `where` fragment that matches only rows the author deleted — the rows a
@@ -78,9 +113,21 @@ export const AUTOMOD_HOLD = 'automod_hold';
  */
 export function authorDeletedWhere() {
   return {
-    deletedAt: { not: null },
+    deletedAt:
+      {
+        not: null,
+      },
     deletedByAdmin: false,
-    OR: [{ deletedBy: null }, { deletedBy: 'author' }],
+    OR: [
+      {
+        deletedBy:
+          null,
+      },
+      {
+        deletedBy:
+          'author',
+      },
+    ],
   };
 }
 
@@ -93,7 +140,11 @@ export const TRASH_WINDOW_DAYS_FREE = 30;
 /** Members (the `trash-extended` feature) get the longer window. */
 export const TRASH_WINDOW_DAYS_MEMBER = 90;
 
-export const DAY_MS = 24 * 60 * 60 * 1000;
+export const DAY_MS =
+  24 *
+  60 *
+  60 *
+  1000;
 
 /**
  * How long this account's deleted content stays restorable.
@@ -101,13 +152,27 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
  * Derived from the feature registry rather than a second tier table, so the
  * membership page and this window can never disagree about who gets 90 days.
  */
-export function trashWindowDays(tier: Tier): number {
-  return canUse(tier, 'trash-extended') ? TRASH_WINDOW_DAYS_MEMBER : TRASH_WINDOW_DAYS_FREE;
+export function trashWindowDays(
+  tier: Tier,
+): number {
+  return canUse(
+    tier,
+    'trash-extended',
+  )
+    ? TRASH_WINDOW_DAYS_MEMBER
+    : TRASH_WINDOW_DAYS_FREE;
 }
 
 /** The instant an item drops out of the bin for good. */
-export function trashExpiresAt(deletedAt: Date, windowDays: number): Date {
-  return new Date(deletedAt.getTime() + windowDays * DAY_MS);
+export function trashExpiresAt(
+  deletedAt: Date,
+  windowDays: number,
+): Date {
+  return new Date(
+    deletedAt.getTime() +
+      windowDays *
+        DAY_MS,
+  );
 }
 
 /**
@@ -115,10 +180,26 @@ export function trashExpiresAt(deletedAt: Date, windowDays: number): Date {
  * four hours left reads "1 day", never "0 days" beside a still-working Restore
  * button.
  */
-export function daysRemaining(deletedAt: Date, windowDays: number, now: Date): number {
-  const remaining = trashExpiresAt(deletedAt, windowDays).getTime() - now.getTime();
-  if (remaining <= 0) return 0;
-  return Math.ceil(remaining / DAY_MS);
+export function daysRemaining(
+  deletedAt: Date,
+  windowDays: number,
+  now: Date,
+): number {
+  const remaining =
+    trashExpiresAt(
+      deletedAt,
+      windowDays,
+    ).getTime() -
+    now.getTime();
+  if (
+    remaining <=
+    0
+  )
+    return 0;
+  return Math.ceil(
+    remaining /
+      DAY_MS,
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -149,7 +230,9 @@ export type RestoreRefusal =
 /** The parent chain state a caller resolves before asking about eligibility. */
 export interface ParentState {
   /** Human label for the parent, used only in log/debug context. */
-  label: 'post' | 'comment';
+  label:
+    | 'post'
+    | 'comment';
   /** False when the parent row is gone from the database entirely. */
   exists: boolean;
   /** Set when the parent row exists but is itself soft-deleted. */
@@ -160,8 +243,12 @@ export interface RestoreCandidate {
   /** The row's author. */
   ownerId: string;
   deletedAt: Date | null;
-  deletedBy?: string | null;
-  deletedByAdmin?: boolean | null;
+  deletedBy?:
+    | string
+    | null;
+  deletedByAdmin?:
+    | boolean
+    | null;
   /**
    * Every ancestor the restored row would point at: a comment's post and its
    * parent comment, a quote-repost's original, a thread segment's root. Empty
@@ -170,7 +257,14 @@ export interface RestoreCandidate {
   parents?: readonly ParentState[];
 }
 
-export type RestoreEligibility = { ok: true } | { ok: false; reason: RestoreRefusal };
+export type RestoreEligibility =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      reason: RestoreRefusal;
+    };
 
 /**
  * Can `userId` restore this row, right now?
@@ -186,17 +280,70 @@ export function checkRestoreEligibility(
   now: Date,
   windowDays: number,
 ): RestoreEligibility {
-  if (candidate.ownerId !== userId) return { ok: false, reason: 'not-owner' };
-  if (!candidate.deletedAt) return { ok: false, reason: 'not-deleted' };
-  if (resolveDeletedBy(candidate) !== 'author') return { ok: false, reason: 'moderated' };
-  if (daysRemaining(candidate.deletedAt, windowDays, now) <= 0) {
-    return { ok: false, reason: 'expired' };
+  if (
+    candidate.ownerId !==
+    userId
+  )
+    return {
+      ok: false,
+      reason:
+        'not-owner',
+    };
+  if (
+    !candidate.deletedAt
+  )
+    return {
+      ok: false,
+      reason:
+        'not-deleted',
+    };
+  if (
+    resolveDeletedBy(
+      candidate,
+    ) !==
+    'author'
+  )
+    return {
+      ok: false,
+      reason:
+        'moderated',
+    };
+  if (
+    daysRemaining(
+      candidate.deletedAt,
+      windowDays,
+      now,
+    ) <=
+    0
+  ) {
+    return {
+      ok: false,
+      reason:
+        'expired',
+    };
   }
-  for (const parent of candidate.parents ?? []) {
-    if (!parent.exists) return { ok: false, reason: 'parent-missing' };
-    if (parent.deletedAt) return { ok: false, reason: 'parent-deleted' };
+  for (const parent of candidate.parents ??
+    []) {
+    if (
+      !parent.exists
+    )
+      return {
+        ok: false,
+        reason:
+          'parent-missing',
+      };
+    if (
+      parent.deletedAt
+    )
+      return {
+        ok: false,
+        reason:
+          'parent-deleted',
+      };
   }
-  return { ok: true };
+  return {
+    ok: true,
+  };
 }
 
 /**
@@ -211,12 +358,45 @@ export function checkRestoreEligibility(
  */
 export function checkPurgeEligibility(
   userId: string,
-  candidate: Pick<RestoreCandidate, 'ownerId' | 'deletedAt' | 'deletedBy' | 'deletedByAdmin'>,
+  candidate: Pick<
+    RestoreCandidate,
+    | 'ownerId'
+    | 'deletedAt'
+    | 'deletedBy'
+    | 'deletedByAdmin'
+  >,
 ): RestoreEligibility {
-  if (candidate.ownerId !== userId) return { ok: false, reason: 'not-owner' };
-  if (!candidate.deletedAt) return { ok: false, reason: 'not-deleted' };
-  if (resolveDeletedBy(candidate) !== 'author') return { ok: false, reason: 'moderated' };
-  return { ok: true };
+  if (
+    candidate.ownerId !==
+    userId
+  )
+    return {
+      ok: false,
+      reason:
+        'not-owner',
+    };
+  if (
+    !candidate.deletedAt
+  )
+    return {
+      ok: false,
+      reason:
+        'not-deleted',
+    };
+  if (
+    resolveDeletedBy(
+      candidate,
+    ) !==
+    'author'
+  )
+    return {
+      ok: false,
+      reason:
+        'moderated',
+    };
+  return {
+    ok: true,
+  };
 }
 
 /**
@@ -226,8 +406,12 @@ export function checkPurgeEligibility(
  * guessed is a real row belonging to someone, which is exactly what an attacker
  * enumerating ids is trying to learn.
  */
-export function refusalStatus(reason: RestoreRefusal): number {
-  switch (reason) {
+export function refusalStatus(
+  reason: RestoreRefusal,
+): number {
+  switch (
+    reason
+  ) {
     case 'not-found':
     case 'not-owner':
       return 404;
@@ -264,7 +448,9 @@ export interface TrashItem {
 
 export interface TrashPage {
   items: TrashItem[];
-  nextCursor: string | null;
+  nextCursor:
+    | string
+    | null;
   /** The caller's current window, so the UI can explain "30 days" vs "90". */
   windowDays: number;
 }
@@ -276,7 +462,18 @@ export const TRASH_PAGE_SIZE = 30;
 export const TRASH_EXCERPT_CHARS = 160;
 
 /** Collapse content to a single-line preview. */
-export function excerptOf(content: string): string {
-  const flat = content.replace(/\s+/g, ' ').trim();
-  return flat.length > TRASH_EXCERPT_CHARS ? `${flat.slice(0, TRASH_EXCERPT_CHARS - 1)}…` : flat;
+export function excerptOf(
+  content: string,
+): string {
+  const flat =
+    content
+      .replace(
+        /\s+/g,
+        ' ',
+      )
+      .trim();
+  return flat.length >
+    TRASH_EXCERPT_CHARS
+    ? `${flat.slice(0, TRASH_EXCERPT_CHARS - 1)}…`
+    : flat;
 }

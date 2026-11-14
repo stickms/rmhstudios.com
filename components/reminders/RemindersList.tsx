@@ -1,13 +1,22 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { AlarmClock, X } from 'lucide-react';
+import {
+  AlarmClock,
+  X,
+} from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
-import { cancelReminderApi, listRemindersApi } from '@/lib/reminders/reminders.contract';
+import {
+  cancelReminderApi,
+  listRemindersApi,
+} from '@/lib/reminders/reminders.contract';
 import type { ReminderView } from '@/lib/reminders/shared';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -18,87 +27,231 @@ import { cn } from '@/lib/utils';
  * locale and zone cannot mismatch a server render.
  */
 export function RemindersList() {
-  const { t } = useTranslation('c-saves');
-  const [items, setItems] = useState<ReminderView[] | null>(null);
-  const arrival = useArrival(items !== null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-saves',
+    );
+  const [
+    items,
+    setItems,
+  ] =
+    useState<
+      | ReminderView[]
+      | null
+    >(
+      null,
+    );
+  const arrival =
+    useArrival(
+      items !==
+        null,
+    );
 
   useEffect(() => {
     let cancelled = false;
-    api(listRemindersApi)
-      .then((d) => {
-        if (!cancelled) setItems(d.reminders);
-      })
-      .catch(() => {
-        if (!cancelled) setItems([]);
-      });
+    api(
+      listRemindersApi,
+    )
+      .then(
+        (
+          d,
+        ) => {
+          if (
+            !cancelled
+          )
+            setItems(
+              d.reminders,
+            );
+        },
+      )
+      .catch(
+        () => {
+          if (
+            !cancelled
+          )
+            setItems(
+              [],
+            );
+        },
+      );
     return () => {
       cancelled = true;
     };
   }, []);
 
-  async function cancel(id: string) {
-    const prev = items;
-    setItems((list) => list?.filter((r) => r.id !== id) ?? null);
-    const ok = await api(cancelReminderApi, { params: { id } }).then(
-      () => true,
-      () => false,
+  async function cancel(
+    id: string,
+  ) {
+    const prev =
+      items;
+    setItems(
+      (
+        list,
+      ) =>
+        list?.filter(
+          (
+            r,
+          ) =>
+            r.id !==
+            id,
+        ) ??
+        null,
     );
-    if (!ok) {
-      setItems(prev);
-      toast.error(t('remind-cancel-error', { defaultValue: "Couldn't cancel the reminder" }));
+    const ok =
+      await api(
+        cancelReminderApi,
+        {
+          params:
+            {
+              id,
+            },
+        },
+      ).then(
+        () =>
+          true,
+        () =>
+          false,
+      );
+    if (
+      !ok
+    ) {
+      setItems(
+        prev,
+      );
+      toast.error(
+        t(
+          'remind-cancel-error',
+          {
+            defaultValue:
+              "Couldn't cancel the reminder",
+          },
+        ),
+      );
     }
   }
 
-  if (items === null) {
+  if (
+    items ===
+    null
+  ) {
     return (
       <div className="flex justify-center py-8">
         <Spinner />
       </div>
     );
   }
-  if (items.length === 0) {
+  if (
+    items.length ===
+    0
+  ) {
     return (
       <EmptyState
-        icon={AlarmClock}
-        className={arrival}
-        title={t('reminders-empty-title', { defaultValue: 'No reminders' })}
-        description={t('reminders-empty-desc', {
-          defaultValue: 'Use "Remind me" on a post or notification to bring it back later.',
-        })}
+        icon={
+          AlarmClock
+        }
+        className={
+          arrival
+        }
+        title={t(
+          'reminders-empty-title',
+          {
+            defaultValue:
+              'No reminders',
+          },
+        )}
+        description={t(
+          'reminders-empty-desc',
+          {
+            defaultValue:
+              'Use "Remind me" on a post or notification to bring it back later.',
+          },
+        )}
       />
     );
   }
   return (
-    <ul className={cn('space-y-2', arrival)}>
-      {items.map((r) => (
-        <li key={r.id}>
-          <Card interactive className="flex-row items-center gap-3 px-4 py-3">
-            <a href={r.url} className="flex min-w-0 flex-1 items-center gap-3">
-              <AlarmClock className="h-5 w-5 shrink-0 text-site-text-muted" aria-hidden />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-site-text">{r.label}</span>
-                <span className="block truncate text-xs text-site-text-muted">
-                  {new Date(r.remindAt).toLocaleString(undefined, {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })}
-                  {r.note ? ` · ${r.note}` : ''}
+    <ul
+      className={cn(
+        'space-y-2',
+        arrival,
+      )}
+    >
+      {items.map(
+        (
+          r,
+        ) => (
+          <li
+            key={
+              r.id
+            }
+          >
+            <Card
+              interactive
+              className="flex-row items-center gap-3 px-4 py-3"
+            >
+              <a
+                href={
+                  r.url
+                }
+                className="flex min-w-0 flex-1 items-center gap-3"
+              >
+                <AlarmClock
+                  className="h-5 w-5 shrink-0 text-site-text-muted"
+                  aria-hidden
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-site-text">
+                    {
+                      r.label
+                    }
+                  </span>
+                  <span className="block truncate text-xs text-site-text-muted">
+                    {new Date(
+                      r.remindAt,
+                    ).toLocaleString(
+                      undefined,
+                      {
+                        weekday:
+                          'short',
+                        month:
+                          'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute:
+                          '2-digit',
+                      },
+                    )}
+                    {r.note
+                      ? ` · ${r.note}`
+                      : ''}
+                  </span>
                 </span>
-              </span>
-            </a>
-            <IconButton
-              icon={X}
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => void cancel(r.id)}
-              label={t('remind-cancel', { defaultValue: 'Cancel reminder' })}
-            />
-          </Card>
-        </li>
-      ))}
+              </a>
+              <IconButton
+                icon={
+                  X
+                }
+                variant="ghost"
+                size="icon-sm"
+                onClick={() =>
+                  void cancel(
+                    r.id,
+                  )
+                }
+                label={t(
+                  'remind-cancel',
+                  {
+                    defaultValue:
+                      'Cancel reminder',
+                  },
+                )}
+              />
+            </Card>
+          </li>
+        ),
+      )}
     </ul>
   );
 }

@@ -13,12 +13,35 @@ import { matchCatalogRoute } from '@/lib/games/route-match';
 import { usePlaytimeHeartbeat } from '@/hooks/usePlaytimeHeartbeat';
 
 export function PlaytimeTracker() {
-  const pathname = useLocation({ select: (l) => l.pathname });
-  const { data: session } = useSession();
-  const signedIn = !!session?.user;
-  const gameId = pathname ? (matchCatalogRoute(pathname)?.id ?? null) : null;
+  const pathname =
+    useLocation(
+      {
+        select:
+          (
+            l,
+          ) =>
+            l.pathname,
+      },
+    );
+  const {
+    data: session,
+  } =
+    useSession();
+  const signedIn =
+    !!session?.user;
+  const gameId =
+    pathname
+      ? (matchCatalogRoute(
+          pathname,
+        )
+          ?.id ??
+        null)
+      : null;
 
-  usePlaytimeHeartbeat(gameId, signedIn);
+  usePlaytimeHeartbeat(
+    gameId,
+    signedIn,
+  );
 
   return null;
 }

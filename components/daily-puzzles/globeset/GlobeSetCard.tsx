@@ -18,26 +18,66 @@
 import { memo } from 'react';
 import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { DOT_COLORS, dotsOf, type Card, type DotColor } from '@/lib/globeset/cards';
+import {
+  DOT_COLORS,
+  dotsOf,
+  type Card,
+  type DotColor,
+} from '@/lib/globeset/cards';
 import { APPLE_SPRING } from '@/lib/app-motion';
 import { cn } from '@/lib/utils';
 
 /** Dot centres on a 3-wide, 2-tall grid, in a 100×72 viewBox. */
-const SLOTS: { x: number; y: number }[] = [
-  { x: 20, y: 22 },
-  { x: 50, y: 22 },
-  { x: 80, y: 22 },
-  { x: 20, y: 52 },
-  { x: 50, y: 52 },
-  { x: 80, y: 52 },
-];
+const SLOTS: {
+  x: number;
+  y: number;
+}[] =
+  [
+    {
+      x: 20,
+      y: 22,
+    },
+    {
+      x: 50,
+      y: 22,
+    },
+    {
+      x: 80,
+      y: 22,
+    },
+    {
+      x: 20,
+      y: 52,
+    },
+    {
+      x: 50,
+      y: 52,
+    },
+    {
+      x: 80,
+      y: 52,
+    },
+  ];
 
 const DOT_R = 11;
 
 /** The glyph stamped inside a dot, as an SVG path in a unit box around (0,0). */
-function shapePath(shape: DotColor['shape'], r: number): string {
-  const p = (n: number) => Number(n.toFixed(2));
-  switch (shape) {
+function shapePath(
+  shape: DotColor['shape'],
+  r: number,
+): string {
+  const p =
+    (
+      n: number,
+    ) =>
+      Number(
+        n.toFixed(
+          2,
+        ),
+      );
+  switch (
+    shape
+  ) {
     case 'circle':
       return `M ${p(-r)} 0 a ${p(r)} ${p(r)} 0 1 0 ${p(r * 2)} 0 a ${p(r)} ${p(r)} 0 1 0 ${p(-r * 2)} 0 Z`;
     case 'triangle':
@@ -47,18 +87,52 @@ function shapePath(shape: DotColor['shape'], r: number): string {
     case 'diamond':
       return `M 0 ${p(-r)} L ${p(r)} 0 L 0 ${p(r)} L ${p(-r)} 0 Z`;
     case 'hexagon': {
-      const pts = Array.from({ length: 6 }, (_, i) => {
-        const a = (Math.PI / 3) * i - Math.PI / 2;
-        return `${p(Math.cos(a) * r)} ${p(Math.sin(a) * r)}`;
-      });
+      const pts =
+        Array.from(
+          {
+            length: 6,
+          },
+          (
+            _,
+            i,
+          ) => {
+            const a =
+              (Math.PI /
+                3) *
+                i -
+              Math.PI /
+                2;
+            return `${p(Math.cos(a) * r)} ${p(Math.sin(a) * r)}`;
+          },
+        );
       return `M ${pts.join(' L ')} Z`;
     }
     case 'star': {
-      const pts = Array.from({ length: 10 }, (_, i) => {
-        const a = (Math.PI / 5) * i - Math.PI / 2;
-        const rad = i % 2 === 0 ? r : r * 0.45;
-        return `${p(Math.cos(a) * rad)} ${p(Math.sin(a) * rad)}`;
-      });
+      const pts =
+        Array.from(
+          {
+            length: 10,
+          },
+          (
+            _,
+            i,
+          ) => {
+            const a =
+              (Math.PI /
+                5) *
+                i -
+              Math.PI /
+                2;
+            const rad =
+              i %
+                2 ===
+              0
+                ? r
+                : r *
+                  0.45;
+            return `${p(Math.cos(a) * rad)} ${p(Math.sin(a) * rad)}`;
+          },
+        );
       return `M ${pts.join(' L ')} Z`;
     }
   }
@@ -96,7 +170,12 @@ function GlobeSetCardImpl({
   onToggle,
   onFocus,
 }: GlobeSetCardProps) {
-  const { t } = useTranslation('c-daily-puzzles');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-daily-puzzles',
+    );
 
   /**
    * The card names its own dots.
@@ -106,26 +185,68 @@ function GlobeSetCardImpl({
    * hear which card they were on and nothing about what was printed on it.
    * A card knows its own dots; nothing else should have to remember to say so.
    */
-  const dots = dotsOf(card)
-    .map((dot) => t(`globeset-color-${dot.id}`, { defaultValue: dot.id }))
-    .join(', ');
-  const label = t('globeset-card-label', {
-    defaultValue: 'Card {{n}}: {{dots}}',
-    n: position,
-    dots,
-  });
+  const dots =
+    dotsOf(
+      card,
+    )
+      .map(
+        (
+          dot,
+        ) =>
+          t(
+            `globeset-color-${dot.id}`,
+            {
+              defaultValue:
+                dot.id,
+            },
+          ),
+      )
+      .join(
+        ', ',
+      );
+  const label =
+    t(
+      'globeset-card-label',
+      {
+        defaultValue:
+          'Card {{n}}: {{dots}}',
+        n: position,
+        dots,
+      },
+    );
 
   return (
     <motion.button
       type="button"
-      onClick={onToggle}
-      onFocus={onFocus}
-      disabled={disabled}
-      aria-pressed={selected}
-      aria-label={label}
-      data-selected={selected || undefined}
-      transition={APPLE_SPRING.snappy}
-      whileTap={disabled ? undefined : { scale: 0.96 }}
+      onClick={
+        onToggle
+      }
+      onFocus={
+        onFocus
+      }
+      disabled={
+        disabled
+      }
+      aria-pressed={
+        selected
+      }
+      aria-label={
+        label
+      }
+      data-selected={
+        selected ||
+        undefined
+      }
+      transition={
+        APPLE_SPRING.snappy
+      }
+      whileTap={
+        disabled
+          ? undefined
+          : {
+              scale: 0.96,
+            }
+      }
       className={cn(
         'group relative aspect-[10/7] w-full rounded-site outline-none',
         'border-2 transition-[border-color,box-shadow,transform]',
@@ -134,18 +255,29 @@ function GlobeSetCardImpl({
         selected
           ? 'border-site-accent shadow-[0_0_0_4px_var(--site-bg-subtle)]'
           : 'border-[var(--globeset-card-edge)] hover:border-site-accent/60',
-        hinted && !selected && 'border-site-warning',
-        solving && 'border-site-success',
+        hinted &&
+          !selected &&
+          'border-site-warning',
+        solving &&
+          'border-site-success',
       )}
-      style={{ background: 'var(--globeset-card-face)' }}
+      style={{
+        background:
+          'var(--globeset-card-face)',
+      }}
     >
       {/* Keyboard shortcut badge — the board binds 1–7 to these positions. */}
       <span
         aria-hidden
         className="absolute left-1.5 top-1 font-mono text-[0.6rem] leading-none opacity-35"
-        style={{ color: 'var(--globeset-dot-ink)' }}
+        style={{
+          color:
+            'var(--globeset-dot-ink)',
+        }}
       >
-        {position}
+        {
+          position
+        }
       </span>
 
       <svg
@@ -155,32 +287,66 @@ function GlobeSetCardImpl({
         focusable="false"
         aria-hidden
       >
-        {DOT_COLORS.map((dot) => {
-          const present = (card & (1 << dot.bit)) !== 0;
-          if (!present) return null;
-          const slot = SLOTS[dot.bit];
-          return (
-            <g key={dot.id} transform={`translate(${slot.x} ${slot.y})`}>
-              <circle
-                r={DOT_R}
-                fill={`var(${dot.token})`}
-                stroke="var(--globeset-dot-ink)"
-                strokeOpacity={0.45}
-                strokeWidth={1}
-              />
-              {shapes && (
-                <path
-                  d={shapePath(dot.shape, DOT_R * 0.58)}
-                  fill="none"
+        {DOT_COLORS.map(
+          (
+            dot,
+          ) => {
+            const present =
+              (card &
+                (1 <<
+                  dot.bit)) !==
+              0;
+            if (
+              !present
+            )
+              return null;
+            const slot =
+              SLOTS[
+                dot
+                  .bit
+              ];
+            return (
+              <g
+                key={
+                  dot.id
+                }
+                transform={`translate(${slot.x} ${slot.y})`}
+              >
+                <circle
+                  r={
+                    DOT_R
+                  }
+                  fill={`var(${dot.token})`}
                   stroke="var(--globeset-dot-ink)"
-                  strokeOpacity={0.8}
-                  strokeWidth={1.6}
-                  strokeLinejoin="round"
+                  strokeOpacity={
+                    0.45
+                  }
+                  strokeWidth={
+                    1
+                  }
                 />
-              )}
-            </g>
-          );
-        })}
+                {shapes && (
+                  <path
+                    d={shapePath(
+                      dot.shape,
+                      DOT_R *
+                        0.58,
+                    )}
+                    fill="none"
+                    stroke="var(--globeset-dot-ink)"
+                    strokeOpacity={
+                      0.8
+                    }
+                    strokeWidth={
+                      1.6
+                    }
+                    strokeLinejoin="round"
+                  />
+                )}
+              </g>
+            );
+          },
+        )}
       </svg>
     </motion.button>
   );
@@ -190,4 +356,7 @@ function GlobeSetCardImpl({
  * Memoised on purpose: a seven-card board re-renders on every tick of the run
  * clock, and a card's appearance depends on nothing that changes per tick.
  */
-export const GlobeSetCard = memo(GlobeSetCardImpl);
+export const GlobeSetCard =
+  memo(
+    GlobeSetCardImpl,
+  );

@@ -14,7 +14,10 @@
  * Client-safe: the admin UI renders the same list the API seeds from.
  */
 
-import { LIGHTS_OUT_VERSION, SLICE_IT_VERSION } from '@/lib/game/replay-meta';
+import {
+  LIGHTS_OUT_VERSION,
+  SLICE_IT_VERSION,
+} from '@/lib/game/replay-meta';
 import type { SpeedrunMetric } from './types';
 
 export interface SpeedrunCategorySeed {
@@ -31,28 +34,33 @@ export interface SpeedrunCategorySeed {
   version: string;
 }
 
-export const DEFAULT_SPEEDRUN_CATEGORIES: readonly SpeedrunCategorySeed[] = [
-  {
-    game: 'lights-out',
-    slug: 'any',
-    name: 'Any%',
-    rules:
-      'Clear the board by any route. Timing starts on the first cell you toggle and ' +
-      'stops the moment the board is dark. The replay is re-simulated from its seed: ' +
-      'a run that does not end on a solved board is rejected automatically.',
-    metric: 'time',
-    version: LIGHTS_OUT_VERSION,
-  },
-  {
-    game: 'slice-it',
-    slug: 'high-score',
-    name: 'High score',
-    rules:
-      'One full track, highest score. The score is recomputed from the judgment log ' +
-      'rather than taken from the client, and a log whose timestamps are out of order ' +
-      'is rejected — but the judgments themselves cannot be checked against the track, ' +
-      'so runs are reviewed before they are ranked.',
-    metric: 'score',
-    version: SLICE_IT_VERSION,
-  },
-] as const;
+export const DEFAULT_SPEEDRUN_CATEGORIES: readonly SpeedrunCategorySeed[] =
+  [
+    {
+      game: 'lights-out',
+      slug: 'any',
+      name: 'Any%',
+      rules:
+        'Clear the board by any route. Timing starts on the first cell you toggle and ' +
+        'stops the moment the board is dark. The replay is re-simulated from its seed: ' +
+        'a run that does not end on a solved board is rejected automatically.',
+      metric:
+        'time',
+      version:
+        LIGHTS_OUT_VERSION,
+    },
+    {
+      game: 'slice-it',
+      slug: 'high-score',
+      name: 'High score',
+      rules:
+        'One full track, highest score. The score is recomputed from the judgment log ' +
+        'rather than taken from the client, and a log whose timestamps are out of order ' +
+        'is rejected — but the judgments themselves cannot be checked against the track, ' +
+        'so runs are reviewed before they are ranked.',
+      metric:
+        'score',
+      version:
+        SLICE_IT_VERSION,
+    },
+  ] as const;

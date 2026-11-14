@@ -34,46 +34,124 @@
  * not an outage (go-services/internal/status/workers.go `evaluateGateway`).
  */
 import { createLogger } from '../shared/logger';
-import { cronEvery, getDuration, getString } from './config';
-import { loadGuardConfig, restricted } from './guard';
+import {
+  cronEvery,
+  getDuration,
+  getString,
+} from './config';
+import {
+  loadGuardConfig,
+  restricted,
+} from './guard';
 import type { DiscordBot } from './bot';
 
-export const DISCORD_BOT_QUEUES = {
-  care: 'discord-bot.care-tick',
-  flush: 'discord-bot.watch-flush',
-  identity: 'discord-bot.watch-identity',
-  summary: 'discord-bot.watch-summary',
-  heartbeat: 'discord-bot.gateway-heartbeat',
-} as const;
+export const DISCORD_BOT_QUEUES =
+  {
+    care: 'discord-bot.care-tick',
+    flush:
+      'discord-bot.watch-flush',
+    identity:
+      'discord-bot.watch-identity',
+    summary:
+      'discord-bot.watch-summary',
+    heartbeat:
+      'discord-bot.gateway-heartbeat',
+  } as const;
 
 /**
  * How long pg-boss keeps a heartbeat row. Status only reads the newest completed one; a day bounds the
  * table at ~1440 rows for this queue instead of pg-boss's 7-day default.
  */
-export const HEARTBEAT_RETENTION_SECONDS = 24 * 60 * 60;
+export const HEARTBEAT_RETENTION_SECONDS =
+  24 *
+  60 *
+  60;
 
 export interface DiscordBotBoss {
-  createQueue: (name: string, options?: object) => Promise<unknown>;
-  schedule: (name: string, cron: string, data: object, options: object) => Promise<unknown>;
-  unschedule?: (name: string) => Promise<unknown>;
-  work: (name: string, handler: () => Promise<void>) => Promise<unknown>;
-  send?: (name: string, data: object, options?: object) => Promise<unknown>;
+  createQueue: (
+    name: string,
+    options?: object,
+  ) => Promise<unknown>;
+  schedule: (
+    name: string,
+    cron: string,
+    data: object,
+    options: object,
+  ) => Promise<unknown>;
+  unschedule?: (
+    name: string,
+  ) => Promise<unknown>;
+  work: (
+    name: string,
+    handler: () => Promise<void>,
+  ) => Promise<unknown>;
+  send?: (
+    name: string,
+    data: object,
+    options?: object,
+  ) => Promise<unknown>;
 }
 
 /** The crons for this configuration (pure; tested). */
-export function discordBotCrons(env: Record<string, string | undefined> = process.env): Record<string, string> {
-  const care = getDuration('ALEX_TICK_INTERVAL', 10 * 60_000, env);
-  const flush = getDuration('DISCORD_WATCH_FLUSH_INTERVAL', 60_000, env);
+export function discordBotCrons(
+  env: Record<
+    string,
+    | string
+    | undefined
+  > = process.env,
+): Record<
+  string,
+  string
+> {
+  const care =
+    getDuration(
+      'ALEX_TICK_INTERVAL',
+      10 *
+        60_000,
+      env,
+    );
+  const flush =
+    getDuration(
+      'DISCORD_WATCH_FLUSH_INTERVAL',
+      60_000,
+      env,
+    );
   return {
-    [DISCORD_BOT_QUEUES.care]: cronEvery(care > 0 ? care : 10 * 60_000, 6),
-    [DISCORD_BOT_QUEUES.flush]: cronEvery(flush > 0 ? flush : 60_000),
-    [DISCORD_BOT_QUEUES.identity]: cronEvery(60 * 60_000, 23),
-    [DISCORD_BOT_QUEUES.summary]: cronEvery(30 * 60_000, 11),
-    [DISCORD_BOT_QUEUES.heartbeat]: '* * * * *',
+    [DISCORD_BOT_QUEUES.care]:
+      cronEvery(
+        care >
+          0
+          ? care
+          : 10 *
+              60_000,
+        6,
+      ),
+    [DISCORD_BOT_QUEUES.flush]:
+      cronEvery(
+        flush >
+          0
+          ? flush
+          : 60_000,
+      ),
+    [DISCORD_BOT_QUEUES.identity]:
+      cronEvery(
+        60 *
+          60_000,
+        23,
+      ),
+    [DISCORD_BOT_QUEUES.summary]:
+      cronEvery(
+        30 *
+          60_000,
+        11,
+      ),
+    [DISCORD_BOT_QUEUES.heartbeat]:
+      '* * * * *',
   };
 }
 
-let bot: DiscordBot | null = null;
+let bot: DiscordBot | null =
+  null;
 
 /** The running bot (null until registered, and when no token is set). */
 export function runningDiscordBot(): DiscordBot | null {
@@ -84,73 +162,247 @@ export function runningDiscordBot(): DiscordBot | null {
  * The heartbeat job body: resolves while the gateway is READY, throws otherwise, so pg-boss records the
  * minute as `completed` or `failed` and the status service can tell a live gateway from a dead one.
  */
-export async function gatewayHeartbeat(b: Pick<DiscordBot, 'isReady'>): Promise<void> {
-  if (!b.isReady()) throw new Error('discord gateway not ready');
+export async function gatewayHeartbeat(
+  b: Pick<
+    DiscordBot,
+    'isReady'
+  >,
+): Promise<void> {
+  if (
+    !b.isReady()
+  )
+    throw new Error(
+      'discord gateway not ready',
+    );
 }
 
 /** Why this process must not start the bot, or null when it should (pure; tested). */
-export function botDisabledReason(env: Record<string, string | undefined> = process.env): string | null {
-  if (!getString('DISCORD_BOT_TOKEN', '', env) && !getString('DISCORD_ACTIVITY_BOT_TOKEN', '', env)) {
+export function botDisabledReason(
+  env: Record<
+    string,
+    | string
+    | undefined
+  > = process.env,
+):
+  | string
+  | null {
+  if (
+    !getString(
+      'DISCORD_BOT_TOKEN',
+      '',
+      env,
+    ) &&
+    !getString(
+      'DISCORD_ACTIVITY_BOT_TOKEN',
+      '',
+      env,
+    )
+  ) {
     return 'no DISCORD_BOT_TOKEN/DISCORD_ACTIVITY_BOT_TOKEN set';
   }
-  if (env.NODE_ENV !== 'production' && !restricted(loadGuardConfig(env))) {
+  if (
+    env.NODE_ENV !==
+      'production' &&
+    !restricted(
+      loadGuardConfig(
+        env,
+      ),
+    )
+  ) {
     return 'outside NODE_ENV=production the bot needs DISCORD_BOT_GUILD_ALLOWLIST (guard.ts)';
   }
   return null;
 }
 
-export async function registerDiscordBot(boss: DiscordBotBoss): Promise<void> {
-  const log = createLogger('discord-bot');
-  const disabled = botDisabledReason();
-  if (disabled) {
+export async function registerDiscordBot(
+  boss: DiscordBotBoss,
+): Promise<void> {
+  const log =
+    createLogger(
+      'discord-bot',
+    );
+  const disabled =
+    botDisabledReason();
+  if (
+    disabled
+  ) {
     // Drop any schedules a run with a token left: nothing would consume them, and the status service reads a
     // scheduled heartbeat queue as "the bot should be online" (B07).
-    for (const q of Object.values(DISCORD_BOT_QUEUES)) await boss.unschedule?.(q).catch(() => undefined);
-    log.warn({ event: 'discord_bot.disabled', detail: disabled });
+    for (const q of Object.values(
+      DISCORD_BOT_QUEUES,
+    ))
+      await boss
+        .unschedule?.(
+          q,
+        )
+        .catch(
+          () =>
+            undefined,
+        );
+    log.warn(
+      {
+        event:
+          'discord_bot.disabled',
+        detail:
+          disabled,
+      },
+    );
     return;
   }
   // Imported here, not at load: without a token the @discordjs packages (and the bot's services) stay out of
   // the worker entirely.
-  const { DiscordBot, loadBotConfig } = await import('./bot');
-  bot = new DiscordBot(loadBotConfig());
-  const b = bot;
+  const {
+    DiscordBot,
+    loadBotConfig,
+  } =
+    await import('./bot');
+  bot =
+    new DiscordBot(
+      loadBotConfig(),
+    );
+  const b =
+    bot;
 
-  const handlers: Record<string, () => Promise<void>> = {
-    [DISCORD_BOT_QUEUES.care]: () => b.careTick(),
-    [DISCORD_BOT_QUEUES.flush]: () => b.watchFlush(),
-    [DISCORD_BOT_QUEUES.identity]: () => b.watchIdentities(),
-    [DISCORD_BOT_QUEUES.summary]: () => b.summaryTick(),
-  };
-  const crons = discordBotCrons();
-  for (const [queue, cron] of Object.entries(crons)) {
-    if (queue === DISCORD_BOT_QUEUES.heartbeat) continue;
+  const handlers: Record<
+    string,
+    () => Promise<void>
+  > =
+    {
+      [DISCORD_BOT_QUEUES.care]:
+        () =>
+          b.careTick(),
+      [DISCORD_BOT_QUEUES.flush]:
+        () =>
+          b.watchFlush(),
+      [DISCORD_BOT_QUEUES.identity]:
+        () =>
+          b.watchIdentities(),
+      [DISCORD_BOT_QUEUES.summary]:
+        () =>
+          b.summaryTick(),
+    };
+  const crons =
+    discordBotCrons();
+  for (const [
+    queue,
+    cron,
+  ] of Object.entries(
+    crons,
+  )) {
+    if (
+      queue ===
+      DISCORD_BOT_QUEUES.heartbeat
+    )
+      continue;
     // The flush/identity/summary ticks only matter with the tracker on; the queues exist either way
     // so a config change never strands a schedule.
-    await boss.createQueue(queue, { policy: 'exclusive', retryLimit: 0, expireInSeconds: 10 * 60 });
-    await boss.schedule(queue, cron, {}, { tz: 'UTC' });
-    const run = handlers[queue]!;
-    await boss.work(queue, async () => {
-      try {
-        await run();
-      } catch (err) {
-        log.warn({ event: 'discord_bot.tick_failed', queue, err: (err as Error).message });
-      }
-    });
+    await boss.createQueue(
+      queue,
+      {
+        policy:
+          'exclusive',
+        retryLimit: 0,
+        expireInSeconds:
+          10 *
+          60,
+      },
+    );
+    await boss.schedule(
+      queue,
+      cron,
+      {},
+      {
+        tz: 'UTC',
+      },
+    );
+    const run =
+      handlers[
+        queue
+      ]!;
+    await boss.work(
+      queue,
+      async () => {
+        try {
+          await run();
+        } catch (err) {
+          log.warn(
+            {
+              event:
+                'discord_bot.tick_failed',
+              queue,
+              err: (
+                err as Error
+              )
+                .message,
+            },
+          );
+        }
+      },
+    );
   }
   // The heartbeat is the one handler whose failure is the point: it is not wrapped, so a minute with the
   // gateway down lands as a `failed` job and only a READY gateway produces `completed` ones.
-  await boss.createQueue(DISCORD_BOT_QUEUES.heartbeat, {
-    policy: 'exclusive',
-    retryLimit: 0,
-    expireInSeconds: 60,
-    deleteAfterSeconds: HEARTBEAT_RETENTION_SECONDS,
-  });
-  await boss.schedule(DISCORD_BOT_QUEUES.heartbeat, crons[DISCORD_BOT_QUEUES.heartbeat]!, {}, { tz: 'UTC' });
-  await boss.work(DISCORD_BOT_QUEUES.heartbeat, () => gatewayHeartbeat(b));
+  await boss.createQueue(
+    DISCORD_BOT_QUEUES.heartbeat,
+    {
+      policy:
+        'exclusive',
+      retryLimit: 0,
+      expireInSeconds: 60,
+      deleteAfterSeconds:
+        HEARTBEAT_RETENTION_SECONDS,
+    },
+  );
+  await boss.schedule(
+    DISCORD_BOT_QUEUES.heartbeat,
+    crons[
+      DISCORD_BOT_QUEUES
+        .heartbeat
+    ]!,
+    {},
+    {
+      tz: 'UTC',
+    },
+  );
+  await boss.work(
+    DISCORD_BOT_QUEUES.heartbeat,
+    () =>
+      gatewayHeartbeat(
+        b,
+      ),
+  );
   // The Go loops ran their first pass shortly after the gateway opened.
-  await boss.send?.(DISCORD_BOT_QUEUES.care, {}, { startAfter: 30 }).catch(() => undefined);
-  await boss.send?.(DISCORD_BOT_QUEUES.summary, {}, { startAfter: 60 }).catch(() => undefined);
-  log.info({ event: 'discord_bot.crons_registered', crons });
+  await boss
+    .send?.(
+      DISCORD_BOT_QUEUES.care,
+      {},
+      {
+        startAfter: 30,
+      },
+    )
+    .catch(
+      () =>
+        undefined,
+    );
+  await boss
+    .send?.(
+      DISCORD_BOT_QUEUES.summary,
+      {},
+      {
+        startAfter: 60,
+      },
+    )
+    .catch(
+      () =>
+        undefined,
+    );
+  log.info(
+    {
+      event:
+        'discord_bot.crons_registered',
+      crons,
+    },
+  );
 
   // Not awaited: the gateway retries patiently and must not hold up the rest of the worker's boot.
   void b.start();
@@ -158,7 +410,12 @@ export async function registerDiscordBot(boss: DiscordBotBoss): Promise<void> {
 
 /** Graceful stop for the worker's SIGTERM path (gateway close, reply drain, tracker close). */
 export async function stopDiscordBot(): Promise<void> {
-  const b = bot;
-  bot = null;
-  if (b) await b.stop();
+  const b =
+    bot;
+  bot =
+    null;
+  if (
+    b
+  )
+    await b.stop();
 }

@@ -8,7 +8,16 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { assistantAskSchema } from '@/lib/assistant/assistant-schema';
 import type { AssistantAnswer } from '@/lib/assistant/assistant.server';
 
-export const askConciergeApi = endpoint<{
-  body: z.infer<typeof assistantAskSchema>;
-  res: AssistantAnswer;
-}>()({ method: 'POST', path: '/api/assistant' });
+export const askConciergeApi =
+  endpoint<{
+    body: z.infer<
+      typeof assistantAskSchema
+    >;
+    res: AssistantAnswer;
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/assistant',
+    },
+  );

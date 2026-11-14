@@ -35,10 +35,16 @@ import { SITE_URL } from '@/lib/seo';
  * Hosts whose `/u/<handle>` path is a real RMH profile. `www.` is accepted
  * because people copy the address bar, and Cloudflare serves both.
  */
-export const PROFILE_HOSTS: readonly string[] = ['rmhstudios.com', 'www.rmhstudios.com'];
+export const PROFILE_HOSTS: readonly string[] =
+  [
+    'rmhstudios.com',
+    'www.rmhstudios.com',
+  ];
 
 /** The canonical, copy-pasteable back-link a user puts on their own site. */
-export function profileUrlFor(handle: string): string {
+export function profileUrlFor(
+  handle: string,
+): string {
   return `${SITE_URL}/u/${handle}`;
 }
 
@@ -55,13 +61,24 @@ export function profileUrlFor(handle: string): string {
  * a stranger typed into a profile is user-generated content whether or not the
  * domain checks out.
  */
-export function profileLinkRel(verified: boolean): string {
-  return verified ? 'me nofollow ugc noopener noreferrer' : 'nofollow ugc noopener noreferrer';
+export function profileLinkRel(
+  verified: boolean,
+): string {
+  return verified
+    ? 'me nofollow ugc noopener noreferrer'
+    : 'nofollow ugc noopener noreferrer';
 }
 
 /** Case-insensitively strip a leading `www.` so host comparison is stable. */
-function normalizeHost(host: string): string {
-  return host.toLowerCase().replace(/^www\./, '');
+function normalizeHost(
+  host: string,
+): string {
+  return host
+    .toLowerCase()
+    .replace(
+      /^www\./,
+      '',
+    );
 }
 
 /**
@@ -69,46 +86,107 @@ function normalizeHost(host: string): string {
  * matching so a `rel="me"` inside a comment, a script string, or a `<textarea>`
  * (i.e. anywhere a visitor's post body can land) cannot verify a domain.
  */
-const INERT_REGIONS: readonly RegExp[] = [
-  /<!--[\s\S]*?(?:-->|$)/gi,
-  /<script\b[\s\S]*?(?:<\/script\s*>|$)/gi,
-  /<style\b[\s\S]*?(?:<\/style\s*>|$)/gi,
-  /<template\b[\s\S]*?(?:<\/template\s*>|$)/gi,
-  /<textarea\b[\s\S]*?(?:<\/textarea\s*>|$)/gi,
-];
+const INERT_REGIONS: readonly RegExp[] =
+  [
+    /<!--[\s\S]*?(?:-->|$)/gi,
+    /<script\b[\s\S]*?(?:<\/script\s*>|$)/gi,
+    /<style\b[\s\S]*?(?:<\/style\s*>|$)/gi,
+    /<template\b[\s\S]*?(?:<\/template\s*>|$)/gi,
+    /<textarea\b[\s\S]*?(?:<\/textarea\s*>|$)/gi,
+  ];
 
 /** Drop comments and raw-text elements from a document before scanning it. */
-export function stripInertMarkup(html: string): string {
-  let out = html;
-  for (const re of INERT_REGIONS) out = out.replace(re, ' ');
+export function stripInertMarkup(
+  html: string,
+): string {
+  let out =
+    html;
+  for (const re of INERT_REGIONS)
+    out =
+      out.replace(
+        re,
+        ' ',
+      );
   return out;
 }
 
 /** The five entities that can appear in an attribute value, decoded. */
-function decodeEntities(value: string): string {
+function decodeEntities(
+  value: string,
+): string {
   return value
-    .replace(/&(?:amp|AMP);/g, '&')
-    .replace(/&(?:lt|LT);/g, '<')
-    .replace(/&(?:gt|GT);/g, '>')
-    .replace(/&(?:quot|QUOT);/g, '"')
-    .replace(/&(?:apos|#39);/g, "'");
+    .replace(
+      /&(?:amp|AMP);/g,
+      '&',
+    )
+    .replace(
+      /&(?:lt|LT);/g,
+      '<',
+    )
+    .replace(
+      /&(?:gt|GT);/g,
+      '>',
+    )
+    .replace(
+      /&(?:quot|QUOT);/g,
+      '"',
+    )
+    .replace(
+      /&(?:apos|#39);/g,
+      "'",
+    );
 }
 
 /** Read one attribute out of an opening tag, tolerating quoting styles. */
-function attr(tag: string, name: string): string | null {
-  const re = new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'\`=<>]+))`, 'i');
-  const m = re.exec(tag);
-  if (!m) return null;
-  return decodeEntities(m[1] ?? m[2] ?? m[3] ?? '');
+function attr(
+  tag: string,
+  name: string,
+):
+  | string
+  | null {
+  const re =
+    new RegExp(
+      `\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'\`=<>]+))`,
+      'i',
+    );
+  const m =
+    re.exec(
+      tag,
+    );
+  if (
+    !m
+  )
+    return null;
+  return decodeEntities(
+    m[1] ??
+      m[2] ??
+      m[3] ??
+      '',
+  );
 }
 
 /** True when a `rel` attribute's token list contains `me`. */
-export function relContainsMe(rel: string | null): boolean {
-  if (!rel) return false;
+export function relContainsMe(
+  rel:
+    | string
+    | null,
+): boolean {
+  if (
+    !rel
+  )
+    return false;
   return rel
     .trim()
-    .split(/\s+/)
-    .some((token) => token.toLowerCase() === 'me');
+    .split(
+      /\s+/,
+    )
+    .some(
+      (
+        token,
+      ) =>
+        token.toLowerCase() ===
+        'me',
+    );
 }
 
 /**
@@ -118,27 +196,74 @@ export function relContainsMe(rel: string | null): boolean {
  * `https://evil.test/?u=https://rmhstudios.com/u/alice` both return `null`
  * because host and path are read off a parsed `URL`.
  */
-export function profileHandleFromUrl(href: string, base?: string): string | null {
+export function profileHandleFromUrl(
+  href: string,
+  base?: string,
+):
+  | string
+  | null {
   let url: URL;
   try {
-    url = new URL(href, base);
+    url =
+      new URL(
+        href,
+        base,
+      );
   } catch {
     return null;
   }
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
-  if (!PROFILE_HOSTS.some((h) => normalizeHost(h) === normalizeHost(url.hostname))) return null;
+  if (
+    url.protocol !==
+      'https:' &&
+    url.protocol !==
+      'http:'
+  )
+    return null;
+  if (
+    !PROFILE_HOSTS.some(
+      (
+        h,
+      ) =>
+        normalizeHost(
+          h,
+        ) ===
+        normalizeHost(
+          url.hostname,
+        ),
+    )
+  )
+    return null;
 
   // Segment-wise, so `/u/alice-two` never satisfies a claim on `alice` and a
   // percent-encoded `/u/%61lice` still resolves to `alice`.
-  const segments = url.pathname.split('/').filter(Boolean);
-  if (segments.length !== 2 || segments[0].toLowerCase() !== 'u') return null;
+  const segments =
+    url.pathname
+      .split(
+        '/',
+      )
+      .filter(
+        Boolean,
+      );
+  if (
+    segments.length !==
+      2 ||
+    segments[0].toLowerCase() !==
+      'u'
+  )
+    return null;
   let handle: string;
   try {
-    handle = decodeURIComponent(segments[1]);
+    handle =
+      decodeURIComponent(
+        segments[1],
+      );
   } catch {
     return null;
   }
-  return handle.toLowerCase() || null;
+  return (
+    handle.toLowerCase() ||
+    null
+  );
 }
 
 /** One `rel="me"` edge found in a document. */
@@ -146,7 +271,9 @@ export interface RelMeLink {
   /** The raw `href` as written on the page. */
   href: string;
   /** The RMH handle it claims, when it is an RMH profile URL. */
-  handle: string | null;
+  handle:
+    | string
+    | null;
 }
 
 /**
@@ -157,17 +284,55 @@ export interface RelMeLink {
  * against the page's own URL is what makes that fall out correctly instead of
  * throwing.
  */
-export function findRelMeLinks(html: string, pageUrl?: string): RelMeLink[] {
-  const source = stripInertMarkup(html);
-  const tagRe = /<(a|link)\b([^>]*)>/gi;
-  const found: RelMeLink[] = [];
+export function findRelMeLinks(
+  html: string,
+  pageUrl?: string,
+): RelMeLink[] {
+  const source =
+    stripInertMarkup(
+      html,
+    );
+  const tagRe =
+    /<(a|link)\b([^>]*)>/gi;
+  const found: RelMeLink[] =
+    [];
   let m: RegExpExecArray | null;
-  while ((m = tagRe.exec(source))) {
-    const tag = m[0];
-    if (!relContainsMe(attr(tag, 'rel'))) continue;
-    const href = attr(tag, 'href');
-    if (!href) continue;
-    found.push({ href, handle: profileHandleFromUrl(href, pageUrl) });
+  while (
+    (m =
+      tagRe.exec(
+        source,
+      ))
+  ) {
+    const tag =
+      m[0];
+    if (
+      !relContainsMe(
+        attr(
+          tag,
+          'rel',
+        ),
+      )
+    )
+      continue;
+    const href =
+      attr(
+        tag,
+        'href',
+      );
+    if (
+      !href
+    )
+      continue;
+    found.push(
+      {
+        href,
+        handle:
+          profileHandleFromUrl(
+            href,
+            pageUrl,
+          ),
+      },
+    );
   }
   return found;
 }
@@ -179,8 +344,27 @@ export function findRelMeLinks(html: string, pageUrl?: string): RelMeLink[] {
  * Handle comparison is case-insensitive because handles are lowercase by rule
  * (`lib/handle.ts`) but a hand-typed back-link often is not.
  */
-export function htmlVerifiesHandle(html: string, handle: string, pageUrl?: string): boolean {
-  const wanted = handle.trim().toLowerCase();
-  if (!wanted) return false;
-  return findRelMeLinks(html, pageUrl).some((link) => link.handle === wanted);
+export function htmlVerifiesHandle(
+  html: string,
+  handle: string,
+  pageUrl?: string,
+): boolean {
+  const wanted =
+    handle
+      .trim()
+      .toLowerCase();
+  if (
+    !wanted
+  )
+    return false;
+  return findRelMeLinks(
+    html,
+    pageUrl,
+  ).some(
+    (
+      link,
+    ) =>
+      link.handle ===
+      wanted,
+  );
 }

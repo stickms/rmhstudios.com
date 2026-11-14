@@ -12,11 +12,16 @@
  */
 
 /** The parts of `window` a reading needs — narrowed so it can be faked. */
-export type KeyboardInsetSource = {
-  /** `document.documentElement.clientHeight` — the layout viewport. */
-  layoutHeight: number;
-  visualViewport?: { height?: number; offsetTop?: number; scale?: number } | null;
-};
+export type KeyboardInsetSource =
+  {
+    /** `document.documentElement.clientHeight` — the layout viewport. */
+    layoutHeight: number;
+    visualViewport?: {
+      height?: number;
+      offsetTop?: number;
+      scale?: number;
+    } | null;
+  };
 
 /**
  * Smallest covered region treated as a keyboard.
@@ -44,18 +49,62 @@ export const MAX_UNZOOMED_SCALE = 1.01;
  * for the field to be visible, the engine stops panning and the reading settles
  * at the keyboard height alone.
  */
-export function keyboardInset(source: KeyboardInsetSource): number {
-  const visual = source.visualViewport;
-  if (!visual) return 0;
+export function keyboardInset(
+  source: KeyboardInsetSource,
+): number {
+  const visual =
+    source.visualViewport;
+  if (
+    !visual
+  )
+    return 0;
 
-  const scale = typeof visual.scale === 'number' ? visual.scale : 1;
-  if (!Number.isFinite(scale) || scale > MAX_UNZOOMED_SCALE) return 0;
+  const scale =
+    typeof visual.scale ===
+    'number'
+      ? visual.scale
+      : 1;
+  if (
+    !Number.isFinite(
+      scale,
+    ) ||
+    scale >
+      MAX_UNZOOMED_SCALE
+  )
+    return 0;
 
-  const height = typeof visual.height === 'number' ? visual.height : 0;
-  const offsetTop = typeof visual.offsetTop === 'number' ? visual.offsetTop : 0;
-  const layout = source.layoutHeight;
-  if (!Number.isFinite(height) || !Number.isFinite(layout) || height <= 0) return 0;
+  const height =
+    typeof visual.height ===
+    'number'
+      ? visual.height
+      : 0;
+  const offsetTop =
+    typeof visual.offsetTop ===
+    'number'
+      ? visual.offsetTop
+      : 0;
+  const layout =
+    source.layoutHeight;
+  if (
+    !Number.isFinite(
+      height,
+    ) ||
+    !Number.isFinite(
+      layout,
+    ) ||
+    height <=
+      0
+  )
+    return 0;
 
-  const covered = layout - (height + offsetTop);
-  return covered >= MIN_KEYBOARD_PX ? Math.round(covered) : 0;
+  const covered =
+    layout -
+    (height +
+      offsetTop);
+  return covered >=
+    MIN_KEYBOARD_PX
+    ? Math.round(
+        covered,
+      )
+    : 0;
 }

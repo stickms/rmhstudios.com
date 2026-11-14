@@ -17,5 +17,10 @@ export const TIP_MAX = 100_000;
 export const TIP_NOTE_MAX = 280;
 
 /** What a tip can be attached to, for the "tipped your post" notification. */
-export const TIP_ENTITY_TYPES = ['rmhark', 'profile'] as const;
-export type TipEntityType = (typeof TIP_ENTITY_TYPES)[number];
+export const TIP_ENTITY_TYPES =
+  [
+    'rmhark',
+    'profile',
+  ] as const;
+export type TipEntityType =
+  (typeof TIP_ENTITY_TYPES)[number];

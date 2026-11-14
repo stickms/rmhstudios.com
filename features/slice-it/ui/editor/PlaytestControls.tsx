@@ -17,13 +17,25 @@
  * exists to catch.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Repeat, Square } from 'lucide-react';
+import {
+  Play,
+  Repeat,
+  Square,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { laneForKey } from '@features/slice-it/engine/input';
 import { useSliceItStore } from '@features/slice-it/engine/store';
-import { editorState, useEditorStore } from '@features/slice-it/engine/editor/store';
+import {
+  editorState,
+  useEditorStore,
+} from '@features/slice-it/engine/editor/store';
 import {
   activePlaytest,
   startEditorPlaytest,
@@ -31,36 +43,114 @@ import {
 } from '@features/slice-it/engine/editor/playtest';
 
 export function PlaytestControls() {
-  const { t } = useTranslation('r-slice-it');
-  const playtesting = useEditorStore((s) => s.playtesting);
-  const keybinds = useSliceItStore((s) => s.keybinds);
-  const extraBinds = useSliceItStore((s) => s.extraBinds);
-  const [judgement, setJudgement] = useState('');
-  const held = useRef(new Set<number>());
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-slice-it',
+    );
+  const playtesting =
+    useEditorStore(
+      (
+        s,
+      ) =>
+        s.playtesting,
+    );
+  const keybinds =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.keybinds,
+    );
+  const extraBinds =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.extraBinds,
+    );
+  const [
+    judgement,
+    setJudgement,
+  ] =
+    useState(
+      '',
+    );
+  const held =
+    useRef(
+      new Set<number>(),
+    );
 
   /* ── The frame loop ───────────────────────────────────────────────────── */
   useEffect(() => {
-    if (!playtesting) return;
+    if (
+      !playtesting
+    )
+      return;
     let frame = 0;
-    const loop = () => {
-      frame = requestAnimationFrame(loop);
-      const session = activePlaytest();
-      if (!session?.running) return;
-      const time = session.tick();
-      const state = editorState();
-      state.setPlayhead(time);
+    const loop =
+      () => {
+        frame =
+          requestAnimationFrame(
+            loop,
+          );
+        const session =
+          activePlaytest();
+        if (
+          !session?.running
+        )
+          return;
+        const time =
+          session.tick();
+        const state =
+          editorState();
+        state.setPlayhead(
+          time,
+        );
 
-      const feedback = session.drainFeedback();
-      if (feedback.length > 0) setJudgement(feedback[feedback.length - 1].text);
+        const feedback =
+          session.drainFeedback();
+        if (
+          feedback.length >
+          0
+        )
+          setJudgement(
+            feedback[
+              feedback.length -
+                1
+            ]
+              .text,
+          );
 
-      // Past the end of the song there is nothing left to judge, and the audio
-      // clock keeps counting — stop rather than scroll into empty timeline.
-      const duration = state.song?.duration ?? 0;
-      if (duration > 0 && time > duration + 1 && !session.looping) stopEditorPlaytest();
-    };
-    frame = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(frame);
-  }, [playtesting]);
+        // Past the end of the song there is nothing left to judge, and the audio
+        // clock keeps counting — stop rather than scroll into empty timeline.
+        const duration =
+          state
+            .song
+            ?.duration ??
+          0;
+        if (
+          duration >
+            0 &&
+          time >
+            duration +
+              1 &&
+          !session.looping
+        )
+          stopEditorPlaytest();
+      };
+    frame =
+      requestAnimationFrame(
+        loop,
+      );
+    return () =>
+      cancelAnimationFrame(
+        frame,
+      );
+  }, [
+    playtesting,
+  ]);
 
   /* ── Lane input ───────────────────────────────────────────────────────── */
   //
@@ -69,114 +159,280 @@ export function PlaytestControls() {
   // subtracts the dispatch latency from it, which is what makes a playtest
   // judgement comparable to a real one.
   useEffect(() => {
-    if (!playtesting) return;
-    const laneFor = (key: string): number | null => {
-      // I1 — same resolver the live game uses, so a lane bound to two keys
-      // behaves identically in playtest and in a real run.
-      const lane = laneForKey(keybinds, extraBinds, key);
-      if (lane !== null) return lane;
-      return null;
-    };
-    const heldLanes = held.current;
+    if (
+      !playtesting
+    )
+      return;
+    const laneFor =
+      (
+        key: string,
+      ):
+        | number
+        | null => {
+        // I1 — same resolver the live game uses, so a lane bound to two keys
+        // behaves identically in playtest and in a real run.
+        const lane =
+          laneForKey(
+            keybinds,
+            extraBinds,
+            key,
+          );
+        if (
+          lane !==
+          null
+        )
+          return lane;
+        return null;
+      };
+    const heldLanes =
+      held.current;
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      const lane = laneFor(event.key);
-      if (lane === null || event.repeat) return;
-      event.preventDefault();
-      heldLanes.add(lane);
-      activePlaytest()?.press(lane, event.timeStamp);
-    };
-    const onKeyUp = (event: KeyboardEvent) => {
-      const lane = laneFor(event.key);
-      if (lane === null) return;
-      event.preventDefault();
-      heldLanes.delete(lane);
-      activePlaytest()?.release(lane);
-    };
+    const onKeyDown =
+      (
+        event: KeyboardEvent,
+      ) => {
+        const lane =
+          laneFor(
+            event.key,
+          );
+        if (
+          lane ===
+            null ||
+          event.repeat
+        )
+          return;
+        event.preventDefault();
+        heldLanes.add(
+          lane,
+        );
+        activePlaytest()?.press(
+          lane,
+          event.timeStamp,
+        );
+      };
+    const onKeyUp =
+      (
+        event: KeyboardEvent,
+      ) => {
+        const lane =
+          laneFor(
+            event.key,
+          );
+        if (
+          lane ===
+          null
+        )
+          return;
+        event.preventDefault();
+        heldLanes.delete(
+          lane,
+        );
+        activePlaytest()?.release(
+          lane,
+        );
+      };
 
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener(
+      'keydown',
+      onKeyDown,
+    );
+    window.addEventListener(
+      'keyup',
+      onKeyUp,
+    );
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
-      for (const lane of heldLanes) activePlaytest()?.release(lane);
+      window.removeEventListener(
+        'keydown',
+        onKeyDown,
+      );
+      window.removeEventListener(
+        'keyup',
+        onKeyUp,
+      );
+      for (const lane of heldLanes)
+        activePlaytest()?.release(
+          lane,
+        );
       heldLanes.clear();
     };
-  }, [playtesting, keybinds, extraBinds]);
+  }, [
+    playtesting,
+    keybinds,
+    extraBinds,
+  ]);
 
   /* A playtest must not outlive the editor: the engine holds the shared
    * AudioManager, and leaving it playing would follow the author to the next
    * page. */
-  useEffect(() => () => void (activePlaytest() ? stopEditorPlaytest() : null), []);
+  useEffect(
+    () =>
+      () =>
+        void (activePlaytest()
+          ? stopEditorPlaytest()
+          : null),
+    [],
+  );
 
-  const onPlay = useCallback(() => {
-    if (playtesting) {
-      stopEditorPlaytest();
-      setJudgement('');
-      return;
-    }
-    void startEditorPlaytest();
-  }, [playtesting]);
+  const onPlay =
+    useCallback(() => {
+      if (
+        playtesting
+      ) {
+        stopEditorPlaytest();
+        setJudgement(
+          '',
+        );
+        return;
+      }
+      void startEditorPlaytest();
+    }, [
+      playtesting,
+    ]);
 
-  const onLoop = useCallback(() => {
-    if (playtesting) {
-      stopEditorPlaytest();
-      setJudgement('');
-      return;
-    }
-    void startEditorPlaytest({ loop: true });
-  }, [playtesting]);
+  const onLoop =
+    useCallback(() => {
+      if (
+        playtesting
+      ) {
+        stopEditorPlaytest();
+        setJudgement(
+          '',
+        );
+        return;
+      }
+      void startEditorPlaytest(
+        {
+          loop: true,
+        },
+      );
+    }, [
+      playtesting,
+    ]);
 
-  const canLoop = useEditorStore((s) => {
-    const selected = s.charts[s.active].notes.filter((note) => note.selected);
-    return selected.length >= 2 || s.loop !== null;
-  });
+  const canLoop =
+    useEditorStore(
+      (
+        s,
+      ) => {
+        const selected =
+          s.charts[
+            s
+              .active
+          ].notes.filter(
+            (
+              note,
+            ) =>
+              note.selected,
+          );
+        return (
+          selected.length >=
+            2 ||
+          s.loop !==
+            null
+        );
+      },
+    );
 
   return (
     <div
       className="flex items-center gap-1.5"
       role="group"
-      aria-label={t('editor-playtest', { defaultValue: 'Playtest' })}
+      aria-label={t(
+        'editor-playtest',
+        {
+          defaultValue:
+            'Playtest',
+        },
+      )}
     >
       <button
         type="button"
         className={cn(
           'flex h-9 items-center gap-2 px-3 text-sm',
-          playtesting ? 'neumorphic-active' : 'neumorphic-sm',
+          playtesting
+            ? 'neumorphic-active'
+            : 'neumorphic-sm',
         )}
-        onClick={onPlay}
-        title={t('editor-playtest-play-title', {
-          defaultValue: 'Play from the playhead (Space)',
-        })}
+        onClick={
+          onPlay
+        }
+        title={t(
+          'editor-playtest-play-title',
+          {
+            defaultValue:
+              'Play from the playhead (Space)',
+          },
+        )}
       >
         {playtesting ? (
-          <Square className="h-4 w-4" aria-hidden />
+          <Square
+            className="h-4 w-4"
+            aria-hidden
+          />
         ) : (
-          <Play className="h-4 w-4" aria-hidden />
+          <Play
+            className="h-4 w-4"
+            aria-hidden
+          />
         )}
         {playtesting
-          ? t('editor-playtest-stop', { defaultValue: 'Stop' })
-          : t('editor-playtest-play', { defaultValue: 'Playtest' })}
+          ? t(
+              'editor-playtest-stop',
+              {
+                defaultValue:
+                  'Stop',
+              },
+            )
+          : t(
+              'editor-playtest-play',
+              {
+                defaultValue:
+                  'Playtest',
+              },
+            )}
       </button>
 
       <button
         type="button"
         className="neumorphic-sm flex h-9 w-9 items-center justify-center disabled:opacity-40"
-        onClick={onLoop}
-        disabled={!canLoop && !playtesting}
-        title={t('editor-playtest-loop-title', {
-          defaultValue: 'Loop the selection (Ctrl+Space)',
-        })}
+        onClick={
+          onLoop
+        }
+        disabled={
+          !canLoop &&
+          !playtesting
+        }
+        title={t(
+          'editor-playtest-loop-title',
+          {
+            defaultValue:
+              'Loop the selection (Ctrl+Space)',
+          },
+        )}
       >
-        <Repeat className="h-4 w-4" aria-hidden />
+        <Repeat
+          className="h-4 w-4"
+          aria-hidden
+        />
         <span className="sr-only">
-          {t('editor-playtest-loop', { defaultValue: 'Loop the selection' })}
+          {t(
+            'editor-playtest-loop',
+            {
+              defaultValue:
+                'Loop the selection',
+            },
+          )}
         </span>
       </button>
 
       {playtesting ? (
-        <span className="min-w-[4.5rem] text-xs tabular-nums opacity-70" aria-live="polite">
-          {judgement}
+        <span
+          className="min-w-[4.5rem] text-xs tabular-nums opacity-70"
+          aria-live="polite"
+        >
+          {
+            judgement
+          }
         </span>
       ) : null}
     </div>

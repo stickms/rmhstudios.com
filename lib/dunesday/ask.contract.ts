@@ -6,7 +6,16 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { DunesdayAsk } from '@/lib/dunesday/ask-schema';
 
-export const askDunesdayApi = endpoint<{
-  body: DunesdayAsk;
-  res: { answer: string };
-}>()({ method: 'POST', path: '/api/dunesday/ask' });
+export const askDunesdayApi =
+  endpoint<{
+    body: DunesdayAsk;
+    res: {
+      answer: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/dunesday/ask',
+    },
+  );

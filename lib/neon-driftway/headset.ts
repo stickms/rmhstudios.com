@@ -18,21 +18,37 @@
  */
 
 /** Browsers that only ship on a headset. Ordinary phones never match. */
-const HEADSET_UA = /\b(OculusBrowser|Quest|Pico(?:Browser|VR)?|VIVE|Wolvic|MagicLeap)\b/i;
+const HEADSET_UA =
+  /\b(OculusBrowser|Quest|Pico(?:Browser|VR)?|VIVE|Wolvic|MagicLeap)\b/i;
 
 interface XRNavigator {
-  xr?: { isSessionSupported?: (mode: string) => Promise<boolean> };
+  xr?: {
+    isSessionSupported?: (
+      mode: string,
+    ) => Promise<boolean>;
+  };
 }
 
 /** True where a headset browser identifies itself in the user agent. */
 export function isHeadsetUserAgent(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  return HEADSET_UA.test(navigator.userAgent);
+  if (
+    typeof navigator ===
+    'undefined'
+  )
+    return false;
+  return HEADSET_UA.test(
+    navigator.userAgent,
+  );
 }
 
 /** True where the browser exposes WebXR at all (says nothing about hardware). */
 export function hasWebXr(): boolean {
-  return typeof navigator !== 'undefined' && 'xr' in navigator;
+  return (
+    typeof navigator !==
+      'undefined' &&
+    'xr' in
+      navigator
+  );
 }
 
 /**
@@ -41,13 +57,29 @@ export function hasWebXr(): boolean {
  * Never throws and never prompts; resolves to `false` on anything unexpected.
  */
 export async function detectHeadset(): Promise<boolean> {
-  if (typeof navigator === 'undefined') return false;
-  if (isHeadsetUserAgent()) return true;
+  if (
+    typeof navigator ===
+    'undefined'
+  )
+    return false;
+  if (
+    isHeadsetUserAgent()
+  )
+    return true;
 
-  const xr = (navigator as XRNavigator).xr;
-  if (!xr?.isSessionSupported) return false;
+  const xr =
+    (
+      navigator as XRNavigator
+    )
+      .xr;
+  if (
+    !xr?.isSessionSupported
+  )
+    return false;
   try {
-    return await xr.isSessionSupported('immersive-vr');
+    return await xr.isSessionSupported(
+      'immersive-vr',
+    );
   } catch {
     // Some browsers reject rather than resolve false when XR is disabled.
     return false;

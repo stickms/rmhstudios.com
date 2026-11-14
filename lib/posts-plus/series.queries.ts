@@ -2,5 +2,16 @@
 import { listSeriesApi } from '@/lib/posts-plus/series.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const seriesQuery = () =>
-  contractQuery(['series', 'mine-and-following'], listSeriesApi, undefined, { staleTime: 5_000 });
+export const seriesQuery =
+  () =>
+    contractQuery(
+      [
+        'series',
+        'mine-and-following',
+      ],
+      listSeriesApi,
+      undefined,
+      {
+        staleTime: 5_000,
+      },
+    );
