@@ -32,6 +32,8 @@ export interface SitewideAnnouncementSummary {
   announcedAt: string;
   /** ISO timestamp after which the popup and feed card stop showing. */
   expiresAt: string;
+  /** The RMHark where the announcement is discussed in the feed, if one was created. */
+  discussionPostId: string | null;
   /** Markdown body — only present when requested with `?full=1`. */
   content?: string;
 }

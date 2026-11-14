@@ -169,3 +169,22 @@ model BotWorkerSettings {
 
   @@map("bot_worker_settings")
 }
+
+/// One row per reaction a bot made to an outside-world headline or to a sitewide
+/// announcement. A bot reacts to an item once (the unique key), and the worker
+/// counts rows per item to spread reactions instead of piling onto one story.
+model BotReaction {
+  id        BigInt   @id @default(autoincrement())
+  botId     String
+  kind      String   @db.VarChar(16) // 'announcement' | 'news'
+  refKey    String   @db.VarChar(200) // blog post id, or the headline's key
+  postId    String? // the RMHark the bot wrote, when the reaction is a post
+  createdAt DateTime @default(now())
+
+  bot User @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  @@unique([botId, kind, refKey])
+  @@index([kind, refKey])
+  @@index([createdAt])
+  @@map("bot_reaction")
+}

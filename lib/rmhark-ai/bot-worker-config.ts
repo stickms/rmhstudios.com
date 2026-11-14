@@ -71,6 +71,12 @@ export interface BotConfig {
   dmActiveHumanLookbackMs: number;
   /** BOT_AI_MODEL. */
   model: string;
+  /**
+   * BOT_REACTIONS_ENABLED (default on): the kill switch for bots reacting to the live sitewide
+   * announcement and to outside headlines (reaction posts and announcement-thread comments).
+   * Off, bots post and reply exactly as before.
+   */
+  reactionsEnabled: boolean;
 }
 
 export function clampInt(v: number, lo: number, hi: number): number {
@@ -124,6 +130,14 @@ function envFloat(env: Env, key: string, fallback: number): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
 }
+/** A boolean switch: false/0/off/no (any case) turn it off; unset, empty or anything else keeps the fallback. */
+function envBool(env: Env, key: string, fallback: boolean): boolean {
+  const v = env[key]?.trim().toLowerCase();
+  if (v === undefined || v === '') return fallback;
+  if (['false', '0', 'off', 'no'].includes(v)) return false;
+  if (['true', '1', 'on', 'yes'].includes(v)) return true;
+  return fallback;
+}
 /** An integer millisecond count; non-positive values are ignored. */
 function envMillis(env: Env, key: string, fallback: number): number {
   const n = envInt(env, key, 0);
@@ -172,6 +186,7 @@ export function loadBotConfig(env: Env = process.env): BotConfig {
       DM_ACTIVE_HUMAN_LOOKBACK_MS,
     ),
     model: env.BOT_AI_MODEL || DEFAULT_BOT_MODEL,
+    reactionsEnabled: envBool(env, 'BOT_REACTIONS_ENABLED', true),
   };
 }
 

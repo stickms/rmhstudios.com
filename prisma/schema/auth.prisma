@@ -218,6 +218,7 @@ model User {
   // Admin-authored feed announcements
   feedAnnouncements FeedAnnouncement[]
   blogAnnouncementsSeen BlogAnnouncementSeen[]
+  botReactions          BotReaction[]
 
   // Admin moderation: audit log entries authored, strikes received/issued
   auditLogs      AdminAuditLog[] @relation("AuditAdmin")
