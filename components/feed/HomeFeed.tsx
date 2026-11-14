@@ -5,6 +5,7 @@ import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { useCaughtUpMarker } from '@/hooks/useCaughtUpMarker';
 import { useSession } from '@/components/Providers';
+import { usePreloadedSitewideAnnouncement } from '@/hooks/useSitewideAnnouncement';
 import { ArrivalSuspense, useArrival, useArrivingKeys, useSuspenseArrival } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +15,7 @@ import { useDeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import { QotdCardLazy } from '@/components/posts-plus/QotdCardLazy';
 import { FortuneCardLazy } from '@/components/delight/FortuneCardLazy';
 import type { FeedItem } from '@/lib/feed-types';
-import type { SitewideAnnouncementSummary } from '@/lib/sitewide-announcement';
+import type { SitewideAnnouncementResponse } from '@/lib/sitewide-announcement';
 import { CaughtUpDivider } from './CaughtUpDivider';
 import { FeedRow } from './FeedRow';
 import { HomeComposer } from './HomeComposer';
@@ -27,8 +28,12 @@ export interface InitialFeed {
   hasMore: boolean;
   /** Viewer's muted words, so the client primes its live-SSE filter with no separate request. */
   mutedWords?: string[];
-  /** The live sitewide announcement as of this page, so the row heading the feed lands with the posts. */
-  announcement?: SitewideAnnouncementSummary | null;
+  /**
+   * The sitewide announcement as the viewer's own query would answer it, preloaded with this page so the row heading the
+   * feed lands with the posts and the popup needs no request. Absent when it was not ready in time (it never delays the
+   * page); the query then fetches it.
+   */
+  announcementState?: SitewideAnnouncementResponse | undefined;
 }
 
 /** X4: the question-of-the-day card follows this many posts. */
@@ -122,6 +127,9 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
     }
   }, [initial, hydrate, fetchNextPage]);
 
+  // The preloaded announcement answers the shared query (the popup reads it too), so nothing fetches it again.
+  usePreloadedSitewideAnnouncement(initial.announcementState);
+
   // X7: the "You're all caught up" row goes before the first post from the previous visit. Plain For You home only: a
   // filtered or searched surface has no "new since last time".
   const caughtUpBeforeId = useCaughtUpMarker(items, filter === 'all' && !search);
@@ -185,7 +193,10 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
   const label = t('feed', { defaultValue: 'Feed' });
   // The live sitewide announcement leads the feed, above the composer. Not in a search, which is a result list.
   const pinned = search ? null : (
-    <SitewideAnnouncementRow initial={initial.announcement} className={streamedArrival} />
+    <SitewideAnnouncementRow
+      initial={initial.announcementState?.announcement}
+      className={streamedArrival}
+    />
   );
 
   if (entries.length === 0) {
