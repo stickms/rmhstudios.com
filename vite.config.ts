@@ -102,6 +102,11 @@ const ssrOnlyExternals = [
 //     changed, not a group.
 //   - naming the deferred shell overlays (modals, command palette) as one group: no
 //     effect, because each is a dynamic-import entry and keeps its own file.
+//   - a group fed by a plugin with the static closure of `app/routes/_site.tsx` (and of
+//     the deferred overlays), to fold the shell's remaining small files: the closure runs
+//     through the route tree and is 2,755 modules. As one chunk `/` went to 405.7 KB
+//     brotli and `/login` to 406.8; entries-aware with an 8 KB merge, `/` was 47 files
+//     but 342.6 KB and `/explore` 436.7.
 const REACT_CORE =
   /node_modules[\\/](?:react|react-dom|scheduler|react-is|use-sync-external-store)[\\/]/;
 
