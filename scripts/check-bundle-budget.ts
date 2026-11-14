@@ -245,10 +245,20 @@ const BUDGETS = {
   // parent commit and of this one: entry 408,401 -> 439,342 B; critical path 945,407 -> 938,977 B raw and
   // 263,171 -> 260,371 B brotli, 54 -> 52 chunks. Every page downloads the whole critical path before it hydrates,
   // so this is 6.4 KB fewer bytes in two fewer requests. Each line is the measurement + ~2%, as above.
+  //
+  // Chunk shaping (2026-11-14): entry RAISED 448,100 -> 699,400 B; critical path LOWERED 957,800 -> 926,100 B raw and
+  // 265,600 -> 244,600 B brotli. No feature bought the entry bytes: the same code moved, on purpose this time. The
+  // `shell` group in vite.config.ts (`$initial`, every module the entry imports statically) folds the other 49 files
+  // of the critical path into the entry file, and the `icons` group stops lucide icons from being one file each.
+  // Measured on a plain `vite build` of the parent commit and of this one: entry about 442,200 -> 685,698 B; critical
+  // path about 942,000 -> 907,905 B raw and about 261,200 -> 239,841 B brotli, 52 -> 3 chunks. Every page downloads
+  // the whole critical path before it hydrates, so this is 21 KB fewer brotli bytes in 49 fewer requests. From here
+  // the entry line and the critical-path line watch nearly the same bytes (the path is the entry, React and the
+  // rolldown runtime); a library leaking onto every page now shows in both. Each line is the measurement + ~2%.
   siteCssBrotli: 32_600,
-  entryRaw: 448_100,
-  criticalPathRaw: 957_800,
-  criticalPathBrotli: 265_600,
+  entryRaw: 699_400,
+  criticalPathRaw: 926_100,
+  criticalPathBrotli: 244_600,
 };
 
 /**
