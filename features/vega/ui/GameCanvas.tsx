@@ -15,7 +15,6 @@ import { asset } from '@/lib/storage/asset';
 import { useGameStore, TOWER_COSTS } from '@features/vega/engine/GameState';
 import { TowerType } from '@features/vega/engine/Entities';
 import { useArrival } from '@/components/ui/arrive';
-import { cn } from '@/lib/utils';
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -489,7 +488,8 @@ function GameOverScreen() {
                               {status === 'submitting' ? t("uploading-data", { defaultValue: "UPLOADING BLACK BOX DATA..." }) : t("no-data-found", { defaultValue: "NO DATA FOUND" })}
                           </p>
                       ) : (
-                          <table className={cn('w-full text-xs', arrival)}>
+                          // A plain join: `cn` would pull tailwind-merge into the island's budget.
+                          <table className={arrival ? `w-full text-xs ${arrival}` : 'w-full text-xs'}>
                               <tbody>
                                   {leaderboard.map((entry, i) => (
                                       <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/5">
