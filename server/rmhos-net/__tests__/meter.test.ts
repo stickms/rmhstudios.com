@@ -86,3 +86,54 @@ it('meters a per-second bucket and a UTC-day budget per user', () => {
     false,
   );
 });
+
+it('prune drops users whose day rolled and bucket refilled, keeps the rest', () => {
+  let now = 0;
+  const m =
+    new UsageMeter(
+      {
+        ...loadPolicy(
+          {},
+        ),
+        bytesPerSecond: 1000,
+        bytesPerDay: 2500,
+      },
+      () =>
+        now,
+    );
+  m.consume(
+    'old',
+    100,
+  );
+  now = 1000;
+  m.consume(
+    'same-day',
+    100,
+  );
+  m.prune();
+  expect(
+    m.size,
+  ).toBe(
+    2,
+  ); // day has not rolled
+  now =
+    86_400_000 +
+    1;
+  m.consume(
+    'fresh',
+    1000,
+  ); // active today, bucket empty
+  m.prune();
+  expect(
+    m.size,
+  ).toBe(
+    1,
+  );
+  expect(
+    m.allowance(
+      'fresh',
+    ),
+  ).toBe(
+    0,
+  );
+});

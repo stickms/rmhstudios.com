@@ -83,7 +83,13 @@ function ports(
         n,
       );
   }
-  return out;
+  // An empty or unparseable list must never mean "deny nothing".
+  return out.size >
+    0
+    ? out
+    : new Set(
+        DEFAULT_DENIED_PORTS,
+      );
 }
 
 export function loadPolicy(
@@ -107,12 +113,16 @@ export function loadPolicy(
     bytesPerSecond:
       int(
         env.RMHOS_NET_BYTES_PER_SECOND,
-        1_048_576,
+        2 *
+          1024 *
+          1024,
       ),
     bytesPerDay:
       int(
         env.RMHOS_NET_BYTES_PER_DAY,
-        1_073_741_824,
+        2 *
+          1024 **
+            3,
       ),
   };
 }
@@ -176,6 +186,17 @@ export async function checkConnect(
     host =
       host.slice(
         1,
+        -1,
+      );
+  // A trailing dot is the same name (`localhost.`); strip one before the name checks.
+  if (
+    host.endsWith(
+      '.',
+    )
+  )
+    host =
+      host.slice(
+        0,
         -1,
       );
   if (

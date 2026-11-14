@@ -143,4 +143,50 @@ export class UsageMeter {
         .bytesPerDay
     );
   }
+
+  /** Number of tracked users. */
+  get size(): number {
+    return this
+      .users
+      .size;
+  }
+
+  /** Drop users whose day has rolled over and whose bucket has refilled: nothing left to remember. */
+  prune(): void {
+    const t =
+      this.now();
+    const day =
+      Math.floor(
+        t /
+          DAY_MS,
+      );
+    for (const [
+      id,
+      e,
+    ] of this
+      .users) {
+      const full =
+        e.tokens +
+          (Math.max(
+            0,
+            t -
+              e.last,
+          ) *
+            this
+              .p
+              .bytesPerSecond) /
+            1000 >=
+        this
+          .p
+          .bytesPerSecond;
+      if (
+        e.day !==
+          day &&
+        full
+      )
+        this.users.delete(
+          id,
+        );
+    }
+  }
 }

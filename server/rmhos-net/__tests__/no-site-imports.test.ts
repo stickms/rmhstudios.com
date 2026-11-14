@@ -2,7 +2,12 @@ import {
   readdirSync,
   readFileSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import {
+  dirname,
+  join,
+  relative,
+  resolve,
+} from 'node:path';
 import {
   expect,
   it,
@@ -13,6 +18,26 @@ const root =
     __dirname,
     '..',
   );
+const repo =
+  resolve(
+    root,
+    '..',
+    '..',
+  );
+const ALLOWED_FEATURES =
+  new Set(
+    [
+      '@features/rmhos/engine/constants',
+      '@features/rmhos/engine/net-ticket.server',
+    ],
+  );
+const SITE_DIRS =
+  [
+    'lib',
+    'components',
+    'app',
+    'server/shared',
+  ];
 
 function files(
   dir: string,
@@ -51,9 +76,24 @@ function files(
   );
 }
 
+function specifiers(
+  src: string,
+): string[] {
+  return [
+    ...src.matchAll(
+      /(?:from|import|require)\s*\(?\s*['"]([^'"]+)['"]/g,
+    ),
+  ].map(
+    (
+      m,
+    ) =>
+      m[1] as string,
+  );
+}
+
 it('the sandboxed relay hub imports nothing from the site', () => {
   const banned =
-    /(?:from|import|require)\s*\(?\s*['"](?:@\/lib|lib\/|@\/components|@\/app|@\/server\/shared)/;
+    /^(?:@\/lib|lib\/|@\/components|@\/app|@\/server\/shared)/;
   const all =
     files(
       root,
@@ -63,16 +103,67 @@ it('the sandboxed relay hub imports nothing from the site', () => {
   ).toBeGreaterThan(
     0,
   );
-  for (const f of all)
-    expect(
-      banned.test(
-        readFileSync(
-          f,
-          'utf8',
-        ),
+  for (const f of all) {
+    for (const spec of specifiers(
+      readFileSync(
+        f,
+        'utf8',
       ),
-      f,
-    ).toBe(
-      false,
-    );
+    )) {
+      expect(
+        banned.test(
+          spec,
+        ),
+        `${f}: ${spec}`,
+      ).toBe(
+        false,
+      );
+      if (
+        spec.startsWith(
+          '.',
+        )
+      ) {
+        const rel =
+          relative(
+            repo,
+            resolve(
+              dirname(
+                f,
+              ),
+              spec,
+            ),
+          );
+        const hit =
+          SITE_DIRS.some(
+            (
+              d,
+            ) =>
+              rel ===
+                d ||
+              rel.startsWith(
+                `${d}/`,
+              ),
+          );
+        expect(
+          hit,
+          `${f}: relative import into the site: ${spec}`,
+        ).toBe(
+          false,
+        );
+      }
+      if (
+        spec.startsWith(
+          '@features/',
+        )
+      )
+        expect(
+          ALLOWED_FEATURES.has(
+            spec,
+          ),
+          `${f}: ${spec}`,
+        ).toBe(
+          true,
+        );
+    }
+  }
 });

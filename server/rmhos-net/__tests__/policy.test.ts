@@ -307,4 +307,104 @@ describe('checkConnect', () => {
       },
     );
   });
+  it('blocks IPv6 spellings of private space and private mapped resolver answers', async () => {
+    for (const host of [
+      '[::1%lo]',
+      '0:0:0:0:0:ffff:7f00:1',
+      '::ffff:169.254.169.254',
+    ])
+      expect(
+        await checkConnect(
+          p,
+          {
+            ...base,
+            host,
+          },
+          pub,
+        ),
+        host,
+      ).toEqual(
+        blocked,
+      );
+    expect(
+      await checkConnect(
+        p,
+        base,
+        async () => [
+          {
+            address:
+              '::ffff:10.0.0.5',
+            family: 6,
+          },
+        ],
+      ),
+    ).toEqual(
+      blocked,
+    );
+  });
+  it('blocks localhost with a trailing dot', async () => {
+    for (const host of [
+      'localhost.',
+      'foo.localhost.',
+    ])
+      expect(
+        await checkConnect(
+          p,
+          {
+            ...base,
+            host,
+          },
+          pub,
+        ),
+        host,
+      ).toEqual(
+        blocked,
+      );
+  });
+});
+
+describe('loadPolicy limits', () => {
+  it('uses the spec defaults', () => {
+    expect(
+      p.bytesPerSecond,
+    ).toBe(
+      2 *
+        1024 *
+        1024,
+    );
+    expect(
+      p.bytesPerDay,
+    ).toBe(
+      2 *
+        1024 **
+          3,
+    );
+  });
+  it('never yields an empty deny-list', () => {
+    for (const v of [
+      '',
+      ' , ',
+      'abc',
+      '0,70000',
+    ])
+      expect(
+        [
+          ...loadPolicy(
+            {
+              RMHOS_NET_DENIED_PORTS:
+                v,
+            },
+          )
+            .deniedPorts,
+        ],
+        v,
+      ).toEqual(
+        [
+          25,
+          465,
+          587,
+          2525,
+        ],
+      );
+  });
 });
