@@ -13,6 +13,7 @@ const root = resolve(import.meta.dirname, '../..');
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 
 const compose = read('docker-compose.yml');
+const deployScript = read('deploy.sh');
 const vhost = read('deploy/apache/wiki.rmhstudios.com.conf');
 const mainVhost = read('deploy/apache/rmhstudios.conf');
 const dockerfile = read('deploy/mediawiki/Dockerfile');
@@ -49,7 +50,7 @@ describe('mediawiki compose service', () => {
   // Without comments: the block runs into the next service's header comment.
   const wiki = directives(service('mediawiki'));
 
-  it('is opt-in, so a deploy neither builds nor starts it', () => {
+  it("sits behind a profile, so the deploy's image pulls and main `up` skip it", () => {
     expect(wiki).toMatch(/profiles:\s*\['wiki'\]/);
   });
 
@@ -97,6 +98,35 @@ describe('mediawiki compose service', () => {
   it('leaves no Wiki.js service and no bot-password plumbing behind', () => {
     expect(compose).not.toMatch(/^ {2}wikijs:/m);
     expect(compose).not.toMatch(/requarks|MEDIAWIKI_URL|MEDIAWIKI_BOT/);
+  });
+});
+
+describe('deploy.sh', () => {
+  // The step itself, from its header to the next step's.
+  const start = deployScript.indexOf('# ── Step 5b: Wiki');
+  const step = deployScript.slice(start, deployScript.indexOf('# ── Step 6: Prune', start));
+
+  it('brings the wiki up after the site has passed its health checks, before pruning', () => {
+    expect(start).toBeGreaterThan(deployScript.indexOf('stage health'));
+    expect(step.length).toBeGreaterThan(0);
+  });
+
+  it('builds it with a fresh base image, then starts it, in production only', () => {
+    expect(step).toContain('if [ "$ENVIRONMENT" = "production" ]; then');
+    expect(step).toContain('--profile wiki build --pull mediawiki');
+    expect(step).toContain('--profile wiki up -d mediawiki');
+    expect(step.indexOf('build --pull')).toBeLessThan(step.indexOf('up -d mediawiki'));
+  });
+
+  it('never fails, stalls or rolls back the site deploy over the wiki', () => {
+    expect(step).toMatch(/timeout \d+ "\$DOCKER_BIN" compose/);
+    expect(step).toContain('} 2>/dev/null || log "WARNING: the wiki step failed; the site deploy is unaffected."');
+    expect(step).not.toMatch(/\bexit\b|update_deploy_status|rollback_non_web/);
+  });
+
+  it('reminds the operator of the one host step it cannot take', () => {
+    expect(step).toContain('/etc/apache2/sites-enabled/wiki.rmhstudios.com.conf');
+    expect(step).toContain('sudo a2ensite wiki.rmhstudios.com');
   });
 });
 

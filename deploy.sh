@@ -1435,6 +1435,64 @@ fi
 
 step_done
 
+# ── Step 5b: Wiki (best-effort, production) ─────────────────────────────────
+# wiki.rmhstudios.com is MediaWiki (docs/wiki.md). Its image is built here on
+# the host from deploy/mediawiki/, not pulled from GHCR, and the service sits
+# behind the `wiki` compose profile so the pulls and the `dc up` above skip it
+# (a running profiled service is not an orphan to --remove-orphans). This brings
+# it up to date after the site is healthy: a rebuild from cache, and no restart
+# at all unless deploy/mediawiki/ or the MediaWiki 1.43 base image changed. The first deploy installs it
+# into the `mediawiki` schema of the site's database. It needs nothing beyond
+# .env.production. BEST-EFFORT: a wiki that fails to build or start is logged
+# and never fails or rolls back the site's deploy.
+if [ "$ENVIRONMENT" = "production" ]; then
+    {
+        step_start "Building and starting the wiki (best-effort)..."
+        _wiki_log=$(mktemp /tmp/deploy-wiki.XXXXXX)
+        # --pull checks Docker Hub for a newer mediawiki:1.43 point release (they
+        # are mostly security fixes); without it the cached base would never move.
+        # A failed build leaves the running wiki as it was.
+        if timeout 900 "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+            --profile wiki build --pull mediawiki > "$_wiki_log" 2>&1 \
+            && timeout 300 "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+            --profile wiki up -d mediawiki >> "$_wiki_log" 2>&1; then
+            # A first start installs the wiki before Apache serves (compose
+            # start_period 120s); an unchanged container is already healthy.
+            # DEPLOY_WIKI_WAIT_SECONDS bounds the wait (default 3 minutes).
+            _wiki_id=$("$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+                --profile wiki ps -q mediawiki 2>/dev/null | head -n1)
+            _wiki_health=missing
+            for _ in $(seq 1 $(( ${DEPLOY_WIKI_WAIT_SECONDS:-180} / 5 ))); do
+                [ -n "$_wiki_id" ] || break
+                _wiki_health=$("$DOCKER_BIN" inspect -f '{{.State.Health.Status}}' "$_wiki_id" 2>/dev/null || echo missing)
+                [ "$_wiki_health" = "healthy" ] && break
+                sleep 5
+            done
+            if [ "$_wiki_health" = "healthy" ]; then
+                log "Wiki is up (mediawiki, loopback port ${PORT_WIKI:-7010})."
+            else
+                log "WARNING: the wiki container is '${_wiki_health}' after ${DEPLOY_WIKI_WAIT_SECONDS:-180}s; the site deploy is unaffected. Its log:"
+                "$DOCKER_BIN" logs --tail=30 "$_wiki_id" 2>&1 | sed 's/^/    /' || true
+            fi
+        else
+            log "WARNING: the wiki did not build or start; the site deploy is unaffected. Last lines:"
+            tail -n 30 "$_wiki_log" | sed 's/^/    /' || true
+        fi
+        rm -f "$_wiki_log"
+        # The vhost is the one host step this sandboxed deploy cannot take.
+        if command -v apache2ctl >/dev/null 2>&1 || command -v apachectl >/dev/null 2>&1; then
+            if [ ! -e /etc/apache2/sites-enabled/wiki.rmhstudios.com.conf ]; then
+                log "  ┌── wiki.rmhstudios.com is not served yet ─────────────────────────"
+                log "  │ The wiki runs, but Apache has no vhost for it. Once, as root:"
+                log "  │   sudo cp deploy/apache/wiki.rmhstudios.com.conf /etc/apache2/sites-available/"
+                log "  │   sudo a2ensite wiki.rmhstudios.com && sudo apachectl configtest && sudo systemctl reload apache2"
+                log "  └───────────────────────────────────────────────────────────────────"
+            fi
+        fi
+        step_done
+    } 2>/dev/null || log "WARNING: the wiki step failed; the site deploy is unaffected."
+fi
+
 # ── Step 6: Prune stale images ───────────────────────────────────────────────
 log "Pruning dangling images..."
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
