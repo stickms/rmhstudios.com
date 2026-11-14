@@ -39,9 +39,9 @@ function setAccent(html: HTMLElement, value: string, fg: string): void {
  * from the page itself. Everywhere else it still is: an Android address bar
  * that matches the theme is exactly what the tag is for.
  *
- * A route may still set its own `theme-color` through `head()` (rmh-capital,
- * rmh-pmc and covid do, and those pages ARE a flat colour, so a matching bar is
- * right there). Ours carries `data-rmh-theme` so the two are never confused —
+ * A route may still set its own `theme-color` through `head()` (rmh-pmc and
+ * covid do, and those pages ARE a flat colour, so a matching bar is right
+ * there; rmh-capital follows the site's editions now and writes none). Ours carries `data-rmh-theme` so the two are never confused —
  * the runtime mirror in `Providers.tsx` only ever touches the marked one.
  *
  * ## `data-app-dark`

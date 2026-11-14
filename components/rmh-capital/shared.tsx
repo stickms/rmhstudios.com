@@ -1,67 +1,301 @@
 /**
- * RMH Capital — shared primitives ported from the original static site.
- * Nav, footer, ticker, brand mark, and the scroll-reveal hook.
+ * RMH Capital — the shared parts every page is built from: the nav and footer,
+ * and the primitives of the chrome design (rmh-capital.css): the page-head
+ * slab, plates, the headline that rises word by word, counting figures, the
+ * deal tombstones and the satire notice.
+ *
+ * Motion is CSS (see the MOTION block in rmh-capital.css). The one script is
+ * the pointer handler in Layout.tsx, which tells a chrome surface where the
+ * pointer is so its reflection can follow.
  */
 
+import type { CSSProperties, ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useVerticalNav } from '@/hooks/useVerticalNav';
 
-/* The geometric RMH mark used in the nav + footer. */
+/** A CSS custom property in a `style` prop, without a cast at every call site. */
+export function cssVars(vars: Record<`--${string}`, string | number>): CSSProperties {
+  return vars as CSSProperties;
+}
+
+/* ── marks and icons ─────────────────────────────────────────────────────── */
+
+/** The RMH hexagon, in chrome. The stops are the site's chrome tokens. */
 export function BrandMark() {
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true">
-      <polygon
-        points="50,5 89,27 89,73 50,95 11,73 11,27"
-        fill="none"
-        stroke="#C8A24A"
-        strokeWidth="3"
+      <defs>
+        <linearGradient id="rmhc-mark" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style={{ stopColor: 'var(--st-1)' }} />
+          <stop offset="0.5" style={{ stopColor: 'var(--st-2)' }} />
+          <stop offset="0.52" style={{ stopColor: 'var(--st-3)' }} />
+          <stop offset="1" style={{ stopColor: 'var(--st-4)' }} />
+        </linearGradient>
+      </defs>
+      <path
+        fill="url(#rmhc-mark)"
+        fillRule="evenodd"
+        d="M50 4 90 27v46L50 96 10 73V27Zm0 20L27.5 37v26L50 76l22.5-13V37Z"
       />
-      <polygon
-        points="50,25 72,38 72,62 50,75 28,62 28,38"
-        fill="none"
-        stroke="#C8A24A"
-        strokeWidth="2"
-        opacity="0.55"
-      />
-      <circle cx="50" cy="50" r="5" fill="#C8A24A" />
+      <circle cx="50" cy="50" r="7" style={{ fill: 'var(--ink)' }} />
     </svg>
   );
 }
 
-/*
- * The scroll-reveal used to live here as `useReveal(key)`: a rAF-deferred
- * `querySelectorAll` over every `.reveal` node, a `getBoundingClientRect()` per
- * node to catch the ones already on screen, an IntersectionObserver for the
- * rest, and a print listener + deadline as a fail-open net — because the CSS it
- * drove set `opacity: 0` unconditionally, so anything that did not run the
- * observer rendered the page blank.
- *
- * It is now a scroll-driven CSS animation (`animation-timeline: view()`) whose
- * hidden start state exists only inside `@supports` + `@media not
- * (prefers-reduced-motion)`. Nothing can be left hidden by a mechanism that
- * never ran, so the net is not needed either. See
- * docs/archive/2026/performance-audit-2026-08-12.md §1.4.
- */
+/** The arrow inside a `.cta`. */
+export function ArrowIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+      <path d="M1.5 8h12M9 3.5 13.5 8 9 12.5" />
+    </svg>
+  );
+}
 
-type NavItem = { to: string; labelKey: string; labelDefault: string };
-const NAV: NavItem[] = [
-  { to: '/rmh-capital/firm', labelKey: 'nav-our-firm', labelDefault: 'Our Firm' },
-  { to: '/rmh-capital/businesses', labelKey: 'nav-businesses', labelDefault: 'Businesses' },
-  { to: '/rmh-capital/insights', labelKey: 'nav-insights', labelDefault: 'Insights' },
-  { to: '/rmh-capital/careers', labelKey: 'nav-careers', labelDefault: 'Careers' },
-  { to: '/rmh-capital/contact', labelKey: 'nav-contact', labelDefault: 'Contact' },
-];
+/** The corner arrow that ends a list item or a `.go` link. */
+export function CornerArrow({ className = 'go-arrow' }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 22 22"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      aria-hidden="true"
+    >
+      <path d="M3 2.5v10.5h14M12.5 8.5 17 13l-4.5 4.5" />
+    </svg>
+  );
+}
+
+/* ── primitives ──────────────────────────────────────────────────────────── */
+
+/**
+ * A headline whose words rise out of masks, one after another, on load.
+ * Pass the translated string; it stays ordinary text for a screen reader.
+ * `delay` (seconds) is when the first word starts.
+ */
+export function Words({ text, delay }: { text: string; delay?: number }) {
+  const words = text.split(' ');
+  return (
+    <span
+      className="words"
+      style={delay === undefined ? undefined : cssVars({ '--d': `${delay}s` })}
+    >
+      {words.map((word, i) => (
+        <span key={i}>
+          <span className="w">
+            <span style={cssVars({ '--i': i })}>{word}</span>
+          </span>
+          {i < words.length - 1 ? ' ' : null}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+export type PlateKind = 'colonnade' | 'louvres' | 'ingot' | 'disc' | 'orb';
+
+/**
+ * A piece of chrome where a bank would hang a photograph. Decorative, so it is
+ * hidden from assistive technology. `className` takes a shape (`plate--wide`,
+ * `plate--tall`, `plate--sq`, `plate--free`). To reveal one on scroll, wrap it
+ * in a `<div className="rv-wipe">` — never put `rv*` on the plate itself.
+ */
+export function Plate({
+  kind,
+  className = '',
+  children,
+}: {
+  kind: PlateKind;
+  className?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div
+      className={`plate plate--${kind} chrome ${className}`.trim()}
+      data-chrome-live=""
+      aria-hidden="true"
+    >
+      {children}
+    </div>
+  );
+}
+
+/** The slab that opens every interior page. `children` go under the lede. */
+export function PageHead({
+  title,
+  lede,
+  children,
+}: {
+  title: string;
+  lede?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <section className="pagehead">
+      <div className="pagehead-slab chrome chrome-satin" data-chrome-live="">
+        <div className="pagehead-copy">
+          <h1 className="display">
+            <Words text={title} />
+          </h1>
+          {lede ? <p className="lede ld">{lede}</p> : null}
+          {children}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * An integer that counts up as it scrolls into view. `pre` and `suf` are
+ * printed around it ("$", "B"). A screen reader gets the final figure.
+ */
+export function Count({
+  to,
+  pre = '',
+  suf = '',
+  className,
+}: {
+  to: number;
+  pre?: string;
+  suf?: string;
+  className?: string;
+}) {
+  return (
+    <span className={className}>
+      <span className="sr">
+        {pre}
+        {to}
+        {suf}
+      </span>
+      <span
+        className="count-n"
+        aria-hidden="true"
+        data-pre={pre}
+        data-suf={suf}
+        style={cssVars({ '--to': to })}
+      />
+    </span>
+  );
+}
+
+/** RMH Capital is a parody. Every page that names a deal carries this. */
+export function SatireNotice() {
+  const { t } = useTranslation('c-rmh-capital');
+  return (
+    <p className="notice">
+      {t('satire-notice', {
+        defaultValue:
+          'RMH Capital is a work of satire. The transactions described on this site are fictional. No company or individual named has any connection to them.',
+      })}
+    </p>
+  );
+}
+
+/**
+ * The two announced transactions, as tombstones. Used on the home page and at
+ * the top of Deals, so the wording lives in one place. Each links to its
+ * section on the Deals page.
+ */
+export function DealTombstones() {
+  const { t } = useTranslation('c-rmh-capital');
+  return (
+    <div className="tombs">
+      <Link className="tomb chrome" data-chrome-live="" to="/rmh-capital/deals" hash="nvidiamd">
+        <div className="tomb-face">
+          <p className="tomb-record">
+            {t('tomb-record', {
+              defaultValue: 'This announcement appears as a matter of record only.',
+            })}
+          </p>
+          <p className="tomb-date">
+            {t('tomb-nvidiamd-date', { defaultValue: 'November 13, 2026' })}
+          </p>
+          <h3 className="tomb-parties">
+            {t('tomb-nvidiamd-parties', { defaultValue: 'AMD and Nvidia' })}
+          </h3>
+          <p className="tomb-amount steel">
+            <Count to={955} pre="$" />
+          </p>
+          <p className="tomb-what">
+            {t('tomb-nvidiamd-what', {
+              defaultValue: 'billion all-stock combination to form NvidiAMD',
+            })}
+          </p>
+          <span className="tomb-rule" />
+          <p className="tomb-role">
+            <b>RMHan Stanley</b>
+            {t('tomb-nvidiamd-role', { defaultValue: 'Lead financial advisor' })}
+          </p>
+          <span className="go">
+            {t('tomb-read', { defaultValue: 'Read the transaction' })} <CornerArrow className="" />
+          </span>
+        </div>
+      </Link>
+
+      <Link
+        className="tomb chrome"
+        data-chrome-live=""
+        to="/rmh-capital/deals"
+        hash="tibetan-buddhism"
+      >
+        <div className="tomb-face">
+          <p className="tomb-record">
+            {t('tomb-record-karma', {
+              defaultValue: 'This announcement appears as a matter of karma only.',
+            })}
+          </p>
+          <p className="tomb-date">
+            {t('tomb-buddhism-date', { defaultValue: 'November 7, 2026' })}
+          </p>
+          <h3 className="tomb-parties">
+            {t('tomb-buddhism-parties', { defaultValue: 'Bain Capital' })}
+          </h3>
+          <p className="tomb-amount steel">
+            <Count to={35} pre="$" />
+          </p>
+          <p className="tomb-what">
+            {t('tomb-buddhism-what', {
+              defaultValue:
+                'million Senior Secured Enlightenment Facility for the acquisition of Tibetan Buddhism',
+            })}
+          </p>
+          <span className="tomb-rule" />
+          <p className="tomb-role">
+            <b>RMH Capital</b>
+            {t('tomb-buddhism-role', { defaultValue: 'Lead left bookrunner' })}
+          </p>
+          <span className="go">
+            {t('tomb-read', { defaultValue: 'Read the transaction' })} <CornerArrow className="" />
+          </span>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+/* ── nav ─────────────────────────────────────────────────────────────────── */
 
 export function TopNav() {
   const { t } = useTranslation('c-rmh-capital');
   // Condense-on-scroll, the mobile menu and `aria-current` are identical here
-  // and in RMH PMC, character for character — see `hooks/useVerticalNav.ts`
-  // for why the shared part is the behaviour and not a component.
+  // and in RMH PMC — see `hooks/useVerticalNav.ts` for why the shared part is
+  // the behaviour and not a component.
   const { toggleMenu, closeMenu, current } = useVerticalNav({
     rootClass: 'rmhc-root',
     barClass: 'topnav',
   });
+  // Literal keys, so the extractor can see them (a key read out of a table is
+  // invisible to it and never reaches the catalogs).
+  const nav = [
+    { to: '/rmh-capital/firm', label: t('nav-our-firm', { defaultValue: 'Our Firm' }) },
+    { to: '/rmh-capital/businesses', label: t('nav-businesses', { defaultValue: 'Businesses' }) },
+    { to: '/rmh-capital/deals', label: t('nav-deals', { defaultValue: 'Deals' }) },
+    { to: '/rmh-capital/insights', label: t('nav-insights', { defaultValue: 'Insights' }) },
+    { to: '/rmh-capital/careers', label: t('nav-careers', { defaultValue: 'Careers' }) },
+    { to: '/rmh-capital/contact', label: t('nav-contact', { defaultValue: 'Contact' }) },
+  ];
 
   return (
     <header className="topnav">
@@ -72,7 +306,15 @@ export function TopNav() {
             href="/"
             aria-label={t('back-to-rmh-studios', { defaultValue: 'Back to RMH Studios' })}
           >
-            <span aria-hidden="true">←</span>
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              aria-hidden="true"
+            >
+              <path d="M14.5 8h-12M7 3.5 2.5 8 7 12.5" />
+            </svg>
             <span className="backlink-label">RMH Studios</span>
           </a>
           <Link
@@ -81,21 +323,16 @@ export function TopNav() {
             aria-label={t('rmh-capital-home', { defaultValue: 'RMH Capital home' })}
           >
             <BrandMark />
-            <span className="brand-text">RMH&nbsp;Capital</span>
+            <span className="brand-text">RMH Capital</span>
           </Link>
         </div>
         <nav className="navlinks" aria-label={t('nav-primary', { defaultValue: 'Primary' })}>
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link key={item.to} to={item.to} aria-current={current(item.to)}>
-              {t(item.labelKey, { defaultValue: item.labelDefault })}
+              {item.label}
             </Link>
           ))}
         </nav>
-        <div className="nav-right">
-          <Link className="nav-cta" to="/rmh-capital/contact">
-            {t('contact-us', { defaultValue: 'Contact us' })}
-          </Link>
-        </div>
         <button
           className="nav-toggle"
           aria-label={t('open-menu', { defaultValue: 'Open menu' })}
@@ -103,7 +340,7 @@ export function TopNav() {
           aria-controls="m-menu"
           onClick={toggleMenu}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
             <line x1="3" y1="7" x2="21" y2="7" />
             <line x1="3" y1="12" x2="21" y2="12" />
             <line x1="3" y1="17" x2="21" y2="17" />
@@ -115,9 +352,15 @@ export function TopNav() {
         id="m-menu"
         aria-label={t('nav-mobile', { defaultValue: 'Mobile' })}
       >
-        {NAV.map((item) => (
-          <Link key={item.to} to={item.to} aria-current={current(item.to)} onClick={closeMenu}>
-            {t(item.labelKey, { defaultValue: item.labelDefault })}
+        {nav.map((item, i) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            aria-current={current(item.to)}
+            onClick={closeMenu}
+            style={cssVars({ '--i': i })}
+          >
+            {item.label}
           </Link>
         ))}
       </nav>
@@ -125,51 +368,28 @@ export function TopNav() {
   );
 }
 
-export function MarketsTicker() {
-  const rows = [
-    ['RMH Global Equity', '+1.24%', false],
-    ['Investment Grade Credit', '+0.38%', false],
-    ['Leveraged Finance Index', '−0.42%', true],
-    ['Venture Activity', '+3.10%', false],
-    ['10Y Benchmark', '4.18%', false],
-    ['RMH M&A Pipeline', '+2.05%', false],
-    ['Housing Credit Spread', '−0.15%', true],
-  ] as const;
-  return (
-    <div className="ticker" aria-hidden="true">
-      <div className="ticker-track">
-        {[...rows, ...rows].map(([label, val, down], i) => (
-          <span key={i}>
-            <b>{label}</b>
-            <i className={down ? 'dn' : undefined}>{val}</i>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
+/* ── footer ──────────────────────────────────────────────────────────────── */
 
 export function SiteFooter() {
   const { t } = useTranslation('c-rmh-capital');
   return (
     <footer className="footer">
-      <div className="container">
+      <div className="wrap">
+        <span className="footer-word steel" aria-hidden="true">
+          RMH Capital
+        </span>
+
         <div className="footer-top">
           <div className="footer-brand">
-            <Link
-              className="brand"
-              to="/rmh-capital"
-              aria-label={t('rmh-capital-home', { defaultValue: 'RMH Capital home' })}
-            >
-              <BrandMark />
-              <span className="brand-text">RMH&nbsp;Capital</span>
-            </Link>
             <p>
               {t('footer-brand-desc', {
                 defaultValue:
                   'An integrated investment bank and financial platform, partnering with clients across the full company arc.',
               })}
             </p>
+            <Link className="go" to="/rmh-capital/contact">
+              {t('contact-us', { defaultValue: 'Contact us' })} <CornerArrow className="" />
+            </Link>
           </div>
           <div className="footer-col">
             <h4>{t('nav-businesses', { defaultValue: 'Businesses' })}</h4>
@@ -192,11 +412,11 @@ export function SiteFooter() {
           <div className="footer-col">
             <h4>{t('footer-firm-heading', { defaultValue: 'Firm' })}</h4>
             <Link to="/rmh-capital/firm">{t('nav-our-firm', { defaultValue: 'Our Firm' })}</Link>
+            <Link to="/rmh-capital/deals">{t('nav-deals', { defaultValue: 'Deals' })}</Link>
             <Link to="/rmh-capital/insights">
               {t('nav-insights', { defaultValue: 'Insights' })}
             </Link>
             <Link to="/rmh-capital/careers">{t('nav-careers', { defaultValue: 'Careers' })}</Link>
-            <Link to="/rmh-capital/contact">{t('nav-contact', { defaultValue: 'Contact' })}</Link>
             <a href="/rmh-capital-board-book.html">
               {t('operating-atlas', { defaultValue: 'Operating Atlas' })}
             </a>
@@ -220,25 +440,6 @@ export function SiteFooter() {
           <div className="footer-legal">
             <a href="/privacy">{t('privacy', { defaultValue: 'Privacy' })}</a>
             <a href="/terms">{t('terms', { defaultValue: 'Terms' })}</a>
-            <a href="#">{t('disclosures', { defaultValue: 'Disclosures' })}</a>
-            <a href="#">{t('accessibility', { defaultValue: 'Accessibility' })}</a>
-          </div>
-          <div className="footer-social">
-            <a href="#" aria-label={t('linkedin', { defaultValue: 'LinkedIn' })}>
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21H21.4v-5.3c0-1.27-.02-2.9-1.77-2.9s-2.04 1.38-2.04 2.8V21H13.8z" />
-              </svg>
-            </a>
-            <a href="#" aria-label={t('x', { defaultValue: 'X' })}>
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.9 2H22l-7.5 8.6L23 22h-6.8l-5-6.6L5.3 22H2l8-9.2L1.5 2h7l4.5 6zM17 20h1.7L7.1 3.8H5.3z" />
-              </svg>
-            </a>
-            <a href="#" aria-label={t('youtube', { defaultValue: 'YouTube' })}>
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M23 12s0-3.4-.4-5c-.2-.9-.9-1.6-1.8-1.8C19.2 5 12 5 12 5s-7.2 0-8.8.4c-.9.2-1.6.9-1.8 1.8C1 8.6 1 12 1 12s0 3.4.4 5c.2.9.9 1.6 1.8 1.8 1.6.4 8.8.4 8.8.4s7.2 0 8.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-5 .4-5zM9.8 15.2V8.8l6 3.2z" />
-              </svg>
-            </a>
           </div>
         </div>
 
@@ -246,6 +447,12 @@ export function SiteFooter() {
           {t('disclaimer', {
             defaultValue:
               'This website is for informational purposes only and does not constitute an offer to sell or a solicitation to buy securities. RMH Capital and its businesses provide services subject to applicable law and regulation; nothing herein is investment, legal, or tax advice. Certain content is illustrative. RMH Capital, RMHCombinator, and the RMH geometric mark are trademarks of RMH Capital LLC.',
+          })}
+        </p>
+        <p className="disclaimer">
+          {t('satire-notice', {
+            defaultValue:
+              'RMH Capital is a work of satire. The transactions described on this site are fictional. No company or individual named has any connection to them.',
           })}
         </p>
       </div>
