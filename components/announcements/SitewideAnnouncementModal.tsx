@@ -171,9 +171,26 @@ export function SitewideAnnouncementModal() {
           >
             {t('sitewide-announcement-read-full', { defaultValue: 'Read full post' })}
           </Link>
-          <Button variant="primary" className="w-full sm:ml-auto sm:w-auto" onClick={dismiss}>
-            {t('sitewide-announcement-dismiss', { defaultValue: 'Got it' })}
-          </Button>
+          {announcement.discussionPostId ? (
+            <div className="flex flex-col gap-3 sm:ml-auto sm:flex-row sm:items-center">
+              <Button variant="default" className="w-full sm:w-auto" onClick={dismiss}>
+                {t('sitewide-announcement-dismiss', { defaultValue: 'Got it' })}
+              </Button>
+              <Button variant="primary" className="w-full sm:w-auto" asChild>
+                <Link
+                  to="/u/$userid/post/$postid"
+                  params={{ userid: 'me', postid: announcement.discussionPostId }}
+                  onClick={dismiss}
+                >
+                  {t('sitewide-join-discussion', { defaultValue: 'Join the discussion' })}
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <Button variant="primary" className="w-full sm:ml-auto sm:w-auto" onClick={dismiss}>
+              {t('sitewide-announcement-dismiss', { defaultValue: 'Got it' })}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -47,6 +47,8 @@ export async function getPostBySlug(slug: string, fields: string[] = []) {
       items[field] = post.tags;
     } else if (field === "announcement") {
       items[field] = post.announcement;
+    } else if (field === "announcementPostId") {
+      items[field] = post.announcementPostId;
     } else if (field === "business") {
       items[field] = post.business;
     } else if (field === "announcedAt") {

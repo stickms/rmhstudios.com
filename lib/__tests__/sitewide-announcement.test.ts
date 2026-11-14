@@ -6,20 +6,31 @@ const db = vi.hoisted(() => ({
   hark: vi.fn(),
   harkCreate: vi.fn(),
   tx: vi.fn(),
+  blogMany2: vi.fn(),
+  audit: vi.fn(),
+  userFind: vi.fn(),
+  cached: vi.fn(),
 }));
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
-    blogPost: { findUnique: db.blogFind, updateMany: db.blogMany },
+    blogPost: { findUnique: db.blogFind, updateMany: db.blogMany, findMany: db.blogMany2 },
+    adminAuditLog: { findFirst: db.audit },
     rMHark: { findFirst: db.hark, create: db.harkCreate },
-    user: { update: vi.fn() },
+    user: { update: vi.fn(), findUnique: db.userFind },
     $transaction: db.tx,
   },
 }));
 vi.mock('@/lib/feed-sse', () => ({ feedEventBus: { publishCreatedPost: vi.fn() } }));
-vi.mock('@/lib/cached.server', () => ({ cached: vi.fn(), invalidateCached: vi.fn() }));
+vi.mock('@/lib/cached.server', () => ({ cached: db.cached, invalidateCached: vi.fn() }));
 vi.mock('@prisma/client', () => ({ Prisma: { PrismaClientKnownRequestError: class extends Error {} } }));
 
-import { applyAnnouncementFields, announcementPostContent, ensureAnnouncementPost } from '../sitewide-announcement.server';
+import {
+  applyAnnouncementFields,
+  announcementPostContent,
+  ensureAnnouncementPost,
+  findAnnouncementAuthorId,
+  getCurrentAnnouncement,
+} from '../sitewide-announcement.server';
 import {
   ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS,
   announcementExpiry,
@@ -162,5 +173,90 @@ describe('ensureAnnouncementPost', () => {
     db.blogMany.mockResolvedValue({ count: 0 });
     expect(await ensureAnnouncementPost({ blogPostId: 'b1', authorId: 'u' })).toBe('winner');
     expect(db.harkCreate).not.toHaveBeenCalled();
+  });
+});
+
+describe('findAnnouncementAuthorId', () => {
+  beforeEach(() => vi.clearAllMocks());
+  it('returns the admin of the newest blog.edit/blog.create row', async () => {
+    db.audit.mockResolvedValue({ adminId: 'admin1' });
+    db.userFind.mockResolvedValue({ id: 'admin1' });
+    expect(await findAnnouncementAuthorId('my-post')).toBe('admin1');
+    expect(db.audit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { targetType: 'BlogPost', targetId: 'my-post', action: { in: ['blog.edit', 'blog.create'] } },
+        orderBy: { createdAt: 'desc' },
+      }),
+    );
+  });
+  it('returns null with no audit row, or when the admin account is gone', async () => {
+    db.audit.mockResolvedValue(null);
+    expect(await findAnnouncementAuthorId('x')).toBeNull();
+    db.audit.mockResolvedValue({ adminId: 'gone' });
+    db.userFind.mockResolvedValue(null);
+    expect(await findAnnouncementAuthorId('x')).toBeNull();
+  });
+});
+
+describe('getCurrentAnnouncement discussion backfill', () => {
+  let nowMs = Date.parse('2026-11-14T12:00:00Z');
+  const live = (id: string) => ({
+    id,
+    slug: `slug-${id}`,
+    title: 'T',
+    description: 'D',
+    image: null,
+    content: 'c',
+    business: 'rmh',
+    announcedAt: new Date('2026-11-13T00:00:00Z'),
+    announcementExpiresAt: null,
+    announcementPostId: null,
+  });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(Date, 'now').mockImplementation(() => nowMs);
+    db.cached.mockImplementation(async (_k: string, _t: number, loader: () => unknown) => loader());
+    db.tx.mockImplementation(async (fn: (tx: unknown) => unknown) =>
+      fn({ blogPost: { updateMany: db.blogMany }, rMHark: { create: db.harkCreate }, user: { update: vi.fn() } }),
+    );
+    db.blogMany.mockResolvedValue({ count: 1 });
+    db.harkCreate.mockImplementation(async ({ data }: { data: { id: string; content: string } }) => ({
+      id: data.id,
+      content: data.content,
+      createdAt: new Date(),
+      replyControl: 'EVERYONE',
+      user: { id: 'u', name: 'A' },
+    }));
+  });
+
+  it('creates the missing discussion post, authored by the last admin to save', async () => {
+    db.blogMany2.mockResolvedValue([live('bf1')]);
+    db.audit.mockResolvedValue({ adminId: 'admin1' });
+    db.userFind.mockResolvedValue({ id: 'admin1' });
+    db.blogFind.mockResolvedValue({ id: 'bf1', slug: 'slug-bf1', title: 'T', description: 'D', business: 'rmh', announcement: true, announcementPostId: null });
+    const r = await getCurrentAnnouncement();
+    expect(r?.discussionPostId).toBeTruthy();
+    expect(db.harkCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ userId: 'admin1' }) }));
+  });
+
+  it('creates nothing and returns null when no admin is known', async () => {
+    db.blogMany2.mockResolvedValue([live('bf2')]);
+    db.audit.mockResolvedValue(null);
+    const r = await getCurrentAnnouncement();
+    expect(r?.discussionPostId).toBeNull();
+    expect(db.harkCreate).not.toHaveBeenCalled();
+  });
+
+  it('does not retry per request when it keeps failing, but retries after a minute', async () => {
+    db.blogMany2.mockResolvedValue([live('bf3')]);
+    db.audit.mockRejectedValue(new Error('db down'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect((await getCurrentAnnouncement())?.discussionPostId).toBeNull();
+    await getCurrentAnnouncement();
+    await getCurrentAnnouncement();
+    expect(db.audit).toHaveBeenCalledTimes(1);
+    nowMs += 61_000;
+    await getCurrentAnnouncement();
+    expect(db.audit).toHaveBeenCalledTimes(2);
   });
 });

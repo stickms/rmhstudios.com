@@ -22,6 +22,45 @@ const CANDIDATE_LIMIT = 10;
 
 export type CurrentAnnouncement = SitewideAnnouncementSummary & { content: string };
 
+/** A failed or declined backfill is not retried for this long, however often the cache reloads. */
+const BACKFILL_RETRY_MS = 60_000;
+// Per-process throttle for the backfill below (one announcement is live at a time, so one slot is enough).
+let lastBackfillAttempt: { blogPostId: string; at: number } | null = null;
+
+/**
+ * The admin who last saved a blog post: the newest 'blog.create' / 'blog.edit' audit row for its slug, if that admin
+ * still exists. Null when there is no such row or the account is gone; never an arbitrary user.
+ */
+export async function findAnnouncementAuthorId(slug: string): Promise<string | null> {
+  const log = await prisma.adminAuditLog.findFirst({
+    where: { targetType: 'BlogPost', targetId: slug, action: { in: ['blog.edit', 'blog.create'] } },
+    orderBy: { createdAt: 'desc' },
+    select: { adminId: true },
+  });
+  if (!log) return null;
+  const admin = await prisma.user.findUnique({ where: { id: log.adminId }, select: { id: true } });
+  return admin?.id ?? null;
+}
+
+/**
+ * Give a live announcement without a discussion post one, authored by the admin who last saved it. Never throws, and
+ * attempts at most once a minute per announcement (success or not) so a failure cannot become a write per request.
+ */
+async function backfillDiscussionPost(blogPostId: string, slug: string, now: number): Promise<string | null> {
+  if (lastBackfillAttempt && lastBackfillAttempt.blogPostId === blogPostId && now - lastBackfillAttempt.at < BACKFILL_RETRY_MS) {
+    return null;
+  }
+  lastBackfillAttempt = { blogPostId, at: now };
+  try {
+    const authorId = await findAnnouncementAuthorId(slug);
+    if (!authorId) return null;
+    return await ensureAnnouncementPost({ blogPostId, authorId });
+  } catch (e) {
+    console.error('announcement discussion backfill failed:', e);
+    return null;
+  }
+}
+
 async function loadCurrentAnnouncement(): Promise<CurrentAnnouncement | null> {
   const now = Date.now();
   const rows = await prisma.blogPost.findMany({
@@ -54,6 +93,7 @@ async function loadCurrentAnnouncement(): Promise<CurrentAnnouncement | null> {
       });
       discussionPostId = live?.id ?? null;
     }
+    if (!discussionPostId) discussionPostId = await backfillDiscussionPost(row.id, row.slug, now);
     return {
       id: row.id,
       slug: row.slug,

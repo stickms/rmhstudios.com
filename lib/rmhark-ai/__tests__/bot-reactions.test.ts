@@ -47,6 +47,7 @@ import {
   type LiveAnnouncement,
   type ReactionContext,
 } from '@/lib/rmhark-ai/bot-worker.server';
+import { withPoliticalLean } from '@/lib/rmhark-ai/persona';
 import { postKindPmf, type Headline } from '@/lib/rmhark-ai/reaction-model';
 
 const HOUR = 3_600_000;
@@ -174,7 +175,7 @@ describe('postAsBot with a reaction context', () => {
     const d = deps({ random: seq([0.1, 0.2]), repo: r.repo, ai: r.ai });
     await postAsBot(d, bot('b1'), ctx({ headlines: [headline('a', 1)] }));
     expect(r.reactionPost).toHaveBeenCalledWith({
-      persona: bot('b1').botPersona,
+      persona: withPoliticalLean(bot('b1').botPersona, 'b1'),
       kind: 'announcement',
       title: ANN.title,
       summary: ANN.description,
