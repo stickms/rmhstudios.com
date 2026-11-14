@@ -1,10 +1,11 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Cookie, Compass, Landmark, Languages, PartyPopper } from 'lucide-react';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const panels = {
   hunt: lazy(() => import('./HuntPanel')),
@@ -59,9 +60,12 @@ export function DelightAdminPage() {
             },
           ]}
         />
-        <Suspense fallback={<Skeleton className="h-40 w-full" />}>
-          <Panel />
-        </Suspense>
+        {/* A box of its own: AdminBody spaces its children, and the fade's wrapper has no box. */}
+        <div>
+          <ArrivalSuspense fallback={<Skeleton className="h-40 w-full" />}>
+            <Panel />
+          </ArrivalSuspense>
+        </div>
       </AdminBody>
     </PageLayout>
   );

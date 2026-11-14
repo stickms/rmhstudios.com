@@ -39,6 +39,8 @@ import {
  removeCommunityMemberApi,
  setCommunityMemberRoleApi,
 } from '@/lib/communities/communities.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Announcement {
  id: string;
@@ -95,6 +97,8 @@ export function CommunityColumn({
  const { run: runJoin, pending: joining } = useOptimisticAction();
  const [announceOpen, setAnnounceOpen] = useState(false);
  const [membersOpen, setMembersOpen] = useState(false);
+ // Steel M9: a community fetched here replaces the spinner; the loader's is there on first paint.
+ const arrival = useArrival(!loading);
 
  const loadCommunity = useCallback(async () => {
  try {
@@ -168,6 +172,7 @@ export function CommunityColumn({
  if (!community) {
  return (
  <EmptyState
+ className={arrival}
  description={t('community-not-found', { defaultValue:'Community not found.'})}
  />
  );
@@ -176,7 +181,7 @@ export function CommunityColumn({
  const isMod = canModerate(community.role);
 
  return (
- <div>
+ <div className={arrival}>
  <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link
  to="/communities"
@@ -424,6 +429,8 @@ function MembersDialog({
  const [createdById, setCreatedById] = useState<string | null>(null);
  const [loading, setLoading] = useState(true);
  const [busy, setBusy] = useState<string | null>(null);
+ // Steel M9: the roster replaces the spinner inside the open dialog.
+ const membersArrival = useArrival(!loading);
 
  const load = useCallback(async () => {
  try {
@@ -500,7 +507,12 @@ function MembersDialog({
  <Spinner size={20} />
  </div>
  ) : (
- <ul className="max-h-[60vh] divide-y divide-site-border overflow-y-auto">
+ <ul
+ className={cn(
+ 'max-h-[60vh] divide-y divide-site-border overflow-y-auto',
+ membersArrival,
+ )}
+ >
  {members.map((m) => {
  const isOwner = m.id === createdById;
  const canTouch = isMod && !isOwner && m.id !== viewerId && m.role !=='ADMIN';

@@ -17,6 +17,8 @@ import {
   type RivalView as RivalData,
 } from '@/lib/arcade/arcade.contract';
 import { api } from '@/lib/contract/client';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function formatMinutes(m: number): string {
   return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
@@ -30,6 +32,8 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
   const { t } = useTranslation('f-arcade');
   const [data, setData] = useState<BacklogData | null>(null);
   const [rival, setRival] = useState<RivalData | null>(null);
+  const arrival = useArrival(data !== null);
+  const rivalArrival = useArrival(rival !== null);
   const [hours, setHours] = useState('');
 
   useEffect(() => {
@@ -122,7 +126,7 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
           </label>
         ) : null}
       </div>
-      <p className="text-sm text-site-text-muted">
+      <p className={cn('text-sm text-site-text-muted', arrival)}>
         {median
           ? t('median-line', {
               defaultValue: 'Median time to finish: {{time}} ({{count}} players)',
@@ -132,7 +136,7 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
           : t('median-none', { defaultValue: 'No completion times yet.' })}
       </p>
       {rival?.rival ? (
-        <p className="flex items-center gap-2 text-sm text-site-text">
+        <p className={cn('flex items-center gap-2 text-sm text-site-text', rivalArrival)}>
           <Swords className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
           {rival.state === 'behind'
             ? t('rival-behind', {

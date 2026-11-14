@@ -25,6 +25,7 @@ import {
 } from '@/lib/posts-plus/constants';
 import type { PostsPlusCompose } from './PostsPlusCompose';
 import { createSeriesApi, listSeriesApi } from '@/lib/posts-plus/series.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 /** The composer dialogs for posts-plus. Default export so the composer can lazy-load it. */
 export default function PostsPlusPanels({
@@ -127,6 +128,8 @@ interface SeriesOption {
 function SeriesDialog({ pp, onClose }: { pp: PostsPlusCompose; onClose: () => void }) {
   const { t } = useTranslation('f-posts-plus');
   const [mine, setMine] = useState<SeriesOption[] | null>(null);
+  // Steel M9: the series list replaces the spinner inside the open dialog.
+  const arrival = useArrival(mine !== null);
   const [title, setTitle] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -183,7 +186,11 @@ function SeriesDialog({ pp, onClose }: { pp: PostsPlusCompose; onClose: () => vo
             <Spinner />
           </div>
         ) : (
-          <div role="listbox" aria-label={t('series-title', { defaultValue: 'Add to a series' })}>
+          <div
+            role="listbox"
+            aria-label={t('series-title', { defaultValue: 'Add to a series' })}
+            className={arrival}
+          >
             <button
               type="button"
               role="option"

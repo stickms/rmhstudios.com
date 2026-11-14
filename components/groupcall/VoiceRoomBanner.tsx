@@ -30,7 +30,7 @@ import { useEffect } from 'react';
 import { Volume2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
-import { AsyncReveal } from '@/components/motion';
+import { useArrival } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { MAX_GROUP_CALL_PARTICIPANTS, type OpenRoomOrigin } from '@/lib/groupcall/events';
@@ -63,6 +63,8 @@ export function VoiceRoomBanner({ origin, originId, className }: VoiceRoomBanner
   const connection = useGroupCallStore((state) => state.connection);
   const busy = useGroupCallStore((state) => isGroupCallBusy(state));
   const activeCallId = useGroupCallStore((state) => state.callId);
+  // The room is known only once the socket answers; the banner fades in then (Steel M9).
+  const arrival = useArrival(room !== undefined);
 
   useEffect(() => {
     // Asked on mount (which also connects the socket) and again every time the
@@ -78,15 +80,14 @@ export function VoiceRoomBanner({ origin, originId, className }: VoiceRoomBanner
   // all. Everything else — already in a call, room full — disables instead.
   if (!viewer) return null;
   if (typeof window !== 'undefined' && !groupCallSupported()) return null;
+  if (room === undefined) return null;
 
   const inThisRoom = Boolean(room && activeCallId === room.callId);
   const faces = room?.participants.slice(0, MAX_FACES) ?? [];
 
   return (
-    <AsyncReveal
-      show={room !== undefined}
-      as="section"
-      className={cn('flex flex-wrap items-center gap-3', className)}
+    <section
+      className={cn('flex flex-wrap items-center gap-3', arrival, className)}
       aria-label={t('voice-room', { defaultValue: 'Voice room' })}
     >
       <Volume2 className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
@@ -150,6 +151,6 @@ export function VoiceRoomBanner({ origin, originId, className }: VoiceRoomBanner
           {t('start-voice', { defaultValue: 'Start voice' })}
         </Button>
       )}
-    </AsyncReveal>
+    </section>
   );
 }

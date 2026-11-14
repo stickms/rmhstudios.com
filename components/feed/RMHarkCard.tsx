@@ -30,7 +30,7 @@ import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { applyReactionToggle } from '@/lib/social/reactions';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { useFreshUser } from '@/stores/userDisplayStore';
-import { relativeTimeShort } from '@/lib/utils';
+import { cn, relativeTimeShort } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { EditHistoryButton } from './EditHistory';
 import { FlairChip } from '@/components/communities/FlairChip';
@@ -41,6 +41,7 @@ import { prefetchPostDetail } from '@/lib/feed/post-detail-prefetch';
 import { reactToPostApi, viewPostApi } from '@/lib/feed/rmhark-actions.contract';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { translatePostApi } from '@/lib/ai/ai.contract';
+import { ARRIVE } from '@/components/ui/arrive';
 
 interface RMHarkCardProps {
   item: FeedItem;
@@ -384,7 +385,12 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               )}
               {/* AI translation (toggled from the menu): set off by a rule, not a box */}
               {showTranslated && translatedText && (
-                <p className="t-body mt-2 border-s-2 border-site-border ps-3 break-words whitespace-pre-wrap">
+                <p
+                  className={cn(
+                    't-body mt-2 border-s-2 border-site-border ps-3 break-words whitespace-pre-wrap',
+                    ARRIVE,
+                  )}
+                >
                   {translatedText}
                 </p>
               )}

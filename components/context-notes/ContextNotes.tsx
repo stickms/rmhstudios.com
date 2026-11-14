@@ -6,7 +6,9 @@ import { StickyNote, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useArrival } from '@/components/ui/arrive';
 import { fetchJson } from '@/lib/http';
+import { cn } from '@/lib/utils';
 
 interface Note {
   id: string;
@@ -35,6 +37,8 @@ export default function ContextNotes({ postId }: { postId: string }) {
     queryKey: ['context-notes', postId, !!session],
     queryFn: () => fetchJson<NotesData>(`/api/context-notes?postId=${encodeURIComponent(postId)}`),
   });
+  // Steel M9: the notes land after the section's heading has painted.
+  const arrival = useArrival(!!q.data);
 
   const act = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -94,7 +98,7 @@ export default function ContextNotes({ postId }: { postId: string }) {
         {t('notes-label', { defaultValue: 'Context notes' })}
       </h3>
       {q.data?.shown.map((n) => (
-        <div key={n.id} className="space-y-2">
+        <div key={n.id} className={cn('space-y-2', arrival)}>
           <p className="text-sm text-site-text">{n.body}</p>
           <p className="text-xs text-site-text-muted">
             {t('note-bridged', {
@@ -105,7 +109,7 @@ export default function ContextNotes({ postId }: { postId: string }) {
         </div>
       ))}
       {q.data && q.data.pending.length > 0 && (
-        <div className="space-y-3">
+        <div className={cn('space-y-3', arrival)}>
           <p className="text-xs font-medium text-site-text-muted">
             {t('note-pending', { defaultValue: 'Proposed notes waiting for ratings' })}
           </p>
@@ -131,7 +135,7 @@ export default function ContextNotes({ postId }: { postId: string }) {
         </div>
       )}
       {q.data && q.data.shown.length === 0 && q.data.pending.length === 0 && (
-        <p className="text-sm text-site-text-muted">
+        <p className={cn('text-sm text-site-text-muted', arrival)}>
           {t('note-none', { defaultValue: 'No notes yet. If this post needs context, add one.' })}
         </p>
       )}

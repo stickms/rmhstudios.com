@@ -16,6 +16,8 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 import { SortSelect, useCreationSortOptions } from '@/components/creator-studio/SortSelect';
 import { DEFAULT_CREATION_SORT, type CreationSort } from '@/lib/ranking/best';
@@ -46,6 +48,7 @@ export function PersonasTab() {
   const [mine, setMine] = useState<Persona[]>([]);
   const [signedIn, setSignedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   const [sort, setSort] = useState<CreationSort>(DEFAULT_CREATION_SORT);
   const sortOptions = useCreationSortOptions();
   const [showForm, setShowForm] = useState(false);
@@ -159,7 +162,7 @@ export function PersonasTab() {
   const validForm = form.name.trim().length >= 2 && form.systemPrompt.trim().length >= 10;
 
   return (
-    <div className="store-personas">
+    <div className={cn('store-personas', arrival)}>
       {signedIn && (
         <div className="store-personas__bar">
           <Button

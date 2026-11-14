@@ -30,6 +30,7 @@ import {
   unlockUserBuildApi,
   viewUserBuildApi,
 } from '@/lib/user-builds.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface BuildDetailProps {
   build: Build;
@@ -56,6 +57,8 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
   const { run: runLike, pending: liking } = useOptimisticAction();
   const [deleting, setDeleting] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  // A paid build is server-rendered locked; its README replaces the paywall once revealed.
+  const unlockArrival = useArrival(!build.locked);
 
   const isOwner = session?.user?.id === build.user.id || !!(session?.user as any)?.isAdmin;
 
@@ -295,7 +298,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
 
       {/* README */}
       {!build.locked && build.readme && (
-        <Card>
+        <Card className={unlockArrival}>
           <CardContent>
             <h2 className="mb-4 text-lg font-semibold text-site-text">{t("readme", { defaultValue: "README" })}</h2>
             <div className="prose max-w-none prose-headings:text-site-text prose-p:text-site-text-muted prose-li:text-site-text-muted prose-strong:text-site-text prose-code:text-site-text prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-site prose-img:border prose-img:border-site-border">

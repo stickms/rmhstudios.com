@@ -11,6 +11,8 @@ import { useEffect, useState } from 'react';
 import { Flame } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useStreak } from '@/lib/useStreak';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const GIVE_UP_MS = 8000;
 // Wide enough for a flame and three digits.
@@ -21,6 +23,7 @@ export function StreakChip() {
   // The route is behind the auth gate, so there is always a signed-in learner.
   const streak = useStreak(true);
   const [gaveUp, setGaveUp] = useState(false);
+  const arrival = useArrival(!!streak || gaveUp);
 
   useEffect(() => {
     if (streak) return;
@@ -37,7 +40,7 @@ export function StreakChip() {
 
   const sentence = t('streak-days', { count: days, defaultValue: '{{count}} day streak' });
   return (
-    <p className={`${BOX} text-sm font-semibold text-app-text`} title={sentence}>
+    <p className={cn(BOX, 'text-sm font-semibold text-app-text', arrival)} title={sentence}>
       <Flame className="h-4 w-4 shrink-0 text-app-warning" aria-hidden="true" />
       <span aria-hidden="true" className="tabular-nums">
         {days}

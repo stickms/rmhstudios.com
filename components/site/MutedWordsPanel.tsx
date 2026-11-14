@@ -17,6 +17,8 @@ import { mergeImportedWords, serializeMutedWords } from '@/lib/feed/muted-import
 import { MUTE_DURATIONS, type MuteDuration, type MutedExpiries } from '@/lib/feed/muted-expiry';
 import { getMutedWordsApi, setMutedWordsApi } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const MAX_WORDS = 100;
 const MAX_WORD_LEN = 50;
@@ -40,6 +42,8 @@ export function MutedWordsPanel() {
   const [duration, setDuration] = useState<DurationChoice>('forever');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
+  // Steel M9: the saved words fill the gap under the form once fetched.
+  const arrival = useArrival(!loading);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -209,11 +213,11 @@ export function MutedWordsPanel() {
       </div>
 
       {!loading && words.length === 0 ? (
-        <p className="text-sm text-site-text-muted">
+        <p className={cn('text-sm text-site-text-muted', arrival)}>
           {t('muted-empty', { defaultValue: 'No muted words yet.' })}
         </p>
       ) : (
-        <ul className="flex flex-wrap gap-2">
+        <ul className={cn('flex flex-wrap gap-2', arrival)}>
           {words.map((w) => (
             <li key={w}>
               <span className="inline-flex items-center gap-2 rounded-full relative px-3 py-1 text-sm text-site-text">

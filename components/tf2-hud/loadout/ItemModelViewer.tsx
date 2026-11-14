@@ -5,7 +5,7 @@
  */
 
 import { Box } from 'lucide-react';
-import { lazy, Suspense, useMemo, type ReactNode } from 'react';
+import { lazy, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { supportsWebGL } from '@/lib/shared/platform';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import type { EffectSpec } from './EffectParticles';
 import type { WarPaint } from './model-utils';
 import PlayerViewer from './PlayerViewer';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const Viewer3D = lazy(() => import('./Viewer3D'));
 
@@ -82,7 +83,9 @@ export default function ItemModelViewer({
         <Note>{t('model-failed', { defaultValue: 'This model could not be loaded.' })}</Note>
       }
     >
-      <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
+      <ArrivalSuspense
+        fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}
+      >
         <Viewer3D
           url={modelUrl(model)}
           cls={cls}
@@ -91,7 +94,7 @@ export default function ItemModelViewer({
           effect={effect}
           festive={festive}
         />
-      </Suspense>
+      </ArrivalSuspense>
     </SilentErrorBoundary>
   );
 

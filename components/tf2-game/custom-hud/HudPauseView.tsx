@@ -40,6 +40,7 @@ import { useHudContext } from '../use-hud';
 import { ensureEditorHolds } from './editor-session';
 import { useHudChoice } from './hud-choice';
 import HudQuickAi from '../ai/HudQuickAi';
+import { useArrival } from '@/components/ui/arrive';
 
 const ExportDialog = lazy(() => import('../../tf2-hud/ExportDialog'));
 
@@ -98,10 +99,13 @@ function Section({
   title,
   children,
   empty,
+  arrival,
 }: {
   title: string;
   children: ReactNode;
   empty?: string | null;
+  /** The M9 class for what replaces the section's "Loading…" line. */
+  arrival?: string;
 }) {
   return (
     <section className="flex flex-col gap-1.5">
@@ -109,9 +113,9 @@ function Section({
         {title}
       </h3>
       {empty ? (
-        <p className="text-xs text-app-text-muted">{empty}</p>
+        <p className={cn('text-xs text-app-text-muted', arrival)}>{empty}</p>
       ) : (
-        <div className="flex flex-col gap-1">{children}</div>
+        <div className={cn('flex flex-col gap-1', arrival)}>{children}</div>
       )}
     </section>
   );
@@ -122,11 +126,13 @@ function HudItem({
   detail,
   sel,
   current,
+  className,
 }: {
   label: string;
   detail?: string;
   sel: HudSelection;
   current: string;
+  className?: string;
 }) {
   const { t } = useTranslation('c-tf2-game');
   const choose = useHudChoice((s) => s.choose);
@@ -145,6 +151,7 @@ function HudItem({
         active
           ? 'border-app-accent bg-app-accent-dim text-app-text'
           : 'border-app-border bg-app-bg-subtle text-app-text hover:bg-app-surface-hover',
+        className,
       )}
     >
       <span className="min-w-0 flex-1">
@@ -190,6 +197,10 @@ export default function HudPauseView({
   const [linkError, setLinkError] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportReady, setExportReady] = useState(false);
+  // M9: each list fades in when it replaces its "Loading…" line.
+  const draftsArrival = useArrival(drafts !== null);
+  const mineArrival = useArrival(!signedIn || mine !== null);
+  const workshopArrival = useArrival(workshop !== null);
 
   useEffect(() => {
     let live = true;
@@ -302,6 +313,7 @@ export default function HudPauseView({
 
       <Section
         title={t('hud_section_drafts', { defaultValue: 'Drafts on this device' })}
+        arrival={draftsArrival}
         empty={
           drafts === null
             ? t('hud_loading', { defaultValue: 'Loading…' })
@@ -323,6 +335,7 @@ export default function HudPauseView({
 
       <Section
         title={t('hud_section_mine', { defaultValue: 'My HUDs' })}
+        arrival={mineArrival}
         empty={
           !signedIn
             ? t('hud_sign_in', { defaultValue: 'Sign in to use the HUDs saved to your account.' })
@@ -382,7 +395,7 @@ export default function HudPauseView({
           </p>
         ) : null}
         {workshop && workshop.length === 0 ? (
-          <p className="text-xs text-app-text-muted">
+          <p className={cn('text-xs text-app-text-muted', workshopArrival)}>
             {t('hud_workshop_empty', { defaultValue: 'No workshop HUDs to show right now.' })}
           </p>
         ) : null}
@@ -397,6 +410,7 @@ export default function HudPauseView({
             }
             sel={{ kind: 'cloud', id: h.id }}
             current={current}
+            className={workshopArrival}
           />
         ))}
       </Section>

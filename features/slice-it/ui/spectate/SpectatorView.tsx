@@ -6,6 +6,8 @@ import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { useSliceItStore } from '@features/slice-it/engine/store';
 import * as net from '@features/slice-it/engine/net/client';
 import type { TeamId } from '@features/slice-it/engine/net/events';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * The spectator screen (`N1`).
@@ -41,6 +43,8 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
   const connection = useSliceItStore((s) => s.connection);
 
   const playing = lobby?.state === 'playing';
+  // The first snapshot from the hub fills the view: it fades in (M9).
+  const arrival = useArrival(Boolean(lobby));
 
   /**
    * The board, ranked.
@@ -99,7 +103,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
         </span>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+      <div className={cn('flex-1 min-h-0 overflow-y-auto p-4 space-y-4', arrival)}>
         <section className="bg-slice-bg p-4 rounded-2xl border border-slice-border">
           {lobby?.song ? (
             <>

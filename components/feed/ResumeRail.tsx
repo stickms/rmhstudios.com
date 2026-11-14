@@ -35,7 +35,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
-import { AsyncReveal } from '@/components/motion';
+import { useArrival } from '@/components/ui/arrive';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/utils';
 import type { ResumeCard, ResumeKind, ResumeState } from '@/lib/history/resume.server';
@@ -79,15 +79,15 @@ export function ResumeRail({ initial }: ResumeRailProps) {
   }, [initial, session?.user]);
 
   const list = cards ?? [];
+  // Steel M9: a rail fetched here appears in a gap, so it fades in; server-seeded cards do not.
+  const arrival = useArrival(list.length > 0);
   // Rule 1 above: nothing to resume, nothing to render — not an empty state.
   if (list.length === 0) return null;
 
   return (
-    <AsyncReveal
-      show
-      as="section"
+    <section
       aria-label={t('resume-title', { defaultValue: 'Pick up where you left off' })}
-      className="surface-card mx-3 mt-3 px-4 py-3"
+      className={cn('surface-card mx-3 mt-3 px-4 py-3', arrival)}
     >
       <div className="mb-2 flex items-center gap-2">
         <History className="size-4 text-site-accent" aria-hidden />
@@ -153,7 +153,7 @@ export function ResumeRail({ initial }: ResumeRailProps) {
           );
         })}
       </HorizontalScroller>
-    </AsyncReveal>
+    </section>
   );
 }
 

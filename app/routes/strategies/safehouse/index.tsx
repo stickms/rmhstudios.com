@@ -9,6 +9,8 @@ import { AccessGate } from '@features/doctrine/ui/safehouse/access-gate';
 import { Shield } from 'lucide-react';
 import { api } from '@/lib/contract/client';
 import { getSafehouseContentApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/safehouse/')({
   head: () => noindexHead('Safehouse'),
@@ -31,6 +33,7 @@ function SafehouseFeed() {
     },
     staleTime: 60_000,
   });
+  const arrival = useArrival(!isLoading);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -53,14 +56,14 @@ function SafehouseFeed() {
       )}
 
       {data?.items?.length === 0 && (
-        <div className="text-center py-16">
+        <div className={cn('text-center py-16', arrival)}>
           <Shield size={32} className="mx-auto mb-3 opacity-20" />
           <p className="text-sm text-white/60">{t("no-intelligence", { defaultValue: "No intelligence available at your clearance level." })}</p>
           <p className="text-xs text-white/50 mt-1">{t("upgrade-tier", { defaultValue: "Upgrade your tier to access classified content." })}</p>
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className={cn('space-y-3', arrival)}>
         {data?.items?.map((item) => (
           <ContentCard key={item.id} {...item} />
         ))}

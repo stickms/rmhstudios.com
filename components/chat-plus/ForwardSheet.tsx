@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { cn } from '@/lib/utils';
 import { forwardLabel, maxForwardTargets } from '@/lib/chat-plus/flags';
@@ -67,6 +68,7 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
   const { t } = useTranslation('f-messaging');
   const close = useChatPlusUi((s) => s.close);
   const { data, isLoading } = useDestinations();
+  const arrival = useArrival(!isLoading);
   const [picked, setPicked] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
 
@@ -147,11 +149,11 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
               <Spinner size={20} />
             </div>
           ) : (data ?? []).length === 0 ? (
-            <p className="py-8 text-center text-sm text-site-text-muted">
+            <p className={cn('py-8 text-center text-sm text-site-text-muted', arrival)}>
               {t('forward-empty', { defaultValue: 'You have no chats to forward to yet.' })}
             </p>
           ) : (
-            <ul className="flex flex-col">
+            <ul className={cn('flex flex-col', arrival)}>
               {(data ?? []).map((d) => {
                 const k = key(d.ref);
                 const on = picked.includes(k);

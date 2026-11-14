@@ -30,7 +30,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
-import { formatCount } from '@/lib/utils';
+import { formatCount, cn } from '@/lib/utils';
 
 import { api } from '@/lib/contract/client';
 import {
@@ -40,6 +40,7 @@ import {
   type BrokenChart,
   type ContentDashboard as ContentDashboardData,
 } from '@features/slice-it/engine/admin.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 function gib(bytes: number): string {
   return `${(bytes / 1024 ** 3).toFixed(2)} GiB`;
@@ -51,6 +52,7 @@ export function ContentDashboard() {
   const [broken, setBroken] = useState<BrokenChart[] | null>(null);
   const [orphans, setOrphans] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
@@ -108,12 +110,13 @@ export function ContentDashboard() {
           </div>
         ) : !dashboard ? (
           <EmptyState
+            className={arrival}
             icon={Database}
             title={t('admin-content-failed', { defaultValue: 'Could not read the library.' })}
           />
         ) : (
           <>
-            <section className="min-w-0 space-y-3">
+            <section className={cn('min-w-0 space-y-3', arrival)}>
               <h2 className="t-heading text-site-text">
                 {t('admin-content-storage', { defaultValue: 'Storage' })}
               </h2>
@@ -155,7 +158,7 @@ export function ContentDashboard() {
               </dl>
             </section>
 
-            <section className="min-w-0 space-y-3">
+            <section className={cn('min-w-0 space-y-3', arrival)}>
               <h2 className="t-heading text-site-text">
                 {t('admin-content-uploads', { defaultValue: 'Uploads per day' })}
               </h2>
@@ -175,7 +178,7 @@ export function ContentDashboard() {
               )}
             </section>
 
-            <section className="min-w-0 space-y-3">
+            <section className={cn('min-w-0 space-y-3', arrival)}>
               <h2 className="t-heading text-site-text">
                 {t('admin-content-broken', { defaultValue: 'Charts that look broken' })}
               </h2>
@@ -212,7 +215,7 @@ export function ContentDashboard() {
               )}
             </section>
 
-            <section className="min-w-0 space-y-3">
+            <section className={cn('min-w-0 space-y-3', arrival)}>
               <h2 className="t-heading text-site-text">
                 {t('admin-content-orphans', { defaultValue: 'Orphaned storage objects' })}
               </h2>

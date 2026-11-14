@@ -11,6 +11,8 @@ import { liquidVTName } from'@/lib/view-transition';
 import { AI_TIMEOUT_MS, api } from'@/lib/contract/client';
 import { HttpError, serverError } from'@/lib/http';
 import { chatWithPersonaApi, deletePersonaApi, getPersonaApi } from'@/lib/personas/personas.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Msg {
  role: string;
@@ -53,6 +55,9 @@ export function PersonaChatColumn({
  const [input, setInput] = useState('');
  const [sending, setSending] = useState(false);
  const scrollRef = useRef<HTMLDivElement>(null);
+ // Steel M9: a persona fetched here replaces the spinner; a reply replaces "typing…" and fades in.
+ const arrival = useArrival(!loading);
+ const isNewReply = useArrivingKeys(messages.map((_, i) => i));
 
  const load = useCallback(async () => {
  try {
@@ -139,6 +144,7 @@ export function PersonaChatColumn({
  if (notFound || !persona) {
  return (
  <EmptyState
+ className={arrival}
  title={t('persona-not-found', { defaultValue:'Persona not found'})}
  action={
  <Link to="/personas">
@@ -154,7 +160,7 @@ export function PersonaChatColumn({
  const greetingShown = messages.length === 0 && persona.greeting;
 
  return (
- <div className="flex h-screen flex-col">
+ <div className={cn('flex h-screen flex-col', arrival)}>
  <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link to="/personas"className="text-site-text-muted hover:text-site-text">
  <ArrowLeft className="h-5 w-5"/>
@@ -195,7 +201,13 @@ export function PersonaChatColumn({
  </Bubble>
  )}
  {messages.map((m, i) => (
- <Bubble key={i} role={m.role} emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
+ <Bubble
+ key={i}
+ role={m.role}
+ emoji={persona.emoji}
+ avatarUrl={persona.avatarUrl}
+ className={m.role === 'assistant' && isNewReply(i) ? ARRIVE : undefined}
+ >
  {m.content}
  </Bubble>
  ))}
@@ -260,16 +272,18 @@ function Bubble({
  role,
  emoji,
  avatarUrl,
+ className,
  children,
 }: {
  role: string;
  emoji: string | null;
  avatarUrl?: string | null;
+ className?: string | undefined;
  children: React.ReactNode;
 }) {
  const isUser = role ==='user';
  return (
- <div className={`flex gap-2 ${isUser ?'flex-row-reverse':''}`}>
+ <div className={cn('flex gap-2', isUser && 'flex-row-reverse', className)}>
  {!isUser && (
  <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-sm">
  {avatarUrl ? (

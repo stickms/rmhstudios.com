@@ -27,6 +27,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { getCasinoRoomsApi, type CasinoLobbyRoom } from '@/lib/coins.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export type CasinoGame = 'blackjack' | 'holdem' | 'baccarat' | 'roulette';
 /** Plinko is single-player — it has no lobby, so it gets the prompt alone. */
@@ -36,6 +38,8 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
   const { t } = useTranslation('c-rmhcoins');
   const [rooms, setRooms] = useState<CasinoLobbyRoom[] | null>(null);
   const hasLobby = game !== 'plinko';
+  const arrival = useArrival(rooms !== null);
+  const isNew = useArrivingKeys(rooms?.map((room) => room.roomId) ?? []);
 
   useEffect(() => {
     if (!hasLobby) return;
@@ -101,19 +105,23 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
         ) : rooms.length === 0 ? (
           <EmptyState
             icon={Users}
+            className={arrival}
             title={t('no-open-tables', { defaultValue: 'No open tables right now' })}
             description={t('no-open-tables-body', {
               defaultValue: 'Sign in to open one — everyone else browsing will see it here.',
             })}
           />
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className={cn('flex flex-col gap-2', arrival)}>
             {rooms.map((room) => (
               // Rows, not buttons: nothing here is joinable without a session,
               // and a control that only ever refuses is worse than no control.
               <li
                 key={room.roomId}
-                className="flex items-center justify-between gap-3 rounded-site p-4"
+                className={cn(
+                  'flex items-center justify-between gap-3 rounded-site p-4',
+                  isNew(room.roomId) && ARRIVE,
+                )}
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-site-text">{room.name}</p>

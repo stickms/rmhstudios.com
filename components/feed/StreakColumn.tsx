@@ -7,6 +7,7 @@ import { useTranslation } from'react-i18next';
 import { api } from '@/lib/contract/client';
 import { getStreakApi } from '@/lib/streak.contract';
 import { ColumnHeader } from'./ColumnHeader';
+import { useArrival } from '@/components/ui/arrive';
 
 interface StreakState {
  current: number;
@@ -27,6 +28,8 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  const { t } = useTranslation('feed');
  const [streak, setStreak] = useState<StreakState | null>(null);
  const [loading, setLoading] = useState(true);
+ // Steel M9: the streak replaces the spinner.
+ const arrival = useArrival(!loading);
 
  useEffect(() => {
  let active = true;
@@ -55,6 +58,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  if (!streak) {
  return (
  <EmptyState
+ className={arrival}
  description={t('streak-load-error', { defaultValue:'Could not load your streak.'})}
  />
  );
@@ -64,7 +68,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  const nextPct = next ? Math.min(100, Math.round((streak.current / next.day) * 100)) : 100;
 
  return (
- <div>
+ <div className={arrival}>
  {/* hideHeader === embedded in JourneyColumn, which supplies the page
  header (and the drawer button) itself. */}
  {!hideHeader && (

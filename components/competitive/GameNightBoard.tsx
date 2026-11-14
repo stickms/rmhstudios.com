@@ -19,6 +19,8 @@ import {
   listGameNightsApi,
   patchGameNightApi,
 } from '@/lib/competitive/game-night.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Pick {
   gameId: string;
@@ -202,6 +204,7 @@ export function GameNightBoard() {
   const { data: session } = useSession();
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
   const [nights, setNights] = useState<Night[] | null>(null);
+  const arrival = useArrival(nights !== null);
 
   const load = useCallback(async () => {
     try {
@@ -227,11 +230,12 @@ export function GameNightBoard() {
       ) : nights.length === 0 ? (
         <EmptyState
           icon={Gamepad2}
+          className={arrival}
           title={t('gn-none', { defaultValue: 'No game night is scheduled yet.' })}
         />
       ) : (
         nights.map((n) => (
-          <Card key={n.id} className="gap-3 px-4 py-4" pane>
+          <Card key={n.id} className={cn('gap-3 px-4 py-4', arrival)} pane>
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-semibold">{n.title}</h2>
               <span className="text-xs text-site-text-muted">

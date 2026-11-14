@@ -2,9 +2,11 @@ import { Bookmark, CheckCircle, ExternalLink, EyeOff, MapPin } from 'lucide-reac
 import { useTranslation } from 'react-i18next';
 import type { JobRow } from '@/lib/rmhladder/server/queries';
 import type { JobActionValue } from '@/lib/rmhladder/server/actions';
+import { ARRIVE, useArrivingKeys } from '@/components/ui/arrive';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { PayBadge } from './PayBadge';
 import { RungMeter } from './RungMeter';
 import { safeExternalUrl, sourceDomain, trackApplyClick } from './url';
@@ -160,6 +162,8 @@ interface JobsTableProps {
 
 export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
   const { t } = useTranslation('site');
+  // Rows that "Load more" appends fade in (Steel M9); the first page is the page's own.
+  const isNew = useArrivingKeys(rows.map((row) => jobFields(row).id));
   return (
     <>
       <p className="sr-only" role="status" aria-live="polite">
@@ -170,7 +174,7 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
         {rows.map((row) => {
           const job = jobFields(row);
           return (
-            <Card key={job.id} className="gap-4 py-5">
+            <Card key={job.id} className={cn('gap-4 py-5', isNew(job.id) && ARRIVE)}>
               <CardHeader className="gap-3 px-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <VerificationBadge status={job.verification?.status} />
@@ -267,7 +271,13 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
             {rows.map((row) => {
               const job = jobFields(row);
               return (
-                <tr key={job.id} className="transition-colors hover:bg-site-surface-hover">
+                <tr
+                  key={job.id}
+                  className={cn(
+                    'transition-colors hover:bg-site-surface-hover',
+                    isNew(job.id) && ARRIVE,
+                  )}
+                >
                   <td className="px-4 py-4">
                     <button type="button" className="text-left" onClick={() => onRowClick(row)}>
                       <span className="block font-semibold text-site-text hover:text-site-accent">

@@ -7,6 +7,8 @@ import { useArcadeRun } from '@/lib/arcade/run-client';
 import { basketShareText } from '@/lib/arcade/basket';
 import { api } from '@/lib/contract/client';
 import { finishBasketApi, getBasketApi } from '@/lib/arcade/arcade.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Stats {
   sorted: number;
@@ -34,6 +36,8 @@ export function BasketPanel({
   const { t } = useTranslation('f-party');
   const run = useArcadeRun((s) => s.run);
   const [board, setBoard] = useState<Row[] | null>(null);
+  // The board is fetched after the result shows: it fades in when it lands (M9).
+  const boardArrival = useArrival(board !== null);
   const [note, setNote] = useState<string | null>(null);
   const sent = useRef(false);
 
@@ -94,7 +98,7 @@ export function BasketPanel({
       </div>
       {note ? <p className="text-xs text-site-text-muted">{note}</p> : null}
       {board?.length ? (
-        <ol className="space-y-0.5 text-xs">
+        <ol className={cn('space-y-0.5 text-xs', boardArrival)}>
           {board.slice(0, 5).map((r) => (
             <li key={r.rank} className={r.isMe ? 'font-semibold' : undefined}>
               {r.rank}. {r.user.name ?? r.user.handle ?? '?'} · {r.score}

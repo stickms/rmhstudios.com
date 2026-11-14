@@ -6,7 +6,7 @@
  */
 
 import { Box } from 'lucide-react';
-import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react';
+import { lazy, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { merge } from '@/lib/tf2-loadout/bodygroups';
@@ -28,6 +28,7 @@ import type { WarPaint } from './model-utils';
 import type { PlayerPart } from './PlayerScene';
 import { SearchSelect } from '../ui';
 import { TfTabs } from '../TfTabs';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 export const PlayerScene = lazy(() => import('./PlayerScene'));
 
@@ -163,7 +164,9 @@ export default function PlayerViewer({
         <Note>{t('model-failed', { defaultValue: 'This model could not be loaded.' })}</Note>
       }
     >
-      <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
+      <ArrivalSuspense
+        fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}
+      >
         <PlayerScene
           body={modelUrl(body)}
           bodygroups={bodygroups}
@@ -172,7 +175,7 @@ export default function PlayerViewer({
           tauntUrl={clip ? animUrl(cls, clip) : undefined}
           team={team}
         />
-      </Suspense>
+      </ArrivalSuspense>
     </SilentErrorBoundary>
   );
 

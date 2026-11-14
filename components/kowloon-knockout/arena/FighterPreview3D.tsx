@@ -9,6 +9,8 @@ import { CLASS_DISPLAY, CLASS_STATS } from '@/lib/kowloon-knockout/game/fighters
 import { previewAt } from '@/lib/kowloon-knockout/render/previewLoop';
 import { resolveMenuQuality } from '@/lib/kowloon-knockout/render/menuQuality';
 import { useGraphicsStore } from '@/lib/kowloon-knockout/render/graphicsStore';
+import { useSuspenseArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function makeFrame(className: FighterClass, modelId: string): RenderFighter {
     const d = CLASS_DISPLAY[className];
@@ -70,10 +72,16 @@ export default function FighterPreview3D({ fighterClass, modelId, size = 200 }: 
         // The preview is small, so "pixel" would be a handful of chunky dots: keep it a little sharper.
         return q.mode === 'pixel' ? { ...q, dpr: Math.max(q.dpr, 0.75) } : q;
     }, [setting, preference]);
+    // Under CharacterSelect's ArrivalSuspense (wrap={false}): the preview fades in when its chunk was waited for (M9).
+    const arrival = useSuspenseArrival();
 
     return (
         // `key` remounts the canvas contents per model so the dispatcher's load state starts fresh.
-        <div className="kk-model-preview" style={{ width: size, height: size }}>
+        <div
+            className={cn('kk-model-preview', arrival)}
+            style={{ width: size, height: size }}
+            suppressHydrationWarning
+        >
             <Canvas
                 key={quality.mode + (quality.antialias ? 'aa' : '')}
                 frameloop="demand"

@@ -41,6 +41,8 @@ import { isRoomCode } from '@/lib/elections/room-config';
 import { CalendarPanel } from './CalendarPanel';
 import { NewsWire } from './NewsWire';
 import { timeAgo, useBaseline, useElectionData, useElectionEvents, useNow, useReveal } from './hooks';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface ElectionsPageProps {
   /** The election day the route resolved (from `?cycle=` or "the current one"). */
@@ -107,17 +109,19 @@ function Host({
   variant,
   flip,
   lead,
+  className,
   children,
 }: {
   variant: number;
   flip?: boolean;
+  className?: string;
   /** Reserves a band above the block for the portrait on wide screens, with this text beside him. */
   lead?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { t } = useTranslation('c-elections');
   return (
-    <div className={lead ? 'el-briefing el-briefing--reserve' : 'el-briefing'}>
+    <div className={cn('el-briefing', lead ? 'el-briefing--reserve' : undefined, className)}>
       {lead ? <div className="el-briefing__lead">{lead}</div> : null}
       <BriefingPortrait
         variant={variant}
@@ -172,6 +176,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
   }, []);
 
   const snapshot: ElectionSnapshot | undefined = data?.snapshot;
+  const arrival = useArrival(!!snapshot);
   const phase = data?.phase ?? phaseOf(cycle.date);
   const offices: Office[] = useMemo(() => {
     if (!snapshot) return cycle.offices;
@@ -398,25 +403,27 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
         >
           {!snapshot ? <div className="el-box el-skel" aria-busy /> : null}
           {snapshot ? (
-            <BalanceOfPower chambers={snapshot.chambers} live={live} races={snapshot.races} />
+            <div className={arrival}>
+              <BalanceOfPower chambers={snapshot.chambers} live={live} races={snapshot.races} />
+            </div>
           ) : null}
           {snapshot && hasData ? (
-            <div style={{ marginTop: 24 }}>
+            <div className={arrival} style={{ marginTop: 24 }}>
               <MyStates races={snapshot.races} onSelectState={selectFromElsewhere} />
             </div>
           ) : null}
           {snapshot && hasData ? (
-            <div style={{ marginTop: 24 }}>
+            <div className={arrival} style={{ marginTop: 24 }}>
               <NailBiters races={snapshot.races} onSelectState={selectFromElsewhere} />
             </div>
           ) : null}
           {snapshot && hasData ? (
-            <div style={{ marginTop: 24 }}>
+            <div className={arrival} style={{ marginTop: 24 }}>
               <PathPanel chambers={snapshot.chambers} races={snapshot.races} />
             </div>
           ) : null}
           {hasData ? (
-            <div style={{ marginTop: 24 }}>
+            <div className={arrival} style={{ marginTop: 24 }}>
               <Host
                 variant={3}
                 lead={
@@ -475,12 +482,14 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
           })}
         >
           {snapshot ? (
-            <StateMap
-              races={snapshot.races}
-              offices={offices}
-              selected={selectedState}
-              onSelect={setSelectedState}
-            />
+            <div className={arrival}>
+              <StateMap
+                races={snapshot.races}
+                offices={offices}
+                selected={selectedState}
+                onSelect={setSelectedState}
+              />
+            </div>
           ) : (
             <div className="el-box el-skel" aria-busy />
           )}
@@ -500,11 +509,11 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
           })}
         >
           {snapshot && hasData ? (
-            <Host variant={3}>
+            <Host variant={3} className={arrival}>
               <RaceExplorer races={snapshot.races} offices={offices} focusRaceId={focusRaceId} />
             </Host>
           ) : snapshot ? (
-            <p className="el-h2" style={{ fontSize: 36 }}>
+            <p className={cn('el-h2', arrival)} style={{ fontSize: 36 }}>
               {t('races.notYet', {
                 defaultValue: 'Ballots for this election aren’t published yet.',
               })}
@@ -553,7 +562,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
           })}
         >
           {snapshot && hasData ? (
-            <div style={{ marginBottom: 28 }}>
+            <div className={arrival} style={{ marginBottom: 28 }}>
               <WatchList snapshot={snapshot} now={now} onSelectState={selectFromElsewhere} />
             </div>
           ) : null}
@@ -688,7 +697,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
               })}
             >
               {snapshot && hasData ? (
-                <Host variant={4}>
+                <Host variant={4} className={arrival}>
                   <PredictionPainter
                     year={year}
                     cycle={param}

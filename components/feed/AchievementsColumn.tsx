@@ -12,6 +12,7 @@ import {
 } from'@/lib/achievements/catalog';
 import { ColumnHeader } from'./ColumnHeader';
 import { AchievementTips } from'@/components/arcade/AchievementTips';
+import { useArrival } from '@/components/ui/arrive';
 
 // Library icons per achievement category (replaces emoji badges).
 const CATEGORY_ICON: Record<AchievementCategory, typeof Users> = {
@@ -63,6 +64,8 @@ export function AchievementsColumn({
  ...(initialData ? { initialData } : {}),
  staleTime: 15_000,
  });
+ // Steel M9: achievements fetched here replace the spinner; the loader's seed is there on first paint.
+ const arrival = useArrival(!loading);
 
  if (loading) {
  return (
@@ -74,6 +77,7 @@ export function AchievementsColumn({
  if (!data) {
  return (
  <EmptyState
+ className={arrival}
  description={t('could-not-load-achievements', {
  defaultValue:'Could not load achievements.',
  })}
@@ -111,7 +115,7 @@ export function AchievementsColumn({
  );
 
  return (
- <div>
+ <div className={arrival}>
  {/* hideHeader === embedded in JourneyColumn/ProfileColumn, which supply
  the page header (and the drawer button); only the stats survive. */}
  {hideHeader ? (

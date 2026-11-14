@@ -14,6 +14,8 @@ import { useEditor } from '@/lib/tf2-hud/store';
 import { ImportError } from '@/lib/tf2-hud/zip/import';
 import Tf2Logo from './Tf2Logo';
 import { Btn, IconBtn } from './ui';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function Tf2HudLanding() {
   const { t } = useTranslation('c-tf2-hud');
@@ -21,6 +23,8 @@ export default function Tf2HudLanding() {
   const newProject = useEditor((s) => s.newProject);
   const importZipFile = useEditor((s) => s.importZipFile);
   const [drafts, setDrafts] = useState<DraftSummary[]>([]);
+  // The drafts are read from this device after mount: the section fades in when there are some (M9).
+  const draftsArrival = useArrival(drafts.length > 0);
   const [busy, setBusy] = useState(false);
   const zip = useRef<HTMLInputElement>(null);
 
@@ -147,7 +151,7 @@ export default function Tf2HudLanding() {
         </section>
 
         {drafts.length ? (
-          <section className="mb-10" aria-labelledby="tf2hud-drafts">
+          <section className={cn('mb-10', draftsArrival)} aria-labelledby="tf2hud-drafts">
             <div className="mb-2 flex items-center justify-between">
               <h2 id="tf2hud-drafts" className="tf2hud-panel-head">
                 {t('drafts', { defaultValue: 'Continue editing' })}

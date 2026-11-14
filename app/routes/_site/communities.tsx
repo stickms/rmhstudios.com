@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useLayoutEffect } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
@@ -9,6 +9,7 @@ import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { CommunitiesColumn } from '@/components/feed/CommunitiesColumn';
 import { CommunitiesSkeleton } from '@/components/feed/CommunitiesSkeleton';
+import { markRouteArrival } from '@/components/ui/arrive';
 import { EventsColumn } from '@/components/events/EventsColumn';
 import { SpacesColumn } from '@/components/spaces/SpacesColumn';
 import { getRequestSession } from '@/lib/auth-session.server';
@@ -145,6 +146,8 @@ function CommunitiesPage() {
 }
 
 function CommunitiesPending() {
+  // Steel M9: as RoutePending does, fade the page in when this skeleton gives way to it.
+  useLayoutEffect(() => () => markRouteArrival('site'), []);
   return (
     <CommunitiesShell>
       <CommunitiesSkeleton />

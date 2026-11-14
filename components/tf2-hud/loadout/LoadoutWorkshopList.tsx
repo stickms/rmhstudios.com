@@ -16,6 +16,8 @@ import { TF_CLASSES, type TfClass } from '@/lib/tf2-loadout/catalog-types';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
 import LoadoutCard from './LoadoutCard';
 import { CLASS_DEFAULT } from './labels';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Sort = 'new' | 'top';
 
@@ -30,6 +32,9 @@ export default function LoadoutWorkshopList() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const seq = useRef(0);
+  // M9: the first page replaces the placeholder cards; a later page fades in card by card.
+  const arrival = useArrival(state !== 'loading' || items.length > 0);
+  const isNew = useArrivingKeys(items.map((l) => l.id));
 
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query.trim()), 300);
@@ -123,14 +128,14 @@ export default function LoadoutWorkshopList() {
       </div>
 
       {state === 'error' ? (
-        <p role="alert" className="py-12 text-center text-sm text-app-danger">
+        <p role="alert" className={cn('py-12 text-center text-sm text-app-danger', arrival)}>
           {t('workshop-error', { defaultValue: 'Could not load the workshop.' })}{' '}
           <button type="button" className="underline" onClick={() => void load(null)}>
             {t('retry', { defaultValue: 'Retry' })}
           </button>
         </p>
       ) : items.length === 0 && state === 'ready' ? (
-        <p className="py-12 text-center text-sm text-app-text-muted">
+        <p className={cn('py-12 text-center text-sm text-app-text-muted', arrival)}>
           {debounced || tfClass
             ? t('loadouts-no-match', { defaultValue: 'No loadouts match.' })
             : t('loadouts-empty', {
@@ -147,6 +152,7 @@ export default function LoadoutWorkshopList() {
               <LoadoutCard
                 loadout={l}
                 idx={idx}
+                className={cn(arrival, isNew(l.id) && ARRIVE)}
                 actions={
                   <Link
                     to="/tf2/loadout/l/$slug"

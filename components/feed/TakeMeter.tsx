@@ -5,6 +5,7 @@ import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { useNearViewport } from '@/hooks/useNearViewport';
+import { useArrival } from '@/components/ui/arrive';
 import { takeSplit, type TakeState, type TakeVote } from '@/lib/feed/take';
 import { getTakeApi, voteTakeApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
@@ -65,6 +66,8 @@ export default function TakeMeter({ postId }: { postId: string }) {
 
   const showResults = state?.counts != null;
   const split = state?.counts ? takeSplit(state.counts) : null;
+  // Steel M9: the split replaces the vote buttons once it is fetched (or after a vote).
+  const resultsArrival = useArrival(showResults);
 
   return (
     <div
@@ -79,7 +82,7 @@ export default function TakeMeter({ postId }: { postId: string }) {
       </div>
 
       {showResults && split ? (
-        <div>
+        <div className={resultsArrival}>
           <div
             className="flex h-2.5 w-full overflow-hidden rounded-full bg-site-surface-active"
             role="img"

@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { api } from '@/lib/contract/client';
 import { uploadAvatarApi } from '@/lib/profile.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -83,6 +84,7 @@ function LoginPage() {
   }, [rawCallback]);
 
   const { data: session, isPending } = useSession();
+  const arrival = useArrival(!(isPending || session?.user));
 
   useEffect(() => {
     if (!isPending && session?.user) {
@@ -423,7 +425,9 @@ function LoginPage() {
     // long sign-up content can scroll naturally without clipped controls.
     // <main> because /login renders outside the _site shell, which is where the
     // site's landmark and skip link live; a deep-linked visit had neither.
-    <main className="flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8">
+    <main
+      className={cn('flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8', arrival)}
+    >
       {/* The sign-in form: a plain block, full-viewport on a phone and a narrow column from the sm breakpoint. */}
       <div
         className={cn(

@@ -6,7 +6,7 @@
  * request (`/extras`) after first paint supplies flairs, posting status, the
  * rail and any pending onboarding questions.
  */
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Award, BarChart3, MessageSquare, ShieldCheck, Star, Trophy } from 'lucide-react';
@@ -15,6 +15,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { CommunityComposer } from '@/components/communities/CommunityComposer';
 import { FlairChip } from '@/components/communities/FlairChip';
 import { RelatedRail } from '@/components/communities/RelatedRail';
@@ -123,6 +125,9 @@ export function CommunityPlusBody({
     !wasDismissed(slug);
 
   const posts = flairFilter ? filtered : items;
+  // `/extras` lands after first paint; a flair filter swaps the list for a spinner and back.
+  const extrasArrival = useArrival(!!extras);
+  const postsArrival = useArrival(posts !== null);
   const panelFallback = (
     <div className="flex justify-center py-12">
       <Spinner />
@@ -131,7 +136,7 @@ export function CommunityPlusBody({
 
   return (
     <div>
-      {extras && <RelatedRail sisters={extras.sisters} />}
+      {extras && <RelatedRail sisters={extras.sisters} className={extrasArrival} />}
 
       {community.joined && (
         <CommunityComposer
@@ -142,7 +147,12 @@ export function CommunityPlusBody({
       )}
 
       {extras?.member && extras.member.roleTags.length > 0 && (
-        <p className="flex flex-wrap items-center gap-1.5 px-4 pt-2 text-xs text-site-text-muted">
+        <p
+          className={cn(
+            'flex flex-wrap items-center gap-1.5 px-4 pt-2 text-xs text-site-text-muted',
+            extrasArrival,
+          )}
+        >
           {t('your-roles', { defaultValue: 'Your roles:' })}
           {extras.member.roleTags.map((r) => (
             <span key={r} className="rounded-full border border-site-border px-2 py-px">
@@ -165,7 +175,7 @@ export function CommunityPlusBody({
         <>
           {extras && extras.flairs.length > 0 && (
             <div
-              className="flex flex-wrap items-center gap-1.5 px-4 pb-3"
+              className={cn('flex flex-wrap items-center gap-1.5 px-4 pb-3', extrasArrival)}
               role="group"
               aria-label={t('flair-filter', { defaultValue: 'Filter by flair' })}
             >
@@ -203,6 +213,7 @@ export function CommunityPlusBody({
             panelFallback
           ) : posts.length === 0 ? (
             <EmptyState
+              className={postsArrival}
               description={
                 flairFilter
                   ? t('no-flair-posts', { defaultValue: 'No posts with this flair yet.' })
@@ -210,12 +221,12 @@ export function CommunityPlusBody({
               }
             />
           ) : (
-            <VirtualPostList items={posts} />
+            <VirtualPostList items={posts} className={postsArrival} />
           )}
         </>
       )}
 
-      <Suspense fallback={panelFallback}>
+      <ArrivalSuspense fallback={panelFallback}>
         {tab === 'fame' && <HallOfFamePanel slug={slug} />}
         {tab === 'challenge' && (
           <ChallengePanel
@@ -236,7 +247,7 @@ export function CommunityPlusBody({
             onExtrasChange={() => void loadExtras()}
           />
         )}
-      </Suspense>
+      </ArrivalSuspense>
 
       {showOnboarding && (
         <OnboardingSheet

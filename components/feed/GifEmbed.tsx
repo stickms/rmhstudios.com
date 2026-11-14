@@ -4,6 +4,8 @@ import { ImageOff } from'lucide-react';
 import { useNearViewport } from'@/hooks/useNearViewport';
 import { api } from '@/lib/contract/client';
 import { gifOembedApi } from '@/lib/unfurl/oembed.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 // ─── URL resolution ──────────────────────────────────────────────
 
@@ -134,6 +136,8 @@ export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
  const { ref, visible } = useNearViewport<HTMLDivElement>('400px 0px', skipObserve);
  const tenor = useTenorResolve(needsResolve && visible && info ? info.originalUrl : null);
  const [error, setError] = useState(false);
+ // Steel M9: a Tenor GIF resolved after paint replaces its placeholder block.
+ const arrival = useArrival(!(needsResolve && !tenor.src && !error));
 
  if (!info) return null;
 
@@ -144,7 +148,7 @@ export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
  if (info.needsResolve && !src && !error) {
  return (
  <div ref={ref} className={`rounded-site overflow-hidden ${className}`}>
- <div className="w-full h-48 bg-site-surface animate-pulse"/>
+ <div className="w-full h-48 bg-site-bg-subtle"/>
  </div>
  );
  }
@@ -152,7 +156,13 @@ export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
  if (!src || error) {
  if (error) {
  return (
- <div className={`rounded-site overflow-hidden p-5 flex items-center justify-center gap-2 ${className}`}>
+ <div
+ className={cn(
+ 'rounded-site overflow-hidden p-5 flex items-center justify-center gap-2',
+ className,
+ arrival,
+ )}
+ >
  <ImageOff className="h-4 w-4 text-site-text-muted"/>
  <span className="text-xs text-site-text-muted">{t("failed-to-load-image", { defaultValue:"Failed to load image"})}</span>
  </div>
@@ -170,7 +180,7 @@ export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
  className="w-full max-h-72 object-contain"
  />
  );
- const wrapperClass = `block rounded-site overflow-hidden ${className}`;
+ const wrapperClass = cn('block rounded-site overflow-hidden', className, arrival);
 
  return linked ? (
  <a

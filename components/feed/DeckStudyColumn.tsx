@@ -17,6 +17,7 @@ import {
  deleteDeckApi,
  getDeckApi,
 } from '@/lib/study/decks.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface Card {
  id: string;
@@ -86,6 +87,8 @@ export function DeckStudyColumn({
  const [front, setFront] = useState('');
  const [back, setBack] = useState('');
  const [adding, setAdding] = useState(false);
+ // Steel M9: a deck fetched here replaces the spinner; the loader's is there on first paint.
+ const arrival = useArrival(!loading);
 
  const load = useCallback(async () => {
  try {
@@ -208,6 +211,7 @@ export function DeckStudyColumn({
  if (notFound || !deck) {
  return (
  <EmptyState
+ className={arrival}
  title={t('deck-not-found', { defaultValue:'Deck not found'})}
  action={
  <Link to="/study">
@@ -270,7 +274,7 @@ export function DeckStudyColumn({
  }
 
  return (
- <div>
+ <div className={arrival}>
  <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link to="/study"className="text-site-text-muted hover:text-site-text">
  <ArrowLeft className="h-5 w-5"/>

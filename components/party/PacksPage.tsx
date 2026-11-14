@@ -16,6 +16,8 @@ import { PACK_MAX_PROMPTS, PACK_MIN_PROMPTS, type PackView } from '@/lib/party/p
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createPackApi, listPacksApi, type PackLists } from '@/lib/party/packs.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export function PacksPage() {
   const { t } = useTranslation('f-party');
@@ -27,6 +29,7 @@ export function PacksPage() {
   const [name, setName] = useState('');
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const arrival = useArrival(lists !== null);
 
   const load = useCallback(async () => {
     try {
@@ -166,7 +169,7 @@ export function PacksPage() {
   );
 
   const section = (title: string, items: PackView[], empty: string) => (
-    <section className="space-y-3">
+    <section className={cn('space-y-3', arrival)}>
       <h2 className="site-section-label">{title}</h2>
       {items.length ? (
         <div className="grid gap-3 sm:grid-cols-2">{items.map(card)}</div>

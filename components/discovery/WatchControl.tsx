@@ -5,6 +5,8 @@ import { toast } from '@/lib/toast';
 import { Select } from '@/components/ui/select';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import type { WatchKind, WatchLevel } from '@/lib/discovery/schema';
 import { api } from '@/lib/contract/client';
 import { getDiscoveryWatchApi, setDiscoveryWatchApi } from '@/lib/discovery/discovery.contract';
@@ -16,6 +18,8 @@ export function WatchControl({ kind, targetId }: { kind: WatchKind; targetId: st
   const idle = useIdleReady();
   const [level, setLevel] = useState<WatchLevel | null>(null);
   const on = !!session && idle;
+  // Steel M9: the picker appears after idle and a fetch.
+  const arrival = useArrival(on && !!level);
 
   useEffect(() => {
     if (!on) return;
@@ -44,7 +48,7 @@ export function WatchControl({ kind, targetId }: { kind: WatchKind; targetId: st
   };
 
   return (
-    <span className="inline-flex items-center gap-1.5">
+    <span className={cn('inline-flex items-center gap-1.5', arrival)}>
       <Eye className="h-4 w-4 text-site-text-muted" aria-hidden />
       <Select
         controlSize="sm"

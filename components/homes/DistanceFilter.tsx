@@ -37,6 +37,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { LocationSearch, type HomesPlace } from './LocationSearch';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface DistanceFilterProps {
   unit?: DistanceUnit;
@@ -60,6 +62,8 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
   const [draftLabel, setDraftLabel] = useState('');
   const [draftQuery, setDraftQuery] = useState('');
   const [draftPlace, setDraftPlace] = useState<HomesPlace | null>(null);
+  // Saved places are read from storage after mount and take the empty line's place.
+  const placesArrival = useArrival(places.length > 0);
 
   // localStorage is browser-only; reading it in the initial state would break
   // hydration.
@@ -212,7 +216,7 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
       {places.length > 0 ? (
         <>
           <div
-            className="mt-3 flex flex-wrap gap-2"
+            className={cn('mt-3 flex flex-wrap gap-2', placesArrival)}
             role="group"
             aria-label={t('homes.distancePlaces', { defaultValue: 'Saved places' })}
           >

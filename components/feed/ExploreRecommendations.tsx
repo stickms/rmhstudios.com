@@ -14,6 +14,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { DeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { FeedItem } from '@/lib/feed-types';
+import { useArrival } from '@/components/ui/arrive';
 
 interface Community {
   id: string;
@@ -186,6 +187,10 @@ export function ExploreRecommendations({
     },
   ];
 
+  // Steel M9: discovery fetched here replaces the spinner; the tips leaderboard lands later on its own.
+  const arrival = useArrival(!(needsExploreData && loading));
+  const tipsArrival = useArrival(tipLeaders.length > 0);
+
   if (needsExploreData && loading) {
     return (
       <div className="flex justify-center px-4 pt-4 pb-12">
@@ -200,7 +205,7 @@ export function ExploreRecommendations({
   // Steel section 10, Explore: stations per kind, rows on rules. Each station is a heading on the spine and rows under
   // it; there are no cards, tiles or pictures.
   return (
-    <Spine>
+    <Spine className={arrival}>
       {/* Trending tags */}
       {showTrending && data && data.trendingTags.length > 0 && (
         <section>
@@ -251,7 +256,7 @@ export function ExploreRecommendations({
       <DeferOnNavigate enabled={tab === 'top'} minHeight="100vh">
         {/* Top supported creators: a people section, so it follows the same tab gate as People. */}
         {showPeople && tipLeaders.length > 0 && (
-          <section>
+          <section className={tipsArrival}>
             <SpineStation>
               {t('top-supported-this-week', { defaultValue: 'Top supported this week' })}
             </SpineStation>

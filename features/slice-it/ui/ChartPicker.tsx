@@ -17,6 +17,8 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star, User } from 'lucide-react';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface ChartOption {
   id: string | null;
@@ -40,10 +42,12 @@ export function ChartPicker({
   onSelect: (chartId: string | null) => void;
 }) {
   const { t } = useTranslation('r-slice-it');
+  // The chart list is fetched after the song opens: the picker fades in when it lands (M9).
+  const arrival = useArrival(charts.length > 1);
   if (charts.length <= 1) return null;
 
   return (
-    <div className="p-4 border-b border-slice-shadow-dark/30">
+    <div className={cn('p-4 border-b border-slice-shadow-dark/30', arrival)}>
       <h3 className="text-sm font-bold text-slice-text uppercase mb-3">
         {t('chart-picker', { defaultValue: 'Chart' })}
       </h3>

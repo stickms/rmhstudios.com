@@ -1,7 +1,8 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // Discussion and the devil's-advocate button load only when a card is opened.
 const MarketPanel = lazy(() => import('./MarketPanel').then((m) => ({ default: m.MarketPanel })));
@@ -30,9 +31,9 @@ export function MarketExtras({ marketId, signedIn, held }: Props) {
           : t('discuss', { defaultValue: 'Discuss' })}
       </button>
       {open && (
-        <Suspense fallback={<Spinner />}>
+        <ArrivalSuspense fallback={<Spinner />}>
           <MarketPanel marketId={marketId} signedIn={signedIn} held={held} />
-        </Suspense>
+        </ArrivalSuspense>
       )}
     </div>
   );

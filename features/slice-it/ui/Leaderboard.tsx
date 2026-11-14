@@ -26,6 +26,8 @@ import {
   type BoardEntry,
   type LeaderboardResponse,
 } from '@features/slice-it/engine/play.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 /**
  * The song / global leaderboard panel.
  *
@@ -80,6 +82,7 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
   const [self, setSelf] = useState<BoardEntry | null>(null);
   const [unavailable, setUnavailable] = useState<LeaderboardResponse['scopeUnavailable']>();
   const [isLoading, setIsLoading] = useState(false);
+  const arrival = useArrival(!isLoading);
 
   const [difficulty, setDifficulty] = useState<Difficulty | 'all'>('all');
   const [modPool, setModPool] = useState<ModPool | 'all'>('all');
@@ -241,7 +244,9 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
             {t('loading', { defaultValue: 'Loading...' })}
           </div>
         ) : unavailable ? (
-          <div className="text-slice-text-light text-center py-4 px-2 leading-relaxed">
+          <div
+            className={cn('text-slice-text-light text-center py-4 px-2 leading-relaxed', arrival)}
+          >
             {unavailable === 'signed-out'
               ? ts('board-scope-signed-out', {
                   defaultValue: 'Sign in to see how you compare to people you follow.',
@@ -251,7 +256,7 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
                 })}
           </div>
         ) : entries.length === 0 ? (
-          <div className="text-slice-text-light text-center py-4">
+          <div className={cn('text-slice-text-light text-center py-4', arrival)}>
             {t('no-scores-yet', { defaultValue: 'No scores yet' })}
           </div>
         ) : (
@@ -262,12 +267,21 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
                 entry={entry}
                 replayId={replays[entry.userId]}
                 onWatch={setWatching}
+                className={arrival}
               />
             ))}
             {showSelf && (
               <>
-                <div className="h-px bg-slice-shadow-dark/40 my-1" role="presentation" />
-                <Row entry={self} replayId={replays[self.userId]} onWatch={setWatching} />
+                <div
+                  className={cn('h-px bg-slice-shadow-dark/40 my-1', arrival)}
+                  role="presentation"
+                />
+                <Row
+                  entry={self}
+                  replayId={replays[self.userId]}
+                  onWatch={setWatching}
+                  className={arrival}
+                />
               </>
             )}
           </>
@@ -339,11 +353,13 @@ function Row({
   entry,
   replayId,
   onWatch,
+  className,
 }: {
   entry: BoardEntry;
   /** Present only when this run has a stored input log (`R3`). */
   replayId?: string;
   onWatch?: (replayId: string) => void;
+  className?: string;
 }) {
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
@@ -362,6 +378,7 @@ function Row({
                 : ''
         }
         ${entry.isSelf ? 'bg-blue-500/10' : ''}
+        ${className ?? ''}
       `}
     >
       <span className="text-slice-text-light w-5 text-center font-bold shrink-0">{rank}.</span>

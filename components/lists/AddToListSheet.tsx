@@ -18,6 +18,7 @@ import {
   getUserListsApi,
   removeListMemberApi,
 } from '@/lib/lists/lists.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 type ListRow = ListView & { containsTarget?: boolean };
 
@@ -30,6 +31,7 @@ export function AddToListSheet({ targetUserId }: { targetUserId: string }) {
   const [open, setOpen] = useState(false);
   const [lists, setLists] = useState<ListRow[] | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+  const arrival = useArrival(lists !== null);
 
   async function load() {
     setOpen(true);
@@ -82,11 +84,11 @@ export function AddToListSheet({ targetUserId }: { targetUserId: string }) {
               {t('loading', { defaultValue: 'Loading…' })}
             </p>
           ) : lists.length === 0 ? (
-            <p className="py-6 text-center text-sm text-site-text-muted">
+            <p className={cn('py-6 text-center text-sm text-site-text-muted', arrival)}>
               {t('no-lists', { defaultValue: 'Create a list first from the Lists page.' })}
             </p>
           ) : (
-            <ul className="divide-y divide-site-border">
+            <ul className={cn('divide-y divide-site-border', arrival)}>
               {lists.map((l) => (
                 <li key={l.id}>
                   <button

@@ -6,6 +6,7 @@ import { VirtualPostList } from '@/components/feed/VirtualPostList';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import type { FeedItem } from '@/lib/feed-types';
 
@@ -21,6 +22,8 @@ export default function HallOfFamePanel({ slug }: { slug: string }) {
   const [cursor, setCursor] = useState<string | null>(null);
   const [threshold, setThreshold] = useState(5);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Later pages fade row by row inside VirtualPostList.
+  const arrival = useArrival(items !== null);
 
   const load = useCallback(
     async (from: string | null) => {
@@ -54,7 +57,7 @@ export default function HallOfFamePanel({ slug }: { slug: string }) {
   }
 
   return (
-    <div>
+    <div className={arrival}>
       <p className="px-4 py-3 text-xs text-site-text-muted">
         {t('fame-hint', {
           n: threshold,

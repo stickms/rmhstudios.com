@@ -5,6 +5,7 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SpineItem } from '@/components/ui/spine';
+import { useArrival } from '@/components/ui/arrive';
 import { fetchJson } from '@/lib/http';
 import { FORTUNE_MAX } from '@/lib/delight/shared';
 
@@ -16,6 +17,8 @@ export default function FortuneCard() {
   const [composing, setComposing] = useState(false);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  // Mounted after idle and filled by its own request: it always lands after the first paint.
+  const arrival = useArrival(fortune !== undefined);
 
   useEffect(() => {
     let alive = true;
@@ -58,6 +61,7 @@ export default function FortuneCard() {
     <SpineItem
       as="section"
       dot={false}
+      className={arrival}
       aria-label={t('fortune-title', { defaultValue: 'Fortune cookie' })}
     >
       <p className="t-label">{t('fortune-title', { defaultValue: 'Fortune cookie' })}</p>

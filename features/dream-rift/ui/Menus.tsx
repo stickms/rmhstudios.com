@@ -34,6 +34,8 @@ import { useFocusReturn } from '@/components/shared/useFocusReturn';
 import { SheetPortrait } from './SheetPortrait';
 import { MenuBackdrop } from './MenuBackdrop';
 import { useRuntime } from './runtime';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import './menus.css';
 
 const DIFF_COLOR: Record<Difficulty, string> = {
@@ -258,6 +260,9 @@ export function CharacterSelect({ onStart, onBack }: { onStart: (char: PlayerId,
 export function LobbyBrowser({ onBack }: { onBack: () => void }) {
     const { t } = useTranslation('c-dream-rift');
     const browse = useDreamRift((s) => s.browse);
+    // The hub's lobby list lands after the screen shows, and grows while it is open (M9).
+    const browseArrival = useArrival(browse.length > 0);
+    const isNewLobby = useArrivingKeys(browse.map((l) => l.code));
     const connection = useDreamRift((s) => s.connection);
     const errorMsg = useDreamRift((s) => s.errorMsg);
     const difficulty = useDreamRift((s) => s.difficulty);
@@ -336,9 +341,14 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
                     {browse.length === 0 ? (
                         <div className="drm-empty">{t('menu-no-lobbies', { defaultValue: 'No open lobbies — create one!' })}</div>
                     ) : (
-                        <div className="drm-list">
+                        <div className={cn('drm-list', browseArrival)}>
                             {browse.map((l) => (
-                                <button key={l.code} type="button" onClick={() => joinLobby(l.code)} className="drm-row">
+                                <button
+                                    key={l.code}
+                                    type="button"
+                                    onClick={() => joinLobby(l.code)}
+                                    className={cn('drm-row', isNewLobby(l.code) && ARRIVE)}
+                                >
                                     <div className="min-w-0">
                                         <div className="drm-row__name">{t('menu-lobby-rift', { defaultValue: "{{name}}'s rift", name: l.hostName })}</div>
                                         <div className="drm-row__meta">

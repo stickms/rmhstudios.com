@@ -20,11 +20,13 @@ import {
   type ScoreSaveData,
 } from '@features/synapse-storm/engine/persistence';
 import { SynapseStormGame } from './SynapseStormGame';
+import { useArrival } from '@/components/ui/arrive';
 
 export function SynapseStormGate() {
   const session = useSession();
   const [loading, setLoading] = useState(true);
   const signedIn = Boolean(session.data?.user);
+  const arrival = useArrival(!session.isPending && !loading);
 
   useEffect(() => {
     if (session.isPending) return;
@@ -55,7 +57,9 @@ export function SynapseStormGate() {
     );
   }
 
-  return (
+  const game = (
     <SynapseStormGame onSaveScore={handleSaveScore} currentUserId={session.data?.user?.id} />
   );
+  // The game replaces the spinner: it fades in through a box-less wrapper (M9).
+  return arrival ? <div className="arrive-group">{game}</div> : game;
 }

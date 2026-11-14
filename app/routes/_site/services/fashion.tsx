@@ -1,8 +1,9 @@
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { buildMeta, buildCanonical } from '@/lib/seo';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /**
  * /services/fashion — RMH Fashion, on a page of its own.
@@ -45,9 +46,9 @@ function Showcase() {
       <div className="px-4 pt-4 pb-12">
         {/* Holds the showcase's height while its chunk loads, so the page does
             not collapse to the title and shove back down when it lands. */}
-        <Suspense fallback={<div className="min-h-[70dvh]" aria-hidden />}>
+        <ArrivalSuspense fallback={<div className="min-h-[70dvh]" aria-hidden />}>
           <FashionStudio />
-        </Suspense>
+        </ArrivalSuspense>
       </div>
     </PageLayout>
   );

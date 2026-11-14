@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import type { ChartSeries, DeployMarker, RangeId } from '@/lib/ops/series';
 import { MetricChart } from './MetricChart';
 import { api } from '@/lib/contract/client';
@@ -15,6 +17,7 @@ export function MetricsSection() {
   const [deploys, setDeploys] = useState<DeployMarker[]>([]);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const arrival = useArrival(failed || series !== null);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +63,7 @@ export function MetricsSection() {
         />
       </div>
       {failed ? (
-        <p className="mt-3 t-body text-site-text-muted">
+        <p className={cn('mt-3 t-body text-site-text-muted', arrival)}>
           {t('metrics-failed', {
             defaultValue: 'Could not load the metrics. Refresh to try again.',
           })}
@@ -71,7 +74,7 @@ export function MetricsSection() {
         </div>
       ) : (
         // Keep the previous charts on screen (dimmed) while a new range loads.
-        <div className={`mt-3 grid gap-3 xl:grid-cols-2 ${loading ? 'opacity-60' : ''}`}>
+        <div className={cn('mt-3 grid gap-3 xl:grid-cols-2', loading && 'opacity-60', arrival)}>
           {series.map((s) => (
             <MetricChart key={s.key} series={s} deploys={deploys} withDate={range === '7d'} />
           ))}

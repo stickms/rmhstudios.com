@@ -4,6 +4,8 @@ import { Landmark } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { fetchJson } from '@/lib/http';
 
 interface Era {
@@ -22,6 +24,7 @@ export function MuseumPage() {
     queryFn: () => fetchJson<{ eras: Era[] }>('/api/museum'),
     staleTime: 5 * 60_000,
   });
+  const arrival = useArrival(!q.isPending);
   return (
     <PageLayout
       title={t('museum-title', { defaultValue: 'Site museum' })}
@@ -34,11 +37,12 @@ export function MuseumPage() {
           <Skeleton className="h-48 w-full" />
         ) : !q.data?.eras.length ? (
           <EmptyState
+            className={arrival}
             icon={Landmark}
             title={t('museum-empty', { defaultValue: 'The museum is still being curated' })}
           />
         ) : (
-          <ol className="max-w-2xl space-y-3 border-s border-site-border ps-4">
+          <ol className={cn('max-w-2xl space-y-3 border-s border-site-border ps-4', arrival)}>
             {q.data.eras.map((e) => (
               <li key={e.id} className="space-y-3 rounded-site px-4 py-3">
                 <time

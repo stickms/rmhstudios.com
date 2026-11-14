@@ -23,7 +23,7 @@
  * over a data table and it is the only version that is actually translated.
  */
 
-import { Suspense, lazy, useState } from 'react';
+import { lazy, useState } from 'react';
 import { ArrowRight, Car, Users, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
@@ -33,6 +33,7 @@ import { getCarBody, type CarBodySpec } from '@/lib/rideshare/cars';
 import { RIDE_CLASS_ICONS } from '@/components/rideshare/RideClassPicker';
 import { CarSilhouette } from './CarSilhouette';
 import './cars.css';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /**
  * The stage pulls in three.js — around a megabyte of vendor JS — so it is split
@@ -147,7 +148,7 @@ export function CarFamily() {
       </header>
 
       <section aria-label={t('cars-stage-label', { defaultValue: 'Vehicle viewer' })}>
-        <Suspense
+        <ArrivalSuspense
           fallback={
             <div className="flex flex-col gap-3">
               <div className="rmhcar-stage rounded-site">
@@ -165,7 +166,7 @@ export function CarFamily() {
           }
         >
           <LiquidCarStage spec={active.body} name={active.info.name} description={description} />
-        </Suspense>
+        </ArrivalSuspense>
       </section>
 
       {/* The picker. Buttons, not a second tab strip: the stage is not one panel

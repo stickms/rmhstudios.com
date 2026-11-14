@@ -37,6 +37,7 @@ import PreviewToolbar from './PreviewToolbar';
 import { SceneProvider } from './scene-context';
 import TopBar from './TopBar';
 import { ValidationProvider } from './validation-context';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // The heavy panels (CodeMirror especially) and every dialog load on first use, so the editor
 // paints with just the file tree, preview and inspector; they are prefetched at idle below.
@@ -456,7 +457,7 @@ export default function Tf2HudEditor({ draft, hud, fork, embedded }: Props) {
       </div>
       <div className="min-h-0 flex-1">
         {rightTab === 'inspector' ? <Inspector /> : null}
-        <Suspense fallback={<PanelFallback />}>
+        <ArrivalSuspense fallback={<PanelFallback />}>
           {rightTab === 'blocks' ? <BlocksPanel /> : null}
           {rightTab === 'code' ? <CodePane /> : null}
           {rightTab === 'scheme' ? <SchemePanel /> : null}
@@ -465,7 +466,7 @@ export default function Tf2HudEditor({ draft, hud, fork, embedded }: Props) {
           {rightTab === 'diff' ? <DiffView /> : null}
           {rightTab === 'problems' ? <ProblemsPanel /> : null}
           {rightTab === 'assets' ? <AssetsPanel /> : null}
-        </Suspense>
+        </ArrivalSuspense>
       </div>
     </div>
   );

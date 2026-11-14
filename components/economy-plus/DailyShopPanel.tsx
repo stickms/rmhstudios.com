@@ -20,6 +20,8 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { CoinAmount } from '@/components/shop/CoinAmount';
 import { ItemPicture } from '@/components/shop/ItemPicture';
 import { RarityMark } from '@/components/shop/RarityMark';
@@ -49,6 +51,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
     queryFn: () => apiJson<DailyShopView>('/api/shop/daily'),
     staleTime: 30_000,
   });
+  const arrival = useArrival(!isLoading && !!data);
 
   // After anything that changes ownership, the Shop tab's own loader data is
   // stale too (it remounts from the cached loader result), so refresh both.
@@ -137,7 +140,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
   }
 
   return (
-    <div className="flex flex-col gap-10 pt-4">
+    <div className={cn('flex flex-col gap-10 pt-4', arrival)}>
       <section aria-labelledby="daily-title" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
           <div className="min-w-0">
@@ -315,6 +318,7 @@ function LoadoutsSection({ onApplied }: { onApplied: () => void }) {
     queryFn: () => apiJson<{ loadouts: LoadoutView[] }>('/api/shop/loadouts'),
     staleTime: 30_000,
   });
+  const arrival = useArrival(!isLoading);
 
   const save = useMutation({
     mutationFn: () =>
@@ -414,13 +418,14 @@ function LoadoutsSection({ onApplied }: { onApplied: () => void }) {
         <Skeleton className="h-16 w-full" />
       ) : loadouts.length === 0 ? (
         <EmptyState
+          className={arrival}
           title={t('lo-empty-title', { defaultValue: 'No saved loadouts' })}
           description={t('lo-empty-text', {
             defaultValue: 'Equip cosmetics in the shop, then save them here.',
           })}
         />
       ) : (
-        <ul className="border-t border-site-border">
+        <ul className={cn('border-t border-site-border', arrival)}>
           {loadouts.map((l) => (
             <li
               key={l.id}

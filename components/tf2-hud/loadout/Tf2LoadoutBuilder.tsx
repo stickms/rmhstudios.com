@@ -97,6 +97,7 @@ import ItemPreviewModal from './ItemPreviewModal';
 import { IconButton } from '@/components/ui/icon-button';
 import WarningList from './WarningList';
 import { CLASS_DEFAULT } from './labels';
+import { useArrival } from '@/components/ui/arrive';
 
 const SITE = () => (typeof window === 'undefined' ? '' : window.location.origin);
 const PAGE = 60;
@@ -121,6 +122,7 @@ export default function Tf2LoadoutBuilder({
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const cat = useCatalog();
+  const arrival = useArrival(cat.status !== 'loading');
 
   // From `lg` the whole page — header included — is exactly the window, so only the columns scroll.
   // Sizing just the <main> to the window left the page one header taller than it, and it scrolled too.
@@ -145,14 +147,17 @@ export default function Tf2LoadoutBuilder({
           {t('catalog-loading', { defaultValue: 'Loading the item catalog…' })}
         </p>
       ) : cat.status === 'error' ? (
-        <p role="alert" className="p-10 text-center text-sm text-app-danger">
+        <p role="alert" className={cn('p-10 text-center text-sm text-app-danger', arrival)}>
           {t('catalog-error', { defaultValue: 'Could not load the item catalog.' })}{' '}
           <button type="button" className="underline" onClick={cat.retry}>
             {t('retry', { defaultValue: 'Retry' })}
           </button>
         </p>
       ) : (
-        <Builder idx={cat.index} initialClass={initialClass} loadoutId={loadoutId} />
+        // A box-less wrapper keeps the builder a flex item of the page; it fades in over the catalog wait (M9).
+        <div className={arrival ? 'arrive-group' : 'contents'}>
+          <Builder idx={cat.index} initialClass={initialClass} loadoutId={loadoutId} />
+        </div>
       )}
     </div>
   );

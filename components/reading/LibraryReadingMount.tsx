@@ -5,7 +5,8 @@
  * fetched once this decides to render it.
  */
 
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
@@ -16,8 +17,8 @@ export function LibraryReadingMount() {
   const idle = useIdleReady();
   if (!data || !idle) return null;
   return (
-    <Suspense fallback={null}>
+    <ArrivalSuspense>
       <LibraryReadingStrip />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

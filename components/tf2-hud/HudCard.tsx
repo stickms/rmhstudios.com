@@ -8,11 +8,25 @@ import { GitFork, Heart, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { HudSummary } from '@/lib/tf2-hud/api-types';
 import { Pill } from './ui';
+import { cn } from '@/lib/utils';
 
-export default function HudCard({ hud, actions }: { hud: HudSummary; actions?: React.ReactNode }) {
+export default function HudCard({
+  hud,
+  actions,
+  className,
+}: {
+  hud: HudSummary;
+  actions?: React.ReactNode;
+  className?: string;
+}) {
   const { t } = useTranslation('c-tf2-hud');
   return (
-    <article className="relative flex flex-col gap-2 rounded-app border border-app-border bg-app-bg-subtle p-4 hover:border-app-border-bright">
+    <article
+      className={cn(
+        'relative flex flex-col gap-2 rounded-app border border-app-border bg-app-bg-subtle p-4 hover:border-app-border-bright',
+        className,
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <h2 className="tf2hud-title min-w-0 truncate text-xl">
           <Link

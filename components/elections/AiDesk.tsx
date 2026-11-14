@@ -8,6 +8,8 @@ import { timeAgo, useNow } from './hooks';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { getElectionSummaryApi, askElectionsApi } from '@/lib/elections/elections.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface SummaryResponse {
   summary: string | null;
@@ -45,6 +47,7 @@ export function AiDesk({
     staleTime: 20_000,
     retry: 1,
   });
+  const summaryArrival = useArrival(!!data?.summary);
 
   const ask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,8 +88,10 @@ export function AiDesk({
         </p>
         {data?.summary ? (
           <>
-            <p className="el-desk__prose" aria-live="polite">{data.summary}</p>
-            <p className="el-eyebrow" style={{ margin: '12px 0 0' }}>
+            <p className={cn('el-desk__prose', summaryArrival)} aria-live="polite">
+              {data.summary}
+            </p>
+            <p className={cn('el-eyebrow', summaryArrival)} style={{ margin: '12px 0 0' }}>
               {t('desk.briefingNote', { defaultValue: 'Generated automatically from the live numbers. Calls are projections, not certified results.' })}
             </p>
           </>

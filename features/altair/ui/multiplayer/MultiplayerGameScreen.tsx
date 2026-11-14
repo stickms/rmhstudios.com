@@ -44,6 +44,8 @@ import { preloadAllSprites } from '@features/altair/engine/engine/sprites/sprite
 import MobileDPad from '@features/altair/ui/mobile/MobileDPad';
 import CoopHud, { type CoopHudPlayer, type CoopHudBoss, type CoopHudSelf } from '@features/altair/ui/multiplayer/CoopHud';
 import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface MultiplayerGameScreenProps {
   lobbyId: string;
@@ -126,6 +128,8 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
   rosterRef.current = roster;
 
   const [spritesReady, setSpritesReady] = useState(false);
+  // The match replaces the asset loading screen: it fades in (M9).
+  const arrival = useArrival(spritesReady);
   const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0 });
   const [hud, setHud] = useState<HudState | null>(null);
   const [hostGone, setHostGone] = useState(false);
@@ -476,7 +480,7 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
       ref={rootRef}
       data-testid="coop-match"
       data-role={isHost ? 'host' : 'guest'}
-      className="fixed inset-0 overflow-hidden bg-(--altair-hud-scrim)"
+      className={cn('fixed inset-0 overflow-hidden bg-(--altair-hud-scrim)', arrival)}
       style={{ width: '100vw', height: '100dvh', touchAction: 'none', overscrollBehavior: 'none' }}
     >
       <canvas

@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { createPortal } from 'react-dom';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -56,18 +57,14 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
         // rewrite its nodes crashes React with a removeChild error.
         // The picker floats in a bare fixed div, so it carries the L4 surface itself.
         <div data-no-twemoji className="surface-overlay overflow-hidden p-0">
-          <Suspense
-            fallback={
-              <Skeleton className="h-[360px] w-[300px] rounded-site" />
-            }
-          >
+          <ArrivalSuspense fallback={<Skeleton className="h-[360px] w-[300px] rounded-site" />}>
             <EmojiPickerPanel
               onSelect={(emoji) => {
                 onSelect(emoji);
                 onClose();
               }}
             />
-          </Suspense>
+          </ArrivalSuspense>
         </div>
       ) : (
         <div

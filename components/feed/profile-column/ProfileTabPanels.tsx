@@ -1,4 +1,5 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Spinner } from '@/components/ui/spinner';
 import type { ProfileData } from '@/components/profile/profile-types';
 import { AchievementsColumn } from '../AchievementsColumn';
@@ -39,21 +40,21 @@ export function ProfileTabPanels({
       )}
 
       {tab === 'guestbook' && (
-        <Suspense fallback={<PanelFallback />}>
+        <ArrivalSuspense fallback={<PanelFallback />}>
           <GuestbookPanel ownerId={profile.id} onModeChange={onGuestbookModeChange} />
-        </Suspense>
+        </ArrivalSuspense>
       )}
 
       {tab === 'kudos' && (
-        <Suspense fallback={<PanelFallback />}>
+        <ArrivalSuspense fallback={<PanelFallback />}>
           <KudosPanel ownerId={profile.id} isOwner={profile.isOwnProfile} />
-        </Suspense>
+        </ArrivalSuspense>
       )}
 
       {tab === 'shelves' && (
-        <Suspense fallback={<PanelFallback />}>
+        <ArrivalSuspense fallback={<PanelFallback />}>
           <ProfileShelvesPanel ownerId={profile.id} />
-        </Suspense>
+        </ArrivalSuspense>
       )}
     </>
   );

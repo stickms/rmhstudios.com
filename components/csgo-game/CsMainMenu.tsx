@@ -24,6 +24,7 @@ import OptionsDialog from '../tf2-game/menus/OptionsDialog';
 import '../tf2-game/register-session';
 import { useMenuSource } from '../tf2-game/menus/use-menu-source';
 import { CS_LOGO, CsScene } from './cs-art';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import './cs-menu.css';
 
 export type CsPlaySource = 'offline' | 'host' | 'browse';
@@ -265,6 +266,9 @@ function CsRooms({ signedIn, onJoin, modeLabel }: { signedIn: boolean; onJoin: (
   const { t } = useTranslation('c-tf2-game');
   const [rooms, setRooms] = useState<RoomListEntry[] | null>(null);
   const [code, setCode] = useState('');
+  // M9: the list replaces "Connecting…", and a room that opens later joins it with a fade.
+  const arrival = useArrival(rooms !== null);
+  const isNewRoom = useArrivingKeys((rooms ?? []).map((r) => r.code));
   const net = useRef<typeof import('@/lib/tf2-game/net/client') | null>(null);
 
   useEffect(() => {
@@ -303,11 +307,11 @@ function CsRooms({ signedIn, onJoin, modeLabel }: { signedIn: boolean; onJoin: (
       {rooms === null ? (
         <p className="pano-note">{t('play_status_connecting', { defaultValue: 'Connecting…' })}</p>
       ) : rooms.length === 0 ? (
-        <p className="pano-note">{t('cs_rooms_empty', { defaultValue: 'Nobody is hosting right now. Host a game, or practise offline.' })}</p>
+        <p className={cn('pano-note', arrival)}>{t('cs_rooms_empty', { defaultValue: 'Nobody is hosting right now. Host a game, or practise offline.' })}</p>
       ) : (
-        <ul className="pano-room-list">
+        <ul className={cn('pano-room-list', arrival)}>
           {rooms.map((r) => (
-            <li key={r.code} className="pano-room">
+            <li key={r.code} className={cn('pano-room', isNewRoom(r.code) && ARRIVE)}>
               <span className="pano-room-name">
                 <span>{r.name || r.code}</span>
                 <small>

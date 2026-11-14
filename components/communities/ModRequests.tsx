@@ -8,6 +8,8 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import type { JoinRequestDTO } from '@/lib/communities/join-requests.server';
@@ -16,6 +18,7 @@ export function ModRequests({ slug }: { slug: string }) {
   const { t } = useTranslation('f-communities-plus');
   const [requests, setRequests] = useState<JoinRequestDTO[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const arrival = useArrival(requests !== null);
   const listRef = useRef<HTMLUListElement>(null);
 
   const load = useCallback(async () => {
@@ -54,6 +57,7 @@ export function ModRequests({ slug }: { slug: string }) {
   if (requests.length === 0) {
     return (
       <EmptyState
+        className={arrival}
         icon={UserPlus}
         title={t('requests-empty', { defaultValue: 'No pending requests' })}
       />
@@ -61,7 +65,7 @@ export function ModRequests({ slug }: { slug: string }) {
   }
 
   return (
-    <ul ref={listRef} className="flex flex-col gap-2">
+    <ul ref={listRef} className={cn('flex flex-col gap-2', arrival)}>
       {requests.map((r) => {
         const name = r.user.name || r.user.handle || t('someone', { defaultValue: 'Someone' });
         return (

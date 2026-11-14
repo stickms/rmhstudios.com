@@ -47,6 +47,8 @@ import { submitGameScoreApi } from '@/lib/game/score.contract';
 import { TRICK_LIST } from '@features/nightrail/engine/constants';
 import { LEVELS, LEVEL_ORDER } from '@features/nightrail/engine/levels';
 import type { LevelId, RunStats, TrickDirection } from '@features/nightrail/engine/types';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export type UIState =
   'menu' | 'levelSelect' | 'tricktionary' | 'playing' | 'crashed' | 'runComplete';
@@ -133,6 +135,7 @@ export function NightrailUI({
   const quit = useQuitGame();
   const session = useSession();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const lbArrival = useArrival(leaderboard.length > 0);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   // A ref, not the state flag, guards the POST: state updates are async, and
@@ -207,7 +210,7 @@ export function NightrailUI({
 
   const leaderboardPanel = (limit: number, title: string) =>
     leaderboard.length > 0 ? (
-      <div className={PANEL}>
+      <div className={cn(PANEL, lbArrival)}>
         <div className="mb-3 flex items-center gap-2">
           <Trophy className="h-4 w-4 text-amber-400" aria-hidden="true" />
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</span>

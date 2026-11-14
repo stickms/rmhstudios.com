@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
@@ -37,6 +39,7 @@ const splitList = (raw: string) =>
 export function ModAutomod({ slug }: { slug: string }) {
   const { t } = useTranslation('f-communities-plus');
   const [rules, setRules] = useState<RuleRow[] | null>(null);
+  const arrival = useArrival(rules !== null);
   const [name, setName] = useState('');
   const [action, setAction] = useState<AutomodAction>('hold');
   const [appliesTo, setAppliesTo] = useState<AutomodAppliesTo>('both');
@@ -157,7 +160,7 @@ export function ModAutomod({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={cn('flex flex-col gap-4', arrival)}>
       <p className="text-xs text-site-text-muted">
         {t('automod-intro', {
           defaultValue:

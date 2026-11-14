@@ -7,6 +7,8 @@ import type { Build, BuildSortOption } from '@/lib/user-builds-types';
 import { transition } from '@/lib/motion';
 import { api } from '@/lib/contract/client';
 import { likeUserBuildApi, listUserBuildsApi } from '@/lib/user-builds.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface BuildGridProps {
   initialBuilds?: Build[];
@@ -37,6 +39,8 @@ export function BuildGrid({
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const arrival = useArrival(!loading);
+  const isNew = useArrivingKeys(builds.map((b) => b.id));
 
   const fetchBuilds = useCallback(
     async (cursorParam?: string) => {
@@ -149,7 +153,7 @@ export function BuildGrid({
 
   if (builds.length === 0) {
     return (
-      <div className="text-center py-20">
+      <div className={cn('text-center py-20', arrival)}>
         <p className="text-site-text-muted">
           {t('no-builds-found', { defaultValue: 'No builds found' })}
         </p>
@@ -163,7 +167,7 @@ export function BuildGrid({
   }
 
   return (
-    <div>
+    <div className={arrival}>
       <LayoutGroup>
         <div
           className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity duration-site ${resorting ? 'opacity-50 pointer-events-none' : ''}`}
@@ -171,6 +175,7 @@ export function BuildGrid({
           {builds.map((build) => (
             <motion.div
               key={build.id}
+              className={isNew(build.id) ? ARRIVE : undefined}
               layout
               transition={{ layout: transition }}
             >

@@ -19,12 +19,14 @@ export function WishButton({
   entityId,
   initialWished = false,
   label,
+  className,
 }: {
   entityType: WishlistEntityType;
   entityId: string;
   initialWished?: boolean;
   /** Optional visible text (e.g. "Notify me"); icon-only when omitted. */
   label?: string;
+  className?: string | undefined;
 }) {
   const { t } = useTranslation('c-wishlist');
   const [wished, setWished] = useState(initialWished);
@@ -54,6 +56,7 @@ export function WishButton({
       onClick={toggle}
       disabled={busy}
       aria-pressed={wished}
+      className={className}
     >
       <Heart className={cn('h-4 w-4', wished && 'fill-current')} aria-hidden />
       {label ?? (wished ? t('wished', { defaultValue: 'Wishlisted' }) : t('wish', { defaultValue: 'Wishlist' }))}

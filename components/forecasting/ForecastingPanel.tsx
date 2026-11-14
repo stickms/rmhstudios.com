@@ -12,6 +12,8 @@ import {
   type SeasonBoard,
   type SeasonSummary,
 } from '@/lib/forecasting/forecasting.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Bucket = CalibrationBucket;
 type Board = SeasonBoard;
@@ -53,6 +55,7 @@ function CalibrationCurve({ buckets }: { buckets: Bucket[] }) {
 function CalibrationCard() {
   const { t } = useTranslation('f-forecasting');
   const [cal, setCal] = useState<Calibration | null>(null);
+  const arrival = useArrival(cal !== null);
   useEffect(() => {
     api(calibrationApi)
       .then((d) => setCal(d.calibration ?? null))
@@ -66,7 +69,7 @@ function CalibrationCard() {
       {!cal ? (
         <Spinner size={16} />
       ) : !cal.enough ? (
-        <p className="text-sm text-site-text-muted">
+        <p className={cn('text-sm text-site-text-muted', arrival)}>
           {t('not-enough', {
             defaultValue: 'Not enough data yet: {{n}} of {{min}} resolved forecasts.',
             n: cal.n,
@@ -74,7 +77,7 @@ function CalibrationCard() {
           })}
         </p>
       ) : (
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className={cn('flex items-center gap-4 flex-wrap', arrival)}>
           <CalibrationCurve buckets={cal.buckets} />
           <dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 text-sm">
             <dt className="text-site-text-muted">{t('forecasts', { defaultValue: 'Forecasts' })}</dt>
@@ -101,6 +104,7 @@ function SeasonCard({ isAdmin }: { isAdmin: boolean }) {
     load();
   }, []);
   const board = data?.board;
+  const seasonArrival = useArrival(data !== null);
   return (
     <section className="rounded-site p-5 flex flex-col gap-3">
       <h2 className="site-section-label">
@@ -109,12 +113,12 @@ function SeasonCard({ isAdmin }: { isAdmin: boolean }) {
       {!data ? (
         <Spinner size={16} />
       ) : !board ? (
-        <p className="text-sm text-site-text-muted">
+        <p className={cn('text-sm text-site-text-muted', seasonArrival)}>
           {t('no-season', { defaultValue: 'No season is running yet.' })}
         </p>
       ) : (
         <>
-          <p className="text-sm text-site-text-muted">
+          <p className={cn('text-sm text-site-text-muted', seasonArrival)}>
             {t('season-meta', {
               defaultValue:
                 '{{title}}: {{resolved}} of {{total}} markets resolved. Points only, no coins.',
@@ -124,11 +128,11 @@ function SeasonCard({ isAdmin }: { isAdmin: boolean }) {
             })}
           </p>
           {board.leaderboard.length === 0 ? (
-            <p className="text-sm text-site-text-muted">
+            <p className={cn('text-sm text-site-text-muted', seasonArrival)}>
               {t('no-scores', { defaultValue: 'Scores appear once a season market resolves.' })}
             </p>
           ) : (
-            <ol className="flex flex-col gap-2">
+            <ol className={cn('flex flex-col gap-2', seasonArrival)}>
               {board.leaderboard.map((r, i) => (
                 <li key={r.userId} className="flex items-center gap-3 text-sm">
                   <span className="w-6 text-site-text-muted tabular-nums">{i + 1}</span>

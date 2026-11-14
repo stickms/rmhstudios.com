@@ -23,6 +23,8 @@ import {
 import type { OfficeHoursPublicView, OfficeHoursSlotView } from '@/lib/calendar/types';
 import { api, viewerTimeZone } from './api';
 import { BookingRow } from './BookingRow';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function OfficeHoursBook({ hostId }: { hostId: string }) {
   const { t, i18n } = useTranslation('f-calendar');
@@ -30,6 +32,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
   const confirm = useConfirm();
   const [view, setView] = useState<OfficeHoursPublicView | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
+  const arrival = useArrival(state !== 'loading');
   const [picked, setPicked] = useState<OfficeHoursSlotView | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -80,6 +83,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
     return (
       <EmptyState
         icon={CalendarClock}
+        className={arrival}
         title={t('oh-missing-title', { defaultValue: 'No office hours here' })}
         description={t('oh-missing-body', {
           defaultValue: 'This member has not published any bookable times.',
@@ -126,7 +130,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
   };
 
   return (
-    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+    <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', arrival)}>
       <header className="flex items-start gap-3">
         <UserAvatar src={view.host.image} alt="" size={48} />
         <div className="min-w-0">

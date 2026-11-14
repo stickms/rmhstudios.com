@@ -11,11 +11,11 @@
  * arriving reads as the game appearing rather than as a flash.
  */
 import './island.css';
-import { Suspense } from 'react';
 import { mountIsland } from '@/components/island/mount';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { NightrailGame } from './ui/NightrailGame';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 mountIsland(
   <main
@@ -24,9 +24,11 @@ mountIsland(
   >
     <div className="grow relative overflow-hidden">
       <GameErrorBoundary gameName="Nightrail">
-        <Suspense fallback={<GameLoadingFallback background="#0a0713" foreground="#f0abfc" />}>
+        <ArrivalSuspense
+          fallback={<GameLoadingFallback background="#0a0713" foreground="#f0abfc" />}
+        >
           <NightrailGame />
-        </Suspense>
+        </ArrivalSuspense>
       </GameErrorBoundary>
     </div>
   </main>,

@@ -6,6 +6,8 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
+import { useArrival, useSuspenseArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { apiJson } from '@/components/economy-plus/api';
 import { api } from '@/lib/contract/client';
 import { searchSpotifyApi } from '@/lib/spotify.contract';
@@ -32,6 +34,9 @@ export default function MixtapeEditor({
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
+  // The editor is a lazy chunk behind ExchangeDetail's boundary; search results land later still.
+  const chunkArrival = useSuspenseArrival();
+  const hitsArrival = useArrival(hits.length > 0);
 
   async function search() {
     if (!q.trim()) return;
@@ -74,7 +79,11 @@ export default function MixtapeEditor({
   }
 
   return (
-    <section aria-labelledby="mx-h"className="space-y-3 p-4">
+    <section
+      aria-labelledby="mx-h"
+      className={cn('space-y-3 p-4', chunkArrival)}
+      suppressHydrationWarning
+    >
       <h2 id="mx-h" className="site-section-label">
         {t('mixtape-title', {
           defaultValue: 'Your mixtape ({{count}}/{{max}})',
@@ -120,7 +129,7 @@ export default function MixtapeEditor({
         </Button>
       </form>
       {hits.length > 0 ? (
-        <ul className="space-y-2">
+        <ul className={cn('space-y-2', hitsArrival)}>
           {hits.slice(0, 8).map((h) => (
             <li key={h.id} className="flex items-center justify-between gap-2 text-sm">
               <span className="min-w-0 truncate">

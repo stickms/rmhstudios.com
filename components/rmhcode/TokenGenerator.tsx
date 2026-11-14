@@ -13,6 +13,8 @@ import {
   listRmhCodeTokensApi,
   revokeRmhCodeTokenApi,
 } from '@/lib/rmhcode/tokens.contract';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Token {
   id: string;
@@ -30,6 +32,9 @@ export default function TokenGenerator() {
   const [newToken, setNewToken] = useState<string | null>(null);
   const [tokenName, setTokenName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // M9: the list replaces its placeholder rows; a token generated later fades into it.
+  const arrival = useArrival(!loading);
+  const isNew = useArrivingKeys(tokens.map((tk) => tk.id));
 
   useEffect(() => {
     fetchTokens();
@@ -154,19 +159,19 @@ export default function TokenGenerator() {
             ))}
           </div>
         ) : tokens.length === 0 ? (
-          <p className="text-sm text-site-text-muted py-4 text-center border border-dashed border-site-border rounded-site-sm">
+          <p className={cn('text-sm text-site-text-muted py-4 text-center border border-dashed border-site-border rounded-site-sm', arrival)}>
             {t("no-active-tokens", { defaultValue: "No active tokens. Generate one to get started." })}
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className={cn('space-y-2', arrival)}>
             {tokens.map((token) => (
               <div
                 key={token.id}
-                className={`surface-card flex items-center justify-between p-3 rounded-site-sm ${
-                  isExpired(token.expiresAt)
-                    ? 'bg-site-danger/10 border-site-danger/30'
-                    : ''
-                }`}
+                className={cn(
+                  'surface-card flex items-center justify-between p-3 rounded-site-sm',
+                  isExpired(token.expiresAt) && 'bg-site-danger/10 border-site-danger/30',
+                  isNew(token.id) && ARRIVE,
+                )}
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">

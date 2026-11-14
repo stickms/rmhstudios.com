@@ -1,9 +1,10 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
 
 import { WidgetFrame } from '@/components/ui/widget-frame';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { IconButton } from '@/components/ui/icon-button';
@@ -112,7 +113,8 @@ export function ProfileShowcase({
   }
 
   return (
-    <div className="mb-4 space-y-3">
+    // A flex gap, not space-y: an arriving module sits in ArrivalSuspense's box-less wrapper.
+    <div className="mb-4 flex flex-col gap-3">
       {isOwner ? (
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
@@ -304,14 +306,14 @@ function ModuleBlock({
 
   if (isPlusModuleKind(module.kind)) {
     return (
-      <Suspense fallback={null}>
+      <ArrivalSuspense>
         <PlusModules
           module={module as Parameters<typeof PlusModules>[0]['module']}
           title={title}
           userId={profile.id}
           isOwner={isOwner}
         />
-      </Suspense>
+      </ArrivalSuspense>
     );
   }
 

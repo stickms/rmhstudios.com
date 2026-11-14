@@ -11,6 +11,7 @@ import type { LoadoutSummary } from '@/lib/tf2-loadout/api-types';
 import type { CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemTile from './ItemTile';
 import { CLASS_DEFAULT } from './labels';
+import { cn } from '@/lib/utils';
 
 const PREVIEW = 8;
 
@@ -18,10 +19,12 @@ export default function LoadoutCard({
   loadout,
   idx,
   actions,
+  className,
 }: {
   loadout: LoadoutSummary;
   idx: CatalogIndex | null;
   actions?: React.ReactNode;
+  className?: string;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const entries = Object.values(loadout.slots);
@@ -34,7 +37,12 @@ export default function LoadoutCard({
       })
     : [];
   return (
-    <article className="relative flex flex-col gap-2 rounded-app border border-app-border bg-app-bg-subtle p-4 hover:border-app-border-bright">
+    <article
+      className={cn(
+        'relative flex flex-col gap-2 rounded-app border border-app-border bg-app-bg-subtle p-4 hover:border-app-border-bright',
+        className,
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <h2 className="tf2hud-title min-w-0 truncate text-xl">
           <Link

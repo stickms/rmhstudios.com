@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Search, Check, X, Music } from 'lucide-react';
 import { api } from '@/lib/contract/client';
 import { searchSpotifyApi } from '@/lib/spotify.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface SpotifyTrack {
  id: string;
@@ -24,6 +26,8 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  const [results, setResults] = useState<SpotifyTrack[]>([]);
  const [loading, setLoading] = useState(false);
  const [showSearch, setShowSearch] = useState(false);
+ // Steel M9: results replace "Searching...".
+ const arrival = useArrival(!loading);
  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
  useEffect(() => {
@@ -150,7 +154,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  )}
 
  {!loading && results.length > 0 && (
- <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-site relative">
+ <div className={cn('max-h-48 overflow-y-auto space-y-0.5 rounded-site relative', arrival)}>
  {results.map((track) => {
  const isSelected = selected?.id === track.id;
  return (
@@ -181,7 +185,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  )}
 
  {!loading && query.trim() && results.length === 0 && (
- <div className="text-center py-3 text-xs text-site-text-muted">
+ <div className={cn('text-center py-3 text-xs text-site-text-muted', arrival)}>
  {t("no-songs-found", { defaultValue:"No songs found"})}
  </div>
  )}

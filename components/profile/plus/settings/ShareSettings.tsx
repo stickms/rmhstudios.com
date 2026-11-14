@@ -4,11 +4,14 @@ import { Link } from '@tanstack/react-router';
 import { Download, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** P10 profile card (QR) and the doorway to webrings (P6). */
 export default function ShareSettings({ handleOrId }: { handleOrId: string }) {
   const { t } = useTranslation('f-profile-plus');
   const [loaded, setLoaded] = useState(false);
+  const arrival = useArrival(loaded);
   const src = `/api/profile/${encodeURIComponent(handleOrId)}/card`;
 
   return (
@@ -31,7 +34,7 @@ export default function ShareSettings({ handleOrId }: { handleOrId: string }) {
             width={1200}
             height={630}
             loading="lazy"
-            className="size-full object-cover"
+            className={cn('size-full object-cover', arrival)}
             onLoad={() => setLoaded(true)}
           />
         </div>

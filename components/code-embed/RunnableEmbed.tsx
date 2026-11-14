@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { buildSrcdoc } from '@/lib/code-embed/shared';
 import { postEmbedApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * A post's code snippet (F14). Nothing is fetched or run until the reader presses
@@ -16,6 +18,7 @@ export function RunnableEmbed({ postId }: { postId: string }) {
   const [doc, setDoc] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const arrival = useArrival(doc !== null);
 
   const run = async () => {
     setLoading(true);
@@ -76,7 +79,7 @@ export function RunnableEmbed({ postId }: { postId: string }) {
           referrerPolicy="no-referrer"
           srcDoc={doc}
           loading="lazy"
-          className="block h-60 w-full border-0"
+          className={cn('block h-60 w-full border-0', arrival)}
         />
       )}
     </div>

@@ -21,6 +21,8 @@ import {
   type InviteOutcome,
   type InviterState,
 } from '@features/balatro/engine/mp/invites';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import './invite-friends.css';
 
 const EMPTY: InviterState = { sent: {}, code: null, inbox: [] };
@@ -37,6 +39,8 @@ export function InviteFriends({ code }: { code: string }) {
   const { t } = useTranslation('c-balatro');
   const { friends } = useActiveFriends(true);
   const state = useInviterState();
+  const arrival = useArrival(friends !== null);
+  const isNew = useArrivingKeys((friends ?? []).map((f) => f.user.id));
   const sent = state.code === code ? state.sent : {};
   const send = useCallback((userId: string) => void inviteFriend(code, userId), [code]);
 
@@ -69,18 +73,18 @@ export function InviteFriends({ code }: { code: string }) {
       {friends === null ? (
         <p className="balatro-invite-friends-empty">{t('mp_invite_friends_loading', { defaultValue: 'Loading friends…' })}</p>
       ) : friends.length === 0 ? (
-        <p className="balatro-invite-friends-empty">
+        <p className={cn('balatro-invite-friends-empty', arrival)}>
           {t('mp_invite_friends_none', { defaultValue: 'No mutual follows online right now.' })}
         </p>
       ) : (
-        <ul className="balatro-invite-friends-list">
+        <ul className={cn('balatro-invite-friends-list', arrival)}>
           {friends.map((f) => {
             const s = sent[f.user.id];
             const name = f.user.name || f.user.username || f.user.handle || '?';
             const busy = s === 'sending';
             const done = s === 'sent';
             return (
-              <li key={f.user.id} className="balatro-invite-friend">
+              <li key={f.user.id} className={cn('balatro-invite-friend', isNew(f.user.id) && ARRIVE)}>
                 {f.user.image ? (
                   <img src={f.user.image} alt="" className="balatro-invite-friend-avatar" loading="lazy" />
                 ) : (

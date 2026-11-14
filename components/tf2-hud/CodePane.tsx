@@ -10,6 +10,7 @@ import { basename, categoryOf, isTextPath } from '@/lib/tf2-hud/project/paths';
 import { useEditor } from '@/lib/tf2-hud/store';
 import CodeEditor from './CodeEditor';
 import { EmptyNote, IconBtn } from './ui';
+import { useArrival } from '@/components/ui/arrive';
 
 function BinaryNote({ path }: { path: string }) {
   const { t } = useTranslation('c-tf2-hud');
@@ -22,6 +23,20 @@ function BinaryNote({ path }: { path: string }) {
           })
         : t('binary-file', { defaultValue: 'Binary file; nothing to edit as text.' })}
     </EmptyNote>
+  );
+}
+
+/** One open file. Keyed by path, so a file that had to be fetched fades in (M9) and a switch to one already loaded does not. */
+function FileBody({ path, loaded }: { path: string; loaded: boolean }) {
+  const { t } = useTranslation('c-tf2-hud');
+  const arrival = useArrival(loaded);
+  if (!isTextPath(path)) return <BinaryNote path={path} />;
+  if (!loaded) return <EmptyNote>{t('loading', { defaultValue: 'Loading…' })}</EmptyNote>;
+  // A box-less wrapper, so the editor fills the pane exactly as before.
+  return (
+    <div className={arrival ? 'arrive-group' : 'contents'}>
+      <CodeEditor path={path} />
+    </div>
   );
 }
 
@@ -70,13 +85,7 @@ export default function CodePane() {
         {activePath}
       </p>
       <div className="min-h-0 flex-1">
-        {!isTextPath(activePath) ? (
-          <BinaryNote path={activePath} />
-        ) : loaded ? (
-          <CodeEditor key={activePath} path={activePath} />
-        ) : (
-          <EmptyNote>{t('loading', { defaultValue: 'Loading…' })}</EmptyNote>
-        )}
+        <FileBody key={activePath} path={activePath} loaded={loaded} />
       </div>
     </div>
   );

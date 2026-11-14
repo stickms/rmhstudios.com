@@ -35,6 +35,8 @@ import { MainMenuContext } from './menu-context';
 import { TempleMenu } from './TempleMenu';
 import { TempleOfJoyGame } from './TempleOfJoyGame';
 import { TempleButton } from './ui';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function LoadingScreen() {
   const { t } = useTranslation('c-temple-of-joy');
@@ -81,6 +83,9 @@ export function TempleOfJoyGate() {
     setView('menu');
   }, []);
 
+  // What replaces the loading screen fades in (M9).
+  const arrival = useArrival(cloud.status !== 'loading');
+
   if (cloud.status === 'loading') return <LoadingScreen />;
 
   // The cloud save could not be resolved, so neither copy is known. Mounting a
@@ -89,7 +94,7 @@ export function TempleOfJoyGate() {
   if (cloud.status === 'failed') {
     return (
       <div className="toj" data-theme="dawn">
-        <div className="toj-loading" role="alert">
+        <div className={cn('toj-loading', arrival)} role="alert">
           <h1 className="toj-loading-title">Temple of Joy</h1>
           <p className="toj-loading-note">
             {t('save-load-failed', { defaultValue: 'Your save could not be loaded.' })}
@@ -120,7 +125,8 @@ export function TempleOfJoyGate() {
   const save = resume ?? cloud.save;
 
   if (view === 'menu') {
-    return <TempleMenu save={save} onEnter={() => setView('game')} />;
+    const menu = <TempleMenu save={save} onEnter={() => setView('game')} />;
+    return arrival ? <div className="arrive-group">{menu}</div> : menu;
   }
 
   return (

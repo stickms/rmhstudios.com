@@ -22,6 +22,8 @@ import { SpineItem } from '@/components/ui/spine';
 import { REPLY_INPUT_ID } from './reply-input-id';
 import { formatFullDate, postLinkPreviewUrl } from './post-detail-state';
 import type { PostTranslation } from './usePostTranslation';
+import { ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface PostArticleProps {
   post: FeedItem;
@@ -101,7 +103,12 @@ export function PostArticle({
 
       {/* Translation (toggled from the menu): set off by a rule, not a box */}
       {showTranslated && translatedText && (
-        <p className="t-body mt-3 border-s-2 border-site-border ps-3 break-words whitespace-pre-wrap">
+        <p
+          className={cn(
+            't-body mt-3 border-s-2 border-site-border ps-3 break-words whitespace-pre-wrap',
+            ARRIVE,
+          )}
+        >
           {translatedText}
         </p>
       )}

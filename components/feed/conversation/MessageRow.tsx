@@ -2,6 +2,7 @@ import { Reply } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SwipeRow } from '@/components/ui/swipe-row';
 import { SpineItem, SpineStation } from '@/components/ui/spine';
+import { cn } from '@/lib/utils';
 import { PostImageGrid } from '../PostImageGrid';
 import ChatMediaEmbed, {
   stripEmbedUrls,
@@ -50,6 +51,7 @@ export function MessageRow({
   onUnsend,
   onHide,
   onToggleReaction,
+  className,
 }: {
   msg: Message;
   prevMsg: Message | null;
@@ -69,6 +71,8 @@ export function MessageRow({
   onUnsend: (messageId: string) => void;
   onHide: (messageId: string) => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
+  /** The `arrive` class (Steel M9) for a message that joins a thread already showing. */
+  className?: string | undefined;
 }) {
   const { t } = useTranslation('feed');
 
@@ -166,9 +170,11 @@ export function MessageRow({
 
   return (
     <>
-      {showDate && <SpineStation>{formatDateSeparator(msg.createdAt)}</SpineStation>}
+      {showDate && (
+        <SpineStation className={className}>{formatDateSeparator(msg.createdAt)}</SpineStation>
+      )}
       {isLine ? (
-        <SpineItem dot={false} className="spine-item--tight">
+        <SpineItem dot={false} className={cn('spine-item--tight', className)}>
           <ChatSystemLine
             meta={msg.meta}
             fallback={msg.content}
@@ -177,7 +183,7 @@ export function MessageRow({
           />
         </SpineItem>
       ) : (
-        <SpineItem dot={!isSelf} className="spine-item--tight group">
+        <SpineItem dot={!isSelf} className={cn('spine-item--tight group', className)}>
           <SwipeRow
             leading={
               canReact && !isEditing && !isVoice && msg.content.trim()

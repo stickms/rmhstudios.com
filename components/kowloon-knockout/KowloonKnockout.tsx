@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { useMultiplayerSync } from '@/lib/kowloon-knockout/useMultiplayerSync';
@@ -11,6 +11,7 @@ import { AnimatePresence, m as motion } from 'framer-motion';
 import './kowloon-knockout.css';
 import './kk-hud.css';
 import { useGameSession } from '@/hooks/useGameSession';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const GameView = lazy(() => import('@/components/kowloon-knockout/arena/GameView'));
 
@@ -99,13 +100,13 @@ export default function KowloonKnockout() {
               transition={{ duration: 0.3 }}
               style={{ width: '100%', height: '100%' }}
             >
-              <Suspense fallback={
+              <ArrivalSuspense fallback={
                 <div className="kk-loading">
                   {t("loading", { defaultValue: "LOADING..." })}
                 </div>
               }>
                 <GameView />
-              </Suspense>
+              </ArrivalSuspense>
             </motion.div>
           )}
 

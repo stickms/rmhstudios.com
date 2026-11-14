@@ -1,9 +1,11 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { TriangleAlert, Users } from 'lucide-react';
 import { useDiscordSdk, type DiscordContext } from '@/lib/discord-sdk';
 import rmhboxCss from '@/components/rmhbox/rmhbox.css?url';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * The Discord Activity gateway — `/discord`, the Activity's root.
@@ -111,16 +113,23 @@ function ActivityPicker({
   canPick,
   launcherName,
   participantCount,
+  className,
 }: {
   onPick: (id: ActivityGameId) => void;
   canPick: boolean;
   launcherName: string | null;
   participantCount: number;
+  className?: string | undefined;
 }) {
   const { t } = useTranslation('r-discord');
 
   return (
-    <div className="min-h-dvh bg-[#1a1a2e] flex items-center justify-center p-4 pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))]">
+    <div
+      className={cn(
+        'min-h-dvh bg-[#1a1a2e] flex items-center justify-center p-4 pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))]',
+        className,
+      )}
+    >
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white mb-2">
@@ -191,6 +200,7 @@ function DiscordGatewayPage() {
   const { t } = useTranslation('r-discord');
   const discord = useDiscordSdk();
   const [gameId, setGameId] = useState<ActivityGameId | null>(null);
+  const arrival = useArrival(discord.status !== 'loading');
 
   if (discord.status === 'loading') {
     return (
@@ -207,7 +217,7 @@ function DiscordGatewayPage() {
 
   if (discord.status === 'error') {
     return (
-      <div className="min-h-dvh bg-[#1a1a2e] flex items-center justify-center p-4">
+      <div className={cn('min-h-dvh bg-[#1a1a2e] flex items-center justify-center p-4', arrival)}>
         <div className="text-center max-w-sm">
           <TriangleAlert className="mx-auto mb-3 h-10 w-10 text-[#f23f43]" aria-hidden="true" />
           <h2 className="text-white text-lg font-semibold mb-2">
@@ -236,6 +246,7 @@ function DiscordGatewayPage() {
   if (!gameId) {
     return (
       <ActivityPicker
+        className={arrival}
         onPick={setGameId}
         canPick={canPick}
         launcherName={launcherName}
@@ -245,7 +256,7 @@ function DiscordGatewayPage() {
   }
 
   return (
-    <Suspense
+    <ArrivalSuspense
       fallback={
         <div className="min-h-dvh bg-[#1a1a2e] flex items-center justify-center">
           <div className="animate-pulse text-[#b5bac1]">
@@ -255,7 +266,7 @@ function DiscordGatewayPage() {
       }
     >
       <GameStage id={gameId} discord={context} onExit={() => setGameId(null)} />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }
 

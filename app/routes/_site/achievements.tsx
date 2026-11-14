@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { listAchievements } from '@/lib/achievements.server';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { useArrival } from '@/components/ui/arrive';
 
 // Prefetch the viewer's own achievements server-side so the grid is present at
 // first paint / prefetched on intent instead of fetched on mount. Signed-out
@@ -36,10 +37,12 @@ function AchievementsPage() {
   const { t: tFeed } = useTranslation('feed');
   const { achievements } = Route.useLoaderData();
   const { data: session, isPending } = useSession();
+  // The whole column fades in when the session resolves after the spinner (M9).
+  const arrival = useArrival(!isPending);
 
   return (
     <>
-      <PageFrame>
+      <PageFrame className={arrival}>
         {session && !isPending ? (
           <JourneyColumn
             userId={session.user.id}

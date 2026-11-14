@@ -48,6 +48,8 @@ import { formatClockSeconds } from '@/lib/core/format';
 
 import { api } from '@/lib/contract/client';
 import { getReplayApi, getSliceSongApi, type ReplayResponse } from '@features/slice-it/engine/play.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 interface ReplayViewerProps {
   /** `GameReplay.id` — what the leaderboard row links to. */
   replayId: string;
@@ -329,11 +331,14 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
     setPosition(0);
   }, []);
 
+  // The notices that replace the loading player fade in (M9).
+  const arrival = useArrival(error !== null || replay !== null);
+
   /* ── Render ────────────────────────────────────────────────────────────── */
 
   if (error) {
     return (
-      <div className="p-6 text-center text-slice-text-muted">
+      <div className={cn('p-6 text-center text-slice-text-muted', arrival)}>
         {t('replay-load-failed', { defaultValue: 'This replay could not be loaded.' })}
       </div>
     );
@@ -341,7 +346,7 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
 
   if (replay && !replay.versionMatch) {
     return (
-      <div className="p-6 text-center text-slice-text-muted">
+      <div className={cn('p-6 text-center text-slice-text-muted', arrival)}>
         {t('replay-version-mismatch', {
           defaultValue:
             'This replay was recorded on an older version of the game and can no longer be played back accurately.',

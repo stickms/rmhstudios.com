@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { getQotdAnswersApi, getQotdArchiveApi } from '@/lib/posts-plus/qotd.contract';
@@ -67,6 +68,9 @@ export function QotdPage({ day }: { day?: string }) {
   const today = archive?.[0] ?? null;
   const selected = day && archive ? (archive.find((d) => d.dayKey === day) ?? today) : today;
   const isToday = !!selected && selected.dayKey === today?.dayKey;
+  // Steel M9: the question replaces its skeleton, and the answers their spinner (again on a day switch).
+  const questionArrival = useArrival(!!archive && !!selected);
+  const answersArrival = useArrival(items.length > 0 || (!loading && (!!page || failed)));
 
   const load = useCallback(async (dayKey: string, cur: string | null) => {
     setLoading(true);
@@ -120,7 +124,7 @@ export function QotdPage({ day }: { day?: string }) {
         {!archive || !selected ? (
           <Skeleton className="h-28 w-full rounded-site" />
         ) : (
-          <section className="rounded-site p-5">
+          <section className={cn('rounded-site p-5', questionArrival)}>
             <p className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
               <MessageCircleQuestion className="h-4 w-4 text-site-accent" aria-hidden />
               {isToday
@@ -167,6 +171,7 @@ export function QotdPage({ day }: { day?: string }) {
           )}
           {failed && (
             <EmptyState
+              className={answersArrival}
               title={t('qotd-load-failed', { defaultValue: 'Could not load the answers' })}
               action={
                 <Button
@@ -180,6 +185,7 @@ export function QotdPage({ day }: { day?: string }) {
           )}
           {!failed && !loading && page && items.length === 0 && (
             <EmptyState
+              className={answersArrival}
               icon={MessageCircleQuestion}
               title={t('qotd-no-answers', { defaultValue: 'No answers yet' })}
               description={
@@ -189,7 +195,7 @@ export function QotdPage({ day }: { day?: string }) {
               }
             />
           )}
-          {items.length > 0 && <VirtualPostList items={items} />}
+          {items.length > 0 && <VirtualPostList items={items} className={answersArrival} />}
           {cursor && selectedKey && (
             <div className="mt-4 flex justify-center">
               <Button
@@ -204,7 +210,7 @@ export function QotdPage({ day }: { day?: string }) {
         </section>
 
         {archive && archive.length > 1 && (
-          <section aria-labelledby="qotd-past">
+          <section aria-labelledby="qotd-past" className={questionArrival}>
             <h2 id="qotd-past" className="site-section-label mb-3">
               {t('qotd-past', { defaultValue: 'Past questions' })}
             </h2>

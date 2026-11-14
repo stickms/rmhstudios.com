@@ -43,6 +43,8 @@ import * as net from '@features/slice-it/engine/net/client';
 import { SongLibrary } from './SongLibrary';
 import { SongDetailsPanel } from './SongDetailsPanel';
 import { SpectatorView } from './spectate/SpectatorView';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface MultiplayerLobbyProps {
   onBack: () => void;
@@ -74,6 +76,8 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
    */
   const { t: ts } = useTranslation('r-slice-it');
   const { data: session, isPending } = useSession();
+  // The card that replaces the session spinner fades in (M9).
+  const arrival = useArrival(!isPending);
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, string | undefined>;
 
@@ -299,7 +303,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
   if (!session) {
     return (
       <Shell>
-        <Card className="w-full max-w-md bg-slice-bg border border-slice-border p-8 text-center">
+        <Card className={cn('w-full max-w-md bg-slice-bg border border-slice-border p-8 text-center', arrival)}>
           <h2 className="text-2xl font-black text-slice-text-darker mb-4">
             {t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
           </h2>
@@ -676,7 +680,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
 
   return (
     <Shell>
-      <Card className="w-full max-w-lg bg-slice-bg border border-slice-border">
+      <Card className={cn('w-full max-w-lg bg-slice-bg border border-slice-border', arrival)}>
         <CardHeader>
           <div className="flex justify-center mb-1">
             <ConnectionPill connection={connection} />

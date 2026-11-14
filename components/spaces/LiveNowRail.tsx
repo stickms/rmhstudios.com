@@ -7,7 +7,7 @@ import { api } from '@/lib/contract/client';
 import { listLiveSpacesApi } from '@/lib/spaces/spaces.contract';
 import type { LiveSpaceSummary } from '@/lib/spaces/types';
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
-import { AsyncReveal } from '@/components/motion';
+import { useArrival } from '@/components/ui/arrive';
 import { useStableListMotion } from '@/hooks/useStableListMotion';
 
 /**
@@ -41,11 +41,13 @@ export function LiveNowRail({ className }: { className?: string }) {
     };
   }, []);
 
+  // Steel M9: the rail is fetched after paint and appears in a gap, so it fades in.
+  const arrival = useArrival(spaces.length > 0);
+  if (spaces.length === 0) return null;
+
   return (
-    <AsyncReveal
-      show={spaces.length > 0}
-      as="section"
-      className={cn('surface-card mx-3 mt-3 rounded-site p-4', className)}
+    <section
+      className={cn('surface-card mx-3 mt-3 rounded-site p-4', className, arrival)}
       aria-label={t('live-now', { defaultValue: 'Live now' })}
     >
       <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-site-danger">
@@ -76,6 +78,6 @@ export function LiveNowRail({ className }: { className?: string }) {
           </Link>
         ))}
       </HorizontalScroller>
-    </AsyncReveal>
+    </section>
   );
 }

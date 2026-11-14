@@ -36,6 +36,8 @@ import {
     ArrowLeft,
 } from 'lucide-react';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -496,6 +498,7 @@ function LeaderboardModal({
     const { t } = useTranslation("c-lights-out");
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const arrival = useArrival(!loading);
 
     useEffect(() => {
         api(getDiscordEmbedLeaderboardApi, { query: { guildId, dateKey, leaderboard: 1 } })
@@ -541,9 +544,9 @@ function LeaderboardModal({
                     {loading ? (
                         <div className="text-center text-[#b5bac1] text-sm py-6 animate-pulse">{t("loading", { defaultValue: "Loading..." })}</div>
                     ) : ranked.length === 0 ? (
-                        <div className="text-center text-[#949ba4] text-sm py-6">{t("leaderboard-empty", { defaultValue: "No one has played yet today." })}</div>
+                        <div className={cn('text-center text-[#949ba4] text-sm py-6', arrival)}>{t("leaderboard-empty", { defaultValue: "No one has played yet today." })}</div>
                     ) : (
-                        <div className="space-y-1.5">
+                        <div className={cn('space-y-1.5', arrival)}>
                             {ranked.map((entry, i) => {
                                 const isCompleted = entry.status === 'completed';
                                 const medal = isCompleted ? (medals[completed.indexOf(entry)] ?? '') : '';
@@ -847,6 +850,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
         }
     };
 
+    const arrival = useArrival(!!grid);
     if (!grid) {
         return (
             <div className="min-h-dvh bg-[#313338] flex items-center justify-center">
@@ -856,7 +860,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     }
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-10 sm:pt-0">
+        <div className={cn('h-dvh bg-[#313338] flex flex-col overflow-hidden pt-10 sm:pt-0', arrival)}>
             {/* Header */}
             <div className="shrink-0 px-4 pt-3 pb-1">
                 <div className="max-w-md mx-auto flex items-center justify-between">
@@ -1371,6 +1375,7 @@ function RaceGameplay({
         setMoves(m => m - 1);
     };
 
+    const arrival = useArrival(!!grid);
     if (!grid) {
         return (
             <div className="h-dvh bg-[#313338] flex items-center justify-center">
@@ -1382,7 +1387,7 @@ function RaceGameplay({
     const racers = lobby.participants.filter(p => p.status !== 'idle');
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-10 sm:pt-0 relative">
+        <div className={cn('h-dvh bg-[#313338] flex flex-col overflow-hidden pt-10 sm:pt-0 relative', arrival)}>
             {/* Countdown overlay */}
             <AnimatePresence>
                 {countdownNum != null && (

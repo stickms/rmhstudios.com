@@ -19,6 +19,8 @@ import type { ResolvedUser } from '@/lib/user-display';
 import type { ListTimelinePost } from '@/lib/lists/lists.server';
 import { api } from '@/lib/contract/client';
 import { deleteListApi, listFeedApi, updateListApi } from '@/lib/lists/lists.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export function ListDetailView({ list, members }: { list: ListView; members: ResolvedUser[] }) {
   const { t } = useTranslation('c-lists');
@@ -33,6 +35,8 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
   const posts = [...(firstPage.data?.items ?? []), ...(more?.posts ?? [])];
   const cursor = more ? more.cursor : (firstPage.data?.nextCursor ?? null);
   const loading = firstPage.isPending;
+  const arrival = useArrival(!loading);
+  const isNew = useArrivingKeys(posts.map((p) => p.id));
 
   async function loadMore() {
     if (!cursor) return;
@@ -121,13 +125,14 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
         </div>
       ) : posts.length === 0 ? (
         <EmptyState
+          className={arrival}
           title={t('feed-empty-title', { defaultValue: 'No posts yet' })}
           description={t('feed-empty-desc', { defaultValue: 'Posts from this list show up here.' })}
         />
       ) : (
-        <ul className="space-y-3">
+        <ul className={cn('space-y-3', arrival)}>
           {posts.map((p) => (
-            <li key={p.id}>
+            <li key={p.id} className={isNew(p.id) ? ARRIVE : undefined}>
               <Card interactive className="px-4 py-3 sm:py-3">
                 <Link to="/thread/$rootId" params={{ rootId: p.id }} className="block">
                   <span className="mb-1 flex items-center gap-2">

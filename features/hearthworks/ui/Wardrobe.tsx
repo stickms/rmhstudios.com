@@ -1,7 +1,8 @@
-import { Suspense, lazy, useState } from 'react';
+import { lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_SKIN, SKINS, SKIN_IDS, SKIN_TIERS, canAfford, type SkinId, type SkinTier } from '@features/hearthworks/engine/skins';
 import { hearthworksStore, useHearthworks } from '@features/hearthworks/engine/store';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // The turntable brings a second WebGL canvas: fetched only when the wardrobe opens.
 const SkinPreview = lazy(() => import('./SkinPreview'));
@@ -46,9 +47,9 @@ export function Wardrobe() {
         role="img"
         aria-label={t('wardrobe-preview', { defaultValue: 'Preview of {{name}}', name: SKINS[shown].name })}
       >
-        <Suspense fallback={null}>
+        <ArrivalSuspense fallback={null}>
           <SkinPreview skin={shown} />
-        </Suspense>
+        </ArrivalSuspense>
       </div>
       {SKIN_TIERS.map((tier) => {
         const ids = SKIN_IDS.filter((id) => SKINS[id].tier === tier);

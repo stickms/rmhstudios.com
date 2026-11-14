@@ -7,6 +7,8 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { apiJson } from '@/lib/rmhladder/community-client';
 import {
   PET_CHOICES,
@@ -43,6 +45,7 @@ export function RoommateMatch({
     enabled: isSignedIn,
     staleTime: 60_000,
   });
+  const arrival = useArrival(!isLoading);
 
   const heading = (
     <h2 className="mb-2 flex items-center gap-2 site-section-label">
@@ -73,7 +76,7 @@ export function RoommateMatch({
   if (!data || data.status === 'not-applicable') return null;
 
   return (
-    <section className="mt-4 rounded-site p-5">
+    <section className={cn('mt-4 rounded-site p-5', arrival)}>
       {heading}
       {data.status === 'match' && (
         <p className="text-sm text-site-text">

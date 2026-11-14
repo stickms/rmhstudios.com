@@ -24,6 +24,8 @@ import { SceneProvider } from './scene-context';
 import { api as contractApi } from '@/lib/contract/client';
 import { countTf2HudDownloadApi } from '@/lib/tf2-hud/hud.contract';
 import { Btn, Pill } from './ui';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: string }) {
   const { t } = useTranslation('c-tf2-hud');
@@ -148,9 +150,18 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
     }
   };
 
+  // M9: the HUD's details and then its preview arrive after the page has painted.
+  const detailArrival = useArrival(detail !== null || error !== null);
+  const previewArrival = useArrival(overlay !== null);
+
   if (error) {
     return (
-      <div className="app-page flex min-h-dvh flex-col items-center justify-center gap-4 bg-app-bg p-6 text-center text-app-text">
+      <div
+        className={cn(
+          'app-page flex min-h-dvh flex-col items-center justify-center gap-4 bg-app-bg p-6 text-center text-app-text',
+          detailArrival,
+        )}
+      >
         <p className="max-w-md text-sm text-app-text-muted">{error}</p>
         <Link
           to="/tf2/workshop"
@@ -175,7 +186,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
           <div className="min-w-0">
             <h1 className="tf2hud-title text-4xl sm:text-5xl">{detail?.title ?? '…'}</h1>
             {detail ? (
-              <p className="mt-1 text-sm text-app-text-muted">
+              <p className={cn('mt-1 text-sm text-app-text-muted', detailArrival)}>
                 {detail.author
                   ? t('by', { defaultValue: 'by {{name}}', name: detail.author.name })
                   : null}
@@ -200,12 +211,17 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
               </p>
             ) : null}
             {detail?.description ? (
-              <p className="mt-3 max-w-2xl whitespace-pre-line text-sm text-app-text">
+              <p
+                className={cn(
+                  'mt-3 max-w-2xl whitespace-pre-line text-sm text-app-text',
+                  detailArrival,
+                )}
+              >
                 {detail.description}
               </p>
             ) : null}
             {detail?.tags.length ? (
-              <ul className="mt-3 flex flex-wrap gap-1">
+              <ul className={cn('mt-3 flex flex-wrap gap-1', detailArrival)}>
                 {detail.tags.map((tag) => (
                   <li key={tag}>
                     <Pill>{tag}</Pill>
@@ -267,10 +283,13 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
             className="flex h-[min(70dvh,40rem)] min-h-96 flex-col overflow-hidden rounded-app border border-app-border"
           >
             {overlay ? (
-              <SceneProvider>
-                <PreviewToolbar />
-                <Preview readOnly />
-              </SceneProvider>
+              // A box-less wrapper: the toolbar and the preview stay flex items of the section.
+              <div className={previewArrival ? 'arrive-group' : 'contents'}>
+                <SceneProvider>
+                  <PreviewToolbar />
+                  <Preview readOnly />
+                </SceneProvider>
+              </div>
             ) : (
               <div className="flex flex-1 items-center justify-center text-sm text-app-text-dim">
                 {t('loading', { defaultValue: 'Loading…' })}

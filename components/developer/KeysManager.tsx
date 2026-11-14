@@ -33,6 +33,8 @@ import {
   updateDeveloperKeyApi,
 } from '@/lib/devplatform/keys.contract';
 import { developerKeysQuery } from '@/lib/devplatform/developer.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface ApiKey {
   id: string;
@@ -61,6 +63,7 @@ export function KeysManager() {
   const { data, isPending: loading } = useQuery(query);
   const keys: ApiKey[] = data?.keys ?? [];
   const hasAccess = !!data?.hasApiAccess;
+  const arrival = useArrival(!loading);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [scopes, setScopes] = useState<string[]>([...DEFAULT_SCOPES]);
@@ -142,7 +145,7 @@ export function KeysManager() {
 
   if (!hasAccess) {
     return (
-      <section className="rounded-site px-4 py-6 text-center">
+      <section className={cn('rounded-site px-4 py-6 text-center', arrival)}>
         <ShieldCheck className="mx-auto mb-2 size-7 text-site-accent" aria-hidden />
         <p className="font-semibold text-site-text">
           {t('keys-subscription-title', { defaultValue: 'A subscription is required' })}
@@ -163,7 +166,7 @@ export function KeysManager() {
   }
 
   return (
-    <section className="space-y-3">
+    <section className={cn('space-y-3', arrival)}>
       <h2 className="site-section-label flex items-center gap-2">
         <KeyRound className="size-4 text-site-accent" aria-hidden />
         {t('keys-title', { defaultValue: 'Your API keys' })}

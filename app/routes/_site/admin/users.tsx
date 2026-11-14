@@ -26,6 +26,8 @@ import {
   setAdminUserCoinsApi,
   updateAdminUserApi,
 } from '@/lib/admin/admin-ops.contract';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type AccountFilter = 'all' | 'people' | 'bots';
 
@@ -68,6 +70,8 @@ function AdminUsersPage() {
   // Bot accounts are ordinary user rows, so they're impossible to pick out of a
   // flat list — this narrows the table to one population or the other.
   const [accounts, setAccounts] = useState<AccountFilter>('all');
+  const arrival = useArrival(!(loading && users.length === 0));
+  const isNewUser = useArrivingKeys(users.map((u) => u.id));
 
   const listUrl = useCallback((cursor?: string | null) => {
     const params = new URLSearchParams();
@@ -258,10 +262,10 @@ function AdminUsersPage() {
               <span>{t("loading-users", { defaultValue: "Loading users..." })}</span>
             </div>
           ) : !loading && users.length === 0 ? (
-            <EmptyState icon={Search} title={t("no-users-found", { defaultValue: "No users found matching your search." })} />
+            <EmptyState className={arrival} icon={Search} title={t("no-users-found", { defaultValue: "No users found matching your search." })} />
           ) : (
             <div
-              className={`divide-y divide-site-border transition-opacity duration-site-fast ${loading ? 'opacity-60' : ''}`}
+              className={cn('divide-y divide-site-border transition-opacity duration-site-fast', loading && 'opacity-60', arrival)}
               aria-busy={loading}
             >
               {users.map((user, index) => {
@@ -273,7 +277,7 @@ function AdminUsersPage() {
                 const secondaryLine =
                   user.email ?? (user.isBot ? t("bot-no-email", { defaultValue: "Automated account" }) : null);
                 return (
-                  <div key={user.id} ref={isLast ? lastUserElementRef : null} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
+                  <div key={user.id} ref={isLast ? lastUserElementRef : null} className={cn('flex flex-wrap items-center gap-x-4 gap-y-2 py-3', isNewUser(user.id) && ARRIVE)}>
                     <div className="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-0">
                       <UserAvatar src={user.image} alt={user.name || user.handle || user.username} size={40} fallbackName={user.name || user.handle || 'U'} />
                       <div className="min-w-0">

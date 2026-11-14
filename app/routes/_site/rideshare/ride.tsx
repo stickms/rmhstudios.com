@@ -45,6 +45,8 @@ import {
   rideActionApi,
   rideDirectionsApi,
 } from '@/lib/rideshare/rideshare.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/rideshare/ride')({
   head: () => ({ meta: [{ title: 'Request a ride — RMH Rideshare' }] }),
@@ -119,6 +121,9 @@ function RequestRidePage() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loadingRides, setLoadingRides] = useState(true);
   const [savedPlaces, setSavedPlaces] = useState<SavedPlaceOption[]>([]);
+  const arrival = useArrival(!isPending);
+  // The ride rows animate themselves; only the empty history needs the M9 fade.
+  const ridesArrival = useArrival(!loadingRides);
 
   const loadRides = useCallback(async () => {
     try {
@@ -301,6 +306,7 @@ function RequestRidePage() {
     return (
       <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
         <SignedOutPrompt
+          className={arrival}
           icon={Navigation}
           callbackURL="/rideshare/ride"
           title={t('sign-in-heading', { defaultValue: 'Sign in to request a ride' })}
@@ -318,7 +324,7 @@ function RequestRidePage() {
 
   return (
     <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
-      <div className="w-full max-w-4xl space-y-6 px-4 pt-4 pb-12">
+      <div className={cn('w-full max-w-4xl space-y-6 px-4 pt-4 pb-12', arrival)}>
         {focusRideId ? (
           /* Live trip takes over the page while a ride is in flight. */
           <ActiveRidePanel
@@ -523,6 +529,7 @@ function RequestRidePage() {
             </div>
           ) : pastRides.length === 0 ? (
             <EmptyState
+              className={ridesArrival}
               icon={Car}
               title={
                 focusRideId || upcomingRides.length > 0

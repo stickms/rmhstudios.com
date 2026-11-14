@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useDoctrineReputationLeaderboard } from '@features/doctrine/ui/hooks/useDoctrineReputation';
 import { Trophy } from 'lucide-react';
 import { RankBadge } from '@features/doctrine/ui/reputation/rank-badge';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/profile/reputation')({
   head: () => noindexHead('Strategies Reputation'),
@@ -13,6 +15,7 @@ export const Route = createFileRoute('/strategies/profile/reputation')({
 function ReputationPage() {
   const { t } = useTranslation("r-strategies");
   const { data, isLoading } = useDoctrineReputationLeaderboard(50);
+  const arrival = useArrival(!isLoading);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -27,7 +30,7 @@ function ReputationPage() {
         {isLoading ? (
           <div className="p-8 text-center text-sm text-white/50">{t("loading", { defaultValue: "Loading..." })}</div>
         ) : (
-          <table className="w-full text-sm">
+          <table className={cn('w-full text-sm', arrival)}>
             <thead>
               <tr style={{ background: 'var(--doctrine-bg-secondary)' }}>
                 <th scope="col" className="text-left px-4 py-2 text-xs font-mono text-white/50">{t("col-number", { defaultValue: "#" })}</th>

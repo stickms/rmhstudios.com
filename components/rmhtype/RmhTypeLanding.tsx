@@ -14,6 +14,8 @@ import { toast } from '@/lib/shared/app-toast';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty } from '@/lib/rmhtype/types';
 import { Link, useRouter } from '@tanstack/react-router';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface LeaderboardEntry {
   rank: number;
@@ -35,14 +37,15 @@ const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 
 function LeaderboardTable({ entries, loading }: { entries: LeaderboardEntry[]; loading: boolean }) {
   const { t } = useTranslation("c-rmhtype");
+  const arrival = useArrival(!loading);
   if (loading) {
     return <p className="text-sm text-app-text-muted text-center py-4">{t("loading", { defaultValue: "Loading..." })}</p>;
   }
   if (entries.length === 0) {
-    return <p className="text-sm text-app-text-muted text-center py-4">{t("no-scores-yet", { defaultValue: "No scores yet. Be the first!" })}</p>;
+    return <p className={cn('text-sm text-app-text-muted text-center py-4', arrival)}>{t("no-scores-yet", { defaultValue: "No scores yet. Be the first!" })}</p>;
   }
   return (
-    <div className="overflow-x-auto">
+    <div className={cn('overflow-x-auto', arrival)}>
       <table className="w-full text-sm">
         <thead>
           <tr className="text-app-text-muted border-b border-app-border">

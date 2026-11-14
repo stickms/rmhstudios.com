@@ -8,6 +8,7 @@ import { useTranslation } from'react-i18next';
 import { PinnedHero } from'@/components/feed/PinnedHero';
 import { api } from'@/lib/contract/client';
 import { getRecapApi } from'@/lib/wrapped/wrapped.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface Recap {
  posts: number;
@@ -40,6 +41,8 @@ export function RecapColumn({
  const seeded = useRef(initialData !== undefined && initialData !== null);
  const [recap, setRecap] = useState<Recap | null>(initialData ?? null);
  const [loading, setLoading] = useState(!initialData);
+ // Steel M9: a recap fetched here replaces the spinner; the loader's is there on first paint.
+ const arrival = useArrival(!loading);
 
  useEffect(() => {
  if (seeded.current) return;
@@ -60,9 +63,9 @@ export function RecapColumn({
  <Spinner />
  </div>
  ) : !recap ? (
- <EmptyState description={t('recap-load-error', { defaultValue:'Could not load your recap.'})} />
+ <EmptyState className={arrival} description={t('recap-load-error', { defaultValue:'Could not load your recap.'})} />
  ) : (
- <>
+ <div className={arrival}>
  {/* Pinned scroll-narrative hero — marquee moment for the weekly review. */}
  <PinnedHero
  title={
@@ -125,7 +128,7 @@ export function RecapColumn({
  </Link>
  </div>
  </div>
- </>
+ </div>
  )}
  </div>
  );

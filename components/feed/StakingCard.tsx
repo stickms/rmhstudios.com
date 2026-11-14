@@ -8,6 +8,8 @@ import { Button } from'@/components/ui/button';
 import { Switch } from'@/components/ui/switch';
 import { Spinner } from'@/components/ui/spinner';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Stake {
  principal: number;
@@ -25,6 +27,8 @@ export function StakingCard() {
  const [loading, setLoading] = useState(true);
  const [amount, setAmount] = useState('');
  const [busy, setBusy] = useState<string | null>(null);
+ // Steel M9: the stake replaces the spinner.
+ const arrival = useArrival(!loading);
 
  const load = useCallback(async () => {
  try {
@@ -84,7 +88,7 @@ export function StakingCard() {
  const validAmt = Number.isFinite(amt) && amt > 0;
 
  return (
- <section className="rounded-site p-5">
+ <section className={cn('rounded-site p-5', arrival)}>
  <div className="mb-3 flex items-center justify-between">
  <div className="flex items-center gap-2">
  <PiggyBank className="h-4 w-4 text-site-accent"/>

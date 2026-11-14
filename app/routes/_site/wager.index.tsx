@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { Swords, Plus } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
@@ -42,6 +44,7 @@ function WagerPage() {
   const loading = list.isPending;
   // A failed fetch (signed out on "mine", a 5xx) shows the empty state, as it always has.
   const wagers = list.data?.wagers ?? [];
+  const arrival = useArrival(!loading);
 
   const onCardChange = (id: string) => (next: SerializedWager | null) => {
     queryClient.setQueryData(listOptions.queryKey, (prev) => {
@@ -91,6 +94,7 @@ function WagerPage() {
         </div>
       ) : wagers.length === 0 ? (
         <EmptyState
+          className={arrival}
           icon={Swords}
           title={
             tab === 'open'
@@ -108,7 +112,7 @@ function WagerPage() {
           }
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={cn('grid gap-3 sm:grid-cols-2', arrival)}>
           {wagers.map((w) => (
             <WagerCard key={w.id} wager={w} viewerId={viewerId} onChange={onCardChange(w.id)} />
           ))}

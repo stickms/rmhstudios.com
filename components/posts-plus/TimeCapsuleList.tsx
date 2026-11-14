@@ -8,6 +8,8 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { formatCountdown } from '@/lib/posts-plus/constants';
 import { api } from '@/lib/contract/client';
 import { discardScheduledApi, listCapsulesApi } from '@/lib/scheduled/scheduled.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Capsule {
   id: string;
@@ -33,6 +35,8 @@ export function TimeCapsuleList() {
   const confirm = useConfirm();
   const [data, setData] = useState<{ sealed: Capsule[]; opened: Capsule[] } | null>(null);
   const [now, setNow] = useState<number | null>(null);
+  // Steel M9: the capsules are fetched after paint and appear at the end of the page.
+  const arrival = useArrival(!!data && (data.sealed.length > 0 || data.opened.length > 0));
 
   const load = useCallback(async () => {
     try {
@@ -80,7 +84,7 @@ export function TimeCapsuleList() {
     ].filter(Boolean);
 
   return (
-    <section className="px-4 pt-6 pb-12" aria-labelledby="capsules-heading">
+    <section className={cn('px-4 pt-6 pb-12', arrival)} aria-labelledby="capsules-heading">
       <h2 id="capsules-heading" className="site-section-label mb-3 flex items-center gap-2">
         <Package className="h-4 w-4 text-site-accent" aria-hidden />
         {t('capsules-title', { defaultValue: 'Time capsules' })}

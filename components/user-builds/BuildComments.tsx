@@ -9,6 +9,8 @@ import { useSession } from '@/components/Providers';
 import type { BuildComment } from '@/lib/user-builds-types';
 import { api } from '@/lib/contract/client';
 import { createBuildCommentApi, listBuildCommentsApi } from '@/lib/user-builds.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface BuildCommentsProps {
   buildId: string;
@@ -33,16 +35,18 @@ function CommentItem({
   comment,
   onReply,
   depth = 0,
+  className,
 }: {
   comment: BuildComment;
   onReply: (parentId: string) => void;
   depth?: number;
+  className?: string;
 }) {
   const { t } = useTranslation('c-user-builds');
   const [showReplies, setShowReplies] = useState(depth === 0);
 
   return (
-    <div className={depth > 0 ? 'ml-6 border-l border-site-border pl-4' : ''}>
+    <div className={cn(depth > 0 && 'ml-6 border-l border-site-border pl-4', className)}>
       <div className="py-3">
         <div className="flex items-start gap-3">
           <UserAvatar
@@ -116,6 +120,8 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const arrival = useArrival(!loading);
+  const isNew = useArrivingKeys(comments.map((c) => c.id));
 
   const fetchComments = useCallback(
     async (cursorParam?: string) => {
@@ -260,13 +266,18 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
           <Spinner />
         </div>
       ) : comments.length === 0 ? (
-        <p className="py-12 text-center text-sm text-site-text-muted">
+        <p className={cn('py-12 text-center text-sm text-site-text-muted', arrival)}>
           {t('no-comments', { defaultValue: 'No comments yet. Be the first!' })}
         </p>
       ) : (
-        <div className="divide-y divide-site-border">
+        <div className={cn('divide-y divide-site-border', arrival)}>
           {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} onReply={handleReply} />
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              onReply={handleReply}
+              className={isNew(comment.id) ? ARRIVE : undefined}
+            />
           ))}
         </div>
       )}

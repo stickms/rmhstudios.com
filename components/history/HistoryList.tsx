@@ -27,6 +27,7 @@ import {
   removeHistoryEntryApi,
 } from '@/lib/shop/shop.contract';
 import { api } from '@/lib/contract/client';
+import { ARRIVE, useArrivingKeys } from '@/components/ui/arrive';
 
 interface HistoryData {
   items: HistoryView[];
@@ -43,6 +44,7 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
   const [filter, setFilter] = useState<HistoryEntityType | 'all'>('all');
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const isNew = useArrivingKeys(items.map((item) => item.id));
 
   const load = useCallback(
     async (f: HistoryEntityType | 'all', append = false, cur?: string | null) => {
@@ -153,7 +155,7 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
       ) : (
         <ul className="space-y-3">
           {items.map((item) => (
-            <li key={item.id}>
+            <li key={item.id} className={isNew(item.id) ? ARRIVE : undefined}>
               <HistoryRow item={item} onRemove={() => removeOne(item.id)} />
             </li>
           ))}

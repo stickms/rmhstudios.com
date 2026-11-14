@@ -26,6 +26,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { decideAdminAppealApi, getAdminAppealsApi } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/appeals')({
   head: () => ({ meta: [{ title: 'Strike Appeals | RMH Studios' }] }),
@@ -65,6 +67,7 @@ function AdminAppealsPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   const load = useCallback(async (v: View) => {
@@ -158,11 +161,12 @@ function AdminAppealsPage() {
           </div>
         ) : items.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Gavel}
             title={t('appeals-empty', { defaultValue: 'No appeals here. The queue is clear.' })}
           />
         ) : (
-          <ul className="divide-y divide-site-border">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {items.map((a) => (
               <li key={a.id} className="py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-center gap-2">

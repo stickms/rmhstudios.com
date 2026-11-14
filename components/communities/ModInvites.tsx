@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import type { InviteDTO } from '@/lib/communities/invites.server';
 
@@ -26,6 +28,7 @@ export function ModInvites({ slug }: { slug: string }) {
   const { t } = useTranslation('f-communities-plus');
   const confirm = useConfirm();
   const [invites, setInvites] = useState<InviteDTO[] | null>(null);
+  const arrival = useArrival(invites !== null);
   const [maxUses, setMaxUses] = useState('');
   const [expiry, setExpiry] = useState('7');
   const [busy, setBusy] = useState(false);
@@ -135,6 +138,7 @@ export function ModInvites({ slug }: { slug: string }) {
         </div>
       ) : invites.length === 0 ? (
         <EmptyState
+          className={arrival}
           icon={Link2}
           title={t('invite-empty', { defaultValue: 'No invite links yet' })}
           description={t('invite-empty-hint', {
@@ -142,7 +146,7 @@ export function ModInvites({ slug }: { slug: string }) {
           })}
         />
       ) : (
-        <ul ref={listRef} className="flex flex-col gap-2">
+        <ul ref={listRef} className={cn('flex flex-col gap-2', arrival)}>
           {invites.map((i) => {
             const label = stateLabel(i);
             return (

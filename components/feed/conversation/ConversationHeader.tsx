@@ -1,7 +1,8 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CallButton } from '@/components/call/CallButton';
@@ -61,9 +62,9 @@ export function ConversationHeader({
                 {otherUser.isBot && <AutomatedBadge />}
               </h1>
               {otherUser.username && <p className="t-meta">@{otherUser.username}</p>}
-              <Suspense fallback={null}>
+              <ArrivalSuspense>
                 <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />
-              </Suspense>
+              </ArrivalSuspense>
             </div>
           </Link>
         )}

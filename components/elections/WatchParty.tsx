@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { ExternalLink, Play } from 'lucide-react';
 import { parseEmbed } from '@/lib/elections/streams';
 import { useLiveStreams } from './useLiveStreams';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * Watch the night: featured streams (configured server-side) or any YouTube /
@@ -18,6 +20,7 @@ export function WatchParty() {
   const [bad, setBad] = useState(false);
 
   const streams = useLiveStreams();
+  const arrival = useArrival(streams.length > 0);
 
   const embed = useMemo(() => (active ? parseEmbed(active.url) : null), [active]);
   const src = embed && typeof location !== 'undefined' ? embed.src(location.hostname) : null;
@@ -69,7 +72,7 @@ export function WatchParty() {
 
       {streams.length ? (
         <div
-          className="el-pick-row"
+          className={cn('el-pick-row', arrival)}
           role="group"
           aria-label={t('watch.live', { defaultValue: 'Live now' })}
         >

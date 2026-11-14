@@ -17,7 +17,8 @@ describe('DirectoryItem is the one directory entry', () => {
   ])('%s renders its list with DirectoryItem in the shared list', (_name, src) => {
     expect(src).toContain("from '@/components/ui/directory-item'");
     expect(src).toContain('<DirectoryItem');
-    expect(src).toContain('className={DIRECTORY_LIST_CLASS}');
+    // The shared list class, alone or merged with the M9 arrival class.
+    expect(src).toMatch(/className=\{(cn\()?DIRECTORY_LIST_CLASS\b/);
   });
 
   it('neither column hand-rolls the entry or its tile', () => {

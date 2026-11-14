@@ -11,6 +11,7 @@ import { isTextPath } from '@/lib/tf2-hud/project/paths';
 import { baseCache, useEditor } from '@/lib/tf2-hud/store';
 import { cn } from '@/lib/utils';
 import { Btn, EmptyNote, PanelHead, Pill, SelectField } from './ui';
+import { useArrival } from '@/components/ui/arrive';
 
 const MAX_ROWS = 2500;
 
@@ -53,6 +54,7 @@ export default function DiffView() {
   }, [path, entry, overlay, baseVersion]);
 
   const stats = Array.isArray(rows) ? diffStats(rows) : null;
+  const arrival = useArrival(rows !== 'loading');
   const display = Array.isArray(rows) ? (full ? rows : withContext(rows, 3)) : [];
 
   return (
@@ -106,11 +108,11 @@ export default function DiffView() {
             {rows === 'loading' ? (
               <EmptyNote>{t('loading', { defaultValue: 'Loading…' })}</EmptyNote>
             ) : rows === 'binary' ? (
-              <EmptyNote>
+              <EmptyNote className={arrival}>
                 {t('binary-changed', { defaultValue: 'Binary file — changed.' })}
               </EmptyNote>
             ) : (
-              <table className="w-full border-collapse">
+              <table className={cn('w-full border-collapse', arrival)}>
                 <tbody>
                   {display.slice(0, MAX_ROWS).map((row, i) =>
                     row === null ? (

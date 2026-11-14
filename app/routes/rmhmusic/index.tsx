@@ -2,7 +2,6 @@
  * RMH Music Landing Route
  */
 
-import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { appRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
@@ -13,6 +12,7 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import { LearnHome } from '@/components/rmhmusic/learn/LearnHome';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/rmhmusic/')({
   head: () => appRouteHead('rmhmusic'),
@@ -22,9 +22,9 @@ export const Route = createFileRoute('/rmhmusic/')({
 function RmhMusicRoute() {
   return (
     <GameErrorBoundary gameName="RMH Music">
-      <Suspense fallback={<GameLoadingFallback />}>
+      <ArrivalSuspense fallback={<GameLoadingFallback />}>
         <LearnHome />
-      </Suspense>
+      </ArrivalSuspense>
     </GameErrorBoundary>
   );
 }

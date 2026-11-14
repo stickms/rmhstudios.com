@@ -13,6 +13,8 @@ import {
   submitDailyPuzzleScoreApi,
   type DailyPuzzleLeaderboardEntry as LeaderboardEntry,
 } from '@/lib/daily-puzzles/daily-puzzles.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 
 /**
@@ -68,6 +70,7 @@ export function DailyPuzzleLeaderboard({
 }: DailyPuzzleLeaderboardProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const arrival = useArrival(!loading);
   const [submitted, setSubmitted] = useState(false);
 
   const { t } = useTranslation('c-daily-puzzles');
@@ -212,12 +215,12 @@ export function DailyPuzzleLeaderboard({
             <Spinner size={24} />
           </div>
         ) : leaderboard.length === 0 ? (
-          <p className="py-3 text-center text-sm text-site-text-muted">
+          <p className={cn('py-3 text-center text-sm text-site-text-muted', arrival)}>
             {t('no-scores-yet', { defaultValue: 'No scores yet.' })}{' '}
             {session.data ? t('youre-the-first', { defaultValue: "You're the first!" }) : ''}
           </p>
         ) : (
-          <ol className="flex flex-col gap-2">
+          <ol className={cn('flex flex-col gap-2', arrival)}>
             {leaderboard.map((e) => (
               <li
                 key={e.rank}

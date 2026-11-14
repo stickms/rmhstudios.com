@@ -38,11 +38,13 @@ import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
+import { useArrival } from '@/components/ui/arrive';
 
 const MAX_MIDDLE_LINKS = 6;
 
 function ChainlinkGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
     const [puzzle, setPuzzle] = useState<ChainlinkPuzzle | null>(null);
+    const arrival = useArrival(puzzle !== null);
 
     useEffect(() => {
         let cancelled = false;
@@ -56,7 +58,9 @@ function ChainlinkGameLoader({ dateKey, isToday }: { dateKey: string; isToday: b
     }, [dateKey]);
 
     if (!puzzle) return <PuzzleLoading title="Chainlink" emoji="🔗" />;
-    return <ChainlinkGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    const content = <ChainlinkGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    // The puzzle replaces the loading panel: it fades in through a box-less wrapper (M9).
+    return arrival ? <div className="arrive-group">{content}</div> : content;
 }
 
 function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkPuzzle; dateKey: string; isToday: boolean }) {

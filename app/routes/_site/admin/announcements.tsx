@@ -35,6 +35,8 @@ import {
   adminAnnouncementsList,
   type AdminAnnouncement as Announcement,
 } from '@/lib/admin/announcements.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/announcements')({
   head: () => ({ meta: [{ title: 'Announcements | RMH Studios' }] }),
@@ -69,6 +71,7 @@ function AdminAnnouncementsPage() {
   const confirm = useConfirm();
   const [list, setList] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
@@ -540,10 +543,11 @@ function AdminAnnouncementsPage() {
           </div>
         ) : list.length === 0 ? (
           <EmptyState
+            className={arrival}
             description={t('no-announcements', { defaultValue: 'No announcements yet.' })}
           />
         ) : (
-          <ul className="divide-y divide-site-border border-t border-site-border">
+          <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
             {list.map((a) => (
               <li key={a.id} className="relative py-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">

@@ -13,6 +13,8 @@ import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { listAdminHeldListingsApi, resolveAdminHeldListingApi } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/market')({
   head: () => ({ meta: [{ title: 'Marketplace Review | RMH Studios' }] }),
@@ -43,6 +45,7 @@ function AdminMarketPage() {
   const { t, i18n } = useTranslation('admin');
   const [rows, setRows] = useState<HeldListingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   // One request at a time across the whole queue: every action button is
   // disabled while any is in flight.
   const [busy, setBusy] = useState<{ id: string; action: Action } | null>(null);
@@ -113,11 +116,12 @@ function AdminMarketPage() {
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Store}
             title={t('market-review-empty', { defaultValue: 'No listings are held for review.' })}
           />
         ) : (
-          <div className="divide-y divide-site-border">
+          <div className={cn('divide-y divide-site-border', arrival)}>
             {rows.map((r) => {
               const name = r.item?.name ?? r.itemId;
               return (

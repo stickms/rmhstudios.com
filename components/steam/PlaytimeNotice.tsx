@@ -10,6 +10,8 @@ import {
   getPlaytimeSettingsApi,
 } from '@/lib/playtime/playtime.contract';
 import type { ResOf } from '@/lib/contract/endpoint';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Settings = ResOf<typeof getPlaytimeSettingsApi>;
 
@@ -23,6 +25,7 @@ export function PlaytimeNotice() {
   const { data: session } = useSession();
   const signedIn = !!session?.user;
   const [settings, setSettings] = useState<Settings | null>(null);
+  const arrival = useArrival(settings !== null);
 
   useEffect(() => {
     if (!signedIn) return;
@@ -47,7 +50,7 @@ export function PlaytimeNotice() {
   }
 
   return (
-    <aside className="stm-notice" aria-label={t('playtime-notice-label', { defaultValue: 'Playtime visibility' })}>
+    <aside className={cn('stm-notice', arrival)} aria-label={t('playtime-notice-label', { defaultValue: 'Playtime visibility' })}>
       <Eye aria-hidden />
       <p>
         {t('playtime-notice-body', {

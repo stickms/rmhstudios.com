@@ -19,8 +19,9 @@
  * is noise.
  */
 
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { markRouteArrival } from '@/components/ui/arrive';
 
 // This module is the route's `pendingComponent`, so the router imports it with
 // the route tree and everything it imports statically is on the critical path
@@ -256,5 +257,7 @@ export function BoardSkeleton({ status }: { status?: string | null }) {
  */
 export function BoardPending() {
   const status = useBoardStatus(true);
+  // Steel M9: the board this stands in for fades in when it lands (as RoutePending does).
+  useLayoutEffect(() => () => markRouteArrival('app'), []);
   return <BoardSkeleton status={status} />;
 }

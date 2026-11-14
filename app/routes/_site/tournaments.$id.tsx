@@ -6,6 +6,8 @@ import { toast } from '@/lib/toast';
 import { Coins, Users, Play, Trophy, Medal } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -99,6 +101,7 @@ function TournamentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [reportingId, setReportingId] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     try {
@@ -159,6 +162,7 @@ function TournamentDetailPage() {
     return (
       <PageLayout title={t('title-tournaments-id', { defaultValue: 'Tournament' })} backTo="/tournaments" wide>
         <EmptyState
+          className={arrival}
           icon={Trophy}
           title={t('not-found', { defaultValue: 'This tournament no longer exists.' })}
         />
@@ -198,7 +202,7 @@ function TournamentDetailPage() {
         </Badge>
       }
     >
-      <div className="max-w-4xl space-y-4">
+      <div className={cn('max-w-4xl space-y-4', arrival)}>
         {/* Summary */}
         <Card className="flex-row flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4" pane>
           <div>

@@ -15,6 +15,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import {
@@ -37,6 +39,8 @@ export default function GuestbookPanel({
   const { data: session } = useSession();
   const [page, setPage] = useState<GuestbookPage | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const arrival = useArrival(page !== null);
+  const isNew = useArrivingKeys((page?.entries ?? []).map((e) => e.id));
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const base = `/api/profile/${encodeURIComponent(ownerId)}/guestbook`;
@@ -154,7 +158,7 @@ export default function GuestbookPanel({
   const viewerId = session?.user.id ?? null;
 
   return (
-    <div className="space-y-3 pb-8">
+    <div className={cn('space-y-3 pb-8', arrival)}>
       {page.isOwner ? (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-site-border pb-3">
           <div className="min-w-0">
@@ -237,7 +241,11 @@ export default function GuestbookPanel({
             return (
               <li
                 key={entry.id}
-                className={`flex items-start gap-3 py-3 ${entry.hidden ? 'opacity-60' : ''}`}
+                className={cn(
+                  'flex items-start gap-3 py-3',
+                  entry.hidden && 'opacity-60',
+                  isNew(entry.id) && ARRIVE,
+                )}
               >
                 <Link to={href} className="shrink-0">
                   <UserAvatar src={entry.author.image} alt={name} size={36} fallbackName={name} />

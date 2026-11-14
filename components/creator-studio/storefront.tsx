@@ -28,6 +28,8 @@ import { ArrowRight, Info } from 'lucide-react';
 import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
 import { DeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import '@/components/creator-studio/storefront.css';
 
 /** A single thing on the shelf — a game, app, persona, build, or page. */
@@ -242,10 +244,10 @@ function TagRow({ tags }: { tags?: string[] }) {
 }
 
 /** The big top banner. */
-function HeroCard({ item }: { item: StoreItem }) {
+function HeroCard({ item, className }: { item: StoreItem; className?: string | undefined }) {
   const { t } = useTranslation('feed');
   return (
-    <div className="store-hero">
+    <div className={cn('store-hero', className)}>
       <PrimaryWrapper item={item} className="store-hero__link" ariaLabel={item.title}>
         <div className="store-hero__art">
           <Art item={item} {...coverFor(item)} eager sizes="100vw" />
@@ -288,11 +290,19 @@ function SpotlightCard({ item }: { item: StoreItem }) {
 }
 
 /** A catalog tile — `wide` ones span two columns and show their description. */
-function MosaicCard({ item, wide }: { item: StoreItem; wide: boolean }) {
+function MosaicCard({
+  item,
+  wide,
+  className,
+}: {
+  item: StoreItem;
+  wide: boolean;
+  className?: string | undefined;
+}) {
   const { t } = useTranslation('feed');
   const detailsLabel = item.detailsLabel ?? t('store-details', { defaultValue: 'Details' });
   return (
-    <div className={`store-card ${wide ? 'is-wide' : ''}`}>
+    <div className={cn('store-card', wide && 'is-wide', className)}>
       <PrimaryWrapper item={item} className="store-card__link" ariaLabel={item.title}>
         <div className="store-art store-card__art">
           <Art item={item} {...coverFor(item)} />
@@ -348,6 +358,10 @@ export function Storefront({
   }, [items, featured, spotlightCount]);
 
   const { t } = useTranslation('feed');
+  // Callers that fetch start with no items (the empty label says Loading); what replaces it fades in,
+  // and so does every tile a later page appends (Steel M9). A catalogue given on first render does not.
+  const arrival = useArrival(items.length > 0);
+  const isNew = useArrivingKeys(items.map((item) => item.id));
 
   return (
     <div className="store">
@@ -359,11 +373,11 @@ export function Storefront({
         />
       ) : (
         <>
-          {hero && <HeroCard item={hero} />}
+          {hero && <HeroCard item={hero} className={arrival} />}
 
           {spotlight.length > 0 && (
             <section
-              className="store-rail"
+              className={cn('store-rail', arrival)}
               aria-label={t('store-featured', { defaultValue: 'Featured' })}
             >
               <div className="store-rail__track">
@@ -378,9 +392,14 @@ export function Storefront({
               the page's DOM — so on a page switch it is built after the hero
               has painted rather than inside the same commit. */}
           <DeferOnNavigate enabled={Boolean(hero)} minHeight="60vh">
-            <div className="store-mosaic">
+            <div className={cn('store-mosaic', arrival)}>
               {mosaic.map((item, i) => (
-                <MosaicCard key={item.id} item={item} wide={isWideTile(i)} />
+                <MosaicCard
+                  key={item.id}
+                  item={item}
+                  wide={isWideTile(i)}
+                  className={isNew(item.id) ? ARRIVE : undefined}
+                />
               ))}
             </div>
           </DeferOnNavigate>

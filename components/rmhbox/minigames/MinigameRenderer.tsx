@@ -14,10 +14,11 @@
  *   minigameId: string — The ID of the minigame to render
  */
 
-import { lazy, Suspense, useCallback, useEffect, type ComponentType } from 'react';
+import { lazy, useCallback, useEffect, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Gamepad2, HelpCircle } from 'lucide-react';
 import { useRMHboxStore, type TimerInfo, type MinigameRoundInfo } from '@/lib/rmhbox/store';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // ─── Minigame ↔ Shell Interface ──────────────────────────────────
 
@@ -183,8 +184,8 @@ export default function MinigameRenderer({ minigameId }: MinigameRendererProps) 
   const playerName = lobby?.players.find((p) => p.userId === playerId)?.userName ?? '';
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
+    <ArrivalSuspense fallback={<LoadingFallback />}>
       <LazyComponent playerId={playerId} playerName={playerName} />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

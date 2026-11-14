@@ -8,6 +8,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import {
   NOW_MAX,
   NOW_STALE_DAYS,
@@ -50,6 +52,7 @@ export default function IdentitySettings({ userId }: { userId: string }) {
   const [counter, setCounter] = useState(false);
   const [endorse, setEndorse] = useState(false);
   const [saving, setSaving] = useState(false);
+  const arrival = useArrival(view !== null);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +101,7 @@ export default function IdentitySettings({ userId }: { userId: string }) {
   if (!view) return <Skeleton className="h-64 w-full" />;
 
   return (
-    <div className="space-y-6">
+    <div className={cn('space-y-6', arrival)}>
       <div className="space-y-2">
         <Label htmlFor="plus-pronouns">{t('pronouns-label', { defaultValue: 'Pronouns' })}</Label>
         <Input

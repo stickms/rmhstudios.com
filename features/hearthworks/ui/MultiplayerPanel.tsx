@@ -9,6 +9,8 @@ import { hearthworksStore } from '@features/hearthworks/engine/store';
 import { HW_LIMITS } from '@features/hearthworks/engine/net/events';
 import { ensureLobby, leaveLobby, useLobby } from '@features/hearthworks/engine/net/lobby';
 import type { LobbyError, LobbyPlayer } from '@features/hearthworks/engine/net/connector';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type TFn = ReturnType<typeof useTranslation>['t'];
 
@@ -87,6 +89,9 @@ export function MultiplayerPanel() {
   const { copied, copyLink } = useLobbyLink({ code: lobby.code, path: '/hearthworks' });
 
   const idle = lobby.phase === 'idle' || lobby.phase === 'closed';
+  // Rooms arrive from the hub after the panel shows, and more join the list while it is open (M9).
+  const roomsArrival = useArrival(lobby.rooms.length > 0);
+  const isNewRoom = useArrivingKeys(lobby.rooms.map((r) => r.code));
 
   const join = useCallback((c: string, password?: string) => {
     const room = c.trim().toUpperCase();
@@ -331,9 +336,9 @@ export function MultiplayerPanel() {
       {lobby.rooms.length === 0 ? (
         <p className="hw-muted">{t('mp-rooms-empty', { defaultValue: 'No open worlds right now.' })}</p>
       ) : (
-        <ul className="hw-list">
+        <ul className={cn('hw-list', roomsArrival)}>
           {lobby.rooms.map((r) => (
-            <li key={r.code} className="hw-row">
+            <li key={r.code} className={cn('hw-row', isNewRoom(r.code) && ARRIVE)}>
               <span>
                 {r.locked && <Lock aria-label={t('mp-locked-badge', { defaultValue: 'Password protected' })} size={14} />} {r.name}
                 <span className="hw-muted">

@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Switch } from '@/components/ui/switch';
 import { useShelfLabels } from './useShelfLabels';
@@ -37,6 +39,7 @@ export default function ShelvesPanel() {
   const labels = useShelfLabels();
   const { data, isPending } = useMyShelves(!!session);
   const { set, remove, prefs } = useShelfMutations();
+  const arrival = useArrival(!isPending);
 
   if (!session) {
     return (
@@ -53,6 +56,7 @@ export default function ShelvesPanel() {
   if (entries.length === 0) {
     return (
       <EmptyState
+        className={arrival}
         icon={BookMarked}
         title={t('shelves-empty', { defaultValue: 'Your shelves are empty' })}
         description={t('shelves-empty-hint', {
@@ -78,7 +82,7 @@ export default function ShelvesPanel() {
   }
 
   return (
-    <div className="space-y-[var(--site-section-gap)]">
+    <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
       {SHELVES.map((shelf) => {
         const items = entries.filter((e) => e.shelf === shelf);
         const isPublic = data?.prefs[PREF_KEY[shelf]] ?? false;

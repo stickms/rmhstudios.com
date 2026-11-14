@@ -7,6 +7,8 @@ import { useSession } from '@/components/Providers';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/analytics')({
   head: () => ({ meta: [{ title: 'Creator Analytics | RMH Studios' }] }),
@@ -17,10 +19,11 @@ export const Route = createFileRoute('/_site/analytics')({
 function AnalyticsPage() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
+  const arrival = useArrival(!isPending);
 
   return (
     <PageLayout title={t('creator-analytics', { defaultValue: 'Creator analytics' })} wide>
-      <div className="min-w-0 px-4 pt-4 pb-[var(--site-page-bottom-space)]">
+      <div className={cn('min-w-0 px-4 pt-4 pb-[var(--site-page-bottom-space)]', arrival)}>
         {isPending ? (
           <div className="flex justify-center py-12">
             <Spinner />

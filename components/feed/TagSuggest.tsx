@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { suggestTagsApi } from '@/lib/feed/compose-assist.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 /** Below this a draft is too thin to tag honestly, and the endpoint rejects it. */
 const MIN_CHARS = 12;
 
@@ -29,6 +31,8 @@ export function TagSuggest({
   const [tags, setTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const lastQueried = useRef('');
+  // Steel M9: the suggested tags land after the spinner and fade in as they mount.
+  const arrival = useArrival(!loading);
 
   useEffect(() => {
     const text = value.trim();
@@ -90,7 +94,10 @@ export function TagSuggest({
           key={tag}
           type="button"
           onClick={() => append(tag)}
-          className="rounded-full border border-site-border px-3 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
+          className={cn(
+            'rounded-full border border-site-border px-3 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text',
+            arrival,
+          )}
         >
           #{tag}
         </button>

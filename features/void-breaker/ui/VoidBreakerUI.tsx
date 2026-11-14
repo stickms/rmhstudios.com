@@ -21,6 +21,8 @@ import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import type { RunStats } from '@features/void-breaker/engine/types';
 import { BossRushMenu, BossRushResult } from './BossRush';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type LBEntry = { username: string; highScore: number };
 
@@ -65,6 +67,7 @@ export function VoidBreakerUI({
 }) {
   const { t } = useTranslation("c-void-breaker");
   const [lb, setLb] = useState<LBEntry[]>([]);
+  const lbArrival = useArrival(lb.length > 0);
   const [submitted, setSubmitted] = useState(false);
   const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   const [showLore, setShowLore] = useState(false);
@@ -628,7 +631,7 @@ export function VoidBreakerUI({
               <LogOut className="w-4 h-4 mr-2" aria-hidden /> {t("quit", { defaultValue: "Quit" })}
             </Button>
             {lb.length > 0 && (
-              <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">
+              <div className={cn('bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3', lbArrival)}>
                 <div className="flex items-center gap-2 mb-2">
                   <Trophy className="w-3.5 h-3.5 text-[#d4af37]" />
                   <span className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em]">{t("leaderboard", { defaultValue: "Leaderboard" })}</span>
@@ -749,7 +752,7 @@ export function VoidBreakerUI({
           </div>
 
           {lb.length > 0 && (
-            <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">
+            <div className={cn('bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3', lbArrival)}>
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="w-3 h-3 text-[#d4af37]" />
                 <span className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em]">{t("leaderboard", { defaultValue: "Leaderboard" })}</span>

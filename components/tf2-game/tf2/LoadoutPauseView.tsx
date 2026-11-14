@@ -14,6 +14,8 @@ import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
 import { useHudContext, useHudState } from '../use-hud';
 import LoadoutScreen from '../menus/LoadoutScreen';
 import { useMenuSource } from '../menus/use-menu-source';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function LoadoutPauseView({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation('c-tf2-game');
@@ -21,6 +23,7 @@ export default function LoadoutPauseView({ onClose }: { onClose: () => void }) {
   const { store } = useHudContext();
   const state = useHudState();
   const source = useMenuSource('tf2');
+  const arrival = useArrival(cat.status !== 'loading');
   if (cat.status === 'loading') {
     return (
       <p role="status" className="tf2m-loadout-note">
@@ -30,7 +33,7 @@ export default function LoadoutPauseView({ onClose }: { onClose: () => void }) {
   }
   if (cat.status === 'error') {
     return (
-      <p role="alert" className="tf2m-loadout-note">
+      <p role="alert" className={cn('tf2m-loadout-note', arrival)}>
         {t('loadout_catalog_error', { defaultValue: 'Could not load the item catalog.' })}{' '}
         <button type="button" className="inline-flex items-center underline pointer-coarse:min-h-11 pointer-coarse:min-w-11" onClick={cat.retry}>
           {t('loadout_retry', { defaultValue: 'Retry' })}
@@ -38,5 +41,9 @@ export default function LoadoutPauseView({ onClose }: { onClose: () => void }) {
       </p>
     );
   }
-  return <LoadoutScreen idx={cat.index} match={{ store, state }} source={source} onClose={onClose} layer />;
+  const screen = (
+    <LoadoutScreen idx={cat.index} match={{ store, state }} source={source} onClose={onClose} layer />
+  );
+  // It replaces the catalog wait: a box-less wrapper fades it in (M9).
+  return arrival ? <div className="arrive-group">{screen}</div> : screen;
 }

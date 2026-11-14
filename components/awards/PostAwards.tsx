@@ -22,6 +22,7 @@ import {
   type AwardEntityType,
   type AwardGroup,
 } from '@/lib/awards/catalog';
+import { useArrival } from '@/components/ui/arrive';
 
 interface Summary {
   groups: AwardGroup[];
@@ -51,6 +52,7 @@ export function PostAwards({
   const [open, setOpen] = useState(false);
   const [anonymous, setAnonymous] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const arrival = useArrival(summary !== null);
 
   useEffect(() => {
     if (initial) return;
@@ -107,7 +109,10 @@ export function PostAwards({
         return (
           <span
             key={g.awardId}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm"
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm',
+              arrival,
+            )}
             title={def.name}
           >
             <span aria-hidden>{def.emoji}</span>
@@ -116,7 +121,7 @@ export function PostAwards({
         );
       })}
       {groups.length > 4 ? (
-        <span className="text-xs text-site-text-muted">
+        <span className={cn('text-xs text-site-text-muted', arrival)}>
           +{groups.slice(4).reduce((s, g) => s + g.count, 0)}
         </span>
       ) : null}

@@ -11,6 +11,8 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { Input } from '@/components/ui/input';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { CalendarFeedView } from '@/lib/calendar/types';
@@ -24,6 +26,7 @@ export default function CalendarSettings() {
   const [feed, setFeed] = useState<CalendarFeedView | null>(null);
   const [busy, setBusy] = useState(false);
   const signedIn = !!session?.user;
+  const arrival = useArrival(feed !== null);
 
   useEffect(() => {
     if (isPending || !signedIn) return;
@@ -103,7 +106,7 @@ export default function CalendarSettings() {
         {feed === null ? (
           <Skeleton className="h-11" />
         ) : feed.url ? (
-          <div className="space-y-2">
+          <div className={cn('space-y-2', arrival)}>
             <label className="block space-y-1 text-sm text-site-text">
               {t('feed-url', { defaultValue: 'Subscribe link' })}
               <div className="flex gap-2">
@@ -126,7 +129,12 @@ export default function CalendarSettings() {
             </Button>
           </div>
         ) : (
-          <Button variant="default" onClick={() => void patch({ enabled: true })} disabled={busy}>
+          <Button
+            variant="default"
+            className={arrival}
+            onClick={() => void patch({ enabled: true })}
+            disabled={busy}
+          >
             {t('feed-create', { defaultValue: 'Create my calendar link' })}
           </Button>
         )}
@@ -139,11 +147,11 @@ export default function CalendarSettings() {
         })}
       >
         {feed && feed.slots.length === 0 ? (
-          <p className="text-sm text-site-text-muted">
+          <p className={cn('text-sm text-site-text-muted', arrival)}>
             {t('feed-slots-none', { defaultValue: 'Nothing is scheduled right now.' })}
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul className={cn('space-y-3', arrival)}>
             {feed?.slots.map((s) => (
               <li
                 key={s.id}

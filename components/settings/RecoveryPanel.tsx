@@ -20,6 +20,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SettingsSection } from '@/components/settings/SettingsSection';
@@ -86,6 +88,8 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
     enabled: signedIn,
   });
   const loading = signedIn && (statusPending || holdPending || requestsPending);
+  // The body spaces its children (settings.css `> * + *`), so each one takes the fade.
+  const arrival = useArrival(!loading);
   const status: CodeStatus | null = statusData ?? null;
   const hold: HoldState | null = holdData ?? null;
   const requests: RequestRow[] = (requestData?.mine ?? []).filter(
@@ -236,7 +240,12 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
       ) : (
         <>
           {hold?.active ? (
-            <p className="mb-4 flex items-start gap-2 rounded-site-sm p-3 text-sm text-site-warning">
+            <p
+              className={cn(
+                'mb-4 flex items-start gap-2 rounded-site-sm p-3 text-sm text-site-warning',
+                arrival,
+              )}
+            >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <span>
                 {t('recovery-hold-active', {
@@ -249,7 +258,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
           ) : null}
 
           {requests.length > 0 ? (
-            <ul className="mb-4 space-y-2">
+            <ul className={cn('mb-4 space-y-2', arrival)}>
               {requests.map((row) => (
                 <li key={row.id} className="rounded-site-sm p-3">
                   <p className="flex items-start gap-2 text-sm font-semibold text-site-danger">
@@ -281,7 +290,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
             </ul>
           ) : null}
 
-          <div className="rounded-site-sm p-3">
+          <div className={cn('rounded-site-sm p-3', arrival)}>
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-site-accent" aria-hidden />
               <h3 className="text-sm font-semibold text-site-text">

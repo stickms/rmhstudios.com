@@ -9,11 +9,13 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import type { FeedSummary } from '@/lib/discovery/feeds.server';
 import { feedsQuery } from '@/lib/discovery/feeds.queries';
 import { EMPTY_FEED_FORM, FeedForm, feedBody } from './FeedForm';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
+import { cn } from '@/lib/utils';
 import { createCustomFeedApi } from '@/lib/discovery/discovery.contract';
 
 function FeedRow({ f }: { f: FeedSummary }) {
@@ -72,6 +74,8 @@ export function FeedsPage() {
   const list = useQuery({ ...feedsQuery(), enabled: !!session, retry: false });
   const lists = list.data ?? null;
   const loadFailed = list.isError;
+  // Steel M9: the lists replace the skeleton when fetched here; seeded by the loader they are there on first paint.
+  const arrival = useArrival(!!lists);
   useEffect(() => {
     if (loadFailed) toast.error(t('feeds-load-failed', { defaultValue: 'Could not load feeds' }));
   }, [loadFailed, t]);
@@ -113,7 +117,7 @@ export function FeedsPage() {
         ) : !lists ? (
           <Skeleton className="h-40 w-full" />
         ) : (
-          <>
+          <div className={cn('space-y-6', arrival)}>
             {creating ? (
               <FeedForm
                 initial={EMPTY_FEED_FORM}
@@ -136,7 +140,7 @@ export function FeedsPage() {
               title={t('feeds-popular', { defaultValue: 'Popular feeds' })}
               items={lists.popular}
             />
-          </>
+          </div>
         )}
       </div>
     </PageLayout>

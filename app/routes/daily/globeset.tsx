@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
@@ -9,15 +8,16 @@ import { buildMeta } from '@/lib/seo';
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import { GlobeSetGame } from '@/components/daily-puzzles/globeset/GlobeSetGame';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const PATH = '/daily/globeset';
 
 function GlobeSetPage() {
   return (
     <GameErrorBoundary gameName="GlobeSet">
-      <Suspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
+      <ArrivalSuspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
         <GlobeSetGame />
-      </Suspense>
+      </ArrivalSuspense>
     </GameErrorBoundary>
   );
 }

@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { exploreApi } from '@/lib/discovery/explore.contract';
 import type { ExploreResult } from '@/lib/explore.server';
@@ -32,11 +34,13 @@ export default function MarginLists() {
   });
   const tags = data?.trendingTags?.slice(0, 5) ?? [];
   const people = data?.suggestedUsers?.slice(0, 3) ?? [];
+  // Steel M9: fetched after idle, the lists land in the margin and fade in; from the shared cache they are just there.
+  const arrival = useArrival(!!data);
 
   return (
     <>
       {tags.length > 0 && (
-        <section className="site-margin__group">
+        <section className={cn('site-margin__group', arrival)}>
           <h2 className="t-label">{t('trending', { defaultValue: 'Trending' })}</h2>
           <ul className="site-margin__list">
             {tags.map((entry) => (
@@ -51,7 +55,7 @@ export default function MarginLists() {
         </section>
       )}
       {people.length > 0 && (
-        <section className="site-margin__group">
+        <section className={cn('site-margin__group', arrival)}>
           <h2 className="t-label">{t('who-to-follow', { defaultValue: 'Who to follow' })}</h2>
           <ul className="site-margin__list">
             {people.map((person) => (

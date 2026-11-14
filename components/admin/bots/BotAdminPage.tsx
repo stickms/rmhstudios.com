@@ -10,8 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
 import { RelativeTime } from '@/components/ui/RelativeTime';
-import { relativeTimeShort } from '@/lib/utils';
+import { cn, relativeTimeShort } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { getAdminBotsApi, saveAdminBotsApi } from '@/lib/admin/admin-ops.contract';
 import {
@@ -89,6 +90,7 @@ export function BotAdminPage() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [saving, setSaving] = useState(false);
+  const arrival = useArrival(!loading);
 
   const ago = useCallback(
     (ts: number, now: number) =>
@@ -200,11 +202,12 @@ export function BotAdminPage() {
           </div>
         ) : failed || !stats || !settings || !draft ? (
           <EmptyState
+            className={arrival}
             icon={Bot}
             title={t('bots-load-error', { defaultValue: 'Could not load bot settings.' })}
           />
         ) : (
-          <>
+          <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
             <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 md:grid-cols-4">
               <StatTile
                 icon={Users}
@@ -419,7 +422,7 @@ export function BotAdminPage() {
                 </Button>
               </div>
             </form>
-          </>
+          </div>
         )}
       </AdminBody>
     </PageLayout>

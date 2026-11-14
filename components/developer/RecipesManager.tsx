@@ -21,6 +21,8 @@ import {
   setRecipeEnabledApi,
 } from '@/lib/devplatform/recipes.contract';
 import { recipesQuery } from '@/lib/devplatform/developer.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Options {
   games: { id: string; title: string }[];
@@ -36,6 +38,7 @@ export function RecipesManager() {
   // A failed read shows an empty list rather than the spinner.
   const recipes: RecipeView[] | null = data?.recipes ?? (isError ? [] : null);
   const options: Options = data?.options ?? { games: [], items: [] };
+  const arrival = useArrival(recipes !== null);
   const [name, setName] = useState('');
   const [trigger, setTrigger] = useState<RecipeTrigger>('new_follower');
   const [gameId, setGameId] = useState('');
@@ -207,7 +210,7 @@ export function RecipesManager() {
       {recipes === null ? (
         <Spinner />
       ) : (
-        <ul className="space-y-3">
+        <ul className={cn('space-y-3', arrival)}>
           {recipes.map((r) => (
             <li key={r.id} className="flex items-center gap-3 rounded-site px-4 py-3">
               <div className="min-w-0 flex-1">

@@ -23,11 +23,13 @@ import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
+import { useArrival } from '@/components/ui/arrive';
 
 type StatementResult = 'real' | 'fake-found' | 'fake-missed' | 'wrong-guess';
 
 function ImpostorGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
     const [puzzle, setPuzzle] = useState<ImpostorPuzzle | null>(null);
+    const arrival = useArrival(puzzle !== null);
 
     useEffect(() => {
         let cancelled = false;
@@ -41,7 +43,9 @@ function ImpostorGameLoader({ dateKey, isToday }: { dateKey: string; isToday: bo
     }, [dateKey]);
 
     if (!puzzle) return <PuzzleLoading title="Impostor" emoji="🤥" />;
-    return <ImpostorGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    const content = <ImpostorGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    // The puzzle replaces the loading panel: it fades in through a box-less wrapper (M9).
+    return arrival ? <div className="arrive-group">{content}</div> : content;
 }
 
 function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuzzle; dateKey: string; isToday: boolean }) {

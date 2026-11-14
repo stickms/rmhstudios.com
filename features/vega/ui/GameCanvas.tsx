@@ -14,6 +14,8 @@ import { VegaGame } from '@features/vega/engine/VegaGame';
 import { asset } from '@/lib/storage/asset';
 import { useGameStore, TOWER_COSTS } from '@features/vega/engine/GameState';
 import { TowerType } from '@features/vega/engine/Entities';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -438,6 +440,7 @@ function GameOverScreen() {
     const { currentLoop, level, resetGame } = useGameStore();
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [status, setStatus] = useState<'submitting' | 'success' | 'error'>('submitting');
+    const arrival = useArrival(leaderboard.length > 0);
 
     useEffect(() => {
         // Submit Score
@@ -486,7 +489,7 @@ function GameOverScreen() {
                               {status === 'submitting' ? t("uploading-data", { defaultValue: "UPLOADING BLACK BOX DATA..." }) : t("no-data-found", { defaultValue: "NO DATA FOUND" })}
                           </p>
                       ) : (
-                          <table className="w-full text-xs">
+                          <table className={cn('w-full text-xs', arrival)}>
                               <tbody>
                                   {leaderboard.map((entry, i) => (
                                       <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/5">

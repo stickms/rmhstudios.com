@@ -29,6 +29,7 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { ArcadeHub } from '@/components/arcade/ArcadeHub';
 import { LeaderboardColumn } from '@/components/feed/LeaderboardColumn';
@@ -52,6 +53,8 @@ export function ArcadeSection({
   const signedIn = Boolean(session);
   const [board, setBoard] = useState<LeaderboardData | null>(null);
   const [boardFailed, setBoardFailed] = useState(false);
+  const sessionArrival = useArrival(!isPending);
+  const boardArrival = useArrival(board !== null || boardFailed);
 
   // Pulled once, the first time the Leaderboard sub-tab is opened.
   useEffect(() => {
@@ -129,13 +132,16 @@ export function ArcadeSection({
           aria-labelledby="cstudio-arcade-tab-challenges"
         >
           {signedIn ? (
-            <ArcadeHub initialState={null} hideHeader />
+            <div className={sessionArrival}>
+              <ArcadeHub initialState={null} hideHeader />
+            </div>
           ) : isPending ? (
             <div className="flex justify-center py-16">
               <Spinner />
             </div>
           ) : (
             <EmptyState
+              className={sessionArrival}
               icon={Gamepad2}
               title={t('arcade-sign-in', {
                 defaultValue: 'Sign in to play the daily arcade challenges',
@@ -160,9 +166,12 @@ export function ArcadeSection({
           aria-labelledby="cstudio-arcade-tab-leaderboard"
         >
           {board ? (
-            <LeaderboardColumn initialData={board} signedIn={signedIn} hideHeader />
+            <div className={boardArrival}>
+              <LeaderboardColumn initialData={board} signedIn={signedIn} hideHeader />
+            </div>
           ) : boardFailed ? (
             <EmptyState
+              className={boardArrival}
               icon={Trophy}
               title={t('leaderboard-failed', {
                 defaultValue: 'Could not load the leaderboard just now.',

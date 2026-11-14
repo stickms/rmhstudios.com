@@ -31,6 +31,7 @@ import { FlashcardSession, type Answered } from './FlashcardLesson';
 import { InputSetup } from './InputSetup';
 import { FlashcardSkeleton, Shell } from './LessonScreen';
 import { useInputRelease } from './useLearnInput';
+import { useArrival } from '@/components/ui/arrive';
 
 const RETURN_TO = '/rmhmusic/practice';
 
@@ -94,6 +95,7 @@ export function PracticeLesson() {
   );
 
   let body: ReactNode;
+  let loading = false;
   if (session !== null && session.length > 0) {
     body = <Practice cards={session} paused={setupOpen} />;
   } else if (session !== null) {
@@ -131,8 +133,10 @@ export function PracticeLesson() {
       </div>
     );
   } else {
+    loading = true;
     body = <FlashcardSkeleton />;
   }
+  const arrival = useArrival(!loading);
 
   const ready = session !== null && session.length > 0;
   return (
@@ -158,7 +162,7 @@ export function PracticeLesson() {
         </div>
       }
     >
-      {body}
+      <div className={arrival}>{body}</div>
       <InputSetup open={setupOpen} onOpenChange={setSetupOpen} returnFocus={setupButton} />
     </Shell>
   );

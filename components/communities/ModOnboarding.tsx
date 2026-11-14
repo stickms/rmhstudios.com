@@ -6,6 +6,8 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { FlairChip } from '@/components/communities/FlairChip';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import {
@@ -38,6 +40,7 @@ export function ModOnboarding({
 }) {
   const { t } = useTranslation('f-communities-plus');
   const [draft, setDraft] = useState<DraftQuestion[] | null>(null);
+  const arrival = useArrival(draft !== null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -99,7 +102,7 @@ export function ModOnboarding({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={cn('flex flex-col gap-4', arrival)}>
       <p className="text-xs text-site-text-muted">
         {t('onb-intro', {
           defaultValue:

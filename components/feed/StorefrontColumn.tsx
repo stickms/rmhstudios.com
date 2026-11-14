@@ -31,6 +31,8 @@ import {
 } from '@/lib/storefront/storefront.contract';
 import { PageLayout } from './PageLayout';
 import { UserAvatar } from './UserAvatar';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Product {
   id: string;
@@ -91,6 +93,8 @@ export function StorefrontColumn({
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
+  // Steel M9: a store fetched here replaces the spinner; the loader's is there on first paint.
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     try {
@@ -232,6 +236,7 @@ export function StorefrontColumn({
     return (
       <PageLayout title={t('storefront', { defaultValue: 'Storefront' })}>
         <EmptyState
+          className={arrival}
           title={t('storefront-missing-title', { defaultValue: 'No store here' })}
           description={t('storefront-missing-desc', {
             defaultValue: 'This link does not match anyone. Check the name, or go to the store.',
@@ -265,7 +270,7 @@ export function StorefrontColumn({
       <Link
         to="/u/$userid"
         params={{ userid: creator.handle ?? creator.id }}
-        className="flex min-h-11 items-center gap-3 border-y border-site-border py-3"
+        className={cn('flex min-h-11 items-center gap-3 border-y border-site-border py-3', arrival)}
       >
         <UserAvatar user={creator} linkToProfile={false} />
         <span className="min-w-0">
@@ -283,7 +288,7 @@ export function StorefrontColumn({
 
       {products.length === 0 ? (
         <EmptyState
-          className="pt-6"
+          className={cn('pt-6', arrival)}
           title={t('storefront-empty-title', { defaultValue: 'No products yet' })}
           description={
             isOwner
@@ -294,7 +299,7 @@ export function StorefrontColumn({
           }
         />
       ) : (
-        <ul>
+        <ul className={arrival}>
           {products.map((p) => (
             <li key={p.id} className="flex flex-col gap-2 border-b border-site-border py-4">
               <div className="flex items-start justify-between gap-3">

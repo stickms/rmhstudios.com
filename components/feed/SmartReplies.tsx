@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { smartRepliesApi } from '@/lib/feed/compose-assist.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 /**
  * One-tap reply chips above a DM composer.
  *
@@ -40,6 +42,8 @@ export function SmartReplies({
   const fetchedFor = useRef<string | null>(null);
 
   const idle = draft.trim().length === 0;
+  // Steel M9: the chips are fetched after a message lands and appear above the composer, so they fade in.
+  const arrival = useArrival(idle && replies.length > 0);
 
   useEffect(() => {
     if (!idle || !replyToMessageId) {
@@ -78,7 +82,7 @@ export function SmartReplies({
 
   return (
     <div
-      className="mb-2 flex flex-wrap items-center gap-2"
+      className={cn('mb-2 flex flex-wrap items-center gap-2', arrival)}
       role="group"
       aria-label={t('smart-replies-label', { defaultValue: 'Suggested replies' })}
       aria-busy={loading}

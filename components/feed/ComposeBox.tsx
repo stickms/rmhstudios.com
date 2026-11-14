@@ -1,6 +1,5 @@
 import {
   lazy,
-  Suspense,
   useState,
   useRef,
   useEffect,
@@ -18,6 +17,7 @@ import { MentionTextarea } from './MentionTextarea';
 import { EmojiPickerButton, EmojiPickerPopover } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useSession, useResolvedUser } from '@/components/Providers';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 import { ScheduleControl } from '@/components/ui/schedule-control';
 import { useSmartPaste } from '@/hooks/useSmartPaste';
@@ -455,7 +455,7 @@ export function ComposeBox({
   const attachments = (
     <>
       {remaining < 0 && !communityId && (
-        <Suspense fallback={null}>
+        <ArrivalSuspense>
           <ThreadPostPanel
             content={content}
             blockedBy={threadBlockedBy({
@@ -469,7 +469,7 @@ export function ComposeBox({
             })}
             onPosted={handleThreadPosted}
           />
-        </Suspense>
+        </ArrivalSuspense>
       )}
 
       {parseInt(unlockPrice, 10) > 0 && (

@@ -26,6 +26,8 @@ import ItemTile from './ItemTile';
 import PlayerViewer from './PlayerViewer';
 import { tauntEffectOf, tauntItemOf, wornItems } from './worn';
 import { CLASS_DEFAULT } from './labels';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
   const { t } = useTranslation('c-tf2-hud');
@@ -117,6 +119,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
       : [];
 
   const warnings = detail && idx ? loadoutWarnings(idx.catalog, detail.tfClass, detail.slots) : [];
+  const arrival = useArrival(detail !== null || error !== null);
 
   return (
     <div className="app-page min-h-dvh bg-app-bg text-app-text">
@@ -127,7 +130,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
       />
       <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8">
         {error ? (
-          <p role="alert" className="py-12 text-center text-sm text-app-danger">
+          <p role="alert" className={cn('py-12 text-center text-sm text-app-danger', arrival)}>
             {error}
           </p>
         ) : !detail ? (
@@ -135,7 +138,8 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
             {t('loading', { defaultValue: 'Loading…' })}
           </p>
         ) : (
-          <>
+          // One box with the main's own rhythm, so the loadout fades in as a whole (M9).
+          <div className={cn('space-y-6', arrival)}>
             <header className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="tf2hud-title text-4xl">{detail.title}</h2>
@@ -279,7 +283,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                 </section>
               );
             })}
-          </>
+          </div>
         )}
       </main>
       {signIn ? (

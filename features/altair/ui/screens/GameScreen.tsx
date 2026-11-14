@@ -27,6 +27,8 @@ import PauseOverlay from '@features/altair/ui/screens/PauseOverlay';
 import MobileDPad from '@features/altair/ui/mobile/MobileDPad';
 import MobileControls from '@features/altair/ui/mobile/MobileControls';
 import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface GameScreenProps {
   onQuit: () => void;
@@ -69,6 +71,8 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
 
   const [isMobile, setIsMobile] = useState(false);
   const [spritesReady, setSpritesReady] = useState(false);
+  // The run replaces the asset loading screen: it fades in (M9).
+  const arrival = useArrival(spritesReady);
   const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0 });
   const [bossInfo, setBossInfo] = useState<{
     bossName: string;
@@ -343,7 +347,7 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
   return (
     <div
       ref={rootRef}
-      className="fixed inset-0 bg-(--altair-hud-scrim) overflow-hidden"
+      className={cn('fixed inset-0 bg-(--altair-hud-scrim) overflow-hidden', arrival)}
       // touch-action none + no overscroll: stops pull-to-refresh, double-tap
       // zoom and page pan while a run is live on iOS/Android.
       style={{ width: '100vw', height: '100dvh', touchAction: 'none', overscrollBehavior: 'none' }}

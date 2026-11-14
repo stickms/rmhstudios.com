@@ -27,6 +27,8 @@ import { useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface WikiFrameProps {
   html: string;
@@ -46,6 +48,8 @@ export default function WikiFrame({
   const { t } = useTranslation("c-rmhbox");
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  // The first article replaces the spinner: it fades in (M9). Later ones swap under the dimmed old page.
+  const arrival = useArrival(!!html);
 
   /**
    * Handle clicks on wiki links.
@@ -118,7 +122,7 @@ export default function WikiFrame({
         >
           <div
             ref={contentRef}
-            className={`wiki-frame ${disabled ? 'wiki-frame-disabled' : ''}`}
+            className={cn('wiki-frame', disabled && 'wiki-frame-disabled', arrival)}
             inert
             dangerouslySetInnerHTML={{ __html: html }}
             style={{ color: 'var(--app-text)' }}

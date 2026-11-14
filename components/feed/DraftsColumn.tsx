@@ -22,6 +22,7 @@ import {
  listScheduledApi,
  publishScheduledApi,
 } from'@/lib/scheduled/scheduled.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface ScheduledRow {
  id: string;
@@ -60,6 +61,8 @@ export function DraftsColumn({
  const [scheduled, setScheduled] = useState<ScheduledRow[]>(initialData?.scheduled ?? []);
  const [loading, setLoading] = useState(!initialData);
  const [busy, setBusy] = useState<string | null>(null);
+ // Steel M9: lists fetched here replace the spinner; the loader's are there on first paint.
+ const arrival = useArrival(!loading);
 
  const load = useCallback(async () => {
  try {
@@ -123,7 +126,7 @@ export function DraftsColumn({
  const empty = drafts.length === 0 && scheduled.length === 0;
 
  return (
- <div>
+ <div className={arrival}>
  <ColumnHeader
  icon={FileText}
  title={t('drafts-and-scheduled', { defaultValue:'Drafts & Scheduled'})}

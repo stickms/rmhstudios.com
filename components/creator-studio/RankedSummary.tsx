@@ -14,6 +14,7 @@ import { Swords, ChevronDown, ArrowUpRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useArrival } from '@/components/ui/arrive';
 import { api } from '@/lib/contract/client';
 import { getRankedOverviewApi } from '@/lib/ranked/ranked.contract';
 
@@ -39,6 +40,8 @@ export function RankedSummary() {
   const [signedIn, setSignedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  // The standings replace "Loading your standings…" once the overview answers.
+  const arrival = useArrival(!loading);
 
   useEffect(() => {
     let active = true;
@@ -85,12 +88,14 @@ export function RankedSummary() {
           <p className="flex items-center gap-2 font-semibold text-site-text">
             {t('ranked', { defaultValue: 'Ranked' })}
             {incoming > 0 && (
-              <Badge variant="default">
+              <Badge variant="default" className={arrival}>
                 {t('ranked-summary-challenges', { count: incoming, defaultValue: '{{count}} new' })}
               </Badge>
             )}
           </p>
-          <p className="hidden truncate text-sm text-site-text-muted sm:block">{subtitle}</p>
+          <p className={cn('hidden truncate text-sm text-site-text-muted sm:block', arrival)}>
+            {subtitle}
+          </p>
         </div>
 
         <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -122,7 +127,7 @@ export function RankedSummary() {
       {open && (
         <div className="border-t border-site-border px-4 py-3">
           {hasRatings ? (
-            <ul className="flex flex-col gap-2">
+            <ul className={cn('flex flex-col gap-2', arrival)}>
               {ratings.map((r) => (
                 <li key={r.game} className="flex items-center gap-3 text-sm">
                   <span className="min-w-0 flex-1 truncate font-semibold text-site-text">
@@ -140,7 +145,7 @@ export function RankedSummary() {
               ))}
             </ul>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className={cn('flex flex-wrap gap-2', arrival)}>
               {games.map((g) => (
                 <Badge key={g.id} variant="default">
                   {g.name}

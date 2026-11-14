@@ -3,6 +3,8 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { SearchField } from '@/components/ui/search-field';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spine, SpineItem } from '@/components/ui/spine';
@@ -86,6 +88,11 @@ export function MessagesColumn({
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
   const navigate = useNavigate();
+  // Steel M9: the inbox and search results replace their spinners; rows that join the list later (the next page, a
+  // new conversation) fade one by one. While a folder loads the keys are empty, so its first page is a new baseline.
+  const listArrival = useArrival(!loading);
+  const searchArrival = useArrival(!searching);
+  const isNew = useArrivingKeys(loading ? [] : conversations.map((c) => c.id));
 
   const fetchConversations = useCallback(
     async (isInitial = false) => {
@@ -325,11 +332,11 @@ export function MessagesColumn({
             <Spinner size={24} />
           </div>
         ) : searchResults.length === 0 ? (
-          <p className="t-body py-8 text-site-text-muted">
+          <p className={cn('t-body py-8 text-site-text-muted', searchArrival)}>
             {t('no-search-results', { defaultValue: 'No people or messages match your search.' })}
           </p>
         ) : (
-          <Spine>
+          <Spine className={searchArrival}>
             {searchResults.map((conv) => (
               <ConversationRow
                 key={conv.id}
@@ -346,16 +353,17 @@ export function MessagesColumn({
           <Spinner size={24} />
         </div>
       ) : conversations.length === 0 && folder !== 'all' ? (
-        <p className="t-body py-8 text-site-text-muted">
+        <p className={cn('t-body py-8 text-site-text-muted', listArrival)}>
           {t('no-messages-yet', { defaultValue: 'No messages yet' })}
         </p>
       ) : conversations.length === 0 ? (
         <>
           {/* Saved Messages (M2) is always there, even in an empty inbox. */}
-          <Spine>
+          <Spine className={listArrival}>
             <SavedMessagesRow />
           </Spine>
           <EmptyState
+            className={listArrival}
             title={t('no-messages-yet', { defaultValue: 'No messages yet' })}
             description={t('no-messages-hint', {
               defaultValue: 'Start a new chat, or message someone from their profile page.',
@@ -370,11 +378,12 @@ export function MessagesColumn({
       ) : (
         <>
           {/* One dot per unread thread (section 10, Inbox): the rows hang on the spine, read ones with no dot. */}
-          <Spine>
+          <Spine className={listArrival}>
             {folder === 'all' && <SavedMessagesRow />}
             {conversations.map((conv) => (
               <ConversationRow
                 key={conv.id}
+                className={isNew(conv.id) ? ARRIVE : undefined}
                 conv={conv}
                 currentUserId={session.user.id}
                 t={t}
@@ -420,11 +429,13 @@ function ConversationRow({
   currentUserId,
   t,
   formatTime,
+  className,
 }: {
   conv: ConversationItem;
   currentUserId: string;
   t: TFn;
   formatTime: (s: string) => string;
+  className?: string | undefined;
 }) {
   const preview = conv.matchSnippet?.trim()
     ? conv.matchSnippet
@@ -438,7 +449,7 @@ function ConversationRow({
 
   const unread = conv.unreadCount > 0;
   return (
-    <SpineItem dot={unread} className="hover:bg-site-bg-subtle">
+    <SpineItem dot={unread} className={cn('hover:bg-site-bg-subtle', className)}>
       <Link
         to={`/messages/${conv.id}` as string}
         className="block after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"

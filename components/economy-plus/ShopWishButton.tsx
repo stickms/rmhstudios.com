@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useArrival } from '@/components/ui/arrive';
 import { WishButton } from '@/components/wishlist/WishButton';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { apiJson } from './api';
@@ -21,7 +22,15 @@ export function ShopWishButton({ itemId }: { itemId: string }) {
     enabled: idle,
     staleTime: 5 * 60_000,
   });
-  // Until the wishlist is known the heart would guess its own state; show nothing instead.
+  // Until the wishlist is known the heart would guess its own state; show nothing instead, then fade it in (M9).
+  const arrival = useArrival(!!data);
   if (!data) return null;
-  return <WishButton entityType="shop_item" entityId={itemId} initialWished={data.has(itemId)} />;
+  return (
+    <WishButton
+      entityType="shop_item"
+      entityId={itemId}
+      initialWished={data.has(itemId)}
+      className={arrival}
+    />
+  );
 }

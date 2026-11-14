@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
 import { Kpi } from '@/components/admin/perf/Kpi';
 import { AlarmRules } from './AlarmRules';
 import { MetricsSection } from './MetricsSection';
@@ -16,7 +17,7 @@ import {
   type AlarmView,
   type OncallApiResponse,
 } from '@/lib/oncall/dashboard';
-import { formatRelativeTime } from '@/lib/utils';
+import { cn, formatRelativeTime } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { getAdminOncallApi } from '@/lib/admin/admin-ops.contract';
 
@@ -126,12 +127,13 @@ function AlarmCard({ alarm }: { alarm: AlarmView }) {
 export function AlarmsPanel() {
   const { t } = useTranslation('f-oncall');
   const { data, loading, reload } = useOncall();
+  const arrival = useArrival(data !== null);
 
   if (!data) return <Spinner />;
 
   if (!data.ok) {
     return (
-      <section className="min-w-0">
+      <section className={cn('min-w-0', arrival)}>
         <h2 className="t-heading text-site-text">
           {data.error === 'not_configured'
             ? t('not-configured-title', { defaultValue: 'On-call watchdog not configured' })
@@ -164,7 +166,7 @@ export function AlarmsPanel() {
   const paging = open.filter((a) => phaseOf(a) === 'paging').length;
 
   return (
-    <div className="space-y-[var(--site-section-gap)]">
+    <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
       <div className="flex items-center justify-between gap-4">
         <p className="t-body text-site-text-muted">
           {t('refreshed', {

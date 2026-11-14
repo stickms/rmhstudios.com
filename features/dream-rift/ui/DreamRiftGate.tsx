@@ -27,6 +27,7 @@ import { recordAttempt, type PracticeOutcome, type PracticeTarget } from '@featu
 import { SettingsScreen } from './SettingsScreen';
 import { planRun, useArcadeRun } from '@/lib/arcade/run-client';
 import { ChallengeNotice } from '@/components/arcade/ChallengeNotice';
+import { useArrival } from '@/components/ui/arrive';
 
 function randomSeed(): number {
     return Math.floor(Math.random() * 0x7fffffff) || 1;
@@ -160,6 +161,8 @@ function ScreenRouter() {
         }
     }, [mode, startInfo, setResult, setScreen]);
 
+    const stageArrival = useArrival(!(screen === 'playing' && !startInfo));
+
     const fullExit = () => {
         disconnectDreamRift();
         quitGame();
@@ -168,7 +171,18 @@ function ScreenRouter() {
     let body: React.ReactNode;
     switch (screen) {
         case 'playing':
-            body = startInfo ? <GameStage start={startInfo} onExit={exitToMenu} /> : <Loading />;
+            // The stage replaces "Entering the rift" when the hub starts the match: it fades in (M9).
+            body = startInfo ? (
+                stageArrival ? (
+                    <div className="arrive-group">
+                        <GameStage start={startInfo} onExit={exitToMenu} />
+                    </div>
+                ) : (
+                    <GameStage start={startInfo} onExit={exitToMenu} />
+                )
+            ) : (
+                <Loading />
+            );
             break;
         case 'char-select':
             body = <CharacterSelect onStart={startSingle} onBack={() => setScreen('title')} />;

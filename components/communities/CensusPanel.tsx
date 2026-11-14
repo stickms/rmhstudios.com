@@ -12,6 +12,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import { CENSUS_MAX_QUESTIONS } from '@/lib/communities/census';
@@ -23,7 +25,15 @@ interface DraftQuestion {
   options: string;
 }
 
-function CreateCensus({ slug, onCreated }: { slug: string; onCreated: () => void }) {
+function CreateCensus({
+  slug,
+  onCreated,
+  className,
+}: {
+  slug: string;
+  onCreated: () => void;
+  className?: string | undefined;
+}) {
   const { t } = useTranslation('f-communities-plus');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -63,7 +73,7 @@ function CreateCensus({ slug, onCreated }: { slug: string; onCreated: () => void
 
   return (
     <form
-      className="m-3 flex flex-col gap-3 p-4"
+      className={cn('m-3 flex flex-col gap-3 p-4', className)}
       onSubmit={(e) => {
         e.preventDefault();
         void save();
@@ -262,6 +272,8 @@ export default function CensusPanel({
     void load();
   }, [load]);
 
+  const arrival = useArrival(census !== undefined);
+
   if (census === undefined) {
     return (
       <div className="flex justify-center py-12">
@@ -271,9 +283,10 @@ export default function CensusPanel({
   }
   if (census === null) {
     return isMod ? (
-      <CreateCensus slug={slug} onCreated={load} />
+      <CreateCensus slug={slug} onCreated={load} className={arrival} />
     ) : (
       <EmptyState
+        className={arrival}
         icon={BarChart3}
         title={t('census-none', { defaultValue: 'No census yet' })}
         description={t('census-none-desc', {
@@ -295,7 +308,7 @@ export default function CensusPanel({
   };
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-3">
+    <div className={cn('flex flex-col gap-3 px-3 py-3', arrival)}>
       <section className="p-4">
         <h3 className="text-base font-semibold text-site-text">{census.title}</h3>
         {census.description && (

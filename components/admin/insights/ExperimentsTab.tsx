@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { send, useInsight } from './api';
 
 interface Arm {
@@ -30,6 +32,7 @@ export function ExperimentsTab() {
   const { data, loading, reload } = useInsight<{ experiments: Experiment[] }>(
     '/api/admin/insights/experiments',
   );
+  const arrival = useArrival(!loading);
   const [key, setKey] = useState('');
   const [name, setName] = useState('');
   const [testPct, setTestPct] = useState(50);
@@ -117,7 +120,7 @@ export function ExperimentsTab() {
       {loading ? (
         <Spinner />
       ) : (
-        <ul className="divide-y divide-site-border border-t border-site-border">
+        <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
           {(data?.experiments ?? []).map((x) => (
             <li key={x.id} className="relative space-y-2 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">

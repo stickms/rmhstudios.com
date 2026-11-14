@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import {
   STAMP_MAX_CREATED,
   STAMP_MAX_EDGE,
@@ -85,6 +87,11 @@ export default function StampSettings({ userId }: { userId: string }) {
     void loadGallery(true, null);
   }, [loadGallery]);
 
+  const arrival = useArrival(mine !== null && wall !== null);
+  // The gallery loads on its own request and grows with "Show more".
+  const galleryArrival = useArrival(gallery.length > 0);
+  const isNewStamp = useArrivingKeys(gallery.map((s) => s.id));
+
   async function create() {
     if (!file || !name.trim()) return;
     setCreating(true);
@@ -156,7 +163,7 @@ export default function StampSettings({ userId }: { userId: string }) {
   if (mine === null || wall === null) return <Skeleton className="h-48 w-full" />;
 
   return (
-    <div className="space-y-8">
+    <div className={cn('space-y-8', arrival)}>
       <section className="space-y-3" aria-labelledby="stamp-make">
         <h3 id="stamp-make" className="text-sm font-semibold text-site-text">
           {t('stamp-make', { defaultValue: 'Make a stamp' })}
@@ -282,11 +289,14 @@ export default function StampSettings({ userId }: { userId: string }) {
             {t('stamp-gallery-empty', { defaultValue: 'No stamps yet. Be the first to make one.' })}
           </p>
         ) : (
-          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <ul className={cn('grid grid-cols-2 gap-2 sm:grid-cols-4', galleryArrival)}>
             {gallery.map((s) => (
               <li
                 key={s.id}
-                className="relative flex flex-col items-center gap-2 rounded-site-sm p-2"
+                className={cn(
+                  'relative flex flex-col items-center gap-2 rounded-site-sm p-2',
+                  isNewStamp(s.id) && ARRIVE,
+                )}
               >
                 <StampImage stamp={s} />
                 <span className="w-full truncate text-center text-xs text-site-text-muted">

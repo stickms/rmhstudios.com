@@ -14,7 +14,7 @@
  * views written for the game (the HUD picker, the loadout's AI bar) find their context through it.
  */
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { lazy, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
@@ -35,6 +35,8 @@ import GameMenu from './GameMenu';
 import OptionsDialog from './OptionsDialog';
 import { useMenuSource } from './use-menu-source';
 import '../tf2-game.css';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const HudPauseView = lazy(() => import('../custom-hud/HudPauseView'));
 const LoadoutScreen = lazy(() => import('./LoadoutScreen'));
@@ -145,9 +147,9 @@ export default function Tf2MainMenu({
           />
         </Modal>
         <Modal open={panel === 'hud'} onOpenChange={(o) => !o && back()} title={t('hud', { defaultValue: 'HUD' })} wide>
-          <Suspense fallback={<p className="text-sm text-app-text-muted">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
+          <ArrivalSuspense fallback={<p className="text-sm text-app-text-muted">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
             <HudPauseView onBack={back} onEdit={() => void navigate({ to: '/tf2/hud-editor' })} />
-          </Suspense>
+          </ArrivalSuspense>
         </Modal>
         {/* The developer console over the menu (its own key, ` , works here too). */}
         {active ? (
@@ -163,9 +165,15 @@ export default function Tf2MainMenu({
 function MenuLoadout({ source, onClose }: { source: ReturnType<typeof useMenuSource>; onClose: () => void }) {
   const { t } = useTranslation('c-tf2-game');
   const cat = useCatalog();
+  // M9: the screen fades in after the catalog wait or the chunk's, never both at once.
+  const arrival = useArrival(cat.status === 'ready');
+  const errorArrival = useArrival(cat.status !== 'loading');
   if (cat.status !== 'ready') {
     return (
-      <p role={cat.status === 'error' ? 'alert' : 'status'} className="tf2m-loadout-note">
+      <p
+        role={cat.status === 'error' ? 'alert' : 'status'}
+        className={cn('tf2m-loadout-note', errorArrival)}
+      >
         {cat.status === 'error'
           ? t('loadout_catalog_error', { defaultValue: 'Could not load the item catalog.' })
           : t('loadout_catalog_loading', { defaultValue: 'Loading the item catalog…' })}{' '}
@@ -177,9 +185,13 @@ function MenuLoadout({ source, onClose }: { source: ReturnType<typeof useMenuSou
       </p>
     );
   }
-  return (
-    <Suspense fallback={<p className="tf2m-loadout-note">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
+  const screen = (
+    <ArrivalSuspense
+      fallback={<p className="tf2m-loadout-note">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}
+      wrap={!arrival}
+    >
       <LoadoutScreen idx={cat.index} match={null} source={source} onClose={onClose} />
-    </Suspense>
+    </ArrivalSuspense>
   );
+  return arrival ? <div className="arrive-group">{screen}</div> : screen;
 }

@@ -7,7 +7,7 @@
  * the map that column was 250px, which is how a card ended up 70px wide with every word on its own line.
  * `layout="rows"` is rows on rules, for the list column beside the map.
  *
- * Nothing enters with an animation (R5): the list is the response to a search and it appears.
+ * The results that replace the skeleton fade in (Steel M9); nothing else animates (R5).
  */
 import type { ReactNode } from 'react';
 import { Home, SearchX } from 'lucide-react';
@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next';
 import type { Listing } from '@/lib/homes/types';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { ListingCard } from './ListingCard';
 
 interface ListingGridProps {
@@ -76,6 +78,7 @@ export function ListingGrid({
 }: ListingGridProps) {
   const { t } = useTranslation('site');
   const rows = layout === 'rows';
+  const arrival = useArrival(!loading);
 
   if (loading) {
     return (
@@ -90,6 +93,7 @@ export function ListingGrid({
   if (!searched) {
     return (
       <EmptyState
+        className={arrival}
         icon={Home}
         title={t('homes-start-title', { defaultValue: 'Start your search' })}
         description={t('homes-start-desc', {
@@ -102,6 +106,7 @@ export function ListingGrid({
   if (listings.length === 0) {
     return (
       <EmptyState
+        className={arrival}
         icon={SearchX}
         title={emptyTitle ?? t('homes-none-title', { defaultValue: 'No listings yet' })}
         description={
@@ -117,7 +122,11 @@ export function ListingGrid({
   }
 
   return (
-    <div data-slot="homes-list" data-layout={layout} className={rows ? undefined : GRID}>
+    <div
+      data-slot="homes-list"
+      data-layout={layout}
+      className={cn(rows ? undefined : GRID, arrival)}
+    >
       {listings.map((l) => (
         <ListingCard
           key={l.id}

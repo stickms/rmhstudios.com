@@ -7,6 +7,8 @@ import { api, roomPosition, usePartyStore, type TimedComment } from '@/lib/rmhtu
 import { mediaKey } from '@/lib/rmhtube/party';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import { btnPrimary, input, muted } from './ui';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** Timed comments (F1): write one at the current second; toggle them on or off. */
 export default function NotesTab() {
@@ -19,6 +21,9 @@ export default function NotesTab() {
   const [body, setBody] = useState('');
   const key = item && !item.live ? mediaKey(item.url) : null;
   const mine = commentsUrl === key ? comments.filter((c) => c.mine) : [];
+  // M9: your comments land after the tab opens, and one you post joins the list with a fade.
+  const listArrival = useArrival(mine.length > 0);
+  const isNew = useArrivingKeys(mine.map((c) => c.id));
 
   // The overlay loads comments when shown; load here too if it is hidden.
   useEffect(() => {
@@ -98,9 +103,9 @@ export default function NotesTab() {
             'Pinned to the playhead; later viewers of this video see it at that moment.',
         })}
       </p>
-      <ul className="space-y-1">
+      <ul className={cn('space-y-1', listArrival)}>
         {mine.map((c) => (
-          <li key={c.id} className="flex items-center gap-2">
+          <li key={c.id} className={cn('flex items-center gap-2', isNew(c.id) && ARRIVE)}>
             <span className="w-12 shrink-0 tabular-nums text-app-text-muted">
               {formatDuration(c.atSec)}
             </span>

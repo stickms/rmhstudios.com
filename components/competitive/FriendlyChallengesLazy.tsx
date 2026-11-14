@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, useEffect, useState } from 'react';
 import { useSession } from '@/components/Providers';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const FriendlyChallenges = lazy(() => import('./FriendlyChallenges'));
 
@@ -15,9 +16,9 @@ export function FriendlyChallengesLazy() {
   if (!idle || !session?.user?.id) return null;
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-8">
-      <Suspense fallback={null}>
+      <ArrivalSuspense>
         <FriendlyChallenges />
-      </Suspense>
+      </ArrivalSuspense>
     </div>
   );
 }

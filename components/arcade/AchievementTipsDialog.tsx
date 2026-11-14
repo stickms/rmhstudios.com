@@ -21,6 +21,7 @@ import {
   postAchievementTipApi,
   voteAchievementTipApi,
 } from '@/lib/arcade/arcade.contract';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 
 interface Tip {
   id: string;
@@ -46,6 +47,9 @@ export function AchievementTipsDialog({
   const [tips, setTips] = useState<Tip[] | null>(null);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  // M9: the tips replace the spinner; one posted while the dialog is open fades in.
+  const arrival = useArrival(tips !== null);
+  const isNew = useArrivingKeys((tips ?? []).map((tip) => tip.id));
 
   const load = useCallback(async () => {
     try {
@@ -99,12 +103,12 @@ export function AchievementTipsDialog({
               <Spinner />
             </div>
           ) : tips.length === 0 ? (
-            <p className="py-4 text-sm text-site-text-muted">
+            <p className={cn('py-4 text-sm text-site-text-muted', arrival)}>
               {t('tips-empty', { defaultValue: 'No tips yet. Be the first to help.' })}
             </p>
           ) : (
             tips.map((tip) => (
-              <div key={tip.id} className="rounded-site p-4">
+              <div key={tip.id} className={cn('rounded-site p-4', arrival, isNew(tip.id) && ARRIVE)}>
                 <p className="whitespace-pre-wrap break-words text-sm text-site-text">{tip.body}</p>
                 <div className="mt-2 flex items-center justify-between text-xs text-site-text-muted">
                   <span className="truncate">{tip.author.name ?? tip.author.handle}</span>

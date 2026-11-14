@@ -55,6 +55,8 @@ import {
   type RankingRow,
   type RankStatus,
 } from '@features/slice-it/engine/admin.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 /**
  * The thresholds, duplicated for display only.
  *
@@ -80,6 +82,7 @@ function AdminSliceItRankingPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async (next: RankStatus) => {
     setLoading(true);
@@ -173,11 +176,12 @@ function AdminSliceItRankingPage() {
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Gauge}
             title={t('admin-rank-empty', { defaultValue: 'No charts in this state.' })}
           />
         ) : (
-          <ul className="divide-y divide-site-border">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {rows.map((row) => (
               <ChartRow
                 key={row.id}

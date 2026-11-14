@@ -65,6 +65,7 @@ import { DebtGlobe } from './DebtGlobe';
 import { CreditScore } from './CreditScore';
 import { api } from '@/lib/contract/client';
 import { debtStatsApi } from '@/lib/kaikai-debt/kaikai-debt.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 type TabId = 'overview' | 'composition' | 'rhythm' | 'terrain' | 'hyper' | 'globe' | 'table';
 
@@ -94,6 +95,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
   });
 
   const stats = query.data ?? emptyStats(snapshot.asOfMs);
+  const arrival = useArrival(!query.isPending);
   const nowMs = useChartClock(stats.asOfMs);
 
   const inputs: CreditInputs = useMemo(
@@ -242,7 +244,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
           role="tabpanel"
           id={`kd-analytics-panel-${tab}`}
           aria-labelledby={`kd-analytics-tab-${tab}`}
-          className="flex flex-col gap-3 sm:gap-4"
+          className={cn('flex flex-col gap-3 sm:gap-4', arrival)}
         >
           {tab === 'overview' && (
             <>

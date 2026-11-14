@@ -8,6 +8,7 @@ import { useLayoutStore } from '@/stores/layoutStore';
 import { SIDEBAR_HIDEABLE_IDS } from '@/lib/home-widgets';
 import { SIDEBAR_NAV, orderNavItems, type NavItem } from '@/lib/sidebar-nav';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 
 /**
  * SidebarEditMode (§15) — reorder the top-level sidebar tabs (G2 SortableList,
@@ -31,6 +32,8 @@ export function SidebarEditMode() {
   const setSidebarOrder = useLayoutStore((s) => s.setSidebarOrder);
   const toggleHidden = useLayoutStore((s) => s.toggleHidden);
   const resetSidebar = useLayoutStore((s) => s.resetSidebar);
+  // Steel M9: the saved order is read on the client, so the list replaces a skeleton.
+  const arrival = useArrival(hydrated);
 
   useEffect(() => {
     useLayoutStore.getState().hydrate();
@@ -59,6 +62,7 @@ export function SidebarEditMode() {
 
       {hydrated ? (
         <SortableList
+          className={arrival}
           items={rows}
           onReorder={(next) => setSidebarOrder(next.map((r) => r.id))}
           itemLabel={(r) => nameFor(r.item)}

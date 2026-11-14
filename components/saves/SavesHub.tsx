@@ -16,6 +16,7 @@ import { SaveNoteEditor } from '@/components/posts-plus/SaveNoteEditor';
 import { SaveNoteSearch } from '@/components/posts-plus/SaveNoteSearch';
 import { api } from '@/lib/contract/client';
 import { createSaveFolderApi, listSavesApi, unsaveItemApi } from '@/lib/saves/saves.contract';
+import { ARRIVE, useArrivingKeys } from '@/components/ui/arrive';
 
 interface HubData {
   items: HydratedSave[];
@@ -38,6 +39,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [q, setQ] = useState(''); // X9: search the owner's private notes
+  const isNew = useArrivingKeys(items.map((save) => save.id));
 
   const load = useCallback(
     async (f: FolderFilter, append = false, cur?: string | null) => {
@@ -165,7 +167,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
       ) : (
         <ul className="space-y-3">
           {items.map((save) => (
-            <li key={save.id}>
+            <li key={save.id} className={isNew(save.id) ? ARRIVE : undefined}>
               <SavedRow save={save} onRemove={() => removeItem(save)} />
             </li>
           ))}

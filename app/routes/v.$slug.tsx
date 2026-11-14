@@ -36,6 +36,8 @@ import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import { VibeProgress } from '@/components/rmhvibe/VibeProgress';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 // Background-build polling cadence + guards (see the generating-status effect).
 const POLL_INTERVAL_MS = 1500;
@@ -144,6 +146,8 @@ function VibeViewer() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [versions, setVersions] = useState<VibeVersionSummary[] | null>(null);
   const [loadingVersions, setLoadingVersions] = useState(false);
+  const versionsArrival = useArrival(versions !== null && !loadingVersions);
+  const isNewVersion = useArrivingKeys(versions?.map((v) => v.id) ?? []);
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -507,7 +511,7 @@ function VibeViewer() {
               </button>
             </div>
 
-            <div className="vibe-history__list flex-1 overflow-y-auto">
+            <div className={cn('vibe-history__list flex-1 overflow-y-auto', versionsArrival)}>
               {loadingVersions && (
                 <div className="vibe-history__empty">
                   <Loader2 size={18} className="animate-spin" />
@@ -533,7 +537,11 @@ function VibeViewer() {
                         type="button"
                         onClick={() => void previewVersion(v.id)}
                         disabled={busy}
-                        className={`vibe-history__item ${isActive ? 'vibe-history__item--active' : ''}`}
+                        className={cn(
+                          'vibe-history__item',
+                          isActive && 'vibe-history__item--active',
+                          isNewVersion(v.id) && ARRIVE,
+                        )}
                       >
                         <div className="vibe-history__item-head">
                           <span className="vibe-history__ver">

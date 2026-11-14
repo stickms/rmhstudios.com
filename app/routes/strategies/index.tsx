@@ -20,6 +20,8 @@ import { ProjectCard } from '@features/doctrine/ui/coalition/project-card';
 import { CountdownTimer } from '@features/doctrine/ui/countdown-timer';
 import { api } from '@/lib/contract/client';
 import { getDoctrineTodayPuzzlesApi, listDoctrineIncidentsApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/')({
   head: () => appRouteHead('rmh-strategies'),
@@ -28,10 +30,10 @@ export const Route = createFileRoute('/strategies/')({
 
 function DashboardPage() {
   const { t } = useTranslation("r-strategies");
-  const { data: rep } = useDoctrineReputation();
+  const { data: rep, isLoading: repLoading } = useDoctrineReputation();
   const { sahurActive, sahurCountdown } = useDoctrineSahur();
 
-  const { data: incidents } = useQuery({
+  const { data: incidents, isLoading: incidentsLoading } = useQuery({
     queryKey: ['doctrine', 'incidents'],
     queryFn: () => api(listDoctrineIncidentsApi, { query: { limit: '3' }, retries: 0 }),
     staleTime: 30_000,
@@ -44,6 +46,8 @@ function DashboardPage() {
   });
 
   const activeIncidents = incidents?.filter?.((i: { status: string }) => i.status === 'ACTIVE') ?? [];
+  const repArrival = useArrival(!repLoading);
+  const incidentsArrival = useArrival(!incidentsLoading);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -59,7 +63,7 @@ function DashboardPage() {
 
       {/* Reputation Overview */}
       {rep && (
-        <div className="rounded-xl p-5 space-y-4" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className={cn('rounded-xl p-5 space-y-4', repArrival)} style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center justify-between">
             <RankBadge xp={rep.totalXp} />
             <StreakDisplay streak={rep.currentStreak} longestStreak={rep.longestStreak} />
@@ -75,7 +79,7 @@ function DashboardPage() {
 
       {/* Active Incidents */}
       {activeIncidents.length > 0 && (
-        <div className="space-y-2">
+        <div className={cn('space-y-2', incidentsArrival)}>
           <h2 className="text-sm md:text-xs font-mono uppercase tracking-wider" style={{ color: 'var(--doctrine-error)' }}>
             {t("active-incidents", { defaultValue: "Active Incidents" })}
           </h2>

@@ -1,5 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { useIdleReady } from '@/hooks/useIdleReady';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const ReadabilityPanel = lazy(() => import('./ReadabilityPanel'));
 
@@ -10,10 +12,12 @@ const ReadabilityPanel = lazy(() => import('./ReadabilityPanel'));
  */
 export function ReadabilityMeter({ text, className }: { text: string; className?: string }) {
   const idle = useIdleReady();
+  // It lands after idle, below text the reader is already looking at.
+  const arrival = useArrival(idle);
   if (!idle || text.trim().length === 0) return null;
   return (
     <Suspense fallback={null}>
-      <ReadabilityPanel text={text} className={className} />
+      <ReadabilityPanel text={text} className={cn(className, arrival)} />
     </Suspense>
   );
 }

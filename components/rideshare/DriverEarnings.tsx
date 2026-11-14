@@ -6,11 +6,14 @@ import { rideClassName } from '@/lib/rideshare/classes';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
 import { getDriverEarningsApi, type DriverEarningsView } from '@/lib/rideshare/rideshare.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export function DriverEarnings() {
   const { t: tr } = useTranslation("c-rideshare");
   const [data, setData] = useState<DriverEarningsView | null>(null);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
 
   useEffect(() => {
     api(getDriverEarningsApi, { retries: 0 })
@@ -49,7 +52,7 @@ export function DriverEarnings() {
   ];
 
   return (
-    <section className="space-y-4">
+    <section className={cn('space-y-4', arrival)}>
       <h2 className="site-section-label">{tr("earnings", { defaultValue: "Earnings" })}</h2>
 
       {/* Earnings headline */}

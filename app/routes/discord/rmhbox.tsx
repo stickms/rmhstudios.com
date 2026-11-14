@@ -1,9 +1,11 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { TriangleAlert } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import { useDiscordSdk } from '@/lib/discord-sdk';
 import rmhboxCss from '@/components/rmhbox/rmhbox.css?url';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const RMHboxDiscordActivity = lazy(() =>
     import('@/components/rmhbox/RMHboxDiscordActivity').then(m => ({
@@ -14,6 +16,7 @@ const RMHboxDiscordActivity = lazy(() =>
 function DiscordRMHboxPage() {
     const { t } = useTranslation("r-discord");
     const discord = useDiscordSdk();
+    const arrival = useArrival(discord.status !== 'loading');
 
     if (discord.status === 'loading') {
         return (
@@ -28,7 +31,7 @@ function DiscordRMHboxPage() {
 
     if (discord.status === 'error') {
         return (
-            <div className="min-h-dvh bg-[#1a1a2e] flex items-center justify-center p-4">
+            <div className={cn('min-h-dvh bg-[#1a1a2e] flex items-center justify-center p-4', arrival)}>
                 <div className="text-center max-w-sm">
                     <TriangleAlert className="mx-auto mb-3 h-10 w-10 text-[#f23f43]" aria-hidden="true" />
                     <h2 className="text-white text-lg font-semibold mb-2">{t("connection-failed", { defaultValue: "Connection Failed" })}</h2>
@@ -42,7 +45,7 @@ function DiscordRMHboxPage() {
     }
 
     return (
-        <Suspense
+        <ArrivalSuspense
             fallback={
                 <div className="min-h-dvh bg-[#1a1a2e] flex items-center justify-center">
                     <div className="animate-pulse text-[#b5bac1]">{t("loading-rmhbox", { defaultValue: "Loading RMHBox..." })}</div>
@@ -50,7 +53,7 @@ function DiscordRMHboxPage() {
             }
         >
             <RMHboxDiscordActivity discord={discord.context} />
-        </Suspense>
+        </ArrivalSuspense>
     );
 }
 

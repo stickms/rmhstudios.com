@@ -15,6 +15,8 @@ import {
   voteNightrailTrickApi,
 } from '@/lib/trick-week/nightrail-tricks.contract';
 import type { TrickView, TricksPayload } from '@/lib/trick-week/trick-week';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function TrickLine({ trick }: { trick: TrickView }) {
   const { t } = useTranslation('f-async-games');
@@ -45,6 +47,7 @@ export function NightrailTrickBoard({
   const [data, setData] = useState<TricksPayload | null>(null);
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
+  const arrival = useArrival(data !== null || failed);
 
   const load = async () => {
     try {
@@ -91,7 +94,7 @@ export function NightrailTrickBoard({
       </Button>
       {open ? (
         failed ? (
-          <p className="text-sm text-site-danger">
+          <p className={cn('text-sm text-site-danger', arrival)}>
             {t('trick-load-error', { defaultValue: 'The entries did not load.' })}
           </p>
         ) : !data ? (
@@ -99,11 +102,11 @@ export function NightrailTrickBoard({
             {t('trick-loading', { defaultValue: 'Loading…' })}
           </p>
         ) : data.tricks.length === 0 ? (
-          <p className="text-sm text-site-text-muted">
+          <p className={cn('text-sm text-site-text-muted', arrival)}>
             {t('trick-empty', { defaultValue: 'No entries yet this week.' })}
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className={cn('space-y-2', arrival)}>
             {data.tricks.map((trick) => (
               <li key={trick.id} className="surface-card flex items-center gap-3 rounded-site px-4 py-3">
                 <TrickLine trick={trick} />

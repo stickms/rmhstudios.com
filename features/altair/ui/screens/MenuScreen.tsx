@@ -14,6 +14,8 @@ import { useKeyboardNav } from '@features/altair/engine/hooks/use-keyboard-nav';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import { api } from '@/lib/contract/client';
 import { getAltairLeaderboardApi } from '@features/altair/engine/altair.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface MenuScreenProps {
   onPlay: () => void;
@@ -232,6 +234,7 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const fetchLeaderboard = useCallback(async (cat: LeaderboardCategory) => {
     setLoading(true);
@@ -309,7 +312,7 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
         {/* Leaderboard list */}
         <div className="px-5 pb-5">
           {error && (
-            <p className="text-sm text-(--altair-danger) text-center py-6">{error}</p>
+            <p className={cn('text-sm text-(--altair-danger) text-center py-6', arrival)}>{error}</p>
           )}
 
           {!error && loading && (
@@ -319,13 +322,13 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
           )}
 
           {!error && !loading && entries.length === 0 && (
-            <p className="text-sm text-(--altair-text-muted) text-center py-6">
+            <p className={cn('text-sm text-(--altair-text-muted) text-center py-6', arrival)}>
               {t("no-entries-yet", { defaultValue: "No entries yet. Play a game to get on the board!" })}
             </p>
           )}
 
           {!error && !loading && entries.length > 0 && (
-            <div className="space-y-1.5">
+            <div className={cn('space-y-1.5', arrival)}>
               {entries.map((entry, i) => (
                 <div
                   key={`${entry.username}-${i}`}

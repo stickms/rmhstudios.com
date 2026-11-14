@@ -1,5 +1,6 @@
-import React, { Suspense } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const HouseAlwaysWinsGame = React.lazy(() =>
   import("./game/HouseAlwaysWinsGame").then((m) => ({
@@ -35,7 +36,7 @@ export function GameShell({ userName }: GameShellProps) {
       {/* Game area. `app-stage-fit` is the size container the stage measures
           itself against, so the playfield letterboxes rather than stretches. */}
       <div className="app-stage-fit app-safe-x relative flex-1 min-h-0 bg-black">
-        <Suspense
+        <ArrivalSuspense
           fallback={
             <div className="flex items-center justify-center w-full h-full">
               <div className="text-neutral-600 text-sm font-mono tracking-widest animate-pulse">
@@ -45,7 +46,7 @@ export function GameShell({ userName }: GameShellProps) {
           }
         >
           <HouseAlwaysWinsGame />
-        </Suspense>
+        </ArrivalSuspense>
       </div>
     </div>
   );

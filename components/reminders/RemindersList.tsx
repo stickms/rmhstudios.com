@@ -9,6 +9,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
 import { cancelReminderApi, listRemindersApi } from '@/lib/reminders/reminders.contract';
 import type { ReminderView } from '@/lib/reminders/shared';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * Pending reminders, soonest first (plan U7). Rendered by the Saves hub.
@@ -18,6 +20,7 @@ import type { ReminderView } from '@/lib/reminders/shared';
 export function RemindersList() {
   const { t } = useTranslation('c-saves');
   const [items, setItems] = useState<ReminderView[] | null>(null);
+  const arrival = useArrival(items !== null);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +60,7 @@ export function RemindersList() {
     return (
       <EmptyState
         icon={AlarmClock}
+        className={arrival}
         title={t('reminders-empty-title', { defaultValue: 'No reminders' })}
         description={t('reminders-empty-desc', {
           defaultValue: 'Use "Remind me" on a post or notification to bring it back later.',
@@ -65,7 +69,7 @@ export function RemindersList() {
     );
   }
   return (
-    <ul className="space-y-2">
+    <ul className={cn('space-y-2', arrival)}>
       {items.map((r) => (
         <li key={r.id}>
           <Card interactive className="flex-row items-center gap-3 px-4 py-3">

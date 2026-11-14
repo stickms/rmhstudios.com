@@ -507,8 +507,8 @@ export function Pill({
   );
 }
 
-export function EmptyNote({ children }: { children: ReactNode }) {
-  return <p className="px-3 py-6 text-center text-xs text-app-text-dim">{children}</p>;
+export function EmptyNote({ children, className }: { children: ReactNode; className?: string }) {
+  return <p className={cn('px-3 py-6 text-center text-xs text-app-text-dim', className)}>{children}</p>;
 }
 
 /* ─────────────────────────────── modal ─────────────────────────────── */

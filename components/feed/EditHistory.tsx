@@ -25,6 +25,7 @@ import { diffWords, diffStat, type PostVersion } from '@/lib/feed/word-diff';
 import { cn, relativeTimeShort } from '@/lib/utils';
 import { postHistoryApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
+import { useArrival } from '@/components/ui/arrive';
 
 /**
  * One version rendered as its diff against the version before it. The oldest
@@ -116,6 +117,10 @@ export function EditHistoryDialog({
   const [versions, setVersions] = useState<PostVersion[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Steel M9: the versions (or why there are none) replace the spinner. Not ready until the first answer, so the
+  // "unavailable" state never flashes before the fetch starts.
+  const ready = !loading && (!!versions || failed);
+  const arrival = useArrival(ready);
 
   useEffect(() => {
     if (!open) return;
@@ -147,12 +152,13 @@ export function EditHistoryDialog({
           })}
         </DialogDescription>
 
-        {loading ? (
+        {!ready ? (
           <div className="flex justify-center py-8">
             <Spinner />
           </div>
         ) : failed || !versions ? (
           <EmptyState
+            className={arrival}
             icon={History}
             title={t('edit-history-unavailable', { defaultValue: 'History unavailable' })}
             description={t('edit-history-unavailable-detail', {
@@ -160,7 +166,7 @@ export function EditHistoryDialog({
             })}
           />
         ) : (
-          <ol className="space-y-2">
+          <ol className={cn('space-y-2', arrival)}>
             {versions.map((version, i) => (
               <VersionDiff
                 key={`${version.at}-${i}`}

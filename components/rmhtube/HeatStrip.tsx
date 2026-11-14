@@ -4,12 +4,16 @@ import { api } from '@/lib/contract/client';
 import { getHeatApi } from '@/lib/rmhtube/heat.contract';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { HEAT_BUCKET_SEC, mediaKey } from '@/lib/rmhtube/party';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const COLUMNS = 120;
 
 export default function HeatStrip({ duration }: { duration: number }) {
   const url = useRmhTubeStore((s) => s.room?.currentItem?.url ?? null);
   const [buckets, setBuckets] = useState<{ b: number; n: number }[]>([]);
+  // Fetched after the player shows: the strip fades in when it lands (M9).
+  const arrival = useArrival(buckets.length > 0);
 
   useEffect(() => {
     setBuckets([]);
@@ -45,7 +49,7 @@ export default function HeatStrip({ duration }: { duration: number }) {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 -bottom-1.5 h-1"
+      className={cn('pointer-events-none absolute inset-x-0 -bottom-1.5 h-1', arrival)}
       style={{ backgroundImage: `linear-gradient(to right, ${stops.join(',')})` }}
     />
   );

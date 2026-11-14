@@ -6,7 +6,7 @@
  * and every graph is produced by DeepSeek — this app performs no math of its own.
  */
 
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { FunctionSquare, LineChart, Sigma } from 'lucide-react';
@@ -17,6 +17,7 @@ import { ScientificCalculator } from '@/components/rmhcalculator/ScientificCalcu
 import { GraphingCalculator } from '@/components/rmhcalculator/GraphingCalculator';
 import { useNotebookTab } from '@/components/rmhcalculator/useNotebookTab';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const MODEL_STORAGE_KEY = 'rmhcalc:model';
 type Mode = 'scientific' | 'graphing' | 'notebook';
@@ -128,9 +129,9 @@ export function RmhCalculatorApp() {
         hidden={mode !== 'notebook'}
       >
         {mode === 'notebook' && (
-          <Suspense fallback={null}>
+          <ArrivalSuspense fallback={null}>
             <NotebookTab />
-          </Suspense>
+          </ArrivalSuspense>
         )}
       </main>
     </div>

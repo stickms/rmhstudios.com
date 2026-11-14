@@ -7,6 +7,8 @@ import { useArcadeRun, seedKeyOf } from '@/lib/arcade/run-client';
 import { seedLink } from '@/lib/arcade/seeded';
 import { api } from '@/lib/contract/client';
 import { getSeedBoardApi, submitArcadeRunApi } from '@/lib/arcade/arcade.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Row {
   rank: number;
@@ -31,6 +33,8 @@ export function RunPanel({
   const { t } = useTranslation('f-arcade');
   const run = useArcadeRun((s) => s.run);
   const [board, setBoard] = useState<Row[] | null>(null);
+  // The board is fetched after the result shows: it fades in when it lands (M9).
+  const boardArrival = useArrival(board !== null);
   const [note, setNote] = useState<string | null>(null);
   const sent = useRef<string | null>(null);
 
@@ -127,7 +131,7 @@ export function RunPanel({
         </p>
       ) : null}
       {board && board.length > 0 ? (
-        <ol className="space-y-0.5 text-xs">
+        <ol className={cn('space-y-0.5 text-xs', boardArrival)}>
           {board.map((r) => (
             <li
               key={r.rank}

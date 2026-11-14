@@ -9,7 +9,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/_site/admin/slice-it-content')({
   // Title only, and no canonical: `lib/sitemap.ts` classifies this `admin`, so
@@ -27,8 +28,8 @@ const ContentDashboard = lazy(() =>
 
 function ContentDashboardRoute() {
   return (
-    <Suspense fallback={null}>
+    <ArrivalSuspense fallback={null}>
       <ContentDashboard />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

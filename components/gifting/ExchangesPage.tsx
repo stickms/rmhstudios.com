@@ -11,8 +11,10 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { apiJson, errorCode } from '@/components/economy-plus/api';
 import type { ExchangeKind, ExchangeSummary } from '@/lib/gifting/exchange';
+import { cn } from '@/lib/utils';
 
 const KEY = ['gift-exchanges'] as const;
 
@@ -150,6 +152,7 @@ export default function ExchangesPage() {
     queryKey: KEY,
     queryFn: () => apiJson<{ exchanges: ExchangeSummary[] }>('/api/gift-exchanges'),
   });
+  const arrival = useArrival(!isLoading);
   const statusLabel: Record<string, string> = {
     OPEN: t('status-open', { defaultValue: 'Open' }),
     DRAWN: t('status-drawn', { defaultValue: 'Drawn' }),
@@ -168,6 +171,7 @@ export default function ExchangesPage() {
           <Skeleton className="h-16 w-full" />
         ) : !data || data.exchanges.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Gift}
             title={t('list-empty', { defaultValue: 'No exchanges yet' })}
             description={t('list-empty-desc', {
@@ -175,7 +179,7 @@ export default function ExchangesPage() {
             })}
           />
         ) : (
-          <ul className="space-y-2">
+          <ul className={cn('space-y-2', arrival)}>
             {data.exchanges.map((e) => (
               <li key={e.id}>
                 <Link

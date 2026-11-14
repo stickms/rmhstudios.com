@@ -28,6 +28,8 @@ import { ModeToggle } from './ModeToggle';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
 import { useInputRelease } from './useLearnInput';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * The input in use: a quiet line ("Playing with: On-screen keys") and, under it, a text button to
@@ -111,6 +113,7 @@ export function LearnHome() {
   );
   const ready = status === 'ready' && !!profile;
   const loading = !ready && status !== 'error';
+  const arrival = useArrival(!loading);
 
   const instrument = profile?.instrument ?? 'piano';
   const tabs = [
@@ -133,7 +136,7 @@ export function LearnHome() {
   let body;
   if (status === 'error') {
     body = (
-      <div role="alert" className="rmm-sheet space-y-3 p-4">
+      <div role="alert" className={cn('rmm-sheet space-y-3 p-4', arrival)}>
         <p className="text-app-text">
           {error === 'unauthorized'
             ? t('error-signed-out', {
@@ -160,7 +163,7 @@ export function LearnHome() {
     body = <HomeSkeleton />;
   } else {
     body = (
-      <div className="space-y-4">
+      <div className={cn('space-y-4', arrival)}>
         <Tabs
           tabs={tabs}
           value={instrument}

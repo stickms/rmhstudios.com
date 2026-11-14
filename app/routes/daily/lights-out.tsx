@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
@@ -9,13 +8,14 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import { LightsOutGame } from '@/components/lights-out/LightsOutGame'
+import { ArrivalSuspense } from '@/components/ui/arrive'
 
 function LightsOutPage() {
     return (
         <GameErrorBoundary gameName="Lights Out">
-            <Suspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
+            <ArrivalSuspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
                 <LightsOutGame />
-            </Suspense>
+            </ArrivalSuspense>
         </GameErrorBoundary>
     )
 }

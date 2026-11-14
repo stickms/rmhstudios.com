@@ -9,6 +9,7 @@ import type { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { isCardKind, isLineKind, type ChatRef } from '@/lib/chat-plus/types';
 import { PostImageGrid } from '../PostImageGrid';
 import { SpineItem, SpineStation } from '@/components/ui/spine';
+import { cn } from '@/lib/utils';
 import { memberDisplayName } from './group-chat-state';
 import type { Group, Msg } from '@/lib/group-chat/types';
 import { PollView } from './PollView';
@@ -39,6 +40,7 @@ export function GroupMessageRow({
   reactionTriggerFor,
   onVote,
   onToggleReaction,
+  className,
 }: {
   message: Msg;
   group: Group;
@@ -51,19 +53,23 @@ export function GroupMessageRow({
   reactionTriggerFor: ReturnType<typeof useItemReactionTrigger>;
   onVote: (messageId: string, optionIdx: number) => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
+  /** The `arrive` class (Steel M9) for a message that joins a thread already showing. */
+  className?: string | undefined;
 }) {
   const { t } = useTranslation('feed');
   const mine = m.sender.id === currentUserId;
   const newDay =
     !prevMessage ||
     new Date(m.createdAt).toDateString() !== new Date(prevMessage.createdAt).toDateString();
-  const station = newDay ? <SpineStation>{formatDay(m.createdAt, t)}</SpineStation> : null;
+  const station = newDay ? (
+    <SpineStation className={className}>{formatDay(m.createdAt, t)}</SpineStation>
+  ) : null;
   // P04: lines (timer, pin, tip…) and card kinds (dice, checklist…).
   if (isLineKind(m.kind)) {
     return (
       <>
         {station}
-        <SpineItem dot={false} className="spine-item--tight">
+        <SpineItem dot={false} className={cn('spine-item--tight', className)}>
           <ChatSystemLine
             meta={m.meta}
             fallback={m.content}
@@ -79,7 +85,7 @@ export function GroupMessageRow({
   return (
     <>
       {station}
-      <SpineItem dot={!mine} className="spine-item--tight group">
+      <SpineItem dot={!mine} className={cn('spine-item--tight group', className)}>
         <div className={`flex items-start gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
           <div className={mine ? 'conversation__mine' : 'min-w-0'} {...reactionTriggerFor(m.id)}>
             {!mine && <p className="t-meta">{name}</p>}

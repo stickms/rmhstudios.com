@@ -33,6 +33,7 @@ import {
   unsubscribePackApi,
   uploadPackItemImageApi,
 } from '@/lib/emoji/packs.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/_site/emoji-packs')({
   head: () => ({
@@ -111,6 +112,7 @@ function EmojiPacksPage() {
   const [canCreate, setCanCreate] = useState<boolean | null>(null);
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     const [browseRes, mineRes] = await Promise.all([
@@ -236,7 +238,7 @@ function EmojiPacksPage() {
           )}
 
           {owned.length > 0 && (
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className={cn('mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2', arrival)}>
               {owned.map((pack) => (
                 <OwnedPackCard key={pack.id} pack={pack} onChanged={load} />
               ))}
@@ -256,14 +258,14 @@ function EmojiPacksPage() {
             </div>
           ) : browse.length === 0 ? (
             <EmptyState
-              className="mt-4"
+              className={cn('mt-4', arrival)}
               title={t('no-packs-title', { defaultValue: 'No packs yet' })}
               description={t('no-packs-hint', {
                 defaultValue: 'Be the first to publish one — members can build packs above.',
               })}
             />
           ) : (
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className={cn('mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2', arrival)}>
               {browse.map((pack) => (
                 <PackCard
                   key={pack.id}

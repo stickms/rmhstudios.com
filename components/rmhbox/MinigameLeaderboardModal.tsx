@@ -13,6 +13,8 @@ import { Trophy, X } from 'lucide-react';
 import type { LeaderboardEntry } from '@/lib/rmhbox/types';
 import { api } from '@/lib/contract/client';
 import { getRmhboxLeaderboardApi } from '@/lib/rmhbox/rmhbox-reads.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface MinigameLeaderboardModalProps {
   minigameId: string;
@@ -34,6 +36,7 @@ export default function MinigameLeaderboardModal({
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const arrival = useArrival(!loading);
 
   const fetchLeaderboard = useCallback(
     async (period: Period) => {
@@ -107,9 +110,9 @@ export default function MinigameLeaderboardModal({
         {loading ? (
           <p className="text-sm text-center py-8 text-app-text-muted">{t("loading", { defaultValue: "Loading…" })}</p>
         ) : entries.length === 0 ? (
-          <p className="text-sm text-center py-8 text-app-text-muted">{t("no-entries", { defaultValue: "No entries yet." })}</p>
+          <p className={cn('text-sm text-center py-8 text-app-text-muted', arrival)}>{t("no-entries", { defaultValue: "No entries yet." })}</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className={cn('w-full text-sm', arrival)}>
             <thead>
               <tr className="text-left text-app-text-muted">
                 <th className="pb-2 pr-2 font-medium">#</th>

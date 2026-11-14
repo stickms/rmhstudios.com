@@ -15,6 +15,8 @@ import {
 import { api } from '@/lib/contract/client';
 import { getTableReadApi } from '@features/gabriels-horn/engine/gabriels-horn.contract';
 import { Panel } from './ui';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Career = (ReadAcc & { games: number }) | null;
 
@@ -46,6 +48,8 @@ export function TableReadPanel({
     };
   }, []);
 
+  // The career column is fetched after the results show: it fades in when it lands (M9).
+  const careerArrival = useArrival(career !== null);
   const rows = results.tableRead ?? [];
   const mine = rows.find((r) => r.socketId === selfSocketId);
   if (!mine || rows.length < 2 || results.abandoned) return null;
@@ -96,7 +100,7 @@ export function TableReadPanel({
               {t('read-table', { defaultValue: 'Table' })}
             </th>
             {life ? (
-              <th scope="col" className="text-end font-normal">
+              <th scope="col" className={cn('text-end font-normal', careerArrival)}>
                 {t('read-career', { defaultValue: 'Career' })}
               </th>
             ) : null}
@@ -111,7 +115,9 @@ export function TableReadPanel({
               <td className="text-end font-mono font-bold tabular-nums">{l.fmt(l.pick(you))}</td>
               <td className="text-end font-mono tabular-nums">{l.fmt(l.pick(avg))}</td>
               {life ? (
-                <td className="text-end font-mono tabular-nums">{l.fmt(l.pick(life))}</td>
+                <td className={cn('text-end font-mono tabular-nums', careerArrival)}>
+                  {l.fmt(l.pick(life))}
+                </td>
               ) : null}
             </tr>
           ))}

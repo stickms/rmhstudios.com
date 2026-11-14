@@ -7,6 +7,8 @@ import { Spinner } from'@/components/ui/spinner';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { api } from '@/lib/contract/client';
 import { getWheelApi, spinWheelApi, type WheelStateView } from '@/lib/wheel/wheel.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type WheelState = WheelStateView;
 
@@ -18,6 +20,8 @@ export function DailyWheel() {
  const [angle, setAngle] = useState(0);
  const [spinning, setSpinning] = useState(false);
  const [won, setWon] = useState<number | null>(null);
+ // Steel M9: the wheel replaces the spinner.
+ const arrival = useArrival(!!state);
 
  useEffect(() => {
  api(getWheelApi, { retries: 0 })
@@ -75,7 +79,7 @@ export function DailyWheel() {
  .join(',');
 
  return (
- <section className="rounded-site relative p-5">
+ <section className={cn('rounded-site relative p-5', arrival)}>
  <div className="mb-3 flex items-center gap-2">
  <Sparkles className="h-4 w-4 text-site-accent"/>
  <h2 className="text-sm font-semibold text-site-text">{t('daily-wheel', { defaultValue:'Daily wheel'})}</h2>

@@ -17,6 +17,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface SessionRow {
   id: string;
@@ -68,6 +70,8 @@ export function SessionManager() {
   const currentToken = (session as { session?: { token?: string } } | null)?.session?.token;
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
+  // Steel M9: the device list replaces the spinner.
+  const arrival = useArrival(!loading);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -153,11 +157,11 @@ export function SessionManager() {
           <Spinner />
         </div>
       ) : sessions.length === 0 ? (
-        <p className="text-sm text-site-text-muted">
+        <p className={cn('text-sm text-site-text-muted', arrival)}>
           {t('sessions-empty', { defaultValue: 'No active sessions found.' })}
         </p>
       ) : (
-        <div className="rounded-site-sm">
+        <div className={cn('rounded-site-sm', arrival)}>
           <ul className="divide-y divide-site-border">
             {sessions.map((s) => {
               const { label, kind } = describeDevice(s.userAgent);

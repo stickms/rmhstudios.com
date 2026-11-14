@@ -3,6 +3,8 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { ExternalLink, FileAudio, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import { api } from '@/lib/contract/client';
 import { getChatSharedLinksApi, getChatSharedMediaApi } from '@/lib/chat-plus/chat.contract';
@@ -40,6 +42,12 @@ export function SharedMediaPanel({ chat, tab }: { chat: ChatRef; tab: 'media' | 
   );
   const q = tab === 'media' ? media : links;
   const items = (q.data?.pages ?? []).flatMap((p) => p.items as (MediaItem | LinkItem)[]);
+  const arrival = useArrival(!q.isLoading);
+  // One baseline per tab, so switching to a tab that is already loaded does not fade it as new rows.
+  const keysOf = (pages: { items: { messageId: string }[] }[] | undefined) =>
+    (pages ?? []).flatMap((p) => p.items.map((it, i) => `${it.messageId}-${i}`));
+  const isNewMedia = useArrivingKeys(keysOf(media.data?.pages));
+  const isNewLink = useArrivingKeys(keysOf(links.data?.pages));
 
   if (q.isLoading) {
     return (
@@ -55,14 +63,14 @@ export function SharedMediaPanel({ chat, tab }: { chat: ChatRef; tab: 'media' | 
   }
   if (q.isError) {
     return (
-      <p className="py-8 text-center text-sm text-site-text-muted">
+      <p className={cn('py-8 text-center text-sm text-site-text-muted', arrival)}>
         {t('media-error', { defaultValue: 'Could not load this right now.' })}
       </p>
     );
   }
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-site-text-muted">
+      <p className={cn('py-8 text-center text-sm text-site-text-muted', arrival)}>
         {tab === 'media'
           ? t('media-empty', {
               defaultValue: 'No photos, GIFs or voice notes have been shared yet.',
@@ -73,13 +81,16 @@ export function SharedMediaPanel({ chat, tab }: { chat: ChatRef; tab: 'media' | 
   }
 
   return (
-    <div>
+    <div className={arrival}>
       {tab === 'media' ? (
         <ul className="grid grid-cols-3 gap-1.5">
           {(items as MediaItem[]).map((m, i) => (
             <li
               key={`${m.messageId}-${i}`}
-              className="aspect-square overflow-hidden rounded-site-sm bg-site-surface"
+              className={cn(
+                'aspect-square overflow-hidden rounded-site-sm bg-site-surface',
+                isNewMedia(`${m.messageId}-${i}`) && ARRIVE,
+              )}
             >
               {m.type === 'voice' ? (
                 <a
@@ -117,7 +128,10 @@ export function SharedMediaPanel({ chat, tab }: { chat: ChatRef; tab: 'media' | 
               /* keep the raw string */
             }
             return (
-              <li key={`${l.messageId}-${i}`}>
+              <li
+                key={`${l.messageId}-${i}`}
+                className={isNewLink(`${l.messageId}-${i}`) ? ARRIVE : undefined}
+              >
                 <a
                   href={l.url}
                   target="_blank"

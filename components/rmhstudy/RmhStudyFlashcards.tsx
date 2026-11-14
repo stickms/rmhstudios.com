@@ -18,6 +18,8 @@ import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { reviewCardApi } from '@/lib/study/decks.contract';
 import { deckReviewQueueApi, listDecksApi } from '@/lib/study/decks.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface DeckRow {
   id: string;
@@ -170,6 +172,8 @@ export default function RmhStudyFlashcards() {
     loadDecks();
   }, [loadDecks]);
 
+  const arrival = useArrival(!loading);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -180,7 +184,7 @@ export default function RmhStudyFlashcards() {
 
   if (!signedIn) {
     return (
-      <div className="p-6 text-center text-sm text-app-text-muted">
+      <div className={cn('p-6 text-center text-sm text-app-text-muted', arrival)}>
         {t("sign-in-prompt", { defaultValue: "Sign in to study flashcards in this room." })}
       </div>
     );
@@ -297,7 +301,7 @@ export default function RmhStudyFlashcards() {
   );
 
   return (
-    <div className="p-4 max-w-2xl mx-auto space-y-5">
+    <div className={cn('p-4 max-w-2xl mx-auto space-y-5', arrival)}>
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold flex items-center gap-2">
           <Layers className="h-4 w-4 text-app-accent" /> {t("flashcards", { defaultValue: "Flashcards" })}

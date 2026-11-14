@@ -20,6 +20,8 @@ import {
   getAdminReportsApi,
   strikeAdminUserApi,
 } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/reports')({
   head: () => ({ meta: [{ title: 'Moderation Queue | RMH Studios' }] }),
@@ -68,6 +70,7 @@ function AdminReportsPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
   // S4: per-report message to the author, filled from a macro.
   const [messages, setMessages] = useState<Record<string, string>>({});
 
@@ -153,9 +156,9 @@ function AdminReportsPage() {
             <Spinner />
           </div>
         ) : reports.length === 0 ? (
-          <EmptyState icon={Flag} title={t('queue-empty', { defaultValue: 'Nothing here. The queue is clear.' })} />
+          <EmptyState className={arrival} icon={Flag} title={t('queue-empty', { defaultValue: 'Nothing here. The queue is clear.' })} />
         ) : (
-          <ul className="divide-y divide-site-border">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {reports.map((r) => {
               const link = entityLink(r);
               return (

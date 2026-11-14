@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import type { TrashItem } from '@/lib/trash/types';
 import { DELETED_POST_GRACE_MS } from '@/lib/media/sweep-policy';
 import { refusalCopy } from '@/components/trash/copy';
+import { cn } from '@/lib/utils';
 
 interface TrashRowProps {
   item: TrashItem;
   busy: boolean;
   onRestore: (item: TrashItem) => void;
   onPurge: (item: TrashItem) => void;
+  className?: string;
 }
 
 /**
@@ -23,7 +25,7 @@ interface TrashRowProps {
  * here would be 36px and fail on a phone, which is where a mis-tapped Delete is
  * most likely to have happened in the first place.
  */
-export function TrashRow({ item, busy, onRestore, onPurge }: TrashRowProps) {
+export function TrashRow({ item, busy, onRestore, onPurge, className }: TrashRowProps) {
   const { t } = useTranslation('settings-content');
   const reasons = refusalCopy(t);
   const Icon = item.kind === 'post' ? StickyNote : MessageSquare;
@@ -46,7 +48,7 @@ export function TrashRow({ item, busy, onRestore, onPurge }: TrashRowProps) {
     Date.now() - Date.parse(item.deletedAt) > DELETED_POST_GRACE_MS;
 
   return (
-    <li className="rounded-site p-5">
+    <li className={cn('rounded-site p-5', className)}>
       <div className="flex flex-col gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <Icon className="mt-0.5 size-4 shrink-0 text-site-text-muted" aria-hidden />

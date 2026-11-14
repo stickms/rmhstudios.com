@@ -4,7 +4,8 @@ import { Coins, Users, Sparkles } from 'lucide-react';
 import { studioOverviewQuery } from '@/lib/creator/earnings.queries';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { relativeTimeShort } from '@/lib/utils';
+import { useArrival } from '@/components/ui/arrive';
+import { cn, relativeTimeShort } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { TierEditor } from '@/components/creator/TierEditor';
 import type { StudioOverview } from '@/lib/creator/studio.server';
@@ -19,6 +20,7 @@ import type { StudioOverview } from '@/lib/creator/studio.server';
 export function StudioDashboard() {
   const { data, isPending: loading } = useQuery(studioOverviewQuery());
   const overview = data?.overview ?? null;
+  const arrival = useArrival(!loading);
 
   if (loading) {
     return (
@@ -34,7 +36,7 @@ export function StudioDashboard() {
   if (!overview) return null;
 
   return (
-    <div className="space-y-[var(--site-section-gap)]">
+    <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
       <OverviewSection overview={overview} />
       <div className="max-w-2xl">
         <TierEditor initialTiers={overview?.tiers ?? []} />

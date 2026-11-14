@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, useEffect, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { TrendingUp, Gamepad2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
@@ -15,6 +15,8 @@ import { PlayTab } from './PlayTab';
 import { PredictionsMarketTab } from '@/components/predictions/PredictionsMarketTab';
 import { useForecastingTab } from '@/components/forecasting/forecastingTab';
 import { coinBalanceApi } from '@/lib/site-reads.contract';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const ForecastingPanel = lazy(() =>
   import('@/components/forecasting/ForecastingPanel').then((m) => ({ default: m.ForecastingPanel })),
@@ -33,6 +35,7 @@ export function RMHCoinsPage() {
     search.tab === 'games' ? 'games' : search.tab === 'forecasting' ? 'forecasting' : 'markets',
   );
   const forecastingTab = useForecastingTab();
+  const arrival = useArrival(!isPending && !loading);
 
   // Signed out is a supported state, not a redirect. This page used to bounce
   // anyone without a session to /login, which meant the prediction markets —
@@ -92,7 +95,7 @@ export function RMHCoinsPage() {
   ];
 
   return (
-    <div className="flex w-full flex-col gap-4">
+    <div className={cn('flex w-full flex-col gap-4', arrival)}>
       {/* Balance bar — a balance once you have one, the offer of one before. */}
       <div className="flex items-center justify-between gap-3 rounded-site px-4 py-3">
         {signedIn ? (
@@ -154,7 +157,7 @@ export function RMHCoinsPage() {
           </div>
         ) : tab === 'forecasting' ? (
           <div id="rmhcoins-panel-forecasting" role="tabpanel" aria-labelledby="rmhcoins-tab-forecasting">
-            <Suspense
+            <ArrivalSuspense
               fallback={
                 <div className="flex justify-center py-10">
                   <Spinner />
@@ -162,7 +165,7 @@ export function RMHCoinsPage() {
               }
             >
               <ForecastingPanel signedIn={signedIn} />
-            </Suspense>
+            </ArrivalSuspense>
           </div>
         ) : (
           <div id="rmhcoins-panel-games" role="tabpanel" aria-labelledby="rmhcoins-tab-games">

@@ -10,6 +10,7 @@ import { playLedgerExtended } from '@/lib/kaikai-debt/sound';
 import { DebtLogRow } from './DebtLogRow';
 import { api } from '@/lib/contract/client';
 import { debtLedgerApi } from '@/lib/kaikai-debt/kaikai-debt.contract';
+import { useArrivingKeys } from '@/components/ui/arrive';
 
 interface DebtLogProps {
   initialEntries: DebtEntryDto[];
@@ -215,6 +216,7 @@ export function DebtLog({
   // the POST response and once back over SSE.
   const pagedIds = new Set(entries.map((e) => e.id));
   const all = [...liveEntries.filter((e) => !pagedIds.has(e.id)), ...entries];
+  const isNew = useArrivingKeys(all.map((e) => e.id));
 
   if (all.length === 0) {
     return (
@@ -237,6 +239,7 @@ export function DebtLog({
             entry={entry}
             nowMs={nowMs || entry.createdAtMs}
             fresh={freshIds.has(entry.id)}
+            arriving={isNew(entry.id)}
           />
         ))}
       </ul>

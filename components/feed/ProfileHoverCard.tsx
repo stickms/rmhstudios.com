@@ -18,6 +18,7 @@ import { AnimatedCount } from'@/components/ui/AnimatedCount';
 import { api } from '@/lib/contract/client';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { getProfileApi } from '@/lib/profile/profile.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface HoverProfile {
  id: string;
@@ -47,6 +48,8 @@ export function ProfileHoverCard({
  const { data: session } = useSession();
  const [profile, setProfile] = useState<HoverProfile | null>(null);
  const { run: runFollow, pending: followBusy } = useOptimisticAction();
+ // Steel M9: the profile replaces the card's placeholder blocks.
+ const arrival = useArrival(!!profile);
 
  const load = useCallback(
  async (open: boolean) => {
@@ -107,7 +110,7 @@ export function ProfileHoverCard({
  </div>
  </div>
  ) : (
- <>
+ <div className={arrival}>
  <div className="mb-2 flex items-start justify-between gap-2">
  <Link to={profileHref}>
  <span className="relative inline-block">
@@ -155,7 +158,7 @@ export function ProfileHoverCard({
  <span className="text-site-text-muted">{t('followers-label', { defaultValue:'Followers'})}</span>
  </span>
  </div>
- </>
+ </div>
  )}
  </HoverCard.Content>
  </HoverCard.Portal>

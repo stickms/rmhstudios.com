@@ -1,10 +1,11 @@
 import { AdminBody } from '@/components/admin/AdminBody';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BookText, Layers } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const AdminGlossary = lazy(() => import('./AdminGlossary'));
 const AdminStories = lazy(() => import('./AdminStories'));
@@ -41,9 +42,9 @@ export function AdminReadingPage() {
         ]}
       />
       <AdminBody width="narrow">
-        <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+        <ArrivalSuspense fallback={<Skeleton className="h-40 w-full" />}>
           {tab === 'glossary' ? <AdminGlossary /> : <AdminStories />}
-        </Suspense>
+        </ArrivalSuspense>
       </AdminBody>
     </PageLayout>
   );

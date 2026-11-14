@@ -12,9 +12,10 @@ import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { useReservedRows } from '@/hooks/useReservedRows';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
-import { relativeTimeShort } from '@/lib/utils';
+import { cn, relativeTimeShort } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MENU_ITEM_ATTR } from '@/components/ui/menu';
@@ -93,6 +94,8 @@ export function NotificationsPopover({
   // centred spinner and then jump to ten rows the moment the fetch landed — the
   // bud animation was fine, the BOX moved out from under it.
   const reserved = useReservedRows('sidebar-notifications', items?.length ?? null, PREVIEW_LIMIT);
+  // Steel M9: the rows replace the skeleton each time the panel opens.
+  const arrival = useArrival(items !== null);
 
   const load = useCallback(async () => {
     try {
@@ -208,11 +211,11 @@ export function NotificationsPopover({
                   ))}
                 </div>
               ) : items.length === 0 ? (
-                <p className="px-3 py-8 text-center text-sm text-site-text-muted">
+                <p className={cn('px-3 py-8 text-center text-sm text-site-text-muted', arrival)}>
                   {t('notif-pop-empty', { defaultValue: "You're all caught up." })}
                 </p>
               ) : (
-                <ul>
+                <ul className={arrival}>
                   {items.map((n) => {
                     const actorName =
                       n.actor?.name || n.actor?.handle || t('someone', { defaultValue: 'Someone' });

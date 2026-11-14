@@ -1,10 +1,11 @@
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearch } from '@tanstack/react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs } from '@/components/ui/tabs';
 import { SignedOutLobby } from './SignedOutLobby';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /**
  * Five tables, and the switcher below can only ever show ONE of them. Importing
@@ -109,13 +110,13 @@ export function PlayTab({ coins, setCoins, signedIn }: Props) {
       {!signedIn ? (
         <SignedOutLobby game={selected} />
       ) : (
-        <Suspense fallback={<TablePending />}>
+        <ArrivalSuspense fallback={<TablePending />}>
           {selected === 'plinko' && <PlinkoGame coins={coins} setCoins={setCoins} />}
           {selected === 'blackjack' && <BlackjackGame coins={coins} setCoins={setCoins} />}
           {selected === 'holdem' && <HoldemGame coins={coins} setCoins={setCoins} />}
           {selected === 'baccarat' && <BaccaratGame coins={coins} setCoins={setCoins} />}
           {selected === 'roulette' && <RouletteGame coins={coins} setCoins={setCoins} />}
-        </Suspense>
+        </ArrivalSuspense>
       )}
     </div>
   );

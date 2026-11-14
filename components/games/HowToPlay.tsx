@@ -8,6 +8,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { howToPlayApi } from '@/lib/devplatform/how-to-play.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** I1 — "How do I play?" Q&A panel, collapsed until opened (no work on first paint). */
 export function HowToPlay({ gameId }: { gameId: string }) {
@@ -16,6 +18,8 @@ export function HowToPlay({ gameId }: { gameId: string }) {
   const [q, setQ] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // The answer replaces the spinner: it fades in (M9).
+  const arrival = useArrival(answer !== null);
 
   async function ask() {
     setBusy(true);
@@ -68,7 +72,7 @@ export function HowToPlay({ gameId }: { gameId: string }) {
           </form>
           {busy && <Spinner />}
           {answer && (
-            <p className="text-sm text-site-text-muted" aria-live="polite">
+            <p className={cn('text-sm text-site-text-muted', arrival)} aria-live="polite">
               {answer}
             </p>
           )}

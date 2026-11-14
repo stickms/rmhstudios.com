@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { NoteBody } from '@/components/devplatform/NoteBody';
 import type { ReleaseNoteView } from '@/lib/devplatform/release-notes';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 async function api(url: string, method: string, body?: unknown) {
   const res = await fetch(url, {
@@ -30,6 +32,8 @@ export function AdminReleaseNotes() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
+  const arrival = useArrival(notes.length > 0);
+  const isNew = useArrivingKeys(notes.map((n) => n.id));
 
   const load = useCallback(async () => {
     const { ok, data } = await api('/api/admin/release-notes', 'GET');
@@ -155,9 +159,9 @@ export function AdminReleaseNotes() {
         </div>
       </section>
 
-      <ul className="divide-y divide-site-border border-t border-site-border">
+      <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
         {notes.map((n) => (
-          <li key={n.id} className="space-y-3 py-4">
+          <li key={n.id} className={cn('space-y-3 py-4', isNew(n.id) && ARRIVE)}>
             <div className="flex flex-wrap items-center gap-2">
               <p className="t-heading min-w-0 flex-1 basis-full break-words text-site-text sm:basis-0">
                 {n.version} · {n.title}

@@ -17,6 +17,8 @@ import { usePathname } from './shell-router-state';
 import { useSectionLabels } from './use-section-labels';
 import { useInboxCount } from './use-inbox-count';
 import { SIDEBAR_NAV, isNavGroup, isNavLeafActive } from '@/lib/sidebar-nav';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** Destinations the five section words already lead to. */
 const SECTION_HREFS = new Set(['/', '/explore', '/games', '/messages']);
@@ -40,6 +42,8 @@ export function Sidebar() {
   const { t } = useTranslation('feed');
   const pathname = usePathname();
   const { data: session, isPending: sessionUnknown } = useSession();
+  // Steel M9: when the session resolves on the client, the account block replaces its empty slot.
+  const accountArrival = useArrival(!sessionUnknown);
   const { resolved } = useResolvedUser();
   const user = session?.user as
     { id: string; handle?: string | null; name?: string | null; image?: string | null } | undefined;
@@ -184,7 +188,7 @@ export function Sidebar() {
         </Button>
 
         {user ? (
-          <div className="site-sidebar__account">
+          <div className={cn('site-sidebar__account', accountArrival)}>
             <Link
               to={viewerPath ?? '/login'}
               className="site-sidebar__handle"
@@ -226,7 +230,7 @@ export function Sidebar() {
         ) : sessionUnknown ? (
           <div className="site-sidebar__account" aria-hidden />
         ) : (
-          <div className="site-sidebar__account">
+          <div className={cn('site-sidebar__account', accountArrival)}>
             <Link to="/login" search={{ callbackURL: undefined }} className="site-sidebar__handle">
               {t('shell-sign-in', { defaultValue: 'Sign in' })}
             </Link>

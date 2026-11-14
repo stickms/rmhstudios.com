@@ -35,6 +35,8 @@ import { safeHref } from '@/lib/url-safety';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface ApplicationPacketProps {
   applicant: PacketApplicant;
@@ -56,6 +58,7 @@ export function ApplicationPacket({
   const { t } = useTranslation('site');
   const [bank, setBank] = useState<AnswerBank | null>(providedBank ?? null);
   const [loading, setLoading] = useState(!providedBank);
+  const arrival = useArrival(!loading);
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
@@ -112,7 +115,10 @@ export function ApplicationPacket({
   }
 
   return (
-    <section className="surface-panel p-4 sm:p-5" aria-labelledby="ladder-packet-heading">
+    <section
+      className={cn('surface-panel p-4 sm:p-5', arrival)}
+      aria-labelledby="ladder-packet-heading"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <ClipboardList className="size-4 text-site-accent" aria-hidden />
         <h2 id="ladder-packet-heading" className="site-section-label">

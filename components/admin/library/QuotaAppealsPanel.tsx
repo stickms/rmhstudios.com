@@ -21,6 +21,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type QuotaRequest = {
   id: string;
@@ -41,6 +43,7 @@ export function QuotaAppealsPanel() {
   const [requests, setRequests] = useState<QuotaRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,12 +113,16 @@ export function QuotaAppealsPanel() {
 
   if (requests.length === 0) {
     return (
-      <EmptyState icon={Inbox} title={t('quota-none', { defaultValue: 'No pending upload appeals.' })} />
+      <EmptyState
+        className={arrival}
+        icon={Inbox}
+        title={t('quota-none', { defaultValue: 'No pending upload appeals.' })}
+      />
     );
   }
 
   return (
-    <ul className="divide-y divide-site-border">
+    <ul className={cn('divide-y divide-site-border', arrival)}>
       {requests.map((req) => {
         const who = req.user.handle ? `@${req.user.handle}` : (req.user.name ?? req.user.id);
         return (

@@ -18,6 +18,8 @@ import { isTouchPhone, motionPermissionGated, requestMotionPermission } from '@/
 import { activityNotificationsSupported } from '@/lib/access/activity';
 import { getNotificationMatrixApi } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function Section({
   title,
@@ -105,6 +107,7 @@ export function AccessPrefsPanel() {
   // after hydration like `phone` — rendering it directly mismatches the SSR HTML.
   const [activityOk, setActivityOk] = useState(false);
   const [quiet, setQuiet] = useState<boolean | null>(null);
+  const quietArrival = useArrival(quiet !== null);
 
   useEffect(() => {
     setPhone(isTouchPhone());
@@ -288,7 +291,7 @@ export function AccessPrefsPanel() {
           onChange={(v) => setAccessPrefs({ bedtime: v })}
         />
         {p.bedtime && quiet === false ? (
-          <p className="text-xs text-site-text-muted">
+          <p className={cn('text-xs text-site-text-muted', quietArrival)}>
             {t('bedtime-no-quiet', { defaultValue: 'You have not set quiet hours yet.' })}{' '}
             <Link to="/settings/notifications" className="underline">
               {t('bedtime-set-quiet', { defaultValue: 'Set quiet hours' })}

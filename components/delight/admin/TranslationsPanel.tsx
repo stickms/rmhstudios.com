@@ -9,6 +9,8 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Select } from '@/components/ui/select';
 import { LOCALES, LOCALE_LABELS } from '@/lib/i18n/config';
 import { fetchJson } from '@/lib/http';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const TARGETS = LOCALES.filter((l) => l !== 'en');
 
@@ -22,6 +24,7 @@ export default function TranslationsPanel() {
         suggestions: { id: string; ns: string; key: string; text: string; votes: number }[];
       }>(`/api/admin/delight/translations?locale=${locale}`),
   });
+  const arrival = useArrival(!!q.data);
   const review = async (id: string, status: 'accepted' | 'rejected') => {
     try {
       await fetchJson(`/api/admin/delight/translations/${id}`, {
@@ -57,9 +60,16 @@ export default function TranslationsPanel() {
         </Button>
       </div>
       {q.data && q.data.suggestions.length === 0 ? (
-        <EmptyState title={t('tr-admin-empty', { defaultValue: 'No open suggestions' })} />
+        <EmptyState
+          className={arrival}
+          title={t('tr-admin-empty', { defaultValue: 'No open suggestions' })}
+        />
       ) : (
-        <ul className="divide-y divide-site-border border-t border-site-border">
+        // Keyed by locale: a switch empties the list, and the next one fades in again.
+        <ul
+          key={locale}
+          className={cn('divide-y divide-site-border border-t border-site-border', arrival)}
+        >
           {q.data?.suggestions.map((s) => (
             <li key={s.id} className="flex items-center gap-3 py-3">
               <div className="min-w-0 flex-1">

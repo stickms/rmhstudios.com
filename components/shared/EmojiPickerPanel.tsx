@@ -63,6 +63,7 @@ import type { InstalledPack, PackItem } from '@/lib/emoji/packs';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { installedPacksApi } from '@/lib/emoji/packs.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface EmojiPickerPanelProps {
   /**
@@ -145,6 +146,8 @@ export default function EmojiPickerPanel({
   const [category, setCategory] = useState<EmojiCategory>('smileys');
   const [frequent, setFrequent] = useState<FrequentEntry[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Steel M9: the grid replaces "Loading…" once the shortcode map is in.
+  const arrival = useArrival(!!shortcodes);
 
   // The shortcode map is a lazy chunk shared with `:code:` completion, so this
   // is usually already warm.
@@ -298,7 +301,7 @@ export default function EmojiPickerPanel({
       </div>
 
       {/* Grid */}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+      <div ref={scrollRef} className={cn('min-h-0 flex-1 overflow-y-auto px-2 pb-2', arrival)}>
         {!shortcodes ? (
           <p className="p-4 text-center text-sm text-site-text-muted">
             {t('emoji-picker-loading', { defaultValue: 'Loading…' })}

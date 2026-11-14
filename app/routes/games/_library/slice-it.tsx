@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { Suspense } from 'react';
+
 
 import { GameHero, GamePlayBar } from '@/components/steam/GameHero';
 import { SteamPane } from '@/components/steam/SteamPane';
@@ -16,6 +16,7 @@ import { sliceItHub, type HubPayload } from '@features/slice-it/engine/hub.serve
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import { SliceItHub } from '@features/slice-it/ui/SliceItHub';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /**
  * V12 — Slice It!'s own indexable surface.
@@ -94,9 +95,9 @@ function SliceItHubPage() {
         ) : undefined
       }
     >
-      <Suspense fallback={null}>
+      <ArrivalSuspense fallback={null}>
         <SliceItHub data={data} />
-      </Suspense>
+      </ArrivalSuspense>
     </SteamPane>
   );
 }

@@ -10,10 +10,12 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { FeedItem } from '@/lib/feed-types';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
+import { cn } from '@/lib/utils';
 import { getCustomFeedApi, type CustomFeedView } from '@/lib/discovery/discovery.contract';
 import { FeedForm, feedBody, type FeedFormValue } from './FeedForm';
 
@@ -28,6 +30,9 @@ export function FeedPage({ id }: { id: string }) {
   const [missing, setMissing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Steel M9: the feed replaces the skeleton; "Load more" appends rows that fade one by one.
+  const arrival = useArrival(!!view || missing);
+  const isNew = useArrivingKeys(items.map((i) => i.id));
 
   const load = useCallback(
     async (cursor?: string) => {
@@ -73,7 +78,7 @@ export function FeedPage({ id }: { id: string }) {
   if (missing) {
     return (
       <PageLayout title={t('feed-title', { defaultValue: 'Feed' })} backTo="/feeds">
-        <div className="pb-12">
+        <div className={cn('pb-12', arrival)}>
           <EmptyState
             title={t('feed-missing', { defaultValue: 'This feed does not exist or is private' })}
           />
@@ -107,7 +112,7 @@ export function FeedPage({ id }: { id: string }) {
       backTo="/feeds"
       description={feed.description ?? undefined}
     >
-      <Spine className="pb-12">
+      <Spine className={cn('pb-12', arrival)}>
         <SpineItem dot={false} className="flex flex-wrap items-center gap-3">
           <p className="min-w-0 flex-1 text-sm text-site-text-muted">
             {[...feed.tags.map((x) => `#${x}`), ...feed.keywords].join(' · ')}
@@ -184,7 +189,15 @@ export function FeedPage({ id }: { id: string }) {
         {items.length === 0 ? (
           <EmptyState title={t('feed-empty', { defaultValue: 'No matching posts yet' })} />
         ) : (
-          items.map((item) => <RMHarkCard key={item.id} item={item} />)
+          items.map((item) =>
+            isNew(item.id) ? (
+              <div key={item.id} className="arrive-group">
+                <RMHarkCard item={item} />
+              </div>
+            ) : (
+              <RMHarkCard key={item.id} item={item} />
+            ),
+          )
         )}
         {view.nextCursor && (
           <SpineItem dot={false} className="flex justify-center border-b-0">

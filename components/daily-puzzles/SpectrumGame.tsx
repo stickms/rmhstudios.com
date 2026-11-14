@@ -24,6 +24,7 @@ import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLe
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
+import { useArrival } from '@/components/ui/arrive';
 
 function scoreEmoji(score: number): string {
     if (score === 2) return '🟩';
@@ -45,6 +46,7 @@ function accuracyTone(accuracy: number): PuzzleTone {
 
 function SpectrumGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
     const [puzzle, setPuzzle] = useState<SpectrumPuzzle | null>(null);
+    const arrival = useArrival(puzzle !== null);
 
     useEffect(() => {
         let cancelled = false;
@@ -58,7 +60,9 @@ function SpectrumGameLoader({ dateKey, isToday }: { dateKey: string; isToday: bo
     }, [dateKey]);
 
     if (!puzzle) return <PuzzleLoading title="Spectrum" emoji="🌈" />;
-    return <SpectrumGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    const content = <SpectrumGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    // The puzzle replaces the loading panel: it fades in through a box-less wrapper (M9).
+    return arrival ? <div className="arrive-group">{content}</div> : content;
 }
 
 function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuzzle; dateKey: string; isToday: boolean }) {

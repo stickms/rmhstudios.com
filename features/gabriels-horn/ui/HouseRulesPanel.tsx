@@ -30,6 +30,8 @@ import { api } from '@/lib/contract/client';
 import { proposeHouseRuleApi } from '@features/gabriels-horn/engine/gabriels-horn.contract';
 import { hornNet } from '@features/gabriels-horn/engine/net/client';
 import { HornButton, Panel } from './ui';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Proposal {
   rules: HouseRules;
@@ -130,6 +132,7 @@ export function HouseRulesPanel({
   const [wish, setWish] = useState('');
   const [busy, setBusy] = useState(false);
   const [proposal, setProposal] = useState<Proposal | null>(null);
+  const arrival = useArrival(proposal !== null);
 
   const ask = async () => {
     const prompt = wish.trim();
@@ -194,7 +197,7 @@ export function HouseRulesPanel({
       </form>
 
       {proposal ? (
-        <div className="space-y-2 border-t border-app-border pt-2.5">
+        <div className={cn('space-y-2 border-t border-app-border pt-2.5', arrival)}>
           <p className="text-sm text-app-text">{proposal.reasoning}</p>
 
           {proposal.changes.length > 0 ? (

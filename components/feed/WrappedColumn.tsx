@@ -21,6 +21,7 @@ import { Button } from'@/components/ui/button';
 import { PinnedHero } from'@/components/feed/PinnedHero';
 import { api } from'@/lib/contract/client';
 import { getWrappedApi } from'@/lib/wrapped/wrapped.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface Wrapped {
  year: number;
@@ -59,6 +60,8 @@ export function WrappedColumn({
  const seeded = useRef(initialData !== undefined && initialData !== null);
  const [data, setData] = useState<Wrapped | null>(initialData ?? null);
  const [loading, setLoading] = useState(!initialData);
+ // Steel M9: a Wrapped fetched here replaces the spinner; the loader's is there on first paint.
+ const arrival = useArrival(!loading);
 
  useEffect(() => {
  if (seeded.current) return;
@@ -76,7 +79,7 @@ export function WrappedColumn({
  );
  }
  if (!data) {
- return <EmptyState description={t('wrapped-load-error', { defaultValue:'Could not load your Wrapped.'})} />;
+ return <EmptyState className={arrival} description={t('wrapped-load-error', { defaultValue:'Could not load your Wrapped.'})} />;
  }
 
  const tiles = [
@@ -89,7 +92,7 @@ export function WrappedColumn({
  ];
 
  return (
- <div>
+ <div className={arrival}>
  {/* Pinned scroll-narrative hero — marquee moment for the year review. */}
  <PinnedHero
  title={

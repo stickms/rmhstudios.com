@@ -8,13 +8,14 @@
 
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { getBook } from '@/lib/library/library.server';
 import { buildCanonical } from '@/lib/seo';
 import { bookSchema, jsonLdScript } from '@/lib/schema';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 import { LibraryStyles } from '@/components/library/LibraryStyles';
 import { Spinner } from '@/components/ui/spinner';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // The reader components pull in three.js / @react-three/fiber (the 3D book-flip
 // canvas + the epub rasteriser) — ~1.3 MB of vendor JS. They MUST stay lazy:
@@ -87,9 +88,9 @@ function Reader() {
     <>
       <VibeStyles />
       <LibraryStyles />
-      <Suspense fallback={<ReaderFallback />}>
+      <ArrivalSuspense fallback={<ReaderFallback />}>
         {book.format === 'epub' ? <EpubReader book={book} /> : <BookReader book={book} />}
-      </Suspense>
+      </ArrivalSuspense>
     </>
   );
 }

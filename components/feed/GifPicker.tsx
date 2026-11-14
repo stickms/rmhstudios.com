@@ -3,6 +3,8 @@ import { useTranslation } from'react-i18next';
 import { Search, X, ImageOff } from'lucide-react';
 import type { KlipyGif } from'@/lib/klipy.server';
 import { buildGifSearchPath } from'@/lib/gif-search';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface GifPickerProps {
  onSelect: (url: string) => void;
@@ -30,6 +32,9 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='', 
  const [loading, setLoading] = useState(true);
  const [error, setError] = useState<'unavailable'|'failed'| null>(null);
  const sentinelRef = useRef<HTMLDivElement>(null);
+ // Steel M9: the first results replace the placeholder tiles; later pages and new searches fade in tile by tile.
+ const arrival = useArrival(!loading || results.length > 0);
+ const isNew = useArrivingKeys(results.map((g) => g.id));
 
  // Fetch a page. pos === null starts a fresh result set.
  // Stable: reads no outer state; only calls setState setters (stable identities).
@@ -102,13 +107,16 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='', 
  {t('gif-search-empty', { defaultValue:'No GIFs found'})}
  </div>
  )}
- <div className="grid grid-cols-2 gap-1">
+ <div className={cn('grid grid-cols-2 gap-1', arrival)}>
  {results.map((g) => (
  <button
  key={g.id}
  type="button"
  onClick={() => { onSelect(g.url); onClose?.(); }}
- className="block rounded-site-sm overflow-hidden border border-site-border hover:border-site-accent transition-colors"
+ className={cn(
+ 'block rounded-site-sm overflow-hidden border border-site-border hover:border-site-accent transition-colors',
+ isNew(g.id) && ARRIVE,
+ )}
  >
  <img src={g.preview} alt={g.description || t('gif-alt', { defaultValue:'GIF'})} loading="lazy"className="w-full h-auto"/>
  </button>

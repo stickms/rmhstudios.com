@@ -8,6 +8,8 @@ import { aggregateReactions } from '@features/doctrine/engine/divisiveness';
 import { EMPTY_REACTIONS } from '@features/doctrine/engine/types';
 import { api } from '@/lib/contract/client';
 import { listDoctrineIncidentsApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/incidents')({
   head: () => ({
@@ -24,6 +26,7 @@ function IncidentsPage() {
     queryFn: () => api(listDoctrineIncidentsApi, { query: { limit: '20' }, retries: 0 }),
     staleTime: 15_000,
   });
+  const arrival = useArrival(!isLoading);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -45,7 +48,7 @@ function IncidentsPage() {
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className={cn('space-y-3', arrival)}>
         {data?.map?.((incident: { id: string; codename: string; severity: string; title: string; narrative: string; status: string; createdAt: string; reactions: Array<{ reaction: string }>; _count: { reports: number } }) => {
           const reactions = incident.reactions ? aggregateReactions(incident.reactions) : EMPTY_REACTIONS;
           return (
@@ -66,7 +69,7 @@ function IncidentsPage() {
       </div>
 
       {data?.length === 0 && (
-        <div className="text-center py-16">
+        <div className={cn('text-center py-16', arrival)}>
           <AlertTriangle size={32} className="mx-auto mb-3 opacity-10" />
           <p className="text-sm text-white/50">{t("all-systems-nominal", { defaultValue: "All systems nominal. For now." })}</p>
         </div>

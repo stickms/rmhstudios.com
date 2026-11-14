@@ -27,6 +27,8 @@ import { HttpError, serverError } from '@/lib/http';
 import { moderateAdminEmojiPackApi } from '@/lib/admin/admin-ops.contract';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { adminEmojiPacksQuery } from '@/lib/admin/admin-ops.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/emoji-packs')({
   head: () => ({ meta: [{ title: 'Emoji Pack Review | RMH Studios' }] }),
@@ -57,6 +59,7 @@ function AdminEmojiPacksPage() {
   // A failed read shows an empty queue.
   const { data, isPending: loading } = useQuery(query);
   const rows: PendingPackRow[] = data?.packs ?? [];
+  const arrival = useArrival(!loading);
   // One decision at a time: while any request is in flight every action is
   // disabled, so a double click cannot fire approve and remove back to back.
   const [busy, setBusy] = useState<{ id: string; action: Action } | null>(null);
@@ -127,13 +130,14 @@ function AdminEmojiPacksPage() {
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Smile}
             title={t('emoji-packs-review-empty', {
               defaultValue: 'No packs are waiting for review.',
             })}
           />
         ) : (
-          <ul className="divide-y divide-site-border">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {rows.map((p) => (
               <li key={p.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-center gap-2">

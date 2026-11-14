@@ -12,6 +12,8 @@ import { useSession } from '@/components/Providers';
 import { MessageSquare } from 'lucide-react';
 import { api } from '@/lib/contract/client';
 import { createSongCommentApi, listSongCommentsApi } from '@features/slice-it/engine/slice-it.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Comment {
   id: string;
@@ -35,6 +37,8 @@ export function SongComments({ songId }: SongCommentsProps) {
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  // The rows carry their own entrance; the empty line that replaces "Loading" fades in (M9).
+  const arrival = useArrival(!isLoading);
 
   useEffect(() => {
     if (songId) {
@@ -104,7 +108,7 @@ export function SongComments({ songId }: SongCommentsProps) {
             {t('loading', { defaultValue: 'Loading...' })}
           </div>
         ) : comments.length === 0 ? (
-          <div className="text-center py-8 text-slice-text-light flex flex-col items-center gap-2">
+          <div className={cn('text-center py-8 text-slice-text-light flex flex-col items-center gap-2', arrival)}>
             <span className="text-xs">
               {t('no-comments-yet', { defaultValue: 'No comments yet.' })}
             </span>

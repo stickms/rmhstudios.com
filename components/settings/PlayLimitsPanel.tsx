@@ -13,6 +13,7 @@ import { playLimitsQuery } from '@/lib/settings/privacy.queries';
 import type { PlayLimitsView } from '@/lib/economy/play-limits.server';
 import { MAX_COOL_OFF_DAYS, MAX_DAILY_CAP } from '@/lib/economy/play-limits';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { useArrival } from '@/components/ui/arrive';
 
 /**
  * Responsible play (W8) — the member's own guard rails, in Settings → Privacy.
@@ -48,6 +49,7 @@ export function PlayLimitsPanel() {
   const { data } = useQuery(playLimitsQuery());
   const [saved, setSaved] = useState<PlayLimitsView | null>(null);
   const view = saved ?? data ?? null;
+  const arrival = useArrival(view !== null);
   const [capDraft, setCapDraft] = useState<string | null>(null);
   const capInput =
     capDraft ?? (view && view.dailyCoinCap !== null ? String(view.dailyCoinCap) : '');
@@ -119,6 +121,7 @@ export function PlayLimitsPanel() {
 
   return (
     <SettingsSection
+      className={arrival}
       title={t('play-limits-title', { defaultValue: 'Staking limits' })}
       description={t('play-limits-subtitle', {
         defaultValue:

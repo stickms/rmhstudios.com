@@ -12,6 +12,7 @@ import { Globe, Highlighter, Lock, Pencil, StickyNote, Trash2 } from 'lucide-rea
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { cn } from '@/lib/utils';
 import { resolveAnchor } from '@/lib/library/text-anchor';
 import { MIN_READERS_TO_SHOW } from '@/lib/reading/passages';
 import { useHighlightActions } from '@/lib/reading/client';
@@ -69,7 +70,7 @@ export function HighlightsSection({
     <section
       data-rf-skip=""
       aria-label={t('highlights-section', { defaultValue: 'Highlights and notes' })}
-      className={className ?? 'surface-card mt-10 space-y-5 rounded-site p-5 text-sm'}
+      className={cn('surface-card mt-10 space-y-5 rounded-site p-5 text-sm', className)}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-site-text">

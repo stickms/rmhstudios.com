@@ -1,5 +1,6 @@
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // The daily shop, bundles and loadouts are a separate chunk, fetched only when
 // the store's Daily tab opens. The split lives here rather than in the route
@@ -9,7 +10,7 @@ const DailyShopPanel = lazy(() => import('./DailyShopPanel'));
 
 export function DailyTab({ signedIn }: { signedIn: boolean }) {
   return (
-    <Suspense
+    <ArrivalSuspense
       fallback={
         <div className="flex flex-col gap-3 pt-4">
           <Skeleton className="h-16 w-full" />
@@ -18,6 +19,6 @@ export function DailyTab({ signedIn }: { signedIn: boolean }) {
       }
     >
       <DailyShopPanel signedIn={signedIn} />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

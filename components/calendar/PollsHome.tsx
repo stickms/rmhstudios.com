@@ -18,6 +18,8 @@ import type { CalPerson, PollListItem } from '@/lib/calendar/types';
 import type { WhenSearch } from '@/lib/calendar/search';
 import { api, viewerTimeZone } from './api';
 import { PersonPicker } from './PersonPicker';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function todayString(): string {
   const d = new Date();
@@ -31,6 +33,8 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
   const [polls, setPolls] = useState<PollListItem[] | null>(null);
   const [creating, setCreating] = useState(!!(attach.communityId || attach.groupChatId));
   const signedIn = !!session?.user;
+  const sessionArrival = useArrival(!isPending);
+  const arrival = useArrival(polls !== null);
 
   useEffect(() => {
     if (isPending || !signedIn) return;
@@ -42,6 +46,7 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
     return (
       <SignedOutPrompt
         icon={CalendarCheck}
+        className={sessionArrival}
         title={t('home-signed-out', { defaultValue: 'Sign in to find a time that works' })}
         description={t('home-signed-out-body', {
           defaultValue: 'Create a poll, share the link, and see when everyone is free.',
@@ -52,7 +57,7 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
   }
 
   return (
-    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+    <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', sessionArrival)}>
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-site-text-muted">
           {t('home-intro', {
@@ -78,12 +83,13 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
         ) : polls.length === 0 ? (
           <EmptyState
             icon={CalendarCheck}
+            className={arrival}
             description={t('home-empty', {
               defaultValue: 'No polls yet. Start one and share the link.',
             })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className={cn('space-y-3', arrival)}>
             {polls.map((p) => (
               <li key={p.id}>
                 <Link

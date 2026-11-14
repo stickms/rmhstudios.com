@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import { Spine, SpineItem } from '@/components/ui/spine';
@@ -123,6 +124,10 @@ export function ConversationView({
   const isSavedChat = !!otherUser && otherUser.id === session?.user.id;
   // M8: the viewer's latest message, which is the one that carries "Seen".
   const lastOwnId = lastOwnMessageId(shownMessages, session?.user.id);
+  // Steel M9: the thread replaces the spinner; a message from them that arrives live, or an older page, fades in. Your
+  // own sends do not (they are optimistic rows).
+  const arrival = useArrival(!loading);
+  const isNew = useArrivingKeys(loading ? [] : shownMessages.map((m) => m.id));
 
   if (!session) {
     return (
@@ -171,7 +176,7 @@ export function ConversationView({
             <Spinner size={32} />
           </div>
         ) : (
-          <Spine>
+          <Spine className={arrival}>
             {hasOlder && (
               <SpineItem dot={false} className="spine-item--tight">
                 <Button variant="ghost" onClick={handleLoadOlder} disabled={loadingOlder}>
@@ -195,6 +200,7 @@ export function ConversationView({
             {shownMessages.map((msg, i) => (
               <MessageRow
                 key={msg.id}
+                className={isNew(msg.id) && msg.senderId !== session.user.id ? ARRIVE : undefined}
                 msg={msg}
                 prevMsg={i > 0 ? shownMessages[i - 1] : null}
                 viewerId={session.user.id}

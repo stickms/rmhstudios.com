@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { DataTable, type Column } from '@/components/admin/perf/DataTable';
 import { Kpi } from '@/components/admin/perf/Kpi';
 import type { HourlyPoint } from '@/lib/deepseek/balance';
@@ -30,6 +32,8 @@ export function DeepseekPanel() {
   const [picked, setPicked] = useState<string | null>(null);
   const hours = WINDOWS.find((w) => w.id === win)!.hours;
   const history = useDeepseekHistory(hours, nonce);
+  const arrival = useArrival(!(loading && !state));
+  const historyArrival = useArrival(!(history.loading && !history.series));
 
   const errorText = (code: string): string => {
     if (code === 'timeout')
@@ -77,7 +81,7 @@ export function DeepseekPanel() {
 
   if (state?.error === 'not_configured') {
     return (
-      <div className="space-y-[var(--site-section-gap)]">
+      <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
         <section className="min-w-0">
           <h2 className="t-heading text-site-text">
             {t('not-configured-title', { defaultValue: 'DeepSeek is not configured' })}
@@ -120,7 +124,7 @@ export function DeepseekPanel() {
       }));
 
   return (
-    <div className="space-y-[var(--site-section-gap)]">
+    <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
       <div className="flex flex-wrap items-center gap-3">
         {live ? (
           <Badge variant={live.isAvailable ? 'success' : 'danger'}>
@@ -199,11 +203,11 @@ export function DeepseekPanel() {
       {history.loading && !history.series ? (
         <Spinner />
       ) : history.failed && !history.series ? (
-        <p className="py-4 t-body text-site-text-muted">
+        <p className={cn('py-4 t-body text-site-text-muted', historyArrival)}>
           {t('history-failed', { defaultValue: 'Could not load balance history.' })}
         </p>
       ) : (
-        <>
+        <div className={cn('space-y-[var(--site-section-gap)]', historyArrival)}>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Kpi
               label={t('burn-hour', { defaultValue: 'Spend per hour' })}
@@ -241,7 +245,7 @@ export function DeepseekPanel() {
           <BalanceChart points={series?.points ?? []} currency={currency} />
 
           <HistoryTable points={series?.points ?? []} currency={currency} />
-        </>
+        </div>
       )}
     </div>
   );

@@ -5,6 +5,8 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { send, useInsight } from './api';
 
 interface Cohorts {
@@ -18,6 +20,7 @@ export function CohortsTab() {
   const { t } = useTranslation('f-ops');
   const { data, loading, reload } = useInsight<Cohorts>('/api/admin/insights/cohorts');
   const [busy, setBusy] = useState(false);
+  const arrival = useArrival(!loading);
 
   const recompute = async () => {
     setBusy(true);
@@ -32,7 +35,7 @@ export function CohortsTab() {
 
   if (loading) return <Spinner />;
   return (
-    <section className="space-y-3">
+    <section className={cn('space-y-3', arrival)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="t-body text-site-text-muted">
           {t('cohorts-intro', {

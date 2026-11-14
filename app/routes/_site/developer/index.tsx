@@ -14,6 +14,8 @@ import { BadgeSnippets } from '@/components/developer/BadgeSnippets';
 import { AiPracticesLink } from '@/components/developer/AiPracticesLink';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/developer/')({
   head: () => ({
@@ -38,6 +40,7 @@ export const Route = createFileRoute('/_site/developer/')({
 function DeveloperHome() {
   const { t } = useTranslation('site');
   const { data: session, isPending } = useSession();
+  const arrival = useArrival(!isPending);
 
   return (
     <PageLayout
@@ -78,16 +81,17 @@ function DeveloperHome() {
           </div>
         ) : !session ? (
           <SignedOutPrompt
+            className={arrival}
             icon={Terminal}
             callbackURL="/developer"
             title={t('developer-sign-in', { defaultValue: 'Sign in to manage developer keys' })}
           />
         ) : (
-          <>
+          <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
             <KeysManager />
             <RecipesManager />
             <BadgeSnippets userId={session.user.id} />
-          </>
+          </div>
         )}
       </div>
     </PageLayout>

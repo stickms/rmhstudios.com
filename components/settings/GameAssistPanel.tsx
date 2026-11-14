@@ -10,6 +10,7 @@ import { MIN_SPEED_FLOOR, type AssistSettings } from '@/lib/game/assist';
 import { setAssistsApi } from '@/lib/game/assist.contract';
 import { gameAssistsQuery } from '@/lib/settings/prefs.queries';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { useArrival } from '@/components/ui/arrive';
 
 /**
  * Cross-game assists (P7), in Settings → Appearance.
@@ -36,6 +37,7 @@ export function GameAssistPanel() {
   // A failed read leaves `state` undefined: the panel simply does not render, and that is not a toast.
   const { data: state } = useQuery(query);
   const [saving, setSaving] = useState(false);
+  const arrival = useArrival(!!state);
 
   const save = useCallback(
     async (patch: Partial<AssistSettings>) => {
@@ -87,6 +89,7 @@ export function GameAssistPanel() {
 
   return (
     <SettingsSection
+      className={arrival}
       title={t('assists-title', { defaultValue: 'Game assists' })}
       description={t('assists-subtitle', {
         defaultValue: 'Settings games apply so they stay playable.',

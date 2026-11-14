@@ -4,6 +4,7 @@ import { Clock, Moon } from 'lucide-react';
 import { localClock, type LocalClock } from '@/lib/profile/plus';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useProfilePlus } from './useProfilePlus';
+import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 /**
@@ -37,11 +38,17 @@ export function LocalTimeChip({
 }) {
   const { t } = useTranslation('f-profile-plus');
   const clock = useLocalClock(timezone);
+  // Computed in the browser after mount, so it always lands after the first paint.
+  const arrival = useArrival(clock !== null);
   if (!clock) return null;
   const Icon = clock.isNight ? Moon : Clock;
   return (
     <span
-      className={cn('inline-flex items-center gap-1.5 text-sm text-site-text-muted', className)}
+      className={cn(
+        'inline-flex items-center gap-1.5 text-sm text-site-text-muted',
+        arrival,
+        className,
+      )}
       title={timezone ?? undefined}
     >
       <Icon className="size-4 shrink-0" aria-hidden />

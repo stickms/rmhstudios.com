@@ -45,6 +45,7 @@ import {
     PuzzleShareRow,
     PuzzleFootnote,
 } from '@/components/daily-puzzles/PuzzleShell';
+import { useArrival } from '@/components/ui/arrive';
 
 export function LightsOutGame() {
     const { t } = useTranslation("c-lights-out");
@@ -256,6 +257,7 @@ export function LightsOutGame() {
     // The grid is built in an effect rather than server-rendered because today's
     // puzzle depends on the visitor's LOCAL date, which the server cannot know.
     // (The `.app-page` document itself now lives in the /daily layout route.)
+    const arrival = useArrival(!!grid);
     if (!grid) {
         return (
             <PuzzlePage>
@@ -287,8 +289,9 @@ export function LightsOutGame() {
         on ? 'bg-site-warning text-site-warning-fg' : 'border border-site-border bg-site-bg-subtle';
     const hintRing = 'ring-2 ring-site-accent ring-offset-2 ring-offset-site-surface animate-pulse';
 
+    // The board arrives into the loading frame: the column fades in once it is built (M9).
     return (
-        <PuzzlePage>
+        <PuzzlePage className={arrival}>
             <PuzzleHeader
                 icon={<Sparkles />}
                 title={t("lights-out-title", { defaultValue: "Lights Out" })}

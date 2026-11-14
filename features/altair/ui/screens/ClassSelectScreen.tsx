@@ -16,6 +16,8 @@ import { useKeyboardNav } from '@features/altair/engine/hooks/use-keyboard-nav';
 import SpriteIcon from '@features/altair/ui/hud/SpriteIcon';
 import { api } from '@/lib/contract/client';
 import { getAltairHeatApi } from '@features/altair/engine/altair.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface ClassSelectScreenProps {
   onSelect: (classId: string) => void;
@@ -70,6 +72,8 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
   }, []);
   // A saved choice above what is unlocked (a different account on this browser) plays at the cap.
   const activeHeat = Math.min(heat, heatUnlocked);
+  // The picker appears once the server's answer lands: it fades in (M9).
+  const heatArrival = useArrival(heatUnlocked > 0);
 
   const handleGridSelect = useCallback((i: number) => {
     const cls = CLASSES[i];
@@ -207,7 +211,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
       />
 
       {/* Heat */}
-      <HeatPicker unlocked={heatUnlocked} value={activeHeat} onChange={setHeat} />
+      <HeatPicker unlocked={heatUnlocked} value={activeHeat} onChange={setHeat} className={heatArrival} />
 
       {/* Action buttons */}
       <div className="mt-auto flex gap-3">
@@ -238,7 +242,17 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
 // ── Heat picker ────────────────────────────────────────────────────────
 
 /** Heat tiers: harder enemies, better pay. Hidden until the account has cleared the game once. */
-function HeatPicker({ unlocked, value, onChange }: { unlocked: number; value: number; onChange: (heat: number) => void }) {
+function HeatPicker({
+  unlocked,
+  value,
+  onChange,
+  className,
+}: {
+  unlocked: number;
+  value: number;
+  onChange: (heat: number) => void;
+  className?: string;
+}) {
   const { t } = useTranslation("c-altair");
   if (unlocked <= 0) return null;
   const mods = heatModifiers(value);
@@ -246,7 +260,7 @@ function HeatPicker({ unlocked, value, onChange }: { unlocked: number; value: nu
   const button =
     'size-9 pointer-coarse:size-11 rounded-(--altair-radius) flex items-center justify-center border border-(--altair-border) text-(--altair-text) hover:bg-(--altair-surface-hover) disabled:opacity-40 disabled:cursor-not-allowed transition-colors';
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-(--altair-radius-lg) bg-(--altair-surface) border border-(--altair-border) mb-4">
+    <div className={cn('flex items-center gap-3 px-4 py-3 rounded-(--altair-radius-lg) bg-(--altair-surface) border border-(--altair-border) mb-4', className)}>
       <Flame size={16} className={value > 0 ? 'text-(--altair-amber)' : 'text-(--altair-text-dim)'} aria-hidden />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">

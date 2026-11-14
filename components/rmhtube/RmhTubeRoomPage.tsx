@@ -41,6 +41,8 @@ import InviteLinkModal from '@/components/rmhtube/InviteLinkModal';
 import OnboardingTour from '@/components/rmhtube/OnboardingTour';
 import PartyLauncher, { PartyOverlaySlot } from '@/components/rmhtube/party/PartyLauncher';
 import { useRouter, useParams } from '@tanstack/react-router';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type MobileTab = 'queue' | 'chat' | 'members';
 
@@ -325,6 +327,9 @@ export default function RmhTubeRoomPage() {
       ? 'app-spacious'
       : '';
 
+  // The room replaces "Joining room…" under the same header: it fades in (M9).
+  const arrival = useArrival(!!room);
+
   // Loading state
   if (!room) {
     return (
@@ -389,7 +394,7 @@ export default function RmhTubeRoomPage() {
       </div>
 
       {/* Main content — only one layout rendered to avoid duplicate video players */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className={cn('flex-1 min-h-0 overflow-hidden', arrival)}>
         {isDesktop ? (
           /* Desktop layout */
           <div className={`grid h-full ${theaterMode ? 'grid-cols-1' : 'grid-cols-[1fr_320px]'}`}>

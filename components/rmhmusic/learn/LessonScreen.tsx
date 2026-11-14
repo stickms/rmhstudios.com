@@ -25,6 +25,7 @@ import { ChordNameBox, PlayChordLesson } from './PlayChordLesson';
 import { RhythmLesson } from './RhythmLesson';
 import { STAFF_BOX } from './StaffCard';
 import { useInputRelease } from './useLearnInput';
+import { useArrival } from '@/components/ui/arrive';
 
 export function Shell({
   title,
@@ -274,6 +275,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   // store's `unauthorized` must not swap it for the load-time sign-in page and lose the result.
   const [started, setStarted] = useState(false);
   if (status === 'ready' && !started) setStarted(true);
+  const arrival = useArrival(started || status === 'error');
   const setupButton = useRef<HTMLButtonElement>(null);
   // Leaving the screen (any route change) or hiding the tab stops the mic; the screen sees it
   // through the hub's phases (useInputPhases), so nothing here needs to re-render.
@@ -405,7 +407,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
       }
     >
       {/* The lesson title is an English catalogue string for now, localised in a later phase. */}
-      {body}
+      <div className={arrival}>{body}</div>
       <InputSetup open={setupOpen} onOpenChange={setSetupOpen} returnFocus={setupButton} />
     </Shell>
   );

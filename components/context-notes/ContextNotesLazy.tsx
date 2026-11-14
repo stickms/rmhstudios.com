@@ -1,6 +1,7 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StickyNote } from 'lucide-react';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 
 const ContextNotes = lazy(() => import('./ContextNotes'));
@@ -21,8 +22,8 @@ export function ContextNotesLazy({ postId, hasNote }: { postId: string; hasNote?
     );
   }
   return (
-    <Suspense fallback={<div className="mt-2 min-h-16 rounded-site"aria-hidden />}>
+    <ArrivalSuspense fallback={<div className="mt-2 min-h-16 rounded-site"aria-hidden />}>
       <ContextNotes postId={postId} />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

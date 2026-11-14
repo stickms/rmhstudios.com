@@ -4,12 +4,14 @@ import { Eye, Heart, MessageCircle, Repeat2, Users, FileText, TrendingUp } from 
 import { Link } from '@tanstack/react-router';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
-import { formatCount } from '@/lib/utils';
+import { cn, formatCount } from '@/lib/utils';
+import { useArrival } from '@/components/ui/arrive';
 import { creatorAnalyticsQuery } from '@/lib/profile/analytics.queries';
 
 export function AnalyticsDashboard() {
   const { t } = useTranslation('feed');
   const { data, isPending: loading, isError: failed } = useQuery(creatorAnalyticsQuery());
+  const arrival = useArrival(!loading);
 
   if (loading) {
     return (
@@ -21,7 +23,7 @@ export function AnalyticsDashboard() {
 
   if (failed || !data) {
     return (
-      <div className="py-12">
+      <div className={cn('py-12', arrival)}>
         <EmptyState
           icon={TrendingUp}
           title={t('analytics-unavailable', { defaultValue: 'Analytics unavailable' })}
@@ -59,7 +61,7 @@ export function AnalyticsDashboard() {
   ];
 
   return (
-    <div className="space-y-[var(--site-section-gap)]">
+    <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
       {/* Summary tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {tiles.map(({ icon: Icon, label, value }) => (

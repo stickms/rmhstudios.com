@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { askConciergeApi } from '@/lib/assistant/assistant.contract';
+import { ARRIVE, useArrivingKeys } from '@/components/ui/arrive';
 
 interface ConciergeLink {
   label: string;
@@ -60,6 +61,8 @@ export function ConciergePanel({ className }: { className?: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  // A reply replaces the "Thinking…" line, so it fades in (M9); the reader's own message does not.
+  const isNew = useArrivingKeys(messages.map((m) => m.id));
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToEnd = useCallback(() => {
@@ -177,6 +180,7 @@ export function ConciergePanel({ className }: { className?: string }) {
                 className={cn(
                   'flex flex-col gap-2',
                   m.role === 'user' ? 'items-end' : 'items-start',
+                  m.role !== 'user' && isNew(m.id) && ARRIVE,
                 )}
               >
                 <div

@@ -15,6 +15,8 @@ import type { PinView } from '@/lib/chat-plus/settings.client';
 import { api } from '@/lib/contract/client';
 import { setChatPinApi } from '@/lib/chat-plus/chat.contract';
 import { chatMetaKey, useChatMeta } from './hooks';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * M6 — the pinned-messages bar under the chat header. Shows the most recent pin
@@ -39,6 +41,8 @@ export function ChatPinnedBar({
   const { data } = useChatMeta(chat);
   const [open, setOpen] = useState(false);
   const pins = data?.pins ?? [];
+  // The chat's meta loads after the thread; the bar lands on top of it when there are pins.
+  const arrival = useArrival(!!data);
   if (pins.length === 0) return null;
   const latest = pins[0];
 
@@ -47,7 +51,10 @@ export function ChatPinnedBar({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="surface-chrome flex w-full shrink-0 items-center gap-2 px-4 py-2 text-left focus-visible:ring-2 focus-visible:ring-site-accent"
+        className={cn(
+          'surface-chrome flex w-full shrink-0 items-center gap-2 px-4 py-2 text-left focus-visible:ring-2 focus-visible:ring-site-accent',
+          arrival,
+        )}
         aria-haspopup="dialog"
       >
         <Pin className="size-4 shrink-0 text-site-accent" aria-hidden />

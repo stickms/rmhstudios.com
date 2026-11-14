@@ -25,6 +25,8 @@ import { api } from '@/lib/contract/client';
 import { errorField, serverError } from '@/lib/http';
 import { listTrashApi, purgeTrashApi, restoreTrashApi } from '@/lib/trash/trash.contract';
 import type { RestoreRefusal, TrashItem, TrashPage } from '@/lib/trash/types';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Filter = 'all' | 'post' | 'comment';
 
@@ -68,6 +70,8 @@ export function TrashPanel() {
 
   const items = query.data?.pages.flatMap((page) => page.items) ?? [];
   const windowDays = query.data?.pages[0]?.windowDays ?? 30;
+  const arrival = useArrival(!query.isPending);
+  const isNew = useArrivingKeys(items.map((item) => `${item.kind}:${item.id}`));
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['trash'] });
@@ -174,6 +178,7 @@ export function TrashPanel() {
       ) : query.isError ? (
         <EmptyState
           icon={Trash2}
+          className={arrival}
           title={t('trash-error-title', { defaultValue: 'Could not load the bin' })}
           description={t('trash-error-body', {
             defaultValue: 'Something went wrong on our side. Try again in a moment.',
@@ -187,6 +192,7 @@ export function TrashPanel() {
       ) : items.length === 0 ? (
         <EmptyState
           icon={Trash2}
+          className={arrival}
           title={t('trash-empty-title', { defaultValue: 'Nothing deleted' })}
           description={t('trash-empty-body', {
             defaultValue: 'Posts and comments you delete will show up here so you can undo it.',
@@ -194,10 +200,11 @@ export function TrashPanel() {
         />
       ) : (
         <>
-          <ul className="flex flex-col gap-3">
+          <ul className={cn('flex flex-col gap-3', arrival)}>
             {items.map((item) => (
               <TrashRow
                 key={`${item.kind}:${item.id}`}
+                className={isNew(`${item.kind}:${item.id}`) ? ARRIVE : undefined}
                 item={item}
                 busy={busyId === item.id}
                 onRestore={handleRestore}

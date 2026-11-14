@@ -1,7 +1,8 @@
-import { lazy, Suspense, useRef, useState, type RefObject } from 'react';
+import { lazy, useRef, useState, type RefObject } from 'react';
 import { Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
 const EmojiPickerPanel = lazy(() => import('./EmojiPickerPanel'));
@@ -116,9 +117,9 @@ export function EmojiPickerPopover({
       className="p-0"
     >
       <div data-no-twemoji>
-        <Suspense fallback={<Skeleton className="h-[360px] w-[300px] rounded-site" />}>
+        <ArrivalSuspense fallback={<Skeleton className="h-[360px] w-[300px] rounded-site" />}>
           <EmojiPickerPanel onSelect={onSelect} />
-        </Suspense>
+        </ArrivalSuspense>
       </div>
     </AnchoredMenu>
   );

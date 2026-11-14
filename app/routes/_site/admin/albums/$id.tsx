@@ -27,6 +27,7 @@ import {
   adminAlbumsList,
 } from '@/lib/admin/albums.contract';
 import { deleteAdminAlbumSlideApi } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/_site/admin/albums/$id')({
   head: () => ({ meta: [{ title: 'Manage Album | Admin' }] }),
@@ -50,6 +51,7 @@ function ManageAlbumPage() {
 
   const [album, setAlbum] = useState<AdminAlbum | null>(null);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
@@ -201,7 +203,7 @@ function ManageAlbumPage() {
         backLabel={t('back-to-albums', { defaultValue: 'All albums' })}
         wide
       >
-        <AdminBody width="narrow">
+        <AdminBody width="narrow" className={arrival}>
           <EmptyState title={t('album-not-found', { defaultValue: 'Album not found.' })} />
         </AdminBody>
       </PageLayout>
@@ -215,7 +217,7 @@ function ManageAlbumPage() {
       backLabel={t('back-to-albums', { defaultValue: 'All albums' })}
       wide
     >
-      <AdminBody width="narrow">
+      <AdminBody width="narrow" className={arrival}>
         {/* Album details: fields on the page gutter. */}
         <div className="relative flex flex-col gap-3">
           <Input

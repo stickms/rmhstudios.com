@@ -8,6 +8,7 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { getPickemApi, setPickemApi, type PickemView as PickemData } from '@/lib/competitive/pickem.contract';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
+import { useArrival } from '@/components/ui/arrive';
 
 const SLOTS: { key: string; role: PickRole }[] = [
   { key: 'CHAMPION', role: 'CHAMPION' },
@@ -28,6 +29,7 @@ export function PickemPanel({
   const [data, setData] = useState<PickemData | null>(null);
   const [card, setCard] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const arrival = useArrival(data !== null);
   const id = tournament.id;
 
   const load = useCallback(async () => {
@@ -80,7 +82,7 @@ export function PickemPanel({
         : t('pk-semi', { defaultValue: 'Semifinalist' }) + (key.endsWith('1') ? ' 2' : ' 1');
 
   return (
-    <div>
+    <div className={arrival}>
       <h2 className="site-section-label mb-2">{t('pk-title', { defaultValue: 'Pick’em' })}</h2>
       <div className="rounded-site p-5 space-y-3">
         <p className="text-sm text-site-text-muted">

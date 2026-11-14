@@ -10,6 +10,7 @@ import { RequestAdminPanel } from './RequestAdminPanel';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { voteRequestApi } from '@/lib/requests/requests.contract';
+import { cn } from '@/lib/utils';
 
 interface RequestCardProps {
   request: FeatureRequestDTO;
@@ -17,6 +18,7 @@ interface RequestCardProps {
   isAdmin: boolean;
   onChanged: (next: FeatureRequestDTO) => void;
   onVoted: (requestId: string, voteCount: number, hasVoted: boolean) => void;
+  className?: string;
 }
 
 /**
@@ -33,6 +35,7 @@ export function RequestCard({
   isAdmin,
   onChanged,
   onVoted,
+  className,
 }: RequestCardProps) {
   const { t } = useTranslation('c-roadmap');
   const [voting, setVoting] = useState(false);
@@ -55,7 +58,7 @@ export function RequestCard({
   }
 
   return (
-    <article className="rounded-site px-4 py-3">
+    <article className={cn('rounded-site px-4 py-3', className)}>
       <div className="flex items-start gap-3">
         <Button
           variant={request.hasVoted ? 'default' : 'default'}

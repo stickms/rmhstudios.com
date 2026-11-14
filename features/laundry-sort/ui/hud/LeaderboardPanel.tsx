@@ -15,6 +15,8 @@ import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
 import { laundryLeaderboardApi } from '@features/laundry-sort/engine/laundry.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Row {
   username: string;
@@ -35,6 +37,7 @@ export function LeaderboardPanel({ refreshKey = 0 }: { refreshKey?: number }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(
     async (which: Mode, signal: AbortSignal) => {
@@ -81,16 +84,18 @@ export function LeaderboardPanel({ refreshKey = 0 }: { refreshKey?: number }) {
           </div>
         ) : null}
 
-        {error ? <p className="py-4 text-center text-xs text-[var(--ls-danger)]">{error}</p> : null}
+        {error ? (
+          <p className={cn('py-4 text-center text-xs text-[var(--ls-danger)]', arrival)}>{error}</p>
+        ) : null}
 
         {!loading && !error && rows.length === 0 ? (
-          <p className="ls-muted py-4 text-center text-xs">
+          <p className={cn('ls-muted py-4 text-center text-xs', arrival)}>
             {t('no-scores-yet', { defaultValue: 'No scores yet. Be the first!' })}
           </p>
         ) : null}
 
         {!loading && !error && rows.length > 0 ? (
-          <ol className="space-y-1">
+          <ol className={cn('space-y-1', arrival)}>
             {rows.map((row, index) => (
               <li
                 key={row.username}
