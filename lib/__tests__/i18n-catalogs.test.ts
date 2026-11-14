@@ -84,6 +84,8 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // CS:GO join fixes (2026-11-14): a room code opened on the other game's page. English-only until the translate pipeline runs.
+  'c-tf2-game': ['play_error_wrong_game'],
   // Store redesign (2026-11-13): the Daily tab. English-only until the translate pipeline runs.
   'f-economy-plus': [
     'bundle-add',

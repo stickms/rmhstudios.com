@@ -100,10 +100,11 @@ export async function connectTf2(next?: Tf2ClientHandlers): Promise<Socket> {
       handshakeSignedIn = !!token;
       return { token };
     },
+    // No room list is asked for here: a list is one game's (TF2's unless the request names another),
+    // and its answer does not say whose it is. Each browser asks for its own game when the status turns
+    // `connected` (ServerBrowser.tsx, CsMainMenu.tsx); a list requested on its behalf for TF2 arrived
+    // after CS:GO's own and left /csgo's "Games to join" empty.
     onStatus: (status) => dispatch('onStatus', status),
-    onConnect: (socket) => {
-      socket.emit(TF2_C2S.LIST_ROOMS, {});
-    },
     bind: registerHandlers,
   });
 

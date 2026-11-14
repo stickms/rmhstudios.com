@@ -233,6 +233,8 @@ export class P2pJoinController {
     this.admittedAt = performance.now();
     this.connectMs = null;
     this.cb.onAdmitted?.(parsed.data);
+    // The game client may turn the room down (it is another game's): `stop()` has ended us.
+    if (this.ended) return;
     this.teardownConnection();
     let relayAsked = false;
     this.direct = new DirectConnection({

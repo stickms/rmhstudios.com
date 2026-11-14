@@ -76,6 +76,12 @@ export interface LoadingView {
 
 const subscribeNoop = () => () => {};
 
+/**
+ * The page an invite link opens, per game with rooms: the one whose `?lobby=CODE` joins with that
+ * game's client. (A CS:GO host's link used to open /tf2/play, which cannot load a CS:GO map.)
+ */
+const INVITE_PATH: Partial<Record<HudGame, string>> = { tf2: '/tf2/play', csgo: '/csgo' };
+
 /** A phone held upright (a tablet in portrait is wide enough to play: no rotate hint there). */
 const PHONE_PORTRAIT = '(orientation: portrait) and (max-width: 600px)';
 
@@ -129,6 +135,10 @@ function useErrorText(): (e: ClientError) => string {
         return t('play_error_p2p_connect', {
           defaultValue: 'Could not reach the host, directly or through our relay. Their network may block it, or the relay is full.',
         });
+      case 'wrong-game':
+        return t('play_error_wrong_game', {
+          defaultValue: 'This room belongs to a different game on this site. Open it from that game’s own page.',
+        });
       case 'context-lost':
         return t('play_error_context', { defaultValue: 'The graphics device was reset. Reload the game to continue.' });
       default:
@@ -162,7 +172,7 @@ export default function GameCanvas({
   const [settings, setSettings] = useState<GameSettings>(() => loadSettings(game));
   const [hintDismissed, setHintDismissed] = useState(false);
   const [roomCode, setRoomCode] = useState<string | null>(null);
-  const invite = useLobbyLink({ code: roomCode, path: '/tf2/play' });
+  const invite = useLobbyLink({ code: roomCode, path: INVITE_PATH[game] });
   const touchFirst = useSyncExternalStore(subscribeNoop, detectTouchFirst, () => false);
   const portrait = usePhonePortrait();
   const settingsRef = useRef(settings);
