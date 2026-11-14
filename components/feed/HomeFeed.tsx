@@ -1,10 +1,11 @@
-import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Await } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { useCaughtUpMarker } from '@/hooks/useCaughtUpMarker';
 import { useSession } from '@/components/Providers';
+import { ArrivalSuspense, useArrival, useArrivingKeys, useSuspenseArrival } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spine, SpineItem } from '@/components/ui/spine';
@@ -13,6 +14,7 @@ import { useDeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import { QotdCardLazy } from '@/components/posts-plus/QotdCardLazy';
 import { FortuneCardLazy } from '@/components/delight/FortuneCardLazy';
 import type { FeedItem } from '@/lib/feed-types';
+import type { SitewideAnnouncementSummary } from '@/lib/sitewide-announcement';
 import { CaughtUpDivider } from './CaughtUpDivider';
 import { FeedRow } from './FeedRow';
 import { HomeComposer } from './HomeComposer';
@@ -25,6 +27,8 @@ export interface InitialFeed {
   hasMore: boolean;
   /** Viewer's muted words, so the client primes its live-SSE filter with no separate request. */
   mutedWords?: string[];
+  /** The live sitewide announcement as of this page, so the row heading the feed lands with the posts. */
+  announcement?: SitewideAnnouncementSummary | null;
 }
 
 /** X4: the question-of-the-day card follows this many posts. */
@@ -150,6 +154,14 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
   const ready = useDeferOnNavigate();
   const shown = ready ? entries : entries.slice(0, FIRST_SCREEN_ENTRIES);
 
+  // Steel M9: posts that land after the skeleton fade in. Streamed into the server HTML after the shell, that is the
+  // class `useSuspenseArrival` writes there; fetched here after a tab switch or a cold store, it is `useArrival`. Rows
+  // that join a feed already showing (the next page, a live post) fade one by one.
+  const streamedArrival = useSuspenseArrival();
+  const fetchedArrival = useArrival(entries.length > 0);
+  const feedArrival = streamedArrival ?? fetchedArrival;
+  const arrived = useArrivingKeys(entries.map((e) => e.id));
+
   // Infinite scroll: fetch the next page as the sentinel nears the viewport. `fetchNextPage` no-ops when already loading
   // or drained. Not while the feed is still partial: four rows put the sentinel inside its margin and would fetch a
   // second page in the middle of the switch.
@@ -172,7 +184,9 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
 
   const label = t('feed', { defaultValue: 'Feed' });
   // The live sitewide announcement leads the feed, above the composer. Not in a search, which is a result list.
-  const pinned = search ? null : <SitewideAnnouncementRow />;
+  const pinned = search ? null : (
+    <SitewideAnnouncementRow initial={initial.announcement} className={streamedArrival} />
+  );
 
   if (entries.length === 0) {
     if (error && initialized) {
@@ -206,10 +220,17 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
       {pinned}
       <HomeComposer />
       {/* A virtual item (the question card, the fortune, the caught-up row) renders its own spine item, or nothing. */}
-      <div role="feed" aria-label={label}>
-        {shown.map((entry) => (
-          <Fragment key={entry.id}>{entry.node}</Fragment>
-        ))}
+      {/* The server's class stays through hydration, which renders without the streamed fallback. */}
+      <div role="feed" aria-label={label} className={feedArrival} suppressHydrationWarning>
+        {shown.map((entry) =>
+          arrived(entry.id) ? (
+            <div key={entry.id} className="arrive-group">
+              {entry.node}
+            </div>
+          ) : (
+            <Fragment key={entry.id}>{entry.node}</Fragment>
+          ),
+        )}
       </div>
       <div ref={sentinelRef} aria-hidden />
       {!ready && <div aria-hidden data-slot="defer-placeholder" style={{ minHeight: '100vh' }} />}
@@ -289,9 +310,9 @@ export function HomeFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed> |
         {storeHasFeed ? (
           <FeedBody initial={NO_STREAMED_PAGE} />
         ) : initialFeed ? (
-          <Suspense fallback={<FeedSkeleton />}>
+          <ArrivalSuspense fallback={<FeedSkeleton />} wrap={false}>
             <Await promise={initialFeed}>{(data) => <FeedBody initial={data} />}</Await>
-          </Suspense>
+          </ArrivalSuspense>
         ) : (
           <FeedSkeleton />
         )}

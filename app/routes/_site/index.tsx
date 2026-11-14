@@ -11,6 +11,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { HomeFeed } from '@/components/feed/HomeFeed';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getTimeline } from '@/lib/feed/timeline';
+import { getCurrentAnnouncement } from '@/lib/sitewide-announcement.server';
 import { trackPromise } from '@/lib/route/tracked-promise';
 
 // The first feed page is fetched by its own server fn so the loader can return
@@ -19,19 +20,27 @@ import { trackPromise } from '@/lib/route/tracked-promise';
 const fetchInitialFeed = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();
   const viewerId: string | null = session?.user?.id ?? null;
-  const feed = await getTimeline({
-    userId: viewerId,
-    surface: 'foryou',
-    filter: 'all',
-    cursor: null,
-    limit: 15,
-    search: null,
-  });
+  // The live sitewide announcement rides with the first page (it is cached ~60s server-side): it heads the feed, and
+  // fetched on its own after idle it landed above the composer and shoved the whole column down. Arriving with the
+  // posts it lands in the same swap as they do. A failure is just no announcement; the row's own query still runs.
+  const [feed, current] = await Promise.all([
+    getTimeline({
+      userId: viewerId,
+      surface: 'foryou',
+      filter: 'all',
+      cursor: null,
+      limit: 15,
+      search: null,
+    }),
+    getCurrentAnnouncement().catch(() => null),
+  ]);
+  const announcement = current ? (({ content: _content, ...summary }) => summary)(current) : null;
   return {
     items: feed.items,
     nextCursor: feed.nextCursor,
     hasMore: feed.hasMore,
     mutedWords: feed.mutedWords ?? [],
+    announcement,
   };
 });
 

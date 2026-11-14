@@ -125,7 +125,7 @@ export function VirtualPostList({ items, className }: VirtualPostListProps) {
  }
  >
  <div
- className={`px-3 pt-3 ${!windowed && !entering ?'feed-card-cv':''} ${entering ?'content-item-enter':''}`.trim()}
+ className={`px-3 pt-3 ${!windowed && !entering ?'feed-card-cv':''} ${entering ?'arrive':''}`.trim()}
  >
  <MemoRMHarkCard item={item} />
  </div>

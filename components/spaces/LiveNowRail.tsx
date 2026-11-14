@@ -63,7 +63,7 @@ export function LiveNowRail({ className }: { className?: string }) {
             params={{ id: s.id }}
             className={cn(
               'surface-card surface-press flex w-56 shrink-0 flex-col gap-1 p-3 transition-colors hover:border-site-text',
-              enteringSpaces.has(s.id) && 'content-item-enter',
+              enteringSpaces.has(s.id) && 'arrive',
             )}
           >
             <div className="flex items-center gap-1.5 text-xs text-site-text-muted">

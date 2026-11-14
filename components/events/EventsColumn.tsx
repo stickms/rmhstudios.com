@@ -164,7 +164,7 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
                 <EventCard
                   key={event.id}
                   event={event}
-                  className={enteringEvents.has(event.id) ? 'content-item-enter' : undefined}
+                  className={enteringEvents.has(event.id) ? 'arrive' : undefined}
                 />
               ))}
             </ul>

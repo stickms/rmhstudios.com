@@ -121,6 +121,9 @@ Work through this for every new or edited page.
 
 - [ ] Loading: `<Skeleton>` blocks (a still `--site-bg-subtle` block, never a shimmer, M6) or `<Spinner>` (router-level
       pending is handled by `RoutePending`). Buttons that trigger async work use `<Button loading={...}>`.
+- [ ] Arrival: what replaces a loading state fades in (M9): `useArrival(ready)` on its root, `<ArrivalSuspense>` for a
+      Suspense, `useArrivingKeys` for rows appended to a list (`components/ui/arrive.tsx`). The placeholder holds the
+      content's shape so nothing shifts.
 - [ ] Empty: `<EmptyState icon title description action?>`.
 - [ ] Errors: rely on route `errorComponent` inheritance (`components/errors/RouteErrorFallback`); throw `notFound()` in
       loaders for 404s (renders `components/errors/NotFound`). An error says what happened and what to do next.

@@ -1,5 +1,6 @@
-import { useContext } from 'react';
+import { useContext, useLayoutEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { markRouteArrival } from '@/components/ui/arrive';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShellLayoutContext } from '@/components/feed/shell-context';
 
@@ -25,6 +26,8 @@ export function RoutePending() {
   // whenever we're rendering a pending shell page and `false` on full-screen
   // routes (which own their whole viewport).
   const inShell = useContext(ShellLayoutContext);
+  // Steel M9: when this gives way to the page it was standing in for, the page fades in rather than popping.
+  useLayoutEffect(() => () => markRouteArrival(inShell ? 'site' : 'app'), [inShell]);
 
   return inShell ? <SitePagePending /> : <GenericPending />;
 }
