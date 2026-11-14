@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 997 endpoints across 199 groups: 110 route files under `app/routes/api` and 887 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 993 endpoints across 200 groups: 109 route files under `app/routes/api` and 884 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-100 routes.
+95 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -145,11 +145,6 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/vibe/backfill-thumbs` | `POST` | `lib/rmhvibe/api/admin.vibe.backfill-thumbs.server.ts` |
 | `/api/admin/view-as` | `GET` | `lib/admin/api/admin.view-as.server.ts` |
 | `/api/admin/wager/:id/resolve` | `POST` | `lib/wager/api/admin.wager.$id.resolve.server.ts` |
-| `/api/admin/wiki/assist` | `POST` | `app/routes/api/admin/wiki/assist.ts` |
-| `/api/admin/wiki/pages` | `GET` `POST` | `lib/wiki/api/admin.wiki.pages.server.ts` |
-| `/api/admin/wiki/pages/:id` | `DELETE` `GET` `PUT` | `lib/wiki/api/admin.wiki.pages.$id.server.ts` |
-| `/api/admin/wiki/seed` | `POST` | `lib/wiki/api/admin.wiki.seed.server.ts` |
-| `/api/admin/wiki/sidebar` | `POST` | `lib/wiki/api/admin.wiki.sidebar.server.ts` |
 
 ## `/api/advent`
 
@@ -2383,6 +2378,14 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/when/:id/ics` | `GET` | `lib/calendar/api/when.$id.ics.server.ts` |
 | `/api/when/:id/lock` | `POST` | `lib/calendar/api/when.$id.lock.server.ts` |
 | `/api/when/:id/respond` | `PUT` | `lib/calendar/api/when.$id.respond.server.ts` |
+
+## `/api/wiki`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/wiki/sso` | `GET` | `lib/wiki/api/wiki.sso.server.ts` |
 
 ## `/api/wishlist`
 

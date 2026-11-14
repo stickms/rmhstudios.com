@@ -4,100 +4,78 @@ The public wiki is [MediaWiki](https://www.mediawiki.org), the software behind
 Wikipedia, running as its own container on its own subdomain. It is a separate
 site from rmhstudios.com on purpose: it shares no shell, stylesheet or design
 tokens with the main site, and it wears the classic Vector skin, which is
-Wikipedia's own look rather than an imitation of it. Everyone can read it.
-Site admins create, edit and delete its pages from **rmhstudios.com/admin/wiki**,
-with a DeepSeek writing assistant in the editor. Admins do not get a second
-account: the site holds one MediaWiki bot password and puts its own admin
-check in front of it.
+Wikipedia's own look rather than an imitation of it.
+
+It works like Wikipedia. Everyone can read it. Anyone with an rmhstudios.com
+account presses **Log in**, comes back signed in under their handle, and edits
+any page in place. Site admins are the wiki's administrators: they can delete
+and restore pages, protect them and block accounts. There is no admin page on
+the main site and no second password.
 
 ```
-visitor ── Cloudflare ── Apache (wiki.rmhstudios.com.conf) ── mediawiki :7010 ── Postgres (database `mediawiki`)
-                                                                  ▲
-site admin ── /admin/wiki ── /api/admin/wiki/** (auth: admin) ────┘  Action API over compose DNS, bot password
-                                    └── /api/admin/wiki/assist ── DeepSeek (streamed)
+reader ── Cloudflare ── Apache (wiki.rmhstudios.com.conf) ── mediawiki :7010 ── Postgres: the site's database, schema `mediawiki`
+                                                                │
+"Log in" ── Special:RMHStudiosLogin ── rmhstudios.com/api/wiki/sso ── (site login if needed) ── back with a signed pass
 ```
 
 ## Where things are
 
 | Piece | Path |
 | ----- | ---- |
-| Image (official `mediawiki:1.43` + the Postgres driver + short URLs) | `deploy/mediawiki/Dockerfile` |
-| Configuration (skin, database, permissions; reads its secrets from the environment) | `deploy/mediawiki/LocalSettings.php` |
-| First-run setup, upgrades and bot password (`wiki-bootstrap` in the image) | `deploy/mediawiki/bootstrap.sh` |
+| Image (official `mediawiki:1.43` + the Postgres driver + short URLs + a small Apache) | `deploy/mediawiki/Dockerfile` |
+| The settings it reads from the environment (database, keys) | `deploy/mediawiki/env.php` |
+| Configuration (skin, permissions, sign-in) | `deploy/mediawiki/LocalSettings.php` |
+| Startup: install on the first start, `update.php` after an upgrade | `deploy/mediawiki/bootstrap.sh` (`wiki-bootstrap` in the image) |
+| Sign in with rmhstudios.com (MediaWiki extension) | `deploy/mediawiki/extensions/RMHStudiosLogin/` |
+| Starter pages and sidebar (imported on the first start only) | `deploy/mediawiki/pages/*.wiki`, `deploy/mediawiki/Sidebar.wiki` |
+| The site's half of sign-in | `lib/wiki/sso.server.ts`, `lib/wiki/api/wiki.sso.server.ts`, `lib/wiki/wiki.contract.ts` |
 | Compose service (`mediawiki`, profile `wiki`, loopback port 7010) | `docker-compose.yml` |
 | Apache vhost | `deploy/apache/wiki.rmhstudios.com.conf` |
 | DNS record | `deploy/terraform/dns.tf` (`cloudflare_record.wiki`) |
-| MediaWiki Action API client (server-only) | `lib/wiki/mediawiki.server.ts` |
-| Schemas and typed contracts | `lib/wiki/wiki-schema.ts`, `lib/wiki/wiki.contract.ts` |
-| Admin API (list, create, read, update, delete, seed, sidebar) | `lib/wiki/api/*.server.ts` |
-| Writing assistant (event stream) | `app/routes/api/admin/wiki/assist.ts`, prompt `WIKI_WRITE` in `lib/ai/prompts/index.ts` |
-| Admin page | `app/routes/_site/admin/wiki.tsx`, `components/admin/wiki/` |
-| Sidebar (`MediaWiki:Sidebar`) | `lib/wiki/sidebar.server.ts` |
-| Starter pages (wikitext) | `lib/wiki/starter-pages.ts`, `lib/wiki/seed.server.ts` |
-| Scripts | `scripts/wiki/seed.ts`, `scripts/wiki/sidebar.ts` |
 | Tests | `lib/wiki/__tests__/`, `deploy/__tests__/wiki-deploy.test.ts` |
+
+## Settings
+
+None of its own. The wiki reuses what the site already has in `.env.production`:
+
+- `DATABASE_DIRECT_URL`, or `DATABASE_URL` when that is unset: the site's
+  database. The wiki's tables live in a separate schema, `mediawiki`, inside it.
+  The site's Prisma models are in `public` and never see them, and
+  `deploy/backup/pg-backup.sh` backs the wiki up with everything else. The direct
+  URL comes first because MediaWiki cannot run behind PgBouncer's transaction
+  pooling, for the same reason `prisma migrate` cannot. A `localhost` in the URL
+  means the host's Postgres, since inside the container localhost is the
+  container.
+- `BETTER_AUTH_SECRET`: the wiki's secret key and the sign-in key are derived
+  from it, each under its own label (`env.php`). Rotating it signs everyone out
+  of the wiki too, and nothing else.
+- `BETTER_AUTH_URL`: where **Log in** sends readers.
+
+Two optional settings: `WIKI_PUBLIC_URL` (default `https://wiki.rmhstudios.com`)
+and `PORT_WIKI` (default 7010).
 
 ## First-time setup (production)
 
 Nothing here runs on a deploy. The `mediawiki` service is behind the `wiki`
-compose profile, so a stack that has not done these steps is unaffected. Run
-the commands from the repository checkout on the VPS, after a deploy that
-contains the wiki code.
+compose profile and its image is built on the host, so a stack that has not
+done these steps is unaffected. From the repository checkout on the VPS, after
+a deploy that contains the wiki code:
 
-1. **Database.** MediaWiki keeps everything (pages, history, users, settings)
-   in its own database on the host Postgres, in a schema called `mediawiki`:
-
-   ```bash
-   sudo -u postgres psql -c "CREATE ROLE mediawiki LOGIN PASSWORD '<db-password>'"
-   sudo -u postgres psql -c "CREATE DATABASE mediawiki OWNER mediawiki"
-   ```
-
-   Postgres must accept that role from the Docker bridge. If the existing
-   `pg_hba.conf` rule for the containers names the site's database or role
-   rather than `all`, add the same line for `mediawiki` and reload Postgres.
-
-2. **Environment.** Add to `.env.production`:
-
-   ```bash
-   MEDIAWIKI_DB_PASS=<db-password>
-   MEDIAWIKI_SECRET_KEY=<output of: openssl rand -hex 32>
-   ```
-
-3. **Build and start the container** (once; `restart: unless-stopped` keeps
-   it up). The image is built on the host from `deploy/mediawiki/`; it is not
-   part of the CI images:
+1. **Start it.**
 
    ```bash
    docker compose -p rmhstudios-prod --env-file .env.production --profile wiki up -d --build mediawiki
+   docker logs -f rmhstudios-prod-mediawiki   # until "wiki: up to date"
    ```
 
-4. **Bootstrap.** This creates the tables and the administrator account,
-   runs `update.php`, and prints the bot password the site uses. It runs inside
-   the container, so the host needs no PHP:
+   The first start creates the `mediawiki` schema in the site's database,
+   installs the wiki, imports the starter pages and the sidebar, and then
+   serves. Later starts run `update.php` only when the MediaWiki version or
+   `LocalSettings.php` changed. It empties MediaWiki's object cache, which holds
+   everyone's sessions, so running it on every start would sign the whole wiki
+   out. `restart: unless-stopped` keeps it up across reboots and deploys.
 
-   ```bash
-   docker exec -e MEDIAWIKI_ADMIN_PASSWORD='<a strong password>' \
-     rmhstudios-prod-mediawiki wiki-bootstrap
-   ```
-
-   The administrator is called `Admin` (set `MEDIAWIKI_ADMIN_USER` as well to
-   choose another name). Its password, at least 10 characters, is used only to
-   sign in at `wiki.rmhstudios.com` for MediaWiki's own pages; keep it in the
-   password manager. The last two lines of output are the bot password.
-
-5. **Connect the site.** Add those two lines to `.env.production`, then
-   recreate `web` so it reads them (a blue/green swap, no downtime):
-
-   ```bash
-   MEDIAWIKI_BOT_USER=Admin@rmhsite
-   MEDIAWIKI_BOT_PASSWORD=<the printed password>
-   ```
-
-   ```bash
-   ./deploy.sh production
-   ```
-
-6. **Apache.** Install the vhost (DNS for `wiki.rmhstudios.com` must point at
+2. **Apache.** Install the vhost (DNS for `wiki.rmhstudios.com` must point at
    the same Cloudflare-proxied origin as the main site):
 
    ```bash
@@ -106,111 +84,116 @@ contains the wiki code.
    sudo apachectl configtest && sudo systemctl reload apache2
    ```
 
-7. **Sidebar and starter pages.** Sign in to rmhstudios.com as an admin, open
-   `/admin/wiki`, press **Update sidebar**, then **Add starter pages**. Both
-   are safe to press again: the sidebar is replaced with the current one, and
-   pages that already exist are never overwritten. The one exception is the
-   main page while it still holds the placeholder MediaWiki's installer wrote.
+3. **Check.** `https://wiki.rmhstudios.com` shows the main page. **Log in**
+   takes you through rmhstudios.com and back, signed in; as a site admin you see
+   **Delete** and **Protect** under the page's **More** menu.
 
-8. **Check.** `https://wiki.rmhstudios.com` shows the main page in the
-   Wikipedia look, signed out.
+### Moving from an earlier wiki setup
 
-### Moving from the Wiki.js wiki
-
-The wiki used to be Wiki.js 2 (the `wikijs` service). If that was ever set
-up on the host, stop and remove its container
-(`docker rm -f rmhstudios-prod-wikijs`), delete `WIKIJS_*` from
-`.env.production`, and, once nothing in it is wanted, drop its database
-(`DROP DATABASE wikijs; DROP ROLE wikijs;`). Its pages are Markdown and do not
-carry over on their own; recreate any that matter from `/admin/wiki`, where the
-assistant can turn pasted Markdown into wikitext.
+- **The first MediaWiki setup** (its own `mediawiki` database and role, the
+  `MEDIAWIKI_*` variables and `/admin/wiki`): remove `MEDIAWIKI_*` from
+  `.env.production`, rebuild and restart the container as in step 1, and, once
+  nothing in it is wanted, `DROP DATABASE mediawiki; DROP ROLE mediawiki;`. Pages
+  written there do not move on their own; export them from that wiki's
+  `Special:Export` before dropping it and import them on the new one with
+  `Special:Import`, as an administrator.
+- **Wiki.js** (the `wikijs` service): `docker rm -f rmhstudios-prod-wikijs`,
+  remove `WIKIJS_*` from `.env.production`, and drop the `wikijs` database and
+  role once nothing in it is wanted.
 
 ## Local development
 
-Start a Postgres role and database as in step 1, then run the image on port
-7010 (the compose service works:
-`docker compose --profile wiki up -d --build mediawiki` with
-`MEDIAWIKI_DB_*`, `MEDIAWIKI_SECRET_KEY` and
-`MEDIAWIKI_SERVER=http://localhost:7010` set), run `wiki-bootstrap` in the
-container as in step 4, and put the printed bot password in `.env` with
-`MEDIAWIKI_URL=http://localhost:7010` and `WIKI_PUBLIC_URL=http://localhost:7010`.
-Then open `/admin/wiki`. `pnpm wiki:sidebar` and `pnpm wiki:seed` do what the
-two buttons do.
+With `DATABASE_URL` and `BETTER_AUTH_SECRET` in `.env` (as for `pnpm dev`):
 
-Without `MEDIAWIKI_BOT_USER` and `MEDIAWIKI_BOT_PASSWORD` the admin page shows
-the setup message and makes no request to the wiki.
+```bash
+WIKI_PUBLIC_URL=http://localhost:7010 BETTER_AUTH_URL=http://localhost:7005 \
+  docker compose --env-file .env --profile wiki up -d --build mediawiki
+```
 
-## How admin access works
+Open `http://localhost:7010`, and run `pnpm dev` for **Log in** to work. Set
+`WIKI_PUBLIC_URL=http://localhost:7010` in `.env` as well, so the site sends you
+back to the local wiki.
 
-- `/api/admin/wiki/**` is `auth: 'admin'`: signed out is 401, signed in without
-  `isAdmin` is 403. That check is the only thing between a visitor and the bot
-  password.
-- The bot password belongs to the administrator account and is limited to the
-  grants the admin page uses (read, edit, create, delete, and edit the
-  interface namespace for the sidebar). It lives in the server environment and
-  is sent only from the site to the `mediawiki` container over the compose
-  network. Each server process signs in once and keeps the session; every call
-  asserts it is still signed in, and a stale session or token signs in again.
-- Create, update, delete, seed and sidebar are written to the admin audit log
-  (`wiki.page.create`, `wiki.page.update`, `wiki.page.delete`, `wiki.seed`,
-  `wiki.sidebar`). On the wiki itself every one of those edits is by `Admin`;
-  the audit log says which site admin made it.
-- An edit is saved on top of the revision the editor opened. If someone saved
-  in between, MediaWiki merges the two where it can and otherwise refuses the
-  save as an edit conflict (409), so one admin never silently overwrites
-  another.
-- A page's title cannot be changed from the site; move a page in MediaWiki
-  itself. The admin page lists articles in the main namespace and nothing else.
-- Pages are wikitext and public.
+## How signing in works
+
+1. **Log in** and **Create account** both open `Special:RMHStudiosLogin`
+   (a hook redirects MediaWiki's own pages there). It stores a random `state`,
+   and the page you were on, in your wiki session, and sends you to
+   `rmhstudios.com/api/wiki/sso?state=…`.
+2. The site sends you to its login page first if you are signed out, and
+   brings you back. Then it reads your account from the database and returns
+   you to the wiki with a pass. The pass holds your user id, your handle,
+   whether you are a site admin, and the state. It is signed with a key derived
+   from `BETTER_AUTH_SECRET` and good for two minutes. A suspended account gets
+   no pass, and the wiki says why.
+3. The wiki checks the signature, the expiry, and that the state is the one it
+   stored in your session. It drops the state, so the pass works once and only
+   in the browser that asked for it, and a link carrying someone else's pass
+   signs nobody in. Then it finds the wiki account linked to your site id, or
+   creates one named after your handle (with a number if the name is taken).
+   It signs you in, and adds or removes the `sysop` and `interface-admin` groups
+   to match your site admin status.
+
+Your wiki account stays linked to your site id, so changing your handle on the
+site keeps your wiki account and its history. Admin rights follow the site at
+each sign-in: removing someone's site admin status removes their wiki rights
+the next time they sign in. Until then, an administrator can block or demote
+them on the wiki (`Special:Block`, `Special:UserRights`).
+
+The pass format is written twice, in `lib/wiki/sso.server.ts` and
+`extensions/RMHStudiosLogin/includes/Pass.php`.
+`lib/wiki/__tests__/sso.server.test.ts` holds a pass the PHP side accepted, so
+a change to either side that breaks the other fails a test.
 
 ## Who can do what on the wiki
 
-`LocalSettings.php` sets it, and `deploy/__tests__/wiki-deploy.test.ts` holds
-it: everyone reads, nobody can create an account, and only sysops edit, create,
-move or delete. Uploads and e-mail are off, so the container keeps no files.
-To let more people edit, create their accounts as the administrator
-(`Special:CreateAccount` works for sysops) and add them to the sysop group.
+`LocalSettings.php` sets it, and `deploy/__tests__/wiki-deploy.test.ts` holds it:
+
+- Everyone reads. Visitors who are not signed in cannot edit.
+- Accounts exist only through rmhstudios.com: nobody can sign up on the wiki,
+  and signing in creates the account.
+- Signed-in members edit and create pages and discussion pages.
+- After 4 days and 10 edits, an account is autoconfirmed (Wikipedia's bar) and
+  can also move pages.
+- Site admins delete, restore, protect, block, move, and edit the wiki's
+  interface pages (`MediaWiki:Sidebar`, `MediaWiki:Common.css`).
+- Uploads and e-mail are off, so the container keeps no files. Pictures are
+  linked, not uploaded.
+
+The wiki keeps a local administrator account, `RMH Studios`, which the installer
+needs and which made the starter pages. Nobody knows its password, and readers
+never use it. If you ever need it:
+
+```bash
+docker exec rmhstudios-prod-mediawiki php maintenance/run.php changePassword --user "RMH Studios" --password '<new>'
+```
+
+It cannot sign in through the web while every login goes through rmhstudios.com.
+Use maintenance scripts instead, or sign in with a site admin account.
 
 ## The look
 
 The Vector skin, set in `LocalSettings.php`, is the whole look: nothing is
-overridden. The logo and favicon are the main site's `favicon.svg`. The
-sidebar is the page `MediaWiki:Sidebar`, written by `applyWikiSidebar()`: a
-Navigation group, the starter articles, and a link back to rmhstudios.com.
-Change it by editing `lib/wiki/sidebar.server.ts`, deploying, and pressing
-**Update sidebar** again.
-
-## The writing assistant
-
-The editor sends an instruction, the title and the current body to
-`POST /api/admin/wiki/assist`, which streams the whole page back from DeepSeek
-through the shared provider (`streamTask('document', …)`, metered in
-`AiUsage`). An empty body asks for a new page; otherwise the page comes back
-with the instruction applied, in wikitext. The text lands in the editor and is
-saved only when the admin saves. It uses `DEEPSEEK_API_KEY` and the
-`RMHARK_AI_MODEL` model, and has no settings of its own. The prompt tells the
-model not to invent facts and to leave a `[placeholder]` instead, so read a
-draft before saving it.
+overridden. The logo and favicon are the main site's `favicon.svg`. The sidebar
+is the wiki page `MediaWiki:Sidebar`, and the main page is `Main Page`. Both
+start from the files in `deploy/mediawiki/` and are edited on the wiki after
+that, like any other page.
 
 ## Operations
 
-- **Rotating the bot password.** Run `wiki-bootstrap` again (step 4; the
-  administrator password is needed only for a first install). It issues a new
-  bot password and revokes the old one; update `.env.production` and redeploy.
-- **A wrong or revoked bot password fails loudly.** The site cannot sign in,
-  the admin page shows "The wiki did not answer", and the web log says
-  `[wiki] sign-in refused`.
 - **Upgrades.** The image is pinned to the 1.43 long-term-support line, and
-  `docker compose ... up -d --build mediawiki` picks up its point releases.
-  Moving to the next LTS is a change to the `FROM` line (and the compose image
-  tag), then a rebuild and `wiki-bootstrap`, which runs `update.php`.
-- **Backups.** `deploy/backup/pg-backup.sh` dumps the site's database only.
-  The `mediawiki` database is not in it yet; until it is, back it up separately
-  (`pg_dump --format=custom mediawiki`). The container holds nothing else.
+  rebuilding with `up -d --build mediawiki` picks up its point releases. Moving
+  to the next LTS is a change to the `FROM` line (and the compose image tag)
+  and a rebuild; the next start runs `update.php`.
+- **Backups.** The wiki is in the site's database, so the nightly
+  `deploy/backup/pg-backup.sh` dump includes it. The container holds nothing
+  else.
+- **Database connections.** Apache runs at most 8 workers, so the wiki holds at
+  most 8 connections. `scripts/db-connection-budget.mjs` counts them in the
+  fleet's budget.
 - **Jobs.** MediaWiki updates link colours and caches through its job queue,
-  which runs one job after each page view. A quiet wiki can lag; run
-  `docker exec rmhstudios-prod-mediawiki php maintenance/run.php runJobs` to
-  drain it. The seed purges the pages it creates, so starter pages never
-  start with red links.
+  which runs one job after each page view and is drained at every start. To
+  drain it by hand:
+  `docker exec rmhstudios-prod-mediawiki php maintenance/run.php runJobs`.
 - **Health.** The container's healthcheck reads `api.php` on port 80; from the
   host, `curl -s 'http://127.0.0.1:7010/api.php?action=query&meta=siteinfo&format=json'`.

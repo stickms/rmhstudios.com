@@ -1,0 +1,63 @@
+{
+	"name": "RMHStudiosLogin",
+	"version": "1.0.0",
+	"author": "RMH Studios",
+	"url": "https://rmhstudios.com",
+	"descriptionmsg": "rmhstudioslogin-desc",
+	"license-name": "MIT",
+	"type": "other",
+	"requires": {
+		"MediaWiki": ">= 1.43.0"
+	},
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\RMHStudiosLogin\\": "includes/"
+	},
+	"SpecialPages": {
+		"RMHStudiosLogin": {
+			"class": "MediaWiki\\Extension\\RMHStudiosLogin\\SpecialRMHStudiosLogin",
+			"services": [
+				"AuthManager",
+				"UserFactory",
+				"UserNameUtils",
+				"UserGroupManager",
+				"UserOptionsManager",
+				"ConnectionProvider"
+			]
+		}
+	},
+	"Hooks": {
+		"SpecialPageBeforeExecute": "main"
+	},
+	"HookHandlers": {
+		"main": {
+			"class": "MediaWiki\\Extension\\RMHStudiosLogin\\Hooks"
+		}
+	},
+	"AuthManagerAutoConfig": {
+		"primaryauth": {
+			"MediaWiki\\Extension\\RMHStudiosLogin\\AuthProvider": {
+				"class": "MediaWiki\\Extension\\RMHStudiosLogin\\AuthProvider",
+				"sort": 100
+			}
+		}
+	},
+	"MessagesDirs": {
+		"RMHStudiosLogin": [
+			"i18n"
+		]
+	},
+	"ExtensionMessagesFiles": {
+		"RMHStudiosLoginAlias": "RMHStudiosLogin.alias.php"
+	},
+	"config": {
+		"RMHStudiosLoginSiteUrl": {
+			"value": "https://rmhstudios.com",
+			"description": "Origin of rmhstudios.com, where sign-in happens."
+		},
+		"RMHStudiosLoginKey": {
+			"value": "",
+			"description": "HMAC key for the sign-in pass. Derived from BETTER_AUTH_SECRET in LocalSettings.php, the same way lib/wiki/sso.server.ts derives it."
+		}
+	},
+	"manifest_version": 2
+}

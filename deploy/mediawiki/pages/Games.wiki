@@ -1,0 +1,165 @@
+Every game on [https://rmhstudios.com rmhstudios.com] runs in the browser. Scores, progress and coins are saved to your account.
+
+{| class="wikitable"
+! Name !! What it is
+|-
+| Hearthworks || Build a cozy town, farm and forage, cook and sell — in one world you plan from above.
+|-
+| RMHbox || Join a lobby and play 16+ party minigames with friends.
+|-
+| Altair || A narrative extraction thriller on a fragmented deep-space mining rig.
+|-
+| Daily Puzzles || Seven daily brain games, fresh at midnight EST: Lights Out, Alibi, Spectrum and more.
+|-
+| Versecraft || A visual novel that writes a new emotional story every time. Share your seed.
+|-
+| Slice It! || A neon rhythm game where you slice through every beat.
+|-
+| VELUM2099 || Run timed deliveries across a neon city and outrun the police.
+|-
+| Synapse Storm || Juggle a storm of micro-challenges. Stay sharp.
+|-
+| Temple of Joy || A golden idle clicker about building an unreasonable amount of gladness.
+|-
+| Neon Driftway || A first-person 3D highway racer, steered from the driver’s seat.
+|-
+| Laundry Sort || Catch simulated cloth garments mid-air and sort them by wash.
+|-
+| Void Breaker || An obsidian-and-gold arena shooter. Collect shards, dash, slow time, detonate.
+|-
+| Kowloon Knockout || A neon 3D brawler in 90s Hong Kong. Combos, and up to 4-player free-for-all or teams.
+|-
+| House Always Wins || A dark casino metroidvania. Explore the abandoned Mirage Royale and outwit The House.
+|-
+| Dream Rift || A danmaku bullet hell across three dream worlds, solo or up to 4-player co-op.
+|-
+| Gabriel's Horn || A bluffing card game where you can’t see your own dice. Spot the liar, hold the fewest cards.
+|-
+| Nightrail || An on-rails trick racer. Your courier train never slows: drift, land tricks, deliver.
+|-
+| Half-Life 2 || The opening of Half-Life 2, Point Insertion, on a clean-room browser engine.
+|-
+| Portal || Portal’s first test chambers, in your browser. Place linked portals and walk through them.
+|-
+| Counter-Strike: Global Offensive || Counter-Strike: Global Offensive in your browser: bomb defusal or deathmatch on Dust II, against bots or friends.
+|}
+
+== Hearthworks (Early access) ==
+
+Found a town on a floating island. Lay roads, raise cottages and market stalls, plant and harvest crops, cook what you grow and sell it to your neighbours. Everything lives in one world: plan it from an isometric bird’s-eye view, and soon walk it on foot, build machines to automate the work, hire helpers, and play with friends.
+
+[https://rmhstudios.com/hearthworks Open Hearthworks]
+
+== RMHbox (Playable) ==
+
+Create or join a lobby, vote on minigames, and compete with friends in real-time. Features 16+ unique minigames across word, trivia, action, and creative categories with live leaderboards and match history.
+
+[https://rmhstudios.com/rmhbox Open RMHbox]
+
+== Altair ==
+
+Navigate Outpost 13, a reality-glitched mining station overrun by "Echoes." Use your neural link to piece together fragmented memories, manage cryo-sickness, and survive the shadows in this narrative-heavy survival experience.
+
+[https://rmhstudios.com/altair Open Altair]
+
+== Daily Puzzles ==
+
+A suite of seven daily brain games. Toggle lights in Lights Out, solve crime scenarios in Alibi, rank items in Spectrum, spot the odd one out in Outcast, build word chains in Chainlink, detect lies in Impostor, and turn a glass globe to find sets in GlobeSet. Share your results with friends and compete for the best scores.
+
+[https://rmhstudios.com/daily Open Daily Puzzles]
+
+== Versecraft ==
+
+Every playthrough is generated from a seed: a unique anime cast, setting, and a multi-act, character-driven story you steer through choices and poem-writing. Prompt the kind of experience you want or roll the dice, deepen bonds with the cast, and share your seed so anyone can replay your exact version.
+
+[https://rmhstudios.com/versecraft Open Versecraft]
+
+== Slice It! ==
+
+Test your reflexes as you slice through beat sequences and dodge obstacles in a vibrant, neon-soaked environment. Feature-rich with global leaderboards, multiplayer lobbies, and support for custom track uploads.
+
+[https://rmhstudios.com/slice-it Open Slice It!]
+
+== VELUM2099 ==
+
+Run courier deliveries through the neon-lit streets of a procedurally generated cyberpunk city — pick up cargo, race it to the drop-off before the timer runs out, and bank credits with a combo multiplier. Cause chaos and the police give chase: shake them off to escape, or get boxed in and busted. Features drift physics, an on-screen joystick for mobile play, rain effects, procedural lo-fi/jazz radio, engine sound synthesis, and a full VHS post-processing pipeline.
+
+[https://rmhstudios.com/velum2099 Open VELUM2099]
+
+== Synapse Storm ==
+
+Juggle a storm of micro-challenges. Stay sharp. See how long your mind can keep up before the load becomes too great.
+
+[https://rmhstudios.com/synapse-storm Open Synapse Storm]
+
+== Temple of Joy ==
+
+Twenty-four sources of joy, four hundred trophies, and four minigames that keep running while the tab is shut: a garden that grows overnight, a market that moves without you, a choir of saints, and a book of prayers that sometimes go wrong. Catch halos, invite the Rapture and let its Sinners fatten while you sleep, and give the whole temple back for Grace when you are ready to climb again. Hundreds of hours, on a curve that has been play-tested for a decade.
+
+[https://rmhstudios.com/temple-of-joy Open Temple of Joy]
+
+== Neon Driftway (Playable Demo) ==
+
+Drive from inside the cockpit across three levels: Sunset Freeway, Rainline, and Night Circuit. On a phone the gyroscope moves the camera in real time, so you can glance into a bend or check the lane beside you while you drive — and there is a side-by-side mode for a Cardboard-style viewer. Without a motion sensor the camera stays locked forward and the game plays exactly the same. Rack up multipliers with daring close calls, manage grip in the rain, and dodge aggressive traffic.
+
+[https://rmhstudios.com/neon-driftway Open Neon Driftway]
+
+== Laundry Sort (Playable) ==
+
+Every garment is actual cloth: a mass of particles solved with position-based dynamics, so a shirt drapes over a bin rim, a towel planes as it falls, and a sock you flick across the room tumbles like one. Play solo against the clock or race up to seven other people on the same seeded laundry, with a locked 16:9 frame so nobody gets a wider view than anyone else.
+
+[https://rmhstudios.com/laundry-sort Open Laundry Sort]
+
+== Void Breaker ==
+
+Survive waves of enemies in a dark arena. Collect void shards that orbit you as a shield and score multiplier. Activate Focus for bullet-time. Dash to dodge. Detonate your shard ring for a devastating Void Burst. Boss fights every 5 waves.
+
+[https://rmhstudios.com/void-breaker Open Void Breaker]
+
+== Kowloon Knockout ==
+
+Step into the neon-lit rooftops of Kowloon, 1997, and brawl in a fully animated 3D arena with a retro pixel-art filter. Pick from nine fighter classes and choose your look: the animated Y-Bot or a Source-engine character from Team Fortress 2, Counter-Strike or Half-Life 2, all moving with the same boxing animations. Master devastating combos and counter-strikes, then battle the CPU solo or take up to four players online in free-for-all or 2v2 teams — built for phones too, with touch controls and a layout that fits any screen.
+
+[https://rmhstudios.com/kowloon-knockout Open Kowloon Knockout]
+
+== House Always Wins ==
+
+A narrative pixel-art metroidvania set inside a decaying casino. Explore six interconnected wings — Lobby, Poker Hall, Slot Vault, Security Wing, Maintenance shafts and the Vault — gating your progress behind three unlockable abilities: the Lucky Coin (double jump), the All-In Dash, and the Card Grip (wall climb). Talk to the Dealer, the old janitor Marlow, the slot-witch Vesper and Security Chief Doss, solve lever and pressure-plate puzzles, dodge spikes, lasers and camera cones, collect chips to pay down your ever-mounting Debt, recover three Vault Keys, and face The House in a multi-ending finale. Tight Celeste-style platforming, the deeper you owe the more the world distorts.
+
+[https://rmhstudios.com/house-always-wins Open House Always Wins]
+
+== Dream Rift ==
+
+A vertical bullet-hell shoot-’em-up: weave a tiny pinpoint hitbox through dense, beautiful danmaku curtains, graze bullets for score, bomb to survive, and capture each boss’s spell cards before the timer runs out. Four playable dreamers — the shrine maiden Reika, the star-thief witch Mira, the tideglass diviner Aoi and void-walker Nyx — each with a distinct shot type. Three stages with mid-bosses, animated bosses and a synced story, a driving techno soundtrack, and Nico Nico–style scrolling comments. Play solo, or create public/private lobbies for up to four-player co-op with forgiving client-authoritative netcode (lag never kills you). Fixed-aspect, fair-by-design, with full mobile touch controls.
+
+[https://rmhstudios.com/dream-rift Open Dream Rift]
+
+== Gabriel's Horn (Playable) ==
+
+Three dice are rolled at the start of your turn and everyone at the table can see them except you. They each tell you a total — truthfully or not — and you pick one of them and call it: truth, or lie. Get it right and they draw three cards; get it wrong and you do. Cards are the currency of failure, so playing one costs you a card too: four colours of effect (see your own dice, force a draw, ward yourself, look at a hand) and one rank that matters, the seven, which trades your whole hand with anyone you like. When you think you are lowest you sound the horn — but everyone else gets one last turn to fix their hand, or to take yours, and if you were not strictly lowest when the counting stops the call drops you to last. 2–6 players, real-time, with table talk.
+
+[https://rmhstudios.com/gabriels-horn Open Gabriel's Horn]
+
+== Nightrail (Playable) ==
+
+You run night freight on a self-propelling courier train, and it will not slow down for you. Every bend scrubs speed off the railhead unless you drift it, so the game is less about going faster than about refusing to give back what you already have. Switch between parallel rails to thread barriers, oncoming freight and holes in the deck; charge a jump to clear the gaps, and spend the airtime flicking through eight tricks — but land with the rotation unfinished and the combo you were protecting is gone. Grind the edge rails to glue combos together, bank them at checkpoints, and get your crates to the end of five runs: the harbor at dusk, a neon ward, a viaduct in the rain, the tunnels under the city, and a skybridge above the clouds.
+
+[https://rmhstudios.com/nightrail Open Nightrail]
+
+== Half-Life 2 (Beta) ==
+
+Step off the train into City 17. The Half-Life 2 demo’s two Point Insertion maps run on an independent browser engine: Source-accurate movement, rigid-body physics you can pick up and throw, scripted sequences, doors and lifts, soundscapes and closed captions. Your progress is saved at each level start, so Continue picks up where you left off. Keyboard and mouse, gamepad or touch.
+
+[https://rmhstudios.com/half-life-2 Open Half-Life 2]
+
+== Portal (Beta) ==
+
+Portal’s opening test chambers, 00 to 10, on an independent browser engine. Fire the blue and orange portals onto walls and floors, look and walk through them (momentum is conserved), carry cubes onto buttons and dodge energy balls. Portals render the view through them, one level deep on phones and two on a desktop. Continue resumes from the last chamber you reached. Keyboard and mouse, gamepad or touch.
+
+[https://rmhstudios.com/portal Open Portal]
+
+== Counter-Strike: Global Offensive (Beta) ==
+
+Counter-Strike: Global Offensive’s Dust II on an independent browser engine, with default loadouts and plain weapons. Play bomb defusal (freeze time, a buy period, the money system, planting and defusing, first to 16) or deathmatch (instant respawns, free weapons). Practise offline against bots, or sign in to host a peer-to-peer match for friends; the match runs in the host’s browser and moves to another player if the host leaves. Keyboard and mouse, gamepad or touch.
+
+[https://rmhstudios.com/csgo Open Counter-Strike: Global Offensive]

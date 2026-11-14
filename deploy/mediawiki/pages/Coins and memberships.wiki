@@ -1,0 +1,17 @@
+Coins are the currency of [https://rmhstudios.com rmhstudios.com]. They are earned by using the site and spent in its shop. Memberships are paid plans that add features on top of a free account.
+
+== Coins ==
+
+* '''Earning.''' Coins come from playing games, completing quests, keeping a streak and taking part in site events.
+* '''Spending.''' The shop sells cosmetics for your profile and other items. Some games and features take a coin stake.
+* '''Your balance.''' Your balance is shown on your profile, and every change to it is recorded in a ledger.
+
+Coins are a site currency. They cannot be exchanged for money.
+
+== Progression ==
+
+Alongside coins, the site tracks experience points, quests, achievements, a battle pass and daily streaks. Each has its own page on the site that shows what you have done and what comes next.
+
+== Memberships ==
+
+A membership is a paid subscription, billed through Stripe. Members get extra features across the site, and some features, such as access to the [[Developer API]], need one. You can manage or cancel a membership from your account settings. A membership can also be given to someone else as a gift.

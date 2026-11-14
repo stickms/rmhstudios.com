@@ -107,7 +107,6 @@ const enResources = {
   "f-safety": () => import("@/locales/en/f-safety.json"),
   "f-tools": () => import("@/locales/en/f-tools.json"),
   "f-watch": () => import("@/locales/en/f-watch.json"),
-  "f-wiki": () => import("@/locales/en/f-wiki.json"),
   "f-worlds": () => import("@/locales/en/f-worlds.json"),
   "feed": () => import("@/locales/en/feed.json"),
   "games-hub": () => import("@/locales/en/games-hub.json"),

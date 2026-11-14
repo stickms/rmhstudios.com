@@ -1,10 +1,11 @@
 /**
  * The wiki's deploy wiring (docs/wiki.md): the compose service, the MediaWiki
- * image (Dockerfile, LocalSettings.php, bootstrap), the Apache vhost and the
- * DNS record have to agree with each other and with the site, and none of them
- * is exercised by a deploy until someone opts in on the host.
+ * image (Dockerfile, env.php, LocalSettings.php, bootstrap, the sign-in
+ * extension), the Apache vhost and the DNS record have to agree with each other
+ * and with the site, and none of them is exercised by a deploy until someone
+ * opts in on the host.
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -14,6 +15,15 @@ const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 const compose = read('docker-compose.yml');
 const vhost = read('deploy/apache/wiki.rmhstudios.com.conf');
 const mainVhost = read('deploy/apache/rmhstudios.conf');
+const dockerfile = read('deploy/mediawiki/Dockerfile');
+const env = read('deploy/mediawiki/env.php');
+const settings = read('deploy/mediawiki/LocalSettings.php');
+const bootstrap = read('deploy/mediawiki/bootstrap.sh');
+const special = read('deploy/mediawiki/extensions/RMHStudiosLogin/includes/SpecialRMHStudiosLogin.php');
+const extension = JSON.parse(read('deploy/mediawiki/extensions/RMHStudiosLogin/extension.json')) as {
+  SpecialPages: Record<string, unknown>;
+  Hooks: Record<string, string>;
+};
 
 // One service's block: from "  name:" to the next two-space-indented key.
 function service(name: string) {
@@ -31,22 +41,21 @@ const directives = (conf: string) =>
     .filter((line) => !line.trim().startsWith('#'))
     .join('\n');
 
-const settings = read('deploy/mediawiki/LocalSettings.php');
-const dockerfile = read('deploy/mediawiki/Dockerfile');
-const bootstrap = read('deploy/mediawiki/bootstrap.sh');
+/** PHP without comments. */
+const php = (source: string) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*(#|\/\/).*$/gm, '');
 
 describe('mediawiki compose service', () => {
   // Without comments: the block runs into the next service's header comment.
   const wiki = directives(service('mediawiki'));
 
-  it('is opt-in, so a deploy cannot crash-loop on a stack without the wiki database', () => {
+  it('is opt-in, so a deploy neither builds nor starts it', () => {
     expect(wiki).toMatch(/profiles:\s*\['wiki'\]/);
   });
 
   it('is built from deploy/mediawiki on the host, never pulled from a registry', () => {
     expect(wiki).toContain('context: ./deploy/mediawiki');
     expect(wiki).toContain('pull_policy: build');
-    expect(wiki).toMatch(/image: rmhstudios-mediawiki:1\.\d+\s*$/m);
   });
 
   it('builds on a pinned MediaWiki LTS line, never a floating tag, with the Postgres driver', () => {
@@ -63,13 +72,13 @@ describe('mediawiki compose service', () => {
     expect(ports[0]).toContain("'127.0.0.1:${PORT_WIKI:-7010}:80'");
   });
 
-  it('uses its own database and takes its secrets from the environment', () => {
-    expect(wiki).toContain('MEDIAWIKI_DB_NAME: ${MEDIAWIKI_DB_NAME:-mediawiki}');
-    expect(wiki).toContain('MEDIAWIKI_DB_PASS: ${MEDIAWIKI_DB_PASS:-}');
-    expect(wiki).toContain('MEDIAWIKI_SECRET_KEY: ${MEDIAWIKI_SECRET_KEY:-}');
-    // Not the site's database or credentials.
-    expect(wiki).not.toContain('DATABASE_URL');
+  it("gets the site's own database and auth secret, and nothing else from its env file", () => {
+    expect(wiki).toContain('DATABASE_URL: ${DATABASE_URL:-}');
+    expect(wiki).toContain('DATABASE_DIRECT_URL: ${DATABASE_DIRECT_URL:-}');
+    expect(wiki).toContain('BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}');
+    expect(wiki).toContain('BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://rmhstudios.com}');
     expect(wiki).not.toContain('env_file');
+    expect(wiki).not.toMatch(/MEDIAWIKI_|WIKIJS_/);
   });
 
   it('drops every capability but the three Apache needs to bind :80 and become www-data', () => {
@@ -85,59 +94,148 @@ describe('mediawiki compose service', () => {
     expect(wiki).toContain('healthcheck:');
   });
 
-  it('is reachable from web by compose DNS on its container port', () => {
-    expect(service('web')).toContain('MEDIAWIKI_URL=${MEDIAWIKI_URL:-http://mediawiki}');
+  it('leaves no Wiki.js service and no bot-password plumbing behind', () => {
+    expect(compose).not.toMatch(/^ {2}wikijs:/m);
+    expect(compose).not.toMatch(/requarks|MEDIAWIKI_URL|MEDIAWIKI_BOT/);
+  });
+});
+
+describe('the image', () => {
+  it('ships the configuration, the sign-in extension and the starter pages', () => {
+    for (const line of [
+      'COPY env.php /usr/local/lib/rmhstudios/env.php',
+      'COPY LocalSettings.php /var/www/html/LocalSettings.php',
+      'COPY extensions/RMHStudiosLogin /var/www/html/extensions/RMHStudiosLogin',
+      'COPY pages /usr/local/share/rmhstudios-wiki/pages',
+      'COPY Sidebar.wiki /usr/local/share/rmhstudios-wiki/Sidebar.wiki',
+      'COPY bootstrap.sh /usr/local/bin/wiki-bootstrap',
+    ]) {
+      expect(dockerfile).toContain(line);
+    }
   });
 
-  it('leaves no Wiki.js service behind', () => {
-    expect(compose).not.toMatch(/^ {2}wikijs:/m);
-    expect(compose).not.toContain('requarks');
+  it('brings the database up to date before it serves, and stops if it cannot', () => {
+    expect(dockerfile).toContain(
+      'CMD ["sh", "-c", "wiki-bootstrap && exec docker-php-entrypoint apache2-foreground"]',
+    );
+  });
+
+  it('closes the web installer', () => {
+    expect(dockerfile).toContain('RedirectMatch 404 ^/mw-config');
+  });
+
+  it('starts every starter page and the main page from a file of wikitext', () => {
+    const pages = readdirSync(resolve(root, 'deploy/mediawiki/pages'));
+    expect(pages).toContain('Main Page.wiki');
+    expect(pages.every((name) => name.endsWith('.wiki'))).toBe(true);
+    for (const name of pages) {
+      const text = read(`deploy/mediawiki/pages/${name}`);
+      // Markdown, a leftover template, or tildes MediaWiki would turn into a signature.
+      expect(text, name).not.toMatch(/^#{1,6} |\]\(|```|\$\{|~~~/m);
+    }
+  });
+
+  it('links the sidebar to pages that exist', () => {
+    const pages = new Set(
+      readdirSync(resolve(root, 'deploy/mediawiki/pages')).map((name) => name.replace(/\.wiki$/, '')),
+    );
+    const sidebar = read('deploy/mediawiki/Sidebar.wiki');
+    for (const [, target] of sidebar.matchAll(/^\*\* ([^|]+)\|/gm)) {
+      if (/^https?:|-url$|^mainpage$/.test(target!)) continue;
+      expect(pages.has(target!), target).toBe(true);
+    }
+  });
+});
+
+describe('env.php', () => {
+  const code = php(env);
+
+  it("reads the site's database, preferring the direct URL PgBouncer cannot pool away", () => {
+    expect(code).toContain("getenv( 'DATABASE_DIRECT_URL' ) ?: rmhWikiEnv( 'DATABASE_URL' )");
+  });
+
+  it('derives keys from BETTER_AUTH_SECRET, each under its own label', () => {
+    expect(code).toContain("hash_hmac( 'sha256', $label, rmhWikiEnv( 'BETTER_AUTH_SECRET' ) )");
+    expect(code).toContain("const RMH_WIKI_SECRET_LABEL = 'rmhstudios wiki secret key v1';");
+    expect(code).toContain("const RMH_WIKI_LOGIN_LABEL = 'rmhstudios wiki sign-in v1';");
   });
 });
 
 describe('LocalSettings.php', () => {
-  const php = settings.replace(/^\s*(#|\/\/|\*).*$/gm, '');
+  const code = php(settings);
 
-  it('holds no secret: the database password and the secret key are read from the environment', () => {
-    expect(php).toContain("$wgDBpassword = rmhWikiEnv( 'MEDIAWIKI_DB_PASS' );");
-    expect(php).toContain("$wgSecretKey = rmhWikiEnv( 'MEDIAWIKI_SECRET_KEY' );");
-    expect(php).not.toMatch(/\$wg(DBpassword|SecretKey|UpgradeKey)\s*=\s*'/);
+  it('holds no secret: the database password and the keys come from env.php', () => {
+    expect(code).toContain("$wgDBpassword = $rmhDatabase['password'];");
+    expect(code).toContain('$wgSecretKey = rmhWikiKey( RMH_WIKI_SECRET_LABEL );');
+    expect(code).toContain('$wgRMHStudiosLoginKey = rmhWikiKey( RMH_WIKI_LOGIN_LABEL );');
+    expect(code).not.toMatch(/\$wg(DBpassword|SecretKey|UpgradeKey|RMHStudiosLoginKey)\s*=\s*'/);
   });
 
-  it('runs on Postgres and the classic Vector skin', () => {
-    expect(php).toContain("$wgDBtype = 'postgres';");
-    expect(php).toContain("$wgDefaultSkin = 'vector';");
-    expect(php).toContain("$wgArticlePath = '/wiki/$1';");
+  it("keeps its tables in their own schema of the site's Postgres database", () => {
+    expect(code).toContain("$wgDBtype = 'postgres';");
+    expect(code).toContain("$wgDBmwschema = 'mediawiki';");
+    expect(code).toContain("$wgDBprefix = '';");
   });
 
-  it('lets everyone read and nobody but sysops write', () => {
-    expect(php).toContain("$wgGroupPermissions['*']['createaccount'] = false;");
-    expect(php).toMatch(/foreach \( \[ '\*', 'user', 'autoconfirmed' \] as \$group \)/);
-    for (const right of ['edit', 'createpage', 'move', 'upload']) expect(php).toContain(`'${right}'`);
-    expect(php).toContain("$wgGroupPermissions['sysop'][$right] = true;");
-    expect(php).not.toMatch(/\['\*'\]\['read'\]\s*=\s*false/);
+  it('runs the classic Vector skin with Wikipedia URLs and the sign-in extension', () => {
+    expect(code).toContain("$wgDefaultSkin = 'vector';");
+    expect(code).toContain("$wgArticlePath = '/wiki/$1';");
+    expect(code).toContain("wfLoadExtension( 'RMHStudiosLogin' );");
+  });
+
+  it('lets everyone read, signed-in members edit, and nobody sign up outside rmhstudios.com', () => {
+    expect(code).toContain("$wgGroupPermissions['*']['createaccount'] = false;");
+    expect(code).toContain("$wgGroupPermissions['*']['autocreateaccount'] = true;");
+    expect(code).toMatch(/foreach \( \[ 'edit', 'createpage', 'createtalk',[^\]]*\] as \$right \) \{\s*\$wgGroupPermissions\['\*'\]\[\$right\] = false;/);
+    expect(code).toMatch(/foreach \( \[ 'edit', 'createpage', 'createtalk',[^\]]*\] as \$right \) \{\s*\$wgGroupPermissions\['user'\]\[\$right\] = true;/);
+    expect(code).not.toMatch(/\['\*'\]\['read'\]\s*=\s*false/);
+  });
+
+  it("holds new accounts to Wikipedia's autoconfirm bar before they can move pages", () => {
+    expect(code).toContain('$wgAutoConfirmAge = 4 * 86400;');
+    expect(code).toContain('$wgAutoConfirmCount = 10;');
+    expect(code).toContain("$wgGroupPermissions['autoconfirmed'][$right] = true;");
   });
 
   it('keeps no state in the container: no uploads, no mail', () => {
-    expect(php).toContain('$wgEnableUploads = false;');
-    expect(php).toContain('$wgEnableEmail = false;');
-  });
-
-  it('is what the image ships, and the web installer is closed', () => {
-    expect(dockerfile).toContain('COPY LocalSettings.php /var/www/html/LocalSettings.php');
-    expect(dockerfile).toContain('RedirectMatch 404 ^/mw-config');
+    expect(code).toContain('$wgEnableUploads = false;');
+    expect(code).toContain('$wgEnableEmail = false;');
   });
 });
 
-describe('wiki-bootstrap', () => {
+describe('signing in', () => {
+  it('sends every login and sign-up to the rmhstudios.com sign-in', () => {
+    expect(extension.SpecialPages).toHaveProperty('RMHStudiosLogin');
+    expect(extension.Hooks).toHaveProperty('SpecialPageBeforeExecute');
+    const hooks = read('deploy/mediawiki/extensions/RMHStudiosLogin/includes/Hooks.php');
+    expect(hooks).toContain("[ 'Userlogin', 'CreateAccount' ]");
+  });
+
+  it('asks the site at the path the site serves, with the state it will check', () => {
+    expect(special).toContain("'/api/wiki/sso?' . http_build_query( [ 'state' => $state ] )");
+    expect(read('lib/wiki/wiki.contract.ts')).toContain("path: '/api/wiki/sso'");
+  });
+
+  it('accepts a pass once, in the session that asked for it', () => {
+    expect(special).toContain('$session->remove( self::SESSION_KEY );');
+    expect(special).toContain("Pass::verify( $pass, $key, (string)( $pending['state'] ?? '' ), time() )");
+  });
+
+  it('makes site admins wiki administrators, and only them', () => {
+    expect(special).toContain("private const ADMIN_GROUPS = [ 'sysop', 'interface-admin' ];");
+    expect(special).toContain('$this->syncAdminGroups( $user, $claims[\'admin\'] );');
+  });
+
+  it('never redirects off the wiki after signing in', () => {
+    expect(special).toContain('$title->isExternal()');
+  });
+});
+
+describe('the startup script', () => {
   const script = bootstrap
     .split('\n')
     .filter((line) => !line.trim().startsWith('#'))
     .join('\n');
-
-  it('is baked into the image', () => {
-    expect(dockerfile).toContain('COPY bootstrap.sh /usr/local/bin/wiki-bootstrap');
-  });
 
   it('never puts a password on a command line, where the host process list shows it', () => {
     expect(script).toContain('--dbpassfile "$tmp/dbpass"');
@@ -147,15 +245,26 @@ describe('wiki-bootstrap', () => {
     expect(script).toMatch(/trap 'rm -rf "\$tmp"'/);
   });
 
-  it('installs only into an empty database, and always runs update.php', () => {
-    expect(script).toMatch(/if \[ "\$installed" = "yes" \]/);
-    expect(script).toContain('php maintenance/run.php update --quick');
+  it('installs and imports the starter pages only into an empty schema', () => {
+    expect(script).toMatch(/if \[ "\$\(cat "\$tmp\/installed"\)" = "yes" \]/);
+    expect(script).toContain("to_regclass('\\''mediawiki.page'\\'')");
+    expect(script).toContain('--dbschema mediawiki');
+    const install = script.indexOf('maintenance/run.php install');
+    const imports = script.indexOf('importTextFiles');
+    const fi = script.indexOf('\nfi\n');
+    expect(install).toBeLessThan(imports);
+    expect(imports).toBeLessThan(fi);
   });
 
-  it('issues a bot password with only the grants the admin page uses, revoking the old one', () => {
-    expect(script).toContain('grants="basic,highvolume,editpage,editprotected,createeditmovepage,delete,editinterface"');
-    expect(script).toMatch(/DELETE FROM bot_passwords WHERE bp_app_id/);
-    expect(script).toContain('echo "MEDIAWIKI_BOT_USER=$admin@$app_id"');
+  it('runs update.php only when MediaWiki or its settings changed, because it signs everyone out', () => {
+    // update.php empties the objectcache table, where the sessions live.
+    expect(script).toContain('fingerprint="$(cat includes/Defines.php LocalSettings.php | sha256sum | cut -c1-64)"');
+    const guard = script.indexOf('if [ "$(cat "$tmp/applied")" = "$fingerprint" ]; then');
+    const update = script.indexOf('maintenance/run.php update --quick');
+    expect(guard).toBeGreaterThan(0);
+    expect(update).toBeGreaterThan(guard);
+    expect(script.match(/maintenance\/run\.php update/g)).toHaveLength(1);
+    expect(script).toContain('INSERT INTO updatelog (ul_key, ul_value)');
   });
 });
 
@@ -213,25 +322,15 @@ describe('DNS and environment', () => {
     expect(read('deploy/terraform/variables.tf')).toContain('default     = "wiki.rmhstudios.com"');
   });
 
-  it('documents every variable the wiki reads', () => {
+  it('documents the only two wiki variables, both optional, and nothing the wiki no longer reads', () => {
     const example = read('.env.example');
-    const names = [
-      'MEDIAWIKI_BOT_USER',
-      'MEDIAWIKI_BOT_PASSWORD',
-      'MEDIAWIKI_URL',
-      'WIKI_PUBLIC_URL',
-      'MEDIAWIKI_SECRET_KEY',
-      'MEDIAWIKI_SERVER',
-      'MEDIAWIKI_DB_HOST',
-      'MEDIAWIKI_DB_PORT',
-      'MEDIAWIKI_DB_USER',
-      'MEDIAWIKI_DB_PASS',
-      'MEDIAWIKI_DB_NAME',
-      'PORT_WIKI',
-    ];
-    for (const name of names) expect(example, name).toContain(`# ${name}=`);
-    // Every variable the container and LocalSettings.php read is one of them.
-    for (const [, name] of settings.matchAll(/rmhWikiEnv\( '(\w+)'/g)) expect(names).toContain(name);
-    expect(example).not.toContain('WIKIJS_');
+    for (const name of ['WIKI_PUBLIC_URL', 'PORT_WIKI']) expect(example, name).toContain(`# ${name}=`);
+    expect(example).not.toMatch(/MEDIAWIKI_|WIKIJS_/);
+    // Everything env.php reads is a setting the site already has, or one of those.
+    for (const [, name] of env.matchAll(/(?:rmhWikiEnv|getenv)\( '(\w+)'/g)) {
+      expect(['DATABASE_URL', 'DATABASE_DIRECT_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL', 'WIKI_PUBLIC_URL']).toContain(
+        name,
+      );
+    }
   });
 });
