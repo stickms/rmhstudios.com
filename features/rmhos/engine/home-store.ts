@@ -14,6 +14,13 @@ export interface CachedHome {
 }
 
 export interface HomeStore {
+  /**
+   * Where archives really live: 'indexeddb', or 'memory' when this browser has no usable
+   * IndexedDB (nothing then outlives the page). Known once the first operation has settled.
+   */
+  readonly kind: 'indexeddb' | 'memory';
+  /** Closes the IndexedDB connection. The store is not used afterwards. */
+  close(): void;
   get(userId: string): Promise<CachedHome | null>;
   put(userId: string, h: CachedHome): Promise<void>;
   delete(userId: string): Promise<void>;
@@ -22,6 +29,8 @@ export interface HomeStore {
 export function memoryHomeStore(): HomeStore {
   const m = new Map<string, CachedHome>();
   return {
+    kind: 'memory',
+    close: () => {},
     get: async (id) => m.get(id) ?? null,
     put: async (id, h) => void m.set(id, h),
     delete: async (id) => void m.delete(id),
@@ -58,15 +67,29 @@ function request<T>(
 export function openHomeStore(): HomeStore {
   const fallback = memoryHomeStore();
   let dbp: Promise<IDBDatabase | null> | null = null;
+  let kind: 'indexeddb' | 'memory' = 'indexeddb';
+  let closed = false;
   const db = () =>
     (dbp ??= (async () => {
       try {
-        return typeof indexedDB === 'undefined' ? null : await openDb();
+        const d = typeof indexedDB === 'undefined' ? null : await openDb();
+        if (!d) kind = 'memory';
+        // A close() that raced the open: do not leak the connection.
+        if (d && closed) d.close();
+        return d;
       } catch {
+        kind = 'memory';
         return null;
       }
     })());
   return {
+    get kind() {
+      return kind;
+    },
+    close() {
+      closed = true;
+      void dbp?.then((d) => d?.close());
+    },
     async get(id) {
       const d = await db();
       if (!d) return fallback.get(id);

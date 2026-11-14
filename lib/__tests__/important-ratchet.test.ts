@@ -9,7 +9,7 @@
  *  - **accessibility / degradation contracts** (`eversion.css`; the jelly sheets that carried most of
  *    them were deleted in Steel phase 1): "these outrank theme, material and utility layers" is the point, and WCAG 2.2.2 / 2.3.1 depend
  *    on it;
- *  - **beating an inline style** that script writes (`balatro` and `rmhos` canvas size (v86 rewrites the canvas's inline width and height on every mode change), `rmhcalculator` field-sizing fallback),
+ *  - **beating an inline style** that script writes (`balatro` canvas size (v86 rewrites the canvas's inline width and height on every mode change; rmhOS avoids it by creating the machine with screen scale 0), `rmhcalculator` field-sizing fallback),
  *    a third-party stylesheet (`tf2-hud` CodeMirror) or a competing rule at higher specificity that a layer move
  *    cannot reorder (`page-motion` `animation: none` on the page root, the scrollbar reveal in `base-interaction`,
  *    the sticky reset in the radial shell).
@@ -30,7 +30,6 @@ const BASELINE: Record<string, number> = {
   'app/globals/loader-print-access.css': 20,
   'app/globals/page-motion.css': 1,
   'features/balatro/ui/balatro.css': 2,
-  'features/rmhos/ui/rmhos.css': 2,
   'components/rmhcalculator/rmhcalculator.css': 1,
   'components/tf2-hud/tf2-hud.css': 1,
 };

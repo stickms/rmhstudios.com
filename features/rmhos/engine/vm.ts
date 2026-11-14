@@ -97,6 +97,16 @@ export function createV86Loader<T>(importer: () => Promise<T>): () => Promise<T>
   };
 }
 
+/**
+ * v86's StateLoadError messages (src/state.js: read_state_header and read_info_block), plus a
+ * zstd failure from its decompressor. Nothing broader: "state" alone matches half of React.
+ */
+export function isStateLoadFailure(text: string): boolean {
+  return /Invalid length: |Invalid header: |Version mismatch: dump=|Length doesn't match header: |Invalid info block length: |zstd/i.test(
+    text,
+  );
+}
+
 const loadV86 = createV86Loader(() => import('v86'));
 
 export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
@@ -132,6 +142,9 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       ...vmOptions({ baseUrl: base, relayUrl }),
       wasm_path: wasmUrl,
       screen_container: screen,
+      // Scale 0: v86's screen adapter then never writes an inline width/height on the canvas
+      // (it only does so for a non-zero combined scale), so the stylesheet alone fits it to the box.
+      screen: { scale: 0 },
       autostart: true,
       disable_speaker: true,
       net_device: {
@@ -218,16 +231,16 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       for (const cb of serialListeners) cb(chunk);
     });
     // A state that downloads but will not restore surfaces as an unhandled rejection out of v86's
-    // loader. Only that is acted on: while the state is loading, a rejection whose message or
-    // stack names the state, its decompression or the restore. Any other rejection on the page
-    // (an unrelated fetch, a third-party script) is left alone rather than costing a cold boot.
-    const STATE_FAILURE = /state|zstd|restore/i;
+    // loader. Only that is acted on: while the state is loading, a rejection that is v86's own
+    // StateLoadError (its exact messages) or a zstd failure. Any other rejection on the page
+    // (React or query code that merely mentions "state", an unrelated fetch) is left alone
+    // rather than costing a cold boot.
     const onError = (ev: PromiseRejectionEvent) => {
       if (!usedState || ready || finished) return;
       const r = ev.reason as { message?: unknown; stack?: unknown } | string | undefined;
       const text =
         typeof r === 'string' ? r : `${String(r?.message ?? '')} ${String(r?.stack ?? '')}`;
-      if (!STATE_FAILURE.test(text)) return;
+      if (!isStateLoadFailure(text)) return;
       ev.preventDefault();
       drop();
       fallBack('state could not be restored');

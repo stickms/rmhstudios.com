@@ -21,7 +21,14 @@ function fakeTar(fill: number): Uint8Array {
   return t;
 }
 
-function setup(opts: { tars?: Uint8Array[]; saveError?: AgentError } = {}) {
+function setup(
+  opts: {
+    tars?: Uint8Array[];
+    saveError?: AgentError;
+    reportBytes?: number;
+    store?: HomeStore;
+  } = {},
+) {
   const share = new Map<string, Uint8Array>();
   const tars = [...(opts.tars ?? [fakeTar(1)])];
   const agent = {
@@ -29,7 +36,7 @@ function setup(opts: { tars?: Uint8Array[]; saveError?: AgentError } = {}) {
       if (opts.saveError) throw opts.saveError;
       const tar = tars.length > 1 ? tars.shift()! : tars[0]!;
       share.set(SHARE_ARCHIVE_PATH, tar);
-      return { bytes: tar.length };
+      return { bytes: opts.reportBytes ?? tar.length };
     }),
   };
   const vm = {
@@ -41,7 +48,7 @@ function setup(opts: { tars?: Uint8Array[]; saveError?: AgentError } = {}) {
     }),
     deleteShareFile: vi.fn(async (p: string) => void share.delete(p)),
   };
-  const store = memoryHomeStore();
+  const store = opts.store ?? memoryHomeStore();
   const sync = new HomeSync({ userId: 'u1', vm, agent: agent as never, store });
   return { share, agent, vm, store, sync };
 }
@@ -61,10 +68,10 @@ describe('HomeSync', () => {
     expect(share.get(SHARE_ARCHIVE_PATH)).toEqual(tar);
   });
 
-  it('prepare treats a corrupt cached archive as empty', async () => {
+  it('prepare reports a corrupt cached archive as corrupt', async () => {
     const { sync, store, vm } = setup();
     await store.put('u1', { archive: new Uint8Array([1, 2, 3]), sha256: 'x', savedAt: 1 });
-    expect(await sync.prepare()).toBe('empty');
+    expect(await sync.prepare()).toBe('corrupt');
     expect(vm.writeShareFile).not.toHaveBeenCalled();
   });
 
@@ -171,5 +178,126 @@ describe('memory home store', () => {
     expect(await s.get('x')).toEqual(h);
     await s.delete('x');
     expect(await s.get('x')).toBeNull();
+  });
+
+  describe('the stored home is only ever replaced deliberately', () => {
+    it('discardDamaged moves a corrupt entry aside and keeps it under :damaged', async () => {
+      const { sync, store } = setup();
+      const damaged = { archive: new Uint8Array([9, 9, 9]), sha256: 'bad', savedAt: 1 };
+      await store.put('u1', damaged);
+      expect(await sync.prepare()).toBe('corrupt');
+      await sync.discardDamaged();
+      expect(await store.get('u1')).toBeNull();
+      expect(await store.get('u1:damaged')).toEqual(damaged);
+    });
+
+    it('exportArchive hands back the raw damaged bytes', async () => {
+      const { sync, store } = setup();
+      await store.put('u1', { archive: new Uint8Array([9, 9, 9]), sha256: 'bad', savedAt: 1 });
+      expect(Array.from((await sync.exportArchive())!)).toEqual([9, 9, 9]);
+    });
+
+    it('import suspends saves: the store keeps the imported archive', async () => {
+      const { sync, store, agent } = setup({ tars: [fakeTar(5)] });
+      await sync.prepare();
+      const backup = await gzip(fakeTar(8));
+      await sync.importArchive(backup);
+      expect(await sync.save()).toEqual({ status: 'failed', code: 'suspended' });
+      expect(agent.save).not.toHaveBeenCalled();
+      expect((await store.get('u1'))!.archive).toEqual(backup);
+    });
+
+    it('import waits for a save already in flight, then wins', async () => {
+      const { sync, store } = setup({ tars: [fakeTar(5)] });
+      await sync.prepare();
+      const backup = await gzip(fakeTar(8));
+      const saving = sync.save();
+      await sync.importArchive(backup);
+      await saving;
+      expect((await store.get('u1'))!.archive).toEqual(backup);
+    });
+
+    it('a tar of the wrong length is bad_archive and the store is untouched', async () => {
+      const { sync, store } = setup({ reportBytes: 999 });
+      await sync.prepare();
+      expect(await sync.save()).toEqual({ status: 'failed', code: 'bad_archive' });
+      expect(await store.get('u1')).toBeNull();
+    });
+
+    it('something that is not a tar is bad_archive', async () => {
+      const junk = new Uint8Array(1536).fill(7);
+      const { sync, store } = setup({ tars: [junk] });
+      await sync.prepare();
+      expect(await sync.save()).toEqual({ status: 'failed', code: 'bad_archive' });
+      expect(await store.get('u1')).toBeNull();
+    });
+
+    it('an empty tar does not replace a non-empty stored home, unless allowed', async () => {
+      const { sync, store } = setup({ tars: [new Uint8Array(10240)] });
+      const stored = { archive: await gzip(fakeTar(3)), sha256: 'old', savedAt: 1 };
+      await store.put('u1', stored);
+      await sync.prepare();
+      expect(await sync.save()).toEqual({ status: 'failed', code: 'empty_home' });
+      expect(await store.get('u1')).toEqual(stored);
+      expect((await sync.save({ allowEmpty: true })).status).toBe('saved');
+    });
+
+    it('an empty tar may be stored first, or replace an empty one', async () => {
+      const { sync } = setup({ tars: [new Uint8Array(10240)] });
+      await sync.prepare();
+      expect((await sync.save()).status).toBe('saved');
+    });
+
+    it('another tab replacing the entry is changed_elsewhere and nothing is written', async () => {
+      const { sync, store } = setup({ tars: [fakeTar(2)] });
+      await store.put('u1', { archive: await gzip(fakeTar(1)), sha256: 'mine', savedAt: 1 });
+      await sync.prepare();
+      const theirs = { archive: await gzip(fakeTar(4)), sha256: 'theirs', savedAt: 2 };
+      await store.put('u1', theirs);
+      expect(await sync.save()).toEqual({ status: 'failed', code: 'changed_elsewhere' });
+      expect(await store.get('u1')).toEqual(theirs);
+    });
+
+    it('an entry created elsewhere after an empty start is changed_elsewhere too', async () => {
+      const { sync, store } = setup({ tars: [fakeTar(2)] });
+      await sync.prepare(); // nothing stored
+      await store.put('u1', { archive: await gzip(fakeTar(4)), sha256: 'theirs', savedAt: 2 });
+      expect(await sync.save()).toEqual({ status: 'failed', code: 'changed_elsewhere' });
+    });
+
+    it('its own earlier write is not "elsewhere"', async () => {
+      const { sync } = setup({ tars: [fakeTar(1), fakeTar(2)] });
+      await sync.prepare();
+      expect((await sync.save()).status).toBe('saved');
+      expect((await sync.save()).status).toBe('saved');
+    });
+
+    it('only a QuotaExceededError is storage-full; anything else is storage_error', async () => {
+      const failing = (err: Error): HomeStore => ({
+        ...memoryHomeStore(),
+        put: async () => {
+          throw err;
+        },
+      });
+      const quota = new Error('full');
+      quota.name = 'QuotaExceededError';
+      const a = setup({ store: failing(quota) });
+      await a.sync.prepare();
+      expect(await a.sync.save()).toEqual({ status: 'storage-full' });
+      const b = setup({ store: failing(new Error('boom')) });
+      await b.sync.prepare();
+      expect(await b.sync.save()).toEqual({ status: 'failed', code: 'storage_error' });
+    });
+
+    it('exportLive gzips the desktop home without writing the store, even when saving is refused', async () => {
+      const { sync, store } = setup({ tars: [fakeTar(6)] });
+      await store.put('u1', { archive: await gzip(fakeTar(1)), sha256: 'mine', savedAt: 1 });
+      await sync.prepare();
+      const theirs = { archive: await gzip(fakeTar(4)), sha256: 'theirs', savedAt: 2 };
+      await store.put('u1', theirs);
+      const live = await sync.exportLive();
+      expect(Array.from(await gunzip(live))).toEqual(Array.from(fakeTar(6)));
+      expect(await store.get('u1')).toEqual(theirs);
+    });
   });
 });

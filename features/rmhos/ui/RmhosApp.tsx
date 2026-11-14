@@ -7,6 +7,8 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import BootScreen from './BootScreen';
+import { DAMAGED_FILE, downloadBytes } from './download';
+import Notices from './Notices';
 import Screen from './Screen';
 import { RmhosSessionProvider, useRmhosMachine, type RmhosSessionValue } from './useRmhosSession';
 
@@ -18,7 +20,9 @@ function SaveStatus({ session }: { session: RmhosSessionValue }) {
   const { t } = useTranslation('c-rmhos');
   const { saving, lastSave } = session;
   let text: string;
-  if (saving) text = t('save-saving', { defaultValue: 'Saving' });
+  if (session.storeKind === 'memory')
+    text = t('save-memory', { defaultValue: 'Not saved: browser storage is unavailable' });
+  else if (saving) text = t('save-saving', { defaultValue: 'Saving' });
   else if (!lastSave) text = t('save-none', { defaultValue: 'Not saved yet' });
   else {
     const time = new Date(lastSave.at).toLocaleTimeString([], {
@@ -57,12 +61,22 @@ export default function RmhosApp() {
             <BootScreen
               phase={session.phase}
               detail={session.detail}
+              failure={session.failure}
               needsKeyboardNotice={!confirmed}
               onStart={() => setConfirmed(true)}
               onRetry={() => void session.restart()}
+              onDownloadDamaged={async () => {
+                const raw = await session.exportArchive();
+                if (raw) downloadBytes(DAMAGED_FILE, raw);
+              }}
+              onStartEmpty={async () => {
+                await session.startEmpty();
+                await session.restart({ save: false });
+              }}
             />
           )}
         </div>
+        {session.phase === 'running' && <Notices session={session} />}
         {session.phase === 'running' && <SaveStatus session={session} />}
       </div>
     </RmhosSessionProvider>

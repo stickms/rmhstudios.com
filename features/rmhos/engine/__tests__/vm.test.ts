@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createV86Loader, createVm, relayConfig } from '../vm';
+import { createV86Loader, createVm, isStateLoadFailure, relayConfig } from '../vm';
 import { resolveImageManifest } from '../image-manifest';
 
 describe('relayConfig', () => {
@@ -92,4 +92,23 @@ describe('createVm cancellation', () => {
     await expect(p).rejects.toMatchObject({ name: 'AbortError' });
     expect(ctor).not.toHaveBeenCalled();
   });
+});
+
+describe('isStateLoadFailure', () => {
+  it.each([
+    'Invalid length: 3',
+    'Invalid header: deadbeef',
+    'Version mismatch: dump=5 we=6',
+    "Length doesn't match header: real=1 header=2",
+    'Invalid info block length: 9',
+    'zstd decompression failed',
+  ])('acts on v86 state errors: %s', (m) => expect(isStateLoadFailure(m)).toBe(true));
+
+  it.each([
+    'Cannot read properties of undefined (reading "state")',
+    'Maximum update depth exceeded: setState in useEffect',
+    'query state is invalid',
+    'Failed to restore focus',
+    'NetworkError when attempting to fetch resource.',
+  ])('leaves other rejections alone: %s', (m) => expect(isStateLoadFailure(m)).toBe(false));
 });

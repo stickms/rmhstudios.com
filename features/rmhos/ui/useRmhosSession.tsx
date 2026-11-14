@@ -1,25 +1,29 @@
 /**
- * The rmhOS session: boots the machine, tells the guest who is signed in, restores the home
- * folder from this browser's storage, and saves it back (autosave, tab hidden, guest power-off).
+ * The rmhOS session as React state: boots the machine, and hands the home-folder orchestration
+ * (identity handshake, RESTORE, saves, unload prompt, power-off) to HomeSession
+ * (../engine/home-session.ts), which is where the rules and their tests live.
  * `useRmhosMachine` runs it once, in RmhosApp; everything below it (the toolbar, dialogs) reads
  * the result with `useRmhosSession()`.
  *
- * Order matters and is the point of this file:
- *   create the machine -> (running) -> prepare() puts the stored tar in the share
- *   -> cold boot only: wait for the guest's READY (a snapshot restore never prints it again)
- *   -> SESSION -> RESTORE (extracts the tar, starts the desktop) -> desktop ready.
+ * Guards that protect the stored archive (the only copy of the person's files):
+ *  - one machine per account per browser: a Web Lock is taken before anything boots;
+ *  - one IndexedDB store per mount, closed on unmount (a restart keeps the same store);
+ *  - the session's saves are suspended after a backup import, so a restart (a new HomeSync) is
+ *    the only way on.
  */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/components/session/session-context';
 import { CDN_BASE } from '@/lib/storage/asset';
-import { AgentClient, AgentError } from '../engine/agent';
+import { AgentClient } from '../engine/agent';
 import { RMHOS } from '../engine/constants';
-import { openHomeStore } from '../engine/home-store';
+import { browserEnv, HomeSession, type SessionSnapshot } from '../engine/home-session';
+import { openHomeStore, type HomeStore } from '../engine/home-store';
 import { HomeSync, type SaveResult } from '../engine/home-sync';
 import { resolveImageManifest } from '../engine/image-manifest';
 import type { RmhosNet } from '../engine/rmhos.contract';
+import { acquireHomeLock } from '../engine/tab-lock';
 import { createVm } from '../engine/vm';
 import type { VmHandle, VmPhase, VmPhaseDetail } from '../engine/vm-types';
 import { rmhosSessionQuery } from './rmhos.queries';
@@ -27,17 +31,42 @@ import { rmhosSessionQuery } from './rmhos.queries';
 /** The machine's phases, plus `session` while the guest is being told who is signing in. */
 export type RmhosPhase = VmPhase | 'session';
 
+/**
+ * Why the machine is in `failed`: `load` (image, emulator or session request), `handshake` (the
+ * guest started but the sign-in/restore did not finish), `corrupt` (the stored home cannot be
+ * read), `locked` (another tab of this account is running rmhOS).
+ */
+export type RmhosFailure = 'load' | 'handshake' | 'corrupt' | 'locked';
+
 export interface RmhosSessionValue {
   phase: RmhosPhase;
   detail: VmPhaseDetail | undefined;
   bootKind: 'snapshot' | 'cold' | null;
+  failure: RmhosFailure | null;
+  /** The guest's RESTORE succeeded: the desktop is up and saving is safe. False again after power-off. */
+  desktopReady: boolean;
+  /** The guest was used (keys, pointer) since the last good save. */
+  dirty: boolean;
+  /** Call on input to the guest screen. */
+  markDirty: () => void;
   lastSave: { result: SaveResult; at: number } | null;
   saving: boolean;
+  /** 'memory': this browser blocks storage, so nothing is kept after the page closes. */
+  storeKind: 'indexeddb' | 'memory';
   saveNow: () => Promise<SaveResult>;
+  /** The stored archive, byte for byte (also when it is damaged). */
   exportArchive: () => Promise<Uint8Array | null>;
+  /** The desktop's home straight from the guest, writing nothing: a backup when saving is refused. */
+  exportLive: () => Promise<Uint8Array | null>;
+  /** Validates and stores a backup. Saves are suspended afterwards: restart (without saving). */
   importArchive: (gz: Uint8Array) => Promise<void>;
-  /** Starts over: a best-effort save, then a fresh machine and handshake. */
-  restart: () => Promise<void>;
+  /** After `corrupt`: keeps the unreadable entry aside; the next start has an empty home. */
+  startEmpty: () => Promise<void>;
+  /**
+   * Starts over: a best-effort save (unless `save: false`, which an imported backup needs: a save
+   * would replace it with the current home), then a fresh machine and handshake.
+   */
+  restart: (opts?: { save?: boolean }) => Promise<void>;
   linuxUser: string | null;
   net: RmhosNet | null;
 }
@@ -68,7 +97,7 @@ export function useRmhosMachine(
 ): RmhosSessionValue {
   const { data: account } = useSession();
   const userId = account?.user?.id ?? null;
-  const sessionQ = useQuery(rmhosSessionQuery());
+  const sessionQ = useQuery(rmhosSessionQuery(userId));
   const sessionRef = useRef(sessionQ.data);
   sessionRef.current = sessionQ.data;
   const sessionReady = !sessionQ.isPending;
@@ -76,65 +105,63 @@ export function useRmhosMachine(
   const [phase, setPhase] = useState<RmhosPhase>('idle');
   const [detail, setDetail] = useState<VmPhaseDetail | undefined>();
   const [bootKind, setBootKind] = useState<'snapshot' | 'cold' | null>(null);
-  const [lastSave, setLastSave] = useState<RmhosSessionValue['lastSave']>(null);
-  const [saving, setSaving] = useState(false);
+  const [failure, setFailure] = useState<RmhosFailure | null>(null);
+  const [snap, setSnap] = useState<SessionSnapshot | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (import.meta.env.DEV) window.__rmhosPhase = phase;
   }, [phase]);
-  const syncRef = useRef<HomeSync | null>(null);
-  const runningRef = useRef(false);
-  const lastSaveRef = useRef<RmhosSessionValue['lastSave']>(null);
-  const readyAtRef = useRef(0);
 
-  const record = useCallback((result: SaveResult) => {
-    const entry = { result, at: Date.now() };
-    lastSaveRef.current = entry;
-    setLastSave(entry);
-    return result;
-  }, []);
+  const runnerRef = useRef<HomeSession | null>(null);
 
-  const saveWith = useCallback(
-    async (timeoutMs?: number): Promise<SaveResult> => {
-      const sync = syncRef.current;
-      if (!sync || !runningRef.current) return NOT_RUNNING;
-      setSaving(true);
-      try {
-        return record(await sync.save(timeoutMs === undefined ? {} : { timeoutMs }));
-      } finally {
-        setSaving(false);
-      }
+  // One store for the life of the page, so a restart keeps the in-memory fallback's contents and
+  // no restart leaks an IndexedDB connection. Closed on unmount.
+  const storeRef = useRef<HomeStore | null>(null);
+  const getStore = () => (storeRef.current ??= openHomeStore());
+  useEffect(
+    () => () => {
+      storeRef.current?.close();
+      storeRef.current = null;
     },
-    [record],
+    [],
   );
-  const saveNow = useCallback(() => saveWith(), [saveWith]);
 
   useEffect(() => {
     if (!enabled || !userId || !sessionReady || !screenRef.current) return;
     const session = sessionRef.current;
-    if (!session) {
-      setPhase('failed');
-      setDetail({ error: 'could not load the session' });
-      return;
-    }
     const screen = screenRef.current;
     const ac = new AbortController();
     const cleanups: Array<() => void> = [];
     let cancelled = false;
-    setPhase('downloading');
     setDetail(undefined);
     setBootKind(null);
-    setLastSave(null);
-    lastSaveRef.current = null;
+    setFailure(null);
+    setSnap(null);
 
-    const fail = (error: string) => {
+    const fail = (error: string, kind: RmhosFailure = 'load') => {
       if (cancelled) return;
+      setFailure(kind);
       setPhase('failed');
       setDetail({ error });
     };
 
+    if (!session) {
+      fail('could not load the session');
+      return;
+    }
+    setPhase('downloading');
+
     void (async () => {
       try {
+        // One machine per account per browser, held for the life of this one.
+        const lock = await acquireHomeLock(userId);
+        if (!lock) {
+          fail('another tab', 'locked');
+          return;
+        }
+        cleanups.push(() => lock.release());
+        if (cancelled) return;
+
         const net = session.net.enabled
           ? { url: session.net.url, ticket: session.net.ticket }
           : null;
@@ -156,63 +183,37 @@ export function useRmhosMachine(
         // Subscribed before the guest can say anything: READY and later lines are latched/parsed.
         const agent = new AgentClient(vm);
         cleanups.push(() => agent.dispose());
-        const sync = new HomeSync({ userId, vm, agent, store: openHomeStore() });
-        syncRef.current = sync;
-        cleanups.push(() => {
-          syncRef.current = null;
-          runningRef.current = false;
-        });
+        const sync = new HomeSync({ userId, vm, agent, store: getStore() });
 
-        const handshake = async () => {
-          const kind = vm.bootKind();
-          setBootKind(kind);
-          setPhase('session');
-          try {
-            // The stored tar must be in the share before the guest is told to RESTORE.
-            await sync.prepare();
-            if (kind === 'cold') await agent.waitReady(120_000);
-            await agent.startSession(session.linuxUser);
-            await agent.restore();
-          } catch (e) {
-            if (!cancelled)
-              fail(e instanceof AgentError ? `agent: ${e.code}` : 'could not start the session');
-            return;
-          }
-          if (cancelled) return;
-          runningRef.current = true;
-          readyAtRef.current = Date.now();
-          setPhase('running');
-          if (import.meta.env.DEV) window.__rmhosSave = () => saveWith();
-
-          const timer = setInterval(() => void saveWith(), RMHOS.autosaveMs);
-          cleanups.push(() => clearInterval(timer));
-          const onVisibility = () => {
-            if (document.visibilityState === 'hidden') void saveWith();
-          };
-          document.addEventListener('visibilitychange', onVisibility);
-          cleanups.push(() => document.removeEventListener('visibilitychange', onVisibility));
-          // Unsaved: the last save did not land (failed or storage full), or the last good save
-          // (or, before any save, the desktop becoming ready) is older than one autosave interval.
-          const onBeforeUnload = (ev: BeforeUnloadEvent) => {
-            const last = lastSaveRef.current;
-            const ok =
-              !last || last.result.status === 'saved' || last.result.status === 'unchanged';
-            const since = Date.now() - (last && ok ? last.at : readyAtRef.current);
-            if (!ok || since > RMHOS.autosaveMs) {
-              ev.preventDefault();
-              ev.returnValue = '';
-            }
-          };
-          window.addEventListener('beforeunload', onBeforeUnload);
-          cleanups.push(() => window.removeEventListener('beforeunload', onBeforeUnload));
-          cleanups.push(
-            agent.onPoweroff(() => {
-              // The guest is going down: one short, best-effort save while the agent may still answer.
-              void saveWith(10_000).finally(() => {
-                runningRef.current = false;
-              });
-            }),
-          );
+        let runner: HomeSession | null = null;
+        const startRunner = () => {
+          setBootKind(vm.bootKind());
+          runner = new HomeSession({
+            agent,
+            sync,
+            bootKind: vm.bootKind(),
+            linuxUser: session.linuxUser,
+            autosaveMs: RMHOS.autosaveMs,
+            env: browserEnv(),
+            onChange: (s) => {
+              if (cancelled) return;
+              setSnap(s);
+              if (s.stage === 'handshake') setPhase('session');
+              else if (s.stage === 'running') setPhase('running');
+              else if (s.stage === 'failed' && s.failure) {
+                setFailure(s.failure);
+                setPhase('failed');
+                setDetail({ error: s.error ?? '' });
+              } else if (s.stage === 'stopped') setPhase('stopped');
+            },
+          });
+          runnerRef.current = runner;
+          cleanups.push(() => {
+            runner?.dispose();
+            if (runnerRef.current === runner) runnerRef.current = null;
+          });
+          if (import.meta.env.DEV) window.__rmhosSave = () => runner!.save();
+          void runner.start();
         };
 
         let started = false;
@@ -222,12 +223,15 @@ export function useRmhosMachine(
             if (p === 'running') {
               if (!started) {
                 started = true;
-                void handshake();
+                startRunner();
               }
               return;
             }
+            // The machine went away after running: nothing may save or prompt any more.
+            if (started && (p === 'stopped' || p === 'failed')) runner?.machineStopped(p);
             setPhase(p);
             setDetail(d);
+            if (p === 'failed') setFailure('load');
           }),
         );
       } catch (err) {
@@ -241,25 +245,38 @@ export function useRmhosMachine(
       ac.abort();
       for (const c of cleanups.reverse()) c();
     };
-  }, [enabled, userId, sessionReady, attempt, screenRef, saveWith]);
+  }, [enabled, userId, sessionReady, attempt, screenRef]);
 
-  const restart = useCallback(async () => {
-    if (runningRef.current) await saveWith();
-    await sessionQ.refetch(); // a fresh relay ticket for the new machine
-    setAttempt((n) => n + 1);
-  }, [saveWith, sessionQ]);
+  const restart = useCallback(
+    async (opts?: { save?: boolean }) => {
+      if (opts?.save !== false) await runnerRef.current?.save();
+      await sessionQ.refetch(); // a fresh relay ticket for the new machine
+      setAttempt((n) => n + 1);
+    },
+    [sessionQ],
+  );
 
   return {
     phase,
     detail,
     bootKind,
-    lastSave,
-    saving,
-    saveNow,
-    exportArchive: useCallback(async () => syncRef.current?.exportArchive() ?? null, []),
+    failure,
+    desktopReady: snap?.desktopReady ?? false,
+    dirty: snap?.dirty ?? false,
+    markDirty: useCallback(() => runnerRef.current?.markDirty(), []),
+    lastSave: snap?.lastSave ?? null,
+    saving: snap?.saving ?? false,
+    storeKind: snap?.storeKind ?? 'indexeddb',
+    saveNow: useCallback(async () => (await runnerRef.current?.save()) ?? NOT_RUNNING, []),
+    exportArchive: useCallback(async () => runnerRef.current?.exportArchive() ?? null, []),
+    exportLive: useCallback(async () => runnerRef.current?.exportLive() ?? null, []),
     importArchive: useCallback(async (gz: Uint8Array) => {
-      if (!syncRef.current) throw new Error('rmhOS is not running');
-      await syncRef.current.importArchive(gz);
+      if (!runnerRef.current) throw new Error('rmhOS is not running');
+      await runnerRef.current.importBackup(gz);
+    }, []),
+    startEmpty: useCallback(async () => {
+      if (!runnerRef.current) throw new Error('rmhOS is not running');
+      await runnerRef.current.startEmpty();
     }, []),
     restart,
     linuxUser: sessionQ.data?.linuxUser ?? null,

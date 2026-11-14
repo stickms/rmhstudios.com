@@ -43,6 +43,13 @@
   min-height: 0;
 }
 
+.rmhos-app .rmhos-notices {
+  flex: none;
+  padding: 6px 12px;
+  border-top: 1px solid var(--app-border);
+  background: var(--app-bg-subtle);
+}
+
 .rmhos-app .rmhos-status {
   flex: none;
   padding: 4px 12px;
@@ -67,11 +74,11 @@
   color: var(--app-text);
 }
 
-/* v86 writes an inline pixel size for the canvas; fit it to the box instead, keeping the aspect
-   ratio and smoothing the scale (not pixelated). */
+/* The machine is created with screen scale 0, so v86 writes no inline size on the canvas: the box
+   decides. Fit it, keeping the aspect ratio and smoothing the scale (not pixelated). */
 .rmhos-app .rmhos-screen > canvas {
-  width: 100% !important;
-  height: 100% !important;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   image-rendering: auto;
 }
