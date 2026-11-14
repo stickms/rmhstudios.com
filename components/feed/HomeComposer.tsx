@@ -2,6 +2,7 @@ import {
   Suspense,
   lazy,
   startTransition,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -15,7 +16,7 @@ import { SpineItem } from '@/components/ui/spine';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { PostsPlusChips, usePostsPlusCompose } from '@/components/posts-plus/PostsPlusCompose';
 import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-limits';
-import { clearComposeDraft } from '@/hooks/useComposeDraft';
+import { clearComposeDraft, readComposeDraft } from '@/hooks/useComposeDraft';
 import { HOME_COMPOSER_INPUT_ID } from './home-composer-id';
 import { useComposeSubmit } from './compose/useComposeSubmit';
 import {
@@ -121,6 +122,15 @@ export function HomeComposer() {
     void loadComposeBox();
     startTransition(() => setExpanded(what));
   };
+  // An unsent draft is offered back from the start, not the first time a quick action happens to mount the full
+  // composer (owner, 2026-11-14: "i dont like how opening the three dots menu suddenly shows recent drafts, always
+  // have the drafts be shown there"). The full composer owns the offer and the restore, so a waiting draft mounts it.
+  const signedIn = !!session;
+  useEffect(() => {
+    if (!signedIn || !readComposeDraft()) return;
+    void loadComposeBox();
+    startTransition(() => setExpanded((current) => current ?? {}));
+  }, [signedIn]);
   const fileRef = useRef<HTMLInputElement>(null);
   const handoff = useRef<ComposerFieldHandoff | null>(null);
   const [submitting, setSubmitting] = useState(false);
