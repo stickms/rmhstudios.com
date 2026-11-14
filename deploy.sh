@@ -1509,8 +1509,8 @@ rmhos_net_stop() { dc --profile rmhos-net stop rmhos-net >/dev/null 2>&1 || true
         rmhos_net_stop
     elif DOCKER_BIN="$DOCKER_BIN" PROJECT_NAME="$PROJECT_NAME" ENV_FILE="$ENV_FILE" \
             bash "$REPO_DIR/deploy/rmhos-net/probe-firewall.sh"; then
-        if dc --profile rmhos-net up -d --no-build rmhos-net >/dev/null 2>&1 && check_http "$PORT_RMHOS_NET"; then
-            log "rmhOS relay hub is up (loopback port ${PORT_RMHOS_NET}), egress firewall proven."
+        if dc --profile rmhos-net up -d --no-build rmhos-net >/dev/null 2>&1 && check_http "${PORT_RMHOS_NET:-7009}"; then
+            log "rmhOS relay hub is up (loopback port ${PORT_RMHOS_NET:-7009}), egress firewall proven."
         else
             log "WARNING: the rmhOS relay hub did not start healthy; stopping it. The site deploy is unaffected."
             rmhos_net_stop
