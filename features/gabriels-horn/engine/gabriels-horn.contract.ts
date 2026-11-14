@@ -3,18 +3,52 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { HornLeaderboardRow } from '@features/gabriels-horn/api/gabriels-horn.leaderboard.server';
 import type { HouseRuleProposal } from '@features/gabriels-horn/api/gabriels-horn.house-rule.server';
 
-export const hornLeaderboardApi = endpoint<{
-  query: { limit?: number };
-  res: { rows: HornLeaderboardRow[] };
-}>()({ method: 'GET', path: '/api/gabriels-horn/leaderboard' });
+export const hornLeaderboardApi =
+  endpoint<{
+    query: {
+      limit?: number;
+    };
+    res: {
+      rows: HornLeaderboardRow[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/gabriels-horn/leaderboard',
+    },
+  );
 
 /** Ask the balancer (model, or the deterministic fallback) to propose rule changes. */
-export const proposeHouseRuleApi = endpoint<{
-  body: { prompt: string; current: unknown; state: unknown };
-  res: HouseRuleProposal;
-}>()({ method: 'POST', path: '/api/gabriels-horn/house-rule' });
+export const proposeHouseRuleApi =
+  endpoint<{
+    body: {
+      prompt: string;
+      current: unknown;
+      state: unknown;
+    };
+    res: HouseRuleProposal;
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/gabriels-horn/house-rule',
+    },
+  );
 
 /** The signed-in player's career table-read (a guest gets 401). */
-export const getTableReadApi = endpoint<{
-  res: { career: Record<string, number> | null };
-}>()({ method: 'GET', path: '/api/gabriels-horn/table-read' });
+export const getTableReadApi =
+  endpoint<{
+    res: {
+      career: Record<
+        string,
+        number
+      > | null;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/gabriels-horn/table-read',
+    },
+  );

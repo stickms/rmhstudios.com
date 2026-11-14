@@ -8,7 +8,8 @@ import { IconButton } from '@/components/ui/icon-button';
  * never requested for someone who just looked at the page. The visitor presses
  * play inside Spotify's own player; nothing starts by itself.
  */
-const TRACK_ID = /^[A-Za-z0-9]{10,32}$/;
+const TRACK_ID =
+  /^[A-Za-z0-9]{10,32}$/;
 
 export default function ProfileSongEmbed({
   spotifyId,
@@ -16,30 +17,71 @@ export default function ProfileSongEmbed({
   onClose,
 }: {
   spotifyId: string;
-  title: string | null;
+  title:
+    | string
+    | null;
   onClose: () => void;
 }) {
-  const { t } = useTranslation('f-profile-plus');
-  if (!TRACK_ID.test(spotifyId)) return null;
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-profile-plus',
+    );
+  if (
+    !TRACK_ID.test(
+      spotifyId,
+    )
+  )
+    return null;
   return (
     <aside
       className="surface-overlay fixed inset-x-3 bottom-24 z-40 mx-auto max-w-sm rounded-site p-2 sm:right-4 sm:left-auto sm:mx-0"
-      aria-label={t('song-embed-label', { defaultValue: 'Profile song player' })}
+      aria-label={t(
+        'song-embed-label',
+        {
+          defaultValue:
+            'Profile song player',
+        },
+      )}
     >
       <div className="mb-1 flex items-center justify-between gap-2 px-1">
         <p className="min-w-0 truncate text-xs font-medium text-site-text-muted">
-          {title ?? t('song-embed-title', { defaultValue: 'Profile song' })}
+          {title ??
+            t(
+              'song-embed-title',
+              {
+                defaultValue:
+                  'Profile song',
+              },
+            )}
         </p>
         <IconButton
-          icon={X}
+          icon={
+            X
+          }
           size="icon-xs"
           variant="ghost"
-          onClick={onClose}
-          label={t('song-embed-close', { defaultValue: 'Close player' })}
+          onClick={
+            onClose
+          }
+          label={t(
+            'song-embed-close',
+            {
+              defaultValue:
+                'Close player',
+            },
+          )}
         />
       </div>
       <iframe
-        title={t('song-embed-frame', { defaultValue: 'Spotify player' })}
+        title={t(
+          'song-embed-frame',
+          {
+            defaultValue:
+              'Spotify player',
+          },
+        )}
         src={`https://open.spotify.com/embed/track/${spotifyId}`}
         width="100%"
         height="80"

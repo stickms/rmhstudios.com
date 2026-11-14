@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { Download, Flame } from 'lucide-react';
+import {
+  Download,
+  Flame,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
@@ -8,187 +11,558 @@ import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import type { ProfileResponse } from '@/lib/perf/admin-types';
-import { DataTable, type Column } from './DataTable';
-import { fmtMs, fmtNum, fmtInt } from './format';
+import {
+  DataTable,
+  type Column,
+} from './DataTable';
+import {
+  fmtMs,
+  fmtNum,
+  fmtInt,
+} from './format';
 import type { ProfileSummaryRow } from '@/lib/perf/admin-types';
 
-const DURATIONS = ['5', '10', '20', '30'];
+const DURATIONS =
+  [
+    '5',
+    '10',
+    '20',
+    '30',
+  ];
 
 /** Shorten a script URL for display: keep the tail, which is the informative part. */
-function shortUrl(url: string): string {
-  const clean = url.replace(/^file:\/\//, '');
-  return clean.length > 70 ? `…${clean.slice(-69)}` : clean;
+function shortUrl(
+  url: string,
+): string {
+  const clean =
+    url.replace(
+      /^file:\/\//,
+      '',
+    );
+  return clean.length >
+    70
+    ? `…${clean.slice(-69)}`
+    : clean;
 }
 
 export function ProfilerTab() {
-  const { t } = useTranslation('f-perf');
-  const [seconds, setSeconds] = useState('10');
-  const [busy, setBusy] = useState<'download' | 'summary' | null>(null);
-  const [result, setResult] = useState<ProfileResponse | null>(null);
-  const arrival = useArrival(result !== null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-perf',
+    );
+  const [
+    seconds,
+    setSeconds,
+  ] =
+    useState(
+      '10',
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState<
+      | 'download'
+      | 'summary'
+      | null
+    >(
+      null,
+    );
+  const [
+    result,
+    setResult,
+  ] =
+    useState<ProfileResponse | null>(
+      null,
+    );
+  const arrival =
+    useArrival(
+      result !==
+        null,
+    );
 
-  const run = async (mode: 'download' | 'summary') => {
-    setBusy(mode);
-    try {
-      const res = await fetch(`/api/admin/perf/profile${mode === 'summary' ? '?summary=1' : ''}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ seconds: Number(seconds) }),
-      });
-      if (res.status === 409) {
-        toast.error(
-          t('profile-busy', {
-            defaultValue: 'A profile is already running on that worker. Try again in a moment.',
-          }),
-        );
-        return;
-      }
-      if (!res.ok) throw new Error(String(res.status));
-      if (mode === 'summary') {
-        setResult((await res.json()) as ProfileResponse);
-        return;
-      }
-      const name =
-        /filename="([^"]+)"/.exec(res.headers.get('content-disposition') ?? '')?.[1] ??
-        'web.cpuprofile';
-      const url = URL.createObjectURL(await res.blob());
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = name;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success(
-        t('profile-saved', {
-          defaultValue: 'Saved {{name}}. Open it in Chrome DevTools, Performance tab.',
-          name,
-        }),
+  const run =
+    async (
+      mode:
+        | 'download'
+        | 'summary',
+    ) => {
+      setBusy(
+        mode,
       );
-    } catch {
-      toast.error(t('profile-failed', { defaultValue: 'Profiling failed.' }));
-    } finally {
-      setBusy(null);
-    }
-  };
+      try {
+        const res =
+          await fetch(
+            `/api/admin/perf/profile${mode === 'summary' ? '?summary=1' : ''}`,
+            {
+              method:
+                'POST',
+              credentials:
+                'include',
+              headers:
+                {
+                  'content-type':
+                    'application/json',
+                },
+              body: JSON.stringify(
+                {
+                  seconds:
+                    Number(
+                      seconds,
+                    ),
+                },
+              ),
+            },
+          );
+        if (
+          res.status ===
+          409
+        ) {
+          toast.error(
+            t(
+              'profile-busy',
+              {
+                defaultValue:
+                  'A profile is already running on that worker. Try again in a moment.',
+              },
+            ),
+          );
+          return;
+        }
+        if (
+          !res.ok
+        )
+          throw new Error(
+            String(
+              res.status,
+            ),
+          );
+        if (
+          mode ===
+          'summary'
+        ) {
+          setResult(
+            (await res.json()) as ProfileResponse,
+          );
+          return;
+        }
+        const name =
+          /filename="([^"]+)"/.exec(
+            res.headers.get(
+              'content-disposition',
+            ) ??
+              '',
+          )?.[1] ??
+          'web.cpuprofile';
+        const url =
+          URL.createObjectURL(
+            await res.blob(),
+          );
+        const a =
+          document.createElement(
+            'a',
+          );
+        a.href =
+          url;
+        a.download =
+          name;
+        a.click();
+        URL.revokeObjectURL(
+          url,
+        );
+        toast.success(
+          t(
+            'profile-saved',
+            {
+              defaultValue:
+                'Saved {{name}}. Open it in Chrome DevTools, Performance tab.',
+              name,
+            },
+          ),
+        );
+      } catch {
+        toast.error(
+          t(
+            'profile-failed',
+            {
+              defaultValue:
+                'Profiling failed.',
+            },
+          ),
+        );
+      } finally {
+        setBusy(
+          null,
+        );
+      }
+    };
 
-  const columns: Column<ProfileSummaryRow>[] = [
-    {
-      id: 'fn',
-      header: t('col-function', { defaultValue: 'Function' }),
-      render: (r) => <span className="t-meta text-site-text break-all">{r.functionName}</span>,
-    },
-    {
-      id: 'loc',
-      header: t('col-location', { defaultValue: 'Location' }),
-      render: (r) =>
-        r.url ? (
-          <span className="t-meta break-all" title={`${r.url}:${r.line}:${r.column}`}>
-            {shortUrl(r.url)}:{r.line}:{r.column}
-          </span>
-        ) : (
-          <span className="text-site-text-muted">—</span>
-        ),
-    },
-    {
-      id: 'self',
-      header: t('col-self-time', { defaultValue: 'Self time' }),
-      align: 'right',
-      sortValue: (r) => r.selfMs,
-      render: (r) => fmtMs(r.selfMs),
-    },
-    {
-      id: 'pct',
-      header: t('col-self-pct', { defaultValue: 'Self %' }),
-      align: 'right',
-      sortValue: (r) => r.selfPercent,
-      render: (r) => `${fmtNum(r.selfPercent, 1)}%`,
-    },
-    {
-      id: 'samples',
-      header: t('col-samples', { defaultValue: 'Samples' }),
-      align: 'right',
-      sortValue: (r) => r.samples,
-      render: (r) => fmtInt(r.samples),
-    },
-  ];
+  const columns: Column<ProfileSummaryRow>[] =
+    [
+      {
+        id: 'fn',
+        header:
+          t(
+            'col-function',
+            {
+              defaultValue:
+                'Function',
+            },
+          ),
+        render:
+          (
+            r,
+          ) => (
+            <span className="t-meta text-site-text break-all">
+              {
+                r.functionName
+              }
+            </span>
+          ),
+      },
+      {
+        id: 'loc',
+        header:
+          t(
+            'col-location',
+            {
+              defaultValue:
+                'Location',
+            },
+          ),
+        render:
+          (
+            r,
+          ) =>
+            r.url ? (
+              <span
+                className="t-meta break-all"
+                title={`${r.url}:${r.line}:${r.column}`}
+              >
+                {shortUrl(
+                  r.url,
+                )}
+                :
+                {
+                  r.line
+                }
+                :
+                {
+                  r.column
+                }
+              </span>
+            ) : (
+              <span className="text-site-text-muted">
+                —
+              </span>
+            ),
+      },
+      {
+        id: 'self',
+        header:
+          t(
+            'col-self-time',
+            {
+              defaultValue:
+                'Self time',
+            },
+          ),
+        align:
+          'right',
+        sortValue:
+          (
+            r,
+          ) =>
+            r.selfMs,
+        render:
+          (
+            r,
+          ) =>
+            fmtMs(
+              r.selfMs,
+            ),
+      },
+      {
+        id: 'pct',
+        header:
+          t(
+            'col-self-pct',
+            {
+              defaultValue:
+                'Self %',
+            },
+          ),
+        align:
+          'right',
+        sortValue:
+          (
+            r,
+          ) =>
+            r.selfPercent,
+        render:
+          (
+            r,
+          ) =>
+            `${fmtNum(r.selfPercent, 1)}%`,
+      },
+      {
+        id: 'samples',
+        header:
+          t(
+            'col-samples',
+            {
+              defaultValue:
+                'Samples',
+            },
+          ),
+        align:
+          'right',
+        sortValue:
+          (
+            r,
+          ) =>
+            r.samples,
+        render:
+          (
+            r,
+          ) =>
+            fmtInt(
+              r.samples,
+            ),
+      },
+    ];
 
   return (
     <div className="space-y-6">
       <section className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
         <p className="t-body text-site-text-muted">
-          {t('profile-intro', {
-            defaultValue:
-              'Samples the JavaScript call stack of ONE web worker (whichever the cluster routes this request to; its pid is shown with the result) at 1 ms intervals. Users are not affected beyond a few percent of that worker’s CPU while it runs.',
-          })}
+          {t(
+            'profile-intro',
+            {
+              defaultValue:
+                'Samples the JavaScript call stack of ONE web worker (whichever the cluster routes this request to; its pid is shown with the result) at 1 ms intervals. Users are not affected beyond a few percent of that worker’s CPU while it runs.',
+            },
+          )}
         </p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="space-y-1 t-meta">
-            <span>{t('profile-duration', { defaultValue: 'Duration' })}</span>
+            <span>
+              {t(
+                'profile-duration',
+                {
+                  defaultValue:
+                    'Duration',
+                },
+              )}
+            </span>
             <Select
-              value={seconds}
-              onChange={(e) => setSeconds(e.target.value)}
-              disabled={busy !== null}
+              value={
+                seconds
+              }
+              onChange={(
+                e,
+              ) =>
+                setSeconds(
+                  e
+                    .target
+                    .value,
+                )
+              }
+              disabled={
+                busy !==
+                null
+              }
               controlSize="sm"
-              aria-label={t('profile-duration-label', {
-                defaultValue: 'Profile duration in seconds',
-              })}
+              aria-label={t(
+                'profile-duration-label',
+                {
+                  defaultValue:
+                    'Profile duration in seconds',
+                },
+              )}
             >
-              {DURATIONS.map((d) => (
-                <option key={d} value={d}>
-                  {t('profile-seconds', { defaultValue: '{{count}} s', count: Number(d) })}
-                </option>
-              ))}
+              {DURATIONS.map(
+                (
+                  d,
+                ) => (
+                  <option
+                    key={
+                      d
+                    }
+                    value={
+                      d
+                    }
+                  >
+                    {t(
+                      'profile-seconds',
+                      {
+                        defaultValue:
+                          '{{count}} s',
+                        count:
+                          Number(
+                            d,
+                          ),
+                      },
+                    )}
+                  </option>
+                ),
+              )}
             </Select>
           </label>
-          <Button onClick={() => void run('download')} disabled={busy !== null}>
-            <Download aria-hidden />
-            {t('profile-capture', { defaultValue: 'Capture CPU profile' })}
+          <Button
+            onClick={() =>
+              void run(
+                'download',
+              )
+            }
+            disabled={
+              busy !==
+              null
+            }
+          >
+            <Download
+              aria-hidden
+            />
+            {t(
+              'profile-capture',
+              {
+                defaultValue:
+                  'Capture CPU profile',
+              },
+            )}
           </Button>
-          <Button variant="default" onClick={() => void run('summary')} disabled={busy !== null}>
-            <Flame aria-hidden />
-            {t('profile-summarise', { defaultValue: 'Capture & summarise' })}
+          <Button
+            variant="default"
+            onClick={() =>
+              void run(
+                'summary',
+              )
+            }
+            disabled={
+              busy !==
+              null
+            }
+          >
+            <Flame
+              aria-hidden
+            />
+            {t(
+              'profile-summarise',
+              {
+                defaultValue:
+                  'Capture & summarise',
+              },
+            )}
           </Button>
         </div>
         <p className="t-body text-site-text-muted">
-          {t('profile-hint', {
-            defaultValue:
-              'The downloaded .cpuprofile opens in Chrome DevTools: Performance tab, Load profile.',
-          })}
+          {t(
+            'profile-hint',
+            {
+              defaultValue:
+                'The downloaded .cpuprofile opens in Chrome DevTools: Performance tab, Load profile.',
+            },
+          )}
         </p>
         {busy && (
-          <div className="flex items-center gap-2 t-body text-site-text-muted" role="status">
-            <Spinner size={18} />
-            {t('profile-running', {
-              defaultValue: 'Profiling for {{count}} s…',
-              count: Number(seconds),
-            })}
+          <div
+            className="flex items-center gap-2 t-body text-site-text-muted"
+            role="status"
+          >
+            <Spinner
+              size={
+                18
+              }
+            />
+            {t(
+              'profile-running',
+              {
+                defaultValue:
+                  'Profiling for {{count}} s…',
+                count:
+                  Number(
+                    seconds,
+                  ),
+              },
+            )}
           </div>
         )}
       </section>
 
       {result && (
-        <section className={cn('space-y-3', arrival)}>
+        <section
+          className={cn(
+            'space-y-3',
+            arrival,
+          )}
+        >
           <h2 className="t-heading text-site-text">
-            {t('profile-result', {
-              defaultValue: 'Top functions by self time (worker pid {{pid}}, {{count}} s)',
-              pid: result.pid,
-              count: result.seconds,
-            })}
+            {t(
+              'profile-result',
+              {
+                defaultValue:
+                  'Top functions by self time (worker pid {{pid}}, {{count}} s)',
+                pid: result.pid,
+                count:
+                  result.seconds,
+              },
+            )}
           </h2>
           <p className="t-body text-site-text-muted">
-            {t('profile-result-meta', {
-              defaultValue: '{{samples}} samples; the worker was idle {{idle}}% of the time.',
-              samples: fmtInt(result.sampleCount),
-              idle: fmtNum(result.idlePercent, 1),
-            })}
+            {t(
+              'profile-result-meta',
+              {
+                defaultValue:
+                  '{{samples}} samples; the worker was idle {{idle}}% of the time.',
+                samples:
+                  fmtInt(
+                    result.sampleCount,
+                  ),
+                idle: fmtNum(
+                  result.idlePercent,
+                  1,
+                ),
+              },
+            )}
           </p>
           <DataTable
-            rows={result.top}
-            columns={columns}
-            rowKey={(r) => `${r.functionName}|${r.url}|${r.line}|${r.column}`}
-            initialSort={{ id: 'self', dir: 'desc' }}
-            empty={t('profile-empty', { defaultValue: 'No samples were captured.' })}
-            sortLabel={(h) => t('sort-by', { defaultValue: 'Sort by {{column}}', column: h })}
+            rows={
+              result.top
+            }
+            columns={
+              columns
+            }
+            rowKey={(
+              r,
+            ) =>
+              `${r.functionName}|${r.url}|${r.line}|${r.column}`
+            }
+            initialSort={{
+              id: 'self',
+              dir: 'desc',
+            }}
+            empty={t(
+              'profile-empty',
+              {
+                defaultValue:
+                  'No samples were captured.',
+              },
+            )}
+            sortLabel={(
+              h,
+            ) =>
+              t(
+                'sort-by',
+                {
+                  defaultValue:
+                    'Sort by {{column}}',
+                  column:
+                    h,
+                },
+              )
+            }
           />
         </section>
       )}

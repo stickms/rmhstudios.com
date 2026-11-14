@@ -6,12 +6,23 @@
  */
 
 import { registerEntityClass } from '../entity-registry';
-import { registerWeapon, type WeaponSpec } from '../weapon-api';
+import {
+  registerWeapon,
+  type WeaponSpec,
+} from '../weapon-api';
 import { ObjectDispenser } from './dispenser';
 import { ObjectSapper } from './sapper';
-import { ObjectSentrygun, SentryRocket } from './sentry';
+import {
+  ObjectSentrygun,
+  SentryRocket,
+} from './sentry';
 import { ObjectTeleporter } from './teleporter';
-import { isSapperItem, PdaEngineerBuild, PdaEngineerDestroy, WeaponBuilder } from './weapons';
+import {
+  isSapperItem,
+  PdaEngineerBuild,
+  PdaEngineerDestroy,
+  WeaponBuilder,
+} from './weapons';
 
 export * from './base-object';
 export * from './net';
@@ -31,23 +42,71 @@ let registered = false;
  * spy's sapper for a sapper item) and tf_weapon_sapper.
  */
 export function registerBuildings(): void {
-  if (registered) return;
+  if (
+    registered
+  )
+    return;
   registered = true;
-  registerEntityClass('obj_sentrygun', ObjectSentrygun);
-  registerEntityClass('obj_dispenser', ObjectDispenser);
-  registerEntityClass('obj_teleporter', ObjectTeleporter);
-  registerEntityClass('obj_attachment_sapper', ObjectSapper);
-  registerEntityClass('tf_projectile_sentryrocket', SentryRocket);
-  registerWeapon('tf_weapon_pda_engineer_build', (spec: WeaponSpec) => new PdaEngineerBuild(spec));
+  registerEntityClass(
+    'obj_sentrygun',
+    ObjectSentrygun,
+  );
+  registerEntityClass(
+    'obj_dispenser',
+    ObjectDispenser,
+  );
+  registerEntityClass(
+    'obj_teleporter',
+    ObjectTeleporter,
+  );
+  registerEntityClass(
+    'obj_attachment_sapper',
+    ObjectSapper,
+  );
+  registerEntityClass(
+    'tf_projectile_sentryrocket',
+    SentryRocket,
+  );
+  registerWeapon(
+    'tf_weapon_pda_engineer_build',
+    (
+      spec: WeaponSpec,
+    ) =>
+      new PdaEngineerBuild(
+        spec,
+      ),
+  );
   registerWeapon(
     'tf_weapon_pda_engineer_destroy',
-    (spec: WeaponSpec) => new PdaEngineerDestroy(spec),
+    (
+      spec: WeaponSpec,
+    ) =>
+      new PdaEngineerDestroy(
+        spec,
+      ),
   );
   registerWeapon(
     'tf_weapon_builder',
-    (spec: WeaponSpec) => new WeaponBuilder(spec, isSapperItem(spec.defindex)),
+    (
+      spec: WeaponSpec,
+    ) =>
+      new WeaponBuilder(
+        spec,
+        isSapperItem(
+          spec.defindex,
+        ),
+      ),
   );
-  registerWeapon('tf_weapon_sapper', (spec: WeaponSpec) => new WeaponBuilder(spec, true));
+  registerWeapon(
+    'tf_weapon_sapper',
+    (
+      spec: WeaponSpec,
+    ) =>
+      new WeaponBuilder(
+        spec,
+        true,
+      ),
+  );
 }
 
 /** Test helper: allow `registerBuildings` to run again after the registries were cleared. */

@@ -9,9 +9,16 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Megaphone, Trophy } from 'lucide-react';
+import {
+  Megaphone,
+  Trophy,
+} from 'lucide-react';
 import type { GameResults } from '@features/gabriels-horn/engine/net/events';
-import { HornButton, Panel, SeatAvatar } from './ui';
+import {
+  HornButton,
+  Panel,
+  SeatAvatar,
+} from './ui';
 import { TableReadPanel } from './TableReadPanel';
 
 export function ResultsPanel({
@@ -21,88 +28,220 @@ export function ResultsPanel({
   onLeave,
 }: {
   results: GameResults;
-  selfSocketId: string | null;
+  selfSocketId:
+    | string
+    | null;
   onRematch: () => void;
   onLeave: () => void;
 }) {
-  const { t } = useTranslation('c-gabriels-horn');
-  const winner = results.standings.find((row) => row.place === 1);
-  const backfired = results.standings.find((row) => row.endBackfired);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-gabriels-horn',
+    );
+  const winner =
+    results.standings.find(
+      (
+        row,
+      ) =>
+        row.place ===
+        1,
+    );
+  const backfired =
+    results.standings.find(
+      (
+        row,
+      ) =>
+        row.endBackfired,
+    );
 
   return (
     <div className="gh-scene app-page app-safe-x text-app-text">
       <main className="mx-auto flex w-full max-w-md grow flex-col justify-center-safe gap-4 px-4 py-8">
         <div className="text-center">
-          <Trophy className="mx-auto size-8 text-app-accent" aria-hidden="true" />
+          <Trophy
+            className="mx-auto size-8 text-app-accent"
+            aria-hidden="true"
+          />
           <h1 className="mt-2 text-2xl font-black">
             {results.abandoned
-              ? t('results-abandoned', { defaultValue: 'The table broke up' })
+              ? t(
+                  'results-abandoned',
+                  {
+                    defaultValue:
+                      'The table broke up',
+                  },
+                )
               : winner
-                ? t('results-winner', { defaultValue: '{{name}} wins', name: winner.name })
-                : t('results-none', { defaultValue: 'No winner' })}
+                ? t(
+                    'results-winner',
+                    {
+                      defaultValue:
+                        '{{name}} wins',
+                      name: winner.name,
+                    },
+                  )
+                : t(
+                    'results-none',
+                    {
+                      defaultValue:
+                        'No winner',
+                    },
+                  )}
           </h1>
-          {winner && !results.abandoned ? (
+          {winner &&
+          !results.abandoned ? (
             <p className="mt-1 text-sm text-app-text-muted">
-              {t('results-with', { defaultValue_one: 'Holding {{count}} card after {{rounds}} rounds.',
-                defaultValue: 'Holding {{count}} cards after {{rounds}} rounds.',
-                count: winner.handCount,
-                rounds: results.rounds,
-              })}
+              {t(
+                'results-with',
+                {
+                  defaultValue_one:
+                    'Holding {{count}} card after {{rounds}} rounds.',
+                  defaultValue:
+                    'Holding {{count}} cards after {{rounds}} rounds.',
+                  count:
+                    winner.handCount,
+                  rounds:
+                    results.rounds,
+                },
+              )}
             </p>
           ) : null}
         </div>
 
         {backfired ? (
           <p className="flex items-start gap-2 rounded-app-sm border border-app-danger bg-app-danger-dim p-3 text-sm text-app-text">
-            <Megaphone className="mt-0.5 size-4 shrink-0 text-app-danger" aria-hidden="true" />
+            <Megaphone
+              className="mt-0.5 size-4 shrink-0 text-app-danger"
+              aria-hidden="true"
+            />
             <span>
-              {t('results-backfired', {
-                defaultValue:
-                  '{{name}} sounded the horn without being strictly lowest, so the call backfired and drops them to last.',
-                name: backfired.name,
-              })}
+              {t(
+                'results-backfired',
+                {
+                  defaultValue:
+                    '{{name}} sounded the horn without being strictly lowest, so the call backfired and drops them to last.',
+                  name: backfired.name,
+                },
+              )}
             </span>
           </p>
         ) : null}
 
         <Panel>
           <ol className="space-y-2">
-            {results.standings.map((row) => (
-              <li key={row.socketId} className="flex items-center gap-2">
-                <span className="w-5 shrink-0 text-end font-mono text-sm text-app-text-dim">
-                  {row.place}
-                </span>
-                <SeatAvatar name={row.name} avatarUrl={row.avatarUrl} size={28} />
-                <span className="min-w-0 grow truncate text-sm">
-                  {row.name}
-                  {row.socketId === selfSocketId ? (
-                    <span className="ms-1 text-app-text-dim">
-                      {t('you-suffix', { defaultValue: '(you)' })}
-                    </span>
-                  ) : null}
-                  {row.calledEnd ? (
-                    <Megaphone
-                      className="ms-1 inline size-3 align-baseline text-app-accent"
-                      aria-label={t('sounded-the-horn', { defaultValue: 'Sounded the horn' })}
-                    />
-                  ) : null}
-                </span>
-                <span className="shrink-0 font-mono text-sm font-bold tabular-nums">
-                  {t('card-count', { defaultValue_one: '{{count}} card', defaultValue: '{{count}} cards', count: row.handCount })}
-                </span>
-              </li>
-            ))}
+            {results.standings.map(
+              (
+                row,
+              ) => (
+                <li
+                  key={
+                    row.socketId
+                  }
+                  className="flex items-center gap-2"
+                >
+                  <span className="w-5 shrink-0 text-end font-mono text-sm text-app-text-dim">
+                    {
+                      row.place
+                    }
+                  </span>
+                  <SeatAvatar
+                    name={
+                      row.name
+                    }
+                    avatarUrl={
+                      row.avatarUrl
+                    }
+                    size={
+                      28
+                    }
+                  />
+                  <span className="min-w-0 grow truncate text-sm">
+                    {
+                      row.name
+                    }
+                    {row.socketId ===
+                    selfSocketId ? (
+                      <span className="ms-1 text-app-text-dim">
+                        {t(
+                          'you-suffix',
+                          {
+                            defaultValue:
+                              '(you)',
+                          },
+                        )}
+                      </span>
+                    ) : null}
+                    {row.calledEnd ? (
+                      <Megaphone
+                        className="ms-1 inline size-3 align-baseline text-app-accent"
+                        aria-label={t(
+                          'sounded-the-horn',
+                          {
+                            defaultValue:
+                              'Sounded the horn',
+                          },
+                        )}
+                      />
+                    ) : null}
+                  </span>
+                  <span className="shrink-0 font-mono text-sm font-bold tabular-nums">
+                    {t(
+                      'card-count',
+                      {
+                        defaultValue_one:
+                          '{{count}} card',
+                        defaultValue:
+                          '{{count}} cards',
+                        count:
+                          row.handCount,
+                      },
+                    )}
+                  </span>
+                </li>
+              ),
+            )}
           </ol>
         </Panel>
 
-        <TableReadPanel results={results} selfSocketId={selfSocketId} />
+        <TableReadPanel
+          results={
+            results
+          }
+          selfSocketId={
+            selfSocketId
+          }
+        />
 
         <div className="grid gap-2">
-          <HornButton variant="primary" onClick={onRematch}>
-            {t('rematch', { defaultValue: 'Again' })}
+          <HornButton
+            variant="primary"
+            onClick={
+              onRematch
+            }
+          >
+            {t(
+              'rematch',
+              {
+                defaultValue:
+                  'Again',
+              },
+            )}
           </HornButton>
-          <HornButton variant="ghost" onClick={onLeave}>
-            {t('leave-table', { defaultValue: 'Leave' })}
+          <HornButton
+            variant="ghost"
+            onClick={
+              onLeave
+            }
+          >
+            {t(
+              'leave-table',
+              {
+                defaultValue:
+                  'Leave',
+              },
+            )}
           </HornButton>
         </div>
       </main>

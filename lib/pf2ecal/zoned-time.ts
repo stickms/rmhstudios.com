@@ -19,7 +19,8 @@
  */
 
 /** The timezone the campaign's schedule is *defined* in. */
-export const CAMPAIGN_TIME_ZONE = 'America/New_York';
+export const CAMPAIGN_TIME_ZONE =
+  'America/New_York';
 
 /**
  * The timezone shown in parentheses beside every time on the page.
@@ -30,7 +31,8 @@ export const CAMPAIGN_TIME_ZONE = 'America/New_York';
  * force — so the parenthetical stays correct through 2026-11-01 instead of
  * quietly lying for four months.
  */
-export const REFERENCE_TIME_ZONE = 'America/Chicago';
+export const REFERENCE_TIME_ZONE =
+  'America/Chicago';
 
 /** Calendar fields of an instant, as read in some timezone. */
 export interface ZonedParts {
@@ -42,44 +44,105 @@ export interface ZonedParts {
   second: number;
 }
 
-const partsCache = new Map<string, Intl.DateTimeFormat>();
+const partsCache =
+  new Map<
+    string,
+    Intl.DateTimeFormat
+  >();
 
-function partsFormatter(timeZone: string): Intl.DateTimeFormat {
-  let fmt = partsCache.get(timeZone);
-  if (!fmt) {
-    fmt = new Intl.DateTimeFormat('en-US', {
+function partsFormatter(
+  timeZone: string,
+): Intl.DateTimeFormat {
+  let fmt =
+    partsCache.get(
       timeZone,
-      hour12: false,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-    partsCache.set(timeZone, fmt);
+    );
+  if (
+    !fmt
+  ) {
+    fmt =
+      new Intl.DateTimeFormat(
+        'en-US',
+        {
+          timeZone,
+          hour12: false,
+          year: 'numeric',
+          month:
+            '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute:
+            '2-digit',
+          second:
+            '2-digit',
+        },
+      );
+    partsCache.set(
+      timeZone,
+      fmt,
+    );
   }
   return fmt;
 }
 
 /** Read an instant's wall-clock fields in `timeZone`. */
-export function getZonedParts(instant: Date, timeZone: string): ZonedParts {
-  const parts = partsFormatter(timeZone).formatToParts(instant);
-  const read = (type: Intl.DateTimeFormatPartTypes): number => {
-    const value = parts.find((p) => p.type === type)?.value ?? '0';
-    return Number.parseInt(value, 10);
-  };
+export function getZonedParts(
+  instant: Date,
+  timeZone: string,
+): ZonedParts {
+  const parts =
+    partsFormatter(
+      timeZone,
+    ).formatToParts(
+      instant,
+    );
+  const read =
+    (
+      type: Intl.DateTimeFormatPartTypes,
+    ): number => {
+      const value =
+        parts.find(
+          (
+            p,
+          ) =>
+            p.type ===
+            type,
+        )
+          ?.value ??
+        '0';
+      return Number.parseInt(
+        value,
+        10,
+      );
+    };
   // `hour12: false` still renders midnight as "24" in some ICU versions
   // (hourCycle h24 rather than h23); normalise so arithmetic on the result
   // cannot land a day ahead.
-  const hour = read('hour') % 24;
+  const hour =
+    read(
+      'hour',
+    ) %
+    24;
   return {
-    year: read('year'),
-    month: read('month'),
-    day: read('day'),
+    year: read(
+      'year',
+    ),
+    month:
+      read(
+        'month',
+      ),
+    day: read(
+      'day',
+    ),
     hour,
-    minute: read('minute'),
-    second: read('second'),
+    minute:
+      read(
+        'minute',
+      ),
+    second:
+      read(
+        'second',
+      ),
   };
 }
 
@@ -87,11 +150,31 @@ export function getZonedParts(instant: Date, timeZone: string): ZonedParts {
  * The offset of `timeZone` from UTC at `instant`, in minutes (east positive, so
  * New York in summer is -240).
  */
-function offsetMinutesAt(instant: Date, timeZone: string): number {
-  const p = getZonedParts(instant, timeZone);
-  const asUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+function offsetMinutesAt(
+  instant: Date,
+  timeZone: string,
+): number {
+  const p =
+    getZonedParts(
+      instant,
+      timeZone,
+    );
+  const asUtc =
+    Date.UTC(
+      p.year,
+      p.month -
+        1,
+      p.day,
+      p.hour,
+      p.minute,
+      p.second,
+    );
   // Round to the minute: `asUtc` drops sub-second precision that `instant` has.
-  return Math.round((asUtc - instant.getTime()) / 60_000);
+  return Math.round(
+    (asUtc -
+      instant.getTime()) /
+      60_000,
+  );
 }
 
 /**
@@ -119,35 +202,83 @@ export function zonedTimeToUtc(
   },
   timeZone: string,
 ): Date {
-  const naive = Date.UTC(
-    parts.year,
-    parts.month - 1,
-    parts.day,
-    parts.hour ?? 0,
-    parts.minute ?? 0,
-    parts.second ?? 0,
-  );
-  let instant = naive;
-  for (let pass = 0; pass < 2; pass++) {
-    const offset = offsetMinutesAt(new Date(instant), timeZone);
-    const corrected = naive - offset * 60_000;
-    if (corrected === instant) break;
-    instant = corrected;
+  const naive =
+    Date.UTC(
+      parts.year,
+      parts.month -
+        1,
+      parts.day,
+      parts.hour ??
+        0,
+      parts.minute ??
+        0,
+      parts.second ??
+        0,
+    );
+  let instant =
+    naive;
+  for (
+    let pass = 0;
+    pass <
+    2;
+    pass++
+  ) {
+    const offset =
+      offsetMinutesAt(
+        new Date(
+          instant,
+        ),
+        timeZone,
+      );
+    const corrected =
+      naive -
+      offset *
+        60_000;
+    if (
+      corrected ===
+      instant
+    )
+      break;
+    instant =
+      corrected;
   }
-  return new Date(instant);
+  return new Date(
+    instant,
+  );
 }
 
 /** Day of week (0 = Sunday) of an instant as read in `timeZone`. */
-export function zonedDayOfWeek(instant: Date, timeZone: string): number {
-  const p = getZonedParts(instant, timeZone);
+export function zonedDayOfWeek(
+  instant: Date,
+  timeZone: string,
+): number {
+  const p =
+    getZonedParts(
+      instant,
+      timeZone,
+    );
   // Day-of-week is a property of the calendar date, so build the date in UTC
   // and read it there — `getUTCDay` on the zone's own fields.
-  return new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay();
+  return new Date(
+    Date.UTC(
+      p.year,
+      p.month -
+        1,
+      p.day,
+    ),
+  ).getUTCDay();
 }
 
 /** `YYYY-MM-DD` for an instant as read in `timeZone`. */
-export function zonedDateKey(instant: Date, timeZone: string): string {
-  const p = getZonedParts(instant, timeZone);
+export function zonedDateKey(
+  instant: Date,
+  timeZone: string,
+): string {
+  const p =
+    getZonedParts(
+      instant,
+      timeZone,
+    );
   return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
 }
 
@@ -157,26 +288,63 @@ export function zonedDateKey(instant: Date, timeZone: string): string {
  */
 export function resolveLocalTimeZone(): string {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || CAMPAIGN_TIME_ZONE;
+    return (
+      Intl.DateTimeFormat().resolvedOptions()
+        .timeZone ||
+      CAMPAIGN_TIME_ZONE
+    );
   } catch {
     return CAMPAIGN_TIME_ZONE;
   }
 }
 
 /** The short zone abbreviation in force at `instant` — "CDT", "CST", "GMT+9". */
-export function zoneAbbreviation(instant: Date, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    timeZoneName: 'short',
-    hour: 'numeric',
-  }).formatToParts(instant);
-  return parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+export function zoneAbbreviation(
+  instant: Date,
+  timeZone: string,
+): string {
+  const parts =
+    new Intl.DateTimeFormat(
+      'en-US',
+      {
+        timeZone,
+        timeZoneName:
+          'short',
+        hour: 'numeric',
+      },
+    ).formatToParts(
+      instant,
+    );
+  return (
+    parts.find(
+      (
+        p,
+      ) =>
+        p.type ===
+        'timeZoneName',
+    )
+      ?.value ??
+    ''
+  );
 }
 
 /**
  * Whether two instants land on the same calendar day in `timeZone`. Used to
  * decide when a session's end time needs its own date beside it.
  */
-export function isSameZonedDay(a: Date, b: Date, timeZone: string): boolean {
-  return zonedDateKey(a, timeZone) === zonedDateKey(b, timeZone);
+export function isSameZonedDay(
+  a: Date,
+  b: Date,
+  timeZone: string,
+): boolean {
+  return (
+    zonedDateKey(
+      a,
+      timeZone,
+    ) ===
+    zonedDateKey(
+      b,
+      timeZone,
+    )
+  );
 }

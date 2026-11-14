@@ -5,8 +5,12 @@
 
 export interface PartyMemberView {
   userId: string;
-  name: string | null;
-  image: string | null;
+  name:
+    | string
+    | null;
+  image:
+    | string
+    | null;
   isLeader: boolean;
 }
 
@@ -19,7 +23,15 @@ export interface PartyView {
 
 export interface PartyInviteMsg {
   partyId: string;
-  from: { userId: string; name: string | null; image: string | null };
+  from: {
+    userId: string;
+    name:
+      | string
+      | null;
+    image:
+      | string
+      | null;
+  };
 }
 
 /** Emitted to every member when the leader queues a game. */

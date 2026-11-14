@@ -22,7 +22,11 @@
  * strike and count once. The window is per target: the first note after Next is always a try.
  */
 import { pitchPoints } from '../scoring/pitch';
-import { scoreFromPoints, starsFor, type Stars } from '../scoring/stars';
+import {
+  scoreFromPoints,
+  starsFor,
+  type Stars,
+} from '../scoring/stars';
 import type { CompleteOutcome } from './learn-data';
 import type { Machine } from './runner';
 
@@ -40,7 +44,9 @@ export interface Target {
 
 /** A note as the hub reports it (cents only from the microphone). */
 export interface Played {
-  type: 'on' | 'off';
+  type:
+    | 'on'
+    | 'off';
   midi: number;
   cents?: number;
   /** ms, `performance.now()` clock. */
@@ -83,131 +89,461 @@ export type State =
       /** The note of the last try (as `SessionState` keeps the answer). */
       answer: Played;
     }
-  | { kind: 'saving'; correct: number; total: number; score: number; attempt: number }
-  | { kind: 'saved'; correct: number; total: number; score: number; stars: Stars }
-  | { kind: 'failed'; correct: number; total: number; score: number; attempt: number }
-  | { kind: 'signed-out'; correct: number; total: number; score: number };
+  | {
+      kind: 'saving';
+      correct: number;
+      total: number;
+      score: number;
+      attempt: number;
+    }
+  | {
+      kind: 'saved';
+      correct: number;
+      total: number;
+      score: number;
+      stars: Stars;
+    }
+  | {
+      kind: 'failed';
+      correct: number;
+      total: number;
+      score: number;
+      attempt: number;
+    }
+  | {
+      kind: 'signed-out';
+      correct: number;
+      total: number;
+      score: number;
+    };
 
 export type Event =
-  | { type: 'answer'; answer: Played }
-  | { type: 'hear' }
-  | { type: 'next' }
-  | { type: 'answered'; attempt: number; outcome: CompleteOutcome }
-  | { type: 'retry' };
+  | {
+      type: 'answer';
+      answer: Played;
+    }
+  | {
+      type: 'hear';
+    }
+  | {
+      type: 'next';
+    }
+  | {
+      type: 'answered';
+      attempt: number;
+      outcome: CompleteOutcome;
+    }
+  | {
+      type: 'retry';
+    };
 
 export type Effect =
   /** Sound the target (the learner asked to hear it). */
-  | { type: 'play'; midi: number }
+  | {
+      type: 'play';
+      midi: number;
+    }
   /** Save the completion; answer with `answered` carrying `attempt`. */
-  | { type: 'complete'; attempt: number; score: number; stars: number };
+  | {
+      type: 'complete';
+      attempt: number;
+      score: number;
+      stars: number;
+    };
 
-export function initial(targets: Target[]): State {
-  return { kind: 'asking', cards: targets, index: 0, correct: 0, points: [], tries: [] };
+export function initial(
+  targets: Target[],
+): State {
+  return {
+    kind: 'asking',
+    cards:
+      targets,
+    index: 0,
+    correct: 0,
+    points:
+      [],
+    tries:
+      [],
+  };
 }
 
-const same = (state: State) => ({ state, effects: [] as Effect[] });
+const same =
+  (
+    state: State,
+  ) => ({
+    state,
+    effects:
+      [] as Effect[],
+  });
 
-const completeEffect = (score: number, attempt: number): Effect => ({
-  type: 'complete',
-  attempt,
-  score,
-  stars: starsFor(score),
-});
+const completeEffect =
+  (
+    score: number,
+    attempt: number,
+  ): Effect => ({
+    type: 'complete',
+    attempt,
+    score,
+    stars:
+      starsFor(
+        score,
+      ),
+  });
 
-export function step(s: State, e: Event): { state: State; effects: Effect[] } {
-  switch (e.type) {
+export function step(
+  s: State,
+  e: Event,
+): {
+  state: State;
+  effects: Effect[];
+} {
+  switch (
+    e.type
+  ) {
     case 'answer': {
-      if (s.kind !== 'asking') return same(s);
-      const card = s.cards[s.index];
-      const note = e.answer;
-      if (card === undefined || note.type !== 'on') return same(s);
-      if (!Number.isFinite(note.midi) || !Number.isFinite(note.time)) return same(s);
-      const last = s.tries[s.tries.length - 1];
-      if (last && Math.abs(note.time - last.time) < SAME_TICK_MS) return same(s);
-      const attempt: Try = {
-        midi: note.midi,
-        ...(note.cents === undefined ? {} : { cents: note.cents }),
-        time: note.time,
-        points: pitchPoints(card.midi, note),
-      };
-      const tries = [...s.tries, attempt];
-      const best = Math.max(...tries.map((t) => t.points));
-      if (best < 100 && tries.length < MATCH_TRIES) return { state: { ...s, tries }, effects: [] };
-      const right = best >= 100;
+      if (
+        s.kind !==
+        'asking'
+      )
+        return same(
+          s,
+        );
+      const card =
+        s
+          .cards[
+          s
+            .index
+        ];
+      const note =
+        e.answer;
+      if (
+        card ===
+          undefined ||
+        note.type !==
+          'on'
+      )
+        return same(
+          s,
+        );
+      if (
+        !Number.isFinite(
+          note.midi,
+        ) ||
+        !Number.isFinite(
+          note.time,
+        )
+      )
+        return same(
+          s,
+        );
+      const last =
+        s
+          .tries[
+          s
+            .tries
+            .length -
+            1
+        ];
+      if (
+        last &&
+        Math.abs(
+          note.time -
+            last.time,
+        ) <
+          SAME_TICK_MS
+      )
+        return same(
+          s,
+        );
+      const attempt: Try =
+        {
+          midi: note.midi,
+          ...(note.cents ===
+          undefined
+            ? {}
+            : {
+                cents:
+                  note.cents,
+              }),
+          time: note.time,
+          points:
+            pitchPoints(
+              card.midi,
+              note,
+            ),
+        };
+      const tries =
+        [
+          ...s.tries,
+          attempt,
+        ];
+      const best =
+        Math.max(
+          ...tries.map(
+            (
+              t,
+            ) =>
+              t.points,
+          ),
+        );
+      if (
+        best <
+          100 &&
+        tries.length <
+          MATCH_TRIES
+      )
+        return {
+          state:
+            {
+              ...s,
+              tries,
+            },
+          effects:
+            [],
+        };
+      const right =
+        best >=
+        100;
       return {
-        state: {
-          kind: 'feedback',
-          cards: s.cards,
-          index: s.index,
-          correct: s.correct + (right ? 1 : 0),
-          points: [...s.points, best],
-          tries,
-          right,
-          best,
-          answer: note,
-        },
-        effects: [],
+        state:
+          {
+            kind: 'feedback',
+            cards:
+              s.cards,
+            index:
+              s.index,
+            correct:
+              s.correct +
+              (right
+                ? 1
+                : 0),
+            points:
+              [
+                ...s.points,
+                best,
+              ],
+            tries,
+            right,
+            best,
+            answer:
+              note,
+          },
+        effects:
+          [],
       };
     }
     case 'hear': {
-      if (s.kind !== 'asking' && s.kind !== 'feedback') return same(s);
-      const card = s.cards[s.index];
-      return card ? { state: s, effects: [{ type: 'play', midi: card.midi }] } : same(s);
+      if (
+        s.kind !==
+          'asking' &&
+        s.kind !==
+          'feedback'
+      )
+        return same(
+          s,
+        );
+      const card =
+        s
+          .cards[
+          s
+            .index
+        ];
+      return card
+        ? {
+            state:
+              s,
+            effects:
+              [
+                {
+                  type: 'play',
+                  midi: card.midi,
+                },
+              ],
+          }
+        : same(
+            s,
+          );
     }
     case 'next': {
-      if (s.kind !== 'feedback') return same(s);
-      if (s.index + 1 < s.cards.length) {
+      if (
+        s.kind !==
+        'feedback'
+      )
+        return same(
+          s,
+        );
+      if (
+        s.index +
+          1 <
+        s
+          .cards
+          .length
+      ) {
         return {
-          state: {
-            kind: 'asking',
-            cards: s.cards,
-            index: s.index + 1,
-            correct: s.correct,
-            points: s.points,
-            tries: [],
-          },
-          effects: [],
+          state:
+            {
+              kind: 'asking',
+              cards:
+                s.cards,
+              index:
+                s.index +
+                1,
+              correct:
+                s.correct,
+              points:
+                s.points,
+              tries:
+                [],
+            },
+          effects:
+            [],
         };
       }
-      const score = scoreFromPoints(s.points);
-      const total = s.cards.length;
+      const score =
+        scoreFromPoints(
+          s.points,
+        );
+      const total =
+        s
+          .cards
+          .length;
       return {
-        state: { kind: 'saving', correct: s.correct, total, score, attempt: 1 },
-        effects: [completeEffect(score, 1)],
+        state:
+          {
+            kind: 'saving',
+            correct:
+              s.correct,
+            total,
+            score,
+            attempt: 1,
+          },
+        effects:
+          [
+            completeEffect(
+              score,
+              1,
+            ),
+          ],
       };
     }
     case 'answered': {
-      if (s.kind !== 'saving' || s.attempt !== e.attempt) return same(s);
-      const { correct, total, score } = s;
-      switch (e.outcome) {
+      if (
+        s.kind !==
+          'saving' ||
+        s.attempt !==
+          e.attempt
+      )
+        return same(
+          s,
+        );
+      const {
+        correct,
+        total,
+        score,
+      } =
+        s;
+      switch (
+        e.outcome
+      ) {
         case 'saved':
-          return same({ kind: 'saved', correct, total, score, stars: starsFor(score) });
+          return same(
+            {
+              kind: 'saved',
+              correct,
+              total,
+              score,
+              stars:
+                starsFor(
+                  score,
+                ),
+            },
+          );
         case 'unauthorized':
-          return same({ kind: 'signed-out', correct, total, score });
+          return same(
+            {
+              kind: 'signed-out',
+              correct,
+              total,
+              score,
+            },
+          );
         case 'failed':
         case 'invalid':
-          return same({ kind: 'failed', correct, total, score, attempt: s.attempt });
+          return same(
+            {
+              kind: 'failed',
+              correct,
+              total,
+              score,
+              attempt:
+                s.attempt,
+            },
+          );
         default:
-          return unreachable(e.outcome);
+          return unreachable(
+            e.outcome,
+          );
       }
     }
     case 'retry': {
-      if (s.kind !== 'failed') return same(s);
-      const attempt = s.attempt + 1;
+      if (
+        s.kind !==
+        'failed'
+      )
+        return same(
+          s,
+        );
+      const attempt =
+        s.attempt +
+        1;
       return {
-        state: { kind: 'saving', correct: s.correct, total: s.total, score: s.score, attempt },
-        effects: [completeEffect(s.score, attempt)],
+        state:
+          {
+            kind: 'saving',
+            correct:
+              s.correct,
+            total:
+              s.total,
+            score:
+              s.score,
+            attempt,
+          },
+        effects:
+          [
+            completeEffect(
+              s.score,
+              attempt,
+            ),
+          ],
       };
     }
     default:
-      return unreachable(e);
+      return unreachable(
+        e,
+      );
   }
 }
 
-export const matchNoteMachine = { initial, step };
+export const matchNoteMachine =
+  {
+    initial,
+    step,
+  };
 
-export function createMatchNoteMachine(targets: Target[]): Machine<State, Event, Effect> {
-  return { initial: initial(targets), step };
+export function createMatchNoteMachine(
+  targets: Target[],
+): Machine<
+  State,
+  Event,
+  Effect
+> {
+  return {
+    initial:
+      initial(
+        targets,
+      ),
+    step,
+  };
 }
 
 /**
@@ -215,10 +551,34 @@ export function createMatchNoteMachine(targets: Target[]): Machine<State, Event,
  * `match-white-keys`: the naturals C4 to C5. Piano and guitar share them in this phase (a guitar's
  * C4 is the B string's first fret; the staff shows guitar music an octave up, `targetStaff`).
  */
-export function matchNotePool(lessonId: string): number[] {
-  return lessonId === 'match-white-keys' ? [60, 62, 64, 65, 67, 69, 71, 72] : [60, 62, 64, 65, 67];
+export function matchNotePool(
+  lessonId: string,
+): number[] {
+  return lessonId ===
+    'match-white-keys'
+    ? [
+        60,
+        62,
+        64,
+        65,
+        67,
+        69,
+        71,
+        72,
+      ]
+    : [
+        60,
+        62,
+        64,
+        65,
+        67,
+      ];
 }
 
-function unreachable(x: never): never {
-  throw new Error(`match-note: unhandled ${JSON.stringify(x)}`);
+function unreachable(
+  x: never,
+): never {
+  throw new Error(
+    `match-note: unhandled ${JSON.stringify(x)}`,
+  );
 }

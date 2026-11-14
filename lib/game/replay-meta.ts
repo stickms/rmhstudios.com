@@ -9,17 +9,28 @@
  * imports these from here; `replay.ts` does not re-export them.
  */
 
-export const LIGHTS_OUT_VERSION = 'lo-1';
+export const LIGHTS_OUT_VERSION =
+  'lo-1';
 
-export const SLICE_IT_VERSION = 'si-1';
+export const SLICE_IT_VERSION =
+  'si-1';
 
 /** Neon Driftway ghost traces (U9) — display-only keyframe replays. */
-export const NEON_DRIFTWAY_GHOST_VERSION = 'nd-ghost-1';
+export const NEON_DRIFTWAY_GHOST_VERSION =
+  'nd-ghost-1';
 
 /** Display titles for the capturable games (kept in sync with lib/catalog). */
-export const REPLAY_GAME_TITLES: Record<string, string> = {
-  'lights-out': 'Lights Out',
-  'slice-it': 'Slice It!',
-  'daily-puzzle': 'Daily Puzzles',
-  'neon-driftway': 'Neon Driftway',
-};
+export const REPLAY_GAME_TITLES: Record<
+  string,
+  string
+> =
+  {
+    'lights-out':
+      'Lights Out',
+    'slice-it':
+      'Slice It!',
+    'daily-puzzle':
+      'Daily Puzzles',
+    'neon-driftway':
+      'Neon Driftway',
+  };

@@ -22,7 +22,13 @@
 
 import { zonedTimeToUtc } from '@/lib/pf2ecal/zoned-time';
 import { TRACKING_TIME_ZONE } from './config';
-import { dateKeyToUtc, daysBetween, isoWeekKey, mondayIndex, shiftDateKey } from './dates';
+import {
+  dateKeyToUtc,
+  daysBetween,
+  isoWeekKey,
+  mondayIndex,
+  shiftDateKey,
+} from './dates';
 import type { WatchDayDTO } from './types';
 
 /* -------------------------------------------------------------------------- */
@@ -62,38 +68,102 @@ export interface PunchCard {
  * of unrecorded Tuesdays look identical on a heatmap, and only one of them is a
  * fact about him.
  */
-export function buildPunchCard(days: WatchDayDTO[]): PunchCard {
-  const cells: PunchCell[] = [];
-  for (let weekday = 0; weekday < 7; weekday += 1) {
-    for (let hour = 0; hour < 24; hour += 1) {
-      cells.push({ weekday, hour, voiceSec: 0, messages: 0 });
+export function buildPunchCard(
+  days: WatchDayDTO[],
+): PunchCard {
+  const cells: PunchCell[] =
+    [];
+  for (
+    let weekday = 0;
+    weekday <
+    7;
+    weekday += 1
+  ) {
+    for (
+      let hour = 0;
+      hour <
+      24;
+      hour += 1
+    ) {
+      cells.push(
+        {
+          weekday,
+          hour,
+          voiceSec: 0,
+          messages: 0,
+        },
+      );
     }
   }
 
   let sampledDays = 0;
   for (const day of days) {
-    if (!day.hourlyVoiceSec && !day.hourlyMessages) continue;
+    if (
+      !day.hourlyVoiceSec &&
+      !day.hourlyMessages
+    )
+      continue;
     sampledDays += 1;
-    const base = mondayIndex(day.dateKey) * 24;
-    for (let hour = 0; hour < 24; hour += 1) {
-      const cell = cells[base + hour];
-      cell.voiceSec += day.hourlyVoiceSec?.[hour] ?? 0;
-      cell.messages += day.hourlyMessages?.[hour] ?? 0;
+    const base =
+      mondayIndex(
+        day.dateKey,
+      ) *
+      24;
+    for (
+      let hour = 0;
+      hour <
+      24;
+      hour += 1
+    ) {
+      const cell =
+        cells[
+          base +
+            hour
+        ];
+      cell.voiceSec +=
+        day
+          .hourlyVoiceSec?.[
+          hour
+        ] ??
+        0;
+      cell.messages +=
+        day
+          .hourlyMessages?.[
+          hour
+        ] ??
+        0;
     }
   }
 
   let maxVoiceSec = 0;
   let maxMessages = 0;
-  let busiest: PunchCell | null = null;
+  let busiest: PunchCell | null =
+    null;
   for (const cell of cells) {
-    if (cell.voiceSec > maxVoiceSec) {
-      maxVoiceSec = cell.voiceSec;
-      busiest = cell;
+    if (
+      cell.voiceSec >
+      maxVoiceSec
+    ) {
+      maxVoiceSec =
+        cell.voiceSec;
+      busiest =
+        cell;
     }
-    if (cell.messages > maxMessages) maxMessages = cell.messages;
+    if (
+      cell.messages >
+      maxMessages
+    )
+      maxMessages =
+        cell.messages;
   }
 
-  return { cells, maxVoiceSec, maxMessages, sampledDays, busiest };
+  return {
+    cells,
+    maxVoiceSec,
+    maxMessages,
+    sampledDays,
+    busiest,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -153,20 +223,63 @@ const NIGHT_ANCHOR_HOUR = 18;
  * the earlier run, which matters only for a day so empty that the length bounds
  * will discard it anyway.
  */
-function longestQuietRun(window: boolean[]): { start: number; length: number } | null {
-  let best: { start: number; length: number } | null = null;
-  let start = -1;
+function longestQuietRun(
+  window: boolean[],
+): {
+  start: number;
+  length: number;
+} | null {
+  let best: {
+    start: number;
+    length: number;
+  } | null =
+    null;
+  let start =
+    -1;
 
-  for (let index = 0; index <= window.length; index += 1) {
-    const active = index < window.length ? window[index] : true;
-    if (!active) {
-      if (start < 0) start = index;
+  for (
+    let index = 0;
+    index <=
+    window.length;
+    index += 1
+  ) {
+    const active =
+      index <
+      window.length
+        ? window[
+            index
+          ]
+        : true;
+    if (
+      !active
+    ) {
+      if (
+        start <
+        0
+      )
+        start =
+          index;
       continue;
     }
-    if (start >= 0) {
-      const length = index - start;
-      if (!best || length > best.length) best = { start, length };
-      start = -1;
+    if (
+      start >=
+      0
+    ) {
+      const length =
+        index -
+        start;
+      if (
+        !best ||
+        length >
+          best.length
+      )
+        best =
+          {
+            start,
+            length,
+          };
+      start =
+        -1;
     }
   }
   return best;
@@ -181,12 +294,20 @@ function longestQuietRun(window: boolean[]): { start: number; length: number } |
  * that a night containing a DST transition still starts and ends on the wall
  * clock hours the histograms were bucketed by.
  */
-function instantAtLocalHour(dateKey: string, hour: number): string {
-  const day = dateKeyToUtc(dateKey);
+function instantAtLocalHour(
+  dateKey: string,
+  hour: number,
+): string {
+  const day =
+    dateKeyToUtc(
+      dateKey,
+    );
   return zonedTimeToUtc(
     {
       year: day.getUTCFullYear(),
-      month: day.getUTCMonth() + 1,
+      month:
+        day.getUTCMonth() +
+        1,
       day: day.getUTCDate(),
       hour,
     },
@@ -203,21 +324,100 @@ function instantAtLocalHour(dateKey: string, hour: number): string {
  * and wrapped back. The anchor is chosen to be an hour the samples never cross —
  * 18:00 for bedtimes, 03:00 for wake-ups.
  */
-function circularMedian(hours: number[], anchor: number): number {
-  if (hours.length === 0) return 0;
-  const shifted = hours.map((hour) => (hour - anchor + 24) % 24).sort((a, b) => a - b);
-  const middle = Math.floor(shifted.length / 2);
+function circularMedian(
+  hours: number[],
+  anchor: number,
+): number {
+  if (
+    hours.length ===
+    0
+  )
+    return 0;
+  const shifted =
+    hours
+      .map(
+        (
+          hour,
+        ) =>
+          (hour -
+            anchor +
+            24) %
+          24,
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          a -
+          b,
+      );
+  const middle =
+    Math.floor(
+      shifted.length /
+        2,
+    );
   const median =
-    shifted.length % 2 === 1 ? shifted[middle] : (shifted[middle - 1] + shifted[middle]) / 2;
-  return (median + anchor) % 24;
+    shifted.length %
+      2 ===
+    1
+      ? shifted[
+          middle
+        ]
+      : (shifted[
+          middle -
+            1
+        ] +
+          shifted[
+            middle
+          ]) /
+        2;
+  return (
+    (median +
+      anchor) %
+    24
+  );
 }
 
 /** Plain median of a numeric list. */
-function median(values: number[]): number {
-  if (values.length === 0) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+function median(
+  values: number[],
+): number {
+  if (
+    values.length ===
+    0
+  )
+    return 0;
+  const sorted =
+    [
+      ...values,
+    ].sort(
+      (
+        a,
+        b,
+      ) =>
+        a -
+        b,
+    );
+  const middle =
+    Math.floor(
+      sorted.length /
+        2,
+    );
+  return sorted.length %
+    2 ===
+    1
+    ? sorted[
+        middle
+      ]
+    : (sorted[
+        middle -
+          1
+      ] +
+        sorted[
+          middle
+        ]) /
+        2;
 }
 
 /**
@@ -239,13 +439,47 @@ function median(values: number[]): number {
  * gaming has to be one of them: he games in long silent stretches, and without
  * it an evening in a game reads as an early night.
  */
-function activeHours(day: WatchDayDTO | undefined): boolean[] {
-  const hours = new Array<boolean>(24).fill(false);
-  if (!day) return hours;
-  for (const series of [day.hourlyMessages, day.hourlyVoiceSec, day.hourlyGamingSec]) {
-    if (!series) continue;
-    for (let hour = 0; hour < 24; hour += 1) {
-      if ((series[hour] ?? 0) > 0) hours[hour] = true;
+function activeHours(
+  day:
+    | WatchDayDTO
+    | undefined,
+): boolean[] {
+  const hours =
+    new Array<boolean>(
+      24,
+    ).fill(
+      false,
+    );
+  if (
+    !day
+  )
+    return hours;
+  for (const series of [
+    day.hourlyMessages,
+    day.hourlyVoiceSec,
+    day.hourlyGamingSec,
+  ]) {
+    if (
+      !series
+    )
+      continue;
+    for (
+      let hour = 0;
+      hour <
+      24;
+      hour += 1
+    ) {
+      if (
+        (series[
+          hour
+        ] ??
+          0) >
+        0
+      )
+        hours[
+          hour
+        ] =
+          true;
     }
   }
   return hours;
@@ -263,86 +497,246 @@ function activeHours(day: WatchDayDTO | undefined): boolean[] {
  * last, so a bedtime reads as "02:00" rather than "02:47" — coarser than the old
  * timestamp arithmetic, and unlike it, actually measuring the right thing.
  */
-export function inferSleep(days: WatchDayDTO[]): SleepPattern {
-  const nights: SleepWindow[] = [];
+export function inferSleep(
+  days: WatchDayDTO[],
+): SleepPattern {
+  const nights: SleepWindow[] =
+    [];
 
-  for (let index = 0; index < days.length - 1; index += 1) {
-    const day = days[index];
-    const next = days[index + 1];
+  for (
+    let index = 0;
+    index <
+    days.length -
+      1;
+    index += 1
+  ) {
+    const day =
+      days[
+        index
+      ];
+    const next =
+      days[
+        index +
+          1
+      ];
     // Consecutive calendar days only: a gap across a quiet Wednesday is two
     // nights and a day, and averaging it in would push every figure late.
-    if (daysBetween(day.dateKey, next.dateKey) !== 1) continue;
+    if (
+      daysBetween(
+        day.dateKey,
+        next.dateKey,
+      ) !==
+      1
+    )
+      continue;
 
     // The night window is 18:00 on the first day to 18:00 on the second, which
     // is the axis the card draws and the only one on which a 4am bedtime reads
     // as late. Index 0 is 18:00; hour h of the window is 24h long.
-    const today = activeHours(day);
-    const tomorrow = activeHours(next);
-    const window = Array.from({ length: 24 }, (_, offset) => {
-      const hour = (NIGHT_ANCHOR_HOUR + offset) % 24;
-      return offset < 24 - NIGHT_ANCHOR_HOUR ? today[hour] : tomorrow[hour];
-    });
+    const today =
+      activeHours(
+        day,
+      );
+    const tomorrow =
+      activeHours(
+        next,
+      );
+    const window =
+      Array.from(
+        {
+          length: 24,
+        },
+        (
+          _,
+          offset,
+        ) => {
+          const hour =
+            (NIGHT_ANCHOR_HOUR +
+              offset) %
+            24;
+          return offset <
+            24 -
+              NIGHT_ANCHOR_HOUR
+            ? today[
+                hour
+              ]
+            : tomorrow[
+                hour
+              ];
+        },
+      );
 
     // A day with no histograms at all is not a 24-hour night; it is a day the
     // tracker has nothing for. Without this, an outage would be reported as his
     // longest ever sleep.
-    if (!window.some(Boolean)) continue;
+    if (
+      !window.some(
+        Boolean,
+      )
+    )
+      continue;
 
-    const run = longestQuietRun(window);
-    if (!run) continue;
-    if (run.length < MIN_SLEEP_HOURS || run.length > MAX_SLEEP_HOURS) continue;
+    const run =
+      longestQuietRun(
+        window,
+      );
+    if (
+      !run
+    )
+      continue;
+    if (
+      run.length <
+        MIN_SLEEP_HOURS ||
+      run.length >
+        MAX_SLEEP_HOURS
+    )
+      continue;
 
-    const sleptHour = (NIGHT_ANCHOR_HOUR + run.start) % 24;
-    const wokeHour = (NIGHT_ANCHOR_HOUR + run.start + run.length) % 24;
+    const sleptHour =
+      (NIGHT_ANCHOR_HOUR +
+        run.start) %
+      24;
+    const wokeHour =
+      (NIGHT_ANCHOR_HOUR +
+        run.start +
+        run.length) %
+      24;
     // The instants are reconstructed from the hour so the export and the
     // screen-reader table can state a real time rather than an offset.
-    const sleptAt = instantAtLocalHour(day.dateKey, NIGHT_ANCHOR_HOUR + run.start);
-    const wokeAt = instantAtLocalHour(day.dateKey, NIGHT_ANCHOR_HOUR + run.start + run.length);
+    const sleptAt =
+      instantAtLocalHour(
+        day.dateKey,
+        NIGHT_ANCHOR_HOUR +
+          run.start,
+      );
+    const wokeAt =
+      instantAtLocalHour(
+        day.dateKey,
+        NIGHT_ANCHOR_HOUR +
+          run.start +
+          run.length,
+      );
 
-    nights.push({
-      nightOf: day.dateKey,
-      sleptAt,
-      wokeAt,
-      hours: run.length,
-      sleptHour,
-      wokeHour,
-    });
+    nights.push(
+      {
+        nightOf:
+          day.dateKey,
+        sleptAt,
+        wokeAt,
+        hours:
+          run.length,
+        sleptHour,
+        wokeHour,
+      },
+    );
   }
 
   // "Latest" is measured on the 18:00-anchored line, so 02:00 counts as later
   // than 23:00 rather than as the earliest bedtime in the set.
-  const bedtimeRank = (night: SleepWindow) => (night.sleptHour - 18 + 24) % 24;
+  const bedtimeRank =
+    (
+      night: SleepWindow,
+    ) =>
+      (night.sleptHour -
+        18 +
+        24) %
+      24;
 
   return {
     nights,
-    medianHours: median(nights.map((night) => night.hours)),
-    medianSleptHour: circularMedian(
-      nights.map((night) => night.sleptHour),
-      18,
-    ),
-    medianWokeHour: circularMedian(
-      nights.map((night) => night.wokeHour),
-      3,
-    ),
-    latest: nights.reduce<SleepWindow | null>(
-      (best, night) => (!best || bedtimeRank(night) > bedtimeRank(best) ? night : best),
-      null,
-    ),
-    shortest: nights.reduce<SleepWindow | null>(
-      (best, night) => (!best || night.hours < best.hours ? night : best),
-      null,
-    ),
+    medianHours:
+      median(
+        nights.map(
+          (
+            night,
+          ) =>
+            night.hours,
+        ),
+      ),
+    medianSleptHour:
+      circularMedian(
+        nights.map(
+          (
+            night,
+          ) =>
+            night.sleptHour,
+        ),
+        18,
+      ),
+    medianWokeHour:
+      circularMedian(
+        nights.map(
+          (
+            night,
+          ) =>
+            night.wokeHour,
+        ),
+        3,
+      ),
+    latest:
+      nights.reduce<SleepWindow | null>(
+        (
+          best,
+          night,
+        ) =>
+          !best ||
+          bedtimeRank(
+            night,
+          ) >
+            bedtimeRank(
+              best,
+            )
+            ? night
+            : best,
+        null,
+      ),
+    shortest:
+      nights.reduce<SleepWindow | null>(
+        (
+          best,
+          night,
+        ) =>
+          !best ||
+          night.hours <
+            best.hours
+            ? night
+            : best,
+        null,
+      ),
   };
 }
 
 /** `02:45` from a fractional local hour. */
-export function formatHourOfDay(hour: number): string {
-  if (!Number.isFinite(hour)) return '—';
-  const wrapped = ((hour % 24) + 24) % 24;
-  const hours = Math.floor(wrapped);
-  const minutes = Math.round((wrapped - hours) * 60);
+export function formatHourOfDay(
+  hour: number,
+): string {
+  if (
+    !Number.isFinite(
+      hour,
+    )
+  )
+    return '—';
+  const wrapped =
+    ((hour %
+      24) +
+      24) %
+    24;
+  const hours =
+    Math.floor(
+      wrapped,
+    );
+  const minutes =
+    Math.round(
+      (wrapped -
+        hours) *
+        60,
+    );
   // Rounding 23.999 must not produce 23:60.
-  const carry = minutes === 60 ? 1 : 0;
+  const carry =
+    minutes ===
+    60
+      ? 1
+      : 0;
   return `${String((hours + carry) % 24).padStart(2, '0')}:${String(carry ? 0 : minutes).padStart(2, '0')}`;
 }
 
@@ -353,10 +747,14 @@ export function formatHourOfDay(hour: number): string {
 /** One personal best: what it was, when, and how it is rendered. */
 export interface WatchRecord {
   id: string;
-  dateKey: string | null;
+  dateKey:
+    | string
+    | null;
   value: number;
   /** `duration` renders through `formatDuration`, `count` through `formatCount`. */
-  kind: 'duration' | 'count';
+  kind:
+    | 'duration'
+    | 'count';
 }
 
 /**
@@ -366,29 +764,113 @@ export interface WatchRecord {
  * because the labels are `t()` calls and `i18next-parser` is a static scanner:
  * a label stored beside the number here would never reach `locales/`.
  */
-export function buildRecords(days: WatchDayDTO[]): WatchRecord[] {
-  const best = (
-    id: string,
-    kind: WatchRecord['kind'],
-    pick: (day: WatchDayDTO) => number,
-  ): WatchRecord => {
-    let record: WatchRecord = { id, dateKey: null, value: 0, kind };
-    for (const day of days) {
-      const value = pick(day);
-      if (value > record.value) record = { id, dateKey: day.dateKey, value, kind };
-    }
-    return record;
-  };
+export function buildRecords(
+  days: WatchDayDTO[],
+): WatchRecord[] {
+  const best =
+    (
+      id: string,
+      kind: WatchRecord['kind'],
+      pick: (
+        day: WatchDayDTO,
+      ) => number,
+    ): WatchRecord => {
+      let record: WatchRecord =
+        {
+          id,
+          dateKey:
+            null,
+          value: 0,
+          kind,
+        };
+      for (const day of days) {
+        const value =
+          pick(
+            day,
+          );
+        if (
+          value >
+          record.value
+        )
+          record =
+            {
+              id,
+              dateKey:
+                day.dateKey,
+              value,
+              kind,
+            };
+      }
+      return record;
+    };
 
   return [
-    best('presence', 'duration', (day) => day.onlineSec + day.idleSec + day.dndSec),
-    best('voice', 'duration', (day) => day.voiceSec),
-    best('session', 'duration', (day) => day.longestVoiceSec),
-    best('messages', 'count', (day) => day.messages),
-    best('gaming', 'duration', (day) => day.gamingSec),
-    best('alone', 'duration', (day) => day.aloneSec),
-    best('late', 'duration', (day) => day.lateNightSec),
-    best('mobile', 'duration', (day) => day.mobileSec),
+    best(
+      'presence',
+      'duration',
+      (
+        day,
+      ) =>
+        day.onlineSec +
+        day.idleSec +
+        day.dndSec,
+    ),
+    best(
+      'voice',
+      'duration',
+      (
+        day,
+      ) =>
+        day.voiceSec,
+    ),
+    best(
+      'session',
+      'duration',
+      (
+        day,
+      ) =>
+        day.longestVoiceSec,
+    ),
+    best(
+      'messages',
+      'count',
+      (
+        day,
+      ) =>
+        day.messages,
+    ),
+    best(
+      'gaming',
+      'duration',
+      (
+        day,
+      ) =>
+        day.gamingSec,
+    ),
+    best(
+      'alone',
+      'duration',
+      (
+        day,
+      ) =>
+        day.aloneSec,
+    ),
+    best(
+      'late',
+      'duration',
+      (
+        day,
+      ) =>
+        day.lateNightSec,
+    ),
+    best(
+      'mobile',
+      'duration',
+      (
+        day,
+      ) =>
+        day.mobileSec,
+    ),
   ];
 }
 
@@ -402,8 +884,12 @@ export interface WeekDelta {
   current: number;
   previous: number;
   /** Signed fraction, e.g. 0.42 = up 42%. Null when last week was zero. */
-  change: number | null;
-  kind: 'duration' | 'count';
+  change:
+    | number
+    | null;
+  kind:
+    | 'duration'
+    | 'count';
 }
 
 export interface WeekComparison {
@@ -422,47 +908,149 @@ export interface WeekComparison {
  * Monday morning, which is an artefact of the calendar and not a fact about him.
  * So the previous week is measured only up to the same weekday.
  */
-export function compareWeeks(days: WatchDayDTO[], todayKey: string): WeekComparison {
-  const currentKey = isoWeekKey(todayKey);
-  const previousKey = isoWeekKey(shiftDateKey(todayKey, -7));
-  const elapsedDays = mondayIndex(todayKey) + 1;
+export function compareWeeks(
+  days: WatchDayDTO[],
+  todayKey: string,
+): WeekComparison {
+  const currentKey =
+    isoWeekKey(
+      todayKey,
+    );
+  const previousKey =
+    isoWeekKey(
+      shiftDateKey(
+        todayKey,
+        -7,
+      ),
+    );
+  const elapsedDays =
+    mondayIndex(
+      todayKey,
+    ) +
+    1;
 
-  const inWindow = (day: WatchDayDTO, weekKey: string, offsetDays: number) => {
-    if (isoWeekKey(day.dateKey) !== weekKey) return false;
-    return mondayIndex(day.dateKey) < offsetDays;
-  };
-
-  const sum = (weekKey: string, pick: (day: WatchDayDTO) => number) =>
-    days.reduce((total, day) => (inWindow(day, weekKey, elapsedDays) ? total + pick(day) : total), 0);
-
-  const delta = (
-    id: string,
-    kind: WeekDelta['kind'],
-    pick: (day: WatchDayDTO) => number,
-  ): WeekDelta => {
-    const current = sum(currentKey, pick);
-    const previous = sum(previousKey, pick);
-    return {
-      id,
-      current,
-      previous,
-      // Null rather than Infinity when last week was zero: "up ∞%" is not a
-      // reading, and the card shows the raw pair instead.
-      change: previous > 0 ? (current - previous) / previous : null,
-      kind,
+  const inWindow =
+    (
+      day: WatchDayDTO,
+      weekKey: string,
+      offsetDays: number,
+    ) => {
+      if (
+        isoWeekKey(
+          day.dateKey,
+        ) !==
+        weekKey
+      )
+        return false;
+      return (
+        mondayIndex(
+          day.dateKey,
+        ) <
+        offsetDays
+      );
     };
-  };
+
+  const sum =
+    (
+      weekKey: string,
+      pick: (
+        day: WatchDayDTO,
+      ) => number,
+    ) =>
+      days.reduce(
+        (
+          total,
+          day,
+        ) =>
+          inWindow(
+            day,
+            weekKey,
+            elapsedDays,
+          )
+            ? total +
+              pick(
+                day,
+              )
+            : total,
+        0,
+      );
+
+  const delta =
+    (
+      id: string,
+      kind: WeekDelta['kind'],
+      pick: (
+        day: WatchDayDTO,
+      ) => number,
+    ): WeekDelta => {
+      const current =
+        sum(
+          currentKey,
+          pick,
+        );
+      const previous =
+        sum(
+          previousKey,
+          pick,
+        );
+      return {
+        id,
+        current,
+        previous,
+        // Null rather than Infinity when last week was zero: "up ∞%" is not a
+        // reading, and the card shows the raw pair instead.
+        change:
+          previous >
+          0
+            ? (current -
+                previous) /
+              previous
+            : null,
+        kind,
+      };
+    };
 
   return {
     currentKey,
     previousKey,
     elapsedDays,
-    deltas: [
-      delta('presence', 'duration', (day) => day.onlineSec + day.idleSec + day.dndSec),
-      delta('voice', 'duration', (day) => day.voiceSec),
-      delta('messages', 'count', (day) => day.messages),
-      delta('gaming', 'duration', (day) => day.gamingSec),
-    ],
+    deltas:
+      [
+        delta(
+          'presence',
+          'duration',
+          (
+            day,
+          ) =>
+            day.onlineSec +
+            day.idleSec +
+            day.dndSec,
+        ),
+        delta(
+          'voice',
+          'duration',
+          (
+            day,
+          ) =>
+            day.voiceSec,
+        ),
+        delta(
+          'messages',
+          'count',
+          (
+            day,
+          ) =>
+            day.messages,
+        ),
+        delta(
+          'gaming',
+          'duration',
+          (
+            day,
+          ) =>
+            day.gamingSec,
+        ),
+      ],
   };
 }
 
@@ -476,7 +1064,8 @@ export function compareWeeks(days: WatchDayDTO[], todayKey: string): WeekCompari
  * feature with its own module and the constant is one line — but the two must
  * agree, because this page's whole projection is "at this rate, by then".
  */
-export const PLEDGE_DEADLINE_KEY = '2030-01-01';
+export const PLEDGE_DEADLINE_KEY =
+  '2030-01-01';
 
 /** One figure carried forward to the deadline. */
 export interface ProjectedFigure {
@@ -485,7 +1074,9 @@ export interface ProjectedFigure {
   perDay: number;
   /** `perDay` × days remaining — what is still to come, not a running total. */
   remaining: number;
-  kind: 'duration' | 'count';
+  kind:
+    | 'duration'
+    | 'count';
 }
 
 export interface Projection {
@@ -512,35 +1103,125 @@ export interface Projection {
  * day in the sample — quiet days included — because the days between now and
  * 2030 will include quiet ones too.
  */
-export function projectToDeadline(days: WatchDayDTO[], todayKey: string): Projection {
-  const sampleDays = days.length;
-  const daysRemaining = Math.max(0, daysBetween(todayKey, PLEDGE_DEADLINE_KEY));
+export function projectToDeadline(
+  days: WatchDayDTO[],
+  todayKey: string,
+): Projection {
+  const sampleDays =
+    days.length;
+  const daysRemaining =
+    Math.max(
+      0,
+      daysBetween(
+        todayKey,
+        PLEDGE_DEADLINE_KEY,
+      ),
+    );
 
-  const rate = (pick: (day: WatchDayDTO) => number) =>
-    sampleDays > 0 ? days.reduce((total, day) => total + pick(day), 0) / sampleDays : 0;
+  const rate =
+    (
+      pick: (
+        day: WatchDayDTO,
+      ) => number,
+    ) =>
+      sampleDays >
+      0
+        ? days.reduce(
+            (
+              total,
+              day,
+            ) =>
+              total +
+              pick(
+                day,
+              ),
+            0,
+          ) /
+          sampleDays
+        : 0;
 
-  const figure = (
-    id: string,
-    kind: ProjectedFigure['kind'],
-    pick: (day: WatchDayDTO) => number,
-  ): ProjectedFigure => {
-    const perDay = rate(pick);
-    return { id, perDay, remaining: perDay * daysRemaining, kind };
-  };
+  const figure =
+    (
+      id: string,
+      kind: ProjectedFigure['kind'],
+      pick: (
+        day: WatchDayDTO,
+      ) => number,
+    ): ProjectedFigure => {
+      const perDay =
+        rate(
+          pick,
+        );
+      return {
+        id,
+        perDay,
+        remaining:
+          perDay *
+          daysRemaining,
+        kind,
+      };
+    };
 
-  const voice = figure('voice', 'duration', (day) => day.voiceSec);
+  const voice =
+    figure(
+      'voice',
+      'duration',
+      (
+        day,
+      ) =>
+        day.voiceSec,
+    );
 
   return {
     sampleDays,
     daysRemaining,
-    figures: [
-      figure('presence', 'duration', (day) => day.onlineSec + day.idleSec + day.dndSec),
-      voice,
-      figure('messages', 'count', (day) => day.messages),
-      figure('gaming', 'duration', (day) => day.gamingSec),
-      figure('mobile', 'duration', (day) => day.mobileSec),
-    ],
-    voiceShare: daysRemaining > 0 ? voice.remaining / (daysRemaining * 86_400) : 0,
-    expired: daysRemaining === 0,
+    figures:
+      [
+        figure(
+          'presence',
+          'duration',
+          (
+            day,
+          ) =>
+            day.onlineSec +
+            day.idleSec +
+            day.dndSec,
+        ),
+        voice,
+        figure(
+          'messages',
+          'count',
+          (
+            day,
+          ) =>
+            day.messages,
+        ),
+        figure(
+          'gaming',
+          'duration',
+          (
+            day,
+          ) =>
+            day.gamingSec,
+        ),
+        figure(
+          'mobile',
+          'duration',
+          (
+            day,
+          ) =>
+            day.mobileSec,
+        ),
+      ],
+    voiceShare:
+      daysRemaining >
+      0
+        ? voice.remaining /
+          (daysRemaining *
+            86_400)
+        : 0,
+    expired:
+      daysRemaining ===
+      0,
   };
 }

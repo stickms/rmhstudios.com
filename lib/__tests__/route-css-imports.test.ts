@@ -27,12 +27,33 @@
  * (`components/creator-studio/arcade-tabs.ts`), never from a component file.
  */
 
-import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
+import {
+  readdirSync,
+  readFileSync,
+  statSync,
+} from 'node:fs';
+import {
+  join,
+  relative,
+} from 'node:path';
 
-const ROOT = join(__dirname, '..', '..');
-const ROUTES = join(ROOT, 'app', 'routes');
+const ROOT =
+  join(
+    __dirname,
+    '..',
+    '..',
+  );
+const ROUTES =
+  join(
+    ROOT,
+    'app',
+    'routes',
+  );
 
 /**
  * The shell-wide sheet, which every page of its layout needs anyway.
@@ -42,32 +63,96 @@ const ROUTES = join(ROOT, 'app', 'routes');
  * links, so the sheet is per-route by construction (the games and full-screen
  * apps all do this, and `__root.tsx` loads `globals.css` the same way).
  */
-const ALLOWED = new Map<string, string>([['app/routes/_site.tsx', '@/components/feed/feed.css']]);
+const ALLOWED =
+  new Map<
+    string,
+    string
+  >(
+    [
+      [
+        'app/routes/_site.tsx',
+        '@/components/feed/feed.css',
+      ],
+    ],
+  );
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) walk(p, out);
-    else if (/\.(tsx|ts)$/.test(name)) out.push(p);
+function walk(
+  dir: string,
+  out: string[] = [],
+): string[] {
+  for (const name of readdirSync(
+    dir,
+  )) {
+    const p =
+      join(
+        dir,
+        name,
+      );
+    if (
+      statSync(
+        p,
+      ).isDirectory()
+    )
+      walk(
+        p,
+        out,
+      );
+    else if (
+      /\.(tsx|ts)$/.test(
+        name,
+      )
+    )
+      out.push(
+        p,
+      );
   }
   return out;
 }
 
 describe('route files do not import stylesheets', () => {
   it('only the shell-wide sheets are imported at a route file’s top level', () => {
-    const offenders: string[] = [];
-    for (const file of walk(ROUTES)) {
-      const rel = relative(ROOT, file).replaceAll('\\', '/');
-      const src = readFileSync(file, 'utf8');
-      for (const [, spec] of src.matchAll(/^import\s+['"]([^'"]+\.css)['"]/gm)) {
-        if (ALLOWED.get(rel) === spec) continue;
-        offenders.push(`${rel} → ${spec}`);
+    const offenders: string[] =
+      [];
+    for (const file of walk(
+      ROUTES,
+    )) {
+      const rel =
+        relative(
+          ROOT,
+          file,
+        ).replaceAll(
+          '\\',
+          '/',
+        );
+      const src =
+        readFileSync(
+          file,
+          'utf8',
+        );
+      for (const [
+        ,
+        spec,
+      ] of src.matchAll(
+        /^import\s+['"]([^'"]+\.css)['"]/gm,
+      )) {
+        if (
+          ALLOWED.get(
+            rel,
+          ) ===
+          spec
+        )
+          continue;
+        offenders.push(
+          `${rel} → ${spec}`,
+        );
       }
     }
     expect(
       offenders,
       'a top-level CSS import in a route file lands in the entry stylesheet of EVERY page — import it from the component that uses it',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 });
 
@@ -86,43 +171,108 @@ describe('route files do not import stylesheets', () => {
  * Side effects belong behind a binding the component uses
  * (`lib/rmhbox/history-display.ts`), and a page module exports its `Route`.
  */
-const ALLOWED_EXPORTS = new Map<string, string>([
-  // A localStorage key string, read by the sign-up flow — costs nothing.
-  ['app/routes/ref.$code.tsx', 'REFERRAL_CODE_KEY'],
-]);
+const ALLOWED_EXPORTS =
+  new Map<
+    string,
+    string
+  >(
+    [
+      // A localStorage key string, read by the sign-up flow — costs nothing.
+      [
+        'app/routes/ref.$code.tsx',
+        'REFERRAL_CODE_KEY',
+      ],
+    ],
+  );
 
 describe('route files keep their definitions small', () => {
-  const pages = walk(ROUTES).filter((f) => f.endsWith('.tsx'));
+  const pages =
+    walk(
+      ROUTES,
+    ).filter(
+      (
+        f,
+      ) =>
+        f.endsWith(
+          '.tsx',
+        ),
+    );
 
   it('no bare side-effect import of a module', () => {
-    const offenders: string[] = [];
+    const offenders: string[] =
+      [];
     for (const file of pages) {
-      const src = readFileSync(file, 'utf8');
-      for (const [, spec] of src.matchAll(/^import\s+['"]([^'"]+)['"]/gm)) {
-        if (!spec.endsWith('.css')) offenders.push(`${relative(ROOT, file)} → ${spec}`);
+      const src =
+        readFileSync(
+          file,
+          'utf8',
+        );
+      for (const [
+        ,
+        spec,
+      ] of src.matchAll(
+        /^import\s+['"]([^'"]+)['"]/gm,
+      )) {
+        if (
+          !spec.endsWith(
+            '.css',
+          )
+        )
+          offenders.push(
+            `${relative(ROOT, file)} → ${spec}`,
+          );
       }
     }
     expect(
       offenders,
       'a side-effect import in a route file runs from the entry chunk of every page — import it from a module the component uses',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('a page route exports only its Route', () => {
-    const offenders: string[] = [];
+    const offenders: string[] =
+      [];
     for (const file of pages) {
-      const rel = relative(ROOT, file).replaceAll('\\', '/');
-      const src = readFileSync(file, 'utf8');
-      for (const [, name] of src.matchAll(
+      const rel =
+        relative(
+          ROOT,
+          file,
+        ).replaceAll(
+          '\\',
+          '/',
+        );
+      const src =
+        readFileSync(
+          file,
+          'utf8',
+        );
+      for (const [
+        ,
+        name,
+      ] of src.matchAll(
         /^export\s+(?:default\s+)?(?:async\s+)?(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/gm,
       )) {
-        if (name === 'Route' || ALLOWED_EXPORTS.get(rel) === name) continue;
-        offenders.push(`${rel} exports ${name}`);
+        if (
+          name ===
+            'Route' ||
+          ALLOWED_EXPORTS.get(
+            rel,
+          ) ===
+            name
+        )
+          continue;
+        offenders.push(
+          `${rel} exports ${name}`,
+        );
       }
     }
     expect(
       offenders,
       'an exported binding (and everything it references) cannot be split out of the route definition — move it to a module under components/ or lib/',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 });

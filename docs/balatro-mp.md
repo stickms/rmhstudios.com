@@ -1,159 +1,1304 @@
 # Balatro multiplayer (native P2P PvP)
 
-> Not published: `docs/conf.py` excludes this file. `/balatro` is signed-in only
-> and kept out of search, and the docs site is public. The single-player port it
-> builds on is [`balatro-wasm.md`](balatro-wasm.md); feature parity with the
-> reference multiplayer mod is tracked in [`balatro-mp-parity.md`](balatro-mp-parity.md).
+> Not
+> published:
+> `docs/conf.py`
+> excludes
+> this
+> file.
+> `/balatro`
+> is
+> signed-in
+> only
+> and
+> kept
+> out
+> of
+> search,
+> and
+> the
+> docs
+> site
+> is
+> public.
+> The
+> single-player
+> port
+> it
+> builds
+> on
+> is
+> [`balatro-wasm.md`](balatro-wasm.md);
+> feature
+> parity
+> with
+> the
+> reference
+> multiplayer
+> mod
+> is
+> tracked
+> in
+> [`balatro-mp-parity.md`](balatro-mp-parity.md).
 
-**Status: as built.** Every workstream has landed; each section below describes the code as
-it is.
+**Status:
+as
+built.**
+Every
+workstream
+has
+landed;
+each
+section
+below
+describes
+the
+code
+as
+it
+is.
 
-Multiplayer adds PvP to `/balatro` without a game server. Players connect
-peer-to-peer in a star around the lobby host. The site's socket hub only signals,
-relays when no direct path forms, and keeps the seat and queue directory. The host's
-TypeScript referees the match. Each player's Lua game reports events and applies
-outcomes. The mod's code is never used: everything is reimplemented from specs, and
-only its assets, UI design and localization strings are imported, with the owner's
+Multiplayer
+adds
+PvP
+to
+`/balatro`
+without
+a
+game
+server.
+Players
+connect
+peer-to-peer
+in
+a
+star
+around
+the
+lobby
+host.
+The
+site's
+socket
+hub
+only
+signals,
+relays
+when
+no
+direct
+path
+forms,
+and
+keeps
+the
+seat
+and
+queue
+directory.
+The
+host's
+TypeScript
+referees
+the
+match.
+Each
+player's
+Lua
+game
+reports
+events
+and
+applies
+outcomes.
+The
+mod's
+code
+is
+never
+used:
+everything
+is
+reimplemented
+from
+specs,
+and
+only
+its
+assets,
+UI
+design
+and
+localization
+strings
+are
+imported,
+with
+the
+owner's
 permission.
 
 ## 1. Architecture
 
-| Layer                | Where                                                  | Owner     |
-| -------------------- | ------------------------------------------------------ | --------- |
-| Signalling contract  | `features/balatro/engine/net/{events,limits}.ts`                   | WS0       |
-| Hub handlers         | `features/balatro/server/{p2p,queue}.ts` | WS1, WS12 |
-| Shared P2P transport | `lib/shared/p2p/`                                      | WS1       |
-| Domain types         | `features/balatro/engine/mp/types.ts`                              | WS0       |
-| P2P wire catalogue   | `features/balatro/engine/mp/wire.ts`                               | WS0       |
-| Lua↔JS mailbox       | `features/balatro/engine/mp/bridge-protocol.ts` · `bridge.ts`      | WS0 · WS3 |
-| Referee, timers      | `features/balatro/engine/mp/{referee,timer,rulesets,setup}/`       | WS4       |
-| Session runtime      | `features/balatro/engine/mp/{index,transport,lobby,match,…}.ts`    | WS5       |
-| Lua MP pack          | `features/balatro/engine/lua/mp/rmh_mp/**`                         | WS6–WS13  |
-| Generated protocol   | `features/balatro/engine/lua/mp/rmh_mp/protocol.lua`               | WS0 (gen) |
-| MP assets, loc       | `data/balatro-mp/**`                                   | WS2       |
+| Layer                | Where                                                           | Owner     |
+| -------------------- | --------------------------------------------------------------- | --------- |
+| Signalling contract  | `features/balatro/engine/net/{events,limits}.ts`                | WS0       |
+| Hub handlers         | `features/balatro/server/{p2p,queue}.ts`                        | WS1, WS12 |
+| Shared P2P transport | `lib/shared/p2p/`                                               | WS1       |
+| Domain types         | `features/balatro/engine/mp/types.ts`                           | WS0       |
+| P2P wire catalogue   | `features/balatro/engine/mp/wire.ts`                            | WS0       |
+| Lua↔JS mailbox       | `features/balatro/engine/mp/bridge-protocol.ts` · `bridge.ts`   | WS0 · WS3 |
+| Referee, timers      | `features/balatro/engine/mp/{referee,timer,rulesets,setup}/`    | WS4       |
+| Session runtime      | `features/balatro/engine/mp/{index,transport,lobby,match,…}.ts` | WS5       |
+| Lua MP pack          | `features/balatro/engine/lua/mp/rmh_mp/**`                      | WS6–WS13  |
+| Generated protocol   | `features/balatro/engine/lua/mp/rmh_mp/protocol.lua`            | WS0 (gen) |
+| MP assets, loc       | `data/balatro-mp/**`                                            | WS2       |
 
-**Topology.** A star around the lobby host. `transport/host-star.ts` holds one
-`DirectConnection` (`lib/shared/p2p/webrtc.ts`) per member; `transport/member.ts` holds the
-member's one link to the host. Each pair carries two negotiated DataChannels (id 0 unreliable,
-pings only; id 1 reliable, every message) under a `ReliableLink` (`lib/shared/p2p/reliable-link.ts`:
-16 KB fragments, ≤ 1 MiB a message, 10 s timeout). The host makes the offer; candidates trickle
-through the hub (`balatro:p2p:signal`, routed only between the host and an admitted member).
-Members never talk to each other: the host relays §3.b traffic with `f` stamped.
+**Topology.**
+A
+star
+around
+the
+lobby
+host.
+`transport/host-star.ts`
+holds
+one
+`DirectConnection`
+(`lib/shared/p2p/webrtc.ts`)
+per
+member;
+`transport/member.ts`
+holds
+the
+member's
+one
+link
+to
+the
+host.
+Each
+pair
+carries
+two
+negotiated
+DataChannels
+(id
+0
+unreliable,
+pings
+only;
+id
+1
+reliable,
+every
+message)
+under
+a
+`ReliableLink`
+(`lib/shared/p2p/reliable-link.ts`:
+16
+KB
+fragments,
+≤
+1
+MiB
+a
+message,
+10
+s
+timeout).
+The
+host
+makes
+the
+offer;
+candidates
+trickle
+through
+the
+hub
+(`balatro:p2p:signal`,
+routed
+only
+between
+the
+host
+and
+an
+admitted
+member).
+Members
+never
+talk
+to
+each
+other:
+the
+host
+relays
+§3.b
+traffic
+with
+`f`
+stamped.
 
-**Relay fallback.** When no pair connects within `DIRECT_TIMEOUT_MS` (8 s; `TURN_TIMEOUT_MS`
-12 s when the ICE list has a TURN server) or the connection fails, the member sends
-`balatro:p2p:relay:start` and swaps in a `RelayChannel`; the host moves that link to the relay on
-the member's first relayed frame. Frames carry a 2-byte header (`lib/shared/p2p/relay.ts`: flags,
-slot); the slot is the last two hex characters of the member's 12-character peer id
-(`peerIdWithSlot` / `relaySlotOf`), so no extra round trip tells the host where to address it.
-The hub (`SignalHub.relay` in `server/socket-server/p2p/signal-hub.ts`) checks and meters each
-frame (§6).
+**Relay
+fallback.**
+When
+no
+pair
+connects
+within
+`DIRECT_TIMEOUT_MS`
+(8
+s;
+`TURN_TIMEOUT_MS`
+12
+s
+when
+the
+ICE
+list
+has
+a
+TURN
+server)
+or
+the
+connection
+fails,
+the
+member
+sends
+`balatro:p2p:relay:start`
+and
+swaps
+in
+a
+`RelayChannel`;
+the
+host
+moves
+that
+link
+to
+the
+relay
+on
+the
+member's
+first
+relayed
+frame.
+Frames
+carry
+a
+2-byte
+header
+(`lib/shared/p2p/relay.ts`:
+flags,
+slot);
+the
+slot
+is
+the
+last
+two
+hex
+characters
+of
+the
+member's
+12-character
+peer
+id
+(`peerIdWithSlot`
+/
+`relaySlotOf`),
+so
+no
+extra
+round
+trip
+tells
+the
+host
+where
+to
+address
+it.
+The
+hub
+(`SignalHub.relay`
+in
+`server/socket-server/p2p/signal-hub.ts`)
+checks
+and
+meters
+each
+frame
+(§6).
 
-**The hub** (`features/balatro/server/p2p.ts` over `balatro/directory.ts`) carries
-no game traffic. It vouches for each joiner's account, gates on the content hash
-(`version-mismatch`), kicks, forfeits, capacity and one seat per account (`seat-held`), and keeps
-the seat directory: a seat survives a dropped socket; the host's own 120 s seat grace decides.
-Late results (`balatro/results.ts`, HUD-24): the room's current host reports a finished run once
-(`balatro:match:result`); each roster player no longer in the room gets their own line, pushed to
-pages that asked (`balatro:match:pending`) or queued 10 min (≤ 4 per account).
+**The
+hub**
+(`features/balatro/server/p2p.ts`
+over
+`balatro/directory.ts`)
+carries
+no
+game
+traffic.
+It
+vouches
+for
+each
+joiner's
+account,
+gates
+on
+the
+content
+hash
+(`version-mismatch`),
+kicks,
+forfeits,
+capacity
+and
+one
+seat
+per
+account
+(`seat-held`),
+and
+keeps
+the
+seat
+directory:
+a
+seat
+survives
+a
+dropped
+socket;
+the
+host's
+own
+120
+s
+seat
+grace
+decides.
+Late
+results
+(`balatro/results.ts`,
+HUD-24):
+the
+room's
+current
+host
+reports
+a
+finished
+run
+once
+(`balatro:match:result`);
+each
+roster
+player
+no
+longer
+in
+the
+room
+gets
+their
+own
+line,
+pushed
+to
+pages
+that
+asked
+(`balatro:match:pending`)
+or
+queued
+10
+min
+(≤
+4
+per
+account).
 
-**Host migration** (`features/balatro/engine/mp/migration.ts`, `lobby/lobby-host.ts` `adopt`). The host
-names a successor in every `balatro:p2p:state` (`successorOf`: the earliest-joined connected,
-non-away, non-forfeited seated player). When the host's socket drops, the hub waits
-`MIGRATE_GRACE_MS` (2 s) if a player can succeed, else `HOST_GRACE_MS` (30 s), then sends
-`promote` to the successor, `host-changed` to everyone else, and re-sends every connected
-member's join request to the new host; with nobody to promote the room closes (`host-lost`). A
-deliberate Leave sends its forfeit, checkpoint and `bye` over P2P and asks the hub to hand over
-`LEAVE_DRAIN_MS` (500 ms) later; `lobby/hub-gate.ts` `HubGate` queues every hub emit made during
-that drain so the hub sees `leave` first. The new host restores the referee from the newest
-`checkpoint` broadcast it holds, or rebuilds one from its own caches (`takeoverCheckpoint`,
-REF-19), and numbers its outcomes from `successorHs` (last seen `hs` + `HS_MIGRATION_GAP`,
-10 000) so no peer drops them as duplicates. A host that hears `host-changed` while it still hosts
-demotes itself and rejoins. A host whose socket only blipped `resume`s its room with its token,
-and can re-claim its code after a hub restart (NET-12).
+**Host
+migration**
+(`features/balatro/engine/mp/migration.ts`,
+`lobby/lobby-host.ts`
+`adopt`).
+The
+host
+names
+a
+successor
+in
+every
+`balatro:p2p:state`
+(`successorOf`:
+the
+earliest-joined
+connected,
+non-away,
+non-forfeited
+seated
+player).
+When
+the
+host's
+socket
+drops,
+the
+hub
+waits
+`MIGRATE_GRACE_MS`
+(2
+s)
+if
+a
+player
+can
+succeed,
+else
+`HOST_GRACE_MS`
+(30
+s),
+then
+sends
+`promote`
+to
+the
+successor,
+`host-changed`
+to
+everyone
+else,
+and
+re-sends
+every
+connected
+member's
+join
+request
+to
+the
+new
+host;
+with
+nobody
+to
+promote
+the
+room
+closes
+(`host-lost`).
+A
+deliberate
+Leave
+sends
+its
+forfeit,
+checkpoint
+and
+`bye`
+over
+P2P
+and
+asks
+the
+hub
+to
+hand
+over
+`LEAVE_DRAIN_MS`
+(500
+ms)
+later;
+`lobby/hub-gate.ts`
+`HubGate`
+queues
+every
+hub
+emit
+made
+during
+that
+drain
+so
+the
+hub
+sees
+`leave`
+first.
+The
+new
+host
+restores
+the
+referee
+from
+the
+newest
+`checkpoint`
+broadcast
+it
+holds,
+or
+rebuilds
+one
+from
+its
+own
+caches
+(`takeoverCheckpoint`,
+REF-19),
+and
+numbers
+its
+outcomes
+from
+`successorHs`
+(last
+seen
+`hs` +
+`HS_MIGRATION_GAP`,
+10 000)
+so
+no
+peer
+drops
+them
+as
+duplicates.
+A
+host
+that
+hears
+`host-changed`
+while
+it
+still
+hosts
+demotes
+itself
+and
+rejoins.
+A
+host
+whose
+socket
+only
+blipped
+`resume`s
+its
+room
+with
+its
+token,
+and
+can
+re-claim
+its
+code
+after
+a
+hub
+restart
+(NET-12).
 
-**Rejoin snapshots.** In a match, Lua's `save_run` (`rmh_mp/hooks/saves.lua`) writes
-`/rmh/mp/run.jkr` and `/rmh/mp/state.json`, touches `/rmh/mp/snap` and sends `snapshot`; the
-runtime copies both into IndexedDB (`rejoin/rejoin-store.ts`: database `rmh-balatro-mp`, keyed by
-`runId`, newest `SNAPSHOT_KEEP` = 3). The localStorage hint `rmh-balatro-mp-rejoin` (the runId) is
-set while the player holds a seat in a running match. After a reload, boot preloads the MP pack,
-the session asks `balatro:seat:query`, and on a rejoin `runtime.ts` `restoreSnapshot` writes the
-files back and sends `rejoin_restore`; `rules/session.lua` loads them through vanilla's Continue
-path (`S.load_snapshot`). No snapshot means the run restarts from its seed. The rejoiner catches
-up within `CATCH_UP_LIMIT_MS` (3 min, `rejoin/catchup.ts`) or is forfeited. `hello.rejoin` versus
-a live-run reconnect is in §5 (WS5).
+**Rejoin
+snapshots.**
+In
+a
+match,
+Lua's
+`save_run`
+(`rmh_mp/hooks/saves.lua`)
+writes
+`/rmh/mp/run.jkr`
+and
+`/rmh/mp/state.json`,
+touches
+`/rmh/mp/snap`
+and
+sends
+`snapshot`;
+the
+runtime
+copies
+both
+into
+IndexedDB
+(`rejoin/rejoin-store.ts`:
+database
+`rmh-balatro-mp`,
+keyed
+by
+`runId`,
+newest
+`SNAPSHOT_KEEP`
+=
+3).
+The
+localStorage
+hint
+`rmh-balatro-mp-rejoin`
+(the
+runId)
+is
+set
+while
+the
+player
+holds
+a
+seat
+in
+a
+running
+match.
+After
+a
+reload,
+boot
+preloads
+the
+MP
+pack,
+the
+session
+asks
+`balatro:seat:query`,
+and
+on
+a
+rejoin
+`runtime.ts`
+`restoreSnapshot`
+writes
+the
+files
+back
+and
+sends
+`rejoin_restore`;
+`rules/session.lua`
+loads
+them
+through
+vanilla's
+Continue
+path
+(`S.load_snapshot`).
+No
+snapshot
+means
+the
+run
+restarts
+from
+its
+seed.
+The
+rejoiner
+catches
+up
+within
+`CATCH_UP_LIMIT_MS`
+(3
+min,
+`rejoin/catchup.ts`)
+or
+is
+forfeited.
+`hello.rejoin`
+versus
+a
+live-run
+reconnect
+is
+in
+§5
+(WS5).
 
-**Lazy MP pack.** Single player loads no MP code or content. `BalatroPage.tsx` `watchMpOpen`
-scans Lua's mailbox batches for `mp_open` (the MULTIPLAYER button in `rmh_mp_entry.lua`) and only
-then imports `pack-loader.ts`, which fetches and writes the MP pack and starts `index.ts`
-(details in §8). Optional art packs load the same way, only when a ruleset needs them
-(`optional-packs.ts`, §4 "Optional packs").
+**Lazy
+MP
+pack.**
+Single
+player
+loads
+no
+MP
+code
+or
+content.
+`BalatroPage.tsx`
+`watchMpOpen`
+scans
+Lua's
+mailbox
+batches
+for
+`mp_open`
+(the
+MULTIPLAYER
+button
+in
+`rmh_mp_entry.lua`)
+and
+only
+then
+imports
+`pack-loader.ts`,
+which
+fetches
+and
+writes
+the
+MP
+pack
+and
+starts
+`index.ts`
+(details
+in
+§8).
+Optional
+art
+packs
+load
+the
+same
+way,
+only
+when
+a
+ruleset
+needs
+them
+(`optional-packs.ts`,
+§4
+"Optional
+packs").
 
-**Content isolation.** MP prototypes enter vanilla's tables and pools only while a session is
-mounted (`MP.registry.mount`), and `unmount()` (on `go_to_menu` or New Run) restores every pool in
-place (§7 "Isolation"). Saves, unlocks and profile tallies never see MP content (§7 "Save
-guards"). `features/balatro/engine/lua/mp_test/specs/sp_invariance_spec.lua` proves it in the real engine:
-golden single-player digests (first three shops, Small/Big tags and bosses for antes 1 and 2, three
-seeds) are equal with no MP pack, with `rmh_mp` loaded after sessions mounted and unmounted, and
-after one more practice mount/unmount (E2E-20).
+**Content
+isolation.**
+MP
+prototypes
+enter
+vanilla's
+tables
+and
+pools
+only
+while
+a
+session
+is
+mounted
+(`MP.registry.mount`),
+and
+`unmount()`
+(on
+`go_to_menu`
+or
+New
+Run)
+restores
+every
+pool
+in
+place
+(§7
+"Isolation").
+Saves,
+unlocks
+and
+profile
+tallies
+never
+see
+MP
+content
+(§7
+"Save
+guards").
+`features/balatro/engine/lua/mp_test/specs/sp_invariance_spec.lua`
+proves
+it
+in
+the
+real
+engine:
+golden
+single-player
+digests
+(first
+three
+shops,
+Small/Big
+tags
+and
+bosses
+for
+antes
+1
+and
+2,
+three
+seeds)
+are
+equal
+with
+no
+MP
+pack,
+with
+`rmh_mp`
+loaded
+after
+sessions
+mounted
+and
+unmounted,
+and
+after
+one
+more
+practice
+mount/unmount
+(E2E-20).
 
 ## 2. Frozen interfaces
 
-All four are zod schemas with types from `z.infer`. They use only `zod` and
-relative imports, so the socket server's esbuild bundle can pull them in as they are.
-`features/balatro/engine/mp/__tests__/contracts.test.ts` enforces this. Changing one is a plan
+All
+four
+are
+zod
+schemas
+with
+types
+from
+`z.infer`.
+They
+use
+only
+`zod`
+and
+relative
+imports,
+so
+the
+socket
+server's
+esbuild
+bundle
+can
+pull
+them
+in
+as
+they
+are.
+`features/balatro/engine/mp/__tests__/contracts.test.ts`
+enforces
+this.
+Changing
+one
+is
+a
+plan
 amendment.
 
-- **Signalling** (`net/events.ts`): `BALATRO_C2S` / `BALATRO_S2C` are
-  `{ event: schema }` maps. They have three derived forms:
-  - `BALATRO_EVENTS`, the `{ event: { c2s, s2c } }` map for `bindEvents`;
-  - `BALATRO_C2S_EVENTS`, the name map for the rate-limit coverage test;
-  - the socket.io generics `BalatroClientToServer` / `BalatroServerToClient`.
+- **Signalling**
+  (`net/events.ts`):
+  `BALATRO_C2S`
+  /
+  `BALATRO_S2C`
+  are
+  `{ event: schema }`
+  maps.
+  They
+  have
+  three
+  derived
+  forms:
+  - `BALATRO_EVENTS`,
+    the
+    `{ event: { c2s, s2c } }`
+    map
+    for
+    `bindEvents`;
+  - `BALATRO_C2S_EVENTS`,
+    the
+    name
+    map
+    for
+    the
+    rate-limit
+    coverage
+    test;
+  - the
+    socket.io
+    generics
+    `BalatroClientToServer`
+    /
+    `BalatroServerToClient`.
 
-  `zIceServers` is a local copy until WS1 re-exports it from `lib/shared/p2p/ice`.
-  Relay frames are bytes capped at `BALATRO_RELAY_LIMITS.MAX_PACKET_BYTES`. The
-  S2C schema also accepts an `ArrayBuffer`, which is what socket.io-client delivers.
+  `zIceServers`
+  is
+  a
+  local
+  copy
+  until
+  WS1
+  re-exports
+  it
+  from
+  `lib/shared/p2p/ice`.
+  Relay
+  frames
+  are
+  bytes
+  capped
+  at
+  `BALATRO_RELAY_LIMITS.MAX_PACKET_BYTES`.
+  The
+  S2C
+  schema
+  also
+  accepts
+  an
+  `ArrayBuffer`,
+  which
+  is
+  what
+  socket.io-client
+  delivers.
 
-- **Wire** (`mp/wire.ts`): the envelope is `{ v: 1, k, s, f?, to?, d }`. `WIRE_D`
-  maps each kind to its data schema, and `WIRE_META` gives each kind's direction
-  and host-only flag. The module has helpers to make, encode, decode and validate
-  an envelope. Fragmentation is the transport's job. `outcome` carries the host
-  sequence number as `d.hs`. `kick` is local-only.
-- **Mailbox** (`mp/bridge-protocol.ts`): it holds the paths, the 64 KB line and
-  256 KB batch limits, and the `L2J` / `J2L` schema maps. `parseLuaBatch`,
-  `parseBridgeMessage` and `encodeJsLine` work on the NDJSON lines. Two rules
-  cover Lua's quirks:
-  - A nullable Lua→JS field may be absent, because a Lua table cannot hold nil.
-  - A `d` of `[]` reads as `{}`.
-- **Domain** (`mp/types.ts`): `LobbyState`, `LobbyOptions` (all camelCase), and
-  `StartedMatch`, `ResolvedRuleset`. The game and referee types are `GameEvent`,
-  `RefInput`, `RefMsg`, `RefOutput`, `RefCheckpoint` and `RefStep<S>`. WS4 defines
-  `RefState`. The rest are `SetupView`, `HandResult`, `PlayerResult`, `SafeCard`,
-  `ReplayEvent` and `ReplayBatch`.
+- **Wire**
+  (`mp/wire.ts`):
+  the
+  envelope
+  is
+  `{ v: 1, k, s, f?, to?, d }`.
+  `WIRE_D`
+  maps
+  each
+  kind
+  to
+  its
+  data
+  schema,
+  and
+  `WIRE_META`
+  gives
+  each
+  kind's
+  direction
+  and
+  host-only
+  flag.
+  The
+  module
+  has
+  helpers
+  to
+  make,
+  encode,
+  decode
+  and
+  validate
+  an
+  envelope.
+  Fragmentation
+  is
+  the
+  transport's
+  job.
+  `outcome`
+  carries
+  the
+  host
+  sequence
+  number
+  as
+  `d.hs`.
+  `kick`
+  is
+  local-only.
+- **Mailbox**
+  (`mp/bridge-protocol.ts`):
+  it
+  holds
+  the
+  paths,
+  the
+  64
+  KB
+  line
+  and
+  256
+  KB
+  batch
+  limits,
+  and
+  the
+  `L2J`
+  /
+  `J2L`
+  schema
+  maps.
+  `parseLuaBatch`,
+  `parseBridgeMessage`
+  and
+  `encodeJsLine`
+  work
+  on
+  the
+  NDJSON
+  lines.
+  Two
+  rules
+  cover
+  Lua's
+  quirks:
+  - A
+    nullable
+    Lua→JS
+    field
+    may
+    be
+    absent,
+    because
+    a
+    Lua
+    table
+    cannot
+    hold
+    nil.
+  - A
+    `d`
+    of
+    `[]`
+    reads
+    as
+    `{}`.
+- **Domain**
+  (`mp/types.ts`):
+  `LobbyState`,
+  `LobbyOptions`
+  (all
+  camelCase),
+  and
+  `StartedMatch`,
+  `ResolvedRuleset`.
+  The
+  game
+  and
+  referee
+  types
+  are
+  `GameEvent`,
+  `RefInput`,
+  `RefMsg`,
+  `RefOutput`,
+  `RefCheckpoint`
+  and
+  `RefStep<S>`.
+  WS4
+  defines
+  `RefState`.
+  The
+  rest
+  are
+  `SetupView`,
+  `HandResult`,
+  `PlayerResult`,
+  `SafeCard`,
+  `ReplayEvent`
+  and
+  `ReplayBatch`.
 
-Each file starts with the gaps in the plan's text that it resolved.
+Each
+file
+starts
+with
+the
+gaps
+in
+the
+plan's
+text
+that
+it
+resolved.
 
 ### Generated Lua protocol
 
-`scripts/balatro/gen-lua-protocol.ts` lowers each bridge schema through
-`z.toJSONSchema` into Lua descriptor tables. It then appends a validator, which
-writes `rmh_mp/protocol.lua`. The file exports:
+`scripts/balatro/gen-lua-protocol.ts`
+lowers
+each
+bridge
+schema
+through
+`z.toJSONSchema`
+into
+Lua
+descriptor
+tables.
+It
+then
+appends
+a
+validator,
+which
+writes
+`rmh_mp/protocol.lua`.
+The
+file
+exports:
 
-- `P.validate(dir, t, d)` and `P.known(dir, t)`;
-- `P.L2J` / `P.J2L` type names and `P.ENUM` value lists;
-- `P.PATHS`, `P.LIMITS` and `P.NULL` / `P.set_null` for JSON null.
+- `P.validate(dir, t, d)`
+  and
+  `P.known(dir, t)`;
+- `P.L2J`
+  /
+  `P.J2L`
+  type
+  names
+  and
+  `P.ENUM`
+  value
+  lists;
+- `P.PATHS`,
+  `P.LIMITS`
+  and
+  `P.NULL`
+  /
+  `P.set_null`
+  for
+  JSON
+  null.
 
-The Lua validator checks types, required fields, enums, ranges, lengths (in code
-points) and records. It skips regex patterns and zod refinements, which TypeScript
+The
+Lua
+validator
+checks
+types,
+required
+fields,
+enums,
+ranges,
+lengths
+(in
+code
+points)
+and
+records.
+It
+skips
+regex
+patterns
+and
+zod
+refinements,
+which
+TypeScript
 checks.
 
-The same run writes `features/balatro/engine/mp/bridge-schema.gen.ts`, the same descriptors as a
-TypeScript table (plus regex patterns). `features/balatro/engine/mp/bridge-codec.ts` walks it,
-and the mailbox (`bridge.ts`) validates with it instead of zod. zod v4 classic does
-not tree-shake, and it cost the lazy MP chunk about 80 KB gzip against a 70 KB budget.
-`bridge-protocol.ts` stays the source. `bridge-codec.test.ts` holds the codec to the
-zod verdicts on every fixture, on mutations of them and on the mailbox framing cases.
-Server code and tests keep using the zod schemas.
+The
+same
+run
+writes
+`features/balatro/engine/mp/bridge-schema.gen.ts`,
+the
+same
+descriptors
+as
+a
+TypeScript
+table
+(plus
+regex
+patterns).
+`features/balatro/engine/mp/bridge-codec.ts`
+walks
+it,
+and
+the
+mailbox
+(`bridge.ts`)
+validates
+with
+it
+instead
+of
+zod.
+zod
+v4
+classic
+does
+not
+tree-shake,
+and
+it
+cost
+the
+lazy
+MP
+chunk
+about
+80
+KB
+gzip
+against
+a
+70
+KB
+budget.
+`bridge-protocol.ts`
+stays
+the
+source.
+`bridge-codec.test.ts`
+holds
+the
+codec
+to
+the
+zod
+verdicts
+on
+every
+fixture,
+on
+mutations
+of
+them
+and
+on
+the
+mailbox
+framing
+cases.
+Server
+code
+and
+tests
+keep
+using
+the
+zod
+schemas.
 
 ```bash
 pnpm balatro:gen-protocol           # regenerate after editing bridge-protocol.ts or types.ts
@@ -162,66 +1307,415 @@ pnpm balatro:gen-protocol --check   # CI freshness check (protocol-lua.test.ts a
 
 ## 3. Tests
 
-| Suite           | Command                 | What                                                                                                         |
-| --------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Suite           | Command                 | What                                                                                                                    |
+| --------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Balatro         | `pnpm test:balatro`     | `features/balatro/engine/mp`, `lib/shared/p2p`, `features/balatro/server/hub`, `scripts/balatro`, plus the Lua L1 specs |
-| Lua L1 only     | `pnpm test:balatro:lua` | `lua5.1 features/balatro/engine/lua/spec/runner.lua [--filter text] [files…]` (TAP output)                               |
-| E2E (WS14)      | `pnpm test:balatro:e2e` | `harness` · `engine` (L2 specs in love.wasm) · `match` (real browsers + bot peers; needs Postgres)           |
-| Main (critical) | `pnpm test`             | hub auth walk, rate-limit coverage, save-path safety, pack manifest                                          |
+| Lua L1 only     | `pnpm test:balatro:lua` | `lua5.1 features/balatro/engine/lua/spec/runner.lua [--filter text] [files…]` (TAP output)                              |
+| E2E (WS14)      | `pnpm test:balatro:e2e` | `harness` · `engine` (L2 specs in love.wasm) · `match` (real browsers + bot peers; needs Postgres)                      |
+| Main (critical) | `pnpm test`             | hub auth walk, rate-limit coverage, save-path safety, pack manifest                                                     |
 
-The Lua specs need **PUC Lua 5.1** (`apt-get install lua5.1`, or set `LUA51=`).
-`lua-specs.test.ts` fails with an install hint without it and never skips.
+The
+Lua
+specs
+need
+**PUC
+Lua
+5.1**
+(`apt-get install lua5.1`,
+or
+set
+`LUA51=`).
+`lua-specs.test.ts`
+fails
+with
+an
+install
+hint
+without
+it
+and
+never
+skips.
 
-Lua specs live in `features/balatro/engine/lua/spec/*_spec.lua`. The runner provides
-`describe` / `it` / `xit` / `before_each` / `after_each` and these matchers:
+Lua
+specs
+live
+in
+`features/balatro/engine/lua/spec/*_spec.lua`.
+The
+runner
+provides
+`describe`
+/
+`it`
+/
+`xit`
+/
+`before_each`
+/
+`after_each`
+and
+these
+matchers:
 
 ```lua
 expect(v).eq(x)        -- also .ne / .near(x, eps) / .truthy() / .falsy() / .type(t)
 expect(fn).error(s)
 ```
 
-It also sets `package.path` (`features/balatro/engine/lua/?.lua;features/balatro/engine/lua/mp/?.lua`) and
-`RMH_SPEC.{root,fixtures}`. Globals and modules a spec file adds are removed after
-it runs. `spec/fake_g.lua` installs a vanilla-shaped `G` with:
+It
+also
+sets
+`package.path`
+(`features/balatro/engine/lua/?.lua;features/balatro/engine/lua/mp/?.lua`)
+and
+`RMH_SPEC.{root,fixtures}`.
+Globals
+and
+modules
+a
+spec
+file
+adds
+are
+removed
+after
+it
+runs.
+`spec/fake_g.lua`
+installs
+a
+vanilla-shaped
+`G`
+with:
 
-- prototypes and pools sorted by `order`;
-- the vanilla event manager rules;
-- deterministic `pseudoseed`/`pseudorandom` stand-ins.
+- prototypes
+  and
+  pools
+  sorted
+  by
+  `order`;
+- the
+  vanilla
+  event
+  manager
+  rules;
+- deterministic
+  `pseudoseed`/`pseudorandom`
+  stand-ins.
 
-Shared fixtures live in `features/balatro/engine/mp/__fixtures__/*.json`.
-`contracts.test.ts` (TypeScript) and `spec/protocol_spec.lua` (Lua) read the same
-files. In them, `{ "$ref": "name" }` points into `types.json` → `objects`, and
-`tsOnly` marks an invalid case that only TypeScript can reject.
+Shared
+fixtures
+live
+in
+`features/balatro/engine/mp/__fixtures__/*.json`.
+`contracts.test.ts`
+(TypeScript)
+and
+`spec/protocol_spec.lua`
+(Lua)
+read
+the
+same
+files.
+In
+them,
+`{ "$ref": "name" }`
+points
+into
+`types.json`
+→
+`objects`,
+and
+`tsOnly`
+marks
+an
+invalid
+case
+that
+only
+TypeScript
+can
+reject.
 
-CI: `.github/workflows/balatro-mp-tests.yml`, path-filtered. Job `test` installs `lua5.1`
-and runs the L1 specs, protocol freshness, `test:balatro`, `test:tf2` (the P2P primitives are
-shared), pack freshness (`build-game-pack.py --check`) and the bundle/pack budget
-(`scripts/balatro/bundle-budget.ts`). The e2e suite runs as parallel jobs next to it:
-`e2e-engine` (the harness and engine projects, one engine boot), `e2e-match` — a matrix over
-the shards of `testing/balatro-e2e/shards.ts`, each with its own `pgvector/pgvector:pg16`
-service, hub and `vite dev`, with `BALATRO_E2E_REQUIRE_MATCH=1` — and the aggregate `e2e`, which
-fails if any of them did (the check to require). Engine pages run the autopilot's turbo
-(`testing/balatro-e2e/lib/turbo.ts`), and every scenario runs on every PR, the 12-ante soak
-(E2E-24) included. The nightly schedule (or a manual run with `long`) runs the same jobs at
-real-speed frames (`BALATRO_E2E_TURBO=off`) plus every engine spec alone in a fresh boot
-(`BALATRO_E2E_ISOLATE=1`). The e2e layout, turbo, the shards, the
-autopilot commands, the bot peers and how to run the match project locally are in
+CI:
+`.github/workflows/balatro-mp-tests.yml`,
+path-filtered.
+Job
+`test`
+installs
+`lua5.1`
+and
+runs
+the
+L1
+specs,
+protocol
+freshness,
+`test:balatro`,
+`test:tf2`
+(the
+P2P
+primitives
+are
+shared),
+pack
+freshness
+(`build-game-pack.py --check`)
+and
+the
+bundle/pack
+budget
+(`scripts/balatro/bundle-budget.ts`).
+The
+e2e
+suite
+runs
+as
+parallel
+jobs
+next
+to
+it:
+`e2e-engine`
+(the
+harness
+and
+engine
+projects,
+one
+engine
+boot),
+`e2e-match`
+—
+a
+matrix
+over
+the
+shards
+of
+`testing/balatro-e2e/shards.ts`,
+each
+with
+its
+own
+`pgvector/pgvector:pg16`
+service,
+hub
+and
+`vite dev`,
+with
+`BALATRO_E2E_REQUIRE_MATCH=1`
+—
+and
+the
+aggregate
+`e2e`,
+which
+fails
+if
+any
+of
+them
+did
+(the
+check
+to
+require).
+Engine
+pages
+run
+the
+autopilot's
+turbo
+(`testing/balatro-e2e/lib/turbo.ts`),
+and
+every
+scenario
+runs
+on
+every
+PR,
+the
+12-ante
+soak
+(E2E-24)
+included.
+The
+nightly
+schedule
+(or
+a
+manual
+run
+with
+`long`)
+runs
+the
+same
+jobs
+at
+real-speed
+frames
+(`BALATRO_E2E_TURBO=off`)
+plus
+every
+engine
+spec
+alone
+in
+a
+fresh
+boot
+(`BALATRO_E2E_ISOLATE=1`).
+The
+e2e
+layout,
+turbo,
+the
+shards,
+the
+autopilot
+commands,
+the
+bot
+peers
+and
+how
+to
+run
+the
+match
+project
+locally
+are
+in
 `testing/balatro-e2e/README.md`.
 
-Bundle accounting (§6.4): the MP JS budget counts every lazy chunk that holds a Balatro module,
-including the queue and replay extensions `index.ts` loads through an `import.meta.glob` array.
-socket.io-client is not counted: `components/call/CallMount.tsx` loads it (through
-`lib/call/store` → `lib/shared/realtime/client`) for every signed-in viewer on every route, and
-`/balatro` is signed-in only, so the MP chunk only reuses it. The script re-checks that from the
-source on every run and counts the socket.io chunk against MP as soon as the shell stops loading
-it (`sharedSocketIo()`).
+Bundle
+accounting
+(§6.4):
+the
+MP
+JS
+budget
+counts
+every
+lazy
+chunk
+that
+holds
+a
+Balatro
+module,
+including
+the
+queue
+and
+replay
+extensions
+`index.ts`
+loads
+through
+an
+`import.meta.glob`
+array.
+socket.io-client
+is
+not
+counted:
+`components/call/CallMount.tsx`
+loads
+it
+(through
+`lib/call/store`
+→
+`lib/shared/realtime/client`)
+for
+every
+signed-in
+viewer
+on
+every
+route,
+and
+`/balatro`
+is
+signed-in
+only,
+so
+the
+MP
+chunk
+only
+reuses
+it.
+The
+script
+re-checks
+that
+from
+the
+source
+on
+every
+run
+and
+counts
+the
+socket.io
+chunk
+against
+MP
+as
+soon
+as
+the
+shell
+stops
+loading
+it
+(`sharedSocketIo()`).
 
 ## 4. The MP pack: art, localization, glyphs
 
-The mod's used PNGs and its 16 localization files are imported once, offline, by
-`scripts/balatro/import-mp-assets.py --mod <checkout>` into `data/balatro-mp/`
-(committed). The importer only copies data. It runs nothing from the mod at
-runtime and copies none of its code.
+The
+mod's
+used
+PNGs
+and
+its
+16
+localization
+files
+are
+imported
+once,
+offline,
+by
+`scripts/balatro/import-mp-assets.py --mod <checkout>`
+into
+`data/balatro-mp/`
+(committed).
+The
+importer
+only
+copies
+data.
+It
+runs
+nothing
+from
+the
+mod
+at
+runtime
+and
+copies
+none
+of
+its
+code.
 
 | Path in `data/balatro-mp/` | What                                                                                                    |
 | -------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -232,57 +1726,455 @@ runtime and copies none of its code.
 | `pack-budget.json`         | the size budgets the builder and the pack test enforce                                                  |
 | `import-sources.json`      | provenance: the mod version and a SHA-256 for every source file                                         |
 
-**Pruned (EX-20).** The importer drops `j_copycat`, `stickers`, `pvp_title_base_*`,
-`alt_t_*` and `modicon`. It fails on any mod PNG it has not classified.
-`sticker_nemesis` (EX-17) and `alt_mp_stakes` (EX-16) ship in the MP pack;
-`release_jokers` (EX-14) goes to `data/balatro-mp/release/{1x,2x}/` and ships in the
-optional Release pack (§4 "Optional packs"). Two sheets are rebuilt:
+**Pruned
+(EX-20).**
+The
+importer
+drops
+`j_copycat`,
+`stickers`,
+`pvp_title_base_*`,
+`alt_t_*`
+and
+`modicon`.
+It
+fails
+on
+any
+mod
+PNG
+it
+has
+not
+classified.
+`sticker_nemesis`
+(EX-17)
+and
+`alt_mp_stakes`
+(EX-16)
+ship
+in
+the
+MP
+pack;
+`release_jokers`
+(EX-14)
+goes
+to
+`data/balatro-mp/release/{1x,2x}/`
+and
+ships
+in
+the
+optional
+Release
+pack
+(§4
+"Optional
+packs").
+Two
+sheets
+are
+rebuilt:
 
-- `mp_misc.png` (2×1) holds the only two used cells of `ec_other_sandbox.png`
-  (D-27): the Echo Deck at (0,0), from (2,0), and the Extra Credit sticker at (1,0),
-  from (1,1).
-- `tag_gambling_sandbox.png` is padded from 32×32 to a vanilla 34×34 tag cell. Vanilla
-  tag art sits at (1,1)–(33,33).
+- `mp_misc.png`
+  (2×1)
+  holds
+  the
+  only
+  two
+  used
+  cells
+  of
+  `ec_other_sandbox.png`
+  (D-27):
+  the
+  Echo
+  Deck
+  at
+  (0,0),
+  from
+  (2,0),
+  and
+  the
+  Extra
+  Credit
+  sticker
+  at
+  (1,0),
+  from
+  (1,1).
+- `tag_gambling_sandbox.png`
+  is
+  padded
+  from
+  32×32
+  to
+  a
+  vanilla
+  34×34
+  tag
+  cell.
+  Vanilla
+  tag
+  art
+  sits
+  at
+  (1,1)–(33,33).
 
-**Localization.** The importer loads each mod file with PUC Lua 5.1 in an empty
-environment, with a bytecode refusal and an instruction budget, and dumps JSON.
-Functions, non-string keys and mixed tables are errors. The builder turns the JSON
-into `rmh_mp/loc/<lang>.lua` in the pack:
+**Localization.**
+The
+importer
+loads
+each
+mod
+file
+with
+PUC
+Lua
+5.1
+in
+an
+empty
+environment,
+with
+a
+bytecode
+refusal
+and
+an
+instruction
+budget,
+and
+dumps
+JSON.
+Functions,
+non-string
+keys
+and
+mixed
+tables
+are
+errors.
+The
+builder
+turns
+the
+JSON
+into
+`rmh_mp/loc/<lang>.lua`
+in
+the
+pack:
 
-- **Shipped languages.** It ships only the game's own languages (`G.LANGUAGES`, read
-  from `game.lua`). `mi` and `vi` are imported but not shipped, and `id` has no MP
+- **Shipped
+  languages.**
+  It
+  ships
+  only
+  the
+  game's
+  own
+  languages
+  (`G.LANGUAGES`,
+  read
+  from
+  `game.lua`).
+  `mi`
+  and
+  `vi`
+  are
+  imported
+  but
+  not
+  shipped,
+  and
+  `id`
+  has
+  no
+  MP
   file.
-- **`en-us`** is complete: the mod's English plus `extra-strings.en-us.json`. A key
-  collision fails the build.
-- **Other languages are partial.** Each holds only the entries it translates.
-  **The runtime lays a language over `en-us` one entry at a time** (WS6,
-  `registry/loc.lua`, on every `init_localization`). An entry is a description
-  `{name, text}`, a dictionary string or a `v_text` line list. It is never merged
+- **`en-us`**
+  is
+  complete:
+  the
+  mod's
+  English
+  plus
+  `extra-strings.en-us.json`.
+  A
+  key
+  collision
+  fails
+  the
+  build.
+- **Other
+  languages
+  are
+  partial.**
+  Each
+  holds
+  only
+  the
+  entries
+  it
+  translates.
+  **The
+  runtime
+  lays
+  a
+  language
+  over
+  `en-us`
+  one
+  entry
+  at
+  a
+  time**
+  (WS6,
+  `registry/loc.lua`,
+  on
+  every
+  `init_localization`).
+  An
+  entry
+  is
+  a
+  description
+  `{name, text}`,
+  a
+  dictionary
+  string
+  or
+  a
+  `v_text`
+  line
+  list.
+  It
+  is
+  never
+  merged
   deeper.
-- **Dropped translations fall back to English.** That covers a key English lacks
-  (the mod's stale keys), a different shape, or a `#n#` placeholder English does not
-  fill. `--verbose` lists them all.
-- **Dead text is dropped from every language**, so it neither ships nor pulls glyphs
-  into the fonts: `j_broken`, `j_mp_idol` and the `m_gold` balanced note (A2 §14).
-  The Release ruleset's `*_release` entries (EX-14), the alt stakes and
-  `j_to_the_moon_mp` (EX-16) ship since those exclusions were lifted, as do Baron,
-  Mime and the White Deck (EX-15).
-- **Missing typographic punctuation is replaced.** `’`, `“”`, `…` and similar marks
-  that a language's font lacks become their ASCII form (the mod's French uses `’`,
-  which `m6x11plus` cannot draw).
+- **Dropped
+  translations
+  fall
+  back
+  to
+  English.**
+  That
+  covers
+  a
+  key
+  English
+  lacks
+  (the
+  mod's
+  stale
+  keys),
+  a
+  different
+  shape,
+  or
+  a
+  `#n#`
+  placeholder
+  English
+  does
+  not
+  fill.
+  `--verbose`
+  lists
+  them
+  all.
+- **Dead
+  text
+  is
+  dropped
+  from
+  every
+  language**,
+  so
+  it
+  neither
+  ships
+  nor
+  pulls
+  glyphs
+  into
+  the
+  fonts:
+  `j_broken`,
+  `j_mp_idol`
+  and
+  the
+  `m_gold`
+  balanced
+  note
+  (A2
+  §14).
+  The
+  Release
+  ruleset's
+  `*_release`
+  entries
+  (EX-14),
+  the
+  alt
+  stakes
+  and
+  `j_to_the_moon_mp`
+  (EX-16)
+  ship
+  since
+  those
+  exclusions
+  were
+  lifted,
+  as
+  do
+  Baron,
+  Mime
+  and
+  the
+  White
+  Deck
+  (EX-15).
+- **Missing
+  typographic
+  punctuation
+  is
+  replaced.**
+  `’`,
+  `“”`,
+  `…`
+  and
+  similar
+  marks
+  that
+  a
+  language's
+  font
+  lacks
+  become
+  their
+  ASCII
+  form
+  (the
+  mod's
+  French
+  uses
+  `’`,
+  which
+  `m6x11plus`
+  cannot
+  draw).
 
-The tables use vanilla's structure (`descriptions.<set>.<key>`, `misc.dictionary`,
-`misc.v_dictionary`, `misc.labels`, `misc.challenge_names`, `misc.v_text`), so
-`loc_parse_string` reads them as it reads the game's own.
+The
+tables
+use
+vanilla's
+structure
+(`descriptions.<set>.<key>`,
+`misc.dictionary`,
+`misc.v_dictionary`,
+`misc.labels`,
+`misc.challenge_names`,
+`misc.v_text`),
+so
+`loc_parse_string`
+reads
+them
+as
+it
+reads
+the
+game's
+own.
 
-**Fonts (LOC-04).** MP text is folded into the core pack's font subsets. Every text
-font gets the English MP text. A language's own MP text goes only into that
-language's font: Japanese into NotoSansJP, Korean into NotoSansKR, and so on.
-That costs about 240 glyphs, about 38 KB of core. MP Lua must not draw literal
-non-ASCII text. Put it in `extra-strings`, which is scanned. Lua sources are not
-scanned, so a comment cannot change the core pack.
+**Fonts
+(LOC-04).**
+MP
+text
+is
+folded
+into
+the
+core
+pack's
+font
+subsets.
+Every
+text
+font
+gets
+the
+English
+MP
+text.
+A
+language's
+own
+MP
+text
+goes
+only
+into
+that
+language's
+font:
+Japanese
+into
+NotoSansJP,
+Korean
+into
+NotoSansKR,
+and
+so
+on.
+That
+costs
+about
+240
+glyphs,
+about
+38
+KB
+of
+core.
+MP
+Lua
+must
+not
+draw
+literal
+non-ASCII
+text.
+Put
+it
+in
+`extra-strings`,
+which
+is
+scanned.
+Lua
+sources
+are
+not
+scanned,
+so
+a
+comment
+cannot
+change
+the
+core
+pack.
 
-**Glyph bitmap.** `rmh_mp/glyphs.bin` is little-endian:
+**Glyph
+bitmap.**
+`rmh_mp/glyphs.bin`
+is
+little-endian:
 
 ```text
 'RMHG'  u8 version=1  u8 fontCount  u8 langCount  u8 0
@@ -290,43 +2182,335 @@ fontCount × { u8 nameLen, name (the G.FONTS file, e.g. resources/fonts/m6x11plu
 langCount × { u8 keyLen, key (G.LANGUAGES key, e.g. en-us), u8 fontIndex }
 ```
 
-Bit `cp & 7` of byte `cp >> 3` is set when the shipped (subset) font draws `cp`.
-TypeScript (WS5 `identity.ts`) picks the bitmap for the current language. It then
-replaces anything else in a player name or chat line with `?`. The builder fails
-if any shipped MP string is missing from its language's bitmap.
+Bit
+`cp & 7`
+of
+byte
+`cp >> 3`
+is
+set
+when
+the
+shipped
+(subset)
+font
+draws
+`cp`.
+TypeScript
+(WS5
+`identity.ts`)
+picks
+the
+bitmap
+for
+the
+current
+language.
+It
+then
+replaces
+anything
+else
+in
+a
+player
+name
+or
+chat
+line
+with
+`?`.
+The
+builder
+fails
+if
+any
+shipped
+MP
+string
+is
+missing
+from
+its
+language's
+bitmap.
 
 ### Optional packs (EX-14)
 
-The Release ruleset's art, `release_jokers.png` (the whole 1.0.0 Joker sheet, ~1.45 MB raw,
-688 000 B after lossless oxipng at 1x + 2x), does not fit what is left of the MP pack's budget.
-It is its own content-addressed pack, `data/balatro-pack/release-<sha12>.zip`
-(`features/balatro/engine/game-pack.json` → `release`), built with the MP pack (also by `--mp-only`), with
-its own budget (`releaseMaxBytes` / `releaseMaxExtractedBytes` in `pack-budget.json`,
-`releasePackBytes` in `scripts/balatro/bundle-budget.ts`). It holds the files at the MP pack's
-own paths (`rmh_mp/assets/{1x,2x}/release_jokers.png`). The MP pack carries
-`rmh_mp/data/packs.lua` (`{release = {file, sha256}}`), so a change to the Release art changes
-the MP pack's hash and with it the lobby content hash (D-36): peers on different art never meet.
+The
+Release
+ruleset's
+art,
+`release_jokers.png`
+(the
+whole
+1.0.0
+Joker
+sheet,
+~1.45
+MB
+raw,
+688
+000
+B
+after
+lossless
+oxipng
+at
+1x +
+2x),
+does
+not
+fit
+what
+is
+left
+of
+the
+MP
+pack's
+budget.
+It
+is
+its
+own
+content-addressed
+pack,
+`data/balatro-pack/release-<sha12>.zip`
+(`features/balatro/engine/game-pack.json`
+→
+`release`),
+built
+with
+the
+MP
+pack
+(also
+by
+`--mp-only`),
+with
+its
+own
+budget
+(`releaseMaxBytes`
+/
+`releaseMaxExtractedBytes`
+in
+`pack-budget.json`,
+`releasePackBytes`
+in
+`scripts/balatro/bundle-budget.ts`).
+It
+holds
+the
+files
+at
+the
+MP
+pack's
+own
+paths
+(`rmh_mp/assets/{1x,2x}/release_jokers.png`).
+The
+MP
+pack
+carries
+`rmh_mp/data/packs.lua`
+(`{release = {file, sha256}}`),
+so
+a
+change
+to
+the
+Release
+art
+changes
+the
+MP
+pack's
+hash
+and
+with
+it
+the
+lobby
+content
+hash
+(D-36):
+peers
+on
+different
+art
+never
+meet.
 
-Loading (`features/balatro/engine/mp/optional-packs.ts`, wired in `index.ts`):
+Loading
+(`features/balatro/engine/mp/optional-packs.ts`,
+wired
+in
+`index.ts`):
 
-1. Nothing fetches it until a ruleset lists it (`RulesetDef.packs`, `requiredPacks()`): the
-   lobby's ruleset (each lobby view) or a Practice run's.
-2. Then each seated peer fetches it once (IndexedDB cache kind `release`, then the auth-gated
-   `/api/balatro/pack/$file` route, sha-256 verified), mounts it (`mountOptionalFiles`, marker
-   `/rmh/mp/packs/release`) and tells the host (`hello.info.packs` / `player_info.packs`, kept
-   as `LobbyPlayer.packs`). A failed download is a `pack-failed` lobby error; the next lobby view
+1. Nothing
+   fetches
+   it
+   until
+   a
+   ruleset
+   lists
+   it
+   (`RulesetDef.packs`,
+   `requiredPacks()`):
+   the
+   lobby's
+   ruleset
+   (each
+   lobby
+   view)
+   or
+   a
+   Practice
+   run's.
+2. Then
+   each
+   seated
+   peer
+   fetches
+   it
+   once
+   (IndexedDB
+   cache
+   kind
+   `release`,
+   then
+   the
+   auth-gated
+   `/api/balatro/pack/$file`
+   route,
+   sha-256
+   verified),
+   mounts
+   it
+   (`mountOptionalFiles`,
+   marker
+   `/rmh/mp/packs/release`)
+   and
+   tells
+   the
+   host
+   (`hello.info.packs`
+   /
+   `player_info.packs`,
+   kept
+   as
+   `LobbyPlayer.packs`).
+   A
+   failed
+   download
+   is
+   a
+   `pack-failed`
+   lobby
+   error;
+   the
+   next
+   lobby
+   view
    retries.
-3. The host cannot start while a seated player lacks a required pack (`startBlock` →
-   `start-packs`, "Waiting for every player to download the ruleset art"). Practice on Release
-   starts once the pack is mounted.
-4. In Lua, mounting a Release session reloads `mp_release_jokers` from the pack
-   (`atlas.reload`); the reworked Mad, Clever, 8 Ball and Square Joker draw from it.
+3. The
+   host
+   cannot
+   start
+   while
+   a
+   seated
+   player
+   lacks
+   a
+   required
+   pack
+   (`startBlock`
+   →
+   `start-packs`,
+   "Waiting
+   for
+   every
+   player
+   to
+   download
+   the
+   ruleset
+   art").
+   Practice
+   on
+   Release
+   starts
+   once
+   the
+   pack
+   is
+   mounted.
+4. In
+   Lua,
+   mounting
+   a
+   Release
+   session
+   reloads
+   `mp_release_jokers`
+   from
+   the
+   pack
+   (`atlas.reload`);
+   the
+   reworked
+   Mad,
+   Clever,
+   8
+   Ball
+   and
+   Square
+   Joker
+   draw
+   from
+   it.
 
 ### Atlas registry
 
-`data/balatro-mp/atlases.json` maps an atlas key to an entry. The pack also ships
-it as the Lua table `rmh_mp/data/atlases.lua`: the flat `atlases` map (no `version` or
-`stub`), with `frames` omitted when null. `registry/atlas.lua` accepts both shapes.
+`data/balatro-mp/atlases.json`
+maps
+an
+atlas
+key
+to
+an
+entry.
+The
+pack
+also
+ships
+it
+as
+the
+Lua
+table
+`rmh_mp/data/atlases.lua`:
+the
+flat
+`atlases`
+map
+(no
+`version`
+or
+`stub`),
+with
+`frames`
+omitted
+when
+null.
+`registry/atlas.lua`
+accepts
+both
+shapes.
 
 | Field         | Meaning                                                                                                                                                                                                                                                                                                                  |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -338,128 +2522,1793 @@ it as the Lua table `rmh_mp/data/atlases.lua`: the flat `atlases` map (no `versi
 | `variants`    | Optional `{lang: file}` art for one language (only `mp_c_asteroid` has one, for `ru`)                                                                                                                                                                                                                                    |
 | `pack`        | Optional: the file ships in that optional pack, from `data/balatro-mp/<pack>/{1x,2x}/`, not in the MP pack (only `mp_release_jokers`, pack `release`). Until the pack is mounted the atlas is an alias of its `placeholder`; `atlas.reload(key)` loads it then (the release layer does on mount)                         |
 
-The key is `mp_<file stem>`, so `j_pizza.png` becomes `mp_j_pizza`. The four
-blind-chip sheets are the exception. They keep the mod's names:
-`mp_player_blind_chip`, `mp_player_blind_col`, `mp_manhunt_hunter_blind_chip` and
-`mp_manhunt_runner_blind_chip`. Every sheet stays within 4096 px at 2x (the WebGL1
-guarantee). The widest is `deck_stickers` at 3550 px.
+The
+key
+is
+`mp_<file stem>`,
+so
+`j_pizza.png`
+becomes
+`mp_j_pizza`.
+The
+four
+blind-chip
+sheets
+are
+the
+exception.
+They
+keep
+the
+mod's
+names:
+`mp_player_blind_chip`,
+`mp_player_blind_col`,
+`mp_manhunt_hunter_blind_chip`
+and
+`mp_manhunt_runner_blind_chip`.
+Every
+sheet
+stays
+within
+4096
+px
+at
+2x
+(the
+WebGL1
+guarantee).
+The
+widest
+is
+`deck_stickers`
+at
+3550
+px.
 
 ## 5. Deviations from the mod
 
-Plan decisions D-04 (the comeback bonus
-arms only on a lives decrease), D-18 (SPEEDRUN emission rebuilt by the host) and
-D-22 (`c_mp_eeeee`) start the list.
+Plan
+decisions
+D-04
+(the
+comeback
+bonus
+arms
+only
+on
+a
+lives
+decrease),
+D-18
+(SPEEDRUN
+emission
+rebuilt
+by
+the
+host)
+and
+D-22
+(`c_mp_eeeee`)
+start
+the
+list.
 
-WS6 (Lua core):
+WS6
+(Lua
+core):
 
-- The Uncommon and Rare Tag reworks under The Order (OR-05) keep vanilla's free
-  (couponed) shop joker; only the queue becomes ante-agnostic, through the
-  `create_card` wrap.
-- The Order's Idol and Mail-In Rebate picks are weighted by copies in the deck over
-  a candidate list sorted by count, rank and suit (a reconstruction of the intent,
-  not the mod's scoring table).
-- A PvP blind's held-in-hand end-of-round effects run when the round ends (after
-  `end_pvp`), not when the player runs out of hands. The money is the same.
-- The Order's voucher queue over a "stable culled pool" and its value-stable deck
-  shuffle are not reproduced; vouchers and shuffles use the rewritten keys only
-  (`*_resample` advances one queue, `nr`/`cashout` are per blind).
+- The
+  Uncommon
+  and
+  Rare
+  Tag
+  reworks
+  under
+  The
+  Order
+  (OR-05)
+  keep
+  vanilla's
+  free
+  (couponed)
+  shop
+  joker;
+  only
+  the
+  queue
+  becomes
+  ante-agnostic,
+  through
+  the
+  `create_card`
+  wrap.
+- The
+  Order's
+  Idol
+  and
+  Mail-In
+  Rebate
+  picks
+  are
+  weighted
+  by
+  copies
+  in
+  the
+  deck
+  over
+  a
+  candidate
+  list
+  sorted
+  by
+  count,
+  rank
+  and
+  suit
+  (a
+  reconstruction
+  of
+  the
+  intent,
+  not
+  the
+  mod's
+  scoring
+  table).
+- A
+  PvP
+  blind's
+  held-in-hand
+  end-of-round
+  effects
+  run
+  when
+  the
+  round
+  ends
+  (after
+  `end_pvp`),
+  not
+  when
+  the
+  player
+  runs
+  out
+  of
+  hands.
+  The
+  money
+  is
+  the
+  same.
+- The
+  Order's
+  voucher
+  queue
+  over
+  a
+  "stable
+  culled
+  pool"
+  and
+  its
+  value-stable
+  deck
+  shuffle
+  are
+  not
+  reproduced;
+  vouchers
+  and
+  shuffles
+  use
+  the
+  rewritten
+  keys
+  only
+  (`*_resample`
+  advances
+  one
+  queue,
+  `nr`/`cashout`
+  are
+  per
+  blind).
 
 ### Lobby options and the pause menu (audit C15, E23, C17)
 
-- D-15: `different_seeds`, `different_decks`, `random_loadout`, `normal_bosses` and
-  `multiplayer_jokers` are Advanced lobby options. The mod's Lobby Options screen exposes none of
-  them (they keep their `core.lua` defaults and no ruleset sets them), so this is the one way to
-  reach them; what they do is the mod's. `legacy_smallworld`, `disable_live_and_timer_hud`,
-  `forced_config`, `weekly` and the `cocktail` lobby option are excluded (EX-19).
-- `different_decks` (the mod's `lobby_start_run` / `copy_host_deck`): a player's own pick stays in
-  its Lua (`MP.loadout`, set by the run setup's `loadout` mode, cleared with each new lobby) and is
-  applied by `MP.session.mount`, as each mod client applies its own `PVP.LOBBY.deck`; nothing
-  goes over the wire. A guest picks a deck and a stake only (no challenge, no MP stake: the host's
-  MP stake applies to everyone), and a per-player deck drops the host's challenge.
-- `random_loadout` is rolled by the host (`buildMatch` → `perPlayer`), not by each client: each
-  player's deck and stake come from `hashString(<run seed>:loadout:<player id>)`, the analogue of
-  the mod's `pseudohash(seed .. "_mp_random_" .. username)`. The MP decks join the pool only
-  when the ruleset has MP content (RS-16 isolation; the mod's pool always lists them).
-- Pause menu: Practice's Seed Change restarts the practice run on a fresh seed. The mod shows the
-  button there too, but its vote needs a lobby, so it does nothing.
-- D-40 (re-audit N2): the MP decks are in the Cocktail Deck's pool and editor and in the
-  `random_loadout` pool. The mod's own code drops them by accident: `get_cocktail_decks` whitelists
-  `v.mod.id` against the key `Multiplayer`, but the mod ships as `MultiplayerPvP`
-  (`objects/decks/ZZ_cocktail.lua:6-17,145-168`, `networking/action_handlers.lua:277-303`; the same
-  stale id disables its `back_multiplayer` DrawStep, `objects/decks/_decks.lua:13`). Ours keeps the
-  evident intent (the mod's Cocktail sticker atlas has the MP-deck columns): `content/cocktail.lua`
-  `K.all_decks`, `lobby/lobby-reducer.ts` `buildMatch`. `random_loadout` adds the MP decks and
-  Cocktail only where the ruleset has MP content (RS-16), so a non-MP ruleset never rolls Cocktail,
-  where the mod adds Cocktail in every ruleset.
+- D-15:
+  `different_seeds`,
+  `different_decks`,
+  `random_loadout`,
+  `normal_bosses`
+  and
+  `multiplayer_jokers`
+  are
+  Advanced
+  lobby
+  options.
+  The
+  mod's
+  Lobby
+  Options
+  screen
+  exposes
+  none
+  of
+  them
+  (they
+  keep
+  their
+  `core.lua`
+  defaults
+  and
+  no
+  ruleset
+  sets
+  them),
+  so
+  this
+  is
+  the
+  one
+  way
+  to
+  reach
+  them;
+  what
+  they
+  do
+  is
+  the
+  mod's.
+  `legacy_smallworld`,
+  `disable_live_and_timer_hud`,
+  `forced_config`,
+  `weekly`
+  and
+  the
+  `cocktail`
+  lobby
+  option
+  are
+  excluded
+  (EX-19).
+- `different_decks`
+  (the
+  mod's
+  `lobby_start_run`
+  /
+  `copy_host_deck`):
+  a
+  player's
+  own
+  pick
+  stays
+  in
+  its
+  Lua
+  (`MP.loadout`,
+  set
+  by
+  the
+  run
+  setup's
+  `loadout`
+  mode,
+  cleared
+  with
+  each
+  new
+  lobby)
+  and
+  is
+  applied
+  by
+  `MP.session.mount`,
+  as
+  each
+  mod
+  client
+  applies
+  its
+  own
+  `PVP.LOBBY.deck`;
+  nothing
+  goes
+  over
+  the
+  wire.
+  A
+  guest
+  picks
+  a
+  deck
+  and
+  a
+  stake
+  only
+  (no
+  challenge,
+  no
+  MP
+  stake:
+  the
+  host's
+  MP
+  stake
+  applies
+  to
+  everyone),
+  and
+  a
+  per-player
+  deck
+  drops
+  the
+  host's
+  challenge.
+- `random_loadout`
+  is
+  rolled
+  by
+  the
+  host
+  (`buildMatch`
+  →
+  `perPlayer`),
+  not
+  by
+  each
+  client:
+  each
+  player's
+  deck
+  and
+  stake
+  come
+  from
+  `hashString(<run seed>:loadout:<player id>)`,
+  the
+  analogue
+  of
+  the
+  mod's
+  `pseudohash(seed .. "_mp_random_" .. username)`.
+  The
+  MP
+  decks
+  join
+  the
+  pool
+  only
+  when
+  the
+  ruleset
+  has
+  MP
+  content
+  (RS-16
+  isolation;
+  the
+  mod's
+  pool
+  always
+  lists
+  them).
+- Pause
+  menu:
+  Practice's
+  Seed
+  Change
+  restarts
+  the
+  practice
+  run
+  on
+  a
+  fresh
+  seed.
+  The
+  mod
+  shows
+  the
+  button
+  there
+  too,
+  but
+  its
+  vote
+  needs
+  a
+  lobby,
+  so
+  it
+  does
+  nothing.
+- D-40
+  (re-audit
+  N2):
+  the
+  MP
+  decks
+  are
+  in
+  the
+  Cocktail
+  Deck's
+  pool
+  and
+  editor
+  and
+  in
+  the
+  `random_loadout`
+  pool.
+  The
+  mod's
+  own
+  code
+  drops
+  them
+  by
+  accident:
+  `get_cocktail_decks`
+  whitelists
+  `v.mod.id`
+  against
+  the
+  key
+  `Multiplayer`,
+  but
+  the
+  mod
+  ships
+  as
+  `MultiplayerPvP`
+  (`objects/decks/ZZ_cocktail.lua:6-17,145-168`,
+  `networking/action_handlers.lua:277-303`;
+  the
+  same
+  stale
+  id
+  disables
+  its
+  `back_multiplayer`
+  DrawStep,
+  `objects/decks/_decks.lua:13`).
+  Ours
+  keeps
+  the
+  evident
+  intent
+  (the
+  mod's
+  Cocktail
+  sticker
+  atlas
+  has
+  the
+  MP-deck
+  columns):
+  `content/cocktail.lua`
+  `K.all_decks`,
+  `lobby/lobby-reducer.ts`
+  `buildMatch`.
+  `random_loadout`
+  adds
+  the
+  MP
+  decks
+  and
+  Cocktail
+  only
+  where
+  the
+  ruleset
+  has
+  MP
+  content
+  (RS-16),
+  so
+  a
+  non-MP
+  ruleset
+  never
+  rolls
+  Cocktail,
+  where
+  the
+  mod
+  adds
+  Cocktail
+  in
+  every
+  ruleset.
 
 ### WS4 (pure match logic)
 
-- Pairing is a true 1-factorisation (stable per-run order + circle method with a BYE slot, bounded search, then reset); A1's adjacent-pair rotation can repeat a pair early for n ≥ 6.
-- Pending death: a player whose ante has passed the pending blind, or who readies for that ante's PvP Boss, counts as having beaten it (prevents stalls on D-06's blind-on-deck key).
-- Any 2-player match outside Manhunt/Teams receives the degenerate `nemesis_pairing`.
-- D-11 votes count present, alive, non-forfeited players; seed and draw votes share `votes.openedAt`, so both expire 60 s after the latest vote of either kind.
-- `end_pvp.pvp_timer_lost` is true when the round was decided by the loser's PvP-timer hand loss.
-- PvP-timer receivers keep their own clock value; ante-timer receivers adopt the sender's value.
-- Teams card targets are `opp[(index + ante − 1) mod |opp|]` (A1 has no rule).
-- The Runner's voucher adds a life only to alive Hunters.
-- Practice reaching ante 9 emits nothing from the referee; the vanilla win screen there is the Lua side's.
-- `chip_cap` (`chips_dollar_cap`: vanilla `mod_chips` caps chips at the money held) and `shrinking_hand` (`minus_hand_size_per_X_dollar = 10`: vanilla `CardArea:update` shrinks the hand by 1 per $10) are Advanced layers after `all_eternal`; they were excluded as EX-18 only because the mod's layers are flag-only, but the flags are vanilla challenge modifiers, so no Lua is needed.
-- EX-18 lifted (LY-26): `no_uncommons` (Uncommon rarity roll → Common in `get_current_pool`, Uncommon Tag banned) and the Glass cycle `glass_vanilla` / `glass_standard` / `glass_legacy` / `glass_experimental` are Advanced layers. A layer's `group` makes Advanced layers mutually exclusive (`sanitizeModifierLayers` keeps the first; the Lua toggle clears the others) and its `overrides` keys are removed from every list built so far before it adds its own, so a Glass layer replaces the ruleset's Glass choice. The Modifiers tab is three columns.
+- Pairing
+  is
+  a
+  true
+  1-factorisation
+  (stable
+  per-run
+  order +
+  circle
+  method
+  with
+  a
+  BYE
+  slot,
+  bounded
+  search,
+  then
+  reset);
+  A1's
+  adjacent-pair
+  rotation
+  can
+  repeat
+  a
+  pair
+  early
+  for
+  n
+  ≥ 6.
+- Pending
+  death:
+  a
+  player
+  whose
+  ante
+  has
+  passed
+  the
+  pending
+  blind,
+  or
+  who
+  readies
+  for
+  that
+  ante's
+  PvP
+  Boss,
+  counts
+  as
+  having
+  beaten
+  it
+  (prevents
+  stalls
+  on
+  D-06's
+  blind-on-deck
+  key).
+- Any
+  2-player
+  match
+  outside
+  Manhunt/Teams
+  receives
+  the
+  degenerate
+  `nemesis_pairing`.
+- D-11
+  votes
+  count
+  present,
+  alive,
+  non-forfeited
+  players;
+  seed
+  and
+  draw
+  votes
+  share
+  `votes.openedAt`,
+  so
+  both
+  expire
+  60
+  s
+  after
+  the
+  latest
+  vote
+  of
+  either
+  kind.
+- `end_pvp.pvp_timer_lost`
+  is
+  true
+  when
+  the
+  round
+  was
+  decided
+  by
+  the
+  loser's
+  PvP-timer
+  hand
+  loss.
+- PvP-timer
+  receivers
+  keep
+  their
+  own
+  clock
+  value;
+  ante-timer
+  receivers
+  adopt
+  the
+  sender's
+  value.
+- Teams
+  card
+  targets
+  are
+  `opp[(index + ante − 1) mod |opp|]`
+  (A1
+  has
+  no
+  rule).
+- The
+  Runner's
+  voucher
+  adds
+  a
+  life
+  only
+  to
+  alive
+  Hunters.
+- Practice
+  reaching
+  ante
+  9
+  emits
+  nothing
+  from
+  the
+  referee;
+  the
+  vanilla
+  win
+  screen
+  there
+  is
+  the
+  Lua
+  side's.
+- `chip_cap`
+  (`chips_dollar_cap`:
+  vanilla
+  `mod_chips`
+  caps
+  chips
+  at
+  the
+  money
+  held)
+  and
+  `shrinking_hand`
+  (`minus_hand_size_per_X_dollar = 10`:
+  vanilla
+  `CardArea:update`
+  shrinks
+  the
+  hand
+  by
+  1
+  per
+  $10)
+  are
+  Advanced
+  layers
+  after
+  `all_eternal`;
+  they
+  were
+  excluded
+  as
+  EX-18
+  only
+  because
+  the
+  mod's
+  layers
+  are
+  flag-only,
+  but
+  the
+  flags
+  are
+  vanilla
+  challenge
+  modifiers,
+  so
+  no
+  Lua
+  is
+  needed.
+- EX-18
+  lifted
+  (LY-26):
+  `no_uncommons`
+  (Uncommon
+  rarity
+  roll
+  →
+  Common
+  in
+  `get_current_pool`,
+  Uncommon
+  Tag
+  banned)
+  and
+  the
+  Glass
+  cycle
+  `glass_vanilla`
+  /
+  `glass_standard`
+  /
+  `glass_legacy`
+  /
+  `glass_experimental`
+  are
+  Advanced
+  layers.
+  A
+  layer's
+  `group`
+  makes
+  Advanced
+  layers
+  mutually
+  exclusive
+  (`sanitizeModifierLayers`
+  keeps
+  the
+  first;
+  the
+  Lua
+  toggle
+  clears
+  the
+  others)
+  and
+  its
+  `overrides`
+  keys
+  are
+  removed
+  from
+  every
+  list
+  built
+  so
+  far
+  before
+  it
+  adds
+  its
+  own,
+  so
+  a
+  Glass
+  layer
+  replaces
+  the
+  ruleset's
+  Glass
+  choice.
+  The
+  Modifiers
+  tab
+  is
+  three
+  columns.
 
 ### WS5 (session runtime)
 
-- `hello.rejoin` is set only by a peer whose Lua run is gone (a reload): the host answers with the referee's `rejoined` resync and the 3-minute catch-up clock. A peer whose run is still live (a network drop, a host migration) sends `rejoin: null`; the host replays its outcome log to it instead (deduplicated by `hs`) and reports it `back`.
-- A crash rejoiner counts as caught up at its first `flags` past ante 0 after `rejoin_restore`; it tells the host with a second `player_info` (the wire has no member-to-host presence kind).
-- A deliberate host leave sends its forfeit, the checkpoint and `bye` over P2P and asks the hub to hand over 500 ms later, so the successor's checkpoint already holds the forfeit.
-- Seats across a Leave: a deliberate Leave gives the seat up at once; only a crash or a dropped socket keeps it for the rejoin (`seat-held` + the Seat-held prompt). Because the host's hub `leave` waits out that 500 ms drain, the roles emit through the runtime's `HubGate` (`lobby/hub-gate.ts`): every hub emit made during the drain (Create, Join, the seat prompt) is queued and sent right after the `leave`, so the hub never sees the next claim while the old room still holds the seat. A host refused before its room exists ends with `seat-held:<code>` like a member, so the prompt can Rejoin that room.
-- Display sync is not filtered by JS: every peer message reaches Lua with its sender, and Lua keeps its target's (report.lua already filters, and `opp_ctx` needs every sender for `mp_from_target`).
+- `hello.rejoin`
+  is
+  set
+  only
+  by
+  a
+  peer
+  whose
+  Lua
+  run
+  is
+  gone
+  (a
+  reload):
+  the
+  host
+  answers
+  with
+  the
+  referee's
+  `rejoined`
+  resync
+  and
+  the
+  3-minute
+  catch-up
+  clock.
+  A
+  peer
+  whose
+  run
+  is
+  still
+  live
+  (a
+  network
+  drop,
+  a
+  host
+  migration)
+  sends
+  `rejoin: null`;
+  the
+  host
+  replays
+  its
+  outcome
+  log
+  to
+  it
+  instead
+  (deduplicated
+  by
+  `hs`)
+  and
+  reports
+  it
+  `back`.
+- A
+  crash
+  rejoiner
+  counts
+  as
+  caught
+  up
+  at
+  its
+  first
+  `flags`
+  past
+  ante
+  0
+  after
+  `rejoin_restore`;
+  it
+  tells
+  the
+  host
+  with
+  a
+  second
+  `player_info`
+  (the
+  wire
+  has
+  no
+  member-to-host
+  presence
+  kind).
+- A
+  deliberate
+  host
+  leave
+  sends
+  its
+  forfeit,
+  the
+  checkpoint
+  and
+  `bye`
+  over
+  P2P
+  and
+  asks
+  the
+  hub
+  to
+  hand
+  over
+  500
+  ms
+  later,
+  so
+  the
+  successor's
+  checkpoint
+  already
+  holds
+  the
+  forfeit.
+- Seats
+  across
+  a
+  Leave:
+  a
+  deliberate
+  Leave
+  gives
+  the
+  seat
+  up
+  at
+  once;
+  only
+  a
+  crash
+  or
+  a
+  dropped
+  socket
+  keeps
+  it
+  for
+  the
+  rejoin
+  (`seat-held` +
+  the
+  Seat-held
+  prompt).
+  Because
+  the
+  host's
+  hub
+  `leave`
+  waits
+  out
+  that
+  500
+  ms
+  drain,
+  the
+  roles
+  emit
+  through
+  the
+  runtime's
+  `HubGate`
+  (`lobby/hub-gate.ts`):
+  every
+  hub
+  emit
+  made
+  during
+  the
+  drain
+  (Create,
+  Join,
+  the
+  seat
+  prompt)
+  is
+  queued
+  and
+  sent
+  right
+  after
+  the
+  `leave`,
+  so
+  the
+  hub
+  never
+  sees
+  the
+  next
+  claim
+  while
+  the
+  old
+  room
+  still
+  holds
+  the
+  seat.
+  A
+  host
+  refused
+  before
+  its
+  room
+  exists
+  ends
+  with
+  `seat-held:<code>`
+  like
+  a
+  member,
+  so
+  the
+  prompt
+  can
+  Rejoin
+  that
+  room.
+- Display
+  sync
+  is
+  not
+  filtered
+  by
+  JS:
+  every
+  peer
+  message
+  reaches
+  Lua
+  with
+  its
+  sender,
+  and
+  Lua
+  keeps
+  its
+  target's
+  (report.lua
+  already
+  filters,
+  and
+  `opp_ctx`
+  needs
+  every
+  sender
+  for
+  `mp_from_target`).
 
 ### WS11 / wave 3 (in-run UI)
 
-- Enemy location: the shop reports `loc_shop-<next blind key>` (the blind-on-deck rule over `round_resets.blind_states`, the Nemesis blind for a PvP Boss slot; bare `loc_shop` with no blind table), shown as "Shopping before <blind>", and the line carries a small chip of the blind it names (hidden for Selecting / Ready).
-- Nemesis rows: the mod puts full-size rows above your jokers, which in the base game's 16:9 room (0.7 units above y = 0) are off-screen. Standard and Mirrored rows are compact (cards × 0.55) starting at y = −0.6, and while a row has cards your joker and consumable areas move down by ≈0.94 (their bottom stays above the shop at 3.6); they move back when the rows empty, and during Blind Select (vanilla anchors the choices to `G.jokers.T.y`). Classic is unchanged. Phantom copies' tooltips show a "Phantom" badge (`rmh_mp_phantom` label) instead of the eternal one they carry to block selling.
-- The deck picker's preview card is not draggable: `CardArea:set_ranks` (run by `emplace`) made a lone card draggable again, so the flag is set after `emplace` (found by the real-builder spec `mp_ui_deck_preview_spec.lua`).
+- Enemy
+  location:
+  the
+  shop
+  reports
+  `loc_shop-<next blind key>`
+  (the
+  blind-on-deck
+  rule
+  over
+  `round_resets.blind_states`,
+  the
+  Nemesis
+  blind
+  for
+  a
+  PvP
+  Boss
+  slot;
+  bare
+  `loc_shop`
+  with
+  no
+  blind
+  table),
+  shown
+  as
+  "Shopping
+  before
+  <blind>",
+  and
+  the
+  line
+  carries
+  a
+  small
+  chip
+  of
+  the
+  blind
+  it
+  names
+  (hidden
+  for
+  Selecting
+  /
+  Ready).
+- Nemesis
+  rows:
+  the
+  mod
+  puts
+  full-size
+  rows
+  above
+  your
+  jokers,
+  which
+  in
+  the
+  base
+  game's
+  16:9
+  room
+  (0.7
+  units
+  above
+  y
+  = 0)
+  are
+  off-screen.
+  Standard
+  and
+  Mirrored
+  rows
+  are
+  compact
+  (cards
+  ×
+  0.55)
+  starting
+  at
+  y
+  =
+  −0.6,
+  and
+  while
+  a
+  row
+  has
+  cards
+  your
+  joker
+  and
+  consumable
+  areas
+  move
+  down
+  by
+  ≈0.94
+  (their
+  bottom
+  stays
+  above
+  the
+  shop
+  at
+  3.6);
+  they
+  move
+  back
+  when
+  the
+  rows
+  empty,
+  and
+  during
+  Blind
+  Select
+  (vanilla
+  anchors
+  the
+  choices
+  to
+  `G.jokers.T.y`).
+  Classic
+  is
+  unchanged.
+  Phantom
+  copies'
+  tooltips
+  show
+  a
+  "Phantom"
+  badge
+  (`rmh_mp_phantom`
+  label)
+  instead
+  of
+  the
+  eternal
+  one
+  they
+  carry
+  to
+  block
+  selling.
+- The
+  deck
+  picker's
+  preview
+  card
+  is
+  not
+  draggable:
+  `CardArea:set_ranks`
+  (run
+  by
+  `emplace`)
+  made
+  a
+  lone
+  card
+  draggable
+  again,
+  so
+  the
+  flag
+  is
+  set
+  after
+  `emplace`
+  (found
+  by
+  the
+  real-builder
+  spec
+  `mp_ui_deck_preview_spec.lua`).
 
 ### EX-14, EX-16, EX-17 and the Judgement rework (lifted; all opt-in)
 
-- Release ruleset (`content/release.lua`): written from the mod's 65 ReworkCenter entries and their
-  text. Where an entry only changes numbers, the vanilla code runs on the 1.0.0 numbers; where it
-  changes behaviour, a rework `calc` returns `dispatch.SKIP` for the contexts it takes over (the
-  mod's `return nil, true`). Yorick counts discard actions on the first card of each discard.
-  The Blue Seal ignores the owner's 1-in-2 balance change (1.0.0 had none) and makes a random
-  Planet. Magic Mouth still steals that Planet (the release wrap goes through trap_hooks' `seal_watch`). Release + an MP stake: the MP stake's scaling past 3 uses the generic
-  curve; its Perishables/Rentals survive Orange/Gold.
-- Alt stakes: Plastic's interest is the mod's: its `lovely/stakes.toml` switches vanilla interest
-  off and adds its own cash-out row (`mp_modified_interest`) paying
-  `interest_amount × min(floor($ / 10), cap / 10)`, i.e. $1 per $10 with the same cap in dollars
-  earned, and ours pays the same (an earlier version of this line said the mod never implemented
-  it; the independent audit, docs/balatro-mp-parity.md §Audit, found the row). To the
-  Moon's bonus scales with the step; Seed Money and Money Tree read as they are (the cap in dollars
-  earned is unchanged).
-- Nemesis sticker: the mod gives it no behaviour (art, `hide_badge`, an enable flag nothing sets).
-  Here it marks cards received from the Nemesis, while the `nemesis_sticker` Advanced layer is on.
-- Judgement rework: the mod's version fed a joker-override queue that no longer exists. Here it uses
-  The Order's own queues: Judgement's Joker is the shop's next roll, stickered rolls are held for
-  the shop (`G.GAME.mp_held_jokers`, `order.take_held`). An Advanced layer, since the mod never
-  enabled it.
+- Release
+  ruleset
+  (`content/release.lua`):
+  written
+  from
+  the
+  mod's
+  65
+  ReworkCenter
+  entries
+  and
+  their
+  text.
+  Where
+  an
+  entry
+  only
+  changes
+  numbers,
+  the
+  vanilla
+  code
+  runs
+  on
+  the
+  1.0.0
+  numbers;
+  where
+  it
+  changes
+  behaviour,
+  a
+  rework
+  `calc`
+  returns
+  `dispatch.SKIP`
+  for
+  the
+  contexts
+  it
+  takes
+  over
+  (the
+  mod's
+  `return nil, true`).
+  Yorick
+  counts
+  discard
+  actions
+  on
+  the
+  first
+  card
+  of
+  each
+  discard.
+  The
+  Blue
+  Seal
+  ignores
+  the
+  owner's
+  1-in-2
+  balance
+  change
+  (1.0.0
+  had
+  none)
+  and
+  makes
+  a
+  random
+  Planet.
+  Magic
+  Mouth
+  still
+  steals
+  that
+  Planet
+  (the
+  release
+  wrap
+  goes
+  through
+  trap_hooks'
+  `seal_watch`).
+  Release +
+  an
+  MP
+  stake:
+  the
+  MP
+  stake's
+  scaling
+  past
+  3
+  uses
+  the
+  generic
+  curve;
+  its
+  Perishables/Rentals
+  survive
+  Orange/Gold.
+- Alt
+  stakes:
+  Plastic's
+  interest
+  is
+  the
+  mod's:
+  its
+  `lovely/stakes.toml`
+  switches
+  vanilla
+  interest
+  off
+  and
+  adds
+  its
+  own
+  cash-out
+  row
+  (`mp_modified_interest`)
+  paying
+  `interest_amount × min(floor($ / 10), cap / 10)`,
+  i.e.
+  $1
+  per
+  $10
+  with
+  the
+  same
+  cap
+  in
+  dollars
+  earned,
+  and
+  ours
+  pays
+  the
+  same
+  (an
+  earlier
+  version
+  of
+  this
+  line
+  said
+  the
+  mod
+  never
+  implemented
+  it;
+  the
+  independent
+  audit,
+  docs/balatro-mp-parity.md
+  §Audit,
+  found
+  the
+  row).
+  To
+  the
+  Moon's
+  bonus
+  scales
+  with
+  the
+  step;
+  Seed
+  Money
+  and
+  Money
+  Tree
+  read
+  as
+  they
+  are
+  (the
+  cap
+  in
+  dollars
+  earned
+  is
+  unchanged).
+- Nemesis
+  sticker:
+  the
+  mod
+  gives
+  it
+  no
+  behaviour
+  (art,
+  `hide_badge`,
+  an
+  enable
+  flag
+  nothing
+  sets).
+  Here
+  it
+  marks
+  cards
+  received
+  from
+  the
+  Nemesis,
+  while
+  the
+  `nemesis_sticker`
+  Advanced
+  layer
+  is
+  on.
+- Judgement
+  rework:
+  the
+  mod's
+  version
+  fed
+  a
+  joker-override
+  queue
+  that
+  no
+  longer
+  exists.
+  Here
+  it
+  uses
+  The
+  Order's
+  own
+  queues:
+  Judgement's
+  Joker
+  is
+  the
+  shop's
+  next
+  roll,
+  stickered
+  rolls
+  are
+  held
+  for
+  the
+  shop
+  (`G.GAME.mp_held_jokers`,
+  `order.take_held`).
+  An
+  Advanced
+  layer,
+  since
+  the
+  mod
+  never
+  enabled
+  it.
 
 ### WS8 (content B: sandbox, Extra Credit)
 
-- Clown Car's "initial scoring step" (an SMODS context) is a custom context `mp_initial_scoring` fired from a `Blind.modify_hand` session wrap: after the blind's own change, before any card scores.
-- Lucky 7 and Alloy's "counts as" (SMODS `check_enhancement`) are session wraps on the vanilla card getters: a Lucky 7 card rolls the Lucky +20 Mult (1 in 5) and $20 (1 in 15) like a real Lucky card; with Alloy held, held Gold gives Steel's X1.5 and held Steel pays Gold's $3. Sandbox jokers that test an enhancement (`MP.sandbox.has_enh`) see both.
-- Go Fish and Warlock destroy their cards through vanilla's `destroying_card` pass (so the removal reaches `remove_playing_cards`), right after scoring rather than in `after`. Warlock picks its target at that point.
-- Chain Lightning keeps one count per joker; a Blueprint copy gives the multiplier of the original's current count without advancing it (the mod's shared counter double-counted copies).
-- Hoarder checks `debuff` (the mod checks a field that never exists, `debuffed`), and Magnet's response is accepted only from the nemesis it asked, once per request (D-19).
-- The Investment Tag also pays after the Nemesis blind (`last_blind.name == bl_mp_nemesis`, kept as a second check; `last_blind.boss` is true there too, since the registry gives every MP blind a never-rolled `boss` table: `showdown = false`, `min = R.NEVER_ROLLED_ANTE`, so vanilla's `Blind:set_blind`, `ease_background_colour_blind` and spin read it and `get_new_boss` never picks it).
-- The per-round globals (Zealot rank, Tuxedo/Farmer suit, Go Fish rank) roll after vanilla's `reset_castle_card`, over sorted suit/rank lists, with the mod's stream keys.
-- The error decoys' tooltip drops the mod's non-ASCII currency glyphs (MP Lua is ASCII; the fonts are subset to loc text).
-- The Sandbox collection order (`MP.sandbox.overview_keys`) shuffles with a private generator, never the game RNG.
+- Clown
+  Car's
+  "initial
+  scoring
+  step"
+  (an
+  SMODS
+  context)
+  is
+  a
+  custom
+  context
+  `mp_initial_scoring`
+  fired
+  from
+  a
+  `Blind.modify_hand`
+  session
+  wrap:
+  after
+  the
+  blind's
+  own
+  change,
+  before
+  any
+  card
+  scores.
+- Lucky
+  7
+  and
+  Alloy's
+  "counts
+  as"
+  (SMODS
+  `check_enhancement`)
+  are
+  session
+  wraps
+  on
+  the
+  vanilla
+  card
+  getters:
+  a
+  Lucky
+  7
+  card
+  rolls
+  the
+  Lucky
+  +20
+  Mult
+  (1
+  in 5)
+  and
+  $20
+  (1
+  in 15)
+  like
+  a
+  real
+  Lucky
+  card;
+  with
+  Alloy
+  held,
+  held
+  Gold
+  gives
+  Steel's
+  X1.5
+  and
+  held
+  Steel
+  pays
+  Gold's
+  $3.
+  Sandbox
+  jokers
+  that
+  test
+  an
+  enhancement
+  (`MP.sandbox.has_enh`)
+  see
+  both.
+- Go
+  Fish
+  and
+  Warlock
+  destroy
+  their
+  cards
+  through
+  vanilla's
+  `destroying_card`
+  pass
+  (so
+  the
+  removal
+  reaches
+  `remove_playing_cards`),
+  right
+  after
+  scoring
+  rather
+  than
+  in
+  `after`.
+  Warlock
+  picks
+  its
+  target
+  at
+  that
+  point.
+- Chain
+  Lightning
+  keeps
+  one
+  count
+  per
+  joker;
+  a
+  Blueprint
+  copy
+  gives
+  the
+  multiplier
+  of
+  the
+  original's
+  current
+  count
+  without
+  advancing
+  it
+  (the
+  mod's
+  shared
+  counter
+  double-counted
+  copies).
+- Hoarder
+  checks
+  `debuff`
+  (the
+  mod
+  checks
+  a
+  field
+  that
+  never
+  exists,
+  `debuffed`),
+  and
+  Magnet's
+  response
+  is
+  accepted
+  only
+  from
+  the
+  nemesis
+  it
+  asked,
+  once
+  per
+  request
+  (D-19).
+- The
+  Investment
+  Tag
+  also
+  pays
+  after
+  the
+  Nemesis
+  blind
+  (`last_blind.name == bl_mp_nemesis`,
+  kept
+  as
+  a
+  second
+  check;
+  `last_blind.boss`
+  is
+  true
+  there
+  too,
+  since
+  the
+  registry
+  gives
+  every
+  MP
+  blind
+  a
+  never-rolled
+  `boss`
+  table:
+  `showdown = false`,
+  `min = R.NEVER_ROLLED_ANTE`,
+  so
+  vanilla's
+  `Blind:set_blind`,
+  `ease_background_colour_blind`
+  and
+  spin
+  read
+  it
+  and
+  `get_new_boss`
+  never
+  picks
+  it).
+- The
+  per-round
+  globals
+  (Zealot
+  rank,
+  Tuxedo/Farmer
+  suit,
+  Go
+  Fish
+  rank)
+  roll
+  after
+  vanilla's
+  `reset_castle_card`,
+  over
+  sorted
+  suit/rank
+  lists,
+  with
+  the
+  mod's
+  stream
+  keys.
+- The
+  error
+  decoys'
+  tooltip
+  drops
+  the
+  mod's
+  non-ASCII
+  currency
+  glyphs
+  (MP
+  Lua
+  is
+  ASCII;
+  the
+  fonts
+  are
+  subset
+  to
+  loc
+  text).
+- The
+  Sandbox
+  collection
+  order
+  (`MP.sandbox.overview_keys`)
+  shuffles
+  with
+  a
+  private
+  generator,
+  never
+  the
+  game
+  RNG.
 
 ## 6. Operations
 
 ### Hub limits
 
-`features/balatro/engine/net/limits.ts` (frozen; a change is a plan amendment):
+`features/balatro/engine/net/limits.ts`
+(frozen;
+a
+change
+is
+a
+plan
+amendment):
 
 | `BALATRO_LIMITS`                          | Value                                                                 |
 | ----------------------------------------- | --------------------------------------------------------------------- |
@@ -471,61 +4320,391 @@ WS6 (Lua core):
 | `INVITES_PER_MIN`                         | 20 per account                                                        |
 | `MP_PROTOCOL_VERSION`                     | 1; the tail of the content hash `<core sha12><mp sha12>-v<n>` (D-36)  |
 
-Every `balatro:*` event has a per-socket rule in `server/socket-server/config.ts` (the rule map is
-also the event allowlist). Per minute: `p2p:host` 10, `p2p:join` 20, `p2p:admit` 240,
-`p2p:signal` 1 200, `p2p:relay:start` 20, `p2p:relay` 12 000, `p2p:state` 240, `p2p:kick` 30,
-`p2p:forfeit-seat` 60, `p2p:leave` 20, `p2p:close` 10, `seat:query` 30, `match:result` 10,
-`match:pending` 20. The WS12 events (§10) are `queue:join` 20, `queue:leave` 30, `party:queue`
-10, `invite` 20, `spectate:list` 30 and `queue:counts` 30. A limited event answers
-`rate-limited`, except `p2p:relay`, which drops silently.
+Every
+`balatro:*`
+event
+has
+a
+per-socket
+rule
+in
+`server/socket-server/config.ts`
+(the
+rule
+map
+is
+also
+the
+event
+allowlist).
+Per
+minute:
+`p2p:host`
+10,
+`p2p:join`
+20,
+`p2p:admit`
+240,
+`p2p:signal`
+1
+200,
+`p2p:relay:start`
+20,
+`p2p:relay`
+12
+000,
+`p2p:state`
+240,
+`p2p:kick`
+30,
+`p2p:forfeit-seat`
+60,
+`p2p:leave`
+20,
+`p2p:close`
+10,
+`seat:query`
+30,
+`match:result`
+10,
+`match:pending` 20.
+The
+WS12
+events
+(§10)
+are
+`queue:join`
+20,
+`queue:leave`
+30,
+`party:queue`
+10,
+`invite`
+20,
+`spectate:list`
+30
+and
+`queue:counts` 30.
+A
+limited
+event
+answers
+`rate-limited`,
+except
+`p2p:relay`,
+which
+drops
+silently.
 
 ### Relay budgets
 
-`BALATRO_RELAY_LIMITS`, metered per relayed member and direction by `SignalHub.spend`
+`BALATRO_RELAY_LIMITS`,
+metered
+per
+relayed
+member
+and
+direction
+by
+`SignalHub.spend`
 (`server/socket-server/p2p/signal-hub.ts`):
 
-- at most `MAX_PEERS_PER_ROOM` (15) members on the relay per room (`full` past it);
-- a token bucket of `BYTES_PER_SEC` 8 KiB/s with a `BURST_BYTES` 64 KiB burst;
-- frames above `MAX_PACKET_BYTES` (16 KiB + 64 B) are dropped. Unreliable frames (pings) are
-  dropped above 1 300 B (`RELAY_MAX_UNRELIABLE_BYTES`), past the bucket, and while the receiver
-  has more than 16 frames waiting (`RELAY_UNRELIABLE_BACKLOG` in `p2p.ts`);
-- reliable frames always pass and run a debt; past `MAX_DEBT_BYTES` (1 MiB) the member is cut off
-  the relay (`rate-limited`).
+- at
+  most
+  `MAX_PEERS_PER_ROOM`
+  (15)
+  members
+  on
+  the
+  relay
+  per
+  room
+  (`full`
+  past
+  it);
+- a
+  token
+  bucket
+  of
+  `BYTES_PER_SEC`
+  8
+  KiB/s
+  with
+  a
+  `BURST_BYTES`
+  64
+  KiB
+  burst;
+- frames
+  above
+  `MAX_PACKET_BYTES`
+  (16
+  KiB +
+  64
+  B)
+  are
+  dropped.
+  Unreliable
+  frames
+  (pings)
+  are
+  dropped
+  above
+  1
+  300
+  B
+  (`RELAY_MAX_UNRELIABLE_BYTES`),
+  past
+  the
+  bucket,
+  and
+  while
+  the
+  receiver
+  has
+  more
+  than
+  16
+  frames
+  waiting
+  (`RELAY_UNRELIABLE_BACKLOG`
+  in
+  `p2p.ts`);
+- reliable
+  frames
+  always
+  pass
+  and
+  run
+  a
+  debt;
+  past
+  `MAX_DEBT_BYTES`
+  (1
+  MiB)
+  the
+  member
+  is
+  cut
+  off
+  the
+  relay
+  (`rate-limited`).
 
-Over P2P each host-member link also limits its peer (40 messages/s, burst 100; §9).
+Over
+P2P
+each
+host-member
+link
+also
+limits
+its
+peer
+(40
+messages/s,
+burst
+100;
+§9).
 
 ### ICE and TURN
 
-The hub mints each account's ICE list (`iceFor` in `p2p.ts` → `buildIceServers` in
-`lib/call/ice.ts`, trimmed by `clampIceServers` to ≤ 8 servers × ≤ 8 URLs) and hands it out with
-the room. The browser takes it through `resolveHubIce` (`wire-codec.ts`, the zod-free
-`resolveIceServers`) and falls back to `DEFAULT_ICE_SERVERS` (Google's and Cloudflare's public
-STUN) when it is missing or invalid. The env vars are the voice-call ones in `.env.example`:
+The
+hub
+mints
+each
+account's
+ICE
+list
+(`iceFor`
+in
+`p2p.ts`
+→
+`buildIceServers`
+in
+`lib/call/ice.ts`,
+trimmed
+by
+`clampIceServers`
+to
+≤
+8
+servers
+×
+≤
+8
+URLs)
+and
+hands
+it
+out
+with
+the
+room.
+The
+browser
+takes
+it
+through
+`resolveHubIce`
+(`wire-codec.ts`,
+the
+zod-free
+`resolveIceServers`)
+and
+falls
+back
+to
+`DEFAULT_ICE_SERVERS`
+(Google's
+and
+Cloudflare's
+public
+STUN)
+when
+it
+is
+missing
+or
+invalid.
+The
+env
+vars
+are
+the
+voice-call
+ones
+in
+`.env.example`:
 
-- `STUN_URLS`: comma-separated STUN URLs (default: the two public servers above);
-- `TURN_URL`: comma-separated TURN URLs (e.g. `turn:…:3478,turns:…:443`);
-- `TURN_SECRET`: coturn's `static-auth-secret`. With both TURN vars set, each list carries a
-  coturn REST credential (`<expiry>:<userId>`, HMAC-SHA1) valid for `TURN_CREDENTIAL_TTL_SEC`
-  (600 s). The secret never reaches a browser.
+- `STUN_URLS`:
+  comma-separated
+  STUN
+  URLs
+  (default:
+  the
+  two
+  public
+  servers
+  above);
+- `TURN_URL`:
+  comma-separated
+  TURN
+  URLs
+  (e.g.
+  `turn:…:3478,turns:…:443`);
+- `TURN_SECRET`:
+  coturn's
+  `static-auth-secret`.
+  With
+  both
+  TURN
+  vars
+  set,
+  each
+  list
+  carries
+  a
+  coturn
+  REST
+  credential
+  (`<expiry>:<userId>`,
+  HMAC-SHA1)
+  valid
+  for
+  `TURN_CREDENTIAL_TTL_SEC`
+  (600
+  s).
+  The
+  secret
+  never
+  reaches
+  a
+  browser.
 
-A pair with no direct path moves to the hub relay after 8 s without TURN, 12 s with it (§1).
+A
+pair
+with
+no
+direct
+path
+moves
+to
+the
+hub
+relay
+after
+8
+s
+without
+TURN,
+12
+s
+with
+it
+(§1).
 
 ### Bundle budget
 
-`scripts/balatro/bundle-budget.ts` (CI step "Bundle and pack budget"; KB = 1 024 B) checks:
+`scripts/balatro/bundle-budget.ts`
+(CI
+step
+"Bundle
+and
+pack
+budget";
+KB
+=
+1
+024
+B)
+checks:
 
 | Budget                              | Limit                                                                     |
 | ----------------------------------- | ------------------------------------------------------------------------- |
 | Single-player route chunk (gzip)    | baseline + 5 KB (2.5 KB for MP's hooks + 2.5 KB of later SP features)     |
 | MP lazy chunks (gzip, summed)       | 70 KB, of which `lib/shared/p2p` ≤ 15 KB                                  |
-| Static closure of `BalatroPage.tsx` | no module under `features/balatro/engine/mp/` or `lib/shared/p2p/`                    |
+| Static closure of `BalatroPage.tsx` | no module under `features/balatro/engine/mp/` or `lib/shared/p2p/`        |
 | Test surface                        | no `__balatroMp` in any output without `VITE_BALATRO_MP_TEST`             |
 | Packs                               | as `pack-budget.json` (below); the manifest's byte counts match the files |
 
-The baseline is `scripts/balatro/bundle-budget.json`: `spEntryGzip` 29 683 B and
-`corePackBytes` 4 930 572 B, recorded at `146548fd` (2026-10-30). Move it only on purpose
-(`bundle-budget.ts --record --ref <commit>`) and say why in the commit message. How
-socket.io-client is counted is in §3.
+The
+baseline
+is
+`scripts/balatro/bundle-budget.json`:
+`spEntryGzip`
+29
+683
+B
+and
+`corePackBytes`
+4
+930
+572
+B,
+recorded
+at
+`146548fd`
+(2026-10-30).
+Move
+it
+only
+on
+purpose
+(`bundle-budget.ts --record --ref <commit>`)
+and
+say
+why
+in
+the
+commit
+message.
+How
+socket.io-client
+is
+counted
+is
+in
+§3.
 
 ### Pack rebuilds (WS2)
 
@@ -537,83 +4716,516 @@ python3 -I scripts/balatro/build-game-pack.py --check    # CI freshness: rebuild
 python3 -I scripts/balatro/build-game-pack.py --check --mp-only   # the fast half (pack.test.ts runs it)
 ```
 
-The mp pack holds the following:
+The
+mp
+pack
+holds
+the
+following:
 
-- `features/balatro/engine/lua/mp/rmh_mp/**.lua`, without `*_spec.lua`;
-- the art;
-- the generated localization and atlas tables;
-- the glyph bitmap.
+- `features/balatro/engine/lua/mp/rmh_mp/**.lua`,
+  without
+  `*_spec.lua`;
+- the
+  art;
+- the
+  generated
+  localization
+  and
+  atlas
+  tables;
+- the
+  glyph
+  bitmap.
 
-Every edit to MP Lua therefore changes `mp-<sha>.zip` and its manifest entry.
-Streams test against local builds. **Only WS2 or the orchestrator commits a rebuilt
-pack, at wave merges** (R-14). CI's `--check` and `pack.test.ts` fail on a stale one.
+Every
+edit
+to
+MP
+Lua
+therefore
+changes
+`mp-<sha>.zip`
+and
+its
+manifest
+entry.
+Streams
+test
+against
+local
+builds.
+**Only
+WS2
+or
+the
+orchestrator
+commits
+a
+rebuilt
+pack,
+at
+wave
+merges**
+(R-14).
+CI's
+`--check`
+and
+`pack.test.ts`
+fail
+on
+a
+stale
+one.
 
-The core pack changes when the shipped MP localization's characters change, and
-when the web platform Lua changes. That Lua is `rmh_web.lua`, `rmh/{u32,bit,luajit_random,json,net}.lua`
-and `rmh_mp_entry.lua` (`PLATFORM_LUA` in the builder). It ships in the core at
-those paths and is no longer bundled into the page (merge point M1b).
-`--mp-only` leaves the core as it is, so run the full build after editing
-`data/balatro-mp/localization`, `extra-strings` or any of those Lua files. A full build takes a few minutes,
-because it subsets about 60 MB of fonts.
+The
+core
+pack
+changes
+when
+the
+shipped
+MP
+localization's
+characters
+change,
+and
+when
+the
+web
+platform
+Lua
+changes.
+That
+Lua
+is
+`rmh_web.lua`,
+`rmh/{u32,bit,luajit_random,json,net}.lua`
+and
+`rmh_mp_entry.lua`
+(`PLATFORM_LUA`
+in
+the
+builder).
+It
+ships
+in
+the
+core
+at
+those
+paths
+and
+is
+no
+longer
+bundled
+into
+the
+page
+(merge
+point
+M1b).
+`--mp-only`
+leaves
+the
+core
+as
+it
+is,
+so
+run
+the
+full
+build
+after
+editing
+`data/balatro-mp/localization`,
+`extra-strings`
+or
+any
+of
+those
+Lua
+files.
+A
+full
+build
+takes
+a
+few
+minutes,
+because
+it
+subsets
+about
+60
+MB
+of
+fonts.
 
-**Budgets** (`data/balatro-mp/pack-budget.json`; the build fails past them):
+**Budgets**
+(`data/balatro-mp/pack-budget.json`;
+the
+build
+fails
+past
+them):
 
-| Pack    | Budget                                        | Plan §6.4                                                                                                                                                                                                                            |
-| ------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Pack    | Budget                                        | Plan §6.4                                                                                                                                                                                                                                                                                       |
+| ------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | core    | 4 930 572 B baseline + 60 422 B               | plan +30 KB. Even per-language, the CJK/Hangul MP glyphs cost ~38 KB (folding all MP text into every font cost ~108 KB); +16 422 B (M1b) is exactly the compressed platform Lua moved into the core; +2 000 B for platform Lua since; +2 000 B more for the Options → QUIT row (`rmh_quit.lua`) |
-| mp      | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua                                                                                      |
-| release | 750 000 B compressed, 750 000 B extracted     | EX-14: the Release Joker sheet alone (688 000 B); fetched only when a lobby picks Release                                                                                                                                            |
+| mp      | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua                                                                                                                                                 |
+| release | 750 000 B compressed, 750 000 B extracted     | EX-14: the Release Joker sheet alone (688 000 B); fetched only when a lobby picks Release                                                                                                                                                                                                       |
 
-`CORE_PATCHES` in the builder is the anchored patch list for data/balatro Lua, as
-`(path, anchor, replacement)`, read from `scripts/balatro/core-patches.json` (each
-entry has an `id` and a `why`). Each anchor must occur exactly once. The L1 specs load
-the base game through the same list (`features/balatro/engine/lua/spec/core_patches.lua`, used by
-`spec/mp_vanilla.lua`), so they test what ships. It holds WS6's eval-row label hook in
-`functions/common_events.lua` (same line, `RMH_MP.eval_row_label`, nil outside
-multiplayer) and the owner's balance changes, which apply to single player and
-multiplayer alike (see [balatro-wasm.md](./balatro-wasm.md) §4, "Balance changes").
-A stream requests further entries through WS2.
+`CORE_PATCHES`
+in
+the
+builder
+is
+the
+anchored
+patch
+list
+for
+data/balatro
+Lua,
+as
+`(path, anchor, replacement)`,
+read
+from
+`scripts/balatro/core-patches.json`
+(each
+entry
+has
+an
+`id`
+and
+a
+`why`).
+Each
+anchor
+must
+occur
+exactly
+once.
+The
+L1
+specs
+load
+the
+base
+game
+through
+the
+same
+list
+(`features/balatro/engine/lua/spec/core_patches.lua`,
+used
+by
+`spec/mp_vanilla.lua`),
+so
+they
+test
+what
+ships.
+It
+holds
+WS6's
+eval-row
+label
+hook
+in
+`functions/common_events.lua`
+(same
+line,
+`RMH_MP.eval_row_label`,
+nil
+outside
+multiplayer)
+and
+the
+owner's
+balance
+changes,
+which
+apply
+to
+single
+player
+and
+multiplayer
+alike
+(see
+[balatro-wasm.md](./balatro-wasm.md)
+§4,
+"Balance
+changes").
+A
+stream
+requests
+further
+entries
+through
+WS2.
 
 ## 7. Lua MP core (WS6)
 
-Sources are in `features/balatro/engine/lua/mp/rmh_mp/`. `require 'rmh_mp'` runs `init.lua`
-once. It loads the core, then the content modules in a fixed order (registry
-`order` = 1000 + definition index, which must match on every peer), then the
-reference content (`j_mp_pacifist`, `bl_mp_nemesis`) for any key no stream
-defined. After that it installs the always-on wraps and binds to
-`RMH_WEB.net`. Session wraps exist only while a session is mounted (wrap group
+Sources
+are
+in
+`features/balatro/engine/lua/mp/rmh_mp/`.
+`require 'rmh_mp'`
+runs
+`init.lua`
+once.
+It
+loads
+the
+core,
+then
+the
+content
+modules
+in
+a
+fixed
+order
+(registry
+`order`
+=
+1000 +
+definition
+index,
+which
+must
+match
+on
+every
+peer),
+then
+the
+reference
+content
+(`j_mp_pacifist`,
+`bl_mp_nemesis`)
+for
+any
+key
+no
+stream
+defined.
+After
+that
+it
+installs
+the
+always-on
+wraps
+and
+binds
+to
+`RMH_WEB.net`.
+Session
+wraps
+exist
+only
+while
+a
+session
+is
+mounted
+(wrap
+group
 `session`).
 
 ### Isolation
 
-`MP.registry.mount(resolved, session)` does the following:
+`MP.registry.mount(resolved, session)`
+does
+the
+following:
 
-- adds every MP prototype to `G.P_CENTERS`, `G.P_BLINDS`, `G.P_TAGS` or
+- adds
+  every
+  MP
+  prototype
+  to
+  `G.P_CENTERS`,
+  `G.P_BLINDS`,
+  `G.P_TAGS`
+  or
   `G.CHALLENGES`;
-- adds the _enabled_ ones to their pools (rarity pools for jokers; never the
-  vanilla `P_CENTER_POOLS.Joker` collection list);
-- swaps reworks in.
+- adds
+  the
+  _enabled_
+  ones
+  to
+  their
+  pools
+  (rarity
+  pools
+  for
+  jokers;
+  never
+  the
+  vanilla
+  `P_CENTER_POOLS.Joker`
+  collection
+  list);
+- swaps
+  reworks
+  in.
 
-`unmount()` restores every pool array in place, with the same table and element
-identity, and removes every MP key. Two specs guard this:
-`spec/mp_registry_spec.lua` and `spec/mp_determinism_spec.lua`. The second runs
-the real `data/balatro` pool code with the LuaJIT-exact `math.random`. Its
-golden-seed digests (shops, bosses, tags, vouchers for 5 seeds) must be equal
-before the pack loads, after it loads, and after a mount/unmount cycle.
+`unmount()`
+restores
+every
+pool
+array
+in
+place,
+with
+the
+same
+table
+and
+element
+identity,
+and
+removes
+every
+MP
+key.
+Two
+specs
+guard
+this:
+`spec/mp_registry_spec.lua`
+and
+`spec/mp_determinism_spec.lua`.
+The
+second
+runs
+the
+real
+`data/balatro`
+pool
+code
+with
+the
+LuaJIT-exact
+`math.random`.
+Its
+golden-seed
+digests
+(shops,
+bosses,
+tags,
+vouchers
+for
+5
+seeds)
+must
+be
+equal
+before
+the
+pack
+loads,
+after
+it
+loads,
+and
+after
+a
+mount/unmount
+cycle.
 
-A gate opens when any of these holds:
+A
+gate
+opens
+when
+any
+of
+these
+holds:
 
-- the key is in `resolved.included` or `resolved.reworked`;
-- `gate.include(session)` returns true;
-- one of `gate.layers` is active;
-- the default `isolation` gate: `multiplayerContent` and the `multiplayerJokers`
-  option are both `true` (a missing option counts as off, as in TS).
+- the
+  key
+  is
+  in
+  `resolved.included`
+  or
+  `resolved.reworked`;
+- `gate.include(session)`
+  returns
+  true;
+- one
+  of
+  `gate.layers`
+  is
+  active;
+- the
+  default
+  `isolation`
+  gate:
+  `multiplayerContent`
+  and
+  the
+  `multiplayerJokers`
+  option
+  are
+  both
+  `true`
+  (a
+  missing
+  option
+  counts
+  as
+  off,
+  as
+  in
+  TS).
 
-`pool = false` keys are registered but never pooled.
+`pool = false`
+keys
+are
+registered
+but
+never
+pooled.
 
-In a session, `get_current_pool` and `get_next_tag_key` run with `unlocked` and
-`discovered` forced on and restored before returning (OR-07). While the vanilla tag
-and blind collection grids build, MP keys are hidden.
+In
+a
+session,
+`get_current_pool`
+and
+`get_next_tag_key`
+run
+with
+`unlocked`
+and
+`discovered`
+forced
+on
+and
+restored
+before
+returning
+(OR-07).
+While
+the
+vanilla
+tag
+and
+blind
+collection
+grids
+build,
+MP
+keys
+are
+hidden.
 
 ### Session lifecycle
 
@@ -629,23 +5241,117 @@ after start_run                layer post hooks; set_ante 0
 go_to_menu / New Run           MP.session.unmount() (after delete_run)
 ```
 
-Applying the bundle follows WS4's conventions (`features/balatro/engine/mp/rulesets/layers.ts`):
+Applying
+the
+bundle
+follows
+WS4's
+conventions
+(`features/balatro/engine/mp/rulesets/layers.ts`):
 
-- `gameModifiers` go into `G.GAME.modifiers`; a dotted key is a nested path
-  (`no_blind_reward.Small` sets `modifiers.no_blind_reward.Small`).
-- `mp_` keys are not modifiers. They are layer-hook parameters, read with
-  `MP.layer_param(name, default)` (also `ctx.params`): `mp_smallworld_cull`,
-  `mp_shop_slots_bonus`, `mp_ante_scaling_mult`, `mp_reroll_increment_bonus`,
-  `mp_sticker_chance`, `mp_eeeee_chance`, `mp_shared_slots`, `mp_glass_cannon_xmult`.
-- `setupHooks` alone decides which layer hooks run. A registered hook on an active
-  layer that is not listed is logged and skipped (the layer lacks `hook: true`).
-- The isolation gate is `multiplayerContent && options.multiplayerJokers`
-  (`mpContentPooled`). `practice_start` carries no options, so practice mounts with
-  `multiplayerJokers = true`, the default the practice bundle was resolved with.
-- `features/balatro/engine/lua/spec/mp_rulesets_spec.lua` applies every real bundle in
+- `gameModifiers`
+  go
+  into
+  `G.GAME.modifiers`;
+  a
+  dotted
+  key
+  is
+  a
+  nested
+  path
+  (`no_blind_reward.Small`
+  sets
+  `modifiers.no_blind_reward.Small`).
+- `mp_`
+  keys
+  are
+  not
+  modifiers.
+  They
+  are
+  layer-hook
+  parameters,
+  read
+  with
+  `MP.layer_param(name, default)`
+  (also
+  `ctx.params`):
+  `mp_smallworld_cull`,
+  `mp_shop_slots_bonus`,
+  `mp_ante_scaling_mult`,
+  `mp_reroll_increment_bonus`,
+  `mp_sticker_chance`,
+  `mp_eeeee_chance`,
+  `mp_shared_slots`,
+  `mp_glass_cannon_xmult`.
+- `setupHooks`
+  alone
+  decides
+  which
+  layer
+  hooks
+  run.
+  A
+  registered
+  hook
+  on
+  an
+  active
+  layer
+  that
+  is
+  not
+  listed
+  is
+  logged
+  and
+  skipped
+  (the
+  layer
+  lacks
+  `hook: true`).
+- The
+  isolation
+  gate
+  is
+  `multiplayerContent && options.multiplayerJokers`
+  (`mpContentPooled`).
+  `practice_start`
+  carries
+  no
+  options,
+  so
+  practice
+  mounts
+  with
+  `multiplayerJokers = true`,
+  the
+  default
+  the
+  practice
+  bundle
+  was
+  resolved
+  with.
+- `features/balatro/engine/lua/spec/mp_rulesets_spec.lua`
+  applies
+  every
+  real
+  bundle
+  in
   `features/balatro/engine/mp/__fixtures__/rulesets-resolved.json`;
-  `rulesets-lua-fixture.test.ts` keeps that file equal to `resolveRuleset()` output
-  (`RMH_UPDATE_FIXTURES=1` regenerates it).
+  `rulesets-lua-fixture.test.ts`
+  keeps
+  that
+  file
+  equal
+  to
+  `resolveRuleset()`
+  output
+  (`RMH_UPDATE_FIXTURES=1`
+  regenerates
+  it).
 
 ### Internal API (PLAN §3.d, implemented)
 
@@ -669,7 +5375,14 @@ Applying the bundle follows WS4's conventions (`features/balatro/engine/mp/rules
 | `MP.registry.atlas.blind_atlas(key)`, `tag_pos(key)`                                                                                                        |                                                                                                                                                      |
 | `MP.open(intent)`                                                                                                                                           | Called by `rmh_mp_entry.lua`; forwards to `MP.ui.open` (WS10)                                                                                        |
 
-Hooks the UI streams may define, all optional:
+Hooks
+the
+UI
+streams
+may
+define,
+all
+optional:
 
 - `MP.ui.open(intent)`
 - `MP.ui.show_result(result)`
@@ -679,92 +5392,721 @@ Hooks the UI streams may define, all optional:
 
 ### Save guards
 
-In a session:
+In
+a
+session:
 
-- `G.F_NO_SAVING` is set.
-- `save_run` writes `/rmh/mp/run.jkr` and `state.json`, touches the marker
-  `/rmh/mp/snap` and sends `snapshot`. This is for matches only; practice writes
+- `G.F_NO_SAVING`
+  is
+  set.
+- `save_run`
+  writes
+  `/rmh/mp/run.jkr`
+  and
+  `state.json`,
+  touches
+  the
+  marker
+  `/rmh/mp/snap`
+  and
+  sends
+  `snapshot`.
+  This
+  is
+  for
+  matches
+  only;
+  practice
+  writes
   nothing.
-- `remove_save` is a no-op.
-- The save channel drops `save_run` pushes and puts the player's real tutorial
-  flags back into `save_settings` pushes (OR-08 forces the tutorial complete in
+- `remove_save`
+  is
+  a
+  no-op.
+- The
+  save
+  channel
+  drops
+  `save_run`
+  pushes
+  and
+  puts
+  the
+  player's
+  real
+  tutorial
+  flags
+  back
+  into
+  `save_settings`
+  pushes
+  (OR-08
+  forces
+  the
+  tutorial
+  complete
+  in
   sessions).
 
-The profile's own bookkeeping never sees MP content, in a session or not (MP
-content can be mounted while vanilla's main menu builds, where no seeded run
-guards the unlocks):
+The
+profile's
+own
+bookkeeping
+never
+sees
+MP
+content,
+in
+a
+session
+or
+not
+(MP
+content
+can
+be
+mounted
+while
+vanilla's
+main
+menu
+builds,
+where
+no
+seeded
+run
+guards
+the
+unlocks):
 
-- `set_discover_tallies` leaves the MP centers out, so they never count toward
-  the `discover_amount` unlocks (Blue, Yellow, Green and Black Deck,
-  Cartomancer, Astronomer).
-- `set_profile_progress` and `set_challenge_unlock` count vanilla's challenges
+- `set_discover_tallies`
+  leaves
+  the
+  MP
+  centers
+  out,
+  so
+  they
+  never
+  count
+  toward
+  the
+  `discover_amount`
+  unlocks
+  (Blue,
+  Yellow,
+  Green
+  and
+  Black
+  Deck,
+  Cartomancer,
+  Astronomer).
+- `set_profile_progress`
+  and
+  `set_challenge_unlock`
+  count
+  vanilla's
+  challenges
   only.
-- `win_game` never marks an MP challenge completed, nor any challenge won in a
-  match or practice; a run continued in single player records its vanilla
-  challenge as vanilla does.
+- `win_game`
+  never
+  marks
+  an
+  MP
+  challenge
+  completed,
+  nor
+  any
+  challenge
+  won
+  in
+  a
+  match
+  or
+  practice;
+  a
+  run
+  continued
+  in
+  single
+  player
+  records
+  its
+  vanilla
+  challenge
+  as
+  vanilla
+  does.
 
-Continue in Singleplayer writes the sidecar `<profile>/mp.jkr`. On boot, Continue
-with that sidecar re-mounts the content as session kind `continued` before
-vanilla loads the save. A fresh single-player run deletes the sidecar.
+Continue
+in
+Singleplayer
+writes
+the
+sidecar
+`<profile>/mp.jkr`.
+On
+boot,
+Continue
+with
+that
+sidecar
+re-mounts
+the
+content
+as
+session
+kind
+`continued`
+before
+vanilla
+loads
+the
+save.
+A
+fresh
+single-player
+run
+deletes
+the
+sidecar.
 
 ## 8. Mailbox, lazy loading and the page (WS3)
 
-**Mailbox.** Lua (`features/balatro/engine/lua/rmh/net.lua`, exposed as `RMH.net`; the codec is
-`rmh/json.lua`) and JS (`features/balatro/engine/mp/bridge.ts`, `Mailbox`) trade NDJSON under
-`/rmh/net`, framed per `bridge-protocol.ts`.
+**Mailbox.**
+Lua
+(`features/balatro/engine/lua/rmh/net.lua`,
+exposed
+as
+`RMH.net`;
+the
+codec
+is
+`rmh/json.lua`)
+and
+JS
+(`features/balatro/engine/mp/bridge.ts`,
+`Mailbox`)
+trade
+NDJSON
+under
+`/rmh/net`,
+framed
+per
+`bridge-protocol.ts`.
 
-- Lua pumps once per frame from `rmh_web.lua` §9, after `RMH.frame_hooks` (each called
-  as `fn(dt)`, paused or not). It writes its batch to `out.tmp`, renames it to `out`,
-  then reads `in` whole and removes it. While `out` still exists, Lua holds its batch.
-  Lua opens nothing on an idle frame (a failed `io.open` on MEMFS throws and catches a
-  JS `ErrnoError`, ~0.1 ms): JS writes `in.sig` non-empty whenever it writes `in`, Lua
-  keeps `in.sig` open, checks its size once a frame (one seek), empties it and only then
-  reads `in`. An unsignalled `in` is still read every 30th frame; without `in.sig` Lua
-  polls `in` every frame. A header-only (ack) batch goes out at most every 8 frames;
-  batches with messages go out the frame they are sent.
-- JS hears the rename through `FS.trackingDelegate.onMovePath` (installed in
-  `runtime.ts`, chaining any existing delegate). Inside that call it reads and unlinks
-  `out`, and writes pending inbound lines to `in` (the in-call reply). Listeners run in
-  a microtask, outside the FS call.
-- `onDeletePath(in)` means Lua consumed the file. Without delegates (and across
-  processes in the conformance test), JS polls every 16 ms and forgets an inbound line
-  only once Lua's batch header acks it. Lua sends a header-only batch to ack (at most
-  every 8 frames).
-- Lua drops `s ≤ last`; JS drops Lua duplicates the same way. Both sides validate
-  (`bridge-codec.ts`, generated from the zod contract; `RMH.net.validate`, which the
-  MP pack sets to `protocol.lua`), log and drop.
-  Handler errors are isolated.
-- JSON: numbers `%.17g`; NaN/±inf are encode errors (scores travel as strings, §0.9);
-  a null object field decodes to nil and a null array item to `json.null`; decoded
-  arrays keep a marker so `[]` re-encodes as `[]`; depth is capped at 64.
+- Lua
+  pumps
+  once
+  per
+  frame
+  from
+  `rmh_web.lua`
+  §9,
+  after
+  `RMH.frame_hooks`
+  (each
+  called
+  as
+  `fn(dt)`,
+  paused
+  or
+  not).
+  It
+  writes
+  its
+  batch
+  to
+  `out.tmp`,
+  renames
+  it
+  to
+  `out`,
+  then
+  reads
+  `in`
+  whole
+  and
+  removes
+  it.
+  While
+  `out`
+  still
+  exists,
+  Lua
+  holds
+  its
+  batch.
+  Lua
+  opens
+  nothing
+  on
+  an
+  idle
+  frame
+  (a
+  failed
+  `io.open`
+  on
+  MEMFS
+  throws
+  and
+  catches
+  a
+  JS
+  `ErrnoError`,
+  ~0.1
+  ms):
+  JS
+  writes
+  `in.sig`
+  non-empty
+  whenever
+  it
+  writes
+  `in`,
+  Lua
+  keeps
+  `in.sig`
+  open,
+  checks
+  its
+  size
+  once
+  a
+  frame
+  (one
+  seek),
+  empties
+  it
+  and
+  only
+  then
+  reads
+  `in`.
+  An
+  unsignalled
+  `in`
+  is
+  still
+  read
+  every
+  30th
+  frame;
+  without
+  `in.sig`
+  Lua
+  polls
+  `in`
+  every
+  frame.
+  A
+  header-only
+  (ack)
+  batch
+  goes
+  out
+  at
+  most
+  every
+  8
+  frames;
+  batches
+  with
+  messages
+  go
+  out
+  the
+  frame
+  they
+  are
+  sent.
+- JS
+  hears
+  the
+  rename
+  through
+  `FS.trackingDelegate.onMovePath`
+  (installed
+  in
+  `runtime.ts`,
+  chaining
+  any
+  existing
+  delegate).
+  Inside
+  that
+  call
+  it
+  reads
+  and
+  unlinks
+  `out`,
+  and
+  writes
+  pending
+  inbound
+  lines
+  to
+  `in`
+  (the
+  in-call
+  reply).
+  Listeners
+  run
+  in
+  a
+  microtask,
+  outside
+  the
+  FS
+  call.
+- `onDeletePath(in)`
+  means
+  Lua
+  consumed
+  the
+  file.
+  Without
+  delegates
+  (and
+  across
+  processes
+  in
+  the
+  conformance
+  test),
+  JS
+  polls
+  every
+  16
+  ms
+  and
+  forgets
+  an
+  inbound
+  line
+  only
+  once
+  Lua's
+  batch
+  header
+  acks
+  it.
+  Lua
+  sends
+  a
+  header-only
+  batch
+  to
+  ack
+  (at
+  most
+  every
+  8
+  frames).
+- Lua
+  drops
+  `s ≤ last`;
+  JS
+  drops
+  Lua
+  duplicates
+  the
+  same
+  way.
+  Both
+  sides
+  validate
+  (`bridge-codec.ts`,
+  generated
+  from
+  the
+  zod
+  contract;
+  `RMH.net.validate`,
+  which
+  the
+  MP
+  pack
+  sets
+  to
+  `protocol.lua`),
+  log
+  and
+  drop.
+  Handler
+  errors
+  are
+  isolated.
+- JSON:
+  numbers
+  `%.17g`;
+  NaN/±inf
+  are
+  encode
+  errors
+  (scores
+  travel
+  as
+  strings,
+  §0.9);
+  a
+  null
+  object
+  field
+  decodes
+  to
+  nil
+  and
+  a
+  null
+  array
+  item
+  to
+  `json.null`;
+  decoded
+  arrays
+  keep
+  a
+  marker
+  so
+  `[]`
+  re-encodes
+  as
+  `[]`;
+  depth
+  is
+  capped
+  at 64.
 
-**Entry.** `rmh_mp_entry.lua` (core) adds MULTIPLAYER to the main menu bar. A click
-sends `mp_open`, shows a loading overlay fed by `mp_pack`, and on `mp_pack` ready (or
-`/rmh/mp/ready`) runs `require 'rmh_mp'` and `rmh_mp.open(intent)`. Files written after
-boot are visible to LÖVE's `require` (`?.lua` and `?/init.lua`), `love.filesystem`
-and `newImage`, verified in-engine, so no loader fallback exists.
+**Entry.**
+`rmh_mp_entry.lua`
+(core)
+adds
+MULTIPLAYER
+to
+the
+main
+menu
+bar.
+A
+click
+sends
+`mp_open`,
+shows
+a
+loading
+overlay
+fed
+by
+`mp_pack`,
+and
+on
+`mp_pack`
+ready
+(or
+`/rmh/mp/ready`)
+runs
+`require 'rmh_mp'`
+and
+`rmh_mp.open(intent)`.
+Files
+written
+after
+boot
+are
+visible
+to
+LÖVE's
+`require`
+(`?.lua`
+and
+`?/init.lua`),
+`love.filesystem`
+and
+`newImage`,
+verified
+in-engine,
+so
+no
+loader
+fallback
+exists.
 
-**Lazy JS.** `BalatroPage.tsx` holds a stub that scans Lua's batches for `mp_open`. It
-then imports `features/balatro/engine/mp/pack-loader.ts`, which takes the mailbox over (last seq
-plus backlog), fetches the MP pack (IndexedDB kind `mp`, then the network), and writes
-it under `rmh_mp/` directories only (`mpPackPath`). It then sends `mp_pack`, and starts
-`index.ts` `startMultiplayer` (WS5; found through `import.meta.glob`, so the chunk
-builds before it exists). Nothing under `features/balatro/engine/mp/` is in the initial chunk.
+**Lazy
+JS.**
+`BalatroPage.tsx`
+holds
+a
+stub
+that
+scans
+Lua's
+batches
+for
+`mp_open`.
+It
+then
+imports
+`features/balatro/engine/mp/pack-loader.ts`,
+which
+takes
+the
+mailbox
+over
+(last
+seq
+plus
+backlog),
+fetches
+the
+MP
+pack
+(IndexedDB
+kind
+`mp`,
+then
+the
+network),
+and
+writes
+it
+under
+`rmh_mp/`
+directories
+only
+(`mpPackPath`).
+It
+then
+sends
+`mp_pack`,
+and
+starts
+`index.ts`
+`startMultiplayer`
+(WS5;
+found
+through
+`import.meta.glob`,
+so
+the
+chunk
+builds
+before
+it
+exists).
+Nothing
+under
+`features/balatro/engine/mp/`
+is
+in
+the
+initial
+chunk.
 
-**Boot autoload.** An invite (`?lobby=`), a rejoin hint (localStorage
-`rmh-balatro-mp-rejoin`, set by the session runtime while seated) or a
-`<profile>/mp.jkr` sidecar writes `/rmh/mp/autoload`. For an invite or rejoin, the MP
-pack is fetched alongside the core and mounted before the game's first line. Lua then
-loads `rmh_mp` right after `G:start_up`. The login redirect keeps `?lobby=`
+**Boot
+autoload.**
+An
+invite
+(`?lobby=`),
+a
+rejoin
+hint
+(localStorage
+`rmh-balatro-mp-rejoin`,
+set
+by
+the
+session
+runtime
+while
+seated)
+or
+a
+`<profile>/mp.jkr`
+sidecar
+writes
+`/rmh/mp/autoload`.
+For
+an
+invite
+or
+rejoin,
+the
+MP
+pack
+is
+fetched
+alongside
+the
+core
+and
+mounted
+before
+the
+game's
+first
+line.
+Lua
+then
+loads
+`rmh_mp`
+right
+after
+`G:start_up`.
+The
+login
+redirect
+keeps
+`?lobby=`
 (`lobbyReturnPath`).
 
 ## 9. Session runtime (WS5)
 
-`features/balatro/engine/mp/index.ts` `startMultiplayer` wires the browser seams (the hub client
-`hub-client.ts` on the shared realtime client, WebRTC, IndexedDB, localStorage, the
-engine FS, the CSPRNG) into `lobby/runtime.ts`, which is browser-free: the
-`features/balatro/engine/mp/__tests__/session/` suite runs whole lobbies on FakeNet channels against
-the real hub handler (`world.test-support.ts`).
+`features/balatro/engine/mp/index.ts`
+`startMultiplayer`
+wires
+the
+browser
+seams
+(the
+hub
+client
+`hub-client.ts`
+on
+the
+shared
+realtime
+client,
+WebRTC,
+IndexedDB,
+localStorage,
+the
+engine
+FS,
+the
+CSPRNG)
+into
+`lobby/runtime.ts`,
+which
+is
+browser-free:
+the
+`features/balatro/engine/mp/__tests__/session/`
+suite
+runs
+whole
+lobbies
+on
+FakeNet
+channels
+against
+the
+real
+hub
+handler
+(`world.test-support.ts`).
 
 | Module                                                 | Role                                                                                                                                                                                                                                                                                                     |
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -779,186 +6121,1980 @@ the real hub handler (`world.test-support.ts`).
 | `chat.ts`, `identity.ts`, `history.ts`, `ratelimit.ts` | Chat (sender and receiver 5-burst 1/s, mute; the site block list from GET /api/moderation/block is muted at start, never saved), glyph-bitmap sanitising, local history, token buckets                                                                                                                   |
 | `wire-codec.ts`                                        | zod-free validation of the wire, the hub's S2C and the client-checked domain types, over descriptors generated into `bridge-schema.gen.ts`                                                                                                                                                               |
 
-**No zod in the MP chunk.** zod v4 classic cannot be tree-shaken. Nothing the chunk
-imports may import `wire.ts`, `types.ts`, `events.ts` or `bridge-protocol.ts` at
-runtime (types only). The generator lowers their schemas into descriptor tables, and
-`wire-codec.test.ts` / `bridge-codec.test.ts` hold the codecs to zod's verdicts.
+**No
+zod
+in
+the
+MP
+chunk.**
+zod
+v4
+classic
+cannot
+be
+tree-shaken.
+Nothing
+the
+chunk
+imports
+may
+import
+`wire.ts`,
+`types.ts`,
+`events.ts`
+or
+`bridge-protocol.ts`
+at
+runtime
+(types
+only).
+The
+generator
+lowers
+their
+schemas
+into
+descriptor
+tables,
+and
+`wire-codec.test.ts`
+/
+`bridge-codec.test.ts`
+hold
+the
+codecs
+to
+zod's
+verdicts.
 
-**Test builds** (`VITE_BALATRO_MP_TEST=1`): the autopilot surface (`test-hooks.ts`),
-`window.__rmhBalatroTest` overrides (`p2p` hooks such as `blockCandidates` for E2E-15,
-`contentHash` for E2E-21), and the `seatGraceMs` option (production pins it at 120 s).
+**Test
+builds**
+(`VITE_BALATRO_MP_TEST=1`):
+the
+autopilot
+surface
+(`test-hooks.ts`),
+`window.__rmhBalatroTest`
+overrides
+(`p2p`
+hooks
+such
+as
+`blockCandidates`
+for
+E2E-15,
+`contentHash`
+for
+E2E-21),
+and
+the
+`seatGraceMs`
+option
+(production
+pins
+it
+at
+120
+s).
 
 ## 10. Matchmaking, party, invites, spectate list (WS12)
 
-Hub: `features/balatro/server/queue.ts` (events) over the pure book in
-`features/balatro/server/hub/queue.ts`. Client: `features/balatro/engine/mp/queue/attach.ts`, loaded by
-`index.ts` as an extension of the session runtime, plus `queue/{queue-client,casual,party}.ts`,
-`setup/host-driver.ts` and `invites.ts`; the React friends list is
-`features/balatro/ui/mp/InviteFriends.tsx` in the Invite popover's `friends` slot.
+Hub:
+`features/balatro/server/queue.ts`
+(events)
+over
+the
+pure
+book
+in
+`features/balatro/server/hub/queue.ts`.
+Client:
+`features/balatro/engine/mp/queue/attach.ts`,
+loaded
+by
+`index.ts`
+as
+an
+extension
+of
+the
+session
+runtime,
+plus
+`queue/{queue-client,casual,party}.ts`,
+`setup/host-driver.ts`
+and
+`invites.ts`;
+the
+React
+friends
+list
+is
+`features/balatro/ui/mp/InviteFriends.tsx`
+in
+the
+Invite
+popover's
+`friends`
+slot.
 
-**Casual queue (MM-01/02).** Lua's FIND GAME sends `ui_queue {op:'join'}`; the hub buckets the
-ticket by `queueMode` and content hash and reports `queue:status searching {waiting}` (mirrored to
-Lua as `queue_view`). Matching is oldest first, up to the mode's maximum (Nemesis 2, others 16);
-a full group matches at once, a short one (≥2 players) once its oldest ticket waited 10 s. A group
-always holds at least two tickets. The earliest player gets `matched {role:'host', waiting:n}` and
-creates an ordinary casual lobby (`runtime.createLobby(mode, 'casual')`); the hub watches for that
-room (same account, mode and hash, polled every 100 ms) and then sends the others
-`matched {role:'member', code}`; they join it and re-send READY 6× at 1.2 s. If the host has not
-hosted within 15 s, or drops, the match falls through: solo players queue again at their old place,
-everyone else is told `cancelled`. A ticket whose socket drops is cancelled.
+**Casual
+queue
+(MM-01/02).**
+Lua's
+FIND
+GAME
+sends
+`ui_queue {op:'join'}`;
+the
+hub
+buckets
+the
+ticket
+by
+`queueMode`
+and
+content
+hash
+and
+reports
+`queue:status searching {waiting}`
+(mirrored
+to
+Lua
+as
+`queue_view`).
+Matching
+is
+oldest
+first,
+up
+to
+the
+mode's
+maximum
+(Nemesis
+2,
+others
+16);
+a
+full
+group
+matches
+at
+once,
+a
+short
+one
+(≥2
+players)
+once
+its
+oldest
+ticket
+waited
+10
+s.
+A
+group
+always
+holds
+at
+least
+two
+tickets.
+The
+earliest
+player
+gets
+`matched {role:'host', waiting:n}`
+and
+creates
+an
+ordinary
+casual
+lobby
+(`runtime.createLobby(mode, 'casual')`);
+the
+hub
+watches
+for
+that
+room
+(same
+account,
+mode
+and
+hash,
+polled
+every
+100
+ms)
+and
+then
+sends
+the
+others
+`matched {role:'member', code}`;
+they
+join
+it
+and
+re-send
+READY
+6×
+at
+1.2
+s.
+If
+the
+host
+has
+not
+hosted
+within
+15
+s,
+or
+drops,
+the
+match
+falls
+through:
+solo
+players
+queue
+again
+at
+their
+old
+place,
+everyone
+else
+is
+told
+`cancelled`.
+A
+ticket
+whose
+socket
+drops
+is
+cancelled.
 
-**Setup (MM-03/04/05, D-32).** In a casual lobby the host's `CasualHost` waits until every matched
-player is in and ready (or 20 s with ≥2 ready; a lobby that never reaches 2 is given up after
-45 s), then runs `SetupHostDriver`: ruleset vote → trap vote (Balanced/Expanded only) → draft
-(Small World skips the votes). Views go out through `LobbyHost.publishSetup`; casts and picks come
-in through `LobbyHost.onSetupInput` (a stale `stepId` is ignored). The results become `ruleset`,
-`trapCards`, `deck` and `stake` in the lobby, and the host starts the match.
+**Setup
+(MM-03/04/05,
+D-32).**
+In
+a
+casual
+lobby
+the
+host's
+`CasualHost`
+waits
+until
+every
+matched
+player
+is
+in
+and
+ready
+(or
+20
+s
+with
+≥2
+ready;
+a
+lobby
+that
+never
+reaches
+2
+is
+given
+up
+after
+45
+s),
+then
+runs
+`SetupHostDriver`:
+ruleset
+vote
+→
+trap
+vote
+(Balanced/Expanded
+only)
+→
+draft
+(Small
+World
+skips
+the
+votes).
+Views
+go
+out
+through
+`LobbyHost.publishSetup`;
+casts
+and
+picks
+come
+in
+through
+`LobbyHost.onSetupInput`
+(a
+stale
+`stepId`
+is
+ignored).
+The
+results
+become
+`ruleset`,
+`trapCards`,
+`deck`
+and
+`stake`
+in
+the
+lobby,
+and
+the
+host
+starts
+the
+match.
 
-**Party (MM-06).** A party is a P2P lobby of kind `party` (≤ 8 players). Its host's FIND GAME
-(`ui_party_queue`) is refused until every member is connected and ready
-(`lobby_error party-not-ready`, …); the hub queues the host and every admitted, connected player
-as one ticket (also `queue:join` with `partyCode`, hash-checked) and refuses a party that would
-fill the mode alone (`full`). On a match the hub closes the party room quietly (seats released,
-no `closed` event), because its players are about to sit down in the match. A role switch waits
-`ROLE_SWITCH_MS` after leaving a hosted party, so the old role's delayed hub `leave` cannot land
-on the new room. The party is remembered (`lastParty`, with the host's hub token) for "Return
-to lobby XXXXXX": Lua remembers a party whose next lobby view was another room and offers the row
-on the PvP bar; its `ui_join {code}` goes through the runtime's `joinHook`, which (after leaving
-the match lobby) re-hosts the code for the old host (`LobbyHost.create(mode, 'party', {code,
-token})`, the hub's resume path; a code taken meanwhile falls back to a fresh one) and joins it
-for everyone else. A member's join can reach the hub before its host has re-claimed the code
-(the host waits out its leave drain first), and the hub answers `not-found`: the runtime's
-`roleEndHook` then joins again, at most `RETURN_RETRY_MAX` (5) times, `RETURN_RETRY_MS` × attempt
-apart (about 7.5 s in all), before `not-found` reaches Lua. Another `ui_join`, `ui_leave` or any
-other end reason stops the retry.
+**Party
+(MM-06).**
+A
+party
+is
+a
+P2P
+lobby
+of
+kind
+`party`
+(≤
+8
+players).
+Its
+host's
+FIND
+GAME
+(`ui_party_queue`)
+is
+refused
+until
+every
+member
+is
+connected
+and
+ready
+(`lobby_error party-not-ready`,
+…);
+the
+hub
+queues
+the
+host
+and
+every
+admitted,
+connected
+player
+as
+one
+ticket
+(also
+`queue:join`
+with
+`partyCode`,
+hash-checked)
+and
+refuses
+a
+party
+that
+would
+fill
+the
+mode
+alone
+(`full`).
+On
+a
+match
+the
+hub
+closes
+the
+party
+room
+quietly
+(seats
+released,
+no
+`closed`
+event),
+because
+its
+players
+are
+about
+to
+sit
+down
+in
+the
+match.
+A
+role
+switch
+waits
+`ROLE_SWITCH_MS`
+after
+leaving
+a
+hosted
+party,
+so
+the
+old
+role's
+delayed
+hub
+`leave`
+cannot
+land
+on
+the
+new
+room.
+The
+party
+is
+remembered
+(`lastParty`,
+with
+the
+host's
+hub
+token)
+for
+"Return
+to
+lobby
+XXXXXX":
+Lua
+remembers
+a
+party
+whose
+next
+lobby
+view
+was
+another
+room
+and
+offers
+the
+row
+on
+the
+PvP
+bar;
+its
+`ui_join {code}`
+goes
+through
+the
+runtime's
+`joinHook`,
+which
+(after
+leaving
+the
+match
+lobby)
+re-hosts
+the
+code
+for
+the
+old
+host
+(`LobbyHost.create(mode, 'party', {code, token})`,
+the
+hub's
+resume
+path;
+a
+code
+taken
+meanwhile
+falls
+back
+to
+a
+fresh
+one)
+and
+joins
+it
+for
+everyone
+else.
+A
+member's
+join
+can
+reach
+the
+hub
+before
+its
+host
+has
+re-claimed
+the
+code
+(the
+host
+waits
+out
+its
+leave
+drain
+first),
+and
+the
+hub
+answers
+`not-found`:
+the
+runtime's
+`roleEndHook`
+then
+joins
+again,
+at
+most
+`RETURN_RETRY_MAX`
+(5)
+times,
+`RETURN_RETRY_MS`
+×
+attempt
+apart
+(about
+7.5
+s
+in
+all),
+before
+`not-found`
+reaches
+Lua.
+Another
+`ui_join`,
+`ui_leave`
+or
+any
+other
+end
+reason
+stops
+the
+retry.
 
-**Invites (LOB-04).** `balatro:invite {code, toUserId}`: only into a room the inviter holds a
-seat in, only to a mutual follow (both directions), at most 20 per minute per account. The hub
-emits `balatro:invited` to every hub socket of the invitee (Lua shows the `mp_invited` toast with
-`name` and `code`; accepting is `ui_join`), or, when it has none, writes one `SYSTEM`
-notification per lobby per 10 minutes linking to `/balatro?lobby=CODE`. The contract has no
-success acknowledgement, so the client's `Inviter` sends one invite at a time and treats "no
-error within 2.5 s" as sent.
+**Invites
+(LOB-04).**
+`balatro:invite {code, toUserId}`:
+only
+into
+a
+room
+the
+inviter
+holds
+a
+seat
+in,
+only
+to
+a
+mutual
+follow
+(both
+directions),
+at
+most
+20
+per
+minute
+per
+account.
+The
+hub
+emits
+`balatro:invited`
+to
+every
+hub
+socket
+of
+the
+invitee
+(Lua
+shows
+the
+`mp_invited`
+toast
+with
+`name`
+and
+`code`;
+accepting
+is
+`ui_join`),
+or,
+when
+it
+has
+none,
+writes
+one
+`SYSTEM`
+notification
+per
+lobby
+per
+10
+minutes
+linking
+to
+`/balatro?lobby=CODE`.
+The
+contract
+has
+no
+success
+acknowledgement,
+so
+the
+client's
+`Inviter`
+sends
+one
+invite
+at
+a
+time
+and
+treats
+"no
+error
+within
+2.5
+s"
+as
+sent.
 
-**Spectate list (MM-07).** `balatro:spectate:list` answers from the directory
+**Spectate
+list
+(MM-07).**
+`balatro:spectate:list`
+answers
+from
+the
+directory
 (`listSpectatableLobbies`).
 
-**Find Game counts (audit A12).** While Find Game is on screen and the hub is up, Lua
-(`ui/pillars.lua`) sends `ui_queue_counts` every 5 s; `attach.ts` forwards it as
-`balatro:queue:counts` and mirrors the answer to Lua as `queue_counts` (live text, no re-render).
-The hub answers every casual mode with `queued` (players on tickets, across content hashes) and
-`inGame` (seats held in `casual` rooms), computed at most once a second for everyone
-(`COUNTS_TTL_MS`); 30 asks a minute per socket.
+**Find
+Game
+counts
+(audit
+A12).**
+While
+Find
+Game
+is
+on
+screen
+and
+the
+hub
+is
+up,
+Lua
+(`ui/pillars.lua`)
+sends
+`ui_queue_counts`
+every
+5
+s;
+`attach.ts`
+forwards
+it
+as
+`balatro:queue:counts`
+and
+mirrors
+the
+answer
+to
+Lua
+as
+`queue_counts`
+(live
+text,
+no
+re-render).
+The
+hub
+answers
+every
+casual
+mode
+with
+`queued`
+(players
+on
+tickets,
+across
+content
+hashes)
+and
+`inGame`
+(seats
+held
+in
+`casual`
+rooms),
+computed
+at
+most
+once
+a
+second
+for
+everyone
+(`COUNTS_TTL_MS`);
+30
+asks
+a
+minute
+per
+socket.
 
-**Queue guard (audit A18).** While searching or matched, `G.FUNCS.start_run` (New Run,
-Continue, Challenges, restart), CREATE, an invite's Join and the menu shortcuts open
-"Matchmaking In Progress" (`ui/queue_guard.lua`): Leave Queue & Continue (leaves, then replays
-the action), Leave Queue, Stay Queued. MP's own launches (`S.launching`) and session runs pass.
+**Queue
+guard
+(audit
+A18).**
+While
+searching
+or
+matched,
+`G.FUNCS.start_run`
+(New
+Run,
+Continue,
+Challenges,
+restart),
+CREATE,
+an
+invite's
+Join
+and
+the
+menu
+shortcuts
+open
+"Matchmaking
+In
+Progress"
+(`ui/queue_guard.lua`):
+Leave
+Queue
+&
+Continue
+(leaves,
+then
+replays
+the
+action),
+Leave
+Queue,
+Stay
+Queued.
+MP's
+own
+launches
+(`S.launching`)
+and
+session
+runs
+pass.
 
-**PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; the runtime's
-`practiceGuard` then refuses Practice with `lobby_error practice` (the search keeps running), and
-the Lua menus grey Practice while searching or matched.
+**PR-05.**
+`isQueued(runtime)`
+(attach.ts)
+is
+true
+while
+searching;
+the
+runtime's
+`practiceGuard`
+then
+refuses
+Practice
+with
+`lobby_error practice`
+(the
+search
+keeps
+running),
+and
+the
+Lua
+menus
+grey
+Practice
+while
+searching
+or
+matched.
 
-**PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; Practice started while
-searching cancels the search.
+**PR-05.**
+`isQueued(runtime)`
+(attach.ts)
+is
+true
+while
+searching;
+Practice
+started
+while
+searching
+cancels
+the
+search.
 
 ## 11. Replays and spectating (WS13)
 
-Lua: `rmh_mp/replay/{init,recorder,player}.lua` (loaded by `rmh_mp/init.lua` after every other
-session installer, so the recorder's wraps are the outermost), `rmh_mp/ui/{replay,spectate}.lua`
-(loaded on first use through `MP.ui.replay_open`, the menu's REPLAYS button). TS:
-`features/balatro/engine/mp/replay/{log,canonical-hash,store,player-feed,service,tap,attach}.ts` and
-`features/balatro/engine/mp/spectate.ts`, attached to the session like WS12's queue module (the
-`import.meta.glob` in `index.ts`); the lobby roles reach it only through `RoleCtx.replayTap()`.
+Lua:
+`rmh_mp/replay/{init,recorder,player}.lua`
+(loaded
+by
+`rmh_mp/init.lua`
+after
+every
+other
+session
+installer,
+so
+the
+recorder's
+wraps
+are
+the
+outermost),
+`rmh_mp/ui/{replay,spectate}.lua`
+(loaded
+on
+first
+use
+through
+`MP.ui.replay_open`,
+the
+menu's
+REPLAYS
+button).
+TS:
+`features/balatro/engine/mp/replay/{log,canonical-hash,store,player-feed,service,tap,attach}.ts`
+and
+`features/balatro/engine/mp/spectate.ts`,
+attached
+to
+the
+session
+like
+WS12's
+queue
+module
+(the
+`import.meta.glob`
+in
+`index.ts`);
+the
+lobby
+roles
+reach
+it
+only
+through
+`RoleCtx.replayTap()`.
 
-**Recording (REP-01/02, D-34).** While a match or practice session is mounted, every input the
-player makes through `G.FUNCS` (blind select/skip, play, discard, sort, cash out, reroll, shop,
-packs, consumables, sell) and every network input Lua applies (`net_in {k:'outcome'|'peer'|'tail', d}`)
-is logged as `{i, t, op, d}`; calls the game makes itself (The Hook's discard, buy-and-use,
-tag boosters, the PvP pillar's own re-press) are not. Card refs are `{id = sort_id - the run's
-base, i = position, k = fingerprint}`; `dg` digests (ante, round, money, hands, discards, deck
-size, jokers, consumables) ride on blind select, play, cash out and leave shop. Lua sends
-≤ 50 events / ~12 KB per frame; caps are 20 000 events or 1 MB per player per match (`end
-{result:'cap'}`). The runtime relays each batch to every peer through the host; the host
-also sends a spectator who joins mid-match every log so far, paced under the receiver's `log`
-limit (800 frames at once, then 15/s).
+**Recording
+(REP-01/02,
+D-34).**
+While
+a
+match
+or
+practice
+session
+is
+mounted,
+every
+input
+the
+player
+makes
+through
+`G.FUNCS`
+(blind
+select/skip,
+play,
+discard,
+sort,
+cash
+out,
+reroll,
+shop,
+packs,
+consumables,
+sell)
+and
+every
+network
+input
+Lua
+applies
+(`net_in {k:'outcome'|'peer'|'tail', d}`)
+is
+logged
+as
+`{i, t, op, d}`;
+calls
+the
+game
+makes
+itself
+(The
+Hook's
+discard,
+buy-and-use,
+tag
+boosters,
+the
+PvP
+pillar's
+own
+re-press)
+are
+not.
+Card
+refs
+are
+`{id = sort_id - the run's base, i = position, k = fingerprint}`;
+`dg`
+digests
+(ante,
+round,
+money,
+hands,
+discards,
+deck
+size,
+jokers,
+consumables)
+ride
+on
+blind
+select,
+play,
+cash
+out
+and
+leave
+shop.
+Lua
+sends
+≤
+50
+events
+/
+~12
+KB
+per
+frame;
+caps
+are
+20
+000
+events
+or
+1
+MB
+per
+player
+per
+match
+(`end {result:'cap'}`).
+The
+runtime
+relays
+each
+batch
+to
+every
+peer
+through
+the
+host;
+the
+host
+also
+sends
+a
+spectator
+who
+joins
+mid-match
+every
+log
+so
+far,
+paced
+under
+the
+receiver's
+`log`
+limit
+(800
+frames
+at
+once,
+then
+15/s).
 
-**chk (REP-05).** When a player's log reaches `end`, that player's TS appends `chk {sha256, n}`
-(SHA-256 of the canonical JSON of the events before it: keys sorted, no whitespace; a
-synchronous implementation, because WebCrypto is async and absent outside secure contexts) and
-sends it to the peers. Opening a replay recomputes every log's `chk`; a mismatch shows "Replay
-may be inaccurate".
+**chk
+(REP-05).**
+When
+a
+player's
+log
+reaches
+`end`,
+that
+player's
+TS
+appends
+`chk {sha256, n}`
+(SHA-256
+of
+the
+canonical
+JSON
+of
+the
+events
+before
+it:
+keys
+sorted,
+no
+whitespace;
+a
+synchronous
+implementation,
+because
+WebCrypto
+is
+async
+and
+absent
+outside
+secure
+contexts)
+and
+sends
+it
+to
+the
+peers.
+Opening
+a
+replay
+recomputes
+every
+log's
+`chk`;
+a
+mismatch
+shows
+"Replay
+may
+be
+inaccurate".
 
-**Storage.** IndexedDB `rmh-balatro-replays`, store `matches`, keyPath `id` (= runId): the header
-and every player's log this peer received (spectated matches too). The newest 30 by start time
-are kept; damaged rows are skipped and removed. Failures mean "no replays", never an error.
+**Storage.**
+IndexedDB
+`rmh-balatro-replays`,
+store
+`matches`,
+keyPath
+`id`
+(=
+runId):
+the
+header
+and
+every
+player's
+log
+this
+peer
+received
+(spectated
+matches
+too).
+The
+newest
+30
+by
+start
+time
+are
+kept;
+damaged
+rows
+are
+skipped
+and
+removed.
+Failures
+mean
+"no
+replays",
+never
+an
+error.
 
-**Playback (REP-03).** `ui_replay {op:'open'}` → `replay_view {playing:{id, pov, pos, len}}` +
-`replay_feed {pov, events}` chunks (≤ 1024 events, ≤ 48 KB). Only the POV's log is fed: its
-`net_in` events re-project the opponents. The driver re-mounts the recorded session (same kind,
-ruleset, roster, seed), launches the run, then re-dispatches inputs once the game is idle and
-re-injects network inputs in log order. Meanwhile live traffic (`outcome`, `peer`, `tail`, timer,
-presence) is blocked, session messages (`ev`, `peer`, `flags`, `log`, `match_left`, ...) are not
-sent, and the player's own button presses are ignored (a played-back run is read-only). Speeds
-1×/2×/4×/fast-forward (0); the seek index is the log's blind selects (ante/slot → event index);
-seeking back restarts and fast-forwards. A missing card, a digest mismatch or a hand scoring
-differently stops playback with "Replay stopped" and the event index and reason.
+**Playback
+(REP-03).**
+`ui_replay {op:'open'}`
+→
+`replay_view {playing:{id, pov, pos, len}}` +
+`replay_feed {pov, events}`
+chunks
+(≤
+1024
+events,
+≤
+48
+KB).
+Only
+the
+POV's
+log
+is
+fed:
+its
+`net_in`
+events
+re-project
+the
+opponents.
+The
+driver
+re-mounts
+the
+recorded
+session
+(same
+kind,
+ruleset,
+roster,
+seed),
+launches
+the
+run,
+then
+re-dispatches
+inputs
+once
+the
+game
+is
+idle
+and
+re-injects
+network
+inputs
+in
+log
+order.
+Meanwhile
+live
+traffic
+(`outcome`,
+`peer`,
+`tail`,
+timer,
+presence)
+is
+blocked,
+session
+messages
+(`ev`,
+`peer`,
+`flags`,
+`log`,
+`match_left`,
+...)
+are
+not
+sent,
+and
+the
+player's
+own
+button
+presses
+are
+ignored
+(a
+played-back
+run
+is
+read-only).
+Speeds
+1×/2×/4×/fast-forward
+(0);
+the
+seek
+index
+is
+the
+log's
+blind
+selects
+(ante/slot
+→
+event
+index);
+seeking
+back
+restarts
+and
+fast-forwards.
+A
+missing
+card,
+a
+digest
+mismatch
+or
+a
+hand
+scoring
+differently
+stops
+playback
+with
+"Replay
+stopped"
+and
+the
+event
+index
+and
+reason.
 
-**Spectating (REP-04, MM-07 view).** The SPECTATE tab asks the hub (`ui_spectate_list` →
-`balatro:spectate:list` → `spectate_view`); WATCH joins as role `spectator`. The spectator's TS
-assembles every player's log (`SpectateFeed`) and opens a live playback (`replay_view` id
-`live:<runId>`) of the first roster player, fast-forwarding while more than 25 events are
-waiting; `ui_replay {op:'pov'}` switches to another player's log from the start. Closing the
-live playback also leaves the lobby. When every player's log has ended, the spectator stores
-the match in My Replays.
+**Spectating
+(REP-04,
+MM-07
+view).**
+The
+SPECTATE
+tab
+asks
+the
+hub
+(`ui_spectate_list`
+→
+`balatro:spectate:list`
+→
+`spectate_view`);
+WATCH
+joins
+as
+role
+`spectator`.
+The
+spectator's
+TS
+assembles
+every
+player's
+log
+(`SpectateFeed`)
+and
+opens
+a
+live
+playback
+(`replay_view`
+id
+`live:<runId>`)
+of
+the
+first
+roster
+player,
+fast-forwarding
+while
+more
+than
+25
+events
+are
+waiting;
+`ui_replay {op:'pov'}`
+switches
+to
+another
+player's
+log
+from
+the
+start.
+Closing
+the
+live
+playback
+also
+leaves
+the
+lobby.
+When
+every
+player's
+log
+has
+ended,
+the
+spectator
+stores
+the
+match
+in
+My
+Replays.
 
-**Contract additions (WS13).** `ReplayOp` `net_in`; bridge `ui_spectate_list` (L2J) and
-`spectate_view {lobbies, error?}` (J2L).
+**Contract
+additions
+(WS13).**
+`ReplayOp`
+`net_in`;
+bridge
+`ui_spectate_list`
+(L2J)
+and
+`spectate_view {lobbies, error?}`
+(J2L).
 
-**Seeded tag packs.** Vanilla's Charm and Meteor Tags pick the art variant of their Mega pack
-with an unseeded `math.random(1, 2)`; in a session the session wrap on `Tag:yep` answers that one
-call from the seeded stream `mp_tag_pack` (rules/session.lua `S.seed_tag_pack`), so peers and
-replays open the same pack. The Ethereal Tag's pack is fixed. Every other `math.random` in the MP
-Lua is either seeded through `pseudoseed` first (rng.shuffle, the Ouija rework) or cosmetic
-(end-screen quips, the error jokers' tooltip text, the ante key, which replays record).
+**Seeded
+tag
+packs.**
+Vanilla's
+Charm
+and
+Meteor
+Tags
+pick
+the
+art
+variant
+of
+their
+Mega
+pack
+with
+an
+unseeded
+`math.random(1, 2)`;
+in
+a
+session
+the
+session
+wrap
+on
+`Tag:yep`
+answers
+that
+one
+call
+from
+the
+seeded
+stream
+`mp_tag_pack`
+(rules/session.lua
+`S.seed_tag_pack`),
+so
+peers
+and
+replays
+open
+the
+same
+pack.
+The
+Ethereal
+Tag's
+pack
+is
+fixed.
+Every
+other
+`math.random`
+in
+the
+MP
+Lua
+is
+either
+seeded
+through
+`pseudoseed`
+first
+(rng.shuffle,
+the
+Ouija
+rework)
+or
+cosmetic
+(end-screen
+quips,
+the
+error
+jokers'
+tooltip
+text,
+the
+ante
+key,
+which
+replays
+record).
 
-**A log continued after a reload rejoin.** A page reload starts a new Lua, whose recorder used
-to restart at index 0 while the peers already held the player's events 0..N, so the new prefix
-was dropped as duplicates and playback stopped at the bare `manifest {rejoin}`. Now the log
-continues where the peers have it, and the markers carry what playback needs:
+**A
+log
+continued
+after
+a
+reload
+rejoin.**
+A
+page
+reload
+starts
+a
+new
+Lua,
+whose
+recorder
+used
+to
+restart
+at
+index
+0
+while
+the
+peers
+already
+held
+the
+player's
+events
+0..N,
+so
+the
+new
+prefix
+was
+dropped
+as
+duplicates
+and
+playback
+stopped
+at
+the
+bare
+`manifest {rejoin}`.
+Now
+the
+log
+continues
+where
+the
+peers
+have
+it,
+and
+the
+markers
+carry
+what
+playback
+needs:
 
-1. _The count._ A crash rejoiner's `welcome` carries `logNext` = how many events of its log the
-   host holds contiguously (`ReplayTap.logLength`; any seated player's welcome does, a live run
-   ignores it). The runtime passes it on as `match_start.logNext` (`beginMatch(match, 'rejoin',
-logNext)`). The host also runs the spectator catch-up for the rejoiner, so its TS gets back
-   every log so far, its own included (`peerLog` accepts the own id; the `chk` waits until the
-   own log is contiguous through `end`).
-2. _The mount marker._ With `logNext ≥ 2` (the host holds the manifest and the lobby info) the
-   recorder starts at that index with `manifest {rejoin, v:2, mount, seg}` instead of
-   `match_manifest` + `lobby_info`. A fresh launch (the restore arrived after it) still records
+1. _The
+   count._
+   A
+   crash
+   rejoiner's
+   `welcome`
+   carries
+   `logNext`
+   =
+   how
+   many
+   events
+   of
+   its
+   log
+   the
+   host
+   holds
+   contiguously
+   (`ReplayTap.logLength`;
+   any
+   seated
+   player's
+   welcome
+   does,
+   a
+   live
+   run
+   ignores
+   it).
+   The
+   runtime
+   passes
+   it
+   on
+   as
+   `match_start.logNext`
+   (`beginMatch(match, 'rejoin', logNext)`).
+   The
+   host
+   also
+   runs
+   the
+   spectator
+   catch-up
+   for
+   the
+   rejoiner,
+   so
+   its
+   TS
+   gets
+   back
+   every
+   log
+   so
+   far,
+   its
+   own
+   included
+   (`peerLog`
+   accepts
+   the
+   own
+   id;
+   the
+   `chk`
+   waits
+   until
+   the
+   own
+   log
+   is
+   contiguous
+   through
+   `end`).
+2. _The
+   mount
+   marker._
+   With
+   `logNext ≥ 2`
+   (the
+   host
+   holds
+   the
+   manifest
+   and
+   the
+   lobby
+   info)
+   the
+   recorder
+   starts
+   at
+   that
+   index
+   with
+   `manifest {rejoin, v:2, mount, seg}`
+   instead
+   of
+   `match_manifest` +
+   `lobby_info`.
+   A
+   fresh
+   launch
+   (the
+   restore
+   arrived
+   after
+   it)
+   still
+   records
    `run_info`.
-3. _The restore marker._ Every MP snapshot's `state.json` records `log_i`, the log index it was
-   taken at (the state is the run after events `[0, log_i)`). A restore (`S.restore_raw`, shared
-   by `rejoin_restore` and playback) records `manifest {rejoin, v:2, restore, from: log_i, seg,
-parts, z, len}` before the run loads, followed by `parts` events `manifest {snap: j, data}`
-   carrying `"<#state>:<state.json><run.jkr>"`, deflated and base64-encoded through `love.data`
-   (`z:'deflate'`; `'raw'` text cut on UTF-8 boundaries where `love.data` is missing), ≤ 6 KB
-   per part. In-engine a shop snapshot of 62 KB travels as about 9 KB in 2 parts.
-4. _Playback._ `mount` re-mounts the session from the log's `lobby_info` as the reloaded page
-   did (the next `run_info` launches again); `restore` reassembles the snapshot and restores it
-   through `S.restore_raw`, as the live rejoin did (a live feed waits for missing parts; a
-   stored log missing them stops with "snapshot incomplete"). Reaching index `from` of a known
-   restore marker with `from < seg` jumps to `seg`: `[from, seg)` is the progress the reload
-   lost. A spectator that already played it simply restores over it.
-5. _Overlap._ If a peer holds events of the old life past the host's count (it got them, the
-   host had not, e.g. after a host migration), the marker lands on an index holding a different
-   event: `PlayerLog.add` (TS) and `PL.feed` (Lua) drop everything from that index on and file
-   the marker (`AddResult.rewound`; a spectator feeds Lua again from there; a playback past it
-   continues at the marker). A re-sent identical marker is a plain duplicate.
+3. _The
+   restore
+   marker._
+   Every
+   MP
+   snapshot's
+   `state.json`
+   records
+   `log_i`,
+   the
+   log
+   index
+   it
+   was
+   taken
+   at
+   (the
+   state
+   is
+   the
+   run
+   after
+   events
+   `[0, log_i)`).
+   A
+   restore
+   (`S.restore_raw`,
+   shared
+   by
+   `rejoin_restore`
+   and
+   playback)
+   records
+   `manifest {rejoin, v:2, restore, from: log_i, seg, parts, z, len}`
+   before
+   the
+   run
+   loads,
+   followed
+   by
+   `parts`
+   events
+   `manifest {snap: j, data}`
+   carrying
+   `"<#state>:<state.json><run.jkr>"`,
+   deflated
+   and
+   base64-encoded
+   through
+   `love.data`
+   (`z:'deflate'`;
+   `'raw'`
+   text
+   cut
+   on
+   UTF-8
+   boundaries
+   where
+   `love.data`
+   is
+   missing),
+   ≤
+   6
+   KB
+   per
+   part.
+   In-engine
+   a
+   shop
+   snapshot
+   of
+   62
+   KB
+   travels
+   as
+   about
+   9
+   KB
+   in
+   2
+   parts.
+4. _Playback._
+   `mount`
+   re-mounts
+   the
+   session
+   from
+   the
+   log's
+   `lobby_info`
+   as
+   the
+   reloaded
+   page
+   did
+   (the
+   next
+   `run_info`
+   launches
+   again);
+   `restore`
+   reassembles
+   the
+   snapshot
+   and
+   restores
+   it
+   through
+   `S.restore_raw`,
+   as
+   the
+   live
+   rejoin
+   did
+   (a
+   live
+   feed
+   waits
+   for
+   missing
+   parts;
+   a
+   stored
+   log
+   missing
+   them
+   stops
+   with
+   "snapshot
+   incomplete").
+   Reaching
+   index
+   `from`
+   of
+   a
+   known
+   restore
+   marker
+   with
+   `from < seg`
+   jumps
+   to
+   `seg`:
+   `[from, seg)`
+   is
+   the
+   progress
+   the
+   reload
+   lost.
+   A
+   spectator
+   that
+   already
+   played
+   it
+   simply
+   restores
+   over
+   it.
+5. _Overlap._
+   If
+   a
+   peer
+   holds
+   events
+   of
+   the
+   old
+   life
+   past
+   the
+   host's
+   count
+   (it
+   got
+   them,
+   the
+   host
+   had
+   not,
+   e.g.
+   after
+   a
+   host
+   migration),
+   the
+   marker
+   lands
+   on
+   an
+   index
+   holding
+   a
+   different
+   event:
+   `PlayerLog.add`
+   (TS)
+   and
+   `PL.feed`
+   (Lua)
+   drop
+   everything
+   from
+   that
+   index
+   on
+   and
+   file
+   the
+   marker
+   (`AddResult.rewound`;
+   a
+   spectator
+   feeds
+   Lua
+   again
+   from
+   there;
+   a
+   playback
+   past
+   it
+   continues
+   at
+   the
+   marker).
+   A
+   re-sent
+   identical
+   marker
+   is
+   a
+   plain
+   duplicate.
 
-A log without rejoins is byte-identical to before, and a stored WS13 log whose marker has no
-`v` still stops there ("the player reloaded mid-match"). `rejoin_restore` now reads the snapshot
-files when it arrives: the launch's own blind-select `save_run` used to be able to overwrite
-them before the deferred load ran. **Contract change:** optional `welcome.logNext` (wire) and
-`match_start.logNext` (bridge; protocol.lua regenerated). Remaining limit: a peer that missed
-part of the old log for good (it was never relayed to it) keeps that gap.
+A
+log
+without
+rejoins
+is
+byte-identical
+to
+before,
+and
+a
+stored
+WS13
+log
+whose
+marker
+has
+no
+`v`
+still
+stops
+there
+("the
+player
+reloaded
+mid-match").
+`rejoin_restore`
+now
+reads
+the
+snapshot
+files
+when
+it
+arrives:
+the
+launch's
+own
+blind-select
+`save_run`
+used
+to
+be
+able
+to
+overwrite
+them
+before
+the
+deferred
+load
+ran.
+**Contract
+change:**
+optional
+`welcome.logNext`
+(wire)
+and
+`match_start.logNext`
+(bridge;
+protocol.lua
+regenerated).
+Remaining
+limit:
+a
+peer
+that
+missed
+part
+of
+the
+old
+log
+for
+good
+(it
+was
+never
+relayed
+to
+it)
+keeps
+that
+gap.

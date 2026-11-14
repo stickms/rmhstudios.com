@@ -14,40 +14,95 @@
  * Run:  pnpm og:cards
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  writeFileSync,
+} from 'node:fs';
 import { resolve } from 'node:path';
 import { STATIC_CARDS } from '../lib/og/static-cards';
 import { renderPageCard } from '../lib/og/page-card.server';
 import { catalogStatsFor } from '../lib/og/catalog-stats';
 
 async function main() {
-  const dir = resolve(process.cwd(), 'public/images/og');
-  mkdirSync(dir, { recursive: true });
+  const dir =
+    resolve(
+      process.cwd(),
+      'public/images/og',
+    );
+  mkdirSync(
+    dir,
+    {
+      recursive: true,
+    },
+  );
 
   // Several paths share one card (every legal page, for instance), so render by
   // FILE rather than by entry. Serially, not in parallel: satori + resvg are
   // CPU-bound and there are only a couple of dozen of these, so concurrency
   // buys nothing and makes a failure harder to attribute to a card.
-  const seen = new Set<string>();
-  let defaultPng: Buffer | null = null;
+  const seen =
+    new Set<string>();
+  let defaultPng: Buffer | null =
+    null;
 
   // Only `default` is a file; every other section card is rendered on request (see `staticCardImage`).
-  for (const card of STATIC_CARDS.filter((c) => c.file === 'default')) {
-    if (seen.has(card.file)) continue;
-    seen.add(card.file);
+  for (const card of STATIC_CARDS.filter(
+    (
+      c,
+    ) =>
+      c.file ===
+      'default',
+  )) {
+    if (
+      seen.has(
+        card.file,
+      )
+    )
+      continue;
+    seen.add(
+      card.file,
+    );
 
-    const png = await renderPageCard({
-      cacheKey: `static:${card.file}`,
-      eyebrow: card.eyebrow,
-      title: card.title,
-      subtitle: card.subtitle,
-      stats: catalogStatsFor(card.file) ?? card.stats,
-      path: card.path === '/' ? null : card.path,
-    });
-    if (card.file === 'default') defaultPng = png;
-    const out = resolve(dir, `${card.file}.png`);
-    writeFileSync(out, png);
-    console.warn(`wrote ${out} (${(png.length / 1024).toFixed(0)} KB)`);
+    const png =
+      await renderPageCard(
+        {
+          cacheKey: `static:${card.file}`,
+          eyebrow:
+            card.eyebrow,
+          title:
+            card.title,
+          subtitle:
+            card.subtitle,
+          stats:
+            catalogStatsFor(
+              card.file,
+            ) ??
+            card.stats,
+          path:
+            card.path ===
+            '/'
+              ? null
+              : card.path,
+        },
+      );
+    if (
+      card.file ===
+      'default'
+    )
+      defaultPng =
+        png;
+    const out =
+      resolve(
+        dir,
+        `${card.file}.png`,
+      );
+    writeFileSync(
+      out,
+      png,
+    );
+    console.warn(
+      `wrote ${out} (${(png.length / 1024).toFixed(0)} KB)`,
+    );
   }
 
   // `/og.png` was the site-wide card before this, hard-coded in `__root.tsx` at
@@ -55,14 +110,33 @@ async function main() {
   // the years still do and some caches hold it, so the URL keeps resolving —
   // now to the same 1200×630 card as everything else, rather than to a 1.8MB
   // image at an aspect ratio no unfurl wants.
-  if (defaultPng) {
-    const alias = resolve(process.cwd(), 'public/og.png');
-    writeFileSync(alias, defaultPng);
-    console.warn(`wrote ${alias} (legacy alias for default.png)`);
+  if (
+    defaultPng
+  ) {
+    const alias =
+      resolve(
+        process.cwd(),
+        'public/og.png',
+      );
+    writeFileSync(
+      alias,
+      defaultPng,
+    );
+    console.warn(
+      `wrote ${alias} (legacy alias for default.png)`,
+    );
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch(
+  (
+    err,
+  ) => {
+    console.error(
+      err,
+    );
+    process.exit(
+      1,
+    );
+  },
+);

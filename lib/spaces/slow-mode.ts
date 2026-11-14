@@ -35,19 +35,33 @@ export interface SlowModeConfig {
   minAccountAgeMs: number;
 }
 
-export const DEFAULT_SLOW_MODE: SlowModeConfig = {
-  cooldownMs: 0,
-  burstMessages: 40,
-  burstWindowMs: 10_000,
-  autoCooldownMs: 10_000,
-  calmMs: 60_000,
-  minAccountAgeMs: 24 * 60 * 60 * 1000,
-};
+export const DEFAULT_SLOW_MODE: SlowModeConfig =
+  {
+    cooldownMs: 0,
+    burstMessages: 40,
+    burstWindowMs: 10_000,
+    autoCooldownMs: 10_000,
+    calmMs: 60_000,
+    minAccountAgeMs:
+      24 *
+      60 *
+      60 *
+      1000,
+  };
 
 export type Verdict =
-  | { ok: true }
-  | { ok: false; reason: 'cooldown'; retryInMs: number }
-  | { ok: false; reason: 'new-account' };
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      reason: 'cooldown';
+      retryInMs: number;
+    }
+  | {
+      ok: false;
+      reason: 'new-account';
+    };
 
 export interface Sender {
   id: string;
@@ -56,60 +70,203 @@ export interface Sender {
 }
 
 export class SlowModeGate {
-  private lastBy = new Map<string, number>();
-  private recent: number[] = [];
-  private autoUntilCalm: number | null = null;
+  private lastBy =
+    new Map<
+      string,
+      number
+    >();
+  private recent: number[] =
+    [];
+  private autoUntilCalm:
+    | number
+    | null =
+    null;
 
-  constructor(private cfg: SlowModeConfig = DEFAULT_SLOW_MODE) {}
+  constructor(
+    private cfg: SlowModeConfig = DEFAULT_SLOW_MODE,
+  ) {}
 
-  configure(next: Partial<SlowModeConfig>): void {
-    this.cfg = { ...this.cfg, ...next };
+  configure(
+    next: Partial<SlowModeConfig>,
+  ): void {
+    this.cfg =
+      {
+        ...this
+          .cfg,
+        ...next,
+      };
   }
 
   /** Whether auto mode is currently engaged. */
-  autoEngaged(now: number): boolean {
-    this.trim(now);
-    if (this.autoUntilCalm !== null && now >= this.autoUntilCalm) this.autoUntilCalm = null;
-    return this.autoUntilCalm !== null;
+  autoEngaged(
+    now: number,
+  ): boolean {
+    this.trim(
+      now,
+    );
+    if (
+      this
+        .autoUntilCalm !==
+        null &&
+      now >=
+        this
+          .autoUntilCalm
+    )
+      this.autoUntilCalm =
+        null;
+    return (
+      this
+        .autoUntilCalm !==
+      null
+    );
   }
 
   /** The cooldown in force right now. */
-  effectiveCooldown(now: number): number {
-    return this.autoEngaged(now)
-      ? Math.max(this.cfg.cooldownMs, this.cfg.autoCooldownMs)
-      : this.cfg.cooldownMs;
+  effectiveCooldown(
+    now: number,
+  ): number {
+    return this.autoEngaged(
+      now,
+    )
+      ? Math.max(
+          this
+            .cfg
+            .cooldownMs,
+          this
+            .cfg
+            .autoCooldownMs,
+        )
+      : this
+          .cfg
+          .cooldownMs;
   }
 
   /** Check, and on success record, one message. */
-  attempt(sender: Sender, now: number): Verdict {
-    if (sender.exempt) {
-      this.record(sender.id, now);
-      return { ok: true };
+  attempt(
+    sender: Sender,
+    now: number,
+  ): Verdict {
+    if (
+      sender.exempt
+    ) {
+      this.record(
+        sender.id,
+        now,
+      );
+      return {
+        ok: true,
+      };
     }
-    const auto = this.autoEngaged(now);
-    if (auto && now - sender.accountCreatedAt < this.cfg.minAccountAgeMs) {
-      return { ok: false, reason: 'new-account' };
+    const auto =
+      this.autoEngaged(
+        now,
+      );
+    if (
+      auto &&
+      now -
+        sender.accountCreatedAt <
+        this
+          .cfg
+          .minAccountAgeMs
+    ) {
+      return {
+        ok: false,
+        reason:
+          'new-account',
+      };
     }
-    const cooldown = this.effectiveCooldown(now);
-    const last = this.lastBy.get(sender.id);
-    if (cooldown > 0 && last !== undefined && now - last < cooldown) {
-      return { ok: false, reason: 'cooldown', retryInMs: cooldown - (now - last) };
+    const cooldown =
+      this.effectiveCooldown(
+        now,
+      );
+    const last =
+      this.lastBy.get(
+        sender.id,
+      );
+    if (
+      cooldown >
+        0 &&
+      last !==
+        undefined &&
+      now -
+        last <
+        cooldown
+    ) {
+      return {
+        ok: false,
+        reason:
+          'cooldown',
+        retryInMs:
+          cooldown -
+          (now -
+            last),
+      };
     }
-    this.record(sender.id, now);
-    return { ok: true };
+    this.record(
+      sender.id,
+      now,
+    );
+    return {
+      ok: true,
+    };
   }
 
-  private record(id: string, now: number): void {
-    this.lastBy.set(id, now);
-    this.recent.push(now);
-    this.trim(now);
-    if (this.recent.length > this.cfg.burstMessages) this.autoUntilCalm = now + this.cfg.calmMs;
+  private record(
+    id: string,
+    now: number,
+  ): void {
+    this.lastBy.set(
+      id,
+      now,
+    );
+    this.recent.push(
+      now,
+    );
+    this.trim(
+      now,
+    );
+    if (
+      this
+        .recent
+        .length >
+      this
+        .cfg
+        .burstMessages
+    )
+      this.autoUntilCalm =
+        now +
+        this
+          .cfg
+          .calmMs;
   }
 
-  private trim(now: number): void {
-    const cutoff = now - this.cfg.burstWindowMs;
+  private trim(
+    now: number,
+  ): void {
+    const cutoff =
+      now -
+      this
+        .cfg
+        .burstWindowMs;
     let i = 0;
-    while (i < this.recent.length && this.recent[i]! <= cutoff) i++;
-    if (i) this.recent.splice(0, i);
+    while (
+      i <
+        this
+          .recent
+          .length &&
+      this
+        .recent[
+        i
+      ]! <=
+        cutoff
+    )
+      i++;
+    if (
+      i
+    )
+      this.recent.splice(
+        0,
+        i,
+      );
   }
 }

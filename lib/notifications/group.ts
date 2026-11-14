@@ -24,14 +24,24 @@ export interface GroupableNotification {
   id: string;
   /** `NotificationType` from Prisma — kept as a string so this stays client-safe. */
   type: string;
-  entityType?: string | null;
-  entityId?: string | null;
+  entityType?:
+    | string
+    | null;
+  entityId?:
+    | string
+    | null;
   /** ISO string or Date; both are accepted because loaders serialize to ISO. */
-  createdAt: string | Date;
+  createdAt:
+    | string
+    | Date;
   read?: boolean;
 }
 
-export interface NotificationGroup<T extends GroupableNotification = GroupableNotification> {
+export interface NotificationGroup<
+  T extends
+    GroupableNotification =
+    GroupableNotification,
+> {
   /** Stable identity of the group: `<type>|<targetId>|<bucket>`. Safe as a React key. */
   key: string;
   type: string;
@@ -39,7 +49,9 @@ export interface NotificationGroup<T extends GroupableNotification = GroupableNo
    * What the group is *about* — `"<entityType>:<entityId>"`, or `null` for
    * notifications with no target (a FOLLOW is about the actor, not an entity).
    */
-  targetId: string | null;
+  targetId:
+    | string
+    | null;
   /** How many rows collapsed into this group. Always ≥ 1. */
   count: number;
   /** Newest `createdAt` in the group — what the list sorts and timestamps by. */
@@ -53,7 +65,10 @@ export interface NotificationGroup<T extends GroupableNotification = GroupableNo
 
 /** One hour. Long enough to fold a burst of likes, short enough that "2 hours
  *  ago" on the group header is never a lie about the newest item in it. */
-export const DEFAULT_BUCKET_MS = 60 * 60 * 1000;
+export const DEFAULT_BUCKET_MS =
+  60 *
+  60 *
+  1000;
 
 export interface GroupOptions {
   /**
@@ -70,13 +85,29 @@ export interface GroupOptions {
   neverGroup?: readonly string[];
 }
 
-function toDate(value: string | Date): Date {
-  return value instanceof Date ? value : new Date(value);
+function toDate(
+  value:
+    | string
+    | Date,
+): Date {
+  return value instanceof
+    Date
+    ? value
+    : new Date(
+        value,
+      );
 }
 
 /** `"<entityType>:<entityId>"`, or null when the row has no target entity. */
-export function targetIdOf(row: GroupableNotification): string | null {
-  if (!row.entityId) return null;
+export function targetIdOf(
+  row: GroupableNotification,
+):
+  | string
+  | null {
+  if (
+    !row.entityId
+  )
+    return null;
   return `${row.entityType ?? 'entity'}:${row.entityId}`;
 }
 
@@ -88,54 +119,142 @@ export function targetIdOf(row: GroupableNotification): string | null {
  * see in the badge count but not in the list is a worse bug than a badly
  * ordered one.
  */
-export function groupNotifications<T extends GroupableNotification>(
+export function groupNotifications<
+  T extends
+    GroupableNotification,
+>(
   rows: readonly T[],
   options: GroupOptions = {},
 ): NotificationGroup<T>[] {
-  const bucketMs = options.bucketMs && options.bucketMs > 0 ? options.bucketMs : DEFAULT_BUCKET_MS;
-  const neverGroup = new Set(options.neverGroup ?? []);
+  const bucketMs =
+    options.bucketMs &&
+    options.bucketMs >
+      0
+      ? options.bucketMs
+      : DEFAULT_BUCKET_MS;
+  const neverGroup =
+    new Set(
+      options.neverGroup ??
+        [],
+    );
 
-  const groups = new Map<string, NotificationGroup<T>>();
+  const groups =
+    new Map<
+      string,
+      NotificationGroup<T>
+    >();
 
   for (const row of rows) {
-    const at = toDate(row.createdAt);
-    const ms = Number.isNaN(at.getTime()) ? 0 : at.getTime();
-    const target = targetIdOf(row);
-    const bucket = Math.floor(ms / bucketMs);
+    const at =
+      toDate(
+        row.createdAt,
+      );
+    const ms =
+      Number.isNaN(
+        at.getTime(),
+      )
+        ? 0
+        : at.getTime();
+    const target =
+      targetIdOf(
+        row,
+      );
+    const bucket =
+      Math.floor(
+        ms /
+          bucketMs,
+      );
 
     // Ungroupable types key on the row id so they can never merge with anything
     // — including another row of the same type in the same hour.
-    const key = neverGroup.has(row.type)
-      ? `${row.type}|${row.id}|single`
-      : `${row.type}|${target ?? '-'}|${bucket}`;
+    const key =
+      neverGroup.has(
+        row.type,
+      )
+        ? `${row.type}|${row.id}|single`
+        : `${row.type}|${target ?? '-'}|${bucket}`;
 
-    const existing = groups.get(key);
-    if (!existing) {
-      groups.set(key, {
+    const existing =
+      groups.get(
         key,
-        type: row.type,
-        targetId: target,
-        count: 1,
-        latest: new Date(ms),
-        items: [row],
-        unread: row.read === false,
-      });
+      );
+    if (
+      !existing
+    ) {
+      groups.set(
+        key,
+        {
+          key,
+          type: row.type,
+          targetId:
+            target,
+          count: 1,
+          latest:
+            new Date(
+              ms,
+            ),
+          items:
+            [
+              row,
+            ],
+          unread:
+            row.read ===
+            false,
+        },
+      );
       continue;
     }
 
     existing.count += 1;
-    existing.items.push(row);
-    existing.unread = existing.unread || row.read === false;
-    if (ms > existing.latest.getTime()) existing.latest = new Date(ms);
+    existing.items.push(
+      row,
+    );
+    existing.unread =
+      existing.unread ||
+      row.read ===
+        false;
+    if (
+      ms >
+      existing.latest.getTime()
+    )
+      existing.latest =
+        new Date(
+          ms,
+        );
   }
 
-  const out = [...groups.values()];
+  const out =
+    [
+      ...groups.values(),
+    ];
   for (const group of out) {
-    group.items.sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+    group.items.sort(
+      (
+        a,
+        b,
+      ) =>
+        toDate(
+          b.createdAt,
+        ).getTime() -
+        toDate(
+          a.createdAt,
+        ).getTime(),
+    );
   }
   // Newest group first; ties broken by key so the order is deterministic across
   // renders (two groups can genuinely share a millisecond in a seeded DB).
-  out.sort((a, b) => b.latest.getTime() - a.latest.getTime() || (a.key < b.key ? -1 : 1));
+  out.sort(
+    (
+      a,
+      b,
+    ) =>
+      b.latest.getTime() -
+        a.latest.getTime() ||
+      (a.key <
+      b.key
+        ? -1
+        : 1),
+  );
   return out;
 }
 
@@ -144,6 +263,19 @@ export function groupNotifications<T extends GroupableNotification>(
  * the list needs it for the optimistic badge decrement and computing it inline
  * in JSX is how the count and the mutation drift apart.
  */
-export function unreadCountOf(group: NotificationGroup): number {
-  return group.items.reduce((n, item) => n + (item.read === false ? 1 : 0), 0);
+export function unreadCountOf(
+  group: NotificationGroup,
+): number {
+  return group.items.reduce(
+    (
+      n,
+      item,
+    ) =>
+      n +
+      (item.read ===
+      false
+        ? 1
+        : 0),
+    0,
+  );
 }

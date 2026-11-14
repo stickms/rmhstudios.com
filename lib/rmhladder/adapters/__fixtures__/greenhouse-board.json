@@ -6,7 +6,9 @@
       "updated_at": "2026-06-20T12:00:00-04:00",
       "first_published": "2026-06-01T09:00:00-04:00",
       "requisition_id": "R-1234",
-      "location": { "name": "New York, NY" },
+      "location": {
+        "name": "New York, NY"
+      },
       "absolute_url": "https://boards.greenhouse.io/stripe/jobs/4285367007",
       "content": "&lt;p&gt;Join our payments team as a PM intern.&lt;/p&gt;"
     },
@@ -16,7 +18,9 @@
       "updated_at": "2026-06-21T12:00:00-04:00",
       "first_published": "2026-05-01T09:00:00-04:00",
       "requisition_id": null,
-      "location": { "name": "Remote - US" },
+      "location": {
+        "name": "Remote - US"
+      },
       "absolute_url": "https://boards.greenhouse.io/stripe/jobs/4285367008",
       "content": "&lt;p&gt;10+ years required.&lt;/p&gt;"
     }

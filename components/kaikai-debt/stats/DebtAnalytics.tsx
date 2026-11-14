@@ -31,10 +31,21 @@
  * The strip is `<Tabs>`, which is the site's only sanctioned tab strip.
  */
 
-import { useMemo, useState } from 'react';
+import {
+  useMemo,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, Box, Globe2, Grid3x3, LineChart, Orbit, Table2 } from 'lucide-react';
+import {
+  BarChart3,
+  Box,
+  Globe2,
+  Grid3x3,
+  LineChart,
+  Orbit,
+  Table2,
+} from 'lucide-react';
 import type { DebtSnapshot } from '@/lib/kaikai-debt/debt';
 import {
   CATEGORY_ORDER,
@@ -46,8 +57,15 @@ import type { CreditInputs } from '@/lib/kaikai-debt/credit';
 import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Legend, useChartClock, useToggleSet } from './chart-kit';
-import { AccrualChart, type HorizonId } from './AccrualChart';
+import {
+  Legend,
+  useChartClock,
+  useToggleSet,
+} from './chart-kit';
+import {
+  AccrualChart,
+  type HorizonId,
+} from './AccrualChart';
 import {
   CategoryBars,
   CategoryTreemap,
@@ -67,16 +85,63 @@ import { api } from '@/lib/contract/client';
 import { debtStatsApi } from '@/lib/kaikai-debt/kaikai-debt.contract';
 import { useArrival } from '@/components/ui/arrive';
 
-type TabId = 'overview' | 'composition' | 'rhythm' | 'terrain' | 'hyper' | 'globe' | 'table';
+type TabId =
+  | 'overview'
+  | 'composition'
+  | 'rhythm'
+  | 'terrain'
+  | 'hyper'
+  | 'globe'
+  | 'table';
 
-export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
-  const { t } = useTranslation('c-kaikai-debt');
-  const [tab, setTab] = useState<TabId>('overview');
-  const [logScaleOn, setLogScaleOn] = useState(true);
-  const [logCounts, setLogCounts] = useState(false);
-  const [byCount, setByCount] = useState(false);
-  const [horizon, setHorizon] = useState<HorizonId>('year');
-  const filter = useToggleSet();
+export function DebtAnalytics({
+  snapshot,
+}: {
+  snapshot: DebtSnapshot;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-kaikai-debt',
+    );
+  const [
+    tab,
+    setTab,
+  ] =
+    useState<TabId>(
+      'overview',
+    );
+  const [
+    logScaleOn,
+    setLogScaleOn,
+  ] =
+    useState(
+      true,
+    );
+  const [
+    logCounts,
+    setLogCounts,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    byCount,
+    setByCount,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    horizon,
+    setHorizon,
+  ] =
+    useState<HorizonId>(
+      'year',
+    );
+  const filter =
+    useToggleSet();
 
   /**
    * The stats read.
@@ -86,130 +151,392 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
    * be fresher than that — the *movement* on screen comes from compounding the
    * bases against the clock, not from refetching them.
    */
-  const query = useQuery<DebtStats>({
-    queryKey: ['kaikai-debt', 'stats'],
-    queryFn: () => api(debtStatsApi),
-    staleTime: 30_000,
-    refetchInterval: 120_000,
-    refetchOnWindowFocus: false,
-  });
-
-  const stats = query.data ?? emptyStats(snapshot.asOfMs);
-  const arrival = useArrival(!query.isPending);
-  const nowMs = useChartClock(stats.asOfMs);
-
-  const inputs: CreditInputs = useMemo(
-    () => ({
-      basisCents: stats.totals.basisCents || snapshot.basisCents,
-      principalCents: stats.totals.principalCents || snapshot.principalCents,
-      entryCount: stats.totals.count || snapshot.entryCount,
-      memberEntryCount: stats.totals.memberEntryCount || snapshot.memberEntryCount,
-      oldestMs: stats.span.oldestMs,
-      categoriesUsed: stats.categories.filter((category) => category.count > 0).length,
-    }),
-    [stats, snapshot],
-  );
-
-  const legendItems = useMemo(
-    () =>
-      stats.categories.map((stat) => ({
-        id: stat.category,
-        label: categoryLabel(stat.category, t),
-        seriesIndex: CATEGORY_ORDER.indexOf(stat.category),
-        value: stat.count > 0 ? stat.count.toLocaleString('en-US') : undefined,
-      })),
-    [stats.categories, t],
-  );
-
-  /** The totals the tiles show, narrowed to the filter when one is on. */
-  const scoped = useMemo(() => {
-    if (filter.selected.size === 0) return stats;
-    const categories = stats.categories.filter((stat) => filter.selected.has(stat.category));
-    const totals = categories.reduce(
-      (sum, stat) => ({
-        count: sum.count + stat.count,
-        principalCents: sum.principalCents + stat.principalCents,
-        basisCents: sum.basisCents + stat.basisCents,
-        memberPrincipalCents: sum.memberPrincipalCents + stat.memberPrincipalCents,
-        memberEntryCount: sum.memberEntryCount + stat.memberCount,
-        contributorCount: stats.totals.contributorCount,
-        creditorCount: stats.totals.creditorCount,
-      }),
+  const query =
+    useQuery<DebtStats>(
       {
-        count: 0,
-        principalCents: 0,
-        basisCents: 0,
-        memberPrincipalCents: 0,
-        memberEntryCount: 0,
-        contributorCount: stats.totals.contributorCount,
-        creditorCount: stats.totals.creditorCount,
+        queryKey:
+          [
+            'kaikai-debt',
+            'stats',
+          ],
+        queryFn:
+          () =>
+            api(
+              debtStatsApi,
+            ),
+        staleTime: 30_000,
+        refetchInterval: 120_000,
+        refetchOnWindowFocus: false,
       },
     );
-    return { ...stats, totals };
-  }, [stats, filter.selected]);
 
-  const tabs = [
-    { id: 'overview', label: t('stats.tab.overview', { defaultValue: 'Overview' }), icon: LineChart },
-    {
-      id: 'composition',
-      label: t('stats.tab.composition', { defaultValue: 'Composition' }),
-      icon: BarChart3,
-    },
-    { id: 'rhythm', label: t('stats.tab.rhythm', { defaultValue: 'Rhythm' }), icon: Grid3x3 },
-    { id: 'terrain', label: t('stats.tab.terrain', { defaultValue: '3D' }), icon: Box },
-    { id: 'hyper', label: t('stats.tab.hyper', { defaultValue: '4D' }), icon: Orbit },
-    { id: 'globe', label: t('stats.tab.globe', { defaultValue: 'Globe' }), icon: Globe2 },
-    { id: 'table', label: t('stats.tab.table', { defaultValue: 'Table' }), icon: Table2 },
-  ];
+  const stats =
+    query.data ??
+    emptyStats(
+      snapshot.asOfMs,
+    );
+  const arrival =
+    useArrival(
+      !query.isPending,
+    );
+  const nowMs =
+    useChartClock(
+      stats.asOfMs,
+    );
+
+  const inputs: CreditInputs =
+    useMemo(
+      () => ({
+        basisCents:
+          stats
+            .totals
+            .basisCents ||
+          snapshot.basisCents,
+        principalCents:
+          stats
+            .totals
+            .principalCents ||
+          snapshot.principalCents,
+        entryCount:
+          stats
+            .totals
+            .count ||
+          snapshot.entryCount,
+        memberEntryCount:
+          stats
+            .totals
+            .memberEntryCount ||
+          snapshot.memberEntryCount,
+        oldestMs:
+          stats
+            .span
+            .oldestMs,
+        categoriesUsed:
+          stats.categories.filter(
+            (
+              category,
+            ) =>
+              category.count >
+              0,
+          )
+            .length,
+      }),
+      [
+        stats,
+        snapshot,
+      ],
+    );
+
+  const legendItems =
+    useMemo(
+      () =>
+        stats.categories.map(
+          (
+            stat,
+          ) => ({
+            id: stat.category,
+            label:
+              categoryLabel(
+                stat.category,
+                t,
+              ),
+            seriesIndex:
+              CATEGORY_ORDER.indexOf(
+                stat.category,
+              ),
+            value:
+              stat.count >
+              0
+                ? stat.count.toLocaleString(
+                    'en-US',
+                  )
+                : undefined,
+          }),
+        ),
+      [
+        stats.categories,
+        t,
+      ],
+    );
+
+  /** The totals the tiles show, narrowed to the filter when one is on. */
+  const scoped =
+    useMemo(() => {
+      if (
+        filter
+          .selected
+          .size ===
+        0
+      )
+        return stats;
+      const categories =
+        stats.categories.filter(
+          (
+            stat,
+          ) =>
+            filter.selected.has(
+              stat.category,
+            ),
+        );
+      const totals =
+        categories.reduce(
+          (
+            sum,
+            stat,
+          ) => ({
+            count:
+              sum.count +
+              stat.count,
+            principalCents:
+              sum.principalCents +
+              stat.principalCents,
+            basisCents:
+              sum.basisCents +
+              stat.basisCents,
+            memberPrincipalCents:
+              sum.memberPrincipalCents +
+              stat.memberPrincipalCents,
+            memberEntryCount:
+              sum.memberEntryCount +
+              stat.memberCount,
+            contributorCount:
+              stats
+                .totals
+                .contributorCount,
+            creditorCount:
+              stats
+                .totals
+                .creditorCount,
+          }),
+          {
+            count: 0,
+            principalCents: 0,
+            basisCents: 0,
+            memberPrincipalCents: 0,
+            memberEntryCount: 0,
+            contributorCount:
+              stats
+                .totals
+                .contributorCount,
+            creditorCount:
+              stats
+                .totals
+                .creditorCount,
+          },
+        );
+      return {
+        ...stats,
+        totals,
+      };
+    }, [
+      stats,
+      filter.selected,
+    ]);
+
+  const tabs =
+    [
+      {
+        id: 'overview',
+        label:
+          t(
+            'stats.tab.overview',
+            {
+              defaultValue:
+                'Overview',
+            },
+          ),
+        icon: LineChart,
+      },
+      {
+        id: 'composition',
+        label:
+          t(
+            'stats.tab.composition',
+            {
+              defaultValue:
+                'Composition',
+            },
+          ),
+        icon: BarChart3,
+      },
+      {
+        id: 'rhythm',
+        label:
+          t(
+            'stats.tab.rhythm',
+            {
+              defaultValue:
+                'Rhythm',
+            },
+          ),
+        icon: Grid3x3,
+      },
+      {
+        id: 'terrain',
+        label:
+          t(
+            'stats.tab.terrain',
+            {
+              defaultValue:
+                '3D',
+            },
+          ),
+        icon: Box,
+      },
+      {
+        id: 'hyper',
+        label:
+          t(
+            'stats.tab.hyper',
+            {
+              defaultValue:
+                '4D',
+            },
+          ),
+        icon: Orbit,
+      },
+      {
+        id: 'globe',
+        label:
+          t(
+            'stats.tab.globe',
+            {
+              defaultValue:
+                'Globe',
+            },
+          ),
+        icon: Globe2,
+      },
+      {
+        id: 'table',
+        label:
+          t(
+            'stats.tab.table',
+            {
+              defaultValue:
+                'Table',
+            },
+          ),
+        icon: Table2,
+      },
+    ];
 
   return (
-    <section className="flex flex-col gap-3 sm:gap-4" aria-labelledby="kd-analytics-title">
+    <section
+      className="flex flex-col gap-3 sm:gap-4"
+      aria-labelledby="kd-analytics-title"
+    >
       <div className="flex flex-col gap-1">
-        <h2 id="kd-analytics-title" className="font-display text-xl font-semibold text-site-text">
-          {t('stats.title', { defaultValue: 'The books, in detail' })}
+        <h2
+          id="kd-analytics-title"
+          className="font-display text-xl font-semibold text-site-text"
+        >
+          {t(
+            'stats.title',
+            {
+              defaultValue:
+                'The books, in detail',
+            },
+          )}
         </h2>
         <p className="max-w-prose text-sm text-pretty text-site-text-muted">
-          {t('stats.lede', {
-            defaultValue:
-              'Every figure below is a basis, not a total — the browser compounds it against the clock, so these charts keep growing while you read them, exactly like the counter at the top. Pick a category to filter everything at once.',
-          })}
+          {t(
+            'stats.lede',
+            {
+              defaultValue:
+                'Every figure below is a basis, not a total — the browser compounds it against the clock, so these charts keep growing while you read them, exactly like the counter at the top. Pick a category to filter everything at once.',
+            },
+          )}
         </p>
       </div>
 
-      <CreditScore inputs={inputs} asOfMs={snapshot.asOfMs} />
+      <CreditScore
+        inputs={
+          inputs
+        }
+        asOfMs={
+          snapshot.asOfMs
+        }
+      />
 
-      <StatTiles stats={scoped} nowMs={nowMs} />
+      <StatTiles
+        stats={
+          scoped
+        }
+        nowMs={
+          nowMs
+        }
+      />
 
       <div className="surface-card flex flex-col gap-3 rounded-site p-2.5 sm:p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-xs font-medium text-site-text-muted">
-            {t('stats.filter.title', { defaultValue: 'Filter every chart' })}
+            {t(
+              'stats.filter.title',
+              {
+                defaultValue:
+                  'Filter every chart',
+              },
+            )}
           </h3>
-          {filter.selected.size > 0 && (
+          {filter
+            .selected
+            .size >
+            0 && (
             <button
               type="button"
-              onClick={filter.clear}
+              onClick={
+                filter.clear
+              }
               className="rounded-site-sm px-1.5 py-0.5 text-xs text-site-accent transition-colors hover:underline"
             >
-              {t('stats.filter.clear', {
-                defaultValue: 'Clear ({{count}} selected)',
-                count: filter.selected.size,
-              })}
+              {t(
+                'stats.filter.clear',
+                {
+                  defaultValue:
+                    'Clear ({{count}} selected)',
+                  count:
+                    filter
+                      .selected
+                      .size,
+                },
+              )}
             </button>
           )}
         </div>
         <Legend
-          items={legendItems}
-          selected={filter.selected}
-          onToggle={filter.toggle}
-          label={t('stats.filter.legend', { defaultValue: 'Debt categories' })}
+          items={
+            legendItems
+          }
+          selected={
+            filter.selected
+          }
+          onToggle={
+            filter.toggle
+          }
+          label={t(
+            'stats.filter.legend',
+            {
+              defaultValue:
+                'Debt categories',
+            },
+          )}
         />
         <SourceSplit
           memberCents={valueNow(
             {
               count: 0,
               principalCents: 0,
-              basisCents: stats.sources.find((s) => s.source === 'member')?.basisCents ?? 0,
+              basisCents:
+                stats.sources.find(
+                  (
+                    s,
+                  ) =>
+                    s.source ===
+                    'member',
+                )
+                  ?.basisCents ??
+                0,
             },
             nowMs,
           )}
@@ -217,21 +544,66 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
             {
               count: 0,
               principalCents: 0,
-              basisCents: stats.sources.find((s) => s.source === 'ledger')?.basisCents ?? 0,
+              basisCents:
+                stats.sources.find(
+                  (
+                    s,
+                  ) =>
+                    s.source ===
+                    'ledger',
+                )
+                  ?.basisCents ??
+                0,
             },
             nowMs,
           )}
-          memberCount={stats.sources.find((s) => s.source === 'member')?.count ?? 0}
-          ledgerCount={stats.sources.find((s) => s.source === 'ledger')?.count ?? 0}
+          memberCount={
+            stats.sources.find(
+              (
+                s,
+              ) =>
+                s.source ===
+                'member',
+            )
+              ?.count ??
+            0
+          }
+          ledgerCount={
+            stats.sources.find(
+              (
+                s,
+              ) =>
+                s.source ===
+                'ledger',
+            )
+              ?.count ??
+            0
+          }
         />
       </div>
 
       <Tabs
         idBase="kd-analytics"
-        value={tab}
-        onChange={(id) => setTab(id as TabId)}
-        aria-label={t('stats.tabsLabel', { defaultValue: 'How to look at the books' })}
-        tabs={tabs}
+        value={
+          tab
+        }
+        onChange={(
+          id,
+        ) =>
+          setTab(
+            id as TabId,
+          )
+        }
+        aria-label={t(
+          'stats.tabsLabel',
+          {
+            defaultValue:
+              'How to look at the books',
+          },
+        )}
+        tabs={
+          tabs
+        }
       />
 
       {query.isPending ? (
@@ -244,94 +616,246 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
           role="tabpanel"
           id={`kd-analytics-panel-${tab}`}
           aria-labelledby={`kd-analytics-tab-${tab}`}
-          className={cn('flex flex-col gap-3 sm:gap-4', arrival)}
+          className={cn(
+            'flex flex-col gap-3 sm:gap-4',
+            arrival,
+          )}
         >
-          {tab === 'overview' && (
+          {tab ===
+            'overview' && (
             <>
               <AccrualChart
-                timeline={stats.timeline}
-                basisCents={
-                  filter.selected.size > 0 ? scoped.totals.basisCents : stats.totals.basisCents
+                timeline={
+                  stats.timeline
                 }
-                nowMs={nowMs}
-                logScaleOn={logScaleOn}
-                onLogScaleChange={setLogScaleOn}
-                horizon={horizon}
-                onHorizonChange={setHorizon}
+                basisCents={
+                  filter
+                    .selected
+                    .size >
+                  0
+                    ? scoped
+                        .totals
+                        .basisCents
+                    : stats
+                        .totals
+                        .basisCents
+                }
+                nowMs={
+                  nowMs
+                }
+                logScaleOn={
+                  logScaleOn
+                }
+                onLogScaleChange={
+                  setLogScaleOn
+                }
+                horizon={
+                  horizon
+                }
+                onHorizonChange={
+                  setHorizon
+                }
               />
               <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
                 <PersonLeaderboard
-                  people={stats.creditors}
-                  nowMs={nowMs}
-                  seriesIndex={2}
-                  title={t('stats.creditors.title', { defaultValue: 'Who he owes the most' })}
-                  hint={t('stats.creditors.hint', {
-                    defaultValue:
-                      'Includes debts he ran up before anyone was counting — a recovered receipt names a real member as its creditor whether or not they ever logged anything.',
-                  })}
-                  emptyLabel={t('stats.creditors.empty', { defaultValue: 'Nobody yet.' })}
+                  people={
+                    stats.creditors
+                  }
+                  nowMs={
+                    nowMs
+                  }
+                  seriesIndex={
+                    2
+                  }
+                  title={t(
+                    'stats.creditors.title',
+                    {
+                      defaultValue:
+                        'Who he owes the most',
+                    },
+                  )}
+                  hint={t(
+                    'stats.creditors.hint',
+                    {
+                      defaultValue:
+                        'Includes debts he ran up before anyone was counting — a recovered receipt names a real member as its creditor whether or not they ever logged anything.',
+                    },
+                  )}
+                  emptyLabel={t(
+                    'stats.creditors.empty',
+                    {
+                      defaultValue:
+                        'Nobody yet.',
+                    },
+                  )}
                 />
                 <PersonLeaderboard
-                  people={stats.contributors}
-                  nowMs={nowMs}
-                  seriesIndex={5}
-                  title={t('stats.contributors.title', { defaultValue: 'Who put it there' })}
-                  hint={t('stats.contributors.hint', {
-                    defaultValue:
-                      'Members who have added a line themselves, ranked by what those lines are worth now.',
-                  })}
-                  emptyLabel={t('stats.contributors.empty', {
-                    defaultValue: 'Nobody has added anything yet.',
-                  })}
+                  people={
+                    stats.contributors
+                  }
+                  nowMs={
+                    nowMs
+                  }
+                  seriesIndex={
+                    5
+                  }
+                  title={t(
+                    'stats.contributors.title',
+                    {
+                      defaultValue:
+                        'Who put it there',
+                    },
+                  )}
+                  hint={t(
+                    'stats.contributors.hint',
+                    {
+                      defaultValue:
+                        'Members who have added a line themselves, ranked by what those lines are worth now.',
+                    },
+                  )}
+                  emptyLabel={t(
+                    'stats.contributors.empty',
+                    {
+                      defaultValue:
+                        'Nobody has added anything yet.',
+                    },
+                  )}
                 />
               </div>
             </>
           )}
 
-          {tab === 'composition' && (
+          {tab ===
+            'composition' && (
             <>
               <CategoryBars
-                categories={stats.categories}
-                nowMs={nowMs}
-                selected={filter.selected}
-                onToggle={filter.toggle}
-                byCount={byCount}
-                onByCountChange={setByCount}
+                categories={
+                  stats.categories
+                }
+                nowMs={
+                  nowMs
+                }
+                selected={
+                  filter.selected
+                }
+                onToggle={
+                  filter.toggle
+                }
+                byCount={
+                  byCount
+                }
+                onByCountChange={
+                  setByCount
+                }
               />
               <CategoryTreemap
-                categories={stats.categories}
-                nowMs={nowMs}
-                selected={filter.selected}
-                onToggle={filter.toggle}
+                categories={
+                  stats.categories
+                }
+                nowMs={
+                  nowMs
+                }
+                selected={
+                  filter.selected
+                }
+                onToggle={
+                  filter.toggle
+                }
               />
               <DistributionChart
-                distribution={stats.distribution}
-                logY={logCounts}
-                onLogYChange={setLogCounts}
+                distribution={
+                  stats.distribution
+                }
+                logY={
+                  logCounts
+                }
+                onLogYChange={
+                  setLogCounts
+                }
               />
             </>
           )}
 
-          {tab === 'rhythm' && <RhythmHeatmap rhythm={stats.rhythm} nowMs={nowMs} />}
-          {tab === 'terrain' && (
-            <DebtSurface3D grid={stats.grid} nowMs={nowMs} selected={filter.selected} />
+          {tab ===
+            'rhythm' && (
+            <RhythmHeatmap
+              rhythm={
+                stats.rhythm
+              }
+              nowMs={
+                nowMs
+              }
+            />
           )}
-          {tab === 'hyper' && (
-            <HyperCube4D grid={stats.grid} nowMs={nowMs} selected={filter.selected} />
+          {tab ===
+            'terrain' && (
+            <DebtSurface3D
+              grid={
+                stats.grid
+              }
+              nowMs={
+                nowMs
+              }
+              selected={
+                filter.selected
+              }
+            />
           )}
-          {tab === 'globe' && (
-            <DebtGlobe grid={stats.grid} nowMs={nowMs} selected={filter.selected} />
+          {tab ===
+            'hyper' && (
+            <HyperCube4D
+              grid={
+                stats.grid
+              }
+              nowMs={
+                nowMs
+              }
+              selected={
+                filter.selected
+              }
+            />
           )}
-          {tab === 'table' && <StatsTable stats={stats} nowMs={nowMs} />}
+          {tab ===
+            'globe' && (
+            <DebtGlobe
+              grid={
+                stats.grid
+              }
+              nowMs={
+                nowMs
+              }
+              selected={
+                filter.selected
+              }
+            />
+          )}
+          {tab ===
+            'table' && (
+            <StatsTable
+              stats={
+                stats
+              }
+              nowMs={
+                nowMs
+              }
+            />
+          )}
         </div>
       )}
 
       {query.isError && (
-        <p className={cn('surface-field rounded-site-sm p-3 text-sm text-site-text-muted')}>
-          {t('stats.error', {
-            defaultValue:
-              'The books would not open just now. The counter and the log are unaffected — try again in a moment.',
-          })}
+        <p
+          className={cn(
+            'surface-field rounded-site-sm p-3 text-sm text-site-text-muted',
+          )}
+        >
+          {t(
+            'stats.error',
+            {
+              defaultValue:
+                'The books would not open just now. The counter and the log are unaffected — try again in a moment.',
+            },
+          )}
         </p>
       )}
     </section>

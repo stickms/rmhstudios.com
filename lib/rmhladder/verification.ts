@@ -33,26 +33,36 @@ export interface VerificationOutcome {
   evidence: string;
 }
 
-export function computeVerification(e: VerificationEvidence): VerificationOutcome {
-  if (e.blocked)
+export function computeVerification(
+  e: VerificationEvidence,
+): VerificationOutcome {
+  if (
+    e.blocked
+  )
     return out(
       'blocked_or_inaccessible',
       0,
       `Posting for "${e.jobTitle}" at ${e.companyName} on ${e.platform} is blocked by robots.txt/anti-bot; not scraped. URL preserved for manual review.`,
     );
-  if (e.closedLanguage)
+  if (
+    e.closedLanguage
+  )
     return out(
       'expired',
       95,
       `Posting for "${e.jobTitle}" at ${e.companyName} contains closed/no-longer-accepting language.`,
     );
-  if (!e.fetched)
+  if (
+    !e.fetched
+  )
     return out(
       'broken_link',
       0,
       `Fetch failed (HTTP ${e.httpStatus ?? 'n/a'}) for "${e.jobTitle}" at ${e.companyName}.`,
     );
-  if (e.isSearchResultsPage)
+  if (
+    e.isSearchResultsPage
+  )
     return out(
       'needs_manual_review',
       30,
@@ -60,70 +70,139 @@ export function computeVerification(e: VerificationEvidence): VerificationOutcom
     );
 
   let confidence = 0;
-  const parts: string[] = [];
-  if (e.apiSource) {
+  const parts: string[] =
+    [];
+  if (
+    e.apiSource
+  ) {
     confidence += 40;
-    parts.push(`official ${e.platform} API returned the posting`);
+    parts.push(
+      `official ${e.platform} API returned the posting`,
+    );
   } else {
     confidence += 20;
-    parts.push(`page returned HTTP ${e.httpStatus ?? 200}`);
+    parts.push(
+      `page returned HTTP ${e.httpStatus ?? 200}`,
+    );
   }
-  if (e.titleMatch) {
+  if (
+    e.titleMatch
+  ) {
     confidence += 15;
-    parts.push(`title matched "${e.jobTitle}"`);
+    parts.push(
+      `title matched "${e.jobTitle}"`,
+    );
   }
-  if (e.companyMatch) {
+  if (
+    e.companyMatch
+  ) {
     confidence += 10;
-    parts.push(`page contained company name "${e.companyName}"`);
+    parts.push(
+      `page contained company name "${e.companyName}"`,
+    );
   }
-  if (e.usConfirmed) {
+  if (
+    e.usConfirmed
+  ) {
     confidence += 15;
-    parts.push(`location confirmed US${e.locationLabel ? ` (${e.locationLabel})` : ''}`);
+    parts.push(
+      `location confirmed US${e.locationLabel ? ` (${e.locationLabel})` : ''}`,
+    );
   }
-  if (e.applyPresent) {
+  if (
+    e.applyPresent
+  ) {
     confidence += 10;
-    parts.push('apply mechanism present');
+    parts.push(
+      'apply mechanism present',
+    );
   }
-  if (e.reqIdPresent) {
+  if (
+    e.reqIdPresent
+  ) {
     confidence += 5;
-    parts.push('requisition ID present');
+    parts.push(
+      'requisition ID present',
+    );
   }
   confidence += 5;
-  parts.push('no expired/closed language detected'); // closedLanguage handled above
-  confidence = Math.min(100, confidence);
+  parts.push(
+    'no expired/closed language detected',
+  ); // closedLanguage handled above
+  confidence =
+    Math.min(
+      100,
+      confidence,
+    );
 
   const evidence = `Verified because ${parts.join(', ')}.`;
-  if (confidence >= 85) return { status: 'verified_active', confidence, evidence };
-  if (confidence >= 60) return { status: 'verified_probable', confidence, evidence };
+  if (
+    confidence >=
+    85
+  )
+    return {
+      status:
+        'verified_active',
+      confidence,
+      evidence,
+    };
+  if (
+    confidence >=
+    60
+  )
+    return {
+      status:
+        'verified_probable',
+      confidence,
+      evidence,
+    };
   return {
-    status: 'needs_manual_review',
+    status:
+      'needs_manual_review',
     confidence,
     evidence: `Low-confidence evidence: ${parts.join(', ')}.`,
   };
 }
 
-const out = (
-  status: VerificationStatus,
-  confidence: number,
-  evidence: string,
-): VerificationOutcome => ({ status, confidence, evidence });
+const out =
+  (
+    status: VerificationStatus,
+    confidence: number,
+    evidence: string,
+  ): VerificationOutcome => ({
+    status,
+    confidence,
+    evidence,
+  });
 
 export function passesAlertGate(args: {
   status: VerificationStatus;
   confidence: number;
   isUS: boolean;
-  earlyCareer: 'yes' | 'probable' | 'no' | 'unclear';
+  earlyCareer:
+    | 'yes'
+    | 'probable'
+    | 'no'
+    | 'unclear';
   finalRelevance: number;
   userThreshold: number;
   alreadyAlerted: boolean;
   blockedKeyword: boolean;
 }): boolean {
   return (
-    (args.status === 'verified_active' || args.status === 'verified_probable') &&
-    args.confidence >= 75 &&
+    (args.status ===
+      'verified_active' ||
+      args.status ===
+        'verified_probable') &&
+    args.confidence >=
+      75 &&
     args.isUS &&
-    (args.earlyCareer === 'yes' || args.earlyCareer === 'probable') &&
-    args.finalRelevance >= args.userThreshold &&
+    (args.earlyCareer ===
+      'yes' ||
+      args.earlyCareer ===
+        'probable') &&
+    args.finalRelevance >=
+      args.userThreshold &&
     !args.alreadyAlerted &&
     !args.blockedKeyword
   );

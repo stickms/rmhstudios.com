@@ -27,14 +27,34 @@
  *   breaks from it where playability demands.
  */
 
-import type { Difficulty, Slice } from '../types';
-import { CHART_MINE_ID_PREFIX, createSeededRandom } from '../chart';
+import type {
+  Difficulty,
+  Slice,
+} from '../types';
+import {
+  CHART_MINE_ID_PREFIX,
+  createSeededRandom,
+} from '../chart';
 import type { Onset } from './onsets';
 
 /* ─── Quantisation ───────────────────────────────────────────────────────── */
 
 /** Grid positions within a beat: 16ths plus the two triplet positions. */
-const SUBDIVISIONS: readonly number[] = [0, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1];
+const SUBDIVISIONS: readonly number[] =
+  [
+    0,
+    1 /
+      4,
+    1 /
+      3,
+    1 /
+      2,
+    2 /
+      3,
+    3 /
+      4,
+    1,
+  ];
 
 /**
  * How far from every grid position an onset may be before it is dropped as an
@@ -89,7 +109,9 @@ export interface QuantizedNote {
   /** Strength ranked within the note's own register (0–1); see {@link assignRanks}. */
   rank?: number;
   /** The lane this note's sound belongs on, when the song's timbres tell. */
-  laneHint?: 0 | 1;
+  laneHint?:
+    | 0
+    | 1;
   /** True when the note was too far from the grid to snap, and keeps its own time. */
   offGrid?: boolean;
 }
@@ -103,14 +125,46 @@ export interface QuantizedNote {
  * renderer colours notes by it (`Slice.quant`), which is how every game in this
  * genre communicates rhythm.
  */
-const QUANT_BY_FRACTION: readonly { fraction: number; quant: number }[] = [
-  { fraction: 0, quant: 1 },
-  { fraction: 1 / 4, quant: 4 },
-  { fraction: 1 / 3, quant: 3 },
-  { fraction: 1 / 2, quant: 2 },
-  { fraction: 2 / 3, quant: 3 },
-  { fraction: 3 / 4, quant: 4 },
-];
+const QUANT_BY_FRACTION: readonly {
+  fraction: number;
+  quant: number;
+}[] =
+  [
+    {
+      fraction: 0,
+      quant: 1,
+    },
+    {
+      fraction:
+        1 /
+        4,
+      quant: 4,
+    },
+    {
+      fraction:
+        1 /
+        3,
+      quant: 3,
+    },
+    {
+      fraction:
+        1 /
+        2,
+      quant: 2,
+    },
+    {
+      fraction:
+        2 /
+        3,
+      quant: 3,
+    },
+    {
+      fraction:
+        3 /
+        4,
+      quant: 4,
+    },
+  ];
 
 /**
  * The subdivision denominator for a snapped within-beat position.
@@ -120,31 +174,65 @@ const QUANT_BY_FRACTION: readonly { fraction: number; quant: number }[] = [
  * that produces a different last bit misses it silently, which would tag every
  * triplet in the chart as a downbeat.
  */
-export function quantOf(fraction: number): number {
+export function quantOf(
+  fraction: number,
+): number {
   let quant = 1;
-  let bestError = Infinity;
+  let bestError =
+    Infinity;
   for (const entry of QUANT_BY_FRACTION) {
-    const error = Math.abs(fraction - entry.fraction);
-    if (error < bestError) {
-      bestError = error;
-      quant = entry.quant;
+    const error =
+      Math.abs(
+        fraction -
+          entry.fraction,
+      );
+    if (
+      error <
+      bestError
+    ) {
+      bestError =
+        error;
+      quant =
+        entry.quant;
     }
   }
   return quant;
 }
 
 /** Index of the last beat at or before `time`, or -1. */
-function beatIndexAt(beats: number[], time: number): number {
+function beatIndexAt(
+  beats: number[],
+  time: number,
+): number {
   let lo = 0;
-  let hi = beats.length - 1;
-  let found = -1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    if (beats[mid] <= time) {
-      found = mid;
-      lo = mid + 1;
+  let hi =
+    beats.length -
+    1;
+  let found =
+    -1;
+  while (
+    lo <=
+    hi
+  ) {
+    const mid =
+      (lo +
+        hi) >>
+      1;
+    if (
+      beats[
+        mid
+      ] <=
+      time
+    ) {
+      found =
+        mid;
+      lo =
+        mid +
+        1;
     } else {
-      hi = mid - 1;
+      hi =
+        mid -
+        1;
     }
   }
   return found;
@@ -157,70 +245,211 @@ function beatIndexAt(beats: number[], time: number): number {
  * subdivision is usually a reverb tail, a vocal consonant or a detector
  * artefact, and charting it produces a note the player hears no reason for.
  */
-export function quantizeOnsets(onsets: Onset[], beats: number[]): QuantizedNote[] {
-  if (beats.length < 2) return [];
+export function quantizeOnsets(
+  onsets: Onset[],
+  beats: number[],
+): QuantizedNote[] {
+  if (
+    beats.length <
+    2
+  )
+    return [];
 
-  const out: QuantizedNote[] = [];
+  const out: QuantizedNote[] =
+    [];
 
   for (const onset of onsets) {
-    let index = beatIndexAt(beats, onset.time);
-    if (index < 0) index = 0;
-    if (index >= beats.length - 1) index = beats.length - 2;
+    let index =
+      beatIndexAt(
+        beats,
+        onset.time,
+      );
+    if (
+      index <
+      0
+    )
+      index = 0;
+    if (
+      index >=
+      beats.length -
+        1
+    )
+      index =
+        beats.length -
+        2;
 
-    const start = beats[index];
-    const end = beats[index + 1];
-    const beatLength = end - start;
-    if (!(beatLength > 0)) continue;
+    const start =
+      beats[
+        index
+      ];
+    const end =
+      beats[
+        index +
+          1
+      ];
+    const beatLength =
+      end -
+      start;
+    if (
+      !(
+        beatLength >
+        0
+      )
+    )
+      continue;
 
-    const fraction = (onset.time - start) / beatLength;
+    const fraction =
+      (onset.time -
+        start) /
+      beatLength;
 
     let bestFraction = 0;
-    let bestError = Infinity;
+    let bestError =
+      Infinity;
     for (const candidate of SUBDIVISIONS) {
-      const error = Math.abs(fraction - candidate);
-      if (error < bestError) {
-        bestError = error;
-        bestFraction = candidate;
+      const error =
+        Math.abs(
+          fraction -
+            candidate,
+        );
+      if (
+        error <
+        bestError
+      ) {
+        bestError =
+          error;
+        bestFraction =
+          candidate;
       }
     }
 
-    const errorSeconds = bestError * beatLength;
-    if (errorSeconds > Math.min(MAX_SNAP_SECONDS, beatLength * MAX_SNAP_FRACTION)) continue;
-    const snap = errorSeconds <= Math.min(SNAP_MOVE_SECONDS, beatLength * SNAP_MOVE_FRACTION);
+    const errorSeconds =
+      bestError *
+      beatLength;
+    if (
+      errorSeconds >
+      Math.min(
+        MAX_SNAP_SECONDS,
+        beatLength *
+          MAX_SNAP_FRACTION,
+      )
+    )
+      continue;
+    const snap =
+      errorSeconds <=
+      Math.min(
+        SNAP_MOVE_SECONDS,
+        beatLength *
+          SNAP_MOVE_FRACTION,
+      );
 
     // A note snapped to the end of one beat is the start of the next.
-    let beatIndex = index;
-    let snappedFraction = bestFraction;
-    if (bestFraction >= 1) {
-      beatIndex = index + 1;
+    let beatIndex =
+      index;
+    let snappedFraction =
+      bestFraction;
+    if (
+      bestFraction >=
+      1
+    ) {
+      beatIndex =
+        index +
+        1;
       snappedFraction = 0;
     }
-    const snappedStart = beats[Math.min(beatIndex, beats.length - 1)];
+    const snappedStart =
+      beats[
+        Math.min(
+          beatIndex,
+          beats.length -
+            1,
+        )
+      ];
     const snappedLength =
-      beatIndex + 1 < beats.length ? beats[beatIndex + 1] - snappedStart : beatLength;
+      beatIndex +
+        1 <
+      beats.length
+        ? beats[
+            beatIndex +
+              1
+          ] -
+          snappedStart
+        : beatLength;
 
     // The label snaps (within SNAP_MOVE_*); the time snaps only inside the detector's
     // own noise.
-    const gridTime = snappedStart + snappedFraction * snappedLength;
-    const time = snap && Math.abs(gridTime - onset.time) <= SNAP_TIME_SECONDS ? gridTime : onset.time;
-    out.push({
-      time,
-      strength: onset.strength,
-      frame: onset.frame,
-      lowRatio: onset.lowRatio,
-      highRatio: onset.highRatio,
-      sustain: onset.sustain,
-      beatIndex,
-      fraction: snap ? snappedFraction : Math.max(0, Math.min(1, fraction)),
-      beatLength: snappedLength,
-      ...(snap ? {} : { offGrid: true }),
-      ...(onset.centroid !== undefined ? { centroid: onset.centroid } : {}),
-      ...holdFor(onset, time, snappedLength, beats),
-    });
+    const gridTime =
+      snappedStart +
+      snappedFraction *
+        snappedLength;
+    const time =
+      snap &&
+      Math.abs(
+        gridTime -
+          onset.time,
+      ) <=
+        SNAP_TIME_SECONDS
+        ? gridTime
+        : onset.time;
+    out.push(
+      {
+        time,
+        strength:
+          onset.strength,
+        frame:
+          onset.frame,
+        lowRatio:
+          onset.lowRatio,
+        highRatio:
+          onset.highRatio,
+        sustain:
+          onset.sustain,
+        beatIndex,
+        fraction:
+          snap
+            ? snappedFraction
+            : Math.max(
+                0,
+                Math.min(
+                  1,
+                  fraction,
+                ),
+              ),
+        beatLength:
+          snappedLength,
+        ...(snap
+          ? {}
+          : {
+              offGrid: true,
+            }),
+        ...(onset.centroid !==
+        undefined
+          ? {
+              centroid:
+                onset.centroid,
+            }
+          : {}),
+        ...holdFor(
+          onset,
+          time,
+          snappedLength,
+          beats,
+        ),
+      },
+    );
   }
 
-  out.sort((a, b) => a.time - b.time);
-  return mergeCoincident(out);
+  out.sort(
+    (
+      a,
+      b,
+    ) =>
+      a.time -
+      b.time,
+  );
+  return mergeCoincident(
+    out,
+  );
 }
 
 /* ─── Holds ──────────────────────────────────────────────────────────────── */
@@ -244,15 +473,61 @@ const TAIL_DIVISIONS = 4;
  * release is judged against the sound, and a tail drawn on a grid line 60 ms away
  * from the sound it follows reads as the game being out of time.
  */
-function snapTail(time: number, beats: readonly number[]): number {
-  const index = Math.max(0, Math.min(beats.length - 2, beatIndexAt(beats as number[], time)));
-  const start = beats[index];
-  const length = beats[index + 1] - start;
-  if (!(length > 0)) return time;
-  const fraction = (time - start) / length;
-  const snapped = Math.round(fraction * TAIL_DIVISIONS) / TAIL_DIVISIONS;
-  const gridTime = start + snapped * length;
-  return Math.abs(gridTime - time) <= SNAP_TIME_SECONDS * 2 ? gridTime : time;
+function snapTail(
+  time: number,
+  beats: readonly number[],
+): number {
+  const index =
+    Math.max(
+      0,
+      Math.min(
+        beats.length -
+          2,
+        beatIndexAt(
+          beats as number[],
+          time,
+        ),
+      ),
+    );
+  const start =
+    beats[
+      index
+    ];
+  const length =
+    beats[
+      index +
+        1
+    ] -
+    start;
+  if (
+    !(
+      length >
+      0
+    )
+  )
+    return time;
+  const fraction =
+    (time -
+      start) /
+    length;
+  const snapped =
+    Math.round(
+      fraction *
+        TAIL_DIVISIONS,
+    ) /
+    TAIL_DIVISIONS;
+  const gridTime =
+    start +
+    snapped *
+      length;
+  return Math.abs(
+    gridTime -
+      time,
+  ) <=
+    SNAP_TIME_SECONDS *
+      2
+    ? gridTime
+    : time;
 }
 
 /** `{ holdDuration }` for a sustained onset that is long enough to chart as one, else `{}`. */
@@ -261,12 +536,43 @@ function holdFor(
   noteTime: number,
   beatLength: number,
   beats: readonly number[],
-): { holdDuration?: number } {
-  const end = onset.holdEnd ?? (onset.sustain > 0 ? onset.time + onset.sustain : 0);
-  if (!(end > noteTime)) return {};
-  const duration = Math.min(snapTail(end, beats) - noteTime, beatLength * MAX_HOLD_BEATS);
-  return duration >= Math.max(MIN_HOLD_SECONDS, beatLength * MIN_HOLD_BEATS)
-    ? { holdDuration: duration }
+): {
+  holdDuration?: number;
+} {
+  const end =
+    onset.holdEnd ??
+    (onset.sustain >
+    0
+      ? onset.time +
+        onset.sustain
+      : 0);
+  if (
+    !(
+      end >
+      noteTime
+    )
+  )
+    return {};
+  const duration =
+    Math.min(
+      snapTail(
+        end,
+        beats,
+      ) -
+        noteTime,
+      beatLength *
+        MAX_HOLD_BEATS,
+    );
+  return duration >=
+    Math.max(
+      MIN_HOLD_SECONDS,
+      beatLength *
+        MIN_HOLD_BEATS,
+    )
+    ? {
+        holdDuration:
+          duration,
+      }
     : {};
 }
 
@@ -277,29 +583,83 @@ function holdFor(
  * Notes now keep their own time, so the slot is compared instead, and the merged
  * note sits where the STRONGER attack is — the one the player is following.
  */
-function mergeCoincident(notes: QuantizedNote[]): QuantizedNote[] {
-  const out: QuantizedNote[] = [];
+function mergeCoincident(
+  notes: QuantizedNote[],
+): QuantizedNote[] {
+  const out: QuantizedNote[] =
+    [];
   for (const note of notes) {
-    const previous = out[out.length - 1];
+    const previous =
+      out[
+        out.length -
+          1
+      ];
     const sameSlot =
-      previous !== undefined &&
+      previous !==
+        undefined &&
       !previous.offGrid &&
       !note.offGrid &&
-      previous.beatIndex === note.beatIndex &&
-      previous.fraction === note.fraction &&
-      Math.abs(previous.time - note.time) <= SNAP_MOVE_SECONDS * 2;
-    if (previous && (sameSlot || Math.abs(previous.time - note.time) < 0.001)) {
-      if (note.strength > previous.strength) previous.time = note.time;
-      previous.strength = Math.max(previous.strength, note.strength);
-      previous.sustain = Math.max(previous.sustain, note.sustain);
-      if (note.holdDuration && !(previous.holdDuration && previous.holdDuration >= note.holdDuration)) {
-        previous.holdDuration = note.holdDuration;
+      previous.beatIndex ===
+        note.beatIndex &&
+      previous.fraction ===
+        note.fraction &&
+      Math.abs(
+        previous.time -
+          note.time,
+      ) <=
+        SNAP_MOVE_SECONDS *
+          2;
+    if (
+      previous &&
+      (sameSlot ||
+        Math.abs(
+          previous.time -
+            note.time,
+        ) <
+          0.001)
+    ) {
+      if (
+        note.strength >
+        previous.strength
+      )
+        previous.time =
+          note.time;
+      previous.strength =
+        Math.max(
+          previous.strength,
+          note.strength,
+        );
+      previous.sustain =
+        Math.max(
+          previous.sustain,
+          note.sustain,
+        );
+      if (
+        note.holdDuration &&
+        !(
+          previous.holdDuration &&
+          previous.holdDuration >=
+            note.holdDuration
+        )
+      ) {
+        previous.holdDuration =
+          note.holdDuration;
       }
-      previous.lowRatio = (previous.lowRatio + note.lowRatio) / 2;
-      previous.highRatio = (previous.highRatio + note.highRatio) / 2;
+      previous.lowRatio =
+        (previous.lowRatio +
+          note.lowRatio) /
+        2;
+      previous.highRatio =
+        (previous.highRatio +
+          note.highRatio) /
+        2;
       continue;
     }
-    out.push({ ...note });
+    out.push(
+      {
+        ...note,
+      },
+    );
   }
   return out;
 }
@@ -325,15 +685,47 @@ export interface Tier {
  * far easier because the load is spread over more fingers. Expert's 6 NPS on
  * two alternating buttons is already a 180 BPM sixteenth-note stream.
  */
-const TIERS: Record<Difficulty, Tier> = {
-  easy: { targetNps: 1.4, minGap: 0.3, laneMinGap: 0.45, holdShare: 0.35 },
-  normal: { targetNps: 2.8, minGap: 0.16, laneMinGap: 0.26, holdShare: 0.3 },
-  hard: { targetNps: 4.2, minGap: 0.105, laneMinGap: 0.17, holdShare: 0.22 },
-  expert: { targetNps: 6.0, minGap: 0.075, laneMinGap: 0.12, holdShare: 0.16 },
-};
+const TIERS: Record<
+  Difficulty,
+  Tier
+> =
+  {
+    easy: {
+      targetNps: 1.4,
+      minGap: 0.3,
+      laneMinGap: 0.45,
+      holdShare: 0.35,
+    },
+    normal:
+      {
+        targetNps: 2.8,
+        minGap: 0.16,
+        laneMinGap: 0.26,
+        holdShare: 0.3,
+      },
+    hard: {
+      targetNps: 4.2,
+      minGap: 0.105,
+      laneMinGap: 0.17,
+      holdShare: 0.22,
+    },
+    expert:
+      {
+        targetNps: 6.0,
+        minGap: 0.075,
+        laneMinGap: 0.12,
+        holdShare: 0.16,
+      },
+  };
 
 /** The order tiers are derived in — each is selected from the one before it. */
-const TIER_ORDER: readonly Difficulty[] = ['expert', 'hard', 'normal', 'easy'];
+const TIER_ORDER: readonly Difficulty[] =
+  [
+    'expert',
+    'hard',
+    'normal',
+    'easy',
+  ];
 
 /**
  * How much a note's grid position boosts its priority.
@@ -363,25 +755,108 @@ const SECTION_WEIGHT_MAX = 1.45;
  * to segment. That is the correct fallback rather than a defect: a track with
  * no discernible structure genuinely has no loud part to favour.
  */
-function sectionEnergyWeighter(sections?: Section[]): (time: number) => number {
-  if (!sections || sections.length < 2) return () => 1;
-  const mean = sections.reduce((sum, s) => sum + s.energy, 0) / sections.length;
-  if (!(mean > 0)) return () => 1;
+function sectionEnergyWeighter(
+  sections?: Section[],
+): (
+  time: number,
+) => number {
+  if (
+    !sections ||
+    sections.length <
+      2
+  )
+    return () =>
+      1;
+  const mean =
+    sections.reduce(
+      (
+        sum,
+        s,
+      ) =>
+        sum +
+        s.energy,
+      0,
+    ) /
+    sections.length;
+  if (
+    !(
+      mean >
+      0
+    )
+  )
+    return () =>
+      1;
 
-  return (time: number) => {
-    const section = sections.find((s) => time >= s.start && time < s.end);
-    if (!section) return 1;
-    const ratio = section.energy / mean;
-    return Math.max(SECTION_WEIGHT_MIN, Math.min(SECTION_WEIGHT_MAX, ratio));
+  return (
+    time: number,
+  ) => {
+    const section =
+      sections.find(
+        (
+          s,
+        ) =>
+          time >=
+            s.start &&
+          time <
+            s.end,
+      );
+    if (
+      !section
+    )
+      return 1;
+    const ratio =
+      section.energy /
+      mean;
+    return Math.max(
+      SECTION_WEIGHT_MIN,
+      Math.min(
+        SECTION_WEIGHT_MAX,
+        ratio,
+      ),
+    );
   };
 }
 
-function metricWeight(note: QuantizedNote): number {
-  if (note.offGrid) return 0.9;
-  const onBeat = note.fraction < 0.001;
-  if (onBeat) return note.beatIndex % 4 === 0 ? 1.6 : 1.35;
-  if (Math.abs(note.fraction - 0.5) < 0.001) return 1.15;
-  if (Math.abs(note.fraction - 1 / 3) < 0.01 || Math.abs(note.fraction - 2 / 3) < 0.01) {
+function metricWeight(
+  note: QuantizedNote,
+): number {
+  if (
+    note.offGrid
+  )
+    return 0.9;
+  const onBeat =
+    note.fraction <
+    0.001;
+  if (
+    onBeat
+  )
+    return note.beatIndex %
+      4 ===
+      0
+      ? 1.6
+      : 1.35;
+  if (
+    Math.abs(
+      note.fraction -
+        0.5,
+    ) <
+    0.001
+  )
+    return 1.15;
+  if (
+    Math.abs(
+      note.fraction -
+        1 /
+          3,
+    ) <
+      0.01 ||
+    Math.abs(
+      note.fraction -
+        2 /
+          3,
+    ) <
+      0.01
+  ) {
     return 1.05;
   }
   return 1;
@@ -403,9 +878,32 @@ function metricWeight(note: QuantizedNote): number {
  * The floor of 8 is not part of the bias: a chart with three notes in it is not
  * a chart, however sparse the uploader asked for.
  */
-export function biasedBudget(base: number, bias: number): number {
-  const clamped = Math.max(-2, Math.min(2, Number.isFinite(bias) ? bias : 0));
-  return Math.max(8, Math.floor(base * Math.pow(1.45, clamped)));
+export function biasedBudget(
+  base: number,
+  bias: number,
+): number {
+  const clamped =
+    Math.max(
+      -2,
+      Math.min(
+        2,
+        Number.isFinite(
+          bias,
+        )
+          ? bias
+          : 0,
+      ),
+    );
+  return Math.max(
+    8,
+    Math.floor(
+      base *
+        Math.pow(
+          1.45,
+          clamped,
+        ),
+    ),
+  );
 }
 
 /* ─── Ranking and lane hints ─────────────────────────────────────────────── */
@@ -420,23 +918,79 @@ export function biasedBudget(base: number, bias: number): number {
  * "this is one of the kick's strongest hits", which is what matters when the budget
  * is small. The floor keeps a weak hit from ranking at zero: it is still a hit.
  */
-function assignRanks(notes: QuantizedNote[]): void {
-  const groups: Record<'low' | 'mid' | 'high', QuantizedNote[]> = { low: [], mid: [], high: [] };
-  for (const note of notes) groups[registerOf(note)].push(note);
-  for (const group of Object.values(groups)) {
-    if (group.length < 6) {
-      for (const note of group) note.rank = note.strength;
+function assignRanks(
+  notes: QuantizedNote[],
+): void {
+  const groups: Record<
+    | 'low'
+    | 'mid'
+    | 'high',
+    QuantizedNote[]
+  > =
+    {
+      low: [],
+      mid: [],
+      high: [],
+    };
+  for (const note of notes)
+    groups[
+      registerOf(
+        note,
+      )
+    ].push(
+      note,
+    );
+  for (const group of Object.values(
+    groups,
+  )) {
+    if (
+      group.length <
+      6
+    ) {
+      for (const note of group)
+        note.rank =
+          note.strength;
       continue;
     }
-    const sorted = [...group].sort((a, b) => a.strength - b.strength);
-    sorted.forEach((note, i) => {
-      note.rank = 0.35 + 0.65 * (i / (sorted.length - 1));
-    });
+    const sorted =
+      [
+        ...group,
+      ].sort(
+        (
+          a,
+          b,
+        ) =>
+          a.strength -
+          b.strength,
+      );
+    sorted.forEach(
+      (
+        note,
+        i,
+      ) => {
+        note.rank =
+          0.35 +
+          0.65 *
+            (i /
+              (sorted.length -
+                1));
+      },
+    );
   }
 }
 
 /** How much a register matters when the budget is tight: the low end carries the groove. */
-const REGISTER_WEIGHT: Record<'low' | 'mid' | 'high', number> = { low: 1.2, mid: 1.1, high: 0.9 };
+const REGISTER_WEIGHT: Record<
+  | 'low'
+  | 'mid'
+  | 'high',
+  number
+> =
+  {
+    low: 1.2,
+    mid: 1.1,
+    high: 0.9,
+  };
 
 /** Octaves between the two timbre clusters below which they are not worth separating. */
 const MIN_CLUSTER_SEPARATION = 0.8;
@@ -457,40 +1011,165 @@ const LANE_AMBIGUITY = 0.2;
  * With no centroid (a pool rebuilt from a stored chart) the old register ratios
  * decide, as they did before.
  */
-function assignLaneHints(notes: QuantizedNote[]): void {
-  const withCentroid = notes.filter((n) => n.centroid !== undefined);
-  if (withCentroid.length >= 12) {
-    const values = withCentroid.map((n) => n.centroid as number).sort((a, b) => a - b);
-    let lo = values[Math.floor(values.length * 0.1)];
-    let hi = values[Math.floor(values.length * 0.9)];
-    for (let iteration = 0; iteration < 16; iteration++) {
-      const boundary = (lo + hi) / 2;
-      let loSum = 0, loWeight = 0, hiSum = 0, hiWeight = 0;
+function assignLaneHints(
+  notes: QuantizedNote[],
+): void {
+  const withCentroid =
+    notes.filter(
+      (
+        n,
+      ) =>
+        n.centroid !==
+        undefined,
+    );
+  if (
+    withCentroid.length >=
+    12
+  ) {
+    const values =
+      withCentroid
+        .map(
+          (
+            n,
+          ) =>
+            n.centroid as number,
+        )
+        .sort(
+          (
+            a,
+            b,
+          ) =>
+            a -
+            b,
+        );
+    let lo =
+      values[
+        Math.floor(
+          values.length *
+            0.1,
+        )
+      ];
+    let hi =
+      values[
+        Math.floor(
+          values.length *
+            0.9,
+        )
+      ];
+    for (
+      let iteration = 0;
+      iteration <
+      16;
+      iteration++
+    ) {
+      const boundary =
+        (lo +
+          hi) /
+        2;
+      let loSum = 0,
+        loWeight = 0,
+        hiSum = 0,
+        hiWeight = 0;
       for (const n of withCentroid) {
-        const c = n.centroid as number;
-        const w = 0.2 + n.strength;
-        if (c <= boundary) { loSum += c * w; loWeight += w; } else { hiSum += c * w; hiWeight += w; }
+        const c =
+          n.centroid as number;
+        const w =
+          0.2 +
+          n.strength;
+        if (
+          c <=
+          boundary
+        ) {
+          loSum +=
+            c *
+            w;
+          loWeight +=
+            w;
+        } else {
+          hiSum +=
+            c *
+            w;
+          hiWeight +=
+            w;
+        }
       }
-      if (loWeight === 0 || hiWeight === 0) break;
-      const nextLo = loSum / loWeight;
-      const nextHi = hiSum / hiWeight;
-      if (Math.abs(nextLo - lo) + Math.abs(nextHi - hi) < 1e-4) { lo = nextLo; hi = nextHi; break; }
-      lo = nextLo;
-      hi = nextHi;
+      if (
+        loWeight ===
+          0 ||
+        hiWeight ===
+          0
+      )
+        break;
+      const nextLo =
+        loSum /
+        loWeight;
+      const nextHi =
+        hiSum /
+        hiWeight;
+      if (
+        Math.abs(
+          nextLo -
+            lo,
+        ) +
+          Math.abs(
+            nextHi -
+              hi,
+          ) <
+        1e-4
+      ) {
+        lo =
+          nextLo;
+        hi =
+          nextHi;
+        break;
+      }
+      lo =
+        nextLo;
+      hi =
+        nextHi;
     }
-    if (hi - lo >= MIN_CLUSTER_SEPARATION) {
-      const boundary = (lo + hi) / 2;
+    if (
+      hi -
+        lo >=
+      MIN_CLUSTER_SEPARATION
+    ) {
+      const boundary =
+        (lo +
+          hi) /
+        2;
       for (const n of notes) {
-        if (n.centroid === undefined) continue;
-        if (n.centroid < boundary - LANE_AMBIGUITY) n.laneHint = 0;
-        else if (n.centroid > boundary + LANE_AMBIGUITY) n.laneHint = 1;
+        if (
+          n.centroid ===
+          undefined
+        )
+          continue;
+        if (
+          n.centroid <
+          boundary -
+            LANE_AMBIGUITY
+        )
+          n.laneHint = 0;
+        else if (
+          n.centroid >
+          boundary +
+            LANE_AMBIGUITY
+        )
+          n.laneHint = 1;
       }
       return;
     }
   }
   for (const n of notes) {
-    if (n.lowRatio >= LOW_LANE_BIAS) n.laneHint = 0;
-    else if (n.highRatio >= HIGH_LANE_BIAS) n.laneHint = 1;
+    if (
+      n.lowRatio >=
+      LOW_LANE_BIAS
+    )
+      n.laneHint = 0;
+    else if (
+      n.highRatio >=
+      HIGH_LANE_BIAS
+    )
+      n.laneHint = 1;
   }
 }
 
@@ -508,7 +1187,15 @@ function selectTier(
   sections?: Section[],
   densityBias = 0,
 ): QuantizedNote[] {
-  const budget = biasedBudget(tier.targetNps * Math.max(1, duration), densityBias);
+  const budget =
+    biasedBudget(
+      tier.targetNps *
+        Math.max(
+          1,
+          duration,
+        ),
+      densityBias,
+    );
 
   // G14 — spend the budget where the music is.
   //
@@ -523,54 +1210,150 @@ function selectTier(
   // its allocation, and every answer to that reintroduces the flat behaviour
   // somewhere. Bounded so a near-silent intro still gets notes and a drop
   // cannot swallow the whole budget.
-  const energyWeight = sectionEnergyWeighter(sections);
+  const energyWeight =
+    sectionEnergyWeighter(
+      sections,
+    );
 
-  const ranked = candidates
-    .map((note, index) => ({
-      note,
-      index,
-      // Rank within register, not raw flux (see `assignRanks`); a held note is
-      // what the music is doing at that moment, so it is kept in preference.
-      priority:
-        (note.rank ?? note.strength) *
-        REGISTER_WEIGHT[registerOf(note)] *
-        (note.holdDuration ? 1.25 : 1) *
-        metricWeight(note) *
-        energyWeight(note.time),
-    }))
-    // Ties broken by original index rather than by anything derived from
-    // floating-point time, so the selection is byte-for-byte reproducible.
-    .sort((a, b) => b.priority - a.priority || a.index - b.index);
+  const ranked =
+    candidates
+      .map(
+        (
+          note,
+          index,
+        ) => ({
+          note,
+          index,
+          // Rank within register, not raw flux (see `assignRanks`); a held note is
+          // what the music is doing at that moment, so it is kept in preference.
+          priority:
+            (note.rank ??
+              note.strength) *
+            REGISTER_WEIGHT[
+              registerOf(
+                note,
+              )
+            ] *
+            (note.holdDuration
+              ? 1.25
+              : 1) *
+            metricWeight(
+              note,
+            ) *
+            energyWeight(
+              note.time,
+            ),
+        }),
+      )
+      // Ties broken by original index rather than by anything derived from
+      // floating-point time, so the selection is byte-for-byte reproducible.
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          b.priority -
+            a.priority ||
+          a.index -
+            b.index,
+      );
 
-  const accepted: QuantizedNote[] = [];
-  const acceptedTimes: number[] = [];
+  const accepted: QuantizedNote[] =
+    [];
+  const acceptedTimes: number[] =
+    [];
 
-  for (const { note } of ranked) {
-    if (accepted.length >= budget) break;
+  for (const {
+    note,
+  } of ranked) {
+    if (
+      accepted.length >=
+      budget
+    )
+      break;
     let tooClose = false;
     // Linear scan of a sorted array would be O(n²); binary search the insert
     // point and check only the two neighbours.
-    const at = lowerBound(acceptedTimes, note.time);
-    if (at > 0 && note.time - acceptedTimes[at - 1] < tier.minGap) tooClose = true;
-    if (!tooClose && at < acceptedTimes.length && acceptedTimes[at] - note.time < tier.minGap) {
+    const at =
+      lowerBound(
+        acceptedTimes,
+        note.time,
+      );
+    if (
+      at >
+        0 &&
+      note.time -
+        acceptedTimes[
+          at -
+            1
+        ] <
+        tier.minGap
+    )
+      tooClose = true;
+    if (
+      !tooClose &&
+      at <
+        acceptedTimes.length &&
+      acceptedTimes[
+        at
+      ] -
+        note.time <
+        tier.minGap
+    ) {
       tooClose = true;
     }
-    if (tooClose) continue;
-    acceptedTimes.splice(at, 0, note.time);
-    accepted.push(note);
+    if (
+      tooClose
+    )
+      continue;
+    acceptedTimes.splice(
+      at,
+      0,
+      note.time,
+    );
+    accepted.push(
+      note,
+    );
   }
 
-  accepted.sort((a, b) => a.time - b.time);
+  accepted.sort(
+    (
+      a,
+      b,
+    ) =>
+      a.time -
+      b.time,
+  );
   return accepted;
 }
 
-function lowerBound(sorted: number[], value: number): number {
+function lowerBound(
+  sorted: number[],
+  value: number,
+): number {
   let lo = 0;
-  let hi = sorted.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (sorted[mid] < value) lo = mid + 1;
-    else hi = mid;
+  let hi =
+    sorted.length;
+  while (
+    lo <
+    hi
+  ) {
+    const mid =
+      (lo +
+        hi) >>
+      1;
+    if (
+      sorted[
+        mid
+      ] <
+      value
+    )
+      lo =
+        mid +
+        1;
+    else
+      hi =
+        mid;
   }
   return lo;
 }
@@ -586,9 +1369,22 @@ function lowerBound(sorted: number[], value: number): number {
  * two sets of numbers drifting apart would produce a chart whose left hand
  * stops matching the low sample.
  */
-function registerOf(note: QuantizedNote): 'low' | 'mid' | 'high' {
-  if (note.lowRatio >= LOW_LANE_BIAS) return 'low';
-  if (note.highRatio >= HIGH_LANE_BIAS) return 'high';
+function registerOf(
+  note: QuantizedNote,
+):
+  | 'low'
+  | 'mid'
+  | 'high' {
+  if (
+    note.lowRatio >=
+    LOW_LANE_BIAS
+  )
+    return 'low';
+  if (
+    note.highRatio >=
+    HIGH_LANE_BIAS
+  )
+    return 'high';
   return 'mid';
 }
 
@@ -619,7 +1415,10 @@ interface BuiltTier {
   /** The notes that survived, in time order — the pool the next easier tier draws from. */
   kept: QuantizedNote[];
   /** The lane each kept note ended up on, so an easier tier can leave it where it is. */
-  lanes: Map<QuantizedNote, number>;
+  lanes: Map<
+    QuantizedNote,
+    number
+  >;
 }
 
 function buildSlices(
@@ -628,115 +1427,330 @@ function buildSlices(
   difficulty: Difficulty,
   random: () => number,
   /** Lanes decided by the tier above. When given, this tier may only DROP notes. */
-  fixedLanes: Map<QuantizedNote, number> | null = null,
+  fixedLanes: Map<
+    QuantizedNote,
+    number
+  > | null = null,
 ): BuiltTier {
   /* 1. The lane each sound asks for. */
-  const natural: number[] = new Array(notes.length);
-  let previousNatural = -1;
-  for (let i = 0; i < notes.length; i++) {
-    const fixed = fixedLanes?.get(notes[i]);
-    if (fixed !== undefined) {
-      natural[i] = fixed;
-      previousNatural = fixed;
+  const natural: number[] =
+    new Array(
+      notes.length,
+    );
+  let previousNatural =
+    -1;
+  for (
+    let i = 0;
+    i <
+    notes.length;
+    i++
+  ) {
+    const fixed =
+      fixedLanes?.get(
+        notes[
+          i
+        ],
+      );
+    if (
+      fixed !==
+      undefined
+    ) {
+      natural[
+        i
+      ] =
+        fixed;
+      previousNatural =
+        fixed;
       continue;
     }
-    const hint = notes[i].laneHint;
+    const hint =
+      notes[
+        i
+      ]
+        .laneHint;
     // No clear timbre: take the lane that keeps the pattern alternating, with a
     // seeded coin only for the very first note.
-    const lane = hint !== undefined ? hint : previousNatural >= 0 ? 1 - previousNatural : random() < 0.5 ? 0 : 1;
-    natural[i] = lane;
-    previousNatural = lane;
+    const lane =
+      hint !==
+      undefined
+        ? hint
+        : previousNatural >=
+            0
+          ? 1 -
+            previousNatural
+          : random() <
+              0.5
+            ? 0
+            : 1;
+    natural[
+      i
+    ] =
+      lane;
+    previousNatural =
+      lane;
   }
 
   /* 2. What two fingers can do. */
-  const slices: Slice[] = [];
-  const kept: QuantizedNote[] = [];
-  const lanes = new Map<QuantizedNote, number>();
-  const lastTimeInLane = [-Infinity, -Infinity];
-  const holdEndInLane = [-Infinity, -Infinity];
-  let runLane = -1;
+  const slices: Slice[] =
+    [];
+  const kept: QuantizedNote[] =
+    [];
+  const lanes =
+    new Map<
+      QuantizedNote,
+      number
+    >();
+  const lastTimeInLane =
+    [
+      -Infinity,
+      -Infinity,
+    ];
+  const holdEndInLane =
+    [
+      -Infinity,
+      -Infinity,
+    ];
+  let runLane =
+    -1;
   let runLength = 0;
   let holds = 0;
-  const holdBudget = Math.floor(notes.length * tier.holdShare);
+  const holdBudget =
+    Math.floor(
+      notes.length *
+        tier.holdShare,
+    );
   // An easier tier leaves every lane exactly as the tier above put it, so each of
   // its notes is the SAME note (time and lane) one tier up — the nesting the
   // difficulty ladder promises. It can only drop; it never moves a note.
-  const frozen = fixedLanes !== null;
+  const frozen =
+    fixedLanes !==
+    null;
 
-  for (let i = 0; i < notes.length; i++) {
-    const note = notes[i];
-    let lane = natural[i];
+  for (
+    let i = 0;
+    i <
+    notes.length;
+    i++
+  ) {
+    const note =
+      notes[
+        i
+      ];
+    let lane =
+      natural[
+        i
+      ];
 
     // Break jacks — but a run of notes with room between them is a bassline, not
     // a jack, so it may be longer.
-    const sinceInLane = note.time - lastTimeInLane[lane];
-    const maxRun = sinceInLane >= tier.laneMinGap * 1.6 ? MAX_SPACED_RUN : MAX_JACK_RUN;
-    if (!frozen && lane === runLane && runLength >= maxRun) lane = 1 - lane;
+    const sinceInLane =
+      note.time -
+      lastTimeInLane[
+        lane
+      ];
+    const maxRun =
+      sinceInLane >=
+      tier.laneMinGap *
+        1.6
+        ? MAX_SPACED_RUN
+        : MAX_JACK_RUN;
+    if (
+      !frozen &&
+      lane ===
+        runLane &&
+      runLength >=
+        maxRun
+    )
+      lane =
+        1 -
+        lane;
 
     // Respect same-lane spacing and any hold on the lane; fall back to the other
     // lane, then drop.
-    if (note.time - lastTimeInLane[lane] < tier.laneMinGap || note.time < holdEndInLane[lane]) {
-      const other = 1 - lane;
+    if (
+      note.time -
+        lastTimeInLane[
+          lane
+        ] <
+        tier.laneMinGap ||
+      note.time <
+        holdEndInLane[
+          lane
+        ]
+    ) {
+      const other =
+        1 -
+        lane;
       if (
         !frozen &&
-        note.time - lastTimeInLane[other] >= tier.laneMinGap &&
-        note.time >= holdEndInLane[other]
+        note.time -
+          lastTimeInLane[
+            other
+          ] >=
+          tier.laneMinGap &&
+        note.time >=
+          holdEndInLane[
+            other
+          ]
       ) {
-        lane = other;
+        lane =
+          other;
       } else {
         continue;
       }
     }
 
     // Tap or hold.
-    let type: Slice['type'] = 'STANDARD';
-    let duration: number | undefined;
-    if (note.holdDuration && holds < holdBudget) {
-      const importance = note.rank ?? note.strength;
-      let limit = note.time + note.holdDuration;
-      for (let j = i + 1; j < notes.length; j++) {
-        const other = notes[j];
-        if (other.time >= limit) break;
+    let type: Slice['type'] =
+      'STANDARD';
+    let duration:
+      | number
+      | undefined;
+    if (
+      note.holdDuration &&
+      holds <
+        holdBudget
+    ) {
+      const importance =
+        note.rank ??
+        note.strength;
+      let limit =
+        note.time +
+        note.holdDuration;
+      for (
+        let j =
+          i +
+          1;
+        j <
+        notes.length;
+        j++
+      ) {
+        const other =
+          notes[
+            j
+          ];
+        if (
+          other.time >=
+          limit
+        )
+          break;
         // A note of equal or higher rank that wants this lane ends the hold; a
         // weaker one is simply played on the other lane, or dropped, by step 2.
-        if (natural[j] === lane && (other.rank ?? other.strength) >= importance) {
-          limit = other.time - tier.laneMinGap;
+        if (
+          natural[
+            j
+          ] ===
+            lane &&
+          (other.rank ??
+            other.strength) >=
+            importance
+        ) {
+          limit =
+            other.time -
+            tier.laneMinGap;
           break;
         }
       }
-      const step = note.beatLength / TAIL_DIVISIONS;
-      const fitted = Math.floor((limit - note.time) / step + 1e-6) * step;
-      if (fitted >= Math.max(MIN_HOLD_SECONDS, note.beatLength * MIN_HOLD_BEATS)) {
-        type = 'LONG';
-        duration = fitted;
+      const step =
+        note.beatLength /
+        TAIL_DIVISIONS;
+      const fitted =
+        Math.floor(
+          (limit -
+            note.time) /
+            step +
+            1e-6,
+        ) *
+        step;
+      if (
+        fitted >=
+        Math.max(
+          MIN_HOLD_SECONDS,
+          note.beatLength *
+            MIN_HOLD_BEATS,
+        )
+      ) {
+        type =
+          'LONG';
+        duration =
+          fitted;
         holds++;
       }
     }
 
-    slices.push({
-      id: `${difficulty}-${i}-${Math.round(note.time * 1000)}`,
-      time: Number(note.time.toFixed(4)),
-      type,
-      lane,
-      quant: note.offGrid ? 16 : quantOf(note.fraction),
-      // G12 — the register this attack sat in, from the SAME ratios the lane
-      // hint falls back on.
-      sound: registerOf(note),
-      ...(duration !== undefined ? { duration: Number(duration.toFixed(4)) } : {}),
-    });
+    slices.push(
+      {
+        id: `${difficulty}-${i}-${Math.round(note.time * 1000)}`,
+        time: Number(
+          note.time.toFixed(
+            4,
+          ),
+        ),
+        type,
+        lane,
+        quant:
+          note.offGrid
+            ? 16
+            : quantOf(
+                note.fraction,
+              ),
+        // G12 — the register this attack sat in, from the SAME ratios the lane
+        // hint falls back on.
+        sound:
+          registerOf(
+            note,
+          ),
+        ...(duration !==
+        undefined
+          ? {
+              duration:
+                Number(
+                  duration.toFixed(
+                    4,
+                  ),
+                ),
+            }
+          : {}),
+      },
+    );
 
-    kept.push(note);
-    lanes.set(note, lane);
-    lastTimeInLane[lane] = note.time;
-    if (duration !== undefined) holdEndInLane[lane] = note.time + duration;
-    if (lane === runLane) runLength++;
+    kept.push(
+      note,
+    );
+    lanes.set(
+      note,
+      lane,
+    );
+    lastTimeInLane[
+      lane
+    ] =
+      note.time;
+    if (
+      duration !==
+      undefined
+    )
+      holdEndInLane[
+        lane
+      ] =
+        note.time +
+        duration;
+    if (
+      lane ===
+      runLane
+    )
+      runLength++;
     else {
-      runLane = lane;
+      runLane =
+        lane;
       runLength = 1;
     }
   }
 
-  return { slices, kept, lanes };
+  return {
+    slices,
+    kept,
+    lanes,
+  };
 }
 
 /* ─── G7: chart-native mines ─────────────────────────────────────────────── */
@@ -756,12 +1770,16 @@ function buildSlices(
  * modifier's own random conversion (`BOMB_CONVERSION_RATE`) still runs on top
  * for players who want more.
  */
-const MINE_SHARE: Record<Difficulty, number> = {
-  easy: 0,
-  normal: 0.015,
-  hard: 0.03,
-  expert: 0.045,
-};
+const MINE_SHARE: Record<
+  Difficulty,
+  number
+> =
+  {
+    easy: 0,
+    normal: 0.015,
+    hard: 0.03,
+    expert: 0.045,
+  };
 
 /** Seconds between two mines. Two mines in one phrase is one mine twice. */
 const MINE_MIN_SPACING_SECONDS = 3;
@@ -792,23 +1810,65 @@ interface MineCandidate {
 function beatFrameAt(
   notes: readonly QuantizedNote[],
   time: number,
-): { start: number; length: number } | null {
-  if (notes.length === 0) return null;
+): {
+  start: number;
+  length: number;
+} | null {
+  if (
+    notes.length ===
+    0
+  )
+    return null;
   let lo = 0;
-  let hi = notes.length - 1;
+  let hi =
+    notes.length -
+    1;
   let best = 0;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    if (notes[mid].time <= time) {
-      best = mid;
-      lo = mid + 1;
+  while (
+    lo <=
+    hi
+  ) {
+    const mid =
+      (lo +
+        hi) >>
+      1;
+    if (
+      notes[
+        mid
+      ]
+        .time <=
+      time
+    ) {
+      best =
+        mid;
+      lo =
+        mid +
+        1;
     } else {
-      hi = mid - 1;
+      hi =
+        mid -
+        1;
     }
   }
-  const near = notes[best];
-  if (!(near.beatLength > 0)) return null;
-  return { start: near.time - near.fraction * near.beatLength, length: near.beatLength };
+  const near =
+    notes[
+      best
+    ];
+  if (
+    !(
+      near.beatLength >
+      0
+    )
+  )
+    return null;
+  return {
+    start:
+      near.time -
+      near.fraction *
+        near.beatLength,
+    length:
+      near.beatLength,
+  };
 }
 
 /**
@@ -849,89 +1909,333 @@ export function placeMines(
   duration: number,
   random: () => number,
 ): Slice[] {
-  const share = MINE_SHARE[difficulty] ?? 0;
-  const budget = Math.floor(slices.length * share);
-  if (budget < 1 || slices.length < MINE_RUN_MIN_LENGTH) return [];
+  const share =
+    MINE_SHARE[
+      difficulty
+    ] ??
+    0;
+  const budget =
+    Math.floor(
+      slices.length *
+        share,
+    );
+  if (
+    budget <
+      1 ||
+    slices.length <
+      MINE_RUN_MIN_LENGTH
+  )
+    return [];
 
-  const ordered = [...slices].sort((a, b) => a.time - b.time);
-  const first = ordered[0].time;
-  const last = ordered[ordered.length - 1].time;
+  const ordered =
+    [
+      ...slices,
+    ].sort(
+      (
+        a,
+        b,
+      ) =>
+        a.time -
+        b.time,
+    );
+  const first =
+    ordered[0]
+      .time;
+  const last =
+    ordered[
+      ordered.length -
+        1
+    ]
+      .time;
 
   // A mine must be a rest, so the bar for "something is already here" is higher
   // than the bar for two ordinary notes: 2x the tier's own minimum in either
   // lane. At the fastest spacings that rejects every candidate, which is the
   // intended answer — a 16th-note stream at Expert has no rests in it to mark.
-  const anyLaneGuard = Math.max(tier.minGap * 2, 0.15);
-  const sameLaneGuard = Math.max(tier.laneMinGap, 0.18);
+  const anyLaneGuard =
+    Math.max(
+      tier.minGap *
+        2,
+      0.15,
+    );
+  const sameLaneGuard =
+    Math.max(
+      tier.laneMinGap,
+      0.18,
+    );
 
-  const candidates: MineCandidate[] = [];
+  const candidates: MineCandidate[] =
+    [];
 
   /* 1. The step after a run ends. */
   let runStart = 0;
-  for (let i = 1; i <= ordered.length; i++) {
-    const frame = beatFrameAt(notes, ordered[i - 1].time);
-    const beatLength = frame?.length ?? 0.5;
-    const gap = i < ordered.length ? ordered[i].time - ordered[i - 1].time : Infinity;
-    const continues = gap <= beatLength * MINE_RUN_MAX_GAP_BEATS;
-    if (continues) continue;
+  for (
+    let i = 1;
+    i <=
+    ordered.length;
+    i++
+  ) {
+    const frame =
+      beatFrameAt(
+        notes,
+        ordered[
+          i -
+            1
+        ]
+          .time,
+      );
+    const beatLength =
+      frame?.length ??
+      0.5;
+    const gap =
+      i <
+      ordered.length
+        ? ordered[
+            i
+          ]
+            .time -
+          ordered[
+            i -
+              1
+          ]
+            .time
+        : Infinity;
+    const continues =
+      gap <=
+      beatLength *
+        MINE_RUN_MAX_GAP_BEATS;
+    if (
+      continues
+    )
+      continue;
 
-    const runLength = i - runStart;
-    runStart = i;
-    if (runLength < MINE_RUN_MIN_LENGTH) continue;
+    const runLength =
+      i -
+      runStart;
+    runStart =
+      i;
+    if (
+      runLength <
+      MINE_RUN_MIN_LENGTH
+    )
+      continue;
 
-    const tail = ordered[i - 1];
-    const before = ordered[i - 2];
-    const step = tail.time - before.time;
-    if (!(step > 0)) continue;
+    const tail =
+      ordered[
+        i -
+          1
+      ];
+    const before =
+      ordered[
+        i -
+          2
+      ];
+    const step =
+      tail.time -
+      before.time;
+    if (
+      !(
+        step >
+        0
+      )
+    )
+      continue;
     // The lane the run was heading for: alternate if it was alternating, hold
     // the lane if it was a jack. Either way it is where the hand is going.
-    const lane = tail.lane === before.lane ? tail.lane : 1 - tail.lane;
-    const time = Number((tail.time + step).toFixed(4));
-    const tailFrame = beatFrameAt(notes, time);
-    const fraction = tailFrame ? ((time - tailFrame.start) / tailFrame.length) % 1 : 0;
-    candidates.push({ time, lane, quant: quantOf(fraction < 0 ? fraction + 1 : fraction) });
+    const lane =
+      tail.lane ===
+      before.lane
+        ? tail.lane
+        : 1 -
+          tail.lane;
+    const time =
+      Number(
+        (
+          tail.time +
+          step
+        ).toFixed(
+          4,
+        ),
+      );
+    const tailFrame =
+      beatFrameAt(
+        notes,
+        time,
+      );
+    const fraction =
+      tailFrame
+        ? ((time -
+            tailFrame.start) /
+            tailFrame.length) %
+          1
+        : 0;
+    candidates.push(
+      {
+        time,
+        lane,
+        quant:
+          quantOf(
+            fraction <
+              0
+              ? fraction +
+                  1
+              : fraction,
+          ),
+      },
+    );
   }
 
   /* 2. The downbeat a syncopation skips. */
   for (const slice of ordered) {
-    if (slice.quant === undefined || slice.quant === 1) continue;
-    const frame = beatFrameAt(notes, slice.time);
-    if (!frame) continue;
-    const time = Number(frame.start.toFixed(4));
-    if (time >= slice.time) continue;
-    candidates.push({ time, lane: slice.lane, quant: 1 });
+    if (
+      slice.quant ===
+        undefined ||
+      slice.quant ===
+        1
+    )
+      continue;
+    const frame =
+      beatFrameAt(
+        notes,
+        slice.time,
+      );
+    if (
+      !frame
+    )
+      continue;
+    const time =
+      Number(
+        frame.start.toFixed(
+          4,
+        ),
+      );
+    if (
+      time >=
+      slice.time
+    )
+      continue;
+    candidates.push(
+      {
+        time,
+        lane: slice.lane,
+        quant: 1,
+      },
+    );
   }
 
   /* 3. Refusal. */
-  const holds = ordered.filter((s) => s.type === 'LONG' && (s.duration ?? 0) > 0);
-  const viable = candidates
-    .filter((candidate) => {
-      if (candidate.time < Math.max(MINE_LEAD_IN_SECONDS, first)) return false;
-      if (candidate.time > Math.min(last, duration)) return false;
-      for (const slice of ordered) {
-        const distance = Math.abs(slice.time - candidate.time);
-        if (distance < anyLaneGuard) return false;
-        if (slice.lane === candidate.lane && distance < sameLaneGuard) return false;
-      }
-      for (const hold of holds) {
-        if (hold.lane !== candidate.lane) continue;
-        const end = hold.time + (hold.duration ?? 0);
-        if (candidate.time >= hold.time - sameLaneGuard && candidate.time <= end + sameLaneGuard) {
-          return false;
-        }
-      }
-      return true;
-    })
-    .sort((a, b) => a.time - b.time || a.lane - b.lane);
+  const holds =
+    ordered.filter(
+      (
+        s,
+      ) =>
+        s.type ===
+          'LONG' &&
+        (s.duration ??
+          0) >
+          0,
+    );
+  const viable =
+    candidates
+      .filter(
+        (
+          candidate,
+        ) => {
+          if (
+            candidate.time <
+            Math.max(
+              MINE_LEAD_IN_SECONDS,
+              first,
+            )
+          )
+            return false;
+          if (
+            candidate.time >
+            Math.min(
+              last,
+              duration,
+            )
+          )
+            return false;
+          for (const slice of ordered) {
+            const distance =
+              Math.abs(
+                slice.time -
+                  candidate.time,
+              );
+            if (
+              distance <
+              anyLaneGuard
+            )
+              return false;
+            if (
+              slice.lane ===
+                candidate.lane &&
+              distance <
+                sameLaneGuard
+            )
+              return false;
+          }
+          for (const hold of holds) {
+            if (
+              hold.lane !==
+              candidate.lane
+            )
+              continue;
+            const end =
+              hold.time +
+              (hold.duration ??
+                0);
+            if (
+              candidate.time >=
+                hold.time -
+                  sameLaneGuard &&
+              candidate.time <=
+                end +
+                  sameLaneGuard
+            ) {
+              return false;
+            }
+          }
+          return true;
+        },
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          a.time -
+            b.time ||
+          a.lane -
+            b.lane,
+      );
 
   // Two rules found the same rest — keep one.
-  const deduped: MineCandidate[] = [];
+  const deduped: MineCandidate[] =
+    [];
   for (const candidate of viable) {
-    const previous = deduped[deduped.length - 1];
-    if (previous && candidate.time - previous.time < anyLaneGuard) continue;
-    deduped.push(candidate);
+    const previous =
+      deduped[
+        deduped.length -
+          1
+      ];
+    if (
+      previous &&
+      candidate.time -
+        previous.time <
+        anyLaneGuard
+    )
+      continue;
+    deduped.push(
+      candidate,
+    );
   }
-  if (deduped.length === 0) return [];
+  if (
+    deduped.length ===
+    0
+  )
+    return [];
 
   /* 4. Spread, then spend the budget. */
   // Stride sampling rather than "the first N": a chart's runs cluster, and
@@ -939,31 +2243,77 @@ export function placeMines(
   // mine in the first chorus and none in the last. The offset is the one place
   // the seeded PRNG is consulted, so two difficulties of the same song do not
   // pick the same phrases.
-  const stride = Math.max(1, deduped.length / budget);
-  const offset = random() * stride;
-  const picked: MineCandidate[] = [];
-  for (let i = 0; picked.length < budget; i++) {
-    const index = Math.floor(offset + i * stride);
-    if (index >= deduped.length) break;
-    const candidate = deduped[index];
-    const previous = picked[picked.length - 1];
-    if (previous && candidate.time - previous.time < MINE_MIN_SPACING_SECONDS) continue;
-    picked.push(candidate);
+  const stride =
+    Math.max(
+      1,
+      deduped.length /
+        budget,
+    );
+  const offset =
+    random() *
+    stride;
+  const picked: MineCandidate[] =
+    [];
+  for (
+    let i = 0;
+    picked.length <
+    budget;
+    i++
+  ) {
+    const index =
+      Math.floor(
+        offset +
+          i *
+            stride,
+      );
+    if (
+      index >=
+      deduped.length
+    )
+      break;
+    const candidate =
+      deduped[
+        index
+      ];
+    const previous =
+      picked[
+        picked.length -
+          1
+      ];
+    if (
+      previous &&
+      candidate.time -
+        previous.time <
+        MINE_MIN_SPACING_SECONDS
+    )
+      continue;
+    picked.push(
+      candidate,
+    );
   }
 
-  return picked.map((candidate, index) => ({
-    id: `${CHART_MINE_ID_PREFIX}${difficulty}-${index}-${Math.round(candidate.time * 1000)}`,
-    time: candidate.time,
-    type: 'BOMB' as const,
-    lane: candidate.lane,
-    quant: candidate.quant,
-  }));
+  return picked.map(
+    (
+      candidate,
+      index,
+    ) => ({
+      id: `${CHART_MINE_ID_PREFIX}${difficulty}-${index}-${Math.round(candidate.time * 1000)}`,
+      time: candidate.time,
+      type: 'BOMB' as const,
+      lane: candidate.lane,
+      quant:
+        candidate.quant,
+    }),
+  );
 }
 
 /* ─── Entry point ────────────────────────────────────────────────────────── */
 
 export interface ChartResult {
-  slices: Record<Difficulty, Slice[]>;
+  slices: Record<
+    Difficulty,
+    Slice[]
+  >;
   /**
    * Notes per difficulty, for the library card and for tests.
    *
@@ -972,7 +2322,10 @@ export interface ChartResult {
    * turns `bombs` on — counting them would advertise a note count no run of the
    * chart can ever produce.
    */
-  noteCounts: Record<Difficulty, number>;
+  noteCounts: Record<
+    Difficulty,
+    number
+  >;
 }
 
 /**
@@ -990,45 +2343,113 @@ export function buildCharts(
   /** C10 — the uploader's −2…2 density bias. 0 is the shipped behaviour. */
   densityBias = 0,
 ): ChartResult {
-  const slices = {} as Record<Difficulty, Slice[]>;
-  const noteCounts = {} as Record<Difficulty, number>;
+  const slices =
+    {} as Record<
+      Difficulty,
+      Slice[]
+    >;
+  const noteCounts =
+    {} as Record<
+      Difficulty,
+      number
+    >;
 
   // Copies, because ranks and lane hints are written onto them and the caller (the
   // editor) keeps its pool between runs.
-  const prepared = notes.map((note) => ({ ...note }));
-  assignRanks(prepared);
-  assignLaneHints(prepared);
+  const prepared =
+    notes.map(
+      (
+        note,
+      ) => ({
+        ...note,
+      }),
+    );
+  assignRanks(
+    prepared,
+  );
+  assignLaneHints(
+    prepared,
+  );
 
-  let pool = prepared;
-  let fixedLanes: Map<QuantizedNote, number> | null = null;
+  let pool =
+    prepared;
+  let fixedLanes: Map<
+    QuantizedNote,
+    number
+  > | null =
+    null;
   for (const difficulty of TIER_ORDER) {
-    const tier = TIERS[difficulty];
-    const selected = selectTier(pool, tier, duration, sections, densityBias);
-    const random = createSeededRandom(`${seed}:${difficulty}`);
-    const built = buildSlices(selected, tier, difficulty, random, fixedLanes);
+    const tier =
+      TIERS[
+        difficulty
+      ];
+    const selected =
+      selectTier(
+        pool,
+        tier,
+        duration,
+        sections,
+        densityBias,
+      );
+    const random =
+      createSeededRandom(
+        `${seed}:${difficulty}`,
+      );
+    const built =
+      buildSlices(
+        selected,
+        tier,
+        difficulty,
+        random,
+        fixedLanes,
+      );
 
     // The next (easier) tier draws from the notes that SURVIVED this one, with
     // their lanes fixed — that is the nesting, by construction.
-    pool = built.kept;
-    fixedLanes = built.lanes;
+    pool =
+      built.kept;
+    fixedLanes =
+      built.lanes;
 
     // G7. A separate PRNG stream, so a chart generated with mines has exactly
     // the same notes as one generated before mines existed — the mine sampler
     // cannot pull the lane assignments out from under `buildSlices`.
-    const mines = placeMines(
-      built.slices,
-      built.kept,
-      tier,
-      difficulty,
-      duration,
-      createSeededRandom(`${seed}:${difficulty}:mines`),
-    );
+    const mines =
+      placeMines(
+        built.slices,
+        built.kept,
+        tier,
+        difficulty,
+        duration,
+        createSeededRandom(
+          `${seed}:${difficulty}:mines`,
+        ),
+      );
 
-    slices[difficulty] = [...built.slices, ...mines].sort((a, b) => a.time - b.time);
-    noteCounts[difficulty] = built.slices.length;
+    slices[
+      difficulty
+    ] =
+      [
+        ...built.slices,
+        ...mines,
+      ].sort(
+        (
+          a,
+          b,
+        ) =>
+          a.time -
+          b.time,
+      );
+    noteCounts[
+      difficulty
+    ] =
+      built.slices.length;
   }
 
-  return { slices, noteCounts };
+  return {
+    slices,
+    noteCounts,
+  };
 }
 
 export { TIERS };

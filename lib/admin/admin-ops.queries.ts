@@ -13,47 +13,119 @@ import {
 import { getAdminCensusApi } from '@/lib/admin/census.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const adminAnalyticsQuery = () =>
-  contractQuery(
-    ['admin', 'analytics'],
-    getAdminAnalyticsApi,
-    { retries: 0 },
-    { staleTime: 30_000 },
-  );
+export const adminAnalyticsQuery =
+  () =>
+    contractQuery(
+      [
+        'admin',
+        'analytics',
+      ],
+      getAdminAnalyticsApi,
+      {
+        retries: 0,
+      },
+      {
+        staleTime: 30_000,
+      },
+    );
 
 /** `days` is the window as the page holds it: '7' | '30' | '90'. */
-export const adminEconomyQuery = (days: string) =>
-  contractQuery(
-    ['admin', 'economy', days],
-    getAdminEconomyApi,
-    { query: { days }, retries: 0 },
-    { staleTime: 30_000 },
-  );
+export const adminEconomyQuery =
+  (
+    days: string,
+  ) =>
+    contractQuery(
+      [
+        'admin',
+        'economy',
+        days,
+      ],
+      getAdminEconomyApi,
+      {
+        query:
+          {
+            days,
+          },
+        retries: 0,
+      },
+      {
+        staleTime: 30_000,
+      },
+    );
 
-export const adminFlagsQuery = () =>
-  contractQuery(['admin', 'flags'], listAdminFlagsApi, { retries: 0 }, { staleTime: 15_000 });
+export const adminFlagsQuery =
+  () =>
+    contractQuery(
+      [
+        'admin',
+        'flags',
+      ],
+      listAdminFlagsApi,
+      {
+        retries: 0,
+      },
+      {
+        staleTime: 15_000,
+      },
+    );
 
-export const adminRedemptionsQuery = () =>
-  contractQuery(
-    ['admin', 'redemptions'],
-    listAdminRedemptionsApi,
-    { retries: 0 },
-    { staleTime: 15_000 },
-  );
+export const adminRedemptionsQuery =
+  () =>
+    contractQuery(
+      [
+        'admin',
+        'redemptions',
+      ],
+      listAdminRedemptionsApi,
+      {
+        retries: 0,
+      },
+      {
+        staleTime: 15_000,
+      },
+    );
 
-export const adminEmojiPacksQuery = () =>
-  contractQuery(
-    ['admin', 'emoji-packs'],
-    listAdminEmojiPacksApi,
-    { retries: 0 },
-    { staleTime: 15_000 },
-  );
+export const adminEmojiPacksQuery =
+  () =>
+    contractQuery(
+      [
+        'admin',
+        'emoji-packs',
+      ],
+      listAdminEmojiPacksApi,
+      {
+        retries: 0,
+      },
+      {
+        staleTime: 15_000,
+      },
+    );
 
 /** The census: live when `month` is null, else the stored snapshot for that 'YYYY-MM'. */
-export const adminCensusQuery = (month: string | null) =>
-  contractQuery(
-    ['admin', 'census', month ?? 'live'],
-    getAdminCensusApi,
-    { query: month ? { month } : {}, retries: 0 },
-    { staleTime: 30_000 },
-  );
+export const adminCensusQuery =
+  (
+    month:
+      | string
+      | null,
+  ) =>
+    contractQuery(
+      [
+        'admin',
+        'census',
+        month ??
+          'live',
+      ],
+      getAdminCensusApi,
+      {
+        query:
+          month
+            ? {
+                month,
+              }
+            : {},
+        retries: 0,
+      },
+      {
+        staleTime: 30_000,
+      },
+    );

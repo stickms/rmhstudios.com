@@ -33,7 +33,10 @@
  * driven from a test with a made-up swing.
  */
 
-import { clamp, clamp01 } from '@/lib/core/math';
+import {
+  clamp,
+  clamp01,
+} from '@/lib/core/math';
 
 /** Below this, in m/s², nothing is happening. A hand at rest reads ~0.3. */
 const ARM_THRESHOLD = 5.5;
@@ -131,55 +134,128 @@ export function createSwing(): SwingState {
  *
  * @returns the throw, if this sample completed one.
  */
-export function feedSwing(state: SwingState, sample: SwingSample): Throw | null {
-  const dt = state.lastAt ? Math.min(0.25, (sample.t - state.lastAt) / 1000) : 1 / 60;
-  state.lastAt = sample.t;
+export function feedSwing(
+  state: SwingState,
+  sample: SwingSample,
+): Throw | null {
+  const dt =
+    state.lastAt
+      ? Math.min(
+          0.25,
+          (sample.t -
+            state.lastAt) /
+            1000,
+        )
+      : 1 /
+        60;
+  state.lastAt =
+    sample.t;
 
-  let { x, y, z } = sample;
-  if (!sample.gravityFree) {
+  let {
+    x,
+    y,
+    z,
+  } =
+    sample;
+  if (
+    !sample.gravityFree
+  ) {
     // No clean reading on this platform: estimate gravity as the slow-moving
     // part of the signal and subtract it. Seeded from the first sample, or the
     // filter spends its first half-second reporting a 9.8 m/s² "swing".
-    if (!state.primed) {
-      state.gx = x;
-      state.gy = y;
-      state.gz = z;
+    if (
+      !state.primed
+    ) {
+      state.gx =
+        x;
+      state.gy =
+        y;
+      state.gz =
+        z;
       state.primed = true;
     } else {
-      const k = 1 - Math.exp(-GRAVITY_RATE * dt);
-      state.gx += (x - state.gx) * k;
-      state.gy += (y - state.gy) * k;
-      state.gz += (z - state.gz) * k;
+      const k =
+        1 -
+        Math.exp(
+          -GRAVITY_RATE *
+            dt,
+        );
+      state.gx +=
+        (x -
+          state.gx) *
+        k;
+      state.gy +=
+        (y -
+          state.gy) *
+        k;
+      state.gz +=
+        (z -
+          state.gz) *
+        k;
     }
-    x -= state.gx;
-    y -= state.gy;
-    z -= state.gz;
+    x -=
+      state.gx;
+    y -=
+      state.gy;
+    z -=
+      state.gz;
   }
 
-  const magnitude = Math.hypot(x, y, z);
+  const magnitude =
+    Math.hypot(
+      x,
+      y,
+      z,
+    );
 
-  if (!state.swinging) {
-    if (magnitude < ARM_THRESHOLD) return null;
+  if (
+    !state.swinging
+  ) {
+    if (
+      magnitude <
+      ARM_THRESHOLD
+    )
+      return null;
     state.swinging = true;
-    state.startedAt = sample.t;
-    state.peak = magnitude;
-    state.peakTwist = sample.twist;
+    state.startedAt =
+      sample.t;
+    state.peak =
+      magnitude;
+    state.peakTwist =
+      sample.twist;
     return null;
   }
 
-  if (magnitude > state.peak) {
-    state.peak = magnitude;
-    state.peakTwist = sample.twist;
+  if (
+    magnitude >
+    state.peak
+  ) {
+    state.peak =
+      magnitude;
+    state.peakTwist =
+      sample.twist;
   }
 
-  const spent = sample.t - state.startedAt > MAX_SWING_MS;
-  const released = magnitude < state.peak * RELEASE_FRACTION;
-  if (!released && !spent) return null;
+  const spent =
+    sample.t -
+      state.startedAt >
+    MAX_SWING_MS;
+  const released =
+    magnitude <
+    state.peak *
+      RELEASE_FRACTION;
+  if (
+    !released &&
+    !spent
+  )
+    return null;
 
   // Both readings are taken BEFORE the state is cleared for the next swing —
   // reading `state.peakTwist` after zeroing it reported every hook as straight.
-  const peak = state.peak;
-  const twist = state.peakTwist;
+  const peak =
+    state.peak;
+  const twist =
+    state.peakTwist;
   state.swinging = false;
   state.peak = 0;
   state.peakTwist = 0;
@@ -187,28 +263,46 @@ export function feedSwing(state: SwingState, sample: SwingSample): Throw | null 
   // A wave of the hand is not a throw. Below the floor the swing is simply
   // discarded and the detector re-arms, so a player fiddling with the phone
   // never loses a ball to it.
-  if (peak < MIN_PEAK) return null;
+  if (
+    peak <
+    MIN_PEAK
+  )
+    return null;
 
   return {
-    power: clamp01((peak - MIN_PEAK) / (FULL_PEAK - MIN_PEAK)),
-    spin: clamp(twist / FULL_TWIST, -1, 1),
+    power:
+      clamp01(
+        (peak -
+          MIN_PEAK) /
+          (FULL_PEAK -
+            MIN_PEAK),
+      ),
+    spin: clamp(
+      twist /
+        FULL_TWIST,
+      -1,
+      1,
+    ),
     peak,
   };
 }
 
 /** Forget any swing in progress, keeping the gravity estimate. */
-export function resetSwing(state: SwingState): void {
+export function resetSwing(
+  state: SwingState,
+): void {
   state.swinging = false;
   state.peak = 0;
   state.peakTwist = 0;
 }
 
 /** Exported for the tests and for the readout that explains the scale. */
-export const SWING = {
-  ARM_THRESHOLD,
-  MIN_PEAK,
-  FULL_PEAK,
-  RELEASE_FRACTION,
-  FULL_TWIST,
-  MAX_SWING_MS,
-} as const;
+export const SWING =
+  {
+    ARM_THRESHOLD,
+    MIN_PEAK,
+    FULL_PEAK,
+    RELEASE_FRACTION,
+    FULL_TWIST,
+    MAX_SWING_MS,
+  } as const;

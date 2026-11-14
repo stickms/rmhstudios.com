@@ -25,28 +25,68 @@ import { TICK_INTERVAL } from '../core/constants';
 export const MAX_FRAME_DT = 0.1;
 
 export interface LoopHost {
-  requestFrame(cb: (t: number) => void): number;
-  cancelFrame(id: number): void;
+  requestFrame(
+    cb: (
+      t: number,
+    ) => void,
+  ): number;
+  cancelFrame(
+    id: number,
+  ): void;
   /** Milliseconds, monotonic. */
   now(): number;
   /** Whether the page is hidden right now. */
   hidden(): boolean;
   /** Subscribes to visibility changes; returns the unsubscribe. */
-  onVisibility(fn: () => void): () => void;
+  onVisibility(
+    fn: () => void,
+  ): () => void;
 }
 
 /** The browser's frame source (rAF), clock and visibility. */
 export function browserLoopHost(): LoopHost {
   return {
-    requestFrame: (cb) => requestAnimationFrame(cb),
-    cancelFrame: (id) => cancelAnimationFrame(id),
-    now: () => performance.now(),
-    hidden: () => typeof document !== 'undefined' && document.visibilityState === 'hidden',
-    onVisibility: (fn) => {
-      if (typeof document === 'undefined') return () => {};
-      document.addEventListener('visibilitychange', fn);
-      return () => document.removeEventListener('visibilitychange', fn);
-    },
+    requestFrame:
+      (
+        cb,
+      ) =>
+        requestAnimationFrame(
+          cb,
+        ),
+    cancelFrame:
+      (
+        id,
+      ) =>
+        cancelAnimationFrame(
+          id,
+        ),
+    now: () =>
+      performance.now(),
+    hidden:
+      () =>
+        typeof document !==
+          'undefined' &&
+        document.visibilityState ===
+          'hidden',
+    onVisibility:
+      (
+        fn,
+      ) => {
+        if (
+          typeof document ===
+          'undefined'
+        )
+          return () => {};
+        document.addEventListener(
+          'visibilitychange',
+          fn,
+        );
+        return () =>
+          document.removeEventListener(
+            'visibilitychange',
+            fn,
+          );
+      },
   };
 }
 
@@ -60,10 +100,15 @@ export interface FrameInfo {
 }
 
 export class GameLoop {
-  private id = -1;
-  private last = -1;
+  private id =
+    -1;
+  private last =
+    -1;
   private started = false;
-  private unsubscribe: (() => void) | null = null;
+  private unsubscribe:
+    | (() => void)
+    | null =
+    null;
   /** Frames run (diagnostics). */
   frames = 0;
   /** Times the loop was paused because the page was hidden. */
@@ -75,86 +120,212 @@ export class GameLoop {
   maxFps = 0;
 
   constructor(
-    private readonly onFrame: (f: FrameInfo) => void,
+    private readonly onFrame: (
+      f: FrameInfo,
+    ) => void,
     private readonly host: LoopHost = browserLoopHost(),
     /** Called when the page hides / shows (the client mutes audio, releases keys). */
-    private readonly onPause?: (paused: boolean) => void,
+    private readonly onPause?: (
+      paused: boolean,
+    ) => void,
   ) {}
 
   get running(): boolean {
-    return this.started;
+    return this
+      .started;
   }
 
   /** True while a frame is scheduled. */
   get scheduled(): boolean {
-    return this.id >= 0;
+    return (
+      this
+        .id >=
+      0
+    );
   }
 
   start(): void {
-    if (this.started) return;
+    if (
+      this
+        .started
+    )
+      return;
     this.started = true;
-    this.last = -1;
-    this.unsubscribe = this.host.onVisibility(() => this.visibilityChanged());
-    if (!this.host.hidden()) this.schedule();
+    this.last =
+      -1;
+    this.unsubscribe =
+      this.host.onVisibility(
+        () =>
+          this.visibilityChanged(),
+      );
+    if (
+      !this.host.hidden()
+    )
+      this.schedule();
     else {
-      this.pauses++;
-      this.onPause?.(true);
+      this
+        .pauses++;
+      this.onPause?.(
+        true,
+      );
     }
   }
 
   stop(): void {
     this.started = false;
-    if (this.id >= 0) this.host.cancelFrame(this.id);
-    this.id = -1;
+    if (
+      this
+        .id >=
+      0
+    )
+      this.host.cancelFrame(
+        this
+          .id,
+      );
+    this.id =
+      -1;
     this.unsubscribe?.();
-    this.unsubscribe = null;
+    this.unsubscribe =
+      null;
   }
 
   private schedule(): void {
-    if (this.id >= 0 || !this.started) return;
-    this.id = this.host.requestFrame(this.tick);
+    if (
+      this
+        .id >=
+        0 ||
+      !this
+        .started
+    )
+      return;
+    this.id =
+      this.host.requestFrame(
+        this
+          .tick,
+      );
   }
 
-  private readonly tick = (): void => {
-    this.id = -1;
-    if (!this.started) return;
-    if (this.host.hidden()) {
-      // A frame the browser delivered on the way into the background: stop here.
-      this.pause();
-      return;
-    }
-    const now = this.host.now();
-    // fps_max: too soon after the last frame — wait for the next display frame (a 1 ms tolerance for rAF jitter).
-    if (this.maxFps > 0 && this.last >= 0 && now - this.last < 1000 / this.maxFps - 1) {
+  private readonly tick =
+    (): void => {
+      this.id =
+        -1;
+      if (
+        !this
+          .started
+      )
+        return;
+      if (
+        this.host.hidden()
+      ) {
+        // A frame the browser delivered on the way into the background: stop here.
+        this.pause();
+        return;
+      }
+      const now =
+        this.host.now();
+      // fps_max: too soon after the last frame — wait for the next display frame (a 1 ms tolerance for rAF jitter).
+      if (
+        this
+          .maxFps >
+          0 &&
+        this
+          .last >=
+          0 &&
+        now -
+          this
+            .last <
+          1000 /
+            this
+              .maxFps -
+            1
+      ) {
+        this.schedule();
+        return;
+      }
+      const rawMs =
+        this
+          .last <
+        0
+          ? 0
+          : now -
+            this
+              .last;
+      const dt =
+        this
+          .last <
+        0
+          ? 0
+          : Math.min(
+              MAX_FRAME_DT,
+              Math.max(
+                0,
+                rawMs /
+                  1000,
+              ),
+            );
+      this.last =
+        now;
+      this
+        .frames++;
+      // Schedule first: a frame callback that throws must not end the loop silently mid-game.
       this.schedule();
-      return;
-    }
-    const rawMs = this.last < 0 ? 0 : now - this.last;
-    const dt = this.last < 0 ? 0 : Math.min(MAX_FRAME_DT, Math.max(0, rawMs / 1000));
-    this.last = now;
-    this.frames++;
-    // Schedule first: a frame callback that throws must not end the loop silently mid-game.
-    this.schedule();
-    this.onFrame({ dt, rawMs, now });
-  };
+      this.onFrame(
+        {
+          dt,
+          rawMs,
+          now,
+        },
+      );
+    };
 
   private pause(): void {
-    if (this.id >= 0) this.host.cancelFrame(this.id);
-    this.id = -1;
-    this.last = -1;
-    this.pauses++;
-    this.onPause?.(true);
+    if (
+      this
+        .id >=
+      0
+    )
+      this.host.cancelFrame(
+        this
+          .id,
+      );
+    this.id =
+      -1;
+    this.last =
+      -1;
+    this
+      .pauses++;
+    this.onPause?.(
+      true,
+    );
   }
 
   private visibilityChanged(): void {
-    if (!this.started) return;
-    if (this.host.hidden()) {
-      if (this.id >= 0) this.pause();
+    if (
+      !this
+        .started
+    )
+      return;
+    if (
+      this.host.hidden()
+    ) {
+      if (
+        this
+          .id >=
+        0
+      )
+        this.pause();
       return;
     }
-    if (this.id < 0) {
-      this.last = -1;
-      this.onPause?.(false);
+    if (
+      this
+        .id <
+      0
+    ) {
+      this.last =
+        -1;
+      this.onPause?.(
+        false,
+      );
       this.schedule();
     }
   }
@@ -172,23 +343,59 @@ export class FixedStep {
   ) {}
 
   /** Adds `dt` seconds; returns how many ticks to run now. */
-  advance(dt: number): number {
-    this.acc += Math.max(0, dt);
-    let n = Math.floor(this.acc / this.step + 1e-9);
-    if (n > this.maxSteps) {
-      this.dropped += n - this.maxSteps;
-      n = this.maxSteps;
+  advance(
+    dt: number,
+  ): number {
+    this.acc +=
+      Math.max(
+        0,
+        dt,
+      );
+    let n =
+      Math.floor(
+        this
+          .acc /
+          this
+            .step +
+          1e-9,
+      );
+    if (
+      n >
+      this
+        .maxSteps
+    ) {
+      this.dropped +=
+        n -
+        this
+          .maxSteps;
+      n =
+        this
+          .maxSteps;
       this.acc = 0;
     } else {
-      this.acc -= n * this.step;
-      if (this.acc < 0) this.acc = 0;
+      this.acc -=
+        n *
+        this
+          .step;
+      if (
+        this
+          .acc <
+        0
+      )
+        this.acc = 0;
     }
     return n;
   }
 
   /** How far into the next tick we are, 0…1. */
   get alpha(): number {
-    return Math.min(1, this.acc / this.step);
+    return Math.min(
+      1,
+      this
+        .acc /
+        this
+          .step,
+    );
   }
 
   reset(): void {

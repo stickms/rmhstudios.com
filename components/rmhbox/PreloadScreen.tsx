@@ -8,9 +8,16 @@
  *   players: { userId: string; userName: string; ready: boolean }[] — Player readiness list
  */
 
-import { useEffect, useMemo } from 'react';
+import {
+  useEffect,
+  useMemo,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, CheckCircle2, Circle } from 'lucide-react';
+import {
+  Loader2,
+  CheckCircle2,
+  Circle,
+} from 'lucide-react';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
 
@@ -25,47 +32,117 @@ interface PreloadScreenProps {
   lobbyId: string;
 }
 
-export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) {
-  const { t } = useTranslation("c-rmhbox");
+export default function PreloadScreen({
+  players,
+  lobbyId,
+}: PreloadScreenProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
 
   // Auto-emit ready on mount
   useEffect(() => {
-    emit(C2S.GAME_READY_TO_RENDER, { lobbyId });
-  }, [lobbyId]);
+    emit(
+      C2S.GAME_READY_TO_RENDER,
+      {
+        lobbyId,
+      },
+    );
+  }, [
+    lobbyId,
+  ]);
 
-  const readyCount = useMemo(() => players.filter((p) => p.ready).length, [players]);
-  const progress = players.length > 0 ? (readyCount / players.length) * 100 : 0;
+  const readyCount =
+    useMemo(
+      () =>
+        players.filter(
+          (
+            p,
+          ) =>
+            p.ready,
+        )
+          .length,
+      [
+        players,
+      ],
+    );
+  const progress =
+    players.length >
+    0
+      ? (readyCount /
+          players.length) *
+        100
+      : 0;
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 p-6 text-app-text">
       <Loader2 className="h-10 w-10 animate-spin text-app-accent" />
-      <h2 className="text-xl font-bold">{t("loading-game", { defaultValue: "Loading Game…" })}</h2>
+      <h2 className="text-xl font-bold">
+        {t(
+          'loading-game',
+          {
+            defaultValue:
+              'Loading Game…',
+          },
+        )}
+      </h2>
 
       {/* Progress bar */}
       <div className="h-2 w-full overflow-hidden rounded-full bg-app-border">
         <div
           className="h-full bg-app-accent w-full origin-left transition-transform duration-500"
-          style={{ transform: `scaleX(${(progress) / 100})` }}
+          style={{
+            transform: `scaleX(${progress / 100})`,
+          }}
         />
       </div>
       <span className="text-sm text-app-text-muted">
-        {t("players-ready", { readyCount, total: players.length, defaultValue: "{{readyCount}} / {{total}} players ready" })}
+        {t(
+          'players-ready',
+          {
+            readyCount,
+            total:
+              players.length,
+            defaultValue:
+              '{{readyCount}} / {{total}} players ready',
+          },
+        )}
       </span>
 
       {/* Player readiness list */}
       <ul className="w-full space-y-1">
-        {players.map((p) => (
-          <li key={p.userId} className="flex items-center gap-2 text-sm">
-            {p.ready ? (
-              <CheckCircle2 className="h-4 w-4 text-app-success" />
-            ) : (
-              <Circle className="h-4 w-4 text-app-text-muted" />
-            )}
-            <span className={p.ready ? 'text-app-text' : 'text-app-text-muted'}>
-              {p.userName}
-            </span>
-          </li>
-        ))}
+        {players.map(
+          (
+            p,
+          ) => (
+            <li
+              key={
+                p.userId
+              }
+              className="flex items-center gap-2 text-sm"
+            >
+              {p.ready ? (
+                <CheckCircle2 className="h-4 w-4 text-app-success" />
+              ) : (
+                <Circle className="h-4 w-4 text-app-text-muted" />
+              )}
+              <span
+                className={
+                  p.ready
+                    ? 'text-app-text'
+                    : 'text-app-text-muted'
+                }
+              >
+                {
+                  p.userName
+                }
+              </span>
+            </li>
+          ),
+        )}
       </ul>
     </div>
   );

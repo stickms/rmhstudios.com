@@ -3,14 +3,38 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { betSchema } from '@/lib/coins-schema';
 
-export const placePlinkoBetApi = endpoint<{
-  body: z.infer<typeof betSchema>;
-  res: { won: boolean; payout: number; newBalance: number; startX: number; landedBin: number };
-}>()({ method: 'POST', path: '/api/coins/bet' });
+export const placePlinkoBetApi =
+  endpoint<{
+    body: z.infer<
+      typeof betSchema
+    >;
+    res: {
+      won: boolean;
+      payout: number;
+      newBalance: number;
+      startX: number;
+      landedBin: number;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/coins/bet',
+    },
+  );
 
-export const claimCoinsApi = endpoint<{
-  res: { newBalance: number };
-}>()({ method: 'POST', path: '/api/coins/claim' });
+export const claimCoinsApi =
+  endpoint<{
+    res: {
+      newBalance: number;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/coins/claim',
+    },
+  );
 
 export interface CasinoLobbyRoom {
   roomId: string;
@@ -24,6 +48,19 @@ export interface CasinoLobbyRoom {
 }
 
 /** Open casino tables per game, for the signed-out lobby preview. Empty lists whenever the hub is unreachable. */
-export const getCasinoRoomsApi = endpoint<{
-  res: Record<'blackjack' | 'holdem' | 'baccarat' | 'roulette', CasinoLobbyRoom[]>;
-}>()({ method: 'GET', path: '/api/casino/rooms' });
+export const getCasinoRoomsApi =
+  endpoint<{
+    res: Record<
+      | 'blackjack'
+      | 'holdem'
+      | 'baccarat'
+      | 'roulette',
+      CasinoLobbyRoom[]
+    >;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/casino/rooms',
+    },
+  );

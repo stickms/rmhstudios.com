@@ -39,27 +39,65 @@ export interface LibraryDialogShellProps {
   children: ReactNode;
 }
 
-export function LibraryDialogShell({ onClose, label, children }: LibraryDialogShellProps) {
-  const { t } = useTranslation('library');
+export function LibraryDialogShell({
+  onClose,
+  label,
+  children,
+}: LibraryDialogShellProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'library',
+    );
   return (
-    <DialogPrimitive.Root open onOpenChange={(o) => !o && onClose()}>
+    <DialogPrimitive.Root
+      open
+      onOpenChange={(
+        o,
+      ) =>
+        !o &&
+        onClose()
+      }
+    >
       <DialogPortal>
         {/* The content IS the scrim (`.lib-upload__overlay` is the viewport-covering layer the
             panels centre inside), so a press on it is an outside press; Radix adds Escape, the
             focus trap and focus return. */}
         <DialogPrimitive.Content
           className="lib-upload__overlay outline-none"
-          aria-describedby={undefined}
-          onInteractOutside={(e) => {
-            if ((e.target as HTMLElement | null)?.closest?.('[data-slot="anchored-menu"]'))
+          aria-describedby={
+            undefined
+          }
+          onInteractOutside={(
+            e,
+          ) => {
+            if (
+              (
+                e.target as HTMLElement | null
+              )?.closest?.(
+                '[data-slot="anchored-menu"]',
+              )
+            )
               e.preventDefault();
           }}
-          onMouseDown={onClose}
+          onMouseDown={
+            onClose
+          }
         >
           <DialogPrimitive.Title className="sr-only">
-            {label ?? t('library-heading', { defaultValue: 'Library' })}
+            {label ??
+              t(
+                'library-heading',
+                {
+                  defaultValue:
+                    'Library',
+                },
+              )}
           </DialogPrimitive.Title>
-          {children}
+          {
+            children
+          }
         </DialogPrimitive.Content>
       </DialogPortal>
     </DialogPrimitive.Root>

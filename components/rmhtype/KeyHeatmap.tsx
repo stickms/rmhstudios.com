@@ -38,29 +38,83 @@ import {
 } from '@/lib/rmhtype/keystats';
 
 /** How strongly a level tints its key. Weak keys read loudest on purpose. */
-const INTENSITY: Record<HeatLevel, number> = {
-  untested: 0,
-  strong: 26,
-  ok: 0,
-  slow: 34,
-  weak: 46,
-};
+const INTENSITY: Record<
+  HeatLevel,
+  number
+> =
+  {
+    untested: 0,
+    strong: 26,
+    ok: 0,
+    slow: 34,
+    weak: 46,
+  };
 
-function tintFor(level: HeatLevel): string | undefined {
-  const token = HEAT_TOKENS[level];
-  if (!token) return undefined;
+function tintFor(
+  level: HeatLevel,
+):
+  | string
+  | undefined {
+  const token =
+    HEAT_TOKENS[
+      level
+    ];
+  if (
+    !token
+  )
+    return undefined;
   return `color-mix(in oklab, var(${token}) ${INTENSITY[level]}%, transparent)`;
 }
 
 function useLevelLabels() {
-  const { t } = useTranslation('c-rmhtype');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhtype',
+    );
   return {
-    strong: t('heat-strong', { defaultValue: 'Fast' }),
-    ok: t('heat-ok', { defaultValue: 'Steady' }),
-    slow: t('heat-slow', { defaultValue: 'Slow' }),
-    weak: t('heat-weak', { defaultValue: 'Weak' }),
-    untested: t('heat-untested', { defaultValue: 'Not enough data' }),
-  } satisfies Record<HeatLevel, string>;
+    strong:
+      t(
+        'heat-strong',
+        {
+          defaultValue:
+            'Fast',
+        },
+      ),
+    ok: t(
+      'heat-ok',
+      {
+        defaultValue:
+          'Steady',
+      },
+    ),
+    slow: t(
+      'heat-slow',
+      {
+        defaultValue:
+          'Slow',
+      },
+    ),
+    weak: t(
+      'heat-weak',
+      {
+        defaultValue:
+          'Weak',
+      },
+    ),
+    untested:
+      t(
+        'heat-untested',
+        {
+          defaultValue:
+            'Not enough data',
+        },
+      ),
+  } satisfies Record<
+    HeatLevel,
+    string
+  >;
 }
 
 interface KeyHeatmapProps {
@@ -69,78 +123,220 @@ interface KeyHeatmapProps {
   className?: string;
 }
 
-export function KeyHeatmap({ keys, layout, className }: KeyHeatmapProps) {
-  const { t } = useTranslation('c-rmhtype');
-  const labels = useLevelLabels();
-  const byKey = new Map(keys.map((metric) => [metric.key, metric]));
-  const rows = KEYBOARD_ROWS[layout] ?? KEYBOARD_ROWS.qwerty;
-
-  const renderKey = (key: string, wide = false) => {
-    const metric = byKey.get(key);
-    const level: HeatLevel = metric ? heatLevel(metric) : 'untested';
-    const ms = metric && level !== 'untested' ? Math.round(metric.msPerKey) : null;
-
-    return (
-      <div
-        key={key}
-        style={{ background: tintFor(level) }}
-        className={cn(
-          'flex h-11 shrink-0 flex-col items-center justify-center rounded-site border text-site-text',
-          wide ? 'w-40' : 'w-11',
-          level === 'untested' ? 'border-dashed border-site-border' : 'border-site-border',
-        )}
-      >
-        <span aria-hidden className="font-mono text-sm leading-none">
-          {key === SPACE_KEY ? '␣' : key}
-        </span>
-        <span
-          aria-hidden
-          className="mt-0.5 font-mono text-[10px] leading-none text-site-text-muted tabular-nums"
-        >
-          {ms === null ? '·' : ms}
-        </span>
-        <span className="sr-only">
-          {t('key-reading', {
-            defaultValue: '{{key}}: {{ms}} ms, {{errors}}% errors, {{level}}',
-            key: key === SPACE_KEY ? t('space-key', { defaultValue: 'space' }) : key,
-            ms: ms ?? 0,
-            errors: metric ? Math.round(metric.errorRate * 100) : 0,
-            level: labels[level],
-          })}
-        </span>
-      </div>
+export function KeyHeatmap({
+  keys,
+  layout,
+  className,
+}: KeyHeatmapProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhtype',
     );
-  };
+  const labels =
+    useLevelLabels();
+  const byKey =
+    new Map(
+      keys.map(
+        (
+          metric,
+        ) => [
+          metric.key,
+          metric,
+        ],
+      ),
+    );
+  const rows =
+    KEYBOARD_ROWS[
+      layout
+    ] ??
+    KEYBOARD_ROWS.qwerty;
+
+  const renderKey =
+    (
+      key: string,
+      wide = false,
+    ) => {
+      const metric =
+        byKey.get(
+          key,
+        );
+      const level: HeatLevel =
+        metric
+          ? heatLevel(
+              metric,
+            )
+          : 'untested';
+      const ms =
+        metric &&
+        level !==
+          'untested'
+          ? Math.round(
+              metric.msPerKey,
+            )
+          : null;
+
+      return (
+        <div
+          key={
+            key
+          }
+          style={{
+            background:
+              tintFor(
+                level,
+              ),
+          }}
+          className={cn(
+            'flex h-11 shrink-0 flex-col items-center justify-center rounded-site border text-site-text',
+            wide
+              ? 'w-40'
+              : 'w-11',
+            level ===
+              'untested'
+              ? 'border-dashed border-site-border'
+              : 'border-site-border',
+          )}
+        >
+          <span
+            aria-hidden
+            className="font-mono text-sm leading-none"
+          >
+            {key ===
+            SPACE_KEY
+              ? '␣'
+              : key}
+          </span>
+          <span
+            aria-hidden
+            className="mt-0.5 font-mono text-[10px] leading-none text-site-text-muted tabular-nums"
+          >
+            {ms ===
+            null
+              ? '·'
+              : ms}
+          </span>
+          <span className="sr-only">
+            {t(
+              'key-reading',
+              {
+                defaultValue:
+                  '{{key}}: {{ms}} ms, {{errors}}% errors, {{level}}',
+                key:
+                  key ===
+                  SPACE_KEY
+                    ? t(
+                        'space-key',
+                        {
+                          defaultValue:
+                            'space',
+                        },
+                      )
+                    : key,
+                ms:
+                  ms ??
+                  0,
+                errors:
+                  metric
+                    ? Math.round(
+                        metric.errorRate *
+                          100,
+                      )
+                    : 0,
+                level:
+                  labels[
+                    level
+                  ],
+              },
+            )}
+          </span>
+        </div>
+      );
+    };
 
   return (
-    <div className={cn('flex flex-col gap-3', className)}>
+    <div
+      className={cn(
+        'flex flex-col gap-3',
+        className,
+      )}
+    >
       {/* The keyboard is wider than a 360px phone, so IT scrolls — the page
           never does. */}
       <div className="-mx-1 overflow-x-auto px-1 pb-1">
         <div className="flex w-max flex-col items-center gap-1.5">
-          {rows.map((row, index) => (
-            <div key={index} className="flex gap-1.5" style={{ paddingLeft: index * 14 }}>
-              {row.map((key) => renderKey(key))}
-            </div>
-          ))}
-          <div className="flex gap-1.5">{renderKey(SPACE_KEY, true)}</div>
+          {rows.map(
+            (
+              row,
+              index,
+            ) => (
+              <div
+                key={
+                  index
+                }
+                className="flex gap-1.5"
+                style={{
+                  paddingLeft:
+                    index *
+                    14,
+                }}
+              >
+                {row.map(
+                  (
+                    key,
+                  ) =>
+                    renderKey(
+                      key,
+                    ),
+                )}
+              </div>
+            ),
+          )}
+          <div className="flex gap-1.5">
+            {renderKey(
+              SPACE_KEY,
+              true,
+            )}
+          </div>
         </div>
       </div>
 
       <ul className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {HEAT_LEVELS.map((level) => (
-          <li key={level} className="flex items-center gap-1.5 text-xs text-site-text-muted">
-            <span
-              aria-hidden
-              style={{ background: tintFor(level) }}
-              className={cn(
-                'size-3 rounded-site-sm border',
-                level === 'untested' ? 'border-dashed border-site-border' : 'border-site-border',
-              )}
-            />
-            {labels[level]}
-          </li>
-        ))}
+        {HEAT_LEVELS.map(
+          (
+            level,
+          ) => (
+            <li
+              key={
+                level
+              }
+              className="flex items-center gap-1.5 text-xs text-site-text-muted"
+            >
+              <span
+                aria-hidden
+                style={{
+                  background:
+                    tintFor(
+                      level,
+                    ),
+                }}
+                className={cn(
+                  'size-3 rounded-site-sm border',
+                  level ===
+                    'untested'
+                    ? 'border-dashed border-site-border'
+                    : 'border-site-border',
+                )}
+              />
+              {
+                labels[
+                  level
+                ]
+              }
+            </li>
+          ),
+        )}
       </ul>
     </div>
   );

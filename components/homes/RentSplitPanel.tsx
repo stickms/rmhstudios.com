@@ -14,47 +14,145 @@ export function RentSplitPanel({
 }: {
   rent: number;
   beds: number;
-  sqft: number | null;
+  sqft:
+    | number
+    | null;
 }) {
-  const { t } = useTranslation('f-ladder-homes');
-  const [open, setOpen] = useState(false);
-  const count = Math.min(8, Math.max(2, beds));
-  const area = sqft ? Math.max(20, Math.round(sqft / count)) : 120;
-  const initial: RentSplitState = {
-    rent: Math.round(rent),
-    shared: 30,
-    rooms: Array.from({ length: count }, (_, i) => ({ name: `Room ${i + 1}`, area, features: [] })),
-  };
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-ladder-homes',
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const count =
+    Math.min(
+      8,
+      Math.max(
+        2,
+        beds,
+      ),
+    );
+  const area =
+    sqft
+      ? Math.max(
+          20,
+          Math.round(
+            sqft /
+              count,
+          ),
+        )
+      : 120;
+  const initial: RentSplitState =
+    {
+      rent: Math.round(
+        rent,
+      ),
+      shared: 30,
+      rooms:
+        Array.from(
+          {
+            length:
+              count,
+          },
+          (
+            _,
+            i,
+          ) => ({
+            name: `Room ${i + 1}`,
+            area,
+            features:
+              [],
+          }),
+        ),
+    };
   return (
     <section className="mt-4">
       <h2 className="mb-2 flex items-center gap-2 site-section-label">
-        <Scale className="size-5" aria-hidden />
-        {t('rsp-heading', { defaultValue: 'Splitting this with roommates?' })}
+        <Scale
+          className="size-5"
+          aria-hidden
+        />
+        {t(
+          'rsp-heading',
+          {
+            defaultValue:
+              'Splitting this with roommates?',
+          },
+        )}
       </h2>
       <p className="mb-3 text-sm text-site-text-muted">
-        {t('rsp-body', {
-          defaultValue: 'Work out what each room should pay, with every number explained.',
-        })}
+        {t(
+          'rsp-body',
+          {
+            defaultValue:
+              'Work out what each room should pay, with every number explained.',
+          },
+        )}
       </p>
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
           variant="default"
           className="min-h-11"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
+          aria-expanded={
+            open
+          }
+          onClick={() =>
+            setOpen(
+              (
+                v,
+              ) =>
+                !v,
+            )
+          }
         >
           {open
-            ? t('rsp-hide', { defaultValue: 'Hide calculator' })
-            : t('rsp-show', { defaultValue: 'Split the rent fairly' })}
+            ? t(
+                'rsp-hide',
+                {
+                  defaultValue:
+                    'Hide calculator',
+                },
+              )
+            : t(
+                'rsp-show',
+                {
+                  defaultValue:
+                    'Split the rent fairly',
+                },
+              )}
         </Button>
-        <Button asChild variant="ghost" className="min-h-11">
+        <Button
+          asChild
+          variant="ghost"
+          className="min-h-11"
+        >
           <Link to="/homes/rent-split">
-            {t('rsp-standalone', { defaultValue: 'Open full page' })}
+            {t(
+              'rsp-standalone',
+              {
+                defaultValue:
+                  'Open full page',
+              },
+            )}
           </Link>
         </Button>
       </div>
-      {open && <RentSplitCalculator className="mt-4" initial={initial} />}
+      {open && (
+        <RentSplitCalculator
+          className="mt-4"
+          initial={
+            initial
+          }
+        />
+      )}
     </section>
   );
 }

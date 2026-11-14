@@ -32,7 +32,9 @@
  */
 
 /** Which feature holds the claim. Used only for logging and for idempotence. */
-export type BusyKind = 'call' | 'gcall';
+export type BusyKind =
+  | 'call'
+  | 'gcall';
 
 export interface BusyClaim {
   kind: BusyKind;
@@ -40,7 +42,11 @@ export interface BusyClaim {
   id: string;
 }
 
-const busy = new Map<string, BusyClaim>();
+const busy =
+  new Map<
+    string,
+    BusyClaim
+  >();
 
 /**
  * Mark a user as being in a call.
@@ -49,10 +55,31 @@ const busy = new Map<string, BusyClaim>();
  * to refuse with `busy`. Returns `true` when the claim was taken, or when this
  * exact claim was already held.
  */
-export function claimBusy(userId: string, kind: BusyKind, id: string): boolean {
-  const current = busy.get(userId);
-  if (current) return current.kind === kind && current.id === id;
-  busy.set(userId, { kind, id });
+export function claimBusy(
+  userId: string,
+  kind: BusyKind,
+  id: string,
+): boolean {
+  const current =
+    busy.get(
+      userId,
+    );
+  if (
+    current
+  )
+    return (
+      current.kind ===
+        kind &&
+      current.id ===
+        id
+    );
+  busy.set(
+    userId,
+    {
+      kind,
+      id,
+    },
+  );
   return true;
 }
 
@@ -62,14 +89,34 @@ export function claimBusy(userId: string, kind: BusyKind, id: string): boolean {
  * Scoped by `id`: a release for a call the user is no longer in does nothing,
  * so a late teardown cannot free a user who has since joined something else.
  */
-export function releaseBusy(userId: string, id: string): void {
-  const current = busy.get(userId);
-  if (current && current.id === id) busy.delete(userId);
+export function releaseBusy(
+  userId: string,
+  id: string,
+): void {
+  const current =
+    busy.get(
+      userId,
+    );
+  if (
+    current &&
+    current.id ===
+      id
+  )
+    busy.delete(
+      userId,
+    );
 }
 
 /** What the user is busy with, or `null`. */
-export function getBusy(userId: string): BusyClaim | null {
-  return busy.get(userId) ?? null;
+export function getBusy(
+  userId: string,
+): BusyClaim | null {
+  return (
+    busy.get(
+      userId,
+    ) ??
+    null
+  );
 }
 
 /** Test seam: how many users are currently claimed. */

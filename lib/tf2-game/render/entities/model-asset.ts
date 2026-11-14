@@ -19,10 +19,28 @@ import {
 } from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
-import { animatedFrame, checkPosedFrame, frameMatrixFor, impliedBindRotation, modelFrame } from '../model-axes';
-import type { LoadedModel, ModelProvider } from '../props';
-import { Animator, AnimSet, type PoseParamDesc, type RawClip, type SequenceDesc } from './animator';
-import { materialTemplate, type MaterialTemplate } from './model-material';
+import {
+  animatedFrame,
+  checkPosedFrame,
+  frameMatrixFor,
+  impliedBindRotation,
+  modelFrame,
+} from '../model-axes';
+import type {
+  LoadedModel,
+  ModelProvider,
+} from '../props';
+import {
+  Animator,
+  AnimSet,
+  type PoseParamDesc,
+  type RawClip,
+  type SequenceDesc,
+} from './animator';
+import {
+  materialTemplate,
+  type MaterialTemplate,
+} from './model-material';
 
 /** One `mdl/index.json` entry (scripts/tf2-game/models.py). */
 export interface ModelIndexEntry {
@@ -49,12 +67,25 @@ export interface BodyExtras {
     clipFrame?: number[];
   };
   skinned?: boolean;
-  bodyparts?: Array<{ name: string; count: number }>;
+  bodyparts?: Array<{
+    name: string;
+    count: number;
+  }>;
   skins?: number[][];
-  attachments?: Array<{ name: string; bone: string; flags?: number; local: number[] }>;
+  attachments?: Array<{
+    name: string;
+    bone: string;
+    flags?: number;
+    local: number[];
+  }>;
   hitboxSets?: Array<{
     name: string;
-    hitboxes: Array<{ bone: string; group: number; min: number[]; max: number[] }>;
+    hitboxes: Array<{
+      bone: string;
+      group: number;
+      min: number[];
+      max: number[];
+    }>;
   }>;
   poseParameters?: PoseParamDesc[];
   boneControllers?: Array<{
@@ -66,8 +97,19 @@ export interface BodyExtras {
     input?: number;
   }>;
   sequences?: SequenceDesc[];
-  activities?: Record<string, Array<{ seq: string; weight: number }>>;
-  weightlists?: Array<Record<string, number>>;
+  activities?: Record<
+    string,
+    Array<{
+      seq: string;
+      weight: number;
+    }>
+  >;
+  weightlists?: Array<
+    Record<
+      string,
+      number
+    >
+  >;
   animPack?: boolean;
 }
 
@@ -87,7 +129,9 @@ export interface AttachmentDesc {
 }
 
 export interface GltfLoaderLike {
-  loadAsync(url: string): Promise<GLTF>;
+  loadAsync(
+    url: string,
+  ): Promise<GLTF>;
 }
 
 export class ModelAsset {
@@ -99,7 +143,11 @@ export class ModelAsset {
   readonly restPos: Float32Array;
   readonly restQuat: Float32Array;
   readonly anim: AnimSet | null;
-  readonly attachments = new Map<string, AttachmentDesc>();
+  readonly attachments =
+    new Map<
+      string,
+      AttachmentDesc
+    >();
   readonly skinned: boolean;
 
   constructor(
@@ -108,79 +156,306 @@ export class ModelAsset {
     readonly materials: Material[],
     animPack: GLTF | null,
   ) {
-    const scene = gltf.scene;
-    this.extras = (scene.userData ?? {}) as BodyExtras;
+    const scene =
+      gltf.scene;
+    this.extras =
+      (scene.userData ??
+        {}) as BodyExtras;
     // The clips' recorded basis: the model's own, or its anim pack's (a model whose sequences all come
     // from an include carries none itself).
-    const packExtras = (animPack?.scene.userData ?? {}) as BodyExtras;
-    const clipFrame = this.extras.source?.clipFrame ?? packExtras.source?.clipFrame;
-    const knownFrame = clipFrame?.length === 9 && clipFrame.every(Number.isFinite) ? frameMatrixFor(clipFrame) : null;
-    this.frame = knownFrame ?? modelFrame(scene).matrix;
-    this.templates = materials.map((m) => materialTemplate(m));
-    annotatePrimitives(gltf);
-    let skel: SkinnedMesh | null = null;
-    scene.traverse((o) => {
-      if (!skel && (o as SkinnedMesh).isSkinnedMesh) skel = o as SkinnedMesh;
-      const mesh = o as Mesh;
-      if (mesh.isMesh) mesh.frustumCulled = false;
-    });
-    const sm = skel as SkinnedMesh | null;
-    this.skinned = !!sm;
-    const bones = sm ? sm.skeleton.bones : [];
-    this.boneNames = bones.map((b) => b.name);
-    this.restPos = new Float32Array(bones.length * 3);
-    this.restQuat = new Float32Array(bones.length * 4);
-    bones.forEach((b, i) => {
-      b.position.toArray(this.restPos, i * 3);
-      b.quaternion.toArray(this.restQuat, i * 4);
-    });
-    for (const a of this.extras.attachments ?? []) {
-      this.attachments.set(a.name.toLowerCase(), {
-        name: a.name,
-        bone: a.bone,
-        local: new Matrix4().fromArray(a.local),
-      });
+    const packExtras =
+      (animPack
+        ?.scene
+        .userData ??
+        {}) as BodyExtras;
+    const clipFrame =
+      this
+        .extras
+        .source
+        ?.clipFrame ??
+      packExtras
+        .source
+        ?.clipFrame;
+    const knownFrame =
+      clipFrame?.length ===
+        9 &&
+      clipFrame.every(
+        Number.isFinite,
+      )
+        ? frameMatrixFor(
+            clipFrame,
+          )
+        : null;
+    this.frame =
+      knownFrame ??
+      modelFrame(
+        scene,
+      )
+        .matrix;
+    this.templates =
+      materials.map(
+        (
+          m,
+        ) =>
+          materialTemplate(
+            m,
+          ),
+      );
+    annotatePrimitives(
+      gltf,
+    );
+    let skel: SkinnedMesh | null =
+      null;
+    scene.traverse(
+      (
+        o,
+      ) => {
+        if (
+          !skel &&
+          (
+            o as SkinnedMesh
+          )
+            .isSkinnedMesh
+        )
+          skel =
+            o as SkinnedMesh;
+        const mesh =
+          o as Mesh;
+        if (
+          mesh.isMesh
+        )
+          mesh.frustumCulled = false;
+      },
+    );
+    const sm =
+      skel as SkinnedMesh | null;
+    this.skinned =
+      !!sm;
+    const bones =
+      sm
+        ? sm
+            .skeleton
+            .bones
+        : [];
+    this.boneNames =
+      bones.map(
+        (
+          b,
+        ) =>
+          b.name,
+      );
+    this.restPos =
+      new Float32Array(
+        bones.length *
+          3,
+      );
+    this.restQuat =
+      new Float32Array(
+        bones.length *
+          4,
+      );
+    bones.forEach(
+      (
+        b,
+        i,
+      ) => {
+        b.position.toArray(
+          this
+            .restPos,
+          i *
+            3,
+        );
+        b.quaternion.toArray(
+          this
+            .restQuat,
+          i *
+            4,
+        );
+      },
+    );
+    for (const a of this
+      .extras
+      .attachments ??
+      []) {
+      this.attachments.set(
+        a.name.toLowerCase(),
+        {
+          name: a.name,
+          bone: a.bone,
+          local:
+            new Matrix4().fromArray(
+              a.local,
+            ),
+        },
+      );
     }
-    const src = animPack ?? gltf;
-    const ax = animPack ? packExtras : this.extras;
-    const hasAnims = (ax.sequences?.length ?? 0) > 0 && bones.length > 0;
-    this.anim = hasAnims
-      ? new AnimSet(this.boneNames, this.restPos, this.restQuat, {
-          sequences: ax.sequences,
-          activities: ax.activities,
-          poseParameters: ax.poseParameters ?? this.extras.poseParameters,
-          weightlists: ax.weightlists,
-          clips: src.animations as unknown as RawClip[],
-        })
-      : null;
+    const src =
+      animPack ??
+      gltf;
+    const ax =
+      animPack
+        ? packExtras
+        : this
+            .extras;
+    const hasAnims =
+      (ax
+        .sequences
+        ?.length ??
+        0) >
+        0 &&
+      bones.length >
+        0;
+    this.anim =
+      hasAnims
+        ? new AnimSet(
+            this
+              .boneNames,
+            this
+              .restPos,
+            this
+              .restQuat,
+            {
+              sequences:
+                ax.sequences,
+              activities:
+                ax.activities,
+              poseParameters:
+                ax.poseParameters ??
+                this
+                  .extras
+                  .poseParameters,
+              weightlists:
+                ax.weightlists,
+              clips:
+                src.animations as unknown as RawClip[],
+            },
+          )
+        : null;
     // Otherwise the frame is recovered from the bind pose's bounds and then the idle pose's root. Both
     // steps stand on the hull: it finds the bind frame the idle root's turn is applied to, and it tells a
     // converter's frame change from an animation that turns the root itself (`checkPosedFrame`). A model
     // that declares a hull of no size (CS:GO's knife view models, whose sequences all come from an include)
     // gives neither, so its frame stays the converter's (y, z, x) default, which is the basis its clips
     // are written in whenever the model has no `ref` sequence.
-    if (this.anim && sm && !knownFrame && !emptyHull(this.extras.source)) {
-      const root = bones.findIndex((b) => !(b.parent as { isBone?: boolean } | null)?.isBone);
-      const seq = idleSequence(this.anim);
-      const clip = seq
-        ? this.anim.clips.get(seq.clips[Math.floor(seq.clips.length / 2)] ?? seq.clips[0])
-        : undefined;
-      const track = root >= 0 ? clip?.rot[root] : null;
-      if (seq && track && !clip?.delta) {
-        const rootBind = this.restQuat.subarray(root * 4, root * 4 + 4);
-        const rootPosed = track.values.subarray(0, 4);
+    if (
+      this
+        .anim &&
+      sm &&
+      !knownFrame &&
+      !emptyHull(
+        this
+          .extras
+          .source,
+      )
+    ) {
+      const root =
+        bones.findIndex(
+          (
+            b,
+          ) =>
+            !(
+              b.parent as {
+                isBone?: boolean;
+              } | null
+            )
+              ?.isBone,
+        );
+      const seq =
+        idleSequence(
+          this
+            .anim,
+        );
+      const clip =
+        seq
+          ? this.anim.clips.get(
+              seq
+                .clips[
+                Math.floor(
+                  seq
+                    .clips
+                    .length /
+                    2,
+                )
+              ] ??
+                seq
+                  .clips[0],
+            )
+          : undefined;
+      const track =
+        root >=
+        0
+          ? clip
+              ?.rot[
+              root
+            ]
+          : null;
+      if (
+        seq &&
+        track &&
+        !clip?.delta
+      ) {
+        const rootBind =
+          this.restQuat.subarray(
+            root *
+              4,
+            root *
+              4 +
+              4,
+          );
+        const rootPosed =
+          track.values.subarray(
+            0,
+            4,
+          );
         // A hull symmetric under a turn (Portal's round elevator) cannot say which way the bind
         // pose faces; the skeleton can: prefer the rotation the idle root implies on a tie.
-        const implied = impliedBindRotation(rootBind, rootPosed);
-        if (implied) this.frame = modelFrame(scene, implied).matrix;
-        const guess = animatedFrame(this.frame, rootBind, rootPosed);
-        const src = this.extras.source;
+        const implied =
+          impliedBindRotation(
+            rootBind,
+            rootPosed,
+          );
+        if (
+          implied
+        )
+          this.frame =
+            modelFrame(
+              scene,
+              implied,
+            ).matrix;
+        const guess =
+          animatedFrame(
+            this
+              .frame,
+            rootBind,
+            rootPosed,
+          );
+        const src =
+          this
+            .extras
+            .source;
         this.frame =
-          guess !== this.frame && src?.hullMin?.length === 3 && src.hullMax?.length === 3
+          guess !==
+            this
+              .frame &&
+          src
+            ?.hullMin
+            ?.length ===
+            3 &&
+          src
+            .hullMax
+            ?.length ===
+            3
             ? checkPosedFrame(
-                this.frame,
+                this
+                  .frame,
                 guess,
-                posedBonePositions(scene, bones, this.anim, seq),
+                posedBonePositions(
+                  scene,
+                  bones,
+                  this
+                    .anim,
+                  seq,
+                ),
                 src.hullMin,
                 src.hullMax,
               )
@@ -190,61 +465,173 @@ export class ModelAsset {
   }
 
   /** Source body index → the submodel shown per body group (SDK body part math). */
-  bodygroupsFromBody(body: number): Record<string, number> {
-    const out: Record<string, number> = {};
+  bodygroupsFromBody(
+    body: number,
+  ): Record<
+    string,
+    number
+  > {
+    const out: Record<
+      string,
+      number
+    > =
+      {};
     let base = 1;
-    for (const bp of this.extras.bodyparts ?? []) {
-      const count = Math.max(1, bp.count);
-      out[bp.name] = Math.floor(body / base) % count;
-      base *= count;
+    for (const bp of this
+      .extras
+      .bodyparts ??
+      []) {
+      const count =
+        Math.max(
+          1,
+          bp.count,
+        );
+      out[
+        bp.name
+      ] =
+        Math.floor(
+          body /
+            base,
+        ) %
+        count;
+      base *=
+        count;
     }
     return out;
   }
 
   /** The body index for named submodels (the inverse of bodygroupsFromBody). */
-  bodyFromGroups(groups: Record<string, number>): number {
+  bodyFromGroups(
+    groups: Record<
+      string,
+      number
+    >,
+  ): number {
     let body = 0;
     let base = 1;
-    for (const bp of this.extras.bodyparts ?? []) {
-      const count = Math.max(1, bp.count);
-      body += Math.min(count - 1, Math.max(0, groups[bp.name] ?? 0)) * base;
-      base *= count;
+    for (const bp of this
+      .extras
+      .bodyparts ??
+      []) {
+      const count =
+        Math.max(
+          1,
+          bp.count,
+        );
+      body +=
+        Math.min(
+          count -
+            1,
+          Math.max(
+            0,
+            groups[
+              bp
+                .name
+            ] ??
+              0,
+          ),
+        ) *
+        base;
+      base *=
+        count;
     }
     return body;
   }
 
   get skinCount(): number {
-    return this.extras.skins?.length ?? 1;
+    return (
+      this
+        .extras
+        .skins
+        ?.length ??
+      1
+    );
   }
 
   /** Hull in Source units (model space), for culling and placement. */
-  get hull(): { min: number[]; max: number[] } {
+  get hull(): {
+    min: number[];
+    max: number[];
+  } {
     return {
-      min: this.extras.source?.hullMin ?? [-24, -24, 0],
-      max: this.extras.source?.hullMax ?? [24, 24, 82],
+      min: this
+        .extras
+        .source
+        ?.hullMin ?? [
+        -24,
+        -24,
+        0,
+      ],
+      max: this
+        .extras
+        .source
+        ?.hullMax ?? [
+        24,
+        24,
+        82,
+      ],
     };
   }
 }
 
 /** A hull the MDL declares with no extent on any axis: it can neither find nor check a frame. */
-function emptyHull(src: BodyExtras['source']): boolean {
-  const lo = src?.hullMin;
-  const hi = src?.hullMax;
-  return lo?.length === 3 && hi?.length === 3 && lo.every((v, i) => v === hi[i]);
+function emptyHull(
+  src: BodyExtras['source'],
+): boolean {
+  const lo =
+    src?.hullMin;
+  const hi =
+    src?.hullMax;
+  return (
+    lo?.length ===
+      3 &&
+    hi?.length ===
+      3 &&
+    lo.every(
+      (
+        v,
+        i,
+      ) =>
+        v ===
+        hi[
+          i
+        ],
+    )
+  );
 }
 
 /** An idle-like absolute sequence (the frame probe of animatedFrame). */
-function idleSequence(set: AnimSet): SequenceDesc | undefined {
-  let first: SequenceDesc | undefined;
+function idleSequence(
+  set: AnimSet,
+):
+  | SequenceDesc
+  | undefined {
+  let first:
+    | SequenceDesc
+    | undefined;
   for (const s of set.sequences.values()) {
-    if (s.delta || s.hidden) continue;
-    first ??= s;
-    const act = s.activity ?? '';
     if (
-      act === 'ACT_IDLE' ||
-      /^ACT_MP_STAND_/.test(act) ||
-      /_VM_IDLE$/.test(act) ||
-      /^(idle|ref)/i.test(s.name)
+      s.delta ||
+      s.hidden
+    )
+      continue;
+    first ??=
+      s;
+    const act =
+      s.activity ??
+      '';
+    if (
+      act ===
+        'ACT_IDLE' ||
+      /^ACT_MP_STAND_/.test(
+        act,
+      ) ||
+      /_VM_IDLE$/.test(
+        act,
+      ) ||
+      /^(idle|ref)/i.test(
+        s.name,
+      )
     )
       return s;
   }
@@ -258,57 +645,210 @@ function posedBonePositions(
   set: AnimSet,
   seq: SequenceDesc,
 ): Float32Array {
-  const n = bones.length;
-  const pos = new Float32Array(n * 3);
-  const quat = new Float32Array(n * 4);
-  const animator = new Animator(set);
-  animator.setSequence(seq, { fade: false });
-  animator.evaluate(pos, quat);
-  scene.updateMatrixWorld(true);
-  const sceneInv = scene.matrixWorld.clone().invert();
-  const index = new Map<Object3D, number>(bones.map((b, i) => [b, i]));
-  const world: Array<Matrix4 | undefined> = new Array(n);
-  const one = new Vector3(1, 1, 1);
-  const t = new Vector3();
-  const q = new Quaternion();
-  const boneWorld = (i: number): Matrix4 => {
-    const done = world[i];
-    if (done) return done;
-    const parent = bones[i].parent;
-    const pi = parent ? index.get(parent) : undefined;
-    const base =
-      pi !== undefined
-        ? boneWorld(pi).clone()
-        : parent
-          ? new Matrix4().multiplyMatrices(sceneInv, parent.matrixWorld)
-          : new Matrix4();
-    const m = base.multiply(
-      new Matrix4().compose(t.fromArray(pos, i * 3), q.fromArray(quat, i * 4), one),
+  const n =
+    bones.length;
+  const pos =
+    new Float32Array(
+      n *
+        3,
     );
-    world[i] = m;
-    return m;
-  };
-  const out = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) t.setFromMatrixPosition(boneWorld(i)).toArray(out, i * 3);
+  const quat =
+    new Float32Array(
+      n *
+        4,
+    );
+  const animator =
+    new Animator(
+      set,
+    );
+  animator.setSequence(
+    seq,
+    {
+      fade: false,
+    },
+  );
+  animator.evaluate(
+    pos,
+    quat,
+  );
+  scene.updateMatrixWorld(
+    true,
+  );
+  const sceneInv =
+    scene.matrixWorld
+      .clone()
+      .invert();
+  const index =
+    new Map<
+      Object3D,
+      number
+    >(
+      bones.map(
+        (
+          b,
+          i,
+        ) => [
+          b,
+          i,
+        ],
+      ),
+    );
+  const world: Array<
+    | Matrix4
+    | undefined
+  > =
+    new Array(
+      n,
+    );
+  const one =
+    new Vector3(
+      1,
+      1,
+      1,
+    );
+  const t =
+    new Vector3();
+  const q =
+    new Quaternion();
+  const boneWorld =
+    (
+      i: number,
+    ): Matrix4 => {
+      const done =
+        world[
+          i
+        ];
+      if (
+        done
+      )
+        return done;
+      const parent =
+        bones[
+          i
+        ]
+          .parent;
+      const pi =
+        parent
+          ? index.get(
+              parent,
+            )
+          : undefined;
+      const base =
+        pi !==
+        undefined
+          ? boneWorld(
+              pi,
+            ).clone()
+          : parent
+            ? new Matrix4().multiplyMatrices(
+                sceneInv,
+                parent.matrixWorld,
+              )
+            : new Matrix4();
+      const m =
+        base.multiply(
+          new Matrix4().compose(
+            t.fromArray(
+              pos,
+              i *
+                3,
+            ),
+            q.fromArray(
+              quat,
+              i *
+                4,
+            ),
+            one,
+          ),
+        );
+      world[
+        i
+      ] =
+        m;
+      return m;
+    };
+  const out =
+    new Float32Array(
+      n *
+        3,
+    );
+  for (
+    let i = 0;
+    i <
+    n;
+    i++
+  )
+    t.setFromMatrixPosition(
+      boneWorld(
+        i,
+      ),
+    ).toArray(
+      out,
+      i *
+        3,
+    );
   return out;
 }
 
 /** Copies each primitive's extras (slot, body group) onto its mesh's userData.prim. */
-function annotatePrimitives(gltf: GLTF): void {
-  const json = gltf.parser.json as {
-    meshes?: Array<{ primitives: Array<{ extras?: PrimitiveInfo }> }>;
-  };
-  gltf.scene.traverse((o: Object3D) => {
-    if (!(o as Mesh).isMesh) return;
-    const assoc = gltf.parser.associations.get(o as Mesh) as
-      { meshes?: number; primitives?: number } | undefined;
-    const prim =
-      assoc && assoc.meshes !== undefined && assoc.primitives !== undefined
-        ? json.meshes?.[assoc.meshes]?.primitives[assoc.primitives]
-        : undefined;
-    const info: PrimitiveInfo = { ...(prim?.extras ?? {}) };
-    o.userData.prim = info;
-  });
+function annotatePrimitives(
+  gltf: GLTF,
+): void {
+  const json =
+    gltf
+      .parser
+      .json as {
+      meshes?: Array<{
+        primitives: Array<{
+          extras?: PrimitiveInfo;
+        }>;
+      }>;
+    };
+  gltf.scene.traverse(
+    (
+      o: Object3D,
+    ) => {
+      if (
+        !(
+          o as Mesh
+        )
+          .isMesh
+      )
+        return;
+      const assoc =
+        gltf.parser.associations.get(
+          o as Mesh,
+        ) as
+          | {
+              meshes?: number;
+              primitives?: number;
+            }
+          | undefined;
+      const prim =
+        assoc &&
+        assoc.meshes !==
+          undefined &&
+        assoc.primitives !==
+          undefined
+          ? json
+              .meshes?.[
+              assoc
+                .meshes
+            ]
+              ?.primitives[
+              assoc
+                .primitives
+            ]
+          : undefined;
+      const info: PrimitiveInfo =
+        {
+          ...(prim?.extras ??
+            {}),
+        };
+      o.userData.prim =
+        info;
+    },
+  );
 }
 
 /**
@@ -316,101 +856,304 @@ function annotatePrimitives(gltf: GLTF): void {
  * `mdl/index.json`) — `gameAssetUrl(p, game)` in the app, `/pkg/<game>/<p>` in the harness.
  */
 export class ModelLibrary implements ModelProvider {
-  private index: Promise<Record<string, ModelIndexEntry> | null> | null = null;
-  private readonly assets = new Map<string, Promise<ModelAsset | null>>();
-  private readonly ready = new Map<string, ModelAsset | null>();
-  private readonly packs = new Map<string, Promise<GLTF | null>>();
+  private index: Promise<Record<
+    string,
+    ModelIndexEntry
+  > | null> | null =
+    null;
+  private readonly assets =
+    new Map<
+      string,
+      Promise<ModelAsset | null>
+    >();
+  private readonly ready =
+    new Map<
+      string,
+      ModelAsset | null
+    >();
+  private readonly packs =
+    new Map<
+      string,
+      Promise<GLTF | null>
+    >();
   private readonly loader: GltfLoaderLike;
 
   constructor(
     private readonly opts: {
-      url: (path: string) => string;
+      url: (
+        path: string,
+      ) => string;
       loader?: GltfLoaderLike;
-      index?: Record<string, ModelIndexEntry>;
+      index?: Record<
+        string,
+        ModelIndexEntry
+      >;
     },
   ) {
-    this.loader = opts.loader ?? new Tf2GLTFLoader();
-    if (opts.index) this.index = Promise.resolve(opts.index);
+    this.loader =
+      opts.loader ??
+      new Tf2GLTFLoader();
+    if (
+      opts.index
+    )
+      this.index =
+        Promise.resolve(
+          opts.index,
+        );
   }
 
-  loadIndex(): Promise<Record<string, ModelIndexEntry> | null> {
-    this.index ??= fetch(this.opts.url('mdl/index.json'))
-      .then((r) => (r.ok ? (r.json() as Promise<Record<string, ModelIndexEntry>>) : null))
-      .catch(() => null);
-    return this.index;
+  loadIndex(): Promise<Record<
+    string,
+    ModelIndexEntry
+  > | null> {
+    this.index ??=
+      fetch(
+        this.opts.url(
+          'mdl/index.json',
+        ),
+      )
+        .then(
+          (
+            r,
+          ) =>
+            r.ok
+              ? (r.json() as Promise<
+                  Record<
+                    string,
+                    ModelIndexEntry
+                  >
+                >)
+              : null,
+        )
+        .catch(
+          () =>
+            null,
+        );
+    return this
+      .index;
   }
 
-  private channelPath(file: string): string {
-    return file.startsWith('mdl/') ? file : `mdl/${file}`;
+  private channelPath(
+    file: string,
+  ): string {
+    return file.startsWith(
+      'mdl/',
+    )
+      ? file
+      : `mdl/${file}`;
   }
 
-  private loadPack(file: string): Promise<GLTF | null> {
-    let p = this.packs.get(file);
-    if (!p) {
-      p = this.loader.loadAsync(this.opts.url(this.channelPath(file))).catch(() => null);
-      this.packs.set(file, p);
+  private loadPack(
+    file: string,
+  ): Promise<GLTF | null> {
+    let p =
+      this.packs.get(
+        file,
+      );
+    if (
+      !p
+    ) {
+      p =
+        this.loader
+          .loadAsync(
+            this.opts.url(
+              this.channelPath(
+                file,
+              ),
+            ),
+          )
+          .catch(
+            () =>
+              null,
+          );
+      this.packs.set(
+        file,
+        p,
+      );
     }
     return p;
   }
 
   /** Starts (or joins) loading a model. Resolves null when it is not in the channel. */
-  asset(mdlPath: string): Promise<ModelAsset | null> {
-    const key = normalizeModelPath(mdlPath);
-    let p = this.assets.get(key);
-    if (!p) {
-      p = (async () => {
-        const index = await this.loadIndex();
-        const entry = index?.[key];
-        if (!entry?.glb) return null;
-        const [gltf, pack] = await Promise.all([
-          this.loader.loadAsync(this.opts.url(this.channelPath(entry.glb))),
-          entry.anims ? this.loadPack(entry.anims) : Promise.resolve(null),
-        ]);
-        const materials = (await gltf.parser.getDependencies('material')) as Material[];
-        return new ModelAsset(key, gltf, materials, pack);
-      })().catch((e: unknown) => {
-        console.warn(`[tf2 models] ${key}:`, e);
-        return null;
-      });
-      void p.then((a) => this.ready.set(key, a));
-      this.assets.set(key, p);
+  asset(
+    mdlPath: string,
+  ): Promise<ModelAsset | null> {
+    const key =
+      normalizeModelPath(
+        mdlPath,
+      );
+    let p =
+      this.assets.get(
+        key,
+      );
+    if (
+      !p
+    ) {
+      p =
+        (async () => {
+          const index =
+            await this.loadIndex();
+          const entry =
+            index?.[
+              key
+            ];
+          if (
+            !entry?.glb
+          )
+            return null;
+          const [
+            gltf,
+            pack,
+          ] =
+            await Promise.all(
+              [
+                this.loader.loadAsync(
+                  this.opts.url(
+                    this.channelPath(
+                      entry.glb,
+                    ),
+                  ),
+                ),
+                entry.anims
+                  ? this.loadPack(
+                      entry.anims,
+                    )
+                  : Promise.resolve(
+                      null,
+                    ),
+              ],
+            );
+          const materials =
+            (await gltf.parser.getDependencies(
+              'material',
+            )) as Material[];
+          return new ModelAsset(
+            key,
+            gltf,
+            materials,
+            pack,
+          );
+        })().catch(
+          (
+            e: unknown,
+          ) => {
+            console.warn(
+              `[tf2 models] ${key}:`,
+              e,
+            );
+            return null;
+          },
+        );
+      void p.then(
+        (
+          a,
+        ) =>
+          this.ready.set(
+            key,
+            a,
+          ),
+      );
+      this.assets.set(
+        key,
+        p,
+      );
     }
     return p;
   }
 
   /** The asset if loaded (null: failed or absent; undefined: not loaded yet — starts loading). */
-  peek(mdlPath: string): ModelAsset | null | undefined {
-    const key = normalizeModelPath(mdlPath);
-    if (this.ready.has(key)) return this.ready.get(key);
-    void this.asset(key);
+  peek(
+    mdlPath: string,
+  ):
+    | ModelAsset
+    | null
+    | undefined {
+    const key =
+      normalizeModelPath(
+        mdlPath,
+      );
+    if (
+      this.ready.has(
+        key,
+      )
+    )
+      return this.ready.get(
+        key,
+      );
+    void this.asset(
+      key,
+    );
     return undefined;
   }
 
   /** ModelProvider (static props). */
-  async load(mdlPath: string): Promise<LoadedModel | null> {
-    const a = await this.asset(mdlPath);
-    return a ? { gltf: a.gltf, materials: a.materials } : null;
+  async load(
+    mdlPath: string,
+  ): Promise<LoadedModel | null> {
+    const a =
+      await this.asset(
+        mdlPath,
+      );
+    return a
+      ? {
+          gltf: a.gltf,
+          materials:
+            a.materials,
+        }
+      : null;
   }
 
   /**
    * ModelProvider: forgets a model. Whoever already holds the asset keeps it; the next `asset()` loads it
    * again. Static props call this on the phone tier once their meshes are built.
    */
-  release(mdlPath: string): void {
-    const key = normalizeModelPath(mdlPath);
-    this.assets.delete(key);
-    this.ready.delete(key);
+  release(
+    mdlPath: string,
+  ): void {
+    const key =
+      normalizeModelPath(
+        mdlPath,
+      );
+    this.assets.delete(
+      key,
+    );
+    this.ready.delete(
+      key,
+    );
   }
 
   /** Resolves when every request so far has settled. */
   async whenIdle(): Promise<void> {
-    let n = -1;
-    while (n !== this.assets.size) {
-      n = this.assets.size;
-      await Promise.all(this.assets.values());
+    let n =
+      -1;
+    while (
+      n !==
+      this
+        .assets
+        .size
+    ) {
+      n =
+        this
+          .assets
+          .size;
+      await Promise.all(
+        this.assets.values(),
+      );
     }
   }
 }
 
-export const normalizeModelPath = (p: string): string =>
-  p.toLowerCase().replace(/\\/g, '/').replace(/^\/+/, '');
+export const normalizeModelPath =
+  (
+    p: string,
+  ): string =>
+    p
+      .toLowerCase()
+      .replace(
+        /\\/g,
+        '/',
+      )
+      .replace(
+        /^\/+/,
+        '',
+      );

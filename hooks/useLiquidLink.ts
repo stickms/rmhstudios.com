@@ -12,17 +12,46 @@ import { runLiquidOpen } from '@/lib/view-transition';
  * `name` statically.
  */
 export function useLiquidLink() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
   return function liquidOpen(
     e: MouseEvent<HTMLElement>,
     name: string,
-    to: { to: string; params?: Record<string, unknown>; search?: Record<string, unknown> },
+    to: {
+      to: string;
+      params?: Record<
+        string,
+        unknown
+      >;
+      search?: Record<
+        string,
+        unknown
+      >;
+    },
   ) {
-    if (e.defaultPrevented) return;
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (
+      e.defaultPrevented
+    )
+      return;
+    if (
+      e.button !==
+        0 ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.altKey
+    )
+      return;
     e.preventDefault();
     // navigate's options are a superset of Link's to/params/search; cast through
     // `never` exactly like ViewTransitionLink does to keep the call route-agnostic.
-    runLiquidOpen(e.currentTarget, name, () => navigate(to as never));
+    runLiquidOpen(
+      e.currentTarget,
+      name,
+      () =>
+        navigate(
+          to as never,
+        ),
+    );
   };
 }

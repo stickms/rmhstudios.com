@@ -24,7 +24,10 @@
  */
 
 import { useMemo } from 'react';
-import { hallWireframe, type HallSpec } from '@/lib/datacenter/hall-hull';
+import {
+  hallWireframe,
+  type HallSpec,
+} from '@/lib/datacenter/hall-hull';
 
 interface HallDiagramProps {
   spec: HallSpec;
@@ -34,41 +37,102 @@ interface HallDiagramProps {
 }
 
 /** Ink per tier: [stroke width, opacity at the near limb]. */
-const TIERS: Record<string, [number, number]> = {
-  major: [3.4, 1],
-  bay: [2, 0.72],
-  run: [1.6, 0.44],
-};
+const TIERS: Record<
+  string,
+  [
+    number,
+    number,
+  ]
+> =
+  {
+    major:
+      [
+        3.4,
+        1,
+      ],
+    bay: [
+      2,
+      0.72,
+    ],
+    run: [
+      1.6,
+      0.44,
+    ],
+  };
 
-export function HallDiagram({ spec, label, className }: HallDiagramProps) {
-  const wf = useMemo(() => hallWireframe(spec), [spec]);
+export function HallDiagram({
+  spec,
+  label,
+  className,
+}: HallDiagramProps) {
+  const wf =
+    useMemo(
+      () =>
+        hallWireframe(
+          spec,
+        ),
+      [
+        spec,
+      ],
+    );
 
   return (
     <svg
-      viewBox={wf.viewBox}
-      className={className}
+      viewBox={
+        wf.viewBox
+      }
+      className={
+        className
+      }
       role="img"
-      aria-label={label}
+      aria-label={
+        label
+      }
       preserveAspectRatio="xMidYMid meet"
     >
-      {wf.wires.map((w, i) => {
-        const [width, peak] = TIERS[w.kind];
-        return (
-          <polyline
-            key={i}
-            points={w.points}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={width}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            // Depth, not decoration: the far side of the hull is the same ink
-            // at a third of the strength, which is what the glass does at the
-            // limb and the only reason the net reads as a solid.
-            strokeOpacity={(peak * (0.42 + 0.58 * w.depth)).toFixed(3)}
-          />
-        );
-      })}
+      {wf.wires.map(
+        (
+          w,
+          i,
+        ) => {
+          const [
+            width,
+            peak,
+          ] =
+            TIERS[
+              w
+                .kind
+            ];
+          return (
+            <polyline
+              key={
+                i
+              }
+              points={
+                w.points
+              }
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={
+                width
+              }
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              // Depth, not decoration: the far side of the hull is the same ink
+              // at a third of the strength, which is what the glass does at the
+              // limb and the only reason the net reads as a solid.
+              strokeOpacity={(
+                peak *
+                (0.42 +
+                  0.58 *
+                    w.depth)
+              ).toFixed(
+                3,
+              )}
+            />
+          );
+        },
+      )}
     </svg>
   );
 }

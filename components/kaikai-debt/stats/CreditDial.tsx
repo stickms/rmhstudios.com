@@ -31,7 +31,11 @@
  * still saying "Poor".
  */
 
-import { useEffect, useMemo, useRef } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import {
@@ -58,18 +62,56 @@ import { cn } from '@/lib/utils';
  * radius 84 centred on (100, 96) — the centre sits below the box's bottom edge
  * by the stroke's half-width so the arc's ends are not clipped.
  */
-const DIAL = { width: 200, height: 124, cx: 100, cy: 100, radius: 82, thickness: 14 } as const;
+const DIAL =
+  {
+    width: 200,
+    height: 124,
+    cx: 100,
+    cy: 100,
+    radius: 82,
+    thickness: 14,
+  } as const;
 
 /** 180°, opening upward: 300 at due west, 850 at due east. */
 const START_DEG = 180;
 const SWEEP_DEG = 180;
 
-const angleFor = (score: number): number =>
-  START_DEG + ((score - CREDIT_MIN) / (CREDIT_MAX - CREDIT_MIN)) * SWEEP_DEG;
+const angleFor =
+  (
+    score: number,
+  ): number =>
+    START_DEG +
+    ((score -
+      CREDIT_MIN) /
+      (CREDIT_MAX -
+        CREDIT_MIN)) *
+      SWEEP_DEG;
 
-function onDial(angleDeg: number, radius: number): { x: number; y: number } {
-  const a = (angleDeg * Math.PI) / 180;
-  return { x: DIAL.cx + Math.cos(a) * radius, y: DIAL.cy + Math.sin(a) * radius };
+function onDial(
+  angleDeg: number,
+  radius: number,
+): {
+  x: number;
+  y: number;
+} {
+  const a =
+    (angleDeg *
+      Math.PI) /
+    180;
+  return {
+    x:
+      DIAL.cx +
+      Math.cos(
+        a,
+      ) *
+        radius,
+    y:
+      DIAL.cy +
+      Math.sin(
+        a,
+      ) *
+        radius,
+  };
 }
 
 /**
@@ -80,11 +122,31 @@ function onDial(angleDeg: number, radius: number): { x: number; y: number } {
  * the boundaries a viewer is meant to locate ("am I in 'poor' or 'fair'?")
  * disappear.
  */
-function bandArc(fromScore: number, toScore: number, radius: number): string {
-  const a0 = angleFor(fromScore) + 1;
-  const a1 = angleFor(toScore) - 1;
-  const p0 = onDial(a0, radius);
-  const p1 = onDial(a1, radius);
+function bandArc(
+  fromScore: number,
+  toScore: number,
+  radius: number,
+): string {
+  const a0 =
+    angleFor(
+      fromScore,
+    ) +
+    1;
+  const a1 =
+    angleFor(
+      toScore,
+    ) -
+    1;
+  const p0 =
+    onDial(
+      a0,
+      radius,
+    );
+  const p1 =
+    onDial(
+      a1,
+      radius,
+    );
   return `M${p0.x.toFixed(2)} ${p0.y.toFixed(2)}A${radius} ${radius} 0 0 1 ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}`;
 }
 
@@ -92,29 +154,68 @@ function bandArc(fromScore: number, toScore: number, radius: number): string {
 /* Labels                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export function bandLabel(band: CreditBand, t: TFunction): string {
-  switch (band) {
+export function bandLabel(
+  band: CreditBand,
+  t: TFunction,
+): string {
+  switch (
+    band
+  ) {
     case 'exceptional':
-      return t('credit.band.exceptional', { defaultValue: 'Exceptional' });
+      return t(
+        'credit.band.exceptional',
+        {
+          defaultValue:
+            'Exceptional',
+        },
+      );
     case 'good':
-      return t('credit.band.good', { defaultValue: 'Good' });
+      return t(
+        'credit.band.good',
+        {
+          defaultValue:
+            'Good',
+        },
+      );
     case 'fair':
-      return t('credit.band.fair', { defaultValue: 'Fair' });
+      return t(
+        'credit.band.fair',
+        {
+          defaultValue:
+            'Fair',
+        },
+      );
     case 'poor':
-      return t('credit.band.poor', { defaultValue: 'Poor' });
+      return t(
+        'credit.band.poor',
+        {
+          defaultValue:
+            'Poor',
+        },
+      );
     default:
-      return t('credit.band.ruinous', { defaultValue: 'Ruinous' });
+      return t(
+        'credit.band.ruinous',
+        {
+          defaultValue:
+            'Ruinous',
+        },
+      );
   }
 }
 
 /** Which palette slot a band takes. Fixed, so the dial never repaints. */
-export const BAND_SERIES: Record<CreditBand, number> = {
-  ruinous: 7,
-  poor: 0,
-  fair: 4,
-  good: 2,
-  exceptional: 6,
-};
+export const BAND_SERIES: Record<
+  CreditBand,
+  number
+> =
+  {
+    ruinous: 7,
+    poor: 0,
+    fair: 4,
+    good: 2,
+    exceptional: 6,
+  };
 
 /* -------------------------------------------------------------------------- */
 /* The dial                                                                   */
@@ -128,7 +229,9 @@ interface CreditDialProps {
   volatility?: number;
   /** Stop the interval. A frozen dial costs nothing — the timer is torn down. */
   paused?: boolean;
-  size?: 'sm' | 'lg';
+  size?:
+    | 'sm'
+    | 'lg';
   className?: string;
   /**
    * Called at most once a second with the current score, for callers that need
@@ -136,7 +239,9 @@ interface CreditDialProps {
    * writing the fast parts to the DOM is that nothing upstream re-renders at
    * that rate.
    */
-  onSample?: (score: number) => void;
+  onSample?: (
+    score: number,
+  ) => void;
 }
 
 export function CreditDial({
@@ -148,178 +253,442 @@ export function CreditDial({
   className,
   onSample,
 }: CreditDialProps) {
-  const { t } = useTranslation('c-kaikai-debt');
-  const reduced = useReducedMotion();
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-kaikai-debt',
+    );
+  const reduced =
+    useReducedMotion();
 
-  const rootRef = useRef<HTMLDivElement>(null);
-  const dialRef = useRef<SVGGElement>(null);
-  const needleRef = useRef<SVGGElement>(null);
-  const scoreRef = useRef<HTMLSpanElement>(null);
-  const deltaRef = useRef<HTMLSpanElement>(null);
+  const rootRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const dialRef =
+    useRef<SVGGElement>(
+      null,
+    );
+  const needleRef =
+    useRef<SVGGElement>(
+      null,
+    );
+  const scoreRef =
+    useRef<HTMLSpanElement>(
+      null,
+    );
+  const deltaRef =
+    useRef<HTMLSpanElement>(
+      null,
+    );
 
   // Read inside the loop rather than as effect dependencies: a slider drag
   // should not tear down and restart the interval, which drops a frame at
   // exactly the moment the viewer is watching hardest.
-  const optionsRef = useRef({ inputs, volatility });
-  optionsRef.current = { inputs, volatility };
+  const optionsRef =
+    useRef(
+      {
+        inputs,
+        volatility,
+      },
+    );
+  optionsRef.current =
+    {
+      inputs,
+      volatility,
+    };
 
-  const initial = useMemo(
-    () => creditScoreAt(inputs, asOfMs, { volatility }),
-    // `volatility` deliberately absent: the FIRST paint must match the server's,
-    // and the server does not know what the viewer has since dragged the
-    // stress-test slider to. The loop picks the new value up on its next tick.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [inputs, asOfMs],
-  );
+  const initial =
+    useMemo(
+      () =>
+        creditScoreAt(
+          inputs,
+          asOfMs,
+          {
+            volatility,
+          },
+        ),
+      // `volatility` deliberately absent: the FIRST paint must match the server's,
+      // and the server does not know what the viewer has since dragged the
+      // stress-test slider to. The loop picks the new value up on its next tick.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [
+        inputs,
+        asOfMs,
+      ],
+    );
 
-  const sampleRef = useRef(onSample);
-  sampleRef.current = onSample;
+  const sampleRef =
+    useRef(
+      onSample,
+    );
+  sampleRef.current =
+    onSample;
 
   useEffect(() => {
-    if (paused) return;
-    const period = reduced ? CREDIT_REDUCED_TICK_MS : CREDIT_TICK_MS;
-    let interval: ReturnType<typeof setInterval> | null = null;
-    let previous = creditScoreAt(optionsRef.current.inputs, asOfMs);
+    if (
+      paused
+    )
+      return;
+    const period =
+      reduced
+        ? CREDIT_REDUCED_TICK_MS
+        : CREDIT_TICK_MS;
+    let interval: ReturnType<
+      typeof setInterval
+    > | null =
+      null;
+    let previous =
+      creditScoreAt(
+        optionsRef
+          .current
+          .inputs,
+        asOfMs,
+      );
     let lastSampleAt = 0;
     let onScreen = true;
 
-    const paint = () => {
-      const options = optionsRef.current;
-      const now = Date.now();
-      const score = creditScoreAt(options.inputs, now, { volatility: options.volatility });
+    const paint =
+      () => {
+        const options =
+          optionsRef.current;
+        const now =
+          Date.now();
+        const score =
+          creditScoreAt(
+            options.inputs,
+            now,
+            {
+              volatility:
+                options.volatility,
+            },
+          );
 
-      if (scoreRef.current) scoreRef.current.textContent = String(Math.round(score));
-      if (deltaRef.current) {
-        const delta = score - previous;
-        deltaRef.current.textContent = `${delta >= 0 ? '+' : '−'}${Math.abs(delta).toFixed(1)}`;
-      }
-      previous = score;
+        if (
+          scoreRef.current
+        )
+          scoreRef.current.textContent =
+            String(
+              Math.round(
+                score,
+              ),
+            );
+        if (
+          deltaRef.current
+        ) {
+          const delta =
+            score -
+            previous;
+          deltaRef.current.textContent = `${delta >= 0 ? '+' : '−'}${Math.abs(delta).toFixed(1)}`;
+        }
+        previous =
+          score;
 
-      needleRef.current?.setAttribute(
-        'transform',
-        `rotate(${angleFor(score).toFixed(2)} ${DIAL.cx} ${DIAL.cy})`,
-      );
+        needleRef.current?.setAttribute(
+          'transform',
+          `rotate(${angleFor(score).toFixed(2)} ${DIAL.cx} ${DIAL.cy})`,
+        );
 
-      const band = creditBand(score);
-      if (rootRef.current?.dataset.band !== band) {
-        if (rootRef.current) rootRef.current.dataset.band = band;
-        dialRef.current?.setAttribute('data-band', band);
-      }
+        const band =
+          creditBand(
+            score,
+          );
+        if (
+          rootRef
+            .current
+            ?.dataset
+            .band !==
+          band
+        ) {
+          if (
+            rootRef.current
+          )
+            rootRef.current.dataset.band =
+              band;
+          dialRef.current?.setAttribute(
+            'data-band',
+            band,
+          );
+        }
 
-      if (now - lastSampleAt > 1_000) {
-        lastSampleAt = now;
-        sampleRef.current?.(score);
-      }
-    };
+        if (
+          now -
+            lastSampleAt >
+          1_000
+        ) {
+          lastSampleAt =
+            now;
+          sampleRef.current?.(
+            score,
+          );
+        }
+      };
 
-    const stop = () => {
-      if (interval) clearInterval(interval);
-      interval = null;
-    };
-    const start = () => {
-      if (interval) return;
-      paint();
-      interval = setInterval(paint, period);
-    };
+    const stop =
+      () => {
+        if (
+          interval
+        )
+          clearInterval(
+            interval,
+          );
+        interval =
+          null;
+      };
+    const start =
+      () => {
+        if (
+          interval
+        )
+          return;
+        paint();
+        interval =
+          setInterval(
+            paint,
+            period,
+          );
+      };
     /** Live only while on screen and in a foreground tab. */
-    const sync = () => {
-      if (onScreen && document.visibilityState === 'visible') start();
-      else stop();
-    };
+    const sync =
+      () => {
+        if (
+          onScreen &&
+          document.visibilityState ===
+            'visible'
+        )
+          start();
+        else
+          stop();
+      };
 
-    let observer: IntersectionObserver | null = null;
-    const host = rootRef.current;
-    if (host && typeof IntersectionObserver !== 'undefined') {
-      observer = new IntersectionObserver((records) => {
-        onScreen = records.some((record) => record.isIntersecting);
-        sync();
-      });
-      observer.observe(host);
+    let observer: IntersectionObserver | null =
+      null;
+    const host =
+      rootRef.current;
+    if (
+      host &&
+      typeof IntersectionObserver !==
+        'undefined'
+    ) {
+      observer =
+        new IntersectionObserver(
+          (
+            records,
+          ) => {
+            onScreen =
+              records.some(
+                (
+                  record,
+                ) =>
+                  record.isIntersecting,
+              );
+            sync();
+          },
+        );
+      observer.observe(
+        host,
+      );
     }
 
-    document.addEventListener('visibilitychange', sync);
+    document.addEventListener(
+      'visibilitychange',
+      sync,
+    );
     sync();
     return () => {
       stop();
       observer?.disconnect();
-      document.removeEventListener('visibilitychange', sync);
+      document.removeEventListener(
+        'visibilitychange',
+        sync,
+      );
     };
-  }, [reduced, paused, asOfMs]);
+  }, [
+    reduced,
+    paused,
+    asOfMs,
+  ]);
 
-  const track = useMemo(() => bandTrack(), []);
-  const initialBand = creditBand(initial);
-  const large = size === 'lg';
+  const track =
+    useMemo(
+      () =>
+        bandTrack(),
+      [],
+    );
+  const initialBand =
+    creditBand(
+      initial,
+    );
+  const large =
+    size ===
+    'lg';
 
   return (
     <div
-      ref={rootRef}
-      data-band={initialBand}
-      className={cn('kd-band flex flex-col items-center', className)}
+      ref={
+        rootRef
+      }
+      data-band={
+        initialBand
+      }
+      className={cn(
+        'kd-band flex flex-col items-center',
+        className,
+      )}
     >
       <svg
         viewBox={`0 0 ${DIAL.width} ${DIAL.height}`}
-        className={cn('w-full', large ? 'max-w-[16rem]' : 'max-w-[13rem]')}
+        className={cn(
+          'w-full',
+          large
+            ? 'max-w-[16rem]'
+            : 'max-w-[13rem]',
+        )}
         role="img"
       >
-        <title>{t('credit.gaugeTitle', { defaultValue: 'Credit score dial' })}</title>
+        <title>
+          {t(
+            'credit.gaugeTitle',
+            {
+              defaultValue:
+                'Credit score dial',
+            },
+          )}
+        </title>
         <desc>
-          {t('credit.gaugeDesc', {
-            defaultValue:
-              'A dial from 300 to 850 divided into five bands, with a needle at the current score.',
-          })}
+          {t(
+            'credit.gaugeDesc',
+            {
+              defaultValue:
+                'A dial from 300 to 850 divided into five bands, with a needle at the current score.',
+            },
+          )}
         </desc>
 
-        <g ref={dialRef} className="kd-dial" data-band={initialBand}>
-          {track.map((segment) => (
-            <path
-              key={segment.band}
-              className={`kd-dial__arc kd-dial__arc--${segment.band} kd-series-${BAND_SERIES[segment.band]}`}
-              d={bandArc(segment.from, segment.to, DIAL.radius)}
-              stroke="currentColor"
-              strokeWidth={DIAL.thickness}
-              strokeLinecap="butt"
-              fill="none"
-            />
-          ))}
+        <g
+          ref={
+            dialRef
+          }
+          className="kd-dial"
+          data-band={
+            initialBand
+          }
+        >
+          {track.map(
+            (
+              segment,
+            ) => (
+              <path
+                key={
+                  segment.band
+                }
+                className={`kd-dial__arc kd-dial__arc--${segment.band} kd-series-${BAND_SERIES[segment.band]}`}
+                d={bandArc(
+                  segment.from,
+                  segment.to,
+                  DIAL.radius,
+                )}
+                stroke="currentColor"
+                strokeWidth={
+                  DIAL.thickness
+                }
+                strokeLinecap="butt"
+                fill="none"
+              />
+            ),
+          )}
         </g>
 
         {/* One group with one transform, so the ~14Hz update is a single
             compositor-friendly attribute write. */}
         <g
-          ref={needleRef}
+          ref={
+            needleRef
+          }
           transform={`rotate(${angleFor(initial).toFixed(2)} ${DIAL.cx} ${DIAL.cy})`}
         >
           <line
-            x1={DIAL.cx - 6}
-            y1={DIAL.cy}
-            x2={DIAL.cx + DIAL.radius - DIAL.thickness - 2}
-            y2={DIAL.cy}
+            x1={
+              DIAL.cx -
+              6
+            }
+            y1={
+              DIAL.cy
+            }
+            x2={
+              DIAL.cx +
+              DIAL.radius -
+              DIAL.thickness -
+              2
+            }
+            y2={
+              DIAL.cy
+            }
             className="stroke-site-text"
-            strokeWidth={3}
+            strokeWidth={
+              3
+            }
             strokeLinecap="round"
           />
         </g>
-        <circle cx={DIAL.cx} cy={DIAL.cy} r={6} className="fill-site-text" />
+        <circle
+          cx={
+            DIAL.cx
+          }
+          cy={
+            DIAL.cy
+          }
+          r={
+            6
+          }
+          className="fill-site-text"
+        />
 
         {/* The scale's ends, tucked under the arc's own ends and anchored
             outward — on the same baseline as the score they crowded it, and a
             reader parsing "300" twice on one line is a reader who has stopped
             reading the dial. */}
         <text
-          x={onDial(START_DEG, DIAL.radius).x - 2}
-          y={DIAL.cy + 18}
+          x={
+            onDial(
+              START_DEG,
+              DIAL.radius,
+            )
+              .x -
+            2
+          }
+          y={
+            DIAL.cy +
+            18
+          }
           className="kd-chart__label"
           textAnchor="start"
         >
-          {CREDIT_MIN}
+          {
+            CREDIT_MIN
+          }
         </text>
         <text
-          x={onDial(START_DEG + SWEEP_DEG, DIAL.radius).x + 2}
-          y={DIAL.cy + 18}
+          x={
+            onDial(
+              START_DEG +
+                SWEEP_DEG,
+              DIAL.radius,
+            )
+              .x +
+            2
+          }
+          y={
+            DIAL.cy +
+            18
+          }
           className="kd-chart__label"
           textAnchor="end"
         >
-          {CREDIT_MAX}
+          {
+            CREDIT_MAX
+          }
         </text>
       </svg>
 
@@ -327,28 +696,54 @@ export function CreditDial({
           flood a screen reader with an unusable stream of numbers. Every caller
           pairs this with a summary sentence at a readable cadence — the same
           choice the odometer makes. */}
-      <p className="flex items-baseline gap-2" aria-live="off">
+      <p
+        className="flex items-baseline gap-2"
+        aria-live="off"
+      >
         <span
-          ref={scoreRef}
+          ref={
+            scoreRef
+          }
           className={cn(
             'kd-odometer font-display leading-none font-bold text-site-text tabular-nums',
-            large ? 'text-[clamp(2.2rem,9vw,3rem)]' : 'text-3xl',
+            large
+              ? 'text-[clamp(2.2rem,9vw,3rem)]'
+              : 'text-3xl',
           )}
         >
-          {Math.round(initial)}
+          {Math.round(
+            initial,
+          )}
         </span>
-        <span ref={deltaRef} className="text-xs text-site-text-muted tabular-nums">
+        <span
+          ref={
+            deltaRef
+          }
+          className="text-xs text-site-text-muted tabular-nums"
+        >
           +0.0
         </span>
       </p>
 
       <p className="mt-1 flex items-center gap-1.5 rounded-full bg-current/12 px-2.5 py-1 text-xs font-medium">
         <span className="text-site-text">
-          {CREDIT_BANDS.map((name) => (
-            <span key={name} className={`kd-band__label kd-band__label--${name}`}>
-              {bandLabel(name, t)}
-            </span>
-          ))}
+          {CREDIT_BANDS.map(
+            (
+              name,
+            ) => (
+              <span
+                key={
+                  name
+                }
+                className={`kd-band__label kd-band__label--${name}`}
+              >
+                {bandLabel(
+                  name,
+                  t,
+                )}
+              </span>
+            ),
+          )}
         </span>
       </p>
     </div>

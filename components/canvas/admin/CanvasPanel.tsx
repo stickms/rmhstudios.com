@@ -9,152 +9,460 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Tabs } from '@/components/ui/tabs';
 import { fetchJson } from '@/lib/http';
-import { CANVAS_SIZES, type CanvasEventView } from '@/lib/canvas/shared';
-import { useArrival, useSuspenseArrival } from '@/components/ui/arrive';
+import {
+  CANVAS_SIZES,
+  type CanvasEventView,
+} from '@/lib/canvas/shared';
+import {
+  useArrival,
+  useSuspenseArrival,
+} from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
-type Row = CanvasEventView & { placements: number };
-
-export default function CanvasPanel() {
-  const { t } = useTranslation('f-canvas');
-  const confirm = useConfirm();
-  const q = useQuery({
-    queryKey: ['canvas', 'admin'],
-    queryFn: () => fetchJson<{ events: Row[] }>('/api/admin/canvas'),
-  });
-  const [title, setTitle] = useState('');
-  const [size, setSize] = useState<string>('128');
-  const [minutes, setMinutes] = useState('5');
-  const [startsAt, setStartsAt] = useState('');
-  const [endsAt, setEndsAt] = useState('');
-  const [busy, setBusy] = useState(false);
-  const shown = useSuspenseArrival();
-  const arrival = useArrival(!q.isPending);
-
-  const run = async (fn: () => Promise<unknown>) => {
-    setBusy(true);
-    try {
-      await fn();
-      await q.refetch();
-    } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : t('admin-error', { defaultValue: 'Something went wrong' }),
-      );
-    } finally {
-      setBusy(false);
-    }
+type Row =
+  CanvasEventView & {
+    placements: number;
   };
 
-  const create = () =>
-    run(async () => {
-      await fetchJson('/api/admin/canvas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          size: Number(size),
-          cooldownMinutes: Number(minutes),
-          startsAt: new Date(startsAt).toISOString(),
-          endsAt: new Date(endsAt).toISOString(),
-        }),
-      });
-      setTitle('');
-      toast.success(t('admin-created', { defaultValue: 'Canvas event scheduled' }));
-    });
+export default function CanvasPanel() {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-canvas',
+    );
+  const confirm =
+    useConfirm();
+  const q =
+    useQuery(
+      {
+        queryKey:
+          [
+            'canvas',
+            'admin',
+          ],
+        queryFn:
+          () =>
+            fetchJson<{
+              events: Row[];
+            }>(
+              '/api/admin/canvas',
+            ),
+      },
+    );
+  const [
+    title,
+    setTitle,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    size,
+    setSize,
+  ] =
+    useState<string>(
+      '128',
+    );
+  const [
+    minutes,
+    setMinutes,
+  ] =
+    useState(
+      '5',
+    );
+  const [
+    startsAt,
+    setStartsAt,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    endsAt,
+    setEndsAt,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
+  const shown =
+    useSuspenseArrival();
+  const arrival =
+    useArrival(
+      !q.isPending,
+    );
 
-  const ready = title.trim() && startsAt && endsAt && Number(minutes) >= 1;
+  const run =
+    async (
+      fn: () => Promise<unknown>,
+    ) => {
+      setBusy(
+        true,
+      );
+      try {
+        await fn();
+        await q.refetch();
+      } catch (e) {
+        toast.error(
+          e instanceof
+            Error
+            ? e.message
+            : t(
+                'admin-error',
+                {
+                  defaultValue:
+                    'Something went wrong',
+                },
+              ),
+        );
+      } finally {
+        setBusy(
+          false,
+        );
+      }
+    };
+
+  const create =
+    () =>
+      run(
+        async () => {
+          await fetchJson(
+            '/api/admin/canvas',
+            {
+              method:
+                'POST',
+              headers:
+                {
+                  'Content-Type':
+                    'application/json',
+                },
+              body: JSON.stringify(
+                {
+                  title,
+                  size: Number(
+                    size,
+                  ),
+                  cooldownMinutes:
+                    Number(
+                      minutes,
+                    ),
+                  startsAt:
+                    new Date(
+                      startsAt,
+                    ).toISOString(),
+                  endsAt:
+                    new Date(
+                      endsAt,
+                    ).toISOString(),
+                },
+              ),
+            },
+          );
+          setTitle(
+            '',
+          );
+          toast.success(
+            t(
+              'admin-created',
+              {
+                defaultValue:
+                  'Canvas event scheduled',
+              },
+            ),
+          );
+        },
+      );
+
+  const ready =
+    title.trim() &&
+    startsAt &&
+    endsAt &&
+    Number(
+      minutes,
+    ) >=
+      1;
   return (
-    <div className={cn('space-y-[var(--site-section-gap)]', shown)} suppressHydrationWarning>
+    <div
+      className={cn(
+        'space-y-[var(--site-section-gap)]',
+        shown,
+      )}
+      suppressHydrationWarning
+    >
       <form
         className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
-        onSubmit={(e) => {
+        onSubmit={(
+          e,
+        ) => {
           e.preventDefault();
           void create();
         }}
       >
         <h2 className="font-semibold text-site-text">
-          {t('admin-new', { defaultValue: 'Start a canvas event' })}
+          {t(
+            'admin-new',
+            {
+              defaultValue:
+                'Start a canvas event',
+            },
+          )}
         </h2>
         <Input
-          value={title}
-          maxLength={80}
-          onChange={(e) => setTitle(e.target.value)}
-          aria-label={t('admin-title-label', { defaultValue: 'Event title' })}
-          placeholder={t('admin-title-label', { defaultValue: 'Event title' })}
+          value={
+            title
+          }
+          maxLength={
+            80
+          }
+          onChange={(
+            e,
+          ) =>
+            setTitle(
+              e
+                .target
+                .value,
+            )
+          }
+          aria-label={t(
+            'admin-title-label',
+            {
+              defaultValue:
+                'Event title',
+            },
+          )}
+          placeholder={t(
+            'admin-title-label',
+            {
+              defaultValue:
+                'Event title',
+            },
+          )}
         />
         <Tabs
-          aria-label={t('admin-size', { defaultValue: 'Canvas size' })}
-          value={size}
-          onChange={setSize}
-          tabs={CANVAS_SIZES.map((s) => ({ id: String(s), label: `${s} × ${s}` }))}
+          aria-label={t(
+            'admin-size',
+            {
+              defaultValue:
+                'Canvas size',
+            },
+          )}
+          value={
+            size
+          }
+          onChange={
+            setSize
+          }
+          tabs={CANVAS_SIZES.map(
+            (
+              s,
+            ) => ({
+              id: String(
+                s,
+              ),
+              label: `${s} × ${s}`,
+            }),
+          )}
         />
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="space-y-1 t-body text-site-text-muted">
-            {t('admin-cooldown', { defaultValue: 'Minutes between pixels' })}
+            {t(
+              'admin-cooldown',
+              {
+                defaultValue:
+                  'Minutes between pixels',
+              },
+            )}
             <Input
               type="number"
-              min={1}
-              max={120}
-              value={minutes}
-              onChange={(e) => setMinutes(e.target.value)}
+              min={
+                1
+              }
+              max={
+                120
+              }
+              value={
+                minutes
+              }
+              onChange={(
+                e,
+              ) =>
+                setMinutes(
+                  e
+                    .target
+                    .value,
+                )
+              }
             />
           </label>
           <label className="space-y-1 t-body text-site-text-muted">
-            {t('admin-start', { defaultValue: 'Starts' })}
+            {t(
+              'admin-start',
+              {
+                defaultValue:
+                  'Starts',
+              },
+            )}
             <Input
               type="datetime-local"
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
+              value={
+                startsAt
+              }
+              onChange={(
+                e,
+              ) =>
+                setStartsAt(
+                  e
+                    .target
+                    .value,
+                )
+              }
             />
           </label>
           <label className="space-y-1 t-body text-site-text-muted">
-            {t('admin-end', { defaultValue: 'Ends' })}
+            {t(
+              'admin-end',
+              {
+                defaultValue:
+                  'Ends',
+              },
+            )}
             <Input
               type="datetime-local"
-              value={endsAt}
-              onChange={(e) => setEndsAt(e.target.value)}
+              value={
+                endsAt
+              }
+              onChange={(
+                e,
+              ) =>
+                setEndsAt(
+                  e
+                    .target
+                    .value,
+                )
+              }
             />
           </label>
         </div>
-        <Button type="submit" variant="default" loading={busy} disabled={!ready}>
-          {t('admin-create', { defaultValue: 'Schedule event' })}
+        <Button
+          type="submit"
+          variant="default"
+          loading={
+            busy
+          }
+          disabled={
+            !ready
+          }
+        >
+          {t(
+            'admin-create',
+            {
+              defaultValue:
+                'Schedule event',
+            },
+          )}
         </Button>
       </form>
-      <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
-        {q.data?.events.map((e) => (
-          <li
-            key={e.id}
-            className="flex items-center justify-between gap-3 py-3"
-          >
-            <div className="min-w-0">
-              <p className="truncate font-medium text-site-text">{e.title}</p>
-              <p className="t-body text-site-text-muted">
-                {t('admin-row', {
-                  defaultValue: '{{size}}px, {{phase}}, {{count}} pixels placed',
-                  size: e.width,
-                  phase: e.phase,
-                  count: e.placements,
-                })}
-              </p>
-            </div>
-            <IconButton
-              icon={Trash2}
-              variant="ghost"
-              size="icon-sm"
-              label={t('admin-delete', { defaultValue: 'Delete event' })}
-              disabled={busy}
-              onClick={async () => {
-                const ok = await confirm({
-                  title: t('admin-confirm', { defaultValue: 'Delete this event and its history?' }),
-                  confirmLabel: t('admin-delete', { defaultValue: 'Delete event' }),
-                  danger: true,
-                });
-                if (ok)
-                  void run(() => fetchJson(`/api/admin/canvas/${e.id}`, { method: 'DELETE' }));
-              }}
-            />
-          </li>
-        ))}
+      <ul
+        className={cn(
+          'divide-y divide-site-border border-t border-site-border',
+          arrival,
+        )}
+      >
+        {q.data?.events.map(
+          (
+            e,
+          ) => (
+            <li
+              key={
+                e.id
+              }
+              className="flex items-center justify-between gap-3 py-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate font-medium text-site-text">
+                  {
+                    e.title
+                  }
+                </p>
+                <p className="t-body text-site-text-muted">
+                  {t(
+                    'admin-row',
+                    {
+                      defaultValue:
+                        '{{size}}px, {{phase}}, {{count}} pixels placed',
+                      size: e.width,
+                      phase:
+                        e.phase,
+                      count:
+                        e.placements,
+                    },
+                  )}
+                </p>
+              </div>
+              <IconButton
+                icon={
+                  Trash2
+                }
+                variant="ghost"
+                size="icon-sm"
+                label={t(
+                  'admin-delete',
+                  {
+                    defaultValue:
+                      'Delete event',
+                  },
+                )}
+                disabled={
+                  busy
+                }
+                onClick={async () => {
+                  const ok =
+                    await confirm(
+                      {
+                        title:
+                          t(
+                            'admin-confirm',
+                            {
+                              defaultValue:
+                                'Delete this event and its history?',
+                            },
+                          ),
+                        confirmLabel:
+                          t(
+                            'admin-delete',
+                            {
+                              defaultValue:
+                                'Delete event',
+                            },
+                          ),
+                        danger: true,
+                      },
+                    );
+                  if (
+                    ok
+                  )
+                    void run(
+                      () =>
+                        fetchJson(
+                          `/api/admin/canvas/${e.id}`,
+                          {
+                            method:
+                              'DELETE',
+                          },
+                        ),
+                    );
+                }}
+              />
+            </li>
+          ),
+        )}
       </ul>
     </div>
   );

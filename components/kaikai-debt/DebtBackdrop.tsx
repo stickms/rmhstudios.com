@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { isLowEndCapability } from '@/lib/low-end';
 
 /**
@@ -48,17 +51,51 @@ import { isLowEndCapability } from '@/lib/low-end';
 export const VEIL_OPACITY = 0.72;
 
 /** Meridian tilts, in degrees — the wireframe's longitude lines, as ellipses. */
-const MERIDIANS = [0, 30, 60, 90, 120, 150];
+const MERIDIANS =
+  [
+    0,
+    30,
+    60,
+    90,
+    120,
+    150,
+  ];
 /** Parallels as a fraction of the sphere's radius (their projected semi-minor axis). */
-const PARALLELS = [0.34, 0.64, 0.87, 1];
+const PARALLELS =
+  [
+    0.34,
+    0.64,
+    0.87,
+    1,
+  ];
 
 export function DebtBackdrop() {
   // A low-end device (`lib/low-end.ts`) gets one static wash and nothing that moves (kaikai-debt.css). Read after mount so
   // the server and the first client render agree; the attribute is on this element, never on <html>.
-  const [lowEnd, setLowEnd] = useState(false);
-  useEffect(() => setLowEnd(isLowEndCapability()), []);
+  const [
+    lowEnd,
+    setLowEnd,
+  ] =
+    useState(
+      false,
+    );
+  useEffect(
+    () =>
+      setLowEnd(
+        isLowEndCapability(),
+      ),
+    [],
+  );
   return (
-    <div className="kd-atmos" data-low-end={lowEnd ? '' : undefined} aria-hidden>
+    <div
+      className="kd-atmos"
+      data-low-end={
+        lowEnd
+          ? ''
+          : undefined
+      }
+      aria-hidden
+    >
       <div className="kd-atmos__aura" />
       <div className="kd-atmos__aura kd-atmos__aura--reverse" />
 
@@ -67,39 +104,95 @@ export function DebtBackdrop() {
           rotation, and animating THAT means re-rasterising every frame. Turning
           the finished drawing reads as a sphere spinning on a tilted axis and
           costs one composited transform. */}
-      <svg className="kd-atmos__globe" viewBox="-110 -110 220 220" focusable="false">
-        <circle className="kd-atmos__ring kd-atmos__ring--limb" cx="0" cy="0" r="100" />
-        {MERIDIANS.map((angle) => (
-          <ellipse
-            key={`m${angle}`}
-            className="kd-atmos__ring"
-            cx="0"
-            cy="0"
-            rx="100"
-            ry="100"
-            transform={`rotate(${angle}) scale(${Math.abs(Math.cos((angle * Math.PI) / 180)) * 0.72 + 0.06} 1)`}
-          />
-        ))}
-        {PARALLELS.map((ratio) => (
-          <ellipse
-            key={`p${ratio}`}
-            className="kd-atmos__ring"
-            cx="0"
-            cy={ratio === 1 ? 0 : Math.sqrt(1 - ratio * ratio) * 100}
-            rx={ratio * 100}
-            ry={ratio * 22}
-          />
-        ))}
-        {PARALLELS.filter((r) => r !== 1).map((ratio) => (
-          <ellipse
-            key={`p-${ratio}`}
-            className="kd-atmos__ring"
-            cx="0"
-            cy={-Math.sqrt(1 - ratio * ratio) * 100}
-            rx={ratio * 100}
-            ry={ratio * 22}
-          />
-        ))}
+      <svg
+        className="kd-atmos__globe"
+        viewBox="-110 -110 220 220"
+        focusable="false"
+      >
+        <circle
+          className="kd-atmos__ring kd-atmos__ring--limb"
+          cx="0"
+          cy="0"
+          r="100"
+        />
+        {MERIDIANS.map(
+          (
+            angle,
+          ) => (
+            <ellipse
+              key={`m${angle}`}
+              className="kd-atmos__ring"
+              cx="0"
+              cy="0"
+              rx="100"
+              ry="100"
+              transform={`rotate(${angle}) scale(${Math.abs(Math.cos((angle * Math.PI) / 180)) * 0.72 + 0.06} 1)`}
+            />
+          ),
+        )}
+        {PARALLELS.map(
+          (
+            ratio,
+          ) => (
+            <ellipse
+              key={`p${ratio}`}
+              className="kd-atmos__ring"
+              cx="0"
+              cy={
+                ratio ===
+                1
+                  ? 0
+                  : Math.sqrt(
+                      1 -
+                        ratio *
+                          ratio,
+                    ) *
+                    100
+              }
+              rx={
+                ratio *
+                100
+              }
+              ry={
+                ratio *
+                22
+              }
+            />
+          ),
+        )}
+        {PARALLELS.filter(
+          (
+            r,
+          ) =>
+            r !==
+            1,
+        ).map(
+          (
+            ratio,
+          ) => (
+            <ellipse
+              key={`p-${ratio}`}
+              className="kd-atmos__ring"
+              cx="0"
+              cy={
+                -Math.sqrt(
+                  1 -
+                    ratio *
+                      ratio,
+                ) *
+                100
+              }
+              rx={
+                ratio *
+                100
+              }
+              ry={
+                ratio *
+                22
+              }
+            />
+          ),
+        )}
       </svg>
 
       {/* Two sweeps, not three, at a third of the old opacity and twice the

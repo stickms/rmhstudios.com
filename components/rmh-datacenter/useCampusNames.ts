@@ -10,14 +10,64 @@
 
 import { useTranslation } from 'react-i18next';
 
-export function useCampusNames(): Record<string, string> {
-  const { t } = useTranslation('c-rmh-datacenter');
+export function useCampusNames(): Record<
+  string,
+  string
+> {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmh-datacenter',
+    );
   return {
-    'ash-01': t('fac-ash-name', { defaultValue: 'Ashburn, Virginia' }),
-    'dub-02': t('fac-dub-name', { defaultValue: 'Dublin, Ireland' }),
-    'sin-01': t('fac-sin-name', { defaultValue: 'Singapore' }),
-    'fra-03': t('fac-fra-name', { defaultValue: 'Frankfurt, Germany' }),
-    'pdx-01': t('fac-pdx-name', { defaultValue: 'Hillsboro, Oregon' }),
-    'gru-01': t('fac-gru-name', { defaultValue: 'São Paulo, Brazil' }),
+    'ash-01':
+      t(
+        'fac-ash-name',
+        {
+          defaultValue:
+            'Ashburn, Virginia',
+        },
+      ),
+    'dub-02':
+      t(
+        'fac-dub-name',
+        {
+          defaultValue:
+            'Dublin, Ireland',
+        },
+      ),
+    'sin-01':
+      t(
+        'fac-sin-name',
+        {
+          defaultValue:
+            'Singapore',
+        },
+      ),
+    'fra-03':
+      t(
+        'fac-fra-name',
+        {
+          defaultValue:
+            'Frankfurt, Germany',
+        },
+      ),
+    'pdx-01':
+      t(
+        'fac-pdx-name',
+        {
+          defaultValue:
+            'Hillsboro, Oregon',
+        },
+      ),
+    'gru-01':
+      t(
+        'fac-gru-name',
+        {
+          defaultValue:
+            'São Paulo, Brazil',
+        },
+      ),
   };
 }

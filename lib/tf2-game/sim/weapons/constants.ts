@@ -24,76 +24,163 @@ import {
  * through the item's `vmActivities` (data/weapons.ts STOCK_WEAPONS) to the
  * activity the arms model actually plays.
  */
-export const VM_ACTIVITY_NAMES = [
-  'ACT_VM_IDLE',
-  'ACT_VM_DRAW',
-  'ACT_VM_HOLSTER',
-  'ACT_VM_PRIMARYATTACK',
-  'ACT_VM_SECONDARYATTACK',
-  'ACT_VM_RELOAD',
-  'ACT_RELOAD_START',
-  'ACT_RELOAD_FINISH',
-  'ACT_VM_DRYFIRE',
-  'ACT_VM_PULLBACK',
-  'ACT_VM_HITCENTER',
-  'ACT_VM_SWINGHARD',
-  'ACT_BACKSTAB_VM_UP',
-  'ACT_BACKSTAB_VM_DOWN',
-  'ACT_BACKSTAB_VM_IDLE',
-  'ACT_MP_ATTACK_STAND_PREFIRE',
-  'ACT_MP_ATTACK_STAND_POSTFIRE',
-  'ACT_VM_IDLE_LOWERED',
-  'ACT_VM_HITLEFT',
-  'ACT_VM_HITRIGHT',
-  'ACT_VM_SWINGHARD_BROKEN',
-  // Unlock item roles' own activities (sent by name: the Huntsman's draw, banners' horn …).
-  'ACT_ITEM2_VM_CHARGE',
-  'ACT_ITEM2_VM_IDLE_2',
-  'ACT_ITEM2_VM_CHARGE_IDLE_3',
-  'ACT_ITEM2_VM_DRYFIRE',
-  'ACT_ITEM1_VM_PRIMARYATTACK',
-  'ACT_ITEM1_VM_SECONDARYATTACK',
-  'ACT_ITEM1_VM_IDLE',
-  'ACT_VM_PRIMARYATTACK_3',
-  'ACT_VM_RELOAD_2',
-  'ACT_VM_SWINGHARD_2',
-  'ACT_ITEM3_VM_PRIMARYATTACK',
-  'ACT_VM_IDLE_2',
-] as const;
-export type VmActivityName = (typeof VM_ACTIVITY_NAMES)[number];
+export const VM_ACTIVITY_NAMES =
+  [
+    'ACT_VM_IDLE',
+    'ACT_VM_DRAW',
+    'ACT_VM_HOLSTER',
+    'ACT_VM_PRIMARYATTACK',
+    'ACT_VM_SECONDARYATTACK',
+    'ACT_VM_RELOAD',
+    'ACT_RELOAD_START',
+    'ACT_RELOAD_FINISH',
+    'ACT_VM_DRYFIRE',
+    'ACT_VM_PULLBACK',
+    'ACT_VM_HITCENTER',
+    'ACT_VM_SWINGHARD',
+    'ACT_BACKSTAB_VM_UP',
+    'ACT_BACKSTAB_VM_DOWN',
+    'ACT_BACKSTAB_VM_IDLE',
+    'ACT_MP_ATTACK_STAND_PREFIRE',
+    'ACT_MP_ATTACK_STAND_POSTFIRE',
+    'ACT_VM_IDLE_LOWERED',
+    'ACT_VM_HITLEFT',
+    'ACT_VM_HITRIGHT',
+    'ACT_VM_SWINGHARD_BROKEN',
+    // Unlock item roles' own activities (sent by name: the Huntsman's draw, banners' horn …).
+    'ACT_ITEM2_VM_CHARGE',
+    'ACT_ITEM2_VM_IDLE_2',
+    'ACT_ITEM2_VM_CHARGE_IDLE_3',
+    'ACT_ITEM2_VM_DRYFIRE',
+    'ACT_ITEM1_VM_PRIMARYATTACK',
+    'ACT_ITEM1_VM_SECONDARYATTACK',
+    'ACT_ITEM1_VM_IDLE',
+    'ACT_VM_PRIMARYATTACK_3',
+    'ACT_VM_RELOAD_2',
+    'ACT_VM_SWINGHARD_2',
+    'ACT_ITEM3_VM_PRIMARYATTACK',
+    'ACT_VM_IDLE_2',
+  ] as const;
+export type VmActivityName =
+  (typeof VM_ACTIVITY_NAMES)[number];
 
-const actId = (name: VmActivityName): number => VM_ACTIVITY_NAMES.indexOf(name);
-export const ACT = {
-  VM_IDLE: actId('ACT_VM_IDLE'),
-  VM_DRAW: actId('ACT_VM_DRAW'),
-  VM_HOLSTER: actId('ACT_VM_HOLSTER'),
-  VM_PRIMARYATTACK: actId('ACT_VM_PRIMARYATTACK'),
-  VM_SECONDARYATTACK: actId('ACT_VM_SECONDARYATTACK'),
-  VM_RELOAD: actId('ACT_VM_RELOAD'),
-  RELOAD_START: actId('ACT_RELOAD_START'),
-  RELOAD_FINISH: actId('ACT_RELOAD_FINISH'),
-  VM_DRYFIRE: actId('ACT_VM_DRYFIRE'),
-  VM_PULLBACK: actId('ACT_VM_PULLBACK'),
-  VM_HITCENTER: actId('ACT_VM_HITCENTER'),
-  VM_SWINGHARD: actId('ACT_VM_SWINGHARD'),
-  BACKSTAB_VM_UP: actId('ACT_BACKSTAB_VM_UP'),
-  BACKSTAB_VM_DOWN: actId('ACT_BACKSTAB_VM_DOWN'),
-  BACKSTAB_VM_IDLE: actId('ACT_BACKSTAB_VM_IDLE'),
-  MP_ATTACK_STAND_PREFIRE: actId('ACT_MP_ATTACK_STAND_PREFIRE'),
-  MP_ATTACK_STAND_POSTFIRE: actId('ACT_MP_ATTACK_STAND_POSTFIRE'),
-  VM_IDLE_LOWERED: actId('ACT_VM_IDLE_LOWERED'),
-  VM_HITLEFT: actId('ACT_VM_HITLEFT'),
-  VM_HITRIGHT: actId('ACT_VM_HITRIGHT'),
-} as const;
+const actId =
+  (
+    name: VmActivityName,
+  ): number =>
+    VM_ACTIVITY_NAMES.indexOf(
+      name,
+    );
+export const ACT =
+  {
+    VM_IDLE:
+      actId(
+        'ACT_VM_IDLE',
+      ),
+    VM_DRAW:
+      actId(
+        'ACT_VM_DRAW',
+      ),
+    VM_HOLSTER:
+      actId(
+        'ACT_VM_HOLSTER',
+      ),
+    VM_PRIMARYATTACK:
+      actId(
+        'ACT_VM_PRIMARYATTACK',
+      ),
+    VM_SECONDARYATTACK:
+      actId(
+        'ACT_VM_SECONDARYATTACK',
+      ),
+    VM_RELOAD:
+      actId(
+        'ACT_VM_RELOAD',
+      ),
+    RELOAD_START:
+      actId(
+        'ACT_RELOAD_START',
+      ),
+    RELOAD_FINISH:
+      actId(
+        'ACT_RELOAD_FINISH',
+      ),
+    VM_DRYFIRE:
+      actId(
+        'ACT_VM_DRYFIRE',
+      ),
+    VM_PULLBACK:
+      actId(
+        'ACT_VM_PULLBACK',
+      ),
+    VM_HITCENTER:
+      actId(
+        'ACT_VM_HITCENTER',
+      ),
+    VM_SWINGHARD:
+      actId(
+        'ACT_VM_SWINGHARD',
+      ),
+    BACKSTAB_VM_UP:
+      actId(
+        'ACT_BACKSTAB_VM_UP',
+      ),
+    BACKSTAB_VM_DOWN:
+      actId(
+        'ACT_BACKSTAB_VM_DOWN',
+      ),
+    BACKSTAB_VM_IDLE:
+      actId(
+        'ACT_BACKSTAB_VM_IDLE',
+      ),
+    MP_ATTACK_STAND_PREFIRE:
+      actId(
+        'ACT_MP_ATTACK_STAND_PREFIRE',
+      ),
+    MP_ATTACK_STAND_POSTFIRE:
+      actId(
+        'ACT_MP_ATTACK_STAND_POSTFIRE',
+      ),
+    VM_IDLE_LOWERED:
+      actId(
+        'ACT_VM_IDLE_LOWERED',
+      ),
+    VM_HITLEFT:
+      actId(
+        'ACT_VM_HITLEFT',
+      ),
+    VM_HITRIGHT:
+      actId(
+        'ACT_VM_HITRIGHT',
+      ),
+  } as const;
 
 /** The networked id of an activity name (ACT_VM_IDLE when unknown). */
-export const vmActivityByName = (name: string): number => {
-  const i = (VM_ACTIVITY_NAMES as readonly string[]).indexOf(name);
-  return i >= 0 ? i : 0;
-};
+export const vmActivityByName =
+  (
+    name: string,
+  ): number => {
+    const i =
+      (
+        VM_ACTIVITY_NAMES as readonly string[]
+      ).indexOf(
+        name,
+      );
+    return i >=
+      0
+      ? i
+      : 0;
+  };
 
 /** The activity name for a networked id ('' when out of range). */
-export const vmActivityName = (id: number): string => VM_ACTIVITY_NAMES[id] ?? '';
+export const vmActivityName =
+  (
+    id: number,
+  ): string =>
+    VM_ACTIVITY_NAMES[
+      id
+    ] ??
+    '';
 
 // ─── Player animation events missing from the core's subset ───────────────
 /** PlayerAnimEvent_t (multiplayer_animstate.h) — ATTACK_PRE / ATTACK_POST. */
@@ -115,13 +202,22 @@ export const RELOAD_SEQUENCE_EARLY_FINISH = 0.2;
 
 // ─── Projectiles' own damage types (g_aWeaponDamageTypes by projectile id) ─
 /** TF_WEAPON_GRENADE_DEMOMAN (a Grenade Launcher pipe): no distance modifier at all. */
-export const DMG_TYPE_PIPE = DMG_BLAST | DMG_HALF_FALLOFF;
+export const DMG_TYPE_PIPE =
+  DMG_BLAST |
+  DMG_HALF_FALLOFF;
 /** TF_WEAPON_GRENADE_PIPEBOMB (a stickybomb). */
-export const DMG_TYPE_STICKY = DMG_BLAST | DMG_HALF_FALLOFF | DMG_NOCLOSEDISTANCEMOD;
+export const DMG_TYPE_STICKY =
+  DMG_BLAST |
+  DMG_HALF_FALLOFF |
+  DMG_NOCLOSEDISTANCEMOD;
 /** CTFGrenadePipebombProjectile::GetDamageType: stickies use the distance modifier for their first 5 s. */
 export const STICKY_DISTANCE_MOD_TIME = 5.0;
 /** TF_WEAPON_SYRINGEGUN_MEDIC (the syringe projectile's own type). */
-export const DMG_TYPE_SYRINGE = DMG_BULLET | DMG_USEDISTANCEMOD | DMG_NOCLOSEDISTANCEMOD | DMG_PREVENT_PHYSICS_FORCE;
+export const DMG_TYPE_SYRINGE =
+  DMG_BULLET |
+  DMG_USEDISTANCEMOD |
+  DMG_NOCLOSEDISTANCEMOD |
+  DMG_PREVENT_PHYSICS_FORCE;
 
 /** CTFWeaponBaseGrenadeProj::Spawn: first DetonateThink 0.2 s after spawn, then every 0.2 s. */
 export const GRENADE_THINK_INTERVAL = 0.2;

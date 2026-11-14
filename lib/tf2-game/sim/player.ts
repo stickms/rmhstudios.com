@@ -50,7 +50,12 @@ import {
   CONTENTS_REDTEAM,
   CONTENTS_SOLID,
 } from '../core/constants';
-import { emptyUserCmd, NO_ENTITY, WORLD_ENTITY, type UserCmd } from '../core/types';
+import {
+  emptyUserCmd,
+  NO_ENTITY,
+  WORLD_ENTITY,
+  type UserCmd,
+} from '../core/types';
 import {
   createMoveState,
   MOVE_COND_BLAST_JUMPING,
@@ -64,7 +69,13 @@ import {
   type MoveState,
 } from './movement-types';
 import { playerMove } from './movement';
-import { calculateMaxSpeed, classEyeHeight, tfFallDamage, VEC_DEAD_VIEW_Z, type MaxSpeedInput } from './class-speeds';
+import {
+  calculateMaxSpeed,
+  classEyeHeight,
+  tfFallDamage,
+  VEC_DEAD_VIEW_Z,
+  type MaxSpeedInput,
+} from './class-speeds';
 import {
   COLLISION_GROUP_PLAYER,
   COLLISION_GROUP_PLAYER_MOVEMENT,
@@ -83,7 +94,12 @@ import {
   SOLID_NONE,
   TFCOLLISION_GROUP_ROCKETS,
 } from './entity';
-import { Conditions, COND_WORDS, PERMANENT_CONDITION, TF_COND } from './conditions';
+import {
+  Conditions,
+  COND_WORDS,
+  PERMANENT_CONDITION,
+  TF_COND,
+} from './conditions';
 import {
   applyOnDamageModifyRules,
   applyPushFromDamage,
@@ -108,11 +124,34 @@ import {
   TF_PLAYER_ENEMY_BLASTED_ME,
   type DamageInfo,
 } from './damage';
-import { MOVE_STATE_NET_FIELDS, NET_PLAYER, type NetRecord, type NetSchema } from './net-schema';
-import { createWeapon, TF_AMMO_COUNT, WEAPON_SLOTS, type Weapon } from './weapon-api';
-import { classHealth, classMaxAmmo, weaponSpecFor } from './loadout';
-import { AttributeSet, hookInt, hookPlayer, hookWeapon, type AttributeOwner } from './items/attributes';
-import { encodeItems, planLoadout } from './items/loadout';
+import {
+  MOVE_STATE_NET_FIELDS,
+  NET_PLAYER,
+  type NetRecord,
+  type NetSchema,
+} from './net-schema';
+import {
+  createWeapon,
+  TF_AMMO_COUNT,
+  WEAPON_SLOTS,
+  type Weapon,
+} from './weapon-api';
+import {
+  classHealth,
+  classMaxAmmo,
+  weaponSpecFor,
+} from './loadout';
+import {
+  AttributeSet,
+  hookInt,
+  hookPlayer,
+  hookWeapon,
+  type AttributeOwner,
+} from './items/attributes';
+import {
+  encodeItems,
+  planLoadout,
+} from './items/loadout';
 import {
   afterburnImmune,
   burnKillType,
@@ -127,12 +166,32 @@ import {
   UnlockState,
   UNLOCK_MOVE_CONDS,
 } from './items/effects';
-import { onUnlockChargeEnd, unlockOnDamaged, unlockOnKill, unlockPreventsDamage } from './items/damage-rules';
-import { aliveDamageModifiers, applyOnHitAttributes, applyOnKillAttributes } from './items/hooks';
-import { damageWeapon, inAirDueToExplosion } from './items/damage-query';
+import {
+  onUnlockChargeEnd,
+  unlockOnDamaged,
+  unlockOnKill,
+  unlockPreventsDamage,
+} from './items/damage-rules';
+import {
+  aliveDamageModifiers,
+  applyOnHitAttributes,
+  applyOnKillAttributes,
+} from './items/hooks';
+import {
+  damageWeapon,
+  inAirDueToExplosion,
+} from './items/damage-query';
 import type { LoadoutSlots } from '../../tf2-loadout/catalog-types';
-import { TF_DEATH_DOMINATION, TF_DEATH_REVENGE, TF_DEATH_ASSISTER_DOMINATION, TF_DEATH_ASSISTER_REVENGE } from './events';
-import { hitboxSet as tfHitboxSet, type Hitbox } from './hitboxes';
+import {
+  TF_DEATH_DOMINATION,
+  TF_DEATH_REVENGE,
+  TF_DEATH_ASSISTER_DOMINATION,
+  TF_DEATH_ASSISTER_REVENGE,
+} from './events';
+import {
+  hitboxSet as tfHitboxSet,
+  type Hitbox,
+} from './hitboxes';
 
 /**
  * A player's collision hulls, standing and crouched. TF2's by default; another game on the engine
@@ -146,12 +205,17 @@ export interface PlayerHull {
 }
 
 /** g_TFViewVectors' hulls. */
-export const TF_PLAYER_HULL: PlayerHull = Object.freeze({
-  min: VEC_HULL_MIN,
-  max: VEC_HULL_MAX,
-  duckMin: VEC_DUCK_HULL_MIN,
-  duckMax: VEC_DUCK_HULL_MAX,
-});
+export const TF_PLAYER_HULL: PlayerHull =
+  Object.freeze(
+    {
+      min: VEC_HULL_MIN,
+      max: VEC_HULL_MAX,
+      duckMin:
+        VEC_DUCK_HULL_MIN,
+      duckMax:
+        VEC_DUCK_HULL_MAX,
+    },
+  );
 
 // ─── Constants (tf_shareddefs.h, tf_player.cpp, tf_player_shared.cpp) ─────
 /** TF_REGEN_TIME / TF_REGEN_AMOUNT. */
@@ -213,42 +277,62 @@ export interface PlayerStats {
   flagReturns: number;
 }
 
-const newStats = (): PlayerStats => ({
-  kills: 0,
-  deaths: 0,
-  assists: 0,
-  dominations: 0,
-  revenges: 0,
-  captures: 0,
-  defenses: 0,
-  destructions: 0,
-  healing: 0,
-  damage: 0,
-  invulns: 0,
-  teleports: 0,
-  backstabs: 0,
-  headshots: 0,
-  suicides: 0,
-  bonusPoints: 0,
-  flagReturns: 0,
-});
+const newStats =
+  (): PlayerStats => ({
+    kills: 0,
+    deaths: 0,
+    assists: 0,
+    dominations: 0,
+    revenges: 0,
+    captures: 0,
+    defenses: 0,
+    destructions: 0,
+    healing: 0,
+    damage: 0,
+    invulns: 0,
+    teleports: 0,
+    backstabs: 0,
+    headshots: 0,
+    suicides: 0,
+    bonusPoints: 0,
+    flagReturns: 0,
+  });
 
 /** SDK: CTFGameRules::CalcPlayerScore (TF_SCORE_* weights, integer divisions). */
-export function calcPlayerScore(s: PlayerStats): number {
+export function calcPlayerScore(
+  s: PlayerStats,
+): number {
   return (
     s.kills +
-    s.captures * 2 +
-    s.flagReturns * 4 +
+    s.captures *
+      2 +
+    s.flagReturns *
+      4 +
     s.defenses +
     s.destructions +
-    Math.trunc(s.headshots / 2) +
+    Math.trunc(
+      s.headshots /
+        2,
+    ) +
     s.backstabs +
-    Math.trunc(s.healing / 600) +
-    Math.trunc(s.assists / 2) +
-    Math.trunc(s.teleports / 2) +
+    Math.trunc(
+      s.healing /
+        600,
+    ) +
+    Math.trunc(
+      s.assists /
+        2,
+    ) +
+    Math.trunc(
+      s.teleports /
+        2,
+    ) +
     s.invulns +
     s.revenges +
-    Math.trunc(s.bonusPoints / 10)
+    Math.trunc(
+      s.bonusPoints /
+        10,
+    )
   );
 }
 
@@ -273,61 +357,111 @@ interface DamagerRecord {
 const DAMAGER_HISTORY = 2;
 /** The MOVE_COND_* bits the game owns (movement owns the rest). */
 const GAME_MOVE_CONDS =
-  MOVE_COND_TAUNTING | MOVE_COND_BURNING | MOVE_COND_BLAST_JUMPING | MOVE_COND_SHIELD_CHARGE | MOVE_COND_LOSER;
-const scratchDir = vec3();
-const scratchA = vec3();
-const scratchB = vec3();
-const damageStack: DamageInfo[] = [];
+  MOVE_COND_TAUNTING |
+  MOVE_COND_BURNING |
+  MOVE_COND_BLAST_JUMPING |
+  MOVE_COND_SHIELD_CHARGE |
+  MOVE_COND_LOSER;
+const scratchDir =
+  vec3();
+const scratchA =
+  vec3();
+const scratchB =
+  vec3();
+const damageStack: DamageInfo[] =
+  [];
 let damageDepth = 0;
 
-export class Player extends Entity implements AttributeOwner {
+export class Player
+  extends Entity
+  implements
+    AttributeOwner
+{
   name: string;
-  userId: string | undefined;
+  userId:
+    | string
+    | undefined;
   isBot = false;
   /** ETFClass currently played. */
   playerClass = 0;
   /** Class the player picked (applies on the next spawn). */
   desiredClass = 0;
-  lifeState = LIFE_DEAD;
-  deathTime = -1000;
+  lifeState =
+    LIFE_DEAD;
+  deathTime =
+    -1000;
   /** When the rules will respawn this player (0 = not scheduled). */
   respawnAt = 0;
-  observerMode = OBS_MODE_NONE;
-  observerTarget: number = NO_ENTITY;
+  observerMode =
+    OBS_MODE_NONE;
+  observerTarget: number =
+    NO_ENTITY;
 
   readonly move: MoveState;
   readonly moveCtx: MoveContext;
   /** The movement trace filter (its `fn` is `moveCtx.filter`), set when the player joins. */
-  moveFilter: EntityTraceFilter | null = null;
-  readonly eyeAngles: Vec3 = vec3();
-  readonly ammo = new Int32Array(TF_AMMO_COUNT);
-  readonly maxAmmo = new Int32Array(TF_AMMO_COUNT);
-  readonly weapons: (Weapon | null)[] = new Array<Weapon | null>(WEAPON_SLOTS).fill(null);
-  activeSlot = -1;
-  lastSlot = -1;
+  moveFilter: EntityTraceFilter | null =
+    null;
+  readonly eyeAngles: Vec3 =
+    vec3();
+  readonly ammo =
+    new Int32Array(
+      TF_AMMO_COUNT,
+    );
+  readonly maxAmmo =
+    new Int32Array(
+      TF_AMMO_COUNT,
+    );
+  readonly weapons: (Weapon | null)[] =
+    new Array<Weapon | null>(
+      WEAPON_SLOTS,
+    ).fill(
+      null,
+    );
+  activeSlot =
+    -1;
+  lastSlot =
+    -1;
   /**
    * Items (sim/items): the loadout chosen per class (by class index; undefined = stock), whether
    * a class's choice still waits for the next respawn or resupply, the attribute sets of worn
    * weapon-slot items (Gunboats, shields), and the public form of what is equipped now
    * (NET_PLAYER `items`, every client renders from it).
    */
-  readonly loadouts: Array<LoadoutSlots | undefined> = [];
-  readonly loadoutDirty: boolean[] = [];
-  wornAttributes: AttributeSet[] = [];
-  items = '';
-  readonly cond = new Conditions();
+  readonly loadouts: Array<
+    | LoadoutSlots
+    | undefined
+  > =
+    [];
+  readonly loadoutDirty: boolean[] =
+    [];
+  wornAttributes: AttributeSet[] =
+    [];
+  items =
+    '';
+  readonly cond =
+    new Conditions();
   /** What unlock items keep on the player (sim/items/effects.ts: stuns, bleeds, rage, heads …). */
-  readonly unlock = new UnlockState();
-  stats: PlayerStats = newStats();
+  readonly unlock =
+    new UnlockState();
+  stats: PlayerStats =
+    newStats();
   /** Unanswered kills by each player id (statsKills.iNumKilledByUnanswered). */
-  readonly killedByUnanswered = new Map<number, number>();
+  readonly killedByUnanswered =
+    new Map<
+      number,
+      number
+    >();
   /** Players this one dominates. */
-  readonly dominating = new Set<number>();
+  readonly dominating =
+    new Set<number>();
 
   /** Commands received and not yet run. */
-  readonly pendingCmds: UserCmd[] = [];
+  readonly pendingCmds: UserCmd[] =
+    [];
   /** The last command run (re-run when a tick gets none). */
-  readonly lastCmd: UserCmd = emptyUserCmd();
+  readonly lastCmd: UserCmd =
+    emptyUserCmd();
   /** cl_autoreload. */
   autoReload = true;
   /** `buddha` (console cheat): damage still lands, but never below 1 health (OVERLAY_BUDDHA_MODE). */
@@ -336,7 +470,8 @@ export class Player extends Entity implements AttributeOwner {
   buttons = 0;
 
   /** curtime of the last damage taken (GetLastDamageReceivedTime). */
-  lastDamageTime = -1000;
+  lastDamageTime =
+    -1000;
   private lastRegenAt = 0;
   private accumulatedRegen = 0;
   private healFraction = 0;
@@ -350,19 +485,25 @@ export class Player extends Entity implements AttributeOwner {
   /** Afterburn. */
   afterburnDuration = 0;
   private flameBurnTime = 0;
-  burnAttacker: number = NO_ENTITY;
+  burnAttacker: number =
+    NO_ENTITY;
   burnWeaponId = 0;
   /** m_hBurnWeapon: the weapon whose afterburn this is (mult_wpn_burndmg). */
-  burnWeapon: Weapon | null = null;
+  burnWeapon: Weapon | null =
+    null;
 
-  readonly healers: Healer[] = [];
+  readonly healers: Healer[] =
+    [];
   /** The medigun's current target (MedicGetHealTarget), set by the medigun. */
-  healTarget: number = NO_ENTITY;
+  healTarget: number =
+    NO_ENTITY;
   blastJumpState = 0;
   takenBlastDamageSinceLastMovement = false;
-  private readonly damagers: DamagerRecord[] = [];
+  private readonly damagers: DamagerRecord[] =
+    [];
   /** Explicit assist for the next death (CTFPlayerShared::SetAssist). */
-  pendingAssist: number = NO_ENTITY;
+  pendingAssist: number =
+    NO_ENTITY;
 
   /** Spy. */
   disguiseTeam = 0;
@@ -370,78 +511,186 @@ export class Player extends Entity implements AttributeOwner {
   disguiseTarget = 0;
   cloakMeter = 100;
   /** Charge meters (demo charge, scout drink, …) the weapons module owns. */
-  readonly meters = new Float32Array(4);
+  readonly meters =
+    new Float32Array(
+      4,
+    );
   /** Flag entity carried (CTF), NO_ENTITY when none. */
-  carriedFlag: number = NO_ENTITY;
+  carriedFlag: number =
+    NO_ENTITY;
   animEvent = 0;
   animEventSeq = 0;
   /** Seconds of respawn time a map forced (SetRespawnTimeOverride), -1 = none. */
-  respawnTimeOverride = -1;
+  respawnTimeOverride =
+    -1;
   /** Arena / forced spawn point name for the next spawn. */
-  spawnPointName = '';
+  spawnPointName =
+    '';
   /** The last spawn point used (round-robin start). */
-  lastSpawnPoint: number = NO_ENTITY;
+  lastSpawnPoint: number =
+    NO_ENTITY;
   /** Client interpolation in ticks (TIME_TO_TICKS(cl_interp)), for lag compensation. */
   lerpTicks = 0;
   /** Measured one-way latency in seconds, for lag compensation. */
   latency = 0;
 
-  constructor(name: string) {
-    super('player');
-    this.name = name;
+  constructor(
+    name: string,
+  ) {
+    super(
+      'player',
+    );
+    this.name =
+      name;
     this.preserved = true;
-    this.flags |= FL_CLIENT;
-    this.move = createMoveState();
+    this.flags |=
+      FL_CLIENT;
+    this.move =
+      createMoveState();
     // Share the kinematic vectors with the movement state.
-    this.move.origin = this.origin;
-    this.move.velocity = this.velocity;
-    this.move.baseVelocity = this.baseVelocity;
-    this.contents = CONTENTS_SOLID | CONTENTS_MONSTER;
-    this.collisionGroup = COLLISION_GROUP_PLAYER;
-    this.moveType = MOVETYPE_NONE;
-    this.solid = SOLID_NONE;
-    this.setSize(VEC_HULL_MIN, VEC_HULL_MAX);
-    this.moveCtx = {
-      world: null as unknown as MoveContext['world'],
-      curtime: 0,
-      filter: null,
-      entityIndex: 0,
-      isPlayer: (id: number) => this.world.isPlayerId(id),
-      getEntityVelocity: (id: number, out: Vec3) => {
-        const e = this.world.entity(id);
-        if (e) copy(out, e.velocity);
-        else set(out, 0, 0, 0);
-      },
-      onFallDamage: (speed: number) => this.onFallDamage(speed),
-      onLand: () => {
-        if (this.blastJumpState) this.clearBlastJumpState();
-      },
-      onJump: (airDash: boolean) => {
-        if (!airDash) this.doAnimationEvent(PLAYERANIMEVENT_JUMP);
-      },
-      onFootstep: (surface: string, volume: number) => {
-        // Predicted: the owner's client plays its own steps (the server leaves them out with
-        // predictedBy); a client world that is not predicting drops it in emitSound.
-        this.world.emitSound(`Player.Footstep.${surface}`, {
-          entity: this.id,
-          volume,
-          predictedBy: this.isBot ? undefined : this.id,
-        });
-      },
-      onWaterLevelChange: (_old: number, level: number) => {
-        if (level >= WL_WAIST && this.cond.has(TF_COND.BURNING)) this.extinguish();
-      },
-      onChargeEnd: () => onUnlockChargeEnd(this),
-    };
+    this.move.origin =
+      this.origin;
+    this.move.velocity =
+      this.velocity;
+    this.move.baseVelocity =
+      this.baseVelocity;
+    this.contents =
+      CONTENTS_SOLID |
+      CONTENTS_MONSTER;
+    this.collisionGroup =
+      COLLISION_GROUP_PLAYER;
+    this.moveType =
+      MOVETYPE_NONE;
+    this.solid =
+      SOLID_NONE;
+    this.setSize(
+      VEC_HULL_MIN,
+      VEC_HULL_MAX,
+    );
+    this.moveCtx =
+      {
+        world:
+          null as unknown as MoveContext['world'],
+        curtime: 0,
+        filter:
+          null,
+        entityIndex: 0,
+        isPlayer:
+          (
+            id: number,
+          ) =>
+            this.world.isPlayerId(
+              id,
+            ),
+        getEntityVelocity:
+          (
+            id: number,
+            out: Vec3,
+          ) => {
+            const e =
+              this.world.entity(
+                id,
+              );
+            if (
+              e
+            )
+              copy(
+                out,
+                e.velocity,
+              );
+            else
+              set(
+                out,
+                0,
+                0,
+                0,
+              );
+          },
+        onFallDamage:
+          (
+            speed: number,
+          ) =>
+            this.onFallDamage(
+              speed,
+            ),
+        onLand:
+          () => {
+            if (
+              this
+                .blastJumpState
+            )
+              this.clearBlastJumpState();
+          },
+        onJump:
+          (
+            airDash: boolean,
+          ) => {
+            if (
+              !airDash
+            )
+              this.doAnimationEvent(
+                PLAYERANIMEVENT_JUMP,
+              );
+          },
+        onFootstep:
+          (
+            surface: string,
+            volume: number,
+          ) => {
+            // Predicted: the owner's client plays its own steps (the server leaves them out with
+            // predictedBy); a client world that is not predicting drops it in emitSound.
+            this.world.emitSound(
+              `Player.Footstep.${surface}`,
+              {
+                entity:
+                  this
+                    .id,
+                volume,
+                predictedBy:
+                  this
+                    .isBot
+                    ? undefined
+                    : this
+                        .id,
+              },
+            );
+          },
+        onWaterLevelChange:
+          (
+            _old: number,
+            level: number,
+          ) => {
+            if (
+              level >=
+                WL_WAIST &&
+              this.cond.has(
+                TF_COND.BURNING,
+              )
+            )
+              this.extinguish();
+          },
+        onChargeEnd:
+          () =>
+            onUnlockChargeEnd(
+              this,
+            ),
+      };
   }
 
   /** Called by the world when the player joins. */
   attach(): void {
-    this.moveCtx.world = this.world;
+    this.moveCtx.world =
+      this.world;
     // The filter object is kept beside its function, so a checkpoint (sim/checkpoint) can rebuild it.
-    this.moveFilter = this.world.createEntityFilterObject(this, COLLISION_GROUP_PLAYER_MOVEMENT);
-    this.moveCtx.filter = this.moveFilter.fn;
-    this.moveCtx.entityIndex = this.id;
+    this.moveFilter =
+      this.world.createEntityFilterObject(
+        this,
+        COLLISION_GROUP_PLAYER_MOVEMENT,
+      );
+    this.moveCtx.filter =
+      this.moveFilter.fn;
+    this.moveCtx.entityIndex =
+      this.id;
   }
 
   override isPlayer(): boolean {
@@ -449,22 +698,61 @@ export class Player extends Entity implements AttributeOwner {
   }
 
   override get alive(): boolean {
-    return !this.removed && this.lifeState === LIFE_ALIVE;
+    return (
+      !this
+        .removed &&
+      this
+        .lifeState ===
+        LIFE_ALIVE
+    );
   }
 
   get fakeClient(): boolean {
-    return (this.flags & FL_FAKECLIENT) !== 0;
+    return (
+      (this
+        .flags &
+        FL_FAKECLIENT) !==
+      0
+    );
   }
 
   get ducked(): boolean {
-    return this.move.ducked;
+    return this
+      .move
+      .ducked;
   }
 
   /** SDK: CTFPlayer::ShouldCollide — teammates pass through each other and through team rockets. */
-  override shouldCollide(collisionGroup: number, contentsMask: number): boolean {
-    if (collisionGroup === COLLISION_GROUP_PLAYER_MOVEMENT || collisionGroup === TFCOLLISION_GROUP_ROCKETS) {
-      if (this.team === TF_TEAM_RED && !(contentsMask & CONTENTS_REDTEAM)) return false;
-      if (this.team === TF_TEAM_BLUE && !(contentsMask & CONTENTS_BLUETEAM)) return false;
+  override shouldCollide(
+    collisionGroup: number,
+    contentsMask: number,
+  ): boolean {
+    if (
+      collisionGroup ===
+        COLLISION_GROUP_PLAYER_MOVEMENT ||
+      collisionGroup ===
+        TFCOLLISION_GROUP_ROCKETS
+    ) {
+      if (
+        this
+          .team ===
+          TF_TEAM_RED &&
+        !(
+          contentsMask &
+          CONTENTS_REDTEAM
+        )
+      )
+        return false;
+      if (
+        this
+          .team ===
+          TF_TEAM_BLUE &&
+        !(
+          contentsMask &
+          CONTENTS_BLUETEAM
+        )
+      )
+        return false;
     }
     return true;
   }
@@ -478,131 +766,387 @@ export class Player extends Entity implements AttributeOwner {
 
   /** Standing eye height (the class's in TF2). */
   standEyeHeight(): number {
-    return classEyeHeight(this.playerClass);
+    return classEyeHeight(
+      this
+        .playerClass,
+    );
   }
 
   /** The hitboxes bullets test (TF2: the class's set; sim/hitboxes.ts). */
   hitboxSet(): readonly Hitbox[] {
-    return tfHitboxSet(this.playerClass, this.move.ducked);
+    return tfHitboxSet(
+      this
+        .playerClass,
+      this
+        .move
+        .ducked,
+    );
   }
 
   viewOffsetZ(): number {
-    if (this.lifeState !== LIFE_ALIVE) return VEC_DEAD_VIEW_Z;
-    return this.move.ducked ? VEC_DUCK_VIEW_Z : this.standEyeHeight();
+    if (
+      this
+        .lifeState !==
+      LIFE_ALIVE
+    )
+      return VEC_DEAD_VIEW_Z;
+    return this
+      .move
+      .ducked
+      ? VEC_DUCK_VIEW_Z
+      : this.standEyeHeight();
   }
 
   /** EyePosition(): origin + view offset. */
-  eyePosition(out: Vec3): Vec3 {
-    return set(out, this.origin.x, this.origin.y, this.origin.z + this.move.viewOffsetZ);
+  eyePosition(
+    out: Vec3,
+  ): Vec3 {
+    return set(
+      out,
+      this
+        .origin
+        .x,
+      this
+        .origin
+        .y,
+      this
+        .origin
+        .z +
+        this
+          .move
+          .viewOffsetZ,
+    );
   }
 
   /** SDK: CBaseEntity::ApplyAbsVelocityImpulse. */
-  applyAbsVelocityImpulse(impulse: Vec3): void {
-    this.velocity.x += impulse.x;
-    this.velocity.y += impulse.y;
-    this.velocity.z += impulse.z;
+  applyAbsVelocityImpulse(
+    impulse: Vec3,
+  ): void {
+    this.velocity.x +=
+      impulse.x;
+    this.velocity.y +=
+      impulse.y;
+    this.velocity.z +=
+      impulse.z;
   }
 
   /** SDK: CTFPlayer::SetBlastJumpState. */
-  setBlastJumpState(state: number): void {
-    this.blastJumpState |= state;
-    this.cond.add(TF_COND.BLASTJUMPING);
+  setBlastJumpState(
+    state: number,
+  ): void {
+    this.blastJumpState |=
+      state;
+    this.cond.add(
+      TF_COND.BLASTJUMPING,
+    );
   }
 
   clearBlastJumpState(): void {
     this.blastJumpState = 0;
-    this.cond.remove(TF_COND.BLASTJUMPING);
+    this.cond.remove(
+      TF_COND.BLASTJUMPING,
+    );
   }
 
-  doAnimationEvent(event: number): void {
-    this.animEvent = event;
-    this.animEventSeq = (this.animEventSeq + 1) & 255;
+  doAnimationEvent(
+    event: number,
+  ): void {
+    this.animEvent =
+      event;
+    this.animEventSeq =
+      (this
+        .animEventSeq +
+        1) &
+      255;
   }
 
   // ─── Health ──────────────────────────────────────────────────────────────
 
   /** SDK: CTFPlayerShared::GetMaxBuffedHealth (rounded down to 5, never below max/current). */
-  maxBuffedHealth(mult = TF_MAX_HEALTH_BOOST, ignoreHealthOverMax = false): number {
-    let boosted = Math.floor((this.maxHealth * mult) / 5) * 5;
-    if (!ignoreHealthOverMax) boosted = Math.max(boosted, this.maxHealth, this.health);
+  maxBuffedHealth(
+    mult = TF_MAX_HEALTH_BOOST,
+    ignoreHealthOverMax = false,
+  ): number {
+    let boosted =
+      Math.floor(
+        (this
+          .maxHealth *
+          mult) /
+          5,
+      ) *
+      5;
+    if (
+      !ignoreHealthOverMax
+    )
+      boosted =
+        Math.max(
+          boosted,
+          this
+            .maxHealth,
+          this
+            .health,
+        );
     return boosted;
   }
 
   /** SDK: CTFPlayer::TakeHealth. DMG_IGNORE_MAXHEALTH lets the caller overheal. */
-  override takeHealth(amount: number, damageType = DMG_GENERIC): number {
-    if (!this.alive) return 0;
-    const before = this.health;
-    if (damageType & DMG_IGNORE_MAXHEALTH) this.health += Math.floor(amount);
+  override takeHealth(
+    amount: number,
+    damageType = DMG_GENERIC,
+  ): number {
+    if (
+      !this
+        .alive
+    )
+      return 0;
+    const before =
+      this
+        .health;
+    if (
+      damageType &
+      DMG_IGNORE_MAXHEALTH
+    )
+      this.health +=
+        Math.floor(
+          amount,
+        );
     else {
-      if (this.health >= this.maxHealth) return 0;
-      this.health = Math.min(this.maxHealth, this.health + Math.floor(amount));
+      if (
+        this
+          .health >=
+        this
+          .maxHealth
+      )
+        return 0;
+      this.health =
+        Math.min(
+          this
+            .maxHealth,
+          this
+            .health +
+            Math.floor(
+              amount,
+            ),
+        );
     }
-    return this.health - before;
+    return (
+      this
+        .health -
+      before
+    );
   }
 
   /** Starts/updates a healer (medigun beam, dispenser). Heal processing happens in the condition think. */
-  addHealer(healerId: number, rate: number, overhealMult = TF_MAX_HEALTH_BOOST, dispenser = false): void {
-    const h = this.healers.find((x) => x.id === healerId);
-    if (h) {
-      h.rate = rate;
-      h.overhealMult = overhealMult;
+  addHealer(
+    healerId: number,
+    rate: number,
+    overhealMult = TF_MAX_HEALTH_BOOST,
+    dispenser = false,
+  ): void {
+    const h =
+      this.healers.find(
+        (
+          x,
+        ) =>
+          x.id ===
+          healerId,
+      );
+    if (
+      h
+    ) {
+      h.rate =
+        rate;
+      h.overhealMult =
+        overhealMult;
       return;
     }
-    this.healers.push({ id: healerId, rate, overhealMult, dispenser, accum: 0 });
-    this.cond.add(TF_COND.HEALTH_BUFF, PERMANENT_CONDITION, healerId);
+    this.healers.push(
+      {
+        id: healerId,
+        rate,
+        overhealMult,
+        dispenser,
+        accum: 0,
+      },
+    );
+    this.cond.add(
+      TF_COND.HEALTH_BUFF,
+      PERMANENT_CONDITION,
+      healerId,
+    );
   }
 
-  removeHealer(healerId: number): void {
-    const i = this.healers.findIndex((x) => x.id === healerId);
-    if (i >= 0) this.healers.splice(i, 1);
-    if (this.healers.length === 0) this.cond.remove(TF_COND.HEALTH_BUFF);
+  removeHealer(
+    healerId: number,
+  ): void {
+    const i =
+      this.healers.findIndex(
+        (
+          x,
+        ) =>
+          x.id ===
+          healerId,
+      );
+    if (
+      i >=
+      0
+    )
+      this.healers.splice(
+        i,
+        1,
+      );
+    if (
+      this
+        .healers
+        .length ===
+      0
+    )
+      this.cond.remove(
+        TF_COND.HEALTH_BUFF,
+      );
   }
 
   // ─── Weapons ─────────────────────────────────────────────────────────────
 
   activeWeapon(): Weapon | null {
-    return this.activeSlot >= 0 ? this.weapons[this.activeSlot] : null;
+    return this
+      .activeSlot >=
+      0
+      ? this
+          .weapons[
+          this
+            .activeSlot
+        ]
+      : null;
   }
 
   /** The active weapon's looping sound while alive ('' for none): the record's `weaponLoop`. */
   weaponLoopSound(): string {
-    if (!this.alive) return '';
-    return this.activeWeapon()?.loopSound?.() ?? '';
+    if (
+      !this
+        .alive
+    )
+      return '';
+    return (
+      this.activeWeapon()?.loopSound?.() ??
+      ''
+    );
   }
 
   /** Gives a weapon into its slot, replacing what was there. */
-  giveWeapon(w: Weapon): void {
-    const old = this.weapons[w.slot];
-    if (old && old !== w) old.onOwnerDeath();
-    this.weapons[w.slot] = w;
-    w.equip(this);
+  giveWeapon(
+    w: Weapon,
+  ): void {
+    const old =
+      this
+        .weapons[
+        w
+          .slot
+      ];
+    if (
+      old &&
+      old !==
+        w
+    )
+      old.onOwnerDeath();
+    this.weapons[
+      w.slot
+    ] =
+      w;
+    w.equip(
+      this,
+    );
   }
 
   /** SDK: CBasePlayer::Weapon_Switch / CTFPlayer::Weapon_Switch. */
-  switchToSlot(slot: number): boolean {
-    if (slot < 0 || slot >= WEAPON_SLOTS) return false;
-    const next = this.weapons[slot];
-    if (!next || slot === this.activeSlot) return false;
-    if (!next.canDeploy()) return false;
-    const cur = this.activeWeapon();
-    if (cur) {
-      if (!cur.canHolster() || this.cond.has(TF_COND.CANNOT_SWITCH_FROM_MELEE)) return false;
-      if (!cur.holster(next)) return false;
+  switchToSlot(
+    slot: number,
+  ): boolean {
+    if (
+      slot <
+        0 ||
+      slot >=
+        WEAPON_SLOTS
+    )
+      return false;
+    const next =
+      this
+        .weapons[
+        slot
+      ];
+    if (
+      !next ||
+      slot ===
+        this
+          .activeSlot
+    )
+      return false;
+    if (
+      !next.canDeploy()
+    )
+      return false;
+    const cur =
+      this.activeWeapon();
+    if (
+      cur
+    ) {
+      if (
+        !cur.canHolster() ||
+        this.cond.has(
+          TF_COND.CANNOT_SWITCH_FROM_MELEE,
+        )
+      )
+        return false;
+      if (
+        !cur.holster(
+          next,
+        )
+      )
+        return false;
     }
-    this.lastSlot = this.activeSlot;
-    this.activeSlot = slot;
+    this.lastSlot =
+      this.activeSlot;
+    this.activeSlot =
+      slot;
     next.deploy();
     // A provide_on_active weapon changes the wearer's numbers while it is out.
-    if (this.weapons.some((w) => w?.provideOnActive)) this.maxHealth = this.computeMaxHealth();
+    if (
+      this.weapons.some(
+        (
+          w,
+        ) =>
+          w?.provideOnActive,
+      )
+    )
+      this.maxHealth =
+        this.computeMaxHealth();
     return true;
   }
 
   /** Can't attack: humiliated losers, taunting, stunned (CTFPlayer::CanAttack / IsAllowedToFire). */
   cannotAttack(): boolean {
-    if (this.cond.has(TF_COND.TAUNTING)) return true;
+    if (
+      this.cond.has(
+        TF_COND.TAUNTING,
+      )
+    )
+      return true;
     // Bonk!'s phase and an armed Dead Ringer (CTFPlayer::CanAttack).
-    if (this.cond.has(TF_COND.PHASE) || this.unlock.feignDeathReady) return true;
-    if (this.world.rules.isHumiliated(this)) return true;
+    if (
+      this.cond.has(
+        TF_COND.PHASE,
+      ) ||
+      this
+        .unlock
+        .feignDeathReady
+    )
+      return true;
+    if (
+      this.world.rules.isHumiliated(
+        this,
+      )
+    )
+      return true;
     return false;
   }
 
@@ -612,68 +1156,218 @@ export class Player extends Entity implements AttributeOwner {
    * public form of what is equipped.
    */
   giveDefaultItems(): void {
-    for (let i = 0; i < WEAPON_SLOTS; i++) {
-      this.weapons[i]?.onOwnerDeath();
-      this.weapons[i] = null;
+    for (
+      let i = 0;
+      i <
+      WEAPON_SLOTS;
+      i++
+    ) {
+      this.weapons[
+        i
+      ]?.onOwnerDeath();
+      this.weapons[
+        i
+      ] =
+        null;
     }
-    const plan = planLoadout(this.playerClass, this.loadouts[this.playerClass], weaponSpecFor);
+    const plan =
+      planLoadout(
+        this
+          .playerClass,
+        this
+          .loadouts[
+          this
+            .playerClass
+        ],
+        weaponSpecFor,
+      );
     for (const p of plan.slots) {
-      if (!p.spec) continue;
-      const w = createWeapon(p.spec);
-      if (w && w.slot >= 0 && w.slot < WEAPON_SLOTS && !this.weapons[w.slot]) {
-        this.weapons[w.slot] = w;
-        w.equip(this);
+      if (
+        !p.spec
+      )
+        continue;
+      const w =
+        createWeapon(
+          p.spec,
+        );
+      if (
+        w &&
+        w.slot >=
+          0 &&
+        w.slot <
+          WEAPON_SLOTS &&
+        !this
+          .weapons[
+          w
+            .slot
+        ]
+      ) {
+        this.weapons[
+          w.slot
+        ] =
+          w;
+        w.equip(
+          this,
+        );
       }
     }
-    this.wornAttributes = plan.worn;
-    this.items = encodeItems(plan.items);
-    this.loadoutDirty[this.playerClass] = false;
-    this.activeSlot = -1;
-    this.lastSlot = -1;
+    this.wornAttributes =
+      plan.worn;
+    this.items =
+      encodeItems(
+        plan.items,
+      );
+    this.loadoutDirty[
+      this.playerClass
+    ] =
+      false;
+    this.activeSlot =
+      -1;
+    this.lastSlot =
+      -1;
   }
 
   /**
    * A new loadout for a class (already validated: sim/items checkGameLoadout). It takes effect at
    * the next respawn or resupply; `CheckInstantLoadoutRespawn` applies it at once in a respawn room.
    */
-  setClassLoadout(classIndex: number, slots: LoadoutSlots | undefined): void {
-    if (classIndex <= 0 || classIndex >= TF_CLASS_COUNT) return;
-    this.loadouts[classIndex] = slots;
-    this.loadoutDirty[classIndex] = true;
+  setClassLoadout(
+    classIndex: number,
+    slots:
+      | LoadoutSlots
+      | undefined,
+  ): void {
+    if (
+      classIndex <=
+        0 ||
+      classIndex >=
+        TF_CLASS_COUNT
+    )
+      return;
+    this.loadouts[
+      classIndex
+    ] =
+      slots;
+    this.loadoutDirty[
+      classIndex
+    ] =
+      true;
   }
 
   /** A chosen loadout for the current class waits for the next respawn or resupply. */
   get loadoutPending(): boolean {
-    return this.loadoutDirty[this.playerClass] === true;
+    return (
+      this
+        .loadoutDirty[
+        this
+          .playerClass
+      ] ===
+      true
+    );
   }
 
   /** SDK: CTFPlayer::GetMaxHealthForBuffing — the class's health, add_maxhealth from every provider. */
   computeMaxHealth(): number {
-    return hookInt(hookPlayer(this, 'add_maxhealth', classHealth(this.playerClass))) + unlockMaxHealthBonus(this);
+    return (
+      hookInt(
+        hookPlayer(
+          this,
+          'add_maxhealth',
+          classHealth(
+            this
+              .playerClass,
+          ),
+        ),
+      ) +
+      unlockMaxHealthBonus(
+        this,
+      )
+    );
   }
 
   /** Refills ammo to the class maximums (GiveDefaultAmmo). */
   refillAmmo(): void {
     this.updateMaxAmmo();
-    this.ammo.set(this.maxAmmo);
+    this.ammo.set(
+      this
+        .maxAmmo,
+    );
   }
 
   /** SDK: CTFPlayer::GetMaxAmmo — the class's maximums with mult_maxammo_* (CALL_ATTRIB_HOOK_INT). */
   updateMaxAmmo(): void {
-    classMaxAmmo(this.playerClass, this.maxAmmo);
-    const m = this.maxAmmo;
-    m[1] = hookInt(hookPlayer(this, 'mult_maxammo_primary', m[1]));
-    m[2] = hookInt(hookPlayer(this, 'mult_maxammo_secondary', m[2]));
-    m[3] = hookInt(hookPlayer(this, 'mult_maxammo_metal', m[3]));
+    classMaxAmmo(
+      this
+        .playerClass,
+      this
+        .maxAmmo,
+    );
+    const m =
+      this
+        .maxAmmo;
+    m[1] =
+      hookInt(
+        hookPlayer(
+          this,
+          'mult_maxammo_primary',
+          m[1],
+        ),
+      );
+    m[2] =
+      hookInt(
+        hookPlayer(
+          this,
+          'mult_maxammo_secondary',
+          m[2],
+        ),
+      );
+    m[3] =
+      hookInt(
+        hookPlayer(
+          this,
+          'mult_maxammo_metal',
+          m[3],
+        ),
+      );
   }
 
   /** CTFPlayer::GiveAmmo. Returns how much was taken. */
-  giveAmmo(count: number, type: number): number {
-    if (type <= 0 || type >= TF_AMMO_COUNT) return 0;
-    const max = this.maxAmmo[type];
-    const room = max - this.ammo[type];
-    const add = Math.max(0, Math.min(room, Math.ceil(count)));
-    this.ammo[type] += add;
+  giveAmmo(
+    count: number,
+    type: number,
+  ): number {
+    if (
+      type <=
+        0 ||
+      type >=
+        TF_AMMO_COUNT
+    )
+      return 0;
+    const max =
+      this
+        .maxAmmo[
+        type
+      ];
+    const room =
+      max -
+      this
+        .ammo[
+        type
+      ];
+    const add =
+      Math.max(
+        0,
+        Math.min(
+          room,
+          Math.ceil(
+            count,
+          ),
+        ),
+      );
+    this.ammo[
+      type
+    ] +=
+      add;
     return add;
   }
 
@@ -683,144 +1377,467 @@ export class Player extends Entity implements AttributeOwner {
    * SDK: CBasePlayer::PlayerRunCommand → CTFPlayer::PreThink, SelectItem,
    * ProcessMovement, PostThink (ItemPostFrame), PhysicsTouchTriggers.
    */
-  runCommand(cmd: UserCmd): void {
-    const world = this.world;
-    if (this.lifeState === LIFE_ALIVE) unlockPreCommand(this, cmd);
-    copy(this.eyeAngles, cmd.viewAngles);
-    this.buttons = cmd.buttons;
+  runCommand(
+    cmd: UserCmd,
+  ): void {
+    const world =
+      this
+        .world;
+    if (
+      this
+        .lifeState ===
+      LIFE_ALIVE
+    )
+      unlockPreCommand(
+        this,
+        cmd,
+      );
+    copy(
+      this
+        .eyeAngles,
+      cmd.viewAngles,
+    );
+    this.buttons =
+      cmd.buttons;
 
-    if (this.lifeState !== LIFE_ALIVE) {
-      if (this.observerMode === OBS_MODE_ROAMING) {
-        this.move.moveType = MOVETYPE_OBSERVER;
-        this.moveCtx.curtime = world.curtime;
-        playerMove(this.move, cmd, this.moveCtx);
+    if (
+      this
+        .lifeState !==
+      LIFE_ALIVE
+    ) {
+      if (
+        this
+          .observerMode ===
+        OBS_MODE_ROAMING
+      ) {
+        this.move.moveType =
+          MOVETYPE_OBSERVER;
+        this.moveCtx.curtime =
+          world.curtime;
+        playerMove(
+          this
+            .move,
+          cmd,
+          this
+            .moveCtx,
+        );
       }
-      this.copyLastCmd(cmd);
+      this.copyLastCmd(
+        cmd,
+      );
       return;
     }
 
-    if (cmd.weaponSelect > 0) this.switchToSlot(cmd.weaponSelect - 1);
+    if (
+      cmd.weaponSelect >
+      0
+    )
+      this.switchToSlot(
+        cmd.weaponSelect -
+          1,
+      );
 
     // Movement.
     this.syncMoveInputs();
-    this.moveCtx.curtime = world.curtime;
-    playerMove(this.move, cmd, this.moveCtx);
+    this.moveCtx.curtime =
+      world.curtime;
+    playerMove(
+      this
+        .move,
+      cmd,
+      this
+        .moveCtx,
+    );
     this.syncFromMove();
-    if (this.removed || this.lifeState !== LIFE_ALIVE) return;
-    if (this.takenBlastDamageSinceLastMovement && this.move.flags & FL_ONGROUND) {
+    if (
+      this
+        .removed ||
+      this
+        .lifeState !==
+        LIFE_ALIVE
+    )
+      return;
+    if (
+      this
+        .takenBlastDamageSinceLastMovement &&
+      this
+        .move
+        .flags &
+        FL_ONGROUND
+    ) {
       this.takenBlastDamageSinceLastMovement = false;
     } else if (
       world.isServer &&
-      this.takenBlastDamageSinceLastMovement &&
-      !(this.move.flags & FL_ONGROUND) &&
-      this.move.velocity.z > 250 &&
-      !inAirDueToExplosion(this)
+      this
+        .takenBlastDamageSinceLastMovement &&
+      !(
+        this
+          .move
+          .flags &
+        FL_ONGROUND
+      ) &&
+      this
+        .move
+        .velocity
+        .z >
+        250 &&
+      !inAirDueToExplosion(
+        this,
+      )
     ) {
       // SDK: CTFGameMovement::CategorizePosition — leaving the ground after an enemy's blast.
-      this.setBlastJumpState(TF_PLAYER_ENEMY_BLASTED_ME);
+      this.setBlastJumpState(
+        TF_PLAYER_ENEMY_BLASTED_ME,
+      );
     }
 
     // Weapons: the active one runs its frame, the others their holster frame.
-    const active = this.activeWeapon();
-    for (let i = 0; i < WEAPON_SLOTS; i++) {
-      const w = this.weapons[i];
-      if (w && w !== active) w.itemHolsterFrame(cmd);
+    const active =
+      this.activeWeapon();
+    for (
+      let i = 0;
+      i <
+      WEAPON_SLOTS;
+      i++
+    ) {
+      const w =
+        this
+          .weapons[
+          i
+        ];
+      if (
+        w &&
+        w !==
+          active
+      )
+        w.itemHolsterFrame(
+          cmd,
+        );
     }
-    if (active && !(this.world.rules.isHumiliated(this) && cmd.buttons & IN_ATTACK)) active.itemPostFrame(cmd);
-    if (this.removed || this.lifeState !== LIFE_ALIVE) return;
+    if (
+      active &&
+      !(
+        this.world.rules.isHumiliated(
+          this,
+        ) &&
+        cmd.buttons &
+          IN_ATTACK
+      )
+    )
+      active.itemPostFrame(
+        cmd,
+      );
+    if (
+      this
+        .removed ||
+      this
+        .lifeState !==
+        LIFE_ALIVE
+    )
+      return;
 
-    world.touchTriggers(this);
-    this.copyLastCmd(cmd);
+    world.touchTriggers(
+      this,
+    );
+    this.copyLastCmd(
+      cmd,
+    );
   }
 
-  private copyLastCmd(cmd: UserCmd): void {
-    const l = this.lastCmd;
-    l.commandNumber = cmd.commandNumber;
-    l.tickCount = cmd.tickCount;
-    copy(l.viewAngles, cmd.viewAngles);
-    l.forwardMove = cmd.forwardMove;
-    l.sideMove = cmd.sideMove;
-    l.upMove = cmd.upMove;
-    l.buttons = cmd.buttons;
+  private copyLastCmd(
+    cmd: UserCmd,
+  ): void {
+    const l =
+      this
+        .lastCmd;
+    l.commandNumber =
+      cmd.commandNumber;
+    l.tickCount =
+      cmd.tickCount;
+    copy(
+      l.viewAngles,
+      cmd.viewAngles,
+    );
+    l.forwardMove =
+      cmd.forwardMove;
+    l.sideMove =
+      cmd.sideMove;
+    l.upMove =
+      cmd.upMove;
+    l.buttons =
+      cmd.buttons;
     l.weaponSelect = 0;
-    l.randomSeed = cmd.randomSeed;
+    l.randomSeed =
+      cmd.randomSeed;
   }
 
   /** Writes what movement reads from the game (team, class, speed, conditions). */
   syncMoveInputs(): void {
-    const m = this.move;
-    m.team = this.team;
-    m.classIndex = this.playerClass;
-    m.dead = this.lifeState !== LIFE_ALIVE;
+    const m =
+      this
+        .move;
+    m.team =
+      this.team;
+    m.classIndex =
+      this.playerClass;
+    m.dead =
+      this
+        .lifeState !==
+      LIFE_ALIVE;
     // Alive: walking, unless the console's `noclip` put the movement in MOVETYPE_NOCLIP (it is part of
     // the replicated MoveState, so the owner's prediction flies too).
-    m.moveType = this.lifeState === LIFE_ALIVE ? (m.moveType === MOVETYPE_NOCLIP ? MOVETYPE_NOCLIP : MOVETYPE_WALK) : this.move.moveType;
-    m.maxSpeed = this.computeMaxSpeed();
+    m.moveType =
+      this
+        .lifeState ===
+      LIFE_ALIVE
+        ? m.moveType ===
+          MOVETYPE_NOCLIP
+          ? MOVETYPE_NOCLIP
+          : MOVETYPE_WALK
+        : this
+            .move
+            .moveType;
+    m.maxSpeed =
+      this.computeMaxSpeed();
     let conds = 0;
-    if (this.cond.has(TF_COND.TAUNTING)) conds |= MOVE_COND_TAUNTING;
-    if (this.cond.has(TF_COND.BURNING)) conds |= MOVE_COND_BURNING;
-    if (this.cond.has(TF_COND.BLASTJUMPING)) conds |= MOVE_COND_BLAST_JUMPING;
-    if (this.cond.has(TF_COND.SHIELD_CHARGE)) conds |= MOVE_COND_SHIELD_CHARGE;
-    if (this.world.rules.isHumiliated(this)) conds |= MOVE_COND_LOSER;
-    m.conds = (m.conds & ~(GAME_MOVE_CONDS | UNLOCK_MOVE_CONDS)) | conds | unlockMoveInputs(this);
-    if (this.world.rules.isFrozen(this)) m.flags |= FL_FROZEN;
-    else m.flags &= ~FL_FROZEN;
+    if (
+      this.cond.has(
+        TF_COND.TAUNTING,
+      )
+    )
+      conds |=
+        MOVE_COND_TAUNTING;
+    if (
+      this.cond.has(
+        TF_COND.BURNING,
+      )
+    )
+      conds |=
+        MOVE_COND_BURNING;
+    if (
+      this.cond.has(
+        TF_COND.BLASTJUMPING,
+      )
+    )
+      conds |=
+        MOVE_COND_BLAST_JUMPING;
+    if (
+      this.cond.has(
+        TF_COND.SHIELD_CHARGE,
+      )
+    )
+      conds |=
+        MOVE_COND_SHIELD_CHARGE;
+    if (
+      this.world.rules.isHumiliated(
+        this,
+      )
+    )
+      conds |=
+        MOVE_COND_LOSER;
+    m.conds =
+      (m.conds &
+        ~(
+          GAME_MOVE_CONDS |
+          UNLOCK_MOVE_CONDS
+        )) |
+      conds |
+      unlockMoveInputs(
+        this,
+      );
+    if (
+      this.world.rules.isFrozen(
+        this,
+      )
+    )
+      m.flags |=
+        FL_FROZEN;
+    else
+      m.flags &=
+        ~FL_FROZEN;
   }
 
   /** Mirrors movement results onto the entity (flags, ground, hull). */
   syncFromMove(): void {
-    const m = this.move;
-    this.flags = (this.flags & ~(FL_ONGROUND | FL_DUCKING)) | (m.flags & (FL_ONGROUND | FL_DUCKING));
-    this.groundEntity = m.groundEntity;
-    const hull = this.hull;
-    if (m.ducked) this.setSize(hull.duckMin, hull.duckMax);
-    else this.setSize(hull.min, hull.max);
-    this.angles.y = this.eyeAngles.y;
+    const m =
+      this
+        .move;
+    this.flags =
+      (this
+        .flags &
+        ~(
+          FL_ONGROUND |
+          FL_DUCKING
+        )) |
+      (m.flags &
+        (FL_ONGROUND |
+          FL_DUCKING));
+    this.groundEntity =
+      m.groundEntity;
+    const hull =
+      this
+        .hull;
+    if (
+      m.ducked
+    )
+      this.setSize(
+        hull.duckMin,
+        hull.duckMax,
+      );
+    else
+      this.setSize(
+        hull.min,
+        hull.max,
+      );
+    this.angles.y =
+      this.eyeAngles.y;
   }
 
-  private readonly speedInput: MaxSpeedInput = { classIndex: 0 };
+  private readonly speedInput: MaxSpeedInput =
+    {
+      classIndex: 0,
+    };
 
   /** SDK: CTFPlayer::TeamFortress_CalculateMaxSpeed (via class-speeds.ts). */
   computeMaxSpeed(): number {
-    const w = this.activeWeapon();
-    const rules = this.world.rules;
-    const s = this.speedInput;
-    s.classIndex = this.playerClass;
-    s.canMove = rules.canPlayerMove(this);
-    s.disguiseClass = this.cond.has(TF_COND.DISGUISED) ? this.disguiseClass : 0;
-    s.stealthed = this.cond.has(TF_COND.STEALTHED);
-    s.aiming = this.cond.has(TF_COND.AIMING);
-    s.speedBoost = this.cond.has(TF_COND.SPEED_BOOST);
-    s.teamWin = rules.bonusRoundSide(this);
-    s.weaponSpeedMod = w ? w.speedMod() : 1;
-    s.shieldCharging = this.cond.has(TF_COND.SHIELD_CHARGE);
+    const w =
+      this.activeWeapon();
+    const rules =
+      this
+        .world
+        .rules;
+    const s =
+      this
+        .speedInput;
+    s.classIndex =
+      this.playerClass;
+    s.canMove =
+      rules.canPlayerMove(
+        this,
+      );
+    s.disguiseClass =
+      this.cond.has(
+        TF_COND.DISGUISED,
+      )
+        ? this
+            .disguiseClass
+        : 0;
+    s.stealthed =
+      this.cond.has(
+        TF_COND.STEALTHED,
+      );
+    s.aiming =
+      this.cond.has(
+        TF_COND.AIMING,
+      );
+    s.speedBoost =
+      this.cond.has(
+        TF_COND.SPEED_BOOST,
+      );
+    s.teamWin =
+      rules.bonusRoundSide(
+        this,
+      );
+    s.weaponSpeedMod =
+      w
+        ? w.speedMod()
+        : 1;
+    s.shieldCharging =
+      this.cond.has(
+        TF_COND.SHIELD_CHARGE,
+      );
     // Items: mult_player_movespeed from every provider, mult_player_movespeed_active on the weapon
     // out, mult_player_aiming_movespeed while aiming (TeamFortress_CalculateMaxSpeed).
-    s.moveSpeedMult = hookPlayer(this, 'mult_player_movespeed', 1);
-    s.activeWeaponSpeedMult = w ? hookWeapon(w, null, 'mult_player_movespeed_active', 1) : 1;
-    s.aimingSpeedMult = hookPlayer(this, 'mult_player_aiming_movespeed', 1);
-    unlockSpeedInputs(this, s);
-    return calculateMaxSpeed(s);
+    s.moveSpeedMult =
+      hookPlayer(
+        this,
+        'mult_player_movespeed',
+        1,
+      );
+    s.activeWeaponSpeedMult =
+      w
+        ? hookWeapon(
+            w,
+            null,
+            'mult_player_movespeed_active',
+            1,
+          )
+        : 1;
+    s.aimingSpeedMult =
+      hookPlayer(
+        this,
+        'mult_player_aiming_movespeed',
+        1,
+      );
+    unlockSpeedInputs(
+      this,
+      s,
+    );
+    return calculateMaxSpeed(
+      s,
+    );
   }
 
   /** Copies a predicted/snapshot MoveState into ours without breaking the shared vectors. */
-  restoreMoveState(src: MoveState): void {
-    const m = this.move;
-    const o = m.origin;
-    const v = m.velocity;
-    const b = m.baseVelocity;
-    const p = m.punchAngle;
-    const pv = m.punchAngleVel;
-    const wj = m.waterJumpVel;
-    const attrs = m.attrs;
-    Object.assign(m, src);
-    m.origin = copy(o, src.origin);
-    m.velocity = copy(v, src.velocity);
-    m.baseVelocity = copy(b, src.baseVelocity);
-    m.punchAngle = copy(p, src.punchAngle);
-    m.punchAngleVel = copy(pv, src.punchAngleVel);
-    m.waterJumpVel = copy(wj, src.waterJumpVel);
-    m.attrs = Object.assign(attrs, src.attrs);
+  restoreMoveState(
+    src: MoveState,
+  ): void {
+    const m =
+      this
+        .move;
+    const o =
+      m.origin;
+    const v =
+      m.velocity;
+    const b =
+      m.baseVelocity;
+    const p =
+      m.punchAngle;
+    const pv =
+      m.punchAngleVel;
+    const wj =
+      m.waterJumpVel;
+    const attrs =
+      m.attrs;
+    Object.assign(
+      m,
+      src,
+    );
+    m.origin =
+      copy(
+        o,
+        src.origin,
+      );
+    m.velocity =
+      copy(
+        v,
+        src.velocity,
+      );
+    m.baseVelocity =
+      copy(
+        b,
+        src.baseVelocity,
+      );
+    m.punchAngle =
+      copy(
+        p,
+        src.punchAngle,
+      );
+    m.punchAngleVel =
+      copy(
+        pv,
+        src.punchAngleVel,
+      );
+    m.waterJumpVel =
+      copy(
+        wj,
+        src.waterJumpVel,
+      );
+    m.attrs =
+      Object.assign(
+        attrs,
+        src.attrs,
+      );
     this.syncFromMove();
   }
 
@@ -832,168 +1849,598 @@ export class Player extends Entity implements AttributeOwner {
    * ConditionGameRulesThink + CTFPlayer::RegenThink + PostThink bits).
    */
   serverThink(): void {
-    if (this.lifeState !== LIFE_ALIVE) return;
-    const world = this.world;
-    const dt = world.frametime;
-    const t = world.curtime;
+    if (
+      this
+        .lifeState !==
+      LIFE_ALIVE
+    )
+      return;
+    const world =
+      this
+        .world;
+    const dt =
+      world.frametime;
+    const t =
+      world.curtime;
 
     // Healers.
     let decayHealth = true;
-    if (this.healers.length > 0) {
+    if (
+      this
+        .healers
+        .length >
+      0
+    ) {
       decayHealth = false;
       // CTFPlayerShared::HealthThink: mult_health_fromhealers on every healer, mult_healing_from_medics on players.
-      const fromHealers = hookPlayer(this, 'mult_health_fromhealers', 1);
-      const fromMedics = fromHealers * hookPlayer(this, 'mult_healing_from_medics', 1);
-      for (let i = 0; i < this.healers.length; i++) {
-        const h = this.healers[i];
-        const healer = world.entity(h.id);
-        if (!healer || healer.removed) {
-          this.healers.splice(i--, 1);
+      const fromHealers =
+        hookPlayer(
+          this,
+          'mult_health_fromhealers',
+          1,
+        );
+      const fromMedics =
+        fromHealers *
+        hookPlayer(
+          this,
+          'mult_healing_from_medics',
+          1,
+        );
+      for (
+        let i = 0;
+        i <
+        this
+          .healers
+          .length;
+        i++
+      ) {
+        const h =
+          this
+            .healers[
+            i
+          ];
+        const healer =
+          world.entity(
+            h.id,
+          );
+        if (
+          !healer ||
+          healer.removed
+        ) {
+          this.healers.splice(
+            i--,
+            1,
+          );
           continue;
         }
-        h.accum += h.rate * dt * (h.dispenser ? fromHealers : fromMedics);
-        const cap = this.maxBuffedHealth(h.overhealMult);
-        const whole = Math.floor(h.accum);
-        if (whole > 0) {
-          h.accum -= whole;
-          const room = Math.max(0, cap - this.health);
-          const healed = this.takeHealth(Math.min(whole, room), DMG_IGNORE_MAXHEALTH);
-          if (healed > 0 && healer.isPlayer() && healer !== this) (healer as Player).stats.healing += healed;
+        h.accum +=
+          h.rate *
+          dt *
+          (h.dispenser
+            ? fromHealers
+            : fromMedics);
+        const cap =
+          this.maxBuffedHealth(
+            h.overhealMult,
+          );
+        const whole =
+          Math.floor(
+            h.accum,
+          );
+        if (
+          whole >
+          0
+        ) {
+          h.accum -=
+            whole;
+          const room =
+            Math.max(
+              0,
+              cap -
+                this
+                  .health,
+            );
+          const healed =
+            this.takeHealth(
+              Math.min(
+                whole,
+                room,
+              ),
+              DMG_IGNORE_MAXHEALTH,
+            );
+          if (
+            healed >
+              0 &&
+            healer.isPlayer() &&
+            healer !==
+              this
+          )
+            (
+              healer as Player
+            ).stats.healing +=
+              healed;
         }
       }
-      if (this.healers.length === 0) this.cond.remove(TF_COND.HEALTH_BUFF);
-      if (this.cond.has(TF_COND.BURNING)) this.afterburnDuration -= 2 * dt;
+      if (
+        this
+          .healers
+          .length ===
+        0
+      )
+        this.cond.remove(
+          TF_COND.HEALTH_BUFF,
+        );
+      if (
+        this.cond.has(
+          TF_COND.BURNING,
+        )
+      )
+        this.afterburnDuration -=
+          2 *
+          dt;
     }
 
     // Overheal flag and decay (tf_boost_drain_time).
-    if (this.health > this.maxHealth) this.cond.add(TF_COND.HEALTH_OVERHEALED);
-    else this.cond.remove(TF_COND.HEALTH_OVERHEALED);
-    if (decayHealth && this.health > this.maxHealth) {
-      const boostMax = this.maxBuffedHealth(TF_MAX_HEALTH_BOOST, true) - this.maxHealth;
-      this.healFraction += dt * (boostMax / TF_BOOST_DRAIN_TIME);
-      const drain = Math.trunc(this.healFraction);
-      if (drain > 0) {
-        this.healFraction -= drain;
-        this.health = Math.max(this.maxHealth, this.health - drain);
+    if (
+      this
+        .health >
+      this
+        .maxHealth
+    )
+      this.cond.add(
+        TF_COND.HEALTH_OVERHEALED,
+      );
+    else
+      this.cond.remove(
+        TF_COND.HEALTH_OVERHEALED,
+      );
+    if (
+      decayHealth &&
+      this
+        .health >
+        this
+          .maxHealth
+    ) {
+      const boostMax =
+        this.maxBuffedHealth(
+          TF_MAX_HEALTH_BOOST,
+          true,
+        ) -
+        this
+          .maxHealth;
+      this.healFraction +=
+        dt *
+        (boostMax /
+          TF_BOOST_DRAIN_TIME);
+      const drain =
+        Math.trunc(
+          this
+            .healFraction,
+        );
+      if (
+        drain >
+        0
+      ) {
+        this.healFraction -=
+          drain;
+        this.health =
+          Math.max(
+            this
+              .maxHealth,
+            this
+              .health -
+              drain,
+          );
       }
-    } else if (!decayHealth) this.healFraction = 0;
+    } else if (
+      !decayHealth
+    )
+      this.healFraction = 0;
 
     // Afterburn.
-    if (this.cond.has(TF_COND.BURNING)) {
-      if (this.afterburnDuration <= 0 || this.move.waterLevel >= WL_WAIST) this.extinguish();
-      else if (t >= this.flameBurnTime) {
-        if (this.playerClass !== TF_CLASS_PYRO || this.cond.has(TF_COND.BURNING_PYRO)) {
-          const info = this.scratchDamage();
-          info.attacker = this.burnAttacker;
-          info.inflictor = this.burnAttacker;
-          info.weaponId = this.burnWeaponId;
-          info.damage = this.burnWeapon ? hookWeapon(this.burnWeapon, this.burnWeapon.owner, 'mult_wpn_burndmg', TF_BURNING_DMG) : TF_BURNING_DMG;
-          info.damageType = DMG_BURN | DMG_PREVENT_PHYSICS_FORCE;
-          info.customKill = this.burnWeapon ? burnKillType(this.burnWeapon) : TF_DMG_CUSTOM_BURNING;
-          info.killIcon = 'tf_weapon_flamethrower';
-          this.eyePosition(info.position);
-          world.applyDamage(this, info);
+    if (
+      this.cond.has(
+        TF_COND.BURNING,
+      )
+    ) {
+      if (
+        this
+          .afterburnDuration <=
+          0 ||
+        this
+          .move
+          .waterLevel >=
+          WL_WAIST
+      )
+        this.extinguish();
+      else if (
+        t >=
+        this
+          .flameBurnTime
+      ) {
+        if (
+          this
+            .playerClass !==
+            TF_CLASS_PYRO ||
+          this.cond.has(
+            TF_COND.BURNING_PYRO,
+          )
+        ) {
+          const info =
+            this.scratchDamage();
+          info.attacker =
+            this.burnAttacker;
+          info.inflictor =
+            this.burnAttacker;
+          info.weaponId =
+            this.burnWeaponId;
+          info.damage =
+            this
+              .burnWeapon
+              ? hookWeapon(
+                  this
+                    .burnWeapon,
+                  this
+                    .burnWeapon
+                    .owner,
+                  'mult_wpn_burndmg',
+                  TF_BURNING_DMG,
+                )
+              : TF_BURNING_DMG;
+          info.damageType =
+            DMG_BURN |
+            DMG_PREVENT_PHYSICS_FORCE;
+          info.customKill =
+            this
+              .burnWeapon
+              ? burnKillType(
+                  this
+                    .burnWeapon,
+                )
+              : TF_DMG_CUSTOM_BURNING;
+          info.killIcon =
+            'tf_weapon_flamethrower';
+          this.eyePosition(
+            info.position,
+          );
+          world.applyDamage(
+            this,
+            info,
+          );
           this.releaseScratchDamage();
-          if (this.lifeState !== LIFE_ALIVE) return;
+          if (
+            this
+              .lifeState !==
+            LIFE_ALIVE
+          )
+            return;
         }
-        this.flameBurnTime = t + TF_BURNING_FREQUENCY;
-        this.afterburnDuration -= TF_BURNING_FREQUENCY;
+        this.flameBurnTime =
+          t +
+          TF_BURNING_FREQUENCY;
+        this.afterburnDuration -=
+          TF_BURNING_FREQUENCY;
       }
     }
 
-    unlockThink(this, dt);
-    if (this.lifeState !== LIFE_ALIVE) return;
-    this.cond.think(dt);
+    unlockThink(
+      this,
+      dt,
+    );
+    if (
+      this
+        .lifeState !==
+      LIFE_ALIVE
+    )
+      return;
+    this.cond.think(
+      dt,
+    );
     this.regenThink();
   }
 
   /** SDK: CTFPlayer::RegenThink. */
   private regenThink(): void {
-    const t = this.world.curtime;
-    if (this.lastRegenAt + TF_REGEN_TIME > t) return;
-    this.lastRegenAt = t;
-    if (this.playerClass === TF_CLASS_MEDIC) {
-      const scale = remapClamped(t - this.lastDamageTime, 5, 10, 1, 2);
-      let amt = TF_REGEN_AMOUNT;
-      const patient = this.world.entity(this.healTarget);
-      if (patient && patient.isPlayer() && patient.health < patient.maxHealth) amt += TF_REGEN_AMOUNT;
-      this.accumulatedRegen += amt * scale;
+    const t =
+      this
+        .world
+        .curtime;
+    if (
+      this
+        .lastRegenAt +
+        TF_REGEN_TIME >
+      t
+    )
+      return;
+    this.lastRegenAt =
+      t;
+    if (
+      this
+        .playerClass ===
+      TF_CLASS_MEDIC
+    ) {
+      const scale =
+        remapClamped(
+          t -
+            this
+              .lastDamageTime,
+          5,
+          10,
+          1,
+          2,
+        );
+      let amt =
+        TF_REGEN_AMOUNT;
+      const patient =
+        this.world.entity(
+          this
+            .healTarget,
+        );
+      if (
+        patient &&
+        patient.isPlayer() &&
+        patient.health <
+          patient.maxHealth
+      )
+        amt +=
+          TF_REGEN_AMOUNT;
+      this.accumulatedRegen +=
+        amt *
+        scale;
     }
     // Other classes regenerate from items (add_health_regen), less soon after being hurt.
-    let regen = hookPlayer(this, 'add_health_regen', 0);
-    if (regen) {
-      const since = t - this.lastDamageTime;
-      regen *= since < 5 ? 0.25 : remapClamped(since, 5, 10, 0.5, 1);
+    let regen =
+      hookPlayer(
+        this,
+        'add_health_regen',
+        0,
+      );
+    if (
+      regen
+    ) {
+      const since =
+        t -
+        this
+          .lastDamageTime;
+      regen *=
+        since <
+        5
+          ? 0.25
+          : remapClamped(
+              since,
+              5,
+              10,
+              0.5,
+              1,
+            );
     }
-    this.accumulatedRegen += regen;
+    this.accumulatedRegen +=
+      regen;
     let heal = 0;
-    if (this.accumulatedRegen >= 1) {
-      heal = Math.floor(this.accumulatedRegen);
-      if (this.health < this.maxHealth) this.takeHealth(heal);
-    } else if (this.accumulatedRegen < -1) {
+    if (
+      this
+        .accumulatedRegen >=
+      1
+    ) {
+      heal =
+        Math.floor(
+          this
+            .accumulatedRegen,
+        );
+      if (
+        this
+          .health <
+        this
+          .maxHealth
+      )
+        this.takeHealth(
+          heal,
+        );
+    } else if (
+      this
+        .accumulatedRegen <
+      -1
+    ) {
       // A drain (the Blutsauger): CTakeDamageInfo from the player to himself.
-      heal = Math.ceil(this.accumulatedRegen);
-      const info = this.scratchDamage();
-      info.attacker = this.id;
-      info.inflictor = this.id;
-      info.damage = -heal;
-      info.damageType = DMG_GENERIC;
-      this.worldSpaceCenter(info.position);
-      this.world.applyDamage(this, info);
+      heal =
+        Math.ceil(
+          this
+            .accumulatedRegen,
+        );
+      const info =
+        this.scratchDamage();
+      info.attacker =
+        this.id;
+      info.inflictor =
+        this.id;
+      info.damage =
+        -heal;
+      info.damageType =
+        DMG_GENERIC;
+      this.worldSpaceCenter(
+        info.position,
+      );
+      this.world.applyDamage(
+        this,
+        info,
+      );
       this.releaseScratchDamage();
     }
-    this.accumulatedRegen -= heal;
+    this.accumulatedRegen -=
+      heal;
   }
 
   /** SDK: CTFPlayerShared::Burn. `flameLife` = the weapon's afterburn per hit. */
-  ignite(attacker: number, weaponId: number, flameLife = TF_BURNING_FLAME_LIFE, weapon: Weapon | null = null): void {
-    if (!this.alive) return;
+  ignite(
+    attacker: number,
+    weaponId: number,
+    flameLife = TF_BURNING_FLAME_LIFE,
+    weapon: Weapon | null = null,
+  ): void {
+    if (
+      !this
+        .alive
+    )
+      return;
     // CTFPlayerShared::Burn: no ignition while phasing (Bonk!).
-    if (this.cond.has(TF_COND.PHASE)) return;
+    if (
+      this.cond.has(
+        TF_COND.PHASE,
+      )
+    )
+      return;
     // mult_wpn_burntime on the igniting weapon (the Degreaser's shorter afterburn is mult_wpn_burndmg).
-    const life = (base: number) => (weapon ? hookWeapon(weapon, weapon.owner, 'mult_wpn_burntime', base) : base);
+    const life =
+      (
+        base: number,
+      ) =>
+        weapon
+          ? hookWeapon(
+              weapon,
+              weapon.owner,
+              'mult_wpn_burntime',
+              base,
+            )
+          : base;
     // Afterburn immunity: a Pyro, or afterburn_immunity on the active weapon / shield / Darwin's, or
     // TF_COND_AFTERBURN_IMMUNE (the Dead Ringer's escape): a brief, fixed burn.
-    const immunePyro = (this.playerClass === TF_CLASS_PYRO && !this.cond.has(TF_COND.BURNING_PYRO)) || afterburnImmune(this);
-    if (!this.cond.has(TF_COND.BURNING)) {
-      this.cond.add(TF_COND.BURNING, PERMANENT_CONDITION, attacker);
-      this.flameBurnTime = this.world.curtime + TF_BURNING_FREQUENCY;
+    const immunePyro =
+      (this
+        .playerClass ===
+        TF_CLASS_PYRO &&
+        !this.cond.has(
+          TF_COND.BURNING_PYRO,
+        )) ||
+      afterburnImmune(
+        this,
+      );
+    if (
+      !this.cond.has(
+        TF_COND.BURNING,
+      )
+    ) {
+      this.cond.add(
+        TF_COND.BURNING,
+        PERMANENT_CONDITION,
+        attacker,
+      );
+      this.flameBurnTime =
+        this
+          .world
+          .curtime +
+        TF_BURNING_FREQUENCY;
       this.afterburnDuration = 0;
     }
-    this.burnAttacker = attacker;
-    this.burnWeaponId = weaponId;
-    this.burnWeapon = weapon;
-    if (immunePyro) this.afterburnDuration = life(TF_BURNING_FLAME_LIFE_PYRO);
-    else this.afterburnDuration = Math.min(TF_AFTERBURN_MAX_DURATION, this.afterburnDuration + life(flameLife));
+    this.burnAttacker =
+      attacker;
+    this.burnWeaponId =
+      weaponId;
+    this.burnWeapon =
+      weapon;
+    if (
+      immunePyro
+    )
+      this.afterburnDuration =
+        life(
+          TF_BURNING_FLAME_LIFE_PYRO,
+        );
+    else
+      this.afterburnDuration =
+        Math.min(
+          TF_AFTERBURN_MAX_DURATION,
+          this
+            .afterburnDuration +
+            life(
+              flameLife,
+            ),
+        );
   }
 
   extinguish(): void {
-    if (!this.cond.has(TF_COND.BURNING)) return;
-    this.cond.remove(TF_COND.BURNING);
+    if (
+      !this.cond.has(
+        TF_COND.BURNING,
+      )
+    )
+      return;
+    this.cond.remove(
+      TF_COND.BURNING,
+    );
     this.afterburnDuration = 0;
-    this.burnAttacker = NO_ENTITY;
+    this.burnAttacker =
+      NO_ENTITY;
   }
 
-  private onFallDamage(speed: number): void {
-    const spread = this.world.random.randomFloat(0.8, 1.2);
-    const dmg = tfFallDamage(speed, this.maxHealth, spread);
-    if (dmg <= 0) return;
-    const info = this.scratchDamage();
-    info.attacker = WORLD_ENTITY;
-    info.inflictor = WORLD_ENTITY;
-    info.damage = dmg;
-    info.damageType = DMG_FALL;
-    copy(info.position, this.origin);
-    this.world.applyDamage(this, info);
+  private onFallDamage(
+    speed: number,
+  ): void {
+    const spread =
+      this.world.random.randomFloat(
+        0.8,
+        1.2,
+      );
+    const dmg =
+      tfFallDamage(
+        speed,
+        this
+          .maxHealth,
+        spread,
+      );
+    if (
+      dmg <=
+      0
+    )
+      return;
+    const info =
+      this.scratchDamage();
+    info.attacker =
+      WORLD_ENTITY;
+    info.inflictor =
+      WORLD_ENTITY;
+    info.damage =
+      dmg;
+    info.damageType =
+      DMG_FALL;
+    copy(
+      info.position,
+      this
+        .origin,
+    );
+    this.world.applyDamage(
+      this,
+      info,
+    );
     this.releaseScratchDamage();
-    this.world.emitSound('Player.FallDamage', { entity: this.id });
+    this.world.emitSound(
+      'Player.FallDamage',
+      {
+        entity:
+          this
+            .id,
+      },
+    );
   }
 
   private scratchDamage(): DamageInfo {
-    const i = damageDepth++;
-    if (!damageStack[i]) damageStack[i] = createDamageInfo();
-    const info = damageStack[i];
-    copyDamageInfo(info, EMPTY_DAMAGE);
+    const i =
+      damageDepth++;
+    if (
+      !damageStack[
+        i
+      ]
+    )
+      damageStack[
+        i
+      ] =
+        createDamageInfo();
+    const info =
+      damageStack[
+        i
+      ];
+    copyDamageInfo(
+      info,
+      EMPTY_DAMAGE,
+    );
     return info;
   }
 
@@ -1004,117 +2451,408 @@ export class Player extends Entity implements AttributeOwner {
   // ─── Damage ──────────────────────────────────────────────────────────────
 
   /** SDK: CTFPlayer::OnTakeDamage + OnTakeDamage_Alive. Returns health removed. */
-  override onTakeDamage(input: DamageInfo): number {
-    if (this.lifeState !== LIFE_ALIVE || this.takeDamage === DAMAGE_NO) return 0;
-    if (this.flags & FL_GODMODE) return 0;
-    const world = this.world;
-    const info = this.scratchDamage();
-    copyDamageInfo(info, input);
+  override onTakeDamage(
+    input: DamageInfo,
+  ): number {
+    if (
+      this
+        .lifeState !==
+        LIFE_ALIVE ||
+      this
+        .takeDamage ===
+        DAMAGE_NO
+    )
+      return 0;
+    if (
+      this
+        .flags &
+      FL_GODMODE
+    )
+      return 0;
+    const world =
+      this
+        .world;
+    const info =
+      this.scratchDamage();
+    copyDamageInfo(
+      info,
+      input,
+    );
     try {
-      const attacker = world.entity(info.attacker);
-      const inflictor = world.entity(info.inflictor);
+      const attacker =
+        world.entity(
+          info.attacker,
+        );
+      const inflictor =
+        world.entity(
+          info.inflictor,
+        );
 
       // Friendly fire (CTFGameRules::FPlayerCanTakeDamage).
-      if (attacker && attacker !== this && attacker.isPlayer() && attacker.team === this.team && !world.options.friendlyFire) {
+      if (
+        attacker &&
+        attacker !==
+          this &&
+        attacker.isPlayer() &&
+        attacker.team ===
+          this
+            .team &&
+        !world
+          .options
+          .friendlyFire
+      ) {
         return 0;
       }
 
       // Rocket jumping: soldiers take 60 % of their own blast damage in the air.
       const selfBlastAirborne =
-        attacker === this &&
-        info.damageType & DMG_BLAST &&
-        !(this.move.flags & FL_ONGROUND) &&
-        this.move.waterLevel === 0;
-      if (selfBlastAirborne && this.playerClass === TF_CLASS_SOLDIER) {
-        info.damage *= TF_DAMAGESCALE_SELF_SOLDIER;
-        if (this.health - info.damage > 0) this.setBlastJumpState(TF_PLAYER_ROCKET_JUMPED);
+        attacker ===
+          this &&
+        info.damageType &
+          DMG_BLAST &&
+        !(
+          this
+            .move
+            .flags &
+          FL_ONGROUND
+        ) &&
+        this
+          .move
+          .waterLevel ===
+          0;
+      if (
+        selfBlastAirborne &&
+        this
+          .playerClass ===
+          TF_CLASS_SOLDIER
+      ) {
+        info.damage *=
+          TF_DAMAGESCALE_SELF_SOLDIER;
+        if (
+          this
+            .health -
+            info.damage >
+          0
+        )
+          this.setBlastJumpState(
+            TF_PLAYER_ROCKET_JUMPED,
+          );
       }
 
       const allowDamage =
-        (inflictor !== null && inflictor.classname === 'trigger_hurt') || info.customKill === TF_DMG_CUSTOM_TELEFRAG;
-      if (allowDamage && inflictor && inflictor.classname === 'trigger_hurt') info.customKill = TF_DMG_CUSTOM_TRIGGER_HURT;
+        (inflictor !==
+          null &&
+          inflictor.classname ===
+            'trigger_hurt') ||
+        info.customKill ===
+          TF_DMG_CUSTOM_TELEFRAG;
+      if (
+        allowDamage &&
+        inflictor &&
+        inflictor.classname ===
+          'trigger_hurt'
+      )
+        info.customKill =
+          TF_DMG_CUSTOM_TRIGGER_HURT;
 
       // Direction from us toward the inflictor (for knockback).
-      const dir = scratchDir;
-      set(dir, 0, 0, 0);
-      if (inflictor) {
-        inflictor.worldSpaceCenter(scratchA);
-        this.worldSpaceCenter(scratchB);
-        set(dir, scratchA.x - scratchB.x, scratchA.y - scratchB.y, scratchA.z - 10 - scratchB.z);
-        normalize(dir);
-      } else if (info.attacker === WORLD_ENTITY) {
-        set(dir, 0, 0, 0);
+      const dir =
+        scratchDir;
+      set(
+        dir,
+        0,
+        0,
+        0,
+      );
+      if (
+        inflictor
+      ) {
+        inflictor.worldSpaceCenter(
+          scratchA,
+        );
+        this.worldSpaceCenter(
+          scratchB,
+        );
+        set(
+          dir,
+          scratchA.x -
+            scratchB.x,
+          scratchA.y -
+            scratchB.y,
+          scratchA.z -
+            10 -
+            scratchB.z,
+        );
+        normalize(
+          dir,
+        );
+      } else if (
+        info.attacker ===
+        WORLD_ENTITY
+      ) {
+        set(
+          dir,
+          0,
+          0,
+          0,
+        );
       }
 
-      if (!applyOnDamageModifyRules(world, info, this, allowDamage)) {
+      if (
+        !applyOnDamageModifyRules(
+          world,
+          info,
+          this,
+          allowDamage,
+        )
+      ) {
         // Invulnerable: no damage, but still pushed.
-        if (!(info.damageType & DMG_PREVENT_PHYSICS_FORCE) && inflictor) applyPushFromDamage(this, info, dir);
+        if (
+          !(
+            info.damageType &
+            DMG_PREVENT_PHYSICS_FORCE
+          ) &&
+          inflictor
+        )
+          applyPushFromDamage(
+            this,
+            info,
+            dir,
+          );
         return 0;
       }
 
       // Bonk!'s phase: no damage, only the push (CTFPlayer::OnTakeDamage).
-      if (!allowDamage && unlockPreventsDamage(this, info, inflictor, dir)) return 0;
+      if (
+        !allowDamage &&
+        unlockPreventsDamage(
+          this,
+          info,
+          inflictor,
+          dir,
+        )
+      )
+        return 0;
 
       // ApplyOnDamageAliveModifyRules: the victim's resistances and vulnerabilities from items
       // (resists scale the damage without its crit bonus); ignition immunity in water is in ignite.
-      const bonus = Math.max(0, Math.min(info.damageBonus, info.damage));
-      const realDamage = aliveDamageModifiers(this, attacker, info, info.damage - bonus, bonus);
-      info.damage = realDamage;
-      if (realDamage <= 0 && !(info.damageType & DMG_BLAST && attacker === this)) return 0;
+      const bonus =
+        Math.max(
+          0,
+          Math.min(
+            info.damageBonus,
+            info.damage,
+          ),
+        );
+      const realDamage =
+        aliveDamageModifiers(
+          this,
+          attacker,
+          info,
+          info.damage -
+            bonus,
+          bonus,
+        );
+      info.damage =
+        realDamage;
+      if (
+        realDamage <=
+          0 &&
+        !(
+          info.damageType &
+            DMG_BLAST &&
+          attacker ===
+            this
+        )
+      )
+        return 0;
 
-      const prev = this.health;
+      const prev =
+        this
+          .health;
       // "Take damage - round to the nearest integer." (m_iHealth is a CNetworkVar<int>: its
       // operator-= converts the float argument to int first, so this is health -= (int)(dmg + 0.5).)
-      this.health -= Math.trunc(realDamage + 0.5);
-      this.lastDamageTime = world.curtime;
-      const removed = prev - this.health;
+      this.health -=
+        Math.trunc(
+          realDamage +
+            0.5,
+        );
+      this.lastDamageTime =
+        world.curtime;
+      const removed =
+        prev -
+        this
+          .health;
 
-      if (attacker && attacker !== this && attacker.isPlayer() && attacker.team !== this.team) {
-        this.recordDamager(attacker.id);
-        (attacker as Player).stats.damage += Math.min(removed, Math.max(prev, 0));
+      if (
+        attacker &&
+        attacker !==
+          this &&
+        attacker.isPlayer() &&
+        attacker.team !==
+          this
+            .team
+      ) {
+        this.recordDamager(
+          attacker.id,
+        );
+        (
+          attacker as Player
+        ).stats.damage +=
+          Math.min(
+            removed,
+            Math.max(
+              prev,
+              0,
+            ),
+          );
       }
 
-      world.events.push({
-        type: 'damage',
-        victim: this.id,
-        attacker: info.attacker,
-        amount: removed,
-        health: Math.max(0, this.health),
-        crit: info.critType,
-        customKill: info.customKill,
-        pos: { x: info.position.x, y: info.position.y, z: info.position.z },
-      });
-      if (info.critType !== 0 && attacker !== this) {
-        world.emitEffect({ kind: 'crittext', pos: this.eyePosition(vec3()), entity: this.id, value: info.critType });
+      world.events.push(
+        {
+          type: 'damage',
+          victim:
+            this
+              .id,
+          attacker:
+            info.attacker,
+          amount:
+            removed,
+          health:
+            Math.max(
+              0,
+              this
+                .health,
+            ),
+          crit: info.critType,
+          customKill:
+            info.customKill,
+          pos: {
+            x: info
+              .position
+              .x,
+            y: info
+              .position
+              .y,
+            z: info
+              .position
+              .z,
+          },
+        },
+      );
+      if (
+        info.critType !==
+          0 &&
+        attacker !==
+          this
+      ) {
+        world.emitEffect(
+          {
+            kind: 'crittext',
+            pos: this.eyePosition(
+              vec3(),
+            ),
+            entity:
+              this
+                .id,
+            value:
+              info.critType,
+          },
+        );
       }
 
       // Knockback.
       if (
-        !(info.damageType & DMG_PREVENT_PHYSICS_FORCE) &&
+        !(
+          info.damageType &
+          DMG_PREVENT_PHYSICS_FORCE
+        ) &&
         inflictor &&
-        this.move.moveType === MOVETYPE_WALK &&
-        !(attacker && attacker.isTrigger()) &&
-        !this.cond.has(TF_COND.DISGUISED)
+        this
+          .move
+          .moveType ===
+          MOVETYPE_WALK &&
+        !(
+          attacker &&
+          attacker.isTrigger()
+        ) &&
+        !this.cond.has(
+          TF_COND.DISGUISED,
+        )
       ) {
-        applyPushFromDamage(this, info, dir);
+        applyPushFromDamage(
+          this,
+          info,
+          dir,
+        );
       }
 
       // Ignition.
-      if (info.damageType & DMG_IGNITE && this.move.waterLevel < WL_WAIST && attacker && attacker.isPlayer()) {
-        this.ignite(attacker.id, info.weaponId, info.afterburn > 0 ? info.afterburn : TF_BURNING_FLAME_LIFE, damageWeapon(world, info));
+      if (
+        info.damageType &
+          DMG_IGNITE &&
+        this
+          .move
+          .waterLevel <
+          WL_WAIST &&
+        attacker &&
+        attacker.isPlayer()
+      ) {
+        this.ignite(
+          attacker.id,
+          info.weaponId,
+          info.afterburn >
+            0
+            ? info.afterburn
+            : TF_BURNING_FLAME_LIFE,
+          damageWeapon(
+            world,
+            info,
+          ),
+        );
       }
 
       // The attacker's on-hit attributes (CTFWeaponBase::ApplyOnHitAttributes).
-      if (removed > 0 && attacker && attacker !== this && attacker.isPlayer() && attacker.team !== this.team) {
-        applyOnHitAttributes(attacker as Player, this, info);
+      if (
+        removed >
+          0 &&
+        attacker &&
+        attacker !==
+          this &&
+        attacker.isPlayer() &&
+        attacker.team !==
+          this
+            .team
+      ) {
+        applyOnHitAttributes(
+          attacker as Player,
+          this,
+          info,
+        );
       }
       // The unlock reactions to a hit (bleeding, rage, hype, feign death, gas …).
-      unlockOnDamaged(this, attacker, info, removed);
+      unlockOnDamaged(
+        this,
+        attacker,
+        info,
+        removed,
+      );
 
-      if (this.health <= 0) {
+      if (
+        this
+          .health <=
+        0
+      ) {
         // CBasePlayer::OnTakeDamage under OVERLAY_BUDDHA_MODE: the hit lands, the player lives.
-        if (this.buddha) this.health = 1;
-        else this.die(info);
+        if (
+          this
+            .buddha
+        )
+          this.health = 1;
+        else
+          this.die(
+            info,
+          );
       }
       return removed;
     } finally {
@@ -1122,186 +2860,588 @@ export class Player extends Entity implements AttributeOwner {
     }
   }
 
-  private recordDamager(id: number): void {
-    const t = this.world.curtime;
-    const h = this.damagers;
+  private recordDamager(
+    id: number,
+  ): void {
+    const t =
+      this
+        .world
+        .curtime;
+    const h =
+      this
+        .damagers;
     // Most recent first, unique (CAchievementData::AddDamagerToHistory).
-    const idx = h.findIndex((d) => d.id === id);
-    if (idx >= 0) h.splice(idx, 1);
-    h.unshift({ id, time: t });
-    if (h.length > DAMAGER_HISTORY + 2) h.length = DAMAGER_HISTORY + 2;
+    const idx =
+      h.findIndex(
+        (
+          d,
+        ) =>
+          d.id ===
+          id,
+      );
+    if (
+      idx >=
+      0
+    )
+      h.splice(
+        idx,
+        1,
+      );
+    h.unshift(
+      {
+        id,
+        time: t,
+      },
+    );
+    if (
+      h.length >
+      DAMAGER_HISTORY +
+        2
+    )
+      h.length =
+        DAMAGER_HISTORY +
+        2;
   }
 
   /** SDK: CTFGameRules::GetRecentDamager. */
-  recentDamager(index: number, maxElapsed: number): Player | null {
-    const d = this.damagers[index];
-    if (!d || this.world.curtime - d.time > maxElapsed) return null;
-    const e = this.world.entity(d.id);
-    return e && e.isPlayer() && !e.removed ? (e as Player) : null;
+  recentDamager(
+    index: number,
+    maxElapsed: number,
+  ): Player | null {
+    const d =
+      this
+        .damagers[
+        index
+      ];
+    if (
+      !d ||
+      this
+        .world
+        .curtime -
+        d.time >
+        maxElapsed
+    )
+      return null;
+    const e =
+      this.world.entity(
+        d.id,
+      );
+    return e &&
+      e.isPlayer() &&
+      !e.removed
+      ? (e as Player)
+      : null;
   }
 
   /** SDK: CTFPlayer::ShouldGib. */
-  shouldGib(info: DamageInfo): boolean {
-    if (!(info.damageType & DMG_BLAST) && !(info.damageType & DMG_HALF_FALLOFF)) return false;
-    if (info.damageType & DMG_CRITICAL) return true;
-    return this.health <= -10;
+  shouldGib(
+    info: DamageInfo,
+  ): boolean {
+    if (
+      !(
+        info.damageType &
+        DMG_BLAST
+      ) &&
+      !(
+        info.damageType &
+        DMG_HALF_FALLOFF
+      )
+    )
+      return false;
+    if (
+      info.damageType &
+      DMG_CRITICAL
+    )
+      return true;
+    return (
+      this
+        .health <=
+      -10
+    );
   }
 
   /**
    * SDK: CTFPlayer::Event_Killed + CTFGameRules::PlayerKilled /
    * DeathNotice: credit, dominations, drops, effects, respawn scheduling.
    */
-  die(info: DamageInfo): void {
-    if (this.lifeState !== LIFE_ALIVE) return;
-    const world = this.world;
-    const gib = this.shouldGib(info);
-    const burning = this.cond.has(TF_COND.BURNING);
-    this.lifeState = LIFE_DYING;
-    this.deathTime = world.curtime;
-    this.takeDamage = DAMAGE_NO;
+  die(
+    info: DamageInfo,
+  ): void {
+    if (
+      this
+        .lifeState !==
+      LIFE_ALIVE
+    )
+      return;
+    const world =
+      this
+        .world;
+    const gib =
+      this.shouldGib(
+        info,
+      );
+    const burning =
+      this.cond.has(
+        TF_COND.BURNING,
+      );
+    this.lifeState =
+      LIFE_DYING;
+    this.deathTime =
+      world.curtime;
+    this.takeDamage =
+      DAMAGE_NO;
 
     // Scorer (GetDeathScorer): suicides and environment deaths credit a recent damager.
-    let scorer: Player | null = null;
-    const killer = world.entity(info.attacker);
-    if (killer && killer.isPlayer() && killer !== this) scorer = killer as Player;
-    else if (!killer || killer === this || !killer.isPlayer()) {
-      scorer = this.recentDamager(0, TF_TIME_SUICIDE_KILL_CREDIT);
+    let scorer: Player | null =
+      null;
+    const killer =
+      world.entity(
+        info.attacker,
+      );
+    if (
+      killer &&
+      killer.isPlayer() &&
+      killer !==
+        this
+    )
+      scorer =
+        killer as Player;
+    else if (
+      !killer ||
+      killer ===
+        this ||
+      !killer.isPlayer()
+    ) {
+      scorer =
+        this.recentDamager(
+          0,
+          TF_TIME_SUICIDE_KILL_CREDIT,
+        );
     }
     // Assister (GetAssister).
-    let assister: Player | null = null;
-    if (scorer) {
-      const explicit = world.entity(this.pendingAssist);
-      if (explicit && explicit.isPlayer() && explicit !== scorer) assister = explicit as Player;
-      if (!assister) {
+    let assister: Player | null =
+      null;
+    if (
+      scorer
+    ) {
+      const explicit =
+        world.entity(
+          this
+            .pendingAssist,
+        );
+      if (
+        explicit &&
+        explicit.isPlayer() &&
+        explicit !==
+          scorer
+      )
+        assister =
+          explicit as Player;
+      if (
+        !assister
+      ) {
         for (const h of scorer.healers) {
-          const e = world.entity(h.id);
-          if (!h.dispenser && e && e.isPlayer() && (e as Player).playerClass === TF_CLASS_MEDIC) {
-            const inflictor = world.entity(info.inflictor);
-            if (!inflictor || !inflictor.isBaseObject()) assister = e as Player;
+          const e =
+            world.entity(
+              h.id,
+            );
+          if (
+            !h.dispenser &&
+            e &&
+            e.isPlayer() &&
+            (
+              e as Player
+            )
+              .playerClass ===
+              TF_CLASS_MEDIC
+          ) {
+            const inflictor =
+              world.entity(
+                info.inflictor,
+              );
+            if (
+              !inflictor ||
+              !inflictor.isBaseObject()
+            )
+              assister =
+                e as Player;
             break;
           }
         }
       }
-      if (!assister) {
-        const recent = this.recentDamager(1, TF_TIME_ASSIST_KILL);
-        if (recent && recent !== scorer) assister = recent;
+      if (
+        !assister
+      ) {
+        const recent =
+          this.recentDamager(
+            1,
+            TF_TIME_ASSIST_KILL,
+          );
+        if (
+          recent &&
+          recent !==
+            scorer
+        )
+          assister =
+            recent;
       }
-      if (assister && assister.team !== scorer.team) assister = null;
+      if (
+        assister &&
+        assister.team !==
+          scorer.team
+      )
+        assister =
+          null;
     }
-    this.pendingAssist = NO_ENTITY;
+    this.pendingAssist =
+      NO_ENTITY;
 
     // Stats, dominations, revenge (CTF_GameStats::Event_PlayerKilled + CalcDominationAndRevenge).
     let deathFlags = 0;
-    this.stats.deaths++;
-    if (scorer) {
-      if (killer === scorer) applyOnKillAttributes(scorer, info);
-      unlockOnKill(this, info, scorer, assister);
-      scorer.stats.kills++;
-      if (info.customKill === TF_DMG_CUSTOM_BACKSTAB) scorer.stats.backstabs++;
-      if (isHeadshot(info.customKill)) scorer.stats.headshots++;
-      deathFlags |= this.calcDominationAndRevenge(scorer, false);
-      this.killedByUnanswered.set(scorer.id, (this.killedByUnanswered.get(scorer.id) ?? 0) + 1);
-      scorer.killedByUnanswered.set(this.id, 0);
+    this
+      .stats
+      .deaths++;
+    if (
+      scorer
+    ) {
+      if (
+        killer ===
+        scorer
+      )
+        applyOnKillAttributes(
+          scorer,
+          info,
+        );
+      unlockOnKill(
+        this,
+        info,
+        scorer,
+        assister,
+      );
+      scorer
+        .stats
+        .kills++;
+      if (
+        info.customKill ===
+        TF_DMG_CUSTOM_BACKSTAB
+      )
+        scorer
+          .stats
+          .backstabs++;
+      if (
+        isHeadshot(
+          info.customKill,
+        )
+      )
+        scorer
+          .stats
+          .headshots++;
+      deathFlags |=
+        this.calcDominationAndRevenge(
+          scorer,
+          false,
+        );
+      this.killedByUnanswered.set(
+        scorer.id,
+        (this.killedByUnanswered.get(
+          scorer.id,
+        ) ??
+          0) +
+          1,
+      );
+      scorer.killedByUnanswered.set(
+        this
+          .id,
+        0,
+      );
     } else {
-      this.stats.suicides++;
+      this
+        .stats
+        .suicides++;
     }
-    if (assister) {
-      assister.stats.assists++;
-      deathFlags |= this.calcDominationAndRevenge(assister, true);
+    if (
+      assister
+    ) {
+      assister
+        .stats
+        .assists++;
+      deathFlags |=
+        this.calcDominationAndRevenge(
+          assister,
+          true,
+        );
     }
 
-    world.events.push({
-      type: 'death',
-      victim: this.id,
-      attacker: scorer ? scorer.id : 0,
-      assister: assister ? assister.id : 0,
-      inflictor: info.inflictor > 0 ? info.inflictor : 0,
-      weapon: info.killIcon,
-      weaponDefIndex: info.weaponDefIndex,
-      crit: info.critType,
-      customKill: info.customKill,
-      damageType: info.damageType,
-      deathFlags,
-      victimClass: this.playerClass,
-      gib,
-      burning,
-    });
-    world.emitEffect({
-      kind: gib ? 'gibs' : 'ragdoll',
-      pos: { x: this.origin.x, y: this.origin.y, z: this.origin.z },
-      entity: this.id,
-      team: this.team,
-      value: this.playerClass,
-      // Where the blow landed (the bullet's hit, the blast's centre): the part it pushes hardest.
-      start: { x: info.position.x, y: info.position.y, z: info.position.z },
-      force: {
-        x: info.force.x + this.velocity.x,
-        y: info.force.y + this.velocity.y,
-        z: info.force.z + this.velocity.z,
+    world.events.push(
+      {
+        type: 'death',
+        victim:
+          this
+            .id,
+        attacker:
+          scorer
+            ? scorer.id
+            : 0,
+        assister:
+          assister
+            ? assister.id
+            : 0,
+        inflictor:
+          info.inflictor >
+          0
+            ? info.inflictor
+            : 0,
+        weapon:
+          info.killIcon,
+        weaponDefIndex:
+          info.weaponDefIndex,
+        crit: info.critType,
+        customKill:
+          info.customKill,
+        damageType:
+          info.damageType,
+        deathFlags,
+        victimClass:
+          this
+            .playerClass,
+        gib,
+        burning,
       },
-    });
+    );
+    world.emitEffect(
+      {
+        kind: gib
+          ? 'gibs'
+          : 'ragdoll',
+        pos: {
+          x: this
+            .origin
+            .x,
+          y: this
+            .origin
+            .y,
+          z: this
+            .origin
+            .z,
+        },
+        entity:
+          this
+            .id,
+        team: this
+          .team,
+        value:
+          this
+            .playerClass,
+        // Where the blow landed (the bullet's hit, the blast's centre): the part it pushes hardest.
+        start:
+          {
+            x: info
+              .position
+              .x,
+            y: info
+              .position
+              .y,
+            z: info
+              .position
+              .z,
+          },
+        force:
+          {
+            x:
+              info
+                .force
+                .x +
+              this
+                .velocity
+                .x,
+            y:
+              info
+                .force
+                .y +
+              this
+                .velocity
+                .y,
+            z:
+              info
+                .force
+                .z +
+              this
+                .velocity
+                .z,
+          },
+      },
+    );
 
     // Drops: ammo pack with the active weapon's model, the flag.
-    world.rules.onPlayerKilled(this, info, scorer, assister);
+    world.rules.onPlayerKilled(
+      this,
+      info,
+      scorer,
+      assister,
+    );
     this.dropAmmoPack();
 
     // Clean up.
-    for (let i = 0; i < WEAPON_SLOTS; i++) this.weapons[i]?.onOwnerDeath();
+    for (
+      let i = 0;
+      i <
+      WEAPON_SLOTS;
+      i++
+    )
+      this.weapons[
+        i
+      ]?.onOwnerDeath();
     this.healers.length = 0;
     this.cond.clear();
-    onUnlockOwnerDied(this);
+    onUnlockOwnerDied(
+      this,
+    );
     this.afterburnDuration = 0;
     this.blastJumpState = 0;
     this.health = 0;
-    this.solid = SOLID_NONE;
-    this.solidFlags |= FSOLID_NOT_SOLID;
+    this.solid =
+      SOLID_NONE;
+    this.solidFlags |=
+      FSOLID_NOT_SOLID;
     this.move.dead = true;
-    this.move.moveType = MOVETYPE_NONE;
-    set(this.velocity, 0, 0, 0);
-    this.doAnimationEvent(PLAYERANIMEVENT_DIE);
-    this.respawnAt = world.rules.nextRespawnTime(this);
+    this.move.moveType =
+      MOVETYPE_NONE;
+    set(
+      this
+        .velocity,
+      0,
+      0,
+      0,
+    );
+    this.doAnimationEvent(
+      PLAYERANIMEVENT_DIE,
+    );
+    this.respawnAt =
+      world.rules.nextRespawnTime(
+        this,
+      );
   }
 
-  private calcDominationAndRevenge(attacker: Player, isAssist: boolean): number {
+  private calcDominationAndRevenge(
+    attacker: Player,
+    isAssist: boolean,
+  ): number {
     let flags = 0;
-    const unanswered = (this.killedByUnanswered.get(attacker.id) ?? 0) + 1;
-    if (unanswered === TF_KILLS_DOMINATION) {
-      flags |= isAssist ? TF_DEATH_ASSISTER_DOMINATION : TF_DEATH_DOMINATION;
-      attacker.dominating.add(this.id);
-      attacker.stats.dominations++;
-    } else if (this.dominating.has(attacker.id)) {
-      flags |= isAssist ? TF_DEATH_ASSISTER_REVENGE : TF_DEATH_REVENGE;
-      this.dominating.delete(attacker.id);
-      attacker.stats.revenges++;
+    const unanswered =
+      (this.killedByUnanswered.get(
+        attacker.id,
+      ) ??
+        0) +
+      1;
+    if (
+      unanswered ===
+      TF_KILLS_DOMINATION
+    ) {
+      flags |=
+        isAssist
+          ? TF_DEATH_ASSISTER_DOMINATION
+          : TF_DEATH_DOMINATION;
+      attacker.dominating.add(
+        this
+          .id,
+      );
+      attacker
+        .stats
+        .dominations++;
+    } else if (
+      this.dominating.has(
+        attacker.id,
+      )
+    ) {
+      flags |=
+        isAssist
+          ? TF_DEATH_ASSISTER_REVENGE
+          : TF_DEATH_REVENGE;
+      this.dominating.delete(
+        attacker.id,
+      );
+      attacker
+        .stats
+        .revenges++;
     }
     return flags;
   }
 
   /** SDK: CTFPlayer::DropAmmoPack — a medium pack with the active weapon's look. */
   dropAmmoPack(): void {
-    const w = this.activeWeapon() ?? this.weapons.find((x) => x !== null) ?? null;
-    if (!w || !this.world.isServer) return;
-    this.world.spawnEntity('tf_ammo_pack', (e) => {
-      copy(e.origin, this.origin);
-      e.origin.z += 40;
-      e.model = w.worldModel;
-      e.owner = this.id;
-      e.team = this.team;
-      copy(e.velocity, this.velocity);
-    });
+    const w =
+      this.activeWeapon() ??
+      this.weapons.find(
+        (
+          x,
+        ) =>
+          x !==
+          null,
+      ) ??
+      null;
+    if (
+      !w ||
+      !this
+        .world
+        .isServer
+    )
+      return;
+    this.world.spawnEntity(
+      'tf_ammo_pack',
+      (
+        e,
+      ) => {
+        copy(
+          e.origin,
+          this
+            .origin,
+        );
+        e.origin.z += 40;
+        e.model =
+          w.worldModel;
+        e.owner =
+          this.id;
+        e.team =
+          this.team;
+        copy(
+          e.velocity,
+          this
+            .velocity,
+        );
+      },
+    );
   }
 
   /** Kill without credit (team change, class change outside spawn with forced respawn, "kill" command). */
-  commitSuicide(explode = false): void {
-    if (this.lifeState !== LIFE_ALIVE) return;
-    const info = this.scratchDamage();
-    info.attacker = this.id;
-    info.inflictor = this.id;
-    info.damage = this.health + 1000;
-    info.damageType = explode ? DMG_BLAST | DMG_CRITICAL : DMG_GENERIC;
+  commitSuicide(
+    explode = false,
+  ): void {
+    if (
+      this
+        .lifeState !==
+      LIFE_ALIVE
+    )
+      return;
+    const info =
+      this.scratchDamage();
+    info.attacker =
+      this.id;
+    info.inflictor =
+      this.id;
+    info.damage =
+      this
+        .health +
+      1000;
+    info.damageType =
+      explode
+        ? DMG_BLAST |
+          DMG_CRITICAL
+        : DMG_GENERIC;
     info.customKill = 6; // TF_DMG_CUSTOM_SUICIDE
     this.health = 0;
-    this.die(info);
+    this.die(
+      info,
+    );
     this.releaseScratchDamage();
   }
 
@@ -1313,147 +3453,463 @@ export class Player extends Entity implements AttributeOwner {
    * is available (the player stays dead and the rules retry).
    */
   spawnPlayer(): boolean {
-    const world = this.world;
-    if (this.team !== TF_TEAM_RED && this.team !== TF_TEAM_BLUE) return false;
-    if (this.desiredClass > 0 && this.desiredClass < TF_CLASS_COUNT) {
-      if (this.desiredClass !== this.playerClass) {
-        this.playerClass = this.desiredClass;
-        for (let i = 0; i < WEAPON_SLOTS; i++) this.weapons[i] = null;
+    const world =
+      this
+        .world;
+    if (
+      this
+        .team !==
+        TF_TEAM_RED &&
+      this
+        .team !==
+        TF_TEAM_BLUE
+    )
+      return false;
+    if (
+      this
+        .desiredClass >
+        0 &&
+      this
+        .desiredClass <
+        TF_CLASS_COUNT
+    ) {
+      if (
+        this
+          .desiredClass !==
+        this
+          .playerClass
+      ) {
+        this.playerClass =
+          this.desiredClass;
+        for (
+          let i = 0;
+          i <
+          WEAPON_SLOTS;
+          i++
+        )
+          this.weapons[
+            i
+          ] =
+            null;
       }
     }
-    if (this.playerClass <= 0) return false;
-    const spot = world.spawns.selectSpawnPoint(this);
-    if (!spot) return false;
+    if (
+      this
+        .playerClass <=
+      0
+    )
+      return false;
+    const spot =
+      world.spawns.selectSpawnPoint(
+        this,
+      );
+    if (
+      !spot
+    )
+      return false;
 
     // Reset movement state.
-    const fresh = createMoveState(this.playerClass, this.team);
-    copy(fresh.origin, spot.origin);
-    set(fresh.velocity, 0, 0, 0);
-    this.restoreMoveState(fresh);
-    this.move.viewOffsetZ = this.standEyeHeight();
-    this.setSize(this.hull.min, this.hull.max);
-    world.spawns.dropToGround(this);
-    copy(this.angles, spot.angles);
-    copy(this.eyeAngles, spot.angles);
+    const fresh =
+      createMoveState(
+        this
+          .playerClass,
+        this
+          .team,
+      );
+    copy(
+      fresh.origin,
+      spot.origin,
+    );
+    set(
+      fresh.velocity,
+      0,
+      0,
+      0,
+    );
+    this.restoreMoveState(
+      fresh,
+    );
+    this.move.viewOffsetZ =
+      this.standEyeHeight();
+    this.setSize(
+      this
+        .hull
+        .min,
+      this
+        .hull
+        .max,
+    );
+    world.spawns.dropToGround(
+      this,
+    );
+    copy(
+      this
+        .angles,
+      spot.angles,
+    );
+    copy(
+      this
+        .eyeAngles,
+      spot.angles,
+    );
     this.eyeAngles.x = 0;
     this.eyeAngles.z = 0;
 
-    this.lifeState = LIFE_ALIVE;
+    this.lifeState =
+      LIFE_ALIVE;
     this.move.dead = false;
-    this.move.moveType = MOVETYPE_WALK;
-    this.moveType = MOVETYPE_WALK;
-    this.observerMode = OBS_MODE_NONE;
-    this.solid = SOLID_BBOX;
-    this.solidFlags &= ~FSOLID_NOT_SOLID;
-    this.takeDamage = DAMAGE_YES;
-    this.effects &= ~EF_NODRAW;
-    this.effects |= EF_NOINTERP;
-    this.setSize(this.hull.min, this.hull.max);
+    this.move.moveType =
+      MOVETYPE_WALK;
+    this.moveType =
+      MOVETYPE_WALK;
+    this.observerMode =
+      OBS_MODE_NONE;
+    this.solid =
+      SOLID_BBOX;
+    this.solidFlags &=
+      ~FSOLID_NOT_SOLID;
+    this.takeDamage =
+      DAMAGE_YES;
+    this.effects &=
+      ~EF_NODRAW;
+    this.effects |=
+      EF_NOINTERP;
+    this.setSize(
+      this
+        .hull
+        .min,
+      this
+        .hull
+        .max,
+    );
     this.cond.clear();
     this.healers.length = 0;
     this.afterburnDuration = 0;
     this.blastJumpState = 0;
     this.damagers.length = 0;
-    this.lastDamageTime = -1000;
+    this.lastDamageTime =
+      -1000;
     this.accumulatedRegen = 0;
     this.healFraction = 0;
-    this.lastRegenAt = world.curtime;
+    this.lastRegenAt =
+      world.curtime;
     this.respawnAt = 0;
     this.cloakMeter = 100;
-    this.carriedFlag = NO_ENTITY;
+    this.carriedFlag =
+      NO_ENTITY;
 
     // Items first: max health and ammo read their attributes (CTFPlayer::InitClass).
-    if (this.weapons.every((w) => w === null) || this.loadoutPending) this.giveDefaultItems();
-    else for (const w of this.weapons) w?.refill();
+    if (
+      this.weapons.every(
+        (
+          w,
+        ) =>
+          w ===
+          null,
+      ) ||
+      this
+        .loadoutPending
+    )
+      this.giveDefaultItems();
+    else
+      for (const w of this
+        .weapons)
+        w?.refill();
     this.initClass();
-    resetUnlockMeters(this, true);
-    this.activeSlot = -1;
-    const first = this.weapons.findIndex((w) => w !== null);
-    if (first >= 0) this.switchToSlot(first);
-    this.lastSlot = -1;
+    resetUnlockMeters(
+      this,
+      true,
+    );
+    this.activeSlot =
+      -1;
+    const first =
+      this.weapons.findIndex(
+        (
+          w,
+        ) =>
+          w !==
+          null,
+      );
+    if (
+      first >=
+      0
+    )
+      this.switchToSlot(
+        first,
+      );
+    this.lastSlot =
+      -1;
 
-    this.doAnimationEvent(PLAYERANIMEVENT_SPAWN);
-    world.lagcomp.reset(this.id);
+    this.doAnimationEvent(
+      PLAYERANIMEVENT_SPAWN,
+    );
+    world.lagcomp.reset(
+      this
+        .id,
+    );
     // Link to the volumes we spawned in (respawn room) right away.
-    world.touchTriggers(this);
-    world.events.push({ type: 'spawn', player: this.id, team: this.team, cls: this.playerClass });
-    world.events.push({ type: 'teleport', player: this.id });
-    world.rules.onPlayerSpawned(this);
+    world.touchTriggers(
+      this,
+    );
+    world.events.push(
+      {
+        type: 'spawn',
+        player:
+          this
+            .id,
+        team: this
+          .team,
+        cls: this
+          .playerClass,
+      },
+    );
+    world.events.push(
+      {
+        type: 'teleport',
+        player:
+          this
+            .id,
+      },
+    );
+    world.rules.onPlayerSpawned(
+      this,
+    );
     return true;
   }
 
   /** SDK: CTFPlayer::InitClass — max health and full ammo. */
   initClass(): void {
-    this.maxHealth = this.computeMaxHealth();
-    this.health = this.maxHealth;
+    this.maxHealth =
+      this.computeMaxHealth();
+    this.health =
+      this.maxHealth;
     this.refillAmmo();
   }
 
   /** SDK: CTFPlayer::Regenerate (resupply cabinet). */
-  regenerate(refillHealthAndAmmo = true): void {
-    if (!this.alive) return;
-    const oldHealth = this.health;
-    const oldMax = this.maxHealth;
-    const boosted = oldHealth > oldMax;
+  regenerate(
+    refillHealthAndAmmo = true,
+  ): void {
+    if (
+      !this
+        .alive
+    )
+      return;
+    const oldHealth =
+      this
+        .health;
+    const oldMax =
+      this
+        .maxHealth;
+    const boosted =
+      oldHealth >
+      oldMax;
     // A loadout chosen since the last spawn is put on here (Regenerate → InitClass → GiveDefaultItems).
-    if (this.loadoutPending) {
-      const active = this.activeSlot;
+    if (
+      this
+        .loadoutPending
+    ) {
+      const active =
+        this
+          .activeSlot;
       this.giveDefaultItems();
-      const slot = active >= 0 && this.weapons[active] ? active : this.weapons.findIndex((w) => w !== null);
-      if (slot >= 0) this.switchToSlot(slot);
-      this.lastSlot = -1;
+      const slot =
+        active >=
+          0 &&
+        this
+          .weapons[
+          active
+        ]
+          ? active
+          : this.weapons.findIndex(
+              (
+                w,
+              ) =>
+                w !==
+                null,
+            );
+      if (
+        slot >=
+        0
+      )
+        this.switchToSlot(
+          slot,
+        );
+      this.lastSlot =
+        -1;
     }
-    this.maxHealth = this.computeMaxHealth();
-    if (refillHealthAndAmmo) {
-      this.health = Math.max(boosted ? oldHealth : 0, this.maxHealth);
-      for (const c of [TF_COND.BURNING, TF_COND.URINE, TF_COND.MAD_MILK, TF_COND.BLEEDING, TF_COND.ENERGY_BUFF, TF_COND.PHASE]) {
-        this.cond.remove(c);
+    this.maxHealth =
+      this.computeMaxHealth();
+    if (
+      refillHealthAndAmmo
+    ) {
+      this.health =
+        Math.max(
+          boosted
+            ? oldHealth
+            : 0,
+          this
+            .maxHealth,
+        );
+      for (const c of [
+        TF_COND.BURNING,
+        TF_COND.URINE,
+        TF_COND.MAD_MILK,
+        TF_COND.BLEEDING,
+        TF_COND.ENERGY_BUFF,
+        TF_COND.PHASE,
+      ]) {
+        this.cond.remove(
+          c,
+        );
       }
       this.afterburnDuration = 0;
       this.cloakMeter = 100;
-      resetUnlockMeters(this, false);
+      resetUnlockMeters(
+        this,
+        false,
+      );
       // grenades1_resupply_denied (the Gas Passer): the locker does not refill that ammo.
-      const keepGrenades1 = hookInt(hookPlayer(this, 'grenades1_resupply_denied', 0)) ? this.ammo[4] : -1;
+      const keepGrenades1 =
+        hookInt(
+          hookPlayer(
+            this,
+            'grenades1_resupply_denied',
+            0,
+          ),
+        )
+          ? this
+              .ammo[4]
+          : -1;
       this.refillAmmo();
-      if (keepGrenades1 >= 0) this.ammo[4] = keepGrenades1;
-      for (const w of this.weapons) w?.refill();
+      if (
+        keepGrenades1 >=
+        0
+      )
+        this.ammo[4] =
+          keepGrenades1;
+      for (const w of this
+        .weapons)
+        w?.refill();
     }
-    this.world.events.push({ type: 'pickup', player: this.id, item: 'regenerate' });
+    this.world.events.push(
+      {
+        type: 'pickup',
+        player:
+          this
+            .id,
+        item: 'regenerate',
+      },
+    );
   }
 
   /** In one of our own team's respawn rooms (PointInRespawnRoom with the same team). */
   inRespawnRoom(): boolean {
-    return this.ownRespawnRoomCount > 0;
+    return (
+      this
+        .ownRespawnRoomCount >
+      0
+    );
   }
 
   /**
    * SDK: CTFPlayer::HandleCommand_JoinClass. In a respawn room (or with no
    * class yet) the change is instant; otherwise it applies on the next spawn.
    */
-  requestClass(cls: number): void {
-    if (cls <= 0 || cls >= TF_CLASS_COUNT) return;
-    this.desiredClass = cls;
-    if (this.lifeState !== LIFE_ALIVE) {
-      if (this.playerClass === 0 || this.world.rules.canSpawnInstantly(this)) this.world.rules.respawnNow(this);
+  requestClass(
+    cls: number,
+  ): void {
+    if (
+      cls <=
+        0 ||
+      cls >=
+        TF_CLASS_COUNT
+    )
+      return;
+    this.desiredClass =
+      cls;
+    if (
+      this
+        .lifeState !==
+      LIFE_ALIVE
+    ) {
+      if (
+        this
+          .playerClass ===
+          0 ||
+        this.world.rules.canSpawnInstantly(
+          this,
+        )
+      )
+        this.world.rules.respawnNow(
+          this,
+        );
       return;
     }
-    if (cls === this.playerClass) return;
-    if (this.inRespawnRoom()) this.world.rules.respawnNow(this, true);
+    if (
+      cls ===
+      this
+        .playerClass
+    )
+      return;
+    if (
+      this.inRespawnRoom()
+    )
+      this.world.rules.respawnNow(
+        this,
+        true,
+      );
   }
 
   /** SDK: CTFPlayer::ChangeTeam — alive players die (no credit), then wait for a wave. */
-  requestTeam(team: number): void {
-    if (team === this.team) return;
-    const old = this.team;
-    if (this.lifeState === LIFE_ALIVE) this.commitSuicide();
-    this.changeTeam(team);
-    this.move.team = team;
-    this.world.events.push({ type: 'team', player: this.id, team, oldTeam: old });
-    if (team === TEAM_SPECTATOR || team === TEAM_UNASSIGNED) {
-      this.observerMode = OBS_MODE_ROAMING;
+  requestTeam(
+    team: number,
+  ): void {
+    if (
+      team ===
+      this
+        .team
+    )
+      return;
+    const old =
+      this
+        .team;
+    if (
+      this
+        .lifeState ===
+      LIFE_ALIVE
+    )
+      this.commitSuicide();
+    this.changeTeam(
+      team,
+    );
+    this.move.team =
+      team;
+    this.world.events.push(
+      {
+        type: 'team',
+        player:
+          this
+            .id,
+        team,
+        oldTeam:
+          old,
+      },
+    );
+    if (
+      team ===
+        TEAM_SPECTATOR ||
+      team ===
+        TEAM_UNASSIGNED
+    ) {
+      this.observerMode =
+        OBS_MODE_ROAMING;
       this.respawnAt = 0;
     } else {
-      this.respawnAt = this.world.rules.nextRespawnTime(this);
+      this.respawnAt =
+        this.world.rules.nextRespawnTime(
+          this,
+        );
     }
   }
 
@@ -1463,90 +3919,319 @@ export class Player extends Entity implements AttributeOwner {
     return NET_PLAYER;
   }
 
-  override writeNet(out: NetRecord): void {
-    super.writeNet(out);
-    out.vx = this.velocity.x;
-    out.vy = this.velocity.y;
-    out.vz = this.velocity.z;
-    out.eyePitch = this.eyeAngles.x;
-    out.eyeYaw = this.eyeAngles.y;
-    out.cls = this.playerClass;
-    out.lifeState = this.lifeState;
-    out.health = Math.max(-999, Math.min(32767, this.health));
-    out.maxHealth = this.maxHealth;
-    out.flags = this.move.flags;
-    out.ducked = this.move.ducked;
-    out.onGround = (this.move.flags & FL_ONGROUND) !== 0;
-    for (let i = 0; i < COND_WORDS; i++) out[COND_FIELDS[i]] = this.cond.bits[i];
-    const w = this.activeWeapon();
-    out.activeWeapon = w ? w.defindex : -1;
-    out.activeSlot = this.activeSlot;
-    out.weaponLoop = this.weaponLoopSound();
-    out.animEvent = this.animEvent;
-    out.animEventSeq = this.animEventSeq;
-    out.disguiseTeam = this.disguiseTeam;
-    out.disguiseClass = this.disguiseClass;
-    out.disguiseTarget = this.disguiseTarget;
-    out.cloak = this.cloakMeter;
-    out.carriedFlag = this.carriedFlag;
-    out.observerMode = this.observerMode;
-    out.observerTarget = this.observerTarget;
-    out.items = this.items;
+  override writeNet(
+    out: NetRecord,
+  ): void {
+    super.writeNet(
+      out,
+    );
+    out.vx =
+      this.velocity.x;
+    out.vy =
+      this.velocity.y;
+    out.vz =
+      this.velocity.z;
+    out.eyePitch =
+      this.eyeAngles.x;
+    out.eyeYaw =
+      this.eyeAngles.y;
+    out.cls =
+      this.playerClass;
+    out.lifeState =
+      this.lifeState;
+    out.health =
+      Math.max(
+        -999,
+        Math.min(
+          32767,
+          this
+            .health,
+        ),
+      );
+    out.maxHealth =
+      this.maxHealth;
+    out.flags =
+      this.move.flags;
+    out.ducked =
+      this.move.ducked;
+    out.onGround =
+      (this
+        .move
+        .flags &
+        FL_ONGROUND) !==
+      0;
+    for (
+      let i = 0;
+      i <
+      COND_WORDS;
+      i++
+    )
+      out[
+        COND_FIELDS[
+          i
+        ]
+      ] =
+        this.cond.bits[
+          i
+        ];
+    const w =
+      this.activeWeapon();
+    out.activeWeapon =
+      w
+        ? w.defindex
+        : -1;
+    out.activeSlot =
+      this.activeSlot;
+    out.weaponLoop =
+      this.weaponLoopSound();
+    out.animEvent =
+      this.animEvent;
+    out.animEventSeq =
+      this.animEventSeq;
+    out.disguiseTeam =
+      this.disguiseTeam;
+    out.disguiseClass =
+      this.disguiseClass;
+    out.disguiseTarget =
+      this.disguiseTarget;
+    out.cloak =
+      this.cloakMeter;
+    out.carriedFlag =
+      this.carriedFlag;
+    out.observerMode =
+      this.observerMode;
+    out.observerTarget =
+      this.observerTarget;
+    out.items =
+      this.items;
     // Private block.
-    for (let i = 1; i < TF_AMMO_COUNT; i++) out[AMMO_FIELDS[i]] = this.ammo[i];
-    out.lastSlot = this.lastSlot;
-    out.respawnAt = this.respawnAt;
-    out.nextRegenAt = this.nextRegenTime;
-    for (let i = 0; i < 4; i++) out[METER_FIELDS[i]] = this.meters[i];
-    out.blastJump = this.blastJumpState;
-    out.unlockState = packUnlockNet(this);
-    out.loadoutPending = this.loadoutPending;
-    out.inSpawnRoom = this.inRespawnRoom();
-    writeMoveState(this.move, out);
+    for (
+      let i = 1;
+      i <
+      TF_AMMO_COUNT;
+      i++
+    )
+      out[
+        AMMO_FIELDS[
+          i
+        ]
+      ] =
+        this.ammo[
+          i
+        ];
+    out.lastSlot =
+      this.lastSlot;
+    out.respawnAt =
+      this.respawnAt;
+    out.nextRegenAt =
+      this.nextRegenTime;
+    for (
+      let i = 0;
+      i <
+      4;
+      i++
+    )
+      out[
+        METER_FIELDS[
+          i
+        ]
+      ] =
+        this.meters[
+          i
+        ];
+    out.blastJump =
+      this.blastJumpState;
+    out.unlockState =
+      packUnlockNet(
+        this,
+      );
+    out.loadoutPending =
+      this.loadoutPending;
+    out.inSpawnRoom =
+      this.inRespawnRoom();
+    writeMoveState(
+      this
+        .move,
+      out,
+    );
   }
 }
 
-const EMPTY_DAMAGE = createDamageInfo();
-const COND_FIELDS = Array.from({ length: COND_WORDS }, (_, i) => `cond${i}`);
-const AMMO_FIELDS = Array.from({ length: TF_AMMO_COUNT }, (_, i) => `ammo${i}`);
-const METER_FIELDS = ['meter0', 'meter1', 'meter2', 'meter3'];
+const EMPTY_DAMAGE =
+  createDamageInfo();
+const COND_FIELDS =
+  Array.from(
+    {
+      length:
+        COND_WORDS,
+    },
+    (
+      _,
+      i,
+    ) =>
+      `cond${i}`,
+  );
+const AMMO_FIELDS =
+  Array.from(
+    {
+      length:
+        TF_AMMO_COUNT,
+    },
+    (
+      _,
+      i,
+    ) =>
+      `ammo${i}`,
+  );
+const METER_FIELDS =
+  [
+    'meter0',
+    'meter1',
+    'meter2',
+    'meter3',
+  ];
 
 /** Precomputed `mv_*` record keys for MOVE_STATE_NET_FIELDS (no string building per snapshot). */
-const MOVE_KEYS = MOVE_STATE_NET_FIELDS.map(([name, kind]) =>
-  kind === 'vec' ? { name, vec: true, k: '', kx: `mv_${name}_x`, ky: `mv_${name}_y`, kz: `mv_${name}_z` } : { name, vec: false, k: `mv_${name}`, kx: '', ky: '', kz: '' },
-);
+const MOVE_KEYS =
+  MOVE_STATE_NET_FIELDS.map(
+    ([
+      name,
+      kind,
+    ]) =>
+      kind ===
+      'vec'
+        ? {
+            name,
+            vec: true,
+            k: '',
+            kx: `mv_${name}_x`,
+            ky: `mv_${name}_y`,
+            kz: `mv_${name}_z`,
+          }
+        : {
+            name,
+            vec: false,
+            k: `mv_${name}`,
+            kx: '',
+            ky: '',
+            kz: '',
+          },
+  );
 
 /** Writes the MoveState into `mv_*` fields (vectors as `mv_<name>_x/_y/_z`). */
-export function writeMoveState(m: MoveState, out: NetRecord): void {
-  const rec = m as unknown as Record<string, unknown>;
-  for (let i = 0; i < MOVE_KEYS.length; i++) {
-    const f = MOVE_KEYS[i];
-    const v = rec[f.name];
-    if (f.vec) {
-      const vv = v as Vec3;
-      out[f.kx] = vv.x;
-      out[f.ky] = vv.y;
-      out[f.kz] = vv.z;
-    } else out[f.k] = v as number | boolean | string;
+export function writeMoveState(
+  m: MoveState,
+  out: NetRecord,
+): void {
+  const rec =
+    m as unknown as Record<
+      string,
+      unknown
+    >;
+  for (
+    let i = 0;
+    i <
+    MOVE_KEYS.length;
+    i++
+  ) {
+    const f =
+      MOVE_KEYS[
+        i
+      ];
+    const v =
+      rec[
+        f
+          .name
+      ];
+    if (
+      f.vec
+    ) {
+      const vv =
+        v as Vec3;
+      out[
+        f.kx
+      ] =
+        vv.x;
+      out[
+        f.ky
+      ] =
+        vv.y;
+      out[
+        f.kz
+      ] =
+        vv.z;
+    } else
+      out[
+        f.k
+      ] =
+        v as
+          | number
+          | boolean
+          | string;
   }
 }
 
 /** Reads `mv_*` fields back into a MoveState (prediction restore). Origin/velocity come from the public fields. */
-export function readMoveState(rec: NetRecord, m: MoveState): void {
-  const target = m as unknown as Record<string, unknown>;
-  for (let i = 0; i < MOVE_KEYS.length; i++) {
-    const f = MOVE_KEYS[i];
-    if (f.vec) {
-      const vv = target[f.name] as Vec3;
-      vv.x = rec[f.kx] as number;
-      vv.y = rec[f.ky] as number;
-      vv.z = rec[f.kz] as number;
-    } else target[f.name] = rec[f.k];
+export function readMoveState(
+  rec: NetRecord,
+  m: MoveState,
+): void {
+  const target =
+    m as unknown as Record<
+      string,
+      unknown
+    >;
+  for (
+    let i = 0;
+    i <
+    MOVE_KEYS.length;
+    i++
+  ) {
+    const f =
+      MOVE_KEYS[
+        i
+      ];
+    if (
+      f.vec
+    ) {
+      const vv =
+        target[
+          f
+            .name
+        ] as Vec3;
+      vv.x =
+        rec[
+          f
+            .kx
+        ] as number;
+      vv.y =
+        rec[
+          f
+            .ky
+        ] as number;
+      vv.z =
+        rec[
+          f
+            .kz
+        ] as number;
+    } else
+      target[
+        f.name
+      ] =
+        rec[
+          f.k
+        ];
   }
-  m.origin.x = rec.ox as number;
-  m.origin.y = rec.oy as number;
-  m.origin.z = rec.oz as number;
-  m.velocity.x = rec.vx as number;
-  m.velocity.y = rec.vy as number;
-  m.velocity.z = rec.vz as number;
+  m.origin.x =
+    rec.ox as number;
+  m.origin.y =
+    rec.oy as number;
+  m.origin.z =
+    rec.oz as number;
+  m.velocity.x =
+    rec.vx as number;
+  m.velocity.y =
+    rec.vy as number;
+  m.velocity.z =
+    rec.vz as number;
 }

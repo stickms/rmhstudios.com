@@ -10,54 +10,128 @@
  *   onSend: (content: string) => void — Callback to send a message
  */
 
-import { useRef, useEffect, useState, useCallback, type FormEvent } from 'react';
+import {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  type FormEvent,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Send,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import type { ChatMessage } from '@/lib/rmhbox/types';
 
 interface ChatOverlayProps {
   messages: ChatMessage[];
-  onSend: (content: string) => void;
+  onSend: (
+    content: string,
+  ) => void;
 }
 
-export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
-  const { t } = useTranslation("c-rmhbox");
-  const [input, setInput] = useState('');
-  const [minimized, setMinimized] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+export default function ChatOverlay({
+  messages,
+  onSend,
+}: ChatOverlayProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
+  const [
+    input,
+    setInput,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    minimized,
+    setMinimized,
+  ] =
+    useState(
+      false,
+    );
+  const bottomRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
 
   useEffect(() => {
-    if (!minimized) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (
+      !minimized
+    ) {
+      bottomRef.current?.scrollIntoView(
+        {
+          behavior:
+            'smooth',
+        },
+      );
     }
-  }, [messages.length, minimized]);
+  }, [
+    messages.length,
+    minimized,
+  ]);
 
-  const handleSubmit = useCallback(
-    (e: FormEvent) => {
-      e.preventDefault();
-      const trimmed = input.trim();
-      if (!trimmed) return;
-      onSend(trimmed);
-      setInput('');
-    },
-    [input, onSend],
-  );
+  const handleSubmit =
+    useCallback(
+      (
+        e: FormEvent,
+      ) => {
+        e.preventDefault();
+        const trimmed =
+          input.trim();
+        if (
+          !trimmed
+        )
+          return;
+        onSend(
+          trimmed,
+        );
+        setInput(
+          '',
+        );
+      },
+      [
+        input,
+        onSend,
+      ],
+    );
 
   return (
     <div className="flex flex-col rounded-app app-glass lg:min-h-0 lg:flex-1">
       {/* Mobile toggle header */}
       <button
-        onClick={() => setMinimized(!minimized)}
+        onClick={() =>
+          setMinimized(
+            !minimized,
+          )
+        }
         className={`flex items-center justify-between px-3 py-2 lg:hidden shrink-0 ${minimized ? '' : 'border-b border-app-border'}`}
       >
         <div className="flex items-center gap-2 text-sm font-semibold text-app-text">
           <MessageSquare className="h-4 w-4" />
-          {t("chat", { defaultValue: "Chat" })}
-          {minimized && messages.length > 0 && (
-            <span className="rounded-full bg-app-accent/20 px-1.5 text-xs text-app-accent">
-              {messages.length}
-            </span>
+          {t(
+            'chat',
+            {
+              defaultValue:
+                'Chat',
+            },
           )}
+          {minimized &&
+            messages.length >
+              0 && (
+              <span className="rounded-full bg-app-accent/20 px-1.5 text-xs text-app-accent">
+                {
+                  messages.length
+                }
+              </span>
+            )}
         </div>
         {minimized ? (
           <ChevronUp className="h-4 w-4 text-app-text-muted" />
@@ -67,46 +141,110 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
       </button>
 
       {/* Collapsible content — hidden on mobile when minimized */}
-      <div className={`flex min-h-0 flex-1 flex-col max-lg:max-h-64 ${minimized ? 'hidden lg:flex' : ''}`}>
+      <div
+        className={`flex min-h-0 flex-1 flex-col max-lg:max-h-64 ${minimized ? 'hidden lg:flex' : ''}`}
+      >
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-          {messages.map((msg) => (
-            <div key={msg.id} className={msg.type === 'system' ? 'text-center' : ''}>
-              {msg.type === 'system' ? (
-                <span className="text-xs italic text-app-text-muted">{msg.content}</span>
-              ) : (
-                <p className="text-sm text-app-text">
-                  <span className="font-semibold text-app-accent">{msg.userName}</span>{' '}
-                  {msg.content}
-                </p>
-              )}
-            </div>
-          ))}
-          <div ref={bottomRef} />
+          {messages.map(
+            (
+              msg,
+            ) => (
+              <div
+                key={
+                  msg.id
+                }
+                className={
+                  msg.type ===
+                  'system'
+                    ? 'text-center'
+                    : ''
+                }
+              >
+                {msg.type ===
+                'system' ? (
+                  <span className="text-xs italic text-app-text-muted">
+                    {
+                      msg.content
+                    }
+                  </span>
+                ) : (
+                  <p className="text-sm text-app-text">
+                    <span className="font-semibold text-app-accent">
+                      {
+                        msg.userName
+                      }
+                    </span>{' '}
+                    {
+                      msg.content
+                    }
+                  </p>
+                )}
+              </div>
+            ),
+          )}
+          <div
+            ref={
+              bottomRef
+            }
+          />
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="border-t border-app-border p-2">
+        <form
+          onSubmit={
+            handleSubmit
+          }
+          className="border-t border-app-border p-2"
+        >
           <div className="flex gap-2">
             <input
               type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={t("type-a-message", { defaultValue: "Type a message…" })}
-              maxLength={200}
+              value={
+                input
+              }
+              onChange={(
+                e,
+              ) =>
+                setInput(
+                  e
+                    .target
+                    .value,
+                )
+              }
+              placeholder={t(
+                'type-a-message',
+                {
+                  defaultValue:
+                    'Type a message…',
+                },
+              )}
+              maxLength={
+                200
+              }
               className="min-h-11 flex-1 rounded-app-sm bg-app-bg px-3 py-1.5 text-sm text-app-text placeholder:text-app-text-muted outline-none focus:ring-1 focus:ring-app-accent"
             />
             <button
               type="submit"
               className="flex min-h-11 min-w-11 items-center justify-center rounded-app-sm bg-app-accent p-2 text-app-accent-fg transition-colors hover:bg-app-accent-hover"
-              aria-label={t("send-message", { defaultValue: "Send message" })}
+              aria-label={t(
+                'send-message',
+                {
+                  defaultValue:
+                    'Send message',
+                },
+              )}
             >
               <Send className="h-4 w-4" />
             </button>
           </div>
-          {input.length > 150 && (
+          {input.length >
+            150 && (
             <p className="mt-1 text-right text-xs text-app-text-muted">
-              {input.length}/200
+              {
+                input.length
+              }
+              /200
             </p>
           )}
         </form>

@@ -13,100 +13,230 @@
 
 import type { CSSProperties } from 'react';
 
-export const CHAT_ACCENTS = ['default', 'success', 'warning', 'danger', 'mono'] as const;
-export type ChatAccent = (typeof CHAT_ACCENTS)[number];
-export const CHAT_WALLPAPERS = ['none', 'aurora', 'dusk', 'paper', 'dots', 'grid'] as const;
-export type ChatWallpaper = (typeof CHAT_WALLPAPERS)[number];
+export const CHAT_ACCENTS =
+  [
+    'default',
+    'success',
+    'warning',
+    'danger',
+    'mono',
+  ] as const;
+export type ChatAccent =
+  (typeof CHAT_ACCENTS)[number];
+export const CHAT_WALLPAPERS =
+  [
+    'none',
+    'aurora',
+    'dusk',
+    'paper',
+    'dots',
+    'grid',
+  ] as const;
+export type ChatWallpaper =
+  (typeof CHAT_WALLPAPERS)[number];
 
 export interface ChatTheme {
   accent: ChatAccent;
   wallpaper: ChatWallpaper;
 }
 
-export const DEFAULT_CHAT_THEME: ChatTheme = { accent: 'default', wallpaper: 'none' };
+export const DEFAULT_CHAT_THEME: ChatTheme =
+  {
+    accent:
+      'default',
+    wallpaper:
+      'none',
+  };
 
-export function encodeTheme(theme: ChatTheme): string | null {
-  if (theme.accent === 'default' && theme.wallpaper === 'none') return null;
+export function encodeTheme(
+  theme: ChatTheme,
+):
+  | string
+  | null {
+  if (
+    theme.accent ===
+      'default' &&
+    theme.wallpaper ===
+      'none'
+  )
+    return null;
   return `${theme.accent}.${theme.wallpaper}`;
 }
 
 /** Parse a stored key. Anything unrecognised falls back to the default. */
-export function parseTheme(key: string | null | undefined): ChatTheme {
-  if (!key) return DEFAULT_CHAT_THEME;
-  const [accent, wallpaper] = key.split('.');
+export function parseTheme(
+  key:
+    | string
+    | null
+    | undefined,
+): ChatTheme {
+  if (
+    !key
+  )
+    return DEFAULT_CHAT_THEME;
+  const [
+    accent,
+    wallpaper,
+  ] =
+    key.split(
+      '.',
+    );
   return {
-    accent: (CHAT_ACCENTS as readonly string[]).includes(accent)
-      ? (accent as ChatAccent)
-      : 'default',
-    wallpaper: (CHAT_WALLPAPERS as readonly string[]).includes(wallpaper)
-      ? (wallpaper as ChatWallpaper)
-      : 'none',
+    accent:
+      (
+        CHAT_ACCENTS as readonly string[]
+      ).includes(
+        accent,
+      )
+        ? (accent as ChatAccent)
+        : 'default',
+    wallpaper:
+      (
+        CHAT_WALLPAPERS as readonly string[]
+      ).includes(
+        wallpaper,
+      )
+        ? (wallpaper as ChatWallpaper)
+        : 'none',
   };
 }
 
 /** A stored key is valid when both halves are in the preset sets. */
-export function isValidThemeKey(key: string): boolean {
-  const [accent, wallpaper, extra] = key.split('.');
+export function isValidThemeKey(
+  key: string,
+): boolean {
+  const [
+    accent,
+    wallpaper,
+    extra,
+  ] =
+    key.split(
+      '.',
+    );
   return (
-    extra === undefined &&
-    (CHAT_ACCENTS as readonly string[]).includes(accent) &&
-    (CHAT_WALLPAPERS as readonly string[]).includes(wallpaper)
+    extra ===
+      undefined &&
+    (
+      CHAT_ACCENTS as readonly string[]
+    ).includes(
+      accent,
+    ) &&
+    (
+      CHAT_WALLPAPERS as readonly string[]
+    ).includes(
+      wallpaper,
+    )
   );
 }
 
-const ACCENT_VARS: Record<Exclude<ChatAccent, 'default'>, Record<string, string>> = {
-  success: {
-    '--site-accent': 'var(--site-success)',
-    '--site-accent-fg': 'var(--site-success-fg)',
-    '--site-accent-hover': 'color-mix(in oklab, var(--site-success) 88%, var(--site-text))',
-  },
-  warning: {
-    '--site-accent': 'var(--site-warning)',
-    '--site-accent-fg': 'var(--site-warning-fg)',
-    '--site-accent-hover': 'color-mix(in oklab, var(--site-warning) 88%, var(--site-text))',
-  },
-  danger: {
-    '--site-accent': 'var(--site-danger)',
-    '--site-accent-fg': 'var(--site-danger-fg)',
-    '--site-accent-hover': 'color-mix(in oklab, var(--site-danger) 88%, var(--site-text))',
-  },
+const ACCENT_VARS: Record<
+  Exclude<
+    ChatAccent,
+    'default'
+  >,
+  Record<
+    string,
+    string
+  >
+> = {
+  success:
+    {
+      '--site-accent':
+        'var(--site-success)',
+      '--site-accent-fg':
+        'var(--site-success-fg)',
+      '--site-accent-hover':
+        'color-mix(in oklab, var(--site-success) 88%, var(--site-text))',
+    },
+  warning:
+    {
+      '--site-accent':
+        'var(--site-warning)',
+      '--site-accent-fg':
+        'var(--site-warning-fg)',
+      '--site-accent-hover':
+        'color-mix(in oklab, var(--site-warning) 88%, var(--site-text))',
+    },
+  danger:
+    {
+      '--site-accent':
+        'var(--site-danger)',
+      '--site-accent-fg':
+        'var(--site-danger-fg)',
+      '--site-accent-hover':
+        'color-mix(in oklab, var(--site-danger) 88%, var(--site-text))',
+    },
   mono: {
-    '--site-accent': 'var(--site-text)',
-    '--site-accent-fg': 'var(--site-bg)',
-    '--site-accent-hover': 'color-mix(in oklab, var(--site-text) 85%, var(--site-bg))',
+    '--site-accent':
+      'var(--site-text)',
+    '--site-accent-fg':
+      'var(--site-bg)',
+    '--site-accent-hover':
+      'color-mix(in oklab, var(--site-text) 85%, var(--site-bg))',
   },
 };
 
-const WALLPAPER_STYLE: Record<Exclude<ChatWallpaper, 'none'>, CSSProperties> = {
-  aurora: {
-    backgroundImage:
-      'radial-gradient(120% 70% at 0% 0%, color-mix(in oklab, var(--site-accent) 18%, transparent), transparent 60%), radial-gradient(100% 60% at 100% 100%, color-mix(in oklab, var(--site-success) 12%, transparent), transparent 60%)',
-  },
+const WALLPAPER_STYLE: Record<
+  Exclude<
+    ChatWallpaper,
+    'none'
+  >,
+  CSSProperties
+> = {
+  aurora:
+    {
+      backgroundImage:
+        'radial-gradient(120% 70% at 0% 0%, color-mix(in oklab, var(--site-accent) 18%, transparent), transparent 60%), radial-gradient(100% 60% at 100% 100%, color-mix(in oklab, var(--site-success) 12%, transparent), transparent 60%)',
+    },
   dusk: {
     backgroundImage:
       'linear-gradient(160deg, color-mix(in oklab, var(--site-accent) 14%, transparent), color-mix(in oklab, var(--site-danger) 10%, transparent))',
   },
-  paper: { backgroundColor: 'var(--site-bg-subtle)' },
+  paper:
+    {
+      backgroundColor:
+        'var(--site-bg-subtle)',
+    },
   dots: {
     backgroundImage:
       'radial-gradient(color-mix(in oklab, var(--site-border) 70%, transparent) 1px, transparent 1.5px)',
-    backgroundSize: '18px 18px',
+    backgroundSize:
+      '18px 18px',
   },
   grid: {
     backgroundImage:
       'linear-gradient(color-mix(in oklab, var(--site-border) 45%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklab, var(--site-border) 45%, transparent) 1px, transparent 1px)',
-    backgroundSize: '28px 28px',
+    backgroundSize:
+      '28px 28px',
   },
 };
 
 /** Style for the chat root: re-points the accent tokens. Empty for the default. */
-export function accentStyle(theme: ChatTheme): CSSProperties {
-  if (theme.accent === 'default') return {};
-  return ACCENT_VARS[theme.accent] as CSSProperties;
+export function accentStyle(
+  theme: ChatTheme,
+): CSSProperties {
+  if (
+    theme.accent ===
+    'default'
+  )
+    return {};
+  return ACCENT_VARS[
+    theme
+      .accent
+  ] as CSSProperties;
 }
 
 /** Style for the message scroller: the wallpaper. Empty for none. */
-export function wallpaperStyle(theme: ChatTheme): CSSProperties {
-  if (theme.wallpaper === 'none') return {};
-  return WALLPAPER_STYLE[theme.wallpaper];
+export function wallpaperStyle(
+  theme: ChatTheme,
+): CSSProperties {
+  if (
+    theme.wallpaper ===
+    'none'
+  )
+    return {};
+  return WALLPAPER_STYLE[
+    theme
+      .wallpaper
+  ];
 }

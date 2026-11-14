@@ -12,14 +12,30 @@
  */
 
 export interface ChannelLike {
-  readonly readyState: 'connecting' | 'open' | 'closing' | 'closed';
+  readonly readyState:
+    | 'connecting'
+    | 'open'
+    | 'closing'
+    | 'closed';
   readonly bufferedAmount: number;
   bufferedAmountLowThreshold: number;
-  send(data: Uint8Array): void;
-  onmessage: ((data: Uint8Array) => void) | null;
-  onopen: (() => void) | null;
-  onclose: (() => void) | null;
-  onbufferedamountlow: (() => void) | null;
+  send(
+    data: Uint8Array,
+  ): void;
+  onmessage:
+    | ((
+        data: Uint8Array,
+      ) => void)
+    | null;
+  onopen:
+    | (() => void)
+    | null;
+  onclose:
+    | (() => void)
+    | null;
+  onbufferedamountlow:
+    | (() => void)
+    | null;
   close(): void;
 }
 

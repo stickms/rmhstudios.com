@@ -12,7 +12,12 @@ import { registerTeamFilteredEvent } from '../tf2-game/net/event-codec';
 
 export interface CsRoundEvent {
   type: 'cs_round';
-  kind: 'match_start' | 'freeze' | 'live' | 'end' | 'halftime';
+  kind:
+    | 'match_start'
+    | 'freeze'
+    | 'live'
+    | 'end'
+    | 'halftime';
   round: number;
   winner?: number;
   /** CS_WIN_* (constants.ts). */
@@ -24,7 +29,14 @@ export interface CsRoundEvent {
 
 export interface CsBombEvent extends Recipients {
   type: 'cs_bomb';
-  kind: 'pickup' | 'dropped' | 'planted' | 'defused' | 'exploded' | 'defuse_start' | 'defuse_abort';
+  kind:
+    | 'pickup'
+    | 'dropped'
+    | 'planted'
+    | 'defused'
+    | 'exploded'
+    | 'defuse_start'
+    | 'defuse_abort';
   player: number;
   entity?: number;
   /** 'A' / 'B' (the bomb target the plant was in). */
@@ -49,12 +61,25 @@ export interface CsBuyEvent extends Recipients {
   price?: number;
 }
 
-export type CsEvent = CsRoundEvent | CsBombEvent | CsMoneyEvent | CsBuyEvent;
+export type CsEvent =
+  | CsRoundEvent
+  | CsBombEvent
+  | CsMoneyEvent
+  | CsBuyEvent;
 
 /** The bomb's pickups and drops are for the Terrorists only (CS:GO shows them to the carrier's team). */
-registerTeamFilteredEvent('cs_bomb');
+registerTeamFilteredEvent(
+  'cs_bomb',
+);
 
 /** Pushes a CS event onto the world's outgoing events. */
-export function csEvent(world: GameWorld, ev: CsEvent): void {
-  (world.events as unknown as CsEvent[]).push(ev);
+export function csEvent(
+  world: GameWorld,
+  ev: CsEvent,
+): void {
+  (
+    world.events as unknown as CsEvent[]
+  ).push(
+    ev,
+  );
 }

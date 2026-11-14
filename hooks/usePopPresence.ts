@@ -1,11 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { POP_COLLAPSE_MS } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 /** What to put on `data-state`. Matches the values Radix emits. */
-export type PopState = 'open' | 'closed';
+export type PopState =
+  | 'open'
+  | 'closed';
 
-export interface PopPresence<T> {
+export interface PopPresence<
+  T,
+> {
   /**
    * Render while this is truthy. It is the caller's own open value while the
    * menu is open, and the LAST open value for the length of the close — so a
@@ -67,34 +75,112 @@ export interface PopPresence<T> {
  * the moment the element is finally allowed to go) are state; the value itself
  * is only ever read back, so caching it costs nothing and cannot churn.
  */
-export function usePopPresence<T>(open: T): PopPresence<T> {
-  const reduced = useReducedMotion();
-  const held = useRef<T | null>(open ? open : null);
-  if (open) held.current = open;
+export function usePopPresence<
+  T,
+>(
+  open: T,
+): PopPresence<T> {
+  const reduced =
+    useReducedMotion();
+  const held =
+    useRef<T | null>(
+      open
+        ? open
+        : null,
+    );
+  if (
+    open
+  )
+    held.current =
+      open;
 
-  const [state, setState] = useState<PopState>(() => (open ? 'open' : 'closed'));
-  const [gone, setGone] = useState(() => !open);
+  const [
+    state,
+    setState,
+  ] =
+    useState<PopState>(
+      () =>
+        open
+          ? 'open'
+          : 'closed',
+    );
+  const [
+    gone,
+    setGone,
+  ] =
+    useState(
+      () =>
+        !open,
+    );
 
   // Both updates are guarded on a comparison of a two-value state, so the extra
   // render they schedule finds nothing left to change and this converges at once.
-  if (open) {
-    if (state !== 'open') setState('open');
-    if (gone) setGone(false);
-  } else if (state !== 'closed') {
-    setState('closed');
+  if (
+    open
+  ) {
+    if (
+      state !==
+      'open'
+    )
+      setState(
+        'open',
+      );
+    if (
+      gone
+    )
+      setGone(
+        false,
+      );
+  } else if (
+    state !==
+    'closed'
+  ) {
+    setState(
+      'closed',
+    );
   }
 
   useEffect(() => {
-    if (open || gone) return;
-    if (reduced) {
-      setGone(true);
+    if (
+      open ||
+      gone
+    )
+      return;
+    if (
+      reduced
+    ) {
+      setGone(
+        true,
+      );
       return;
     }
-    const timer = window.setTimeout(() => setGone(true), POP_COLLAPSE_MS);
+    const timer =
+      window.setTimeout(
+        () =>
+          setGone(
+            true,
+          ),
+        POP_COLLAPSE_MS,
+      );
     // Re-opening inside the close window clears the pending removal, so a fast
     // toggle re-enters the open state on the element that is already there.
-    return () => window.clearTimeout(timer);
-  }, [open, gone, reduced]);
+    return () =>
+      window.clearTimeout(
+        timer,
+      );
+  }, [
+    open,
+    gone,
+    reduced,
+  ]);
 
-  return { present: open ? open : gone ? null : held.current, state };
+  return {
+    present:
+      open
+        ? open
+        : gone
+          ? null
+          : held.current,
+    state,
+  };
 }

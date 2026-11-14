@@ -11,7 +11,10 @@
  * whether a run was noteworthy without asking each other.
  */
 
-import { DIFFICULTY_MULTIPLIERS, type Difficulty } from './constants';
+import {
+  DIFFICULTY_MULTIPLIERS,
+  type Difficulty,
+} from './constants';
 
 /* ─── X5 — posting a run to the feed ─────────────────────────────────────── */
 
@@ -20,7 +23,9 @@ export interface RunContext {
   isPerfect: boolean;
   difficulty: Difficulty;
   /** Position on the chart's board, or null when unplaced. */
-  globalRank: number | null;
+  globalRank:
+    | number
+    | null;
   /** A new personal best. Deliberately NOT part of `isNoteworthy` — see below. */
   isPersonalBest: boolean;
 }
@@ -40,27 +45,72 @@ export const MAX_AUTO_POSTS_PER_DAY = 2;
  * The whole feature is default-off regardless. This decides what an opted-in
  * player's automatic posts look like, not whether they happen.
  */
-export function isNoteworthy(run: RunContext): boolean {
-  if (run.isFirstClearOfChart) return true;
-  if (run.isPerfect && run.difficulty === 'expert') return true;
-  return run.globalRank !== null && run.globalRank <= 10;
+export function isNoteworthy(
+  run: RunContext,
+): boolean {
+  if (
+    run.isFirstClearOfChart
+  )
+    return true;
+  if (
+    run.isPerfect &&
+    run.difficulty ===
+      'expert'
+  )
+    return true;
+  return (
+    run.globalRank !==
+      null &&
+    run.globalRank <=
+      10
+  );
 }
 
 /** Why it was posted, for the post's own copy. */
-export function noteworthyReason(run: RunContext): string | null {
-  if (run.isFirstClearOfChart) return 'first-clear';
-  if (run.isPerfect && run.difficulty === 'expert') return 'perfect-expert';
-  if (run.globalRank !== null && run.globalRank <= 10) return 'top-ten';
+export function noteworthyReason(
+  run: RunContext,
+):
+  | string
+  | null {
+  if (
+    run.isFirstClearOfChart
+  )
+    return 'first-clear';
+  if (
+    run.isPerfect &&
+    run.difficulty ===
+      'expert'
+  )
+    return 'perfect-expert';
+  if (
+    run.globalRank !==
+      null &&
+    run.globalRank <=
+      10
+  )
+    return 'top-ten';
   return null;
 }
 
 export function shouldAutoPost(
   run: RunContext,
-  options: { enabled: boolean; postsToday: number },
+  options: {
+    enabled: boolean;
+    postsToday: number;
+  },
 ): boolean {
-  if (!options.enabled) return false;
-  if (options.postsToday >= MAX_AUTO_POSTS_PER_DAY) return false;
-  return isNoteworthy(run);
+  if (
+    !options.enabled
+  )
+    return false;
+  if (
+    options.postsToday >=
+    MAX_AUTO_POSTS_PER_DAY
+  )
+    return false;
+  return isNoteworthy(
+    run,
+  );
 }
 
 /* ─── H10 — the shareable card ───────────────────────────────────────────── */
@@ -72,7 +122,9 @@ export function shouldAutoPost(
  * queue full of runs nobody will ever look at — and the share button on a run
  * you have already beaten points at a worse version of your own score.
  */
-export function shouldWriteCard(run: { isPersonalBest: boolean }): boolean {
+export function shouldWriteCard(run: {
+  isPersonalBest: boolean;
+}): boolean {
   return run.isPersonalBest;
 }
 
@@ -105,10 +157,39 @@ export function runXp(input: {
   accuracy: number;
   failed: boolean;
 }): number {
-  const difficulty = DIFFICULTY_MULTIPLIERS[input.difficulty] ?? 1;
-  const accuracy = Number.isFinite(input.accuracy) ? Math.max(0, Math.min(1, input.accuracy)) : 0;
-  const weight = input.failed ? MIN_ACCURACY_WEIGHT : Math.max(MIN_ACCURACY_WEIGHT, accuracy);
-  return Math.max(1, Math.round(BASE_RUN_XP * difficulty * weight));
+  const difficulty =
+    DIFFICULTY_MULTIPLIERS[
+      input
+        .difficulty
+    ] ??
+    1;
+  const accuracy =
+    Number.isFinite(
+      input.accuracy,
+    )
+      ? Math.max(
+          0,
+          Math.min(
+            1,
+            input.accuracy,
+          ),
+        )
+      : 0;
+  const weight =
+    input.failed
+      ? MIN_ACCURACY_WEIGHT
+      : Math.max(
+          MIN_ACCURACY_WEIGHT,
+          accuracy,
+        );
+  return Math.max(
+    1,
+    Math.round(
+      BASE_RUN_XP *
+        difficulty *
+        weight,
+    ),
+  );
 }
 
 /* ─── R7 — escalating a pattern, never a run ─────────────────────────────── */
@@ -135,10 +216,25 @@ export const REVIEW_SUSPICION = 0.8;
 export const ESCALATE_AFTER = 5;
 export const ESCALATE_WINDOW_DAYS = 7;
 
-export function shouldEscalate(recentFlagged: number): boolean {
-  return recentFlagged >= ESCALATE_AFTER;
+export function shouldEscalate(
+  recentFlagged: number,
+): boolean {
+  return (
+    recentFlagged >=
+    ESCALATE_AFTER
+  );
 }
 
-export function isFlagged(suspicion: number | null | undefined): boolean {
-  return typeof suspicion === 'number' && suspicion > REVIEW_SUSPICION;
+export function isFlagged(
+  suspicion:
+    | number
+    | null
+    | undefined,
+): boolean {
+  return (
+    typeof suspicion ===
+      'number' &&
+    suspicion >
+      REVIEW_SUSPICION
+  );
 }

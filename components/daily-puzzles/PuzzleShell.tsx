@@ -24,38 +24,73 @@
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Share2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Share2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { cn } from '@/lib/utils';
 
-export type PuzzleTone = 'success' | 'danger' | 'warning' | 'accent' | 'neutral';
+export type PuzzleTone =
+  | 'success'
+  | 'danger'
+  | 'warning'
+  | 'accent'
+  | 'neutral';
 
 /** Ink for a semantic tone (text on the glass, never on a filled surface). */
-export const TONE_TEXT: Record<PuzzleTone, string> = {
-  success: 'text-site-success',
-  danger: 'text-site-danger',
-  warning: 'text-site-warning',
-  accent: 'text-site-accent',
-  neutral: 'text-site-text',
-};
+export const TONE_TEXT: Record<
+  PuzzleTone,
+  string
+> =
+  {
+    success:
+      'text-site-success',
+    danger:
+      'text-site-danger',
+    warning:
+      'text-site-warning',
+    accent:
+      'text-site-accent',
+    neutral:
+      'text-site-text',
+  };
 
 /** Translucent tint + hairline for a semantic tone (callouts, picked cards). */
-export const TONE_TINT: Record<PuzzleTone, string> = {
-  success: 'border-site-success/40 bg-site-success/10',
-  danger: 'border-site-danger/40 bg-site-danger/10',
-  warning: 'border-site-warning/40 bg-site-warning/10',
-  accent: 'border-site-accent/40 bg-site-accent/10',
-  neutral: 'border-site-border bg-site-surface',
-};
+export const TONE_TINT: Record<
+  PuzzleTone,
+  string
+> =
+  {
+    success:
+      'border-site-success/40 bg-site-success/10',
+    danger:
+      'border-site-danger/40 bg-site-danger/10',
+    warning:
+      'border-site-warning/40 bg-site-warning/10',
+    accent:
+      'border-site-accent/40 bg-site-accent/10',
+    neutral:
+      'border-site-border bg-site-surface',
+  };
 
-const TONE_RIM: Record<PuzzleTone, string> = {
-  success: 'border-site-success/40',
-  danger: 'border-site-danger/40',
-  warning: 'border-site-warning/40',
-  accent: 'border-site-accent/40',
-  neutral: 'border-site-border',
-};
+const TONE_RIM: Record<
+  PuzzleTone,
+  string
+> =
+  {
+    success:
+      'border-site-success/40',
+    danger:
+      'border-site-danger/40',
+    warning:
+      'border-site-warning/40',
+    accent:
+      'border-site-accent/40',
+    neutral:
+      'border-site-border',
+  };
 
 /* ── Page column ───────────────────────────────────────────────────────────── */
 
@@ -71,31 +106,63 @@ export function PuzzlePage({
   className,
 }: {
   children: ReactNode;
-  width?: 'md' | 'lg';
+  width?:
+    | 'md'
+    | 'lg';
   className?: string;
 }) {
   return (
     <div
       className={cn(
         'mx-auto w-full px-4 pt-[calc(1rem+var(--safe-top))] pb-12',
-        width === 'lg' ? 'max-w-5xl' : 'max-w-2xl',
+        width ===
+          'lg'
+          ? 'max-w-5xl'
+          : 'max-w-2xl',
         className,
       )}
     >
-      {children}
+      {
+        children
+      }
     </div>
   );
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 
-export function PuzzleBackLink({ className }: { className?: string }) {
-  const { t } = useTranslation('c-daily-puzzles');
+export function PuzzleBackLink({
+  className,
+}: {
+  className?: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-daily-puzzles',
+    );
   return (
-    <Button asChild variant="ghost" size="sm" className={cn('-ml-2 mb-3 text-site-text-muted', className)}>
+    <Button
+      asChild
+      variant="ghost"
+      size="sm"
+      className={cn(
+        '-ml-2 mb-3 text-site-text-muted',
+        className,
+      )}
+    >
       <Link to="/daily">
-        <ArrowLeft aria-hidden />
-        {t('back-to-daily-puzzles', { defaultValue: 'Back to Daily Puzzles' })}
+        <ArrowLeft
+          aria-hidden
+        />
+        {t(
+          'back-to-daily-puzzles',
+          {
+            defaultValue:
+              'Back to Daily Puzzles',
+          },
+        )}
       </Link>
     </Button>
   );
@@ -121,18 +188,35 @@ export function PuzzleHeader({
 }) {
   return (
     <>
-      {!hideBackLink && <PuzzleBackLink />}
+      {!hideBackLink && (
+        <PuzzleBackLink />
+      )}
       <header className="mb-6 flex flex-col items-center gap-2 text-center">
         <h1 className="flex items-center justify-center gap-2 text-3xl font-bold tracking-tight text-site-text sm:text-4xl">
           {icon ? (
-            <span aria-hidden className="inline-flex shrink-0 items-center text-site-accent [&_svg]:size-7 sm:[&_svg]:size-8">
-              {icon}
+            <span
+              aria-hidden
+              className="inline-flex shrink-0 items-center text-site-accent [&_svg]:size-7 sm:[&_svg]:size-8"
+            >
+              {
+                icon
+              }
             </span>
           ) : null}
-          {title}
+          {
+            title
+          }
         </h1>
-        {subtitle ? <p className="text-sm text-site-text-muted">{subtitle}</p> : null}
-        {children}
+        {subtitle ? (
+          <p className="text-sm text-site-text-muted">
+            {
+              subtitle
+            }
+          </p>
+        ) : null}
+        {
+          children
+        }
       </header>
     </>
   );
@@ -155,13 +239,38 @@ export function PuzzleNotice({
       role="note"
       className={cn(
         'rounded-site-sm border px-4 py-3 text-center',
-        TONE_TINT[tone],
+        TONE_TINT[
+          tone
+        ],
         className,
       )}
     >
-      {title ? <p className={cn('text-sm font-semibold', TONE_TEXT[tone])}>{title}</p> : null}
+      {title ? (
+        <p
+          className={cn(
+            'text-sm font-semibold',
+            TONE_TEXT[
+              tone
+            ],
+          )}
+        >
+          {
+            title
+          }
+        </p>
+      ) : null}
       {children ? (
-        <div className={cn('text-xs text-site-text-muted', title && 'mt-1')}>{children}</div>
+        <div
+          className={cn(
+            'text-xs text-site-text-muted',
+            title &&
+              'mt-1',
+          )}
+        >
+          {
+            children
+          }
+        </div>
       ) : null}
     </div>
   );
@@ -169,13 +278,14 @@ export function PuzzleNotice({
 
 /* ── Result ────────────────────────────────────────────────────────────────── */
 
-export type PuzzleStatItem = {
-  key: string;
-  icon?: ReactNode;
-  value: ReactNode;
-  label: ReactNode;
-  tone?: PuzzleTone;
-};
+export type PuzzleStatItem =
+  {
+    key: string;
+    icon?: ReactNode;
+    value: ReactNode;
+    label: ReactNode;
+    tone?: PuzzleTone;
+  };
 
 /**
  * The result card: outcome title + one-line description, then a stat row.
@@ -201,36 +311,92 @@ export function PuzzleResultCard({
     <section
       className={cn(
         'surface-panel flex flex-col items-center gap-4 rounded-site border px-4 py-5 text-center sm:px-6',
-        TONE_RIM[tone],
+        TONE_RIM[
+          tone
+        ],
       )}
     >
       <div className="flex flex-col items-center gap-1">
         {emoji ? (
-          <div aria-hidden className="text-3xl">
-            {emoji}
+          <div
+            aria-hidden
+            className="text-3xl"
+          >
+            {
+              emoji
+            }
           </div>
         ) : null}
-        <h2 className={cn('text-2xl font-bold', TONE_TEXT[tone])}>{title}</h2>
-        {description ? <p className="text-sm text-site-text-muted">{description}</p> : null}
+        <h2
+          className={cn(
+            'text-2xl font-bold',
+            TONE_TEXT[
+              tone
+            ],
+          )}
+        >
+          {
+            title
+          }
+        </h2>
+        {description ? (
+          <p className="text-sm text-site-text-muted">
+            {
+              description
+            }
+          </p>
+        ) : null}
       </div>
-      {stats && stats.length > 0 ? (
+      {stats &&
+      stats.length >
+        0 ? (
         <dl className="flex w-full flex-wrap items-start justify-center gap-x-8 gap-y-4 border-t border-site-border pt-4">
-          {stats.map((s) => (
-            <div key={s.key} className="flex min-w-16 flex-col items-center gap-1">
-              {s.icon ? (
-                <span aria-hidden className="text-site-text-muted [&_svg]:size-5">
-                  {s.icon}
-                </span>
-              ) : null}
-              <dd className={cn('order-2 text-2xl font-bold tabular-nums', TONE_TEXT[s.tone ?? 'neutral'])}>
-                {s.value}
-              </dd>
-              <dt className="order-3 text-xs text-site-text-muted">{s.label}</dt>
-            </div>
-          ))}
+          {stats.map(
+            (
+              s,
+            ) => (
+              <div
+                key={
+                  s.key
+                }
+                className="flex min-w-16 flex-col items-center gap-1"
+              >
+                {s.icon ? (
+                  <span
+                    aria-hidden
+                    className="text-site-text-muted [&_svg]:size-5"
+                  >
+                    {
+                      s.icon
+                    }
+                  </span>
+                ) : null}
+                <dd
+                  className={cn(
+                    'order-2 text-2xl font-bold tabular-nums',
+                    TONE_TEXT[
+                      s.tone ??
+                        'neutral'
+                    ],
+                  )}
+                >
+                  {
+                    s.value
+                  }
+                </dd>
+                <dt className="order-3 text-xs text-site-text-muted">
+                  {
+                    s.label
+                  }
+                </dt>
+              </div>
+            ),
+          )}
         </dl>
       ) : null}
-      {children}
+      {
+        children
+      }
     </section>
   );
 }
@@ -248,25 +414,49 @@ export function PuzzleSection({
   className?: string;
 }) {
   return (
-    <section className={cn('surface-card flex flex-col gap-3 rounded-site px-4 py-4', className)}>
+    <section
+      className={cn(
+        'surface-card flex flex-col gap-3 rounded-site px-4 py-4',
+        className,
+      )}
+    >
       {title ? (
         <h3 className="site-section-label flex items-center gap-2">
           {icon ? (
-            <span aria-hidden className="inline-flex text-site-text-muted [&_svg]:size-4">
-              {icon}
+            <span
+              aria-hidden
+              className="inline-flex text-site-text-muted [&_svg]:size-4"
+            >
+              {
+                icon
+              }
             </span>
           ) : null}
-          {title}
+          {
+            title
+          }
         </h3>
       ) : null}
-      {children}
+      {
+        children
+      }
     </section>
   );
 }
 
 /** A stack of result pieces — the rhythm between result card, sections and share row. */
-export function PuzzleResultStack({ children }: { children: ReactNode }) {
-  return <div className="mt-6 flex flex-col gap-3">{children}</div>;
+export function PuzzleResultStack({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <div className="mt-6 flex flex-col gap-3">
+      {
+        children
+      }
+    </div>
+  );
 }
 
 /* ── Share row ─────────────────────────────────────────────────────────────── */
@@ -284,28 +474,69 @@ export function PuzzleShareRow({
   shareLabel?: string;
   disabled?: boolean;
 }) {
-  const { t } = useTranslation('c-daily-puzzles');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-daily-puzzles',
+    );
   return (
     <div className="flex flex-wrap items-center justify-center gap-2">
       <CopyButton
-        value={shareText}
-        icon={Share2}
+        value={
+          shareText
+        }
+        icon={
+          Share2
+        }
         variant="default"
-        toastOnCopy={false}
-        disabled={disabled}
+        toastOnCopy={
+          false
+        }
+        disabled={
+          disabled
+        }
       >
-        {shareLabel ?? t('share-result', { defaultValue: 'Share Result' })}
+        {shareLabel ??
+          t(
+            'share-result',
+            {
+              defaultValue:
+                'Share Result',
+            },
+          )}
       </CopyButton>
-      <Button asChild variant="default">
+      <Button
+        asChild
+        variant="default"
+      >
         <Link to="/daily">
-          <ArrowLeft aria-hidden />
-          {t('all-puzzles', { defaultValue: 'All Puzzles' })}
+          <ArrowLeft
+            aria-hidden
+          />
+          {t(
+            'all-puzzles',
+            {
+              defaultValue:
+                'All Puzzles',
+            },
+          )}
         </Link>
       </Button>
     </div>
   );
 }
 
-export function PuzzleFootnote({ children }: { children: ReactNode }) {
-  return <p className="text-center text-xs text-site-text-muted">{children}</p>;
+export function PuzzleFootnote({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <p className="text-center text-xs text-site-text-muted">
+      {
+        children
+      }
+    </p>
+  );
 }

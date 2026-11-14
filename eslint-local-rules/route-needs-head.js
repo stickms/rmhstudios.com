@@ -13,53 +13,143 @@
 import path from 'node:path';
 
 /** @param {string} filename */
-export function isLayoutRouteFile(filename) {
-  const base = path.basename(filename);
-  return base.startsWith('_') || base === 'route.tsx';
+export function isLayoutRouteFile(
+  filename,
+) {
+  const base =
+    path.basename(
+      filename,
+    );
+  return (
+    base.startsWith(
+      '_',
+    ) ||
+    base ===
+      'route.tsx'
+  );
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
-const rule = {
-  meta: {
-    type: 'suggestion',
-    docs: {
-      description: 'Require a head() on page routes that render a component',
-    },
-    schema: [],
-    messages: {
-      missingHead:
-        'Page route has a `component` but no `head()`. Add one with buildMeta / gameRouteHead / appRouteHead (or noindexHead() for private pages).',
-    },
-  },
-  create(context) {
-    if (isLayoutRouteFile(context.filename)) return {};
-    return {
-      CallExpression(node) {
-        // createFileRoute('/x')({ ... })
-        const callee = node.callee;
-        if (
-          callee.type !== 'CallExpression' ||
-          callee.callee.type !== 'Identifier' ||
-          callee.callee.name !== 'createFileRoute'
-        )
-          return;
-        const arg = node.arguments[0];
-        if (!arg || arg.type !== 'ObjectExpression') return;
-        const keys = new Set();
-        for (const p of arg.properties) {
-          if (p.type !== 'Property') {
-            if (p.type === 'SpreadElement') keys.add('*spread');
-            continue;
-          }
-          if (p.key.type === 'Identifier') keys.add(p.key.name);
-          else if (p.key.type === 'Literal') keys.add(String(p.key.value));
-        }
-        if (!keys.has('component')) return;
-        if (keys.has('head') || keys.has('*spread')) return;
-        context.report({ node: arg, messageId: 'missingHead' });
+const rule =
+  {
+    meta: {
+      type: 'suggestion',
+      docs: {
+        description:
+          'Require a head() on page routes that render a component',
       },
-    };
-  },
-};
+      schema:
+        [],
+      messages:
+        {
+          missingHead:
+            'Page route has a `component` but no `head()`. Add one with buildMeta / gameRouteHead / appRouteHead (or noindexHead() for private pages).',
+        },
+    },
+    create(
+      context,
+    ) {
+      if (
+        isLayoutRouteFile(
+          context.filename,
+        )
+      )
+        return {};
+      return {
+        CallExpression(
+          node,
+        ) {
+          // createFileRoute('/x')({ ... })
+          const callee =
+            node.callee;
+          if (
+            callee.type !==
+              'CallExpression' ||
+            callee
+              .callee
+              .type !==
+              'Identifier' ||
+            callee
+              .callee
+              .name !==
+              'createFileRoute'
+          )
+            return;
+          const arg =
+            node
+              .arguments[0];
+          if (
+            !arg ||
+            arg.type !==
+              'ObjectExpression'
+          )
+            return;
+          const keys =
+            new Set();
+          for (const p of arg.properties) {
+            if (
+              p.type !==
+              'Property'
+            ) {
+              if (
+                p.type ===
+                'SpreadElement'
+              )
+                keys.add(
+                  '*spread',
+                );
+              continue;
+            }
+            if (
+              p
+                .key
+                .type ===
+              'Identifier'
+            )
+              keys.add(
+                p
+                  .key
+                  .name,
+              );
+            else if (
+              p
+                .key
+                .type ===
+              'Literal'
+            )
+              keys.add(
+                String(
+                  p
+                    .key
+                    .value,
+                ),
+              );
+          }
+          if (
+            !keys.has(
+              'component',
+            )
+          )
+            return;
+          if (
+            keys.has(
+              'head',
+            ) ||
+            keys.has(
+              '*spread',
+            )
+          )
+            return;
+          context.report(
+            {
+              node: arg,
+              messageId:
+                'missingHead',
+            },
+          );
+        },
+      };
+    },
+  };
 
 export default rule;

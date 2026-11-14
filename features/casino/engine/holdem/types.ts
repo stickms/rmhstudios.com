@@ -1,15 +1,35 @@
-import type { Card, HandRank } from './logic';
+import type {
+  Card,
+  HandRank,
+} from './logic';
 
-export type TablePhase = 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'results';
+export type TablePhase =
+  | 'waiting'
+  | 'preflop'
+  | 'flop'
+  | 'turn'
+  | 'river'
+  | 'showdown'
+  | 'results';
 
-export type PlayerAction = 'fold' | 'check' | 'call' | 'raise' | 'all_in' | null;
+export type PlayerAction =
+  | 'fold'
+  | 'check'
+  | 'call'
+  | 'raise'
+  | 'all_in'
+  | null;
 
 export interface PlayerSeatClient {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   seatIndex: number;
-  holeCards: (Card | null)[] | null; // null = hidden, partial array = some cards revealed
+  holeCards:
+    | (Card | null)[]
+    | null; // null = hidden, partial array = some cards revealed
   currentBet: number;
   totalChips: number; // chips at table
   folded: boolean;
@@ -38,14 +58,23 @@ export interface TableStateSnapshot {
   players: PlayerSeatClient[];
   communityCards: Card[];
   pot: number;
-  sidePots: { amount: number; eligible: string[] }[];
-  currentTurnUserId: string | null;
+  sidePots: {
+    amount: number;
+    eligible: string[];
+  }[];
+  currentTurnUserId:
+    | string
+    | null;
   currentBet: number;
   minRaise: number;
-  turnTimeout: number | null;
+  turnTimeout:
+    | number
+    | null;
   smallBlind: number;
   bigBlind: number;
-  resultsCountdown: number | null;
+  resultsCountdown:
+    | number
+    | null;
 }
 
 export interface HandResultEntry {
@@ -53,7 +82,9 @@ export interface HandResultEntry {
   payout: number;
   netGain: number;
   handRank: HandRank | null;
-  bestHand: Card[] | null;
+  bestHand:
+    | Card[]
+    | null;
   holeCards: (Card | null)[];
 }
 
@@ -77,6 +108,8 @@ export interface RoomInfo {
   smallBlind: number;
   bigBlind: number;
   buyIn: number;
-  privacy: 'public' | 'unlisted';
+  privacy:
+    | 'public'
+    | 'unlisted';
   joinCode: string;
 }

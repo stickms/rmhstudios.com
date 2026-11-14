@@ -24,7 +24,23 @@
  * their presence is the documented signal. Always false during SSR.
  */
 export function isDiscordActivity(): boolean {
-  if (typeof window === 'undefined') return false;
-  const params = new URLSearchParams(window.location.search);
-  return params.has('frame_id') && params.has('instance_id');
+  if (
+    typeof window ===
+    'undefined'
+  )
+    return false;
+  const params =
+    new URLSearchParams(
+      window
+        .location
+        .search,
+    );
+  return (
+    params.has(
+      'frame_id',
+    ) &&
+    params.has(
+      'instance_id',
+    )
+  );
 }

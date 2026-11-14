@@ -32,12 +32,15 @@
  * and a preload without it is a second, uncredentialed fetch instead of a warm
  * cache hit. The literal types matter for TanStack's `head().links`.
  */
-export function preloadFont(href: string) {
+export function preloadFont(
+  href: string,
+) {
   return {
     rel: 'preload',
     as: 'font',
     type: 'font/woff2',
     href,
-    crossOrigin: 'anonymous',
+    crossOrigin:
+      'anonymous',
   } as const;
 }

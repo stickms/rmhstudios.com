@@ -19,14 +19,26 @@ import {
   type Race,
 } from './types';
 
-const OFFICES_ORDER: Office[] = ['president', 'senate', 'house', 'governor'];
+const OFFICES_ORDER: Office[] =
+  [
+    'president',
+    'senate',
+    'house',
+    'governor',
+  ];
 
 export interface RaceFact {
   label: string;
-  leader: string | null;
+  leader:
+    | string
+    | null;
   leaderParty: Party | null;
-  marginPts: number | null;
-  pctReporting: number | null;
+  marginPts:
+    | number
+    | null;
+  pctReporting:
+    | number
+    | null;
   status: Race['status'];
   flipped: boolean;
 }
@@ -34,12 +46,18 @@ export interface RaceFact {
 export interface ChamberFact {
   office: Office;
   name: string;
-  seats: Record<Party, number>;
+  seats: Record<
+    Party,
+    number
+  >;
   toWin: number;
   racesCalled: number;
   seatsUp: number;
   controlledBy: Party | null;
-  flips: Record<Party, number>;
+  flips: Record<
+    Party,
+    number
+  >;
   derived: boolean;
 }
 
@@ -58,68 +76,244 @@ export interface Facts {
   calledHighlights: RaceFact[];
 }
 
-function raceFact(r: Race): RaceFact {
-  const leader = r.candidates.find((c) => c.won) ?? r.candidates.find((c) => c.leader) ?? null;
+function raceFact(
+  r: Race,
+): RaceFact {
+  const leader =
+    r.candidates.find(
+      (
+        c,
+      ) =>
+        c.won,
+    ) ??
+    r.candidates.find(
+      (
+        c,
+      ) =>
+        c.leader,
+    ) ??
+    null;
   return {
-    label: r.label,
-    leader: leader ? `${leader.name} (${PARTY_SHORT[leader.party]})` : null,
-    leaderParty: leader?.party ?? null,
-    marginPts: r.margin,
-    pctReporting: r.pctReporting,
-    status: r.status,
-    flipped: r.flipped,
+    label:
+      r.label,
+    leader:
+      leader
+        ? `${leader.name} (${PARTY_SHORT[leader.party]})`
+        : null,
+    leaderParty:
+      leader?.party ??
+      null,
+    marginPts:
+      r.margin,
+    pctReporting:
+      r.pctReporting,
+    status:
+      r.status,
+    flipped:
+      r.flipped,
   };
 }
 
-const OFFICE_WEIGHT: Record<Office, number> = { president: 0, senate: 1, governor: 2, house: 3 };
+const OFFICE_WEIGHT: Record<
+  Office,
+  number
+> =
+  {
+    president: 0,
+    senate: 1,
+    governor: 2,
+    house: 3,
+  };
 
-export function buildFacts(s: ElectionSnapshot): Facts {
-  const called = s.races.filter((r) => r.status === 'called');
-  const counting = s.races.filter((r) => r.status === 'counting');
-  const closest = counting
-    .filter((r) => r.margin != null && (r.pctReporting ?? 0) >= 5)
-    .sort((a, b) => (a.margin ?? 99) - (b.margin ?? 99))
-    .slice(0, 5)
-    .map(raceFact);
-  const tossups = s.races
-    .filter((r) => r.rating === 'tossup' && r.status !== 'called')
-    .sort((a, b) => OFFICE_WEIGHT[a.office] - OFFICE_WEIGHT[b.office])
-    .slice(0, 10)
-    .map(raceFact);
-  const highlights = [...called]
-    .sort((a, b) => OFFICE_WEIGHT[a.office] - OFFICE_WEIGHT[b.office])
-    .filter((r) => r.office !== 'house')
-    .slice(0, 8)
-    .map(raceFact);
+export function buildFacts(
+  s: ElectionSnapshot,
+): Facts {
+  const called =
+    s.races.filter(
+      (
+        r,
+      ) =>
+        r.status ===
+        'called',
+    );
+  const counting =
+    s.races.filter(
+      (
+        r,
+      ) =>
+        r.status ===
+        'counting',
+    );
+  const closest =
+    counting
+      .filter(
+        (
+          r,
+        ) =>
+          r.margin !=
+            null &&
+          (r.pctReporting ??
+            0) >=
+            5,
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          (a.margin ??
+            99) -
+          (b.margin ??
+            99),
+      )
+      .slice(
+        0,
+        5,
+      )
+      .map(
+        raceFact,
+      );
+  const tossups =
+    s.races
+      .filter(
+        (
+          r,
+        ) =>
+          r.rating ===
+            'tossup' &&
+          r.status !==
+            'called',
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          OFFICE_WEIGHT[
+            a
+              .office
+          ] -
+          OFFICE_WEIGHT[
+            b
+              .office
+          ],
+      )
+      .slice(
+        0,
+        10,
+      )
+      .map(
+        raceFact,
+      );
+  const highlights =
+    [
+      ...called,
+    ]
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          OFFICE_WEIGHT[
+            a
+              .office
+          ] -
+          OFFICE_WEIGHT[
+            b
+              .office
+          ],
+      )
+      .filter(
+        (
+          r,
+        ) =>
+          r.office !==
+          'house',
+      )
+      .slice(
+        0,
+        8,
+      )
+      .map(
+        raceFact,
+      );
 
   return {
     date: s.date,
     live: s.live,
-    racesTotal: s.races.length,
-    racesCalled: called.length,
-    racesCounting: counting.length,
-    chambers: OFFICES_ORDER.flatMap((o) => {
-      const c = s.chambers[o];
-      return c ? [chamberFact(c)] : [];
-    }),
-    flips: called.filter((r) => r.flipped).slice(0, 12).map(raceFact),
+    racesTotal:
+      s
+        .races
+        .length,
+    racesCalled:
+      called.length,
+    racesCounting:
+      counting.length,
+    chambers:
+      OFFICES_ORDER.flatMap(
+        (
+          o,
+        ) => {
+          const c =
+            s
+              .chambers[
+              o
+            ];
+          return c
+            ? [
+                chamberFact(
+                  c,
+                ),
+              ]
+            : [];
+        },
+      ),
+    flips:
+      called
+        .filter(
+          (
+            r,
+          ) =>
+            r.flipped,
+        )
+        .slice(
+          0,
+          12,
+        )
+        .map(
+          raceFact,
+        ),
     closest,
     tossups,
-    calledHighlights: highlights,
+    calledHighlights:
+      highlights,
   };
 }
 
-function chamberFact(c: ChamberControl): ChamberFact {
+function chamberFact(
+  c: ChamberControl,
+): ChamberFact {
   return {
-    office: c.office,
-    name: OFFICE_NAME[c.office],
-    seats: c.seats,
-    toWin: c.toWin,
-    racesCalled: c.racesCalled,
-    seatsUp: c.seatsUp,
-    controlledBy: c.controlledBy,
-    flips: c.flips,
-    derived: c.derived,
+    office:
+      c.office,
+    name: OFFICE_NAME[
+      c
+        .office
+    ],
+    seats:
+      c.seats,
+    toWin:
+      c.toWin,
+    racesCalled:
+      c.racesCalled,
+    seatsUp:
+      c.seatsUp,
+    controlledBy:
+      c.controlledBy,
+    flips:
+      c.flips,
+    derived:
+      c.derived,
   };
 }
 
@@ -128,53 +322,102 @@ function chamberFact(c: ChamberControl): ChamberFact {
  * otherwise: the called count per chamber, who controls what, and the count of
  * races with votes in (bucketed so a trickle of precincts does not churn it).
  */
-export function snapshotFingerprint(s: ElectionSnapshot): string {
-  const f = buildFacts(s);
-  const chambers = f.chambers
-    .map((c) => `${c.office}:${c.racesCalled}:${c.controlledBy ?? '-'}`)
-    .join('|');
+export function snapshotFingerprint(
+  s: ElectionSnapshot,
+): string {
+  const f =
+    buildFacts(
+      s,
+    );
+  const chambers =
+    f.chambers
+      .map(
+        (
+          c,
+        ) =>
+          `${c.office}:${c.racesCalled}:${c.controlledBy ?? '-'}`,
+      )
+      .join(
+        '|',
+      );
   return `${f.date}#${f.racesCalled}/${Math.floor(f.racesCounting / 10)}#${chambers}`;
 }
 
-const seatLine = (c: ChamberFact) =>
-  `${c.name}: ${PARTY_SHORT.GOP} ${c.seats.GOP} · ${PARTY_SHORT.DEM} ${c.seats.DEM}` +
-  (c.seats.OTH ? ` · ${PARTY_SHORT.OTH} ${c.seats.OTH}` : '') +
-  ` (${c.toWin} to win)`;
+const seatLine =
+  (
+    c: ChamberFact,
+  ) =>
+    `${c.name}: ${PARTY_SHORT.GOP} ${c.seats.GOP} · ${PARTY_SHORT.DEM} ${c.seats.DEM}` +
+    (c
+      .seats
+      .OTH
+      ? ` · ${PARTY_SHORT.OTH} ${c.seats.OTH}`
+      : '') +
+    ` (${c.toWin} to win)`;
 
 /** Plain bullets — always available, no AI. */
-export function deterministicSummary(s: ElectionSnapshot): string[] {
-  const f = buildFacts(s);
-  if (!f.racesTotal) return [];
-  const out: string[] = [];
+export function deterministicSummary(
+  s: ElectionSnapshot,
+): string[] {
+  const f =
+    buildFacts(
+      s,
+    );
+  if (
+    !f.racesTotal
+  )
+    return [];
+  const out: string[] =
+    [];
 
-  if (!f.live) {
+  if (
+    !f.live
+  ) {
     for (const c of f.chambers) {
       out.push(
         `${c.name}: ${c.seatsUp} ${c.seatsUp === 1 ? 'seat' : 'seats'} on the ballot${
-          c.derived ? '' : ` · ${seatLine(c)}`
+          c.derived
+            ? ''
+            : ` · ${seatLine(c)}`
         }`,
       );
     }
-    out.push('Polls have not reported yet — results appear here the moment the first precincts do.');
+    out.push(
+      'Polls have not reported yet — results appear here the moment the first precincts do.',
+    );
     return out;
   }
 
-  out.push(`${f.racesCalled} of ${f.racesTotal} races called · ${f.racesCounting} still counting`);
+  out.push(
+    `${f.racesCalled} of ${f.racesTotal} races called · ${f.racesCounting} still counting`,
+  );
   for (const c of f.chambers) {
-    const who = c.controlledBy
-      ? `${PARTY_SHORT[c.controlledBy]} has clinched control`
-      : c.derived
-        ? 'called so far'
-        : 'control undecided';
-    out.push(`${seatLine(c)} — ${who}`);
+    const who =
+      c.controlledBy
+        ? `${PARTY_SHORT[c.controlledBy]} has clinched control`
+        : c.derived
+          ? 'called so far'
+          : 'control undecided';
+    out.push(
+      `${seatLine(c)} — ${who}`,
+    );
   }
-  for (const r of f.flips.slice(0, 3)) {
-    out.push(`Flip: ${r.label} → ${r.leader ?? 'called'}`);
+  for (const r of f.flips.slice(
+    0,
+    3,
+  )) {
+    out.push(
+      `Flip: ${r.label} → ${r.leader ?? 'called'}`,
+    );
   }
-  for (const r of f.closest.slice(0, 2)) {
+  for (const r of f.closest.slice(
+    0,
+    2,
+  )) {
     out.push(
       `Too close: ${r.label} — ${r.leader ?? 'tied'} by ${r.marginPts?.toFixed(1)} pts, ${Math.round(
-        r.pctReporting ?? 0,
+        r.pctReporting ??
+          0,
       )}% in`,
     );
   }
@@ -182,34 +425,86 @@ export function deterministicSummary(s: ElectionSnapshot): string[] {
 }
 
 /** One line for the feed card and share text. */
-export function headline(s: ElectionSnapshot): string {
-  const f = buildFacts(s);
-  if (!f.racesTotal) return 'Results will appear here as soon as polls report.';
-  if (!f.live) {
-    const bits = f.chambers.map((c) => `${c.seatsUp} ${c.name}`);
+export function headline(
+  s: ElectionSnapshot,
+): string {
+  const f =
+    buildFacts(
+      s,
+    );
+  if (
+    !f.racesTotal
+  )
+    return 'Results will appear here as soon as polls report.';
+  if (
+    !f.live
+  ) {
+    const bits =
+      f.chambers.map(
+        (
+          c,
+        ) =>
+          `${c.seatsUp} ${c.name}`,
+      );
     return bits.length
       ? `On the ballot: ${bits.join(' · ')}. Live results the moment polls close.`
       : `${f.racesTotal} races on the ballot. Live results the moment polls close.`;
   }
-  const lead = f.chambers.filter((c) => c.office === 'senate' || c.office === 'house');
-  const parts = lead.map(
-    (c) => `${c.name} ${PARTY_SHORT.GOP} ${c.seats.GOP}–${PARTY_SHORT.DEM} ${c.seats.DEM}`,
-  );
+  const lead =
+    f.chambers.filter(
+      (
+        c,
+      ) =>
+        c.office ===
+          'senate' ||
+        c.office ===
+          'house',
+    );
+  const parts =
+    lead.map(
+      (
+        c,
+      ) =>
+        `${c.name} ${PARTY_SHORT.GOP} ${c.seats.GOP}–${PARTY_SHORT.DEM} ${c.seats.DEM}`,
+    );
   return parts.length
     ? `${parts.join(' · ')} · ${f.racesCalled}/${f.racesTotal} races called`
     : `${f.racesCalled} of ${f.racesTotal} races called`;
 }
 
 /** Counts of races by rating lean — for the "ratings" bar before results exist. */
-export function ratingLean(races: Race[]): { dem: number; tossup: number; gop: number } {
+export function ratingLean(
+  races: Race[],
+): {
+  dem: number;
+  tossup: number;
+  gop: number;
+} {
   let dem = 0;
   let gop = 0;
   let tossup = 0;
   for (const r of races) {
-    if (!r.rating) continue;
-    if (r.rating === 'tossup') tossup++;
-    else if (r.rating.endsWith('dem')) dem++;
-    else gop++;
+    if (
+      !r.rating
+    )
+      continue;
+    if (
+      r.rating ===
+      'tossup'
+    )
+      tossup++;
+    else if (
+      r.rating.endsWith(
+        'dem',
+      )
+    )
+      dem++;
+    else
+      gop++;
   }
-  return { dem, tossup, gop };
+  return {
+    dem,
+    tossup,
+    gop,
+  };
 }

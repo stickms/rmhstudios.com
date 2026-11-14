@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pause, Play } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Pause,
+  Play,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { formatDuration } from '@/lib/voice/peaks';
@@ -26,9 +34,18 @@ import { VoiceWaveform } from '@/components/voice/VoiceWaveform';
  */
 
 /** Playback position per audio URL, so a remount resumes rather than restarts. */
-const resumePositions = new Map<string, number>();
+const resumePositions =
+  new Map<
+    string,
+    number
+  >();
 
-const SPEEDS = [1, 1.5, 2] as const;
+const SPEEDS =
+  [
+    1,
+    1.5,
+    2,
+  ] as const;
 
 export function VoicePlayer({
   src,
@@ -37,28 +54,96 @@ export function VoicePlayer({
   className,
 }: {
   src: string;
-  durationMs: number | null;
+  durationMs:
+    | number
+    | null;
   peaks: number[];
   className?: string;
 }) {
-  const { t } = useTranslation('feed');
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const [position, setPosition] = useState(() => resumePositions.get(src) ?? 0);
-  const [speedIndex, setSpeedIndex] = useState(0);
-  const [failed, setFailed] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const audioRef =
+    useRef<HTMLAudioElement | null>(
+      null,
+    );
+  const [
+    playing,
+    setPlaying,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    position,
+    setPosition,
+  ] =
+    useState(
+      () =>
+        resumePositions.get(
+          src,
+        ) ??
+        0,
+    );
+  const [
+    speedIndex,
+    setSpeedIndex,
+  ] =
+    useState(
+      0,
+    );
+  const [
+    failed,
+    setFailed,
+  ] =
+    useState(
+      false,
+    );
 
   // Metadata duration wins once known; the stored value is what lets the bubble
   // show a length before the file is touched at all.
-  const [measuredMs, setMeasuredMs] = useState<number | null>(null);
-  const totalMs = measuredMs ?? durationMs ?? 0;
-  const progress = totalMs > 0 ? Math.min(1, (position * 1000) / totalMs) : 0;
+  const [
+    measuredMs,
+    setMeasuredMs,
+  ] =
+    useState<
+      | number
+      | null
+    >(
+      null,
+    );
+  const totalMs =
+    measuredMs ??
+    durationMs ??
+    0;
+  const progress =
+    totalMs >
+    0
+      ? Math.min(
+          1,
+          (position *
+            1000) /
+            totalMs,
+        )
+      : 0;
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.playbackRate = SPEEDS[speedIndex];
-  }, [speedIndex]);
+    const audio =
+      audioRef.current;
+    if (
+      !audio
+    )
+      return;
+    audio.playbackRate =
+      SPEEDS[
+        speedIndex
+      ];
+  }, [
+    speedIndex,
+  ]);
 
   // Persist the position on unmount too — `timeupdate` fires ~4×/s, so pausing
   // and immediately navigating away would otherwise lose up to a quarter second
@@ -66,122 +151,341 @@ export function VoicePlayer({
   useEffect(() => {
     // Captured now, not in the cleanup: by teardown React may already have
     // detached the element from the ref.
-    const audio = audioRef.current;
+    const audio =
+      audioRef.current;
     return () => {
-      if (audio && audio.currentTime > 0) resumePositions.set(src, audio.currentTime);
+      if (
+        audio &&
+        audio.currentTime >
+          0
+      )
+        resumePositions.set(
+          src,
+          audio.currentTime,
+        );
     };
-  }, [src]);
+  }, [
+    src,
+  ]);
 
-  const toggle = useCallback(async () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playing) {
-      audio.pause();
-      return;
-    }
-    try {
-      const resume = resumePositions.get(src) ?? 0;
-      // Re-seek on the first press after a remount: the element is new, so its
-      // currentTime is 0 even though we remember where the user was.
-      if (resume > 0 && audio.currentTime < 0.05) audio.currentTime = resume;
-      audio.playbackRate = SPEEDS[speedIndex];
-      await audio.play();
-    } catch {
-      setFailed(true);
-    }
-  }, [playing, speedIndex, src]);
+  const toggle =
+    useCallback(async () => {
+      const audio =
+        audioRef.current;
+      if (
+        !audio
+      )
+        return;
+      if (
+        playing
+      ) {
+        audio.pause();
+        return;
+      }
+      try {
+        const resume =
+          resumePositions.get(
+            src,
+          ) ??
+          0;
+        // Re-seek on the first press after a remount: the element is new, so its
+        // currentTime is 0 even though we remember where the user was.
+        if (
+          resume >
+            0 &&
+          audio.currentTime <
+            0.05
+        )
+          audio.currentTime =
+            resume;
+        audio.playbackRate =
+          SPEEDS[
+            speedIndex
+          ];
+        await audio.play();
+      } catch {
+        setFailed(
+          true,
+        );
+      }
+    }, [
+      playing,
+      speedIndex,
+      src,
+    ]);
 
-  const seek = useCallback(
-    (fraction: number) => {
-      const audio = audioRef.current;
-      if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
-      const next = Math.min(Math.max(fraction, 0), 1) * audio.duration;
-      audio.currentTime = next;
-      setPosition(next);
-      resumePositions.set(src, next);
-    },
-    [src],
-  );
+  const seek =
+    useCallback(
+      (
+        fraction: number,
+      ) => {
+        const audio =
+          audioRef.current;
+        if (
+          !audio ||
+          !Number.isFinite(
+            audio.duration,
+          ) ||
+          audio.duration <=
+            0
+        )
+          return;
+        const next =
+          Math.min(
+            Math.max(
+              fraction,
+              0,
+            ),
+            1,
+          ) *
+          audio.duration;
+        audio.currentTime =
+          next;
+        setPosition(
+          next,
+        );
+        resumePositions.set(
+          src,
+          next,
+        );
+      },
+      [
+        src,
+      ],
+    );
 
-  const cycleSpeed = useCallback(() => {
-    setSpeedIndex((i) => (i + 1) % SPEEDS.length);
-  }, []);
+  const cycleSpeed =
+    useCallback(() => {
+      setSpeedIndex(
+        (
+          i,
+        ) =>
+          (i +
+            1) %
+          SPEEDS.length,
+      );
+    }, []);
 
-  const remainingLabel = formatDuration(
-    playing || position > 0 ? Math.max(0, totalMs - position * 1000) : totalMs,
-  );
+  const remainingLabel =
+    formatDuration(
+      playing ||
+        position >
+          0
+        ? Math.max(
+            0,
+            totalMs -
+              position *
+                1000,
+          )
+        : totalMs,
+    );
 
   return (
-    <div className={cn('flex w-full min-w-0 items-center gap-2', className)}>
+    <div
+      className={cn(
+        'flex w-full min-w-0 items-center gap-2',
+        className,
+      )}
+    >
       <audio
-        ref={audioRef}
-        src={src}
+        ref={
+          audioRef
+        }
+        src={
+          src
+        }
         preload="metadata"
-        onLoadedMetadata={(e) => {
-          const d = e.currentTarget.duration;
-          if (Number.isFinite(d) && d > 0) setMeasuredMs(Math.round(d * 1000));
+        onLoadedMetadata={(
+          e,
+        ) => {
+          const d =
+            e
+              .currentTarget
+              .duration;
+          if (
+            Number.isFinite(
+              d,
+            ) &&
+            d >
+              0
+          )
+            setMeasuredMs(
+              Math.round(
+                d *
+                  1000,
+              ),
+            );
         }}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
+        onPlay={() =>
+          setPlaying(
+            true,
+          )
+        }
+        onPause={() =>
+          setPlaying(
+            false,
+          )
+        }
         onEnded={() => {
-          setPlaying(false);
-          setPosition(0);
-          resumePositions.delete(src);
+          setPlaying(
+            false,
+          );
+          setPosition(
+            0,
+          );
+          resumePositions.delete(
+            src,
+          );
         }}
-        onTimeUpdate={(e) => {
-          const time = e.currentTarget.currentTime;
-          setPosition(time);
-          resumePositions.set(src, time);
+        onTimeUpdate={(
+          e,
+        ) => {
+          const time =
+            e
+              .currentTarget
+              .currentTime;
+          setPosition(
+            time,
+          );
+          resumePositions.set(
+            src,
+            time,
+          );
         }}
-        onError={() => setFailed(true)}
+        onError={() =>
+          setFailed(
+            true,
+          )
+        }
       />
 
       <button
         type="button"
-        onClick={toggle}
-        disabled={failed}
+        onClick={
+          toggle
+        }
+        disabled={
+          failed
+        }
         // 44px: this is the primary control of the bubble and it sits beside a
         // scrollable thread, where a smaller target is a mis-tap that scrolls.
         className="flex size-11 shrink-0 items-center justify-center rounded-full bg-current/15 text-current transition-opacity hover:opacity-80 disabled:opacity-40"
         aria-label={
           playing
-            ? t('voice-pause', { defaultValue: 'Pause voice message' })
-            : t('voice-play', { defaultValue: 'Play voice message' })
+            ? t(
+                'voice-pause',
+                {
+                  defaultValue:
+                    'Pause voice message',
+                },
+              )
+            : t(
+                'voice-play',
+                {
+                  defaultValue:
+                    'Play voice message',
+                },
+              )
         }
       >
-        {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
+        {playing ? (
+          <Pause className="size-5" />
+        ) : (
+          <Play className="size-5" />
+        )}
       </button>
 
       <div className="relative min-w-0 flex-1">
-        <VoiceWaveform peaks={peaks} progress={progress} />
+        <VoiceWaveform
+          peaks={
+            peaks
+          }
+          progress={
+            progress
+          }
+        />
         {/* A native range input laid over the bars: seeking works with a
             pointer, a keyboard and a screen reader without re-implementing any
             of it. Invisible, because the bars ARE the visual. */}
         <input
           type="range"
-          min={0}
-          max={1000}
-          step={1}
-          value={Math.round(progress * 1000)}
-          onChange={(e) => seek(Number(e.currentTarget.value) / 1000)}
-          disabled={failed || totalMs <= 0}
-          aria-label={t('voice-seek', { defaultValue: 'Seek within voice message' })}
-          aria-valuetext={formatDuration(position * 1000)}
+          min={
+            0
+          }
+          max={
+            1000
+          }
+          step={
+            1
+          }
+          value={Math.round(
+            progress *
+              1000,
+          )}
+          onChange={(
+            e,
+          ) =>
+            seek(
+              Number(
+                e
+                  .currentTarget
+                  .value,
+              ) /
+                1000,
+            )
+          }
+          disabled={
+            failed ||
+            totalMs <=
+              0
+          }
+          aria-label={t(
+            'voice-seek',
+            {
+              defaultValue:
+                'Seek within voice message',
+            },
+          )}
+          aria-valuetext={formatDuration(
+            position *
+              1000,
+          )}
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         />
       </div>
 
       <span className="shrink-0 text-caption tabular-nums opacity-70">
-        {failed ? t('voice-unavailable', { defaultValue: 'Unavailable' }) : remainingLabel}
+        {failed
+          ? t(
+              'voice-unavailable',
+              {
+                defaultValue:
+                  'Unavailable',
+              },
+            )
+          : remainingLabel}
       </span>
 
       <button
         type="button"
-        onClick={cycleSpeed}
+        onClick={
+          cycleSpeed
+        }
         className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-full px-2 text-caption font-semibold tabular-nums transition-opacity hover:opacity-80"
-        aria-label={t('voice-speed', { defaultValue: 'Playback speed' })}
+        aria-label={t(
+          'voice-speed',
+          {
+            defaultValue:
+              'Playback speed',
+          },
+        )}
       >
-        {SPEEDS[speedIndex]}&times;
+        {
+          SPEEDS[
+            speedIndex
+          ]
+        }
+        &times;
       </button>
     </div>
   );

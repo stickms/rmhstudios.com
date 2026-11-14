@@ -30,40 +30,79 @@
  * promise is marked as soon as it settles. Client-only: the server's promise is
  * serialized for streaming and is left exactly as it was. Idempotent.
  */
-type Tracked<T> = Promise<T> & {
-  status?: string;
-  value?: T;
-  reason?: unknown;
-  /** seroval's settlement marker on a deserialized promise: 1 fulfilled, 2 rejected. */
-  s?: unknown;
-  /** seroval's settled value (or rejection reason). */
-  v?: unknown;
-};
+type Tracked<
+  T,
+> =
+  Promise<T> & {
+    status?: string;
+    value?: T;
+    reason?: unknown;
+    /** seroval's settlement marker on a deserialized promise: 1 fulfilled, 2 rejected. */
+    s?: unknown;
+    /** seroval's settled value (or rejection reason). */
+    v?: unknown;
+  };
 
-export function trackPromise<T>(promise: Promise<T>): Promise<T> {
-  if (typeof window === 'undefined') return promise;
-  const p = promise as Tracked<T>;
+export function trackPromise<
+  T,
+>(
+  promise: Promise<T>,
+): Promise<T> {
+  if (
+    typeof window ===
+    'undefined'
+  )
+    return promise;
+  const p =
+    promise as Tracked<T>;
   // Already instrumented — by React, or by an earlier call.
-  if (typeof p.status === 'string') return promise;
-  if (p.s === 1 && 'v' in p) {
-    p.status = 'fulfilled';
-    p.value = p.v as T;
+  if (
+    typeof p.status ===
+    'string'
+  )
+    return promise;
+  if (
+    p.s ===
+      1 &&
+    'v' in
+      p
+  ) {
+    p.status =
+      'fulfilled';
+    p.value =
+      p.v as T;
     return promise;
   }
-  if (p.s === 2 && 'v' in p) {
-    p.status = 'rejected';
-    p.reason = p.v;
+  if (
+    p.s ===
+      2 &&
+    'v' in
+      p
+  ) {
+    p.status =
+      'rejected';
+    p.reason =
+      p.v;
     return promise;
   }
-  p.status = 'pending';
+  p.status =
+    'pending';
   p.then(
-    (value) => {
-      p.status = 'fulfilled';
-      p.value = value;
+    (
+      value,
+    ) => {
+      p.status =
+        'fulfilled';
+      p.value =
+        value;
     },
-    (reason: unknown) => {
-      p.status = 'rejected';
-      p.reason = reason;
+    (
+      reason: unknown,
+    ) => {
+      p.status =
+        'rejected';
+      p.reason =
+        reason;
     },
   );
   return promise;

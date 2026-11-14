@@ -5,7 +5,20 @@ import type { ReactionRow } from '@/lib/social/reactions';
 import type { reactBody } from './reaction-schema';
 
 /** Toggle an emoji reaction on a comment (400 `Invalid emoji`, 404 `Not found`). */
-export const reactToCommentApi = endpoint<{
-  body: z.infer<typeof reactBody>;
-  res: { success: true; reacted: boolean; reactions: ReactionRow[] };
-}>()({ method: 'POST', path: '/api/comments/$commentId/react' });
+export const reactToCommentApi =
+  endpoint<{
+    body: z.infer<
+      typeof reactBody
+    >;
+    res: {
+      success: true;
+      reacted: boolean;
+      reactions: ReactionRow[];
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/comments/$commentId/react',
+    },
+  );

@@ -22,9 +22,20 @@
  * response objects, so the content-type and method gates are covered too.
  */
 
-import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
+import {
+  readdirSync,
+  readFileSync,
+  statSync,
+} from 'node:fs';
+import {
+  join,
+  resolve,
+} from 'node:path';
 import anonHtmlCachePlugin, {
   CACHEABLE_ANON_PATHS,
   CACHEABLE_ANON_PREFIXES,
@@ -35,87 +46,172 @@ import anonHtmlCachePlugin, {
 } from '@/server/nitro/anon-html-cache';
 
 /** Cookie shapes Better Auth actually emits, plus the bare dev-mode name. */
-const SESSION_COOKIES = [
-  'better-auth.session_token=abc123',
-  '__Secure-better-auth.session_token=abc123',
-  '__Host-better-auth.session_token=abc123',
-  'better-auth.session_data=eyJ0aGluZyI6MX0',
-  'theme=dark; better-auth.session_token=abc123; rmh-lang=en',
-];
+const SESSION_COOKIES =
+  [
+    'better-auth.session_token=abc123',
+    '__Secure-better-auth.session_token=abc123',
+    '__Host-better-auth.session_token=abc123',
+    'better-auth.session_data=eyJ0aGluZyI6MX0',
+    'theme=dark; better-auth.session_token=abc123; rmh-lang=en',
+  ];
 
-const LOCALE_COOKIE = 'rmh-lang=fr';
+const LOCALE_COOKIE =
+  'rmh-lang=fr';
 
 /** Paths the plugin may mark `public`, plus one article path per prefix. */
-const ALLOWLISTED_PATHS = [
-  ...CACHEABLE_ANON_PATHS,
-  ...CACHEABLE_ANON_PREFIXES.map((prefix) => `${prefix}some-slug`),
-];
+const ALLOWLISTED_PATHS =
+  [
+    ...CACHEABLE_ANON_PATHS,
+    ...CACHEABLE_ANON_PREFIXES.map(
+      (
+        prefix,
+      ) =>
+        `${prefix}some-slug`,
+    ),
+  ];
 
 /** Paths that must never be shared, whatever the cookies say. */
-const NON_ALLOWLISTED_PATHS = [
-  '/wallet',
-  '/settings/account',
-  '/notifications',
-  '/messages',
-  '/u/someone',
-  '/admin',
-  '/create',
-  // Prefix matching must not spill into a sibling that merely shares a stem.
-  '/blogroll',
-  '/blog-archive',
-  '/newsletter',
-  '/news-roundup',
-  // The prefixes' own bare paths are separate decisions: `/news` is allowlisted
-  // on its own merits, `/blog` is a redirect and deliberately is not.
-  '/blog',
-];
+const NON_ALLOWLISTED_PATHS =
+  [
+    '/wallet',
+    '/settings/account',
+    '/notifications',
+    '/messages',
+    '/u/someone',
+    '/admin',
+    '/create',
+    // Prefix matching must not spill into a sibling that merely shares a stem.
+    '/blogroll',
+    '/blog-archive',
+    '/newsletter',
+    '/news-roundup',
+    // The prefixes' own bare paths are separate decisions: `/news` is allowlisted
+    // on its own merits, `/blog` is a redirect and deliberately is not.
+    '/blog',
+  ];
 
 /** Minimal stand-ins for the Nitro `response` hook's `event.req` / `event.res`. */
 function runPlugin(options: {
   path: string;
-  cookie?: string | null;
+  cookie?:
+    | string
+    | null;
   method?: string;
-  contentType?: string | null;
+  contentType?:
+    | string
+    | null;
   existingCacheControl?: string;
   /** Extra response headers the handler set before the hook runs (e.g. a CSP). */
-  responseHeaders?: Record<string, string>;
+  responseHeaders?: Record<
+    string,
+    string
+  >;
 }): Headers {
-  const resHeaders = new Headers();
-  if (options.contentType !== null) {
-    resHeaders.set('content-type', options.contentType ?? 'text/html; charset=utf-8');
+  const resHeaders =
+    new Headers();
+  if (
+    options.contentType !==
+    null
+  ) {
+    resHeaders.set(
+      'content-type',
+      options.contentType ??
+        'text/html; charset=utf-8',
+    );
   }
-  if (options.existingCacheControl) {
-    resHeaders.set('Cache-Control', options.existingCacheControl);
+  if (
+    options.existingCacheControl
+  ) {
+    resHeaders.set(
+      'Cache-Control',
+      options.existingCacheControl,
+    );
   }
-  for (const [name, value] of Object.entries(options.responseHeaders ?? {}))
-    resHeaders.set(name, value);
+  for (const [
+    name,
+    value,
+  ] of Object.entries(
+    options.responseHeaders ??
+      {},
+  ))
+    resHeaders.set(
+      name,
+      value,
+    );
 
-  const reqHeaders = new Headers();
-  if (options.cookie) reqHeaders.set('cookie', options.cookie);
+  const reqHeaders =
+    new Headers();
+  if (
+    options.cookie
+  )
+    reqHeaders.set(
+      'cookie',
+      options.cookie,
+    );
 
-  let handler: ((res: unknown, event: unknown) => void) | null = null;
-  anonHtmlCachePlugin({
-    hooks: {
-      hook: (name, fn) => {
-        if (name === 'response') handler = fn;
+  let handler:
+    | ((
+        res: unknown,
+        event: unknown,
+      ) => void)
+    | null =
+    null;
+  anonHtmlCachePlugin(
+    {
+      hooks:
+        {
+          hook: (
+            name,
+            fn,
+          ) => {
+            if (
+              name ===
+              'response'
+            )
+              handler =
+                fn;
+          },
+        },
+    },
+  );
+  expect(
+    handler,
+    'plugin must register a `response` hook',
+  ).not.toBeNull();
+
+  const event =
+    {
+      req: {
+        url: `http://rmhstudios.com${options.path}`,
+        method:
+          options.method ??
+          'GET',
+        headers:
+          reqHeaders,
       },
+      res: {
+        headers:
+          resHeaders,
+      },
+    };
+  handler!(
+    {
+      headers:
+        resHeaders,
     },
-  });
-  expect(handler, 'plugin must register a `response` hook').not.toBeNull();
-
-  const event = {
-    req: {
-      url: `http://rmhstudios.com${options.path}`,
-      method: options.method ?? 'GET',
-      headers: reqHeaders,
-    },
-    res: { headers: resHeaders },
-  };
-  handler!({ headers: resHeaders }, event);
+    event,
+  );
   return resHeaders;
 }
 
-const cacheControl = (headers: Headers) => headers.get('Cache-Control') ?? '';
+const cacheControl =
+  (
+    headers: Headers,
+  ) =>
+    headers.get(
+      'Cache-Control',
+    ) ??
+    '';
 
 /**
  * The plugin must write to the response that is actually being SENT.
@@ -134,78 +230,223 @@ const cacheControl = (headers: Headers) => headers.get('Cache-Control') ?? '';
  * time, and only `res.headers` is the live one.
  */
 describe('anon-html-cache — writes to the response actually being sent', () => {
-  function runAgainstRealH3Shape(path: string, cookie?: string) {
-    const sentHeaders = new Headers({ 'content-type': 'text/html; charset=utf-8' });
-    const detached: Headers[] = [];
-
-    let handler: ((res: unknown, event: unknown) => void) | null = null;
-    anonHtmlCachePlugin({
-      hooks: {
-        hook: (name, fn) => {
-          if (name === 'response') handler = fn;
+  function runAgainstRealH3Shape(
+    path: string,
+    cookie?: string,
+  ) {
+    const sentHeaders =
+      new Headers(
+        {
+          'content-type':
+            'text/html; charset=utf-8',
         },
-      },
-    });
+      );
+    const detached: Headers[] =
+      [];
 
-    const reqHeaders = new Headers();
-    if (cookie) reqHeaders.set('cookie', cookie);
-
-    const event = {
-      req: { url: `http://rmhstudios.com${path}`, method: 'GET', headers: reqHeaders },
-      // The lazy getter: a brand-new detached response every read, exactly like
-      // `get res() { return this[kEventRes] ||= new H3EventResponse(); }` after
-      // `prepareResponse` has cleared the slot.
-      get res() {
-        const fresh = new Headers();
-        detached.push(fresh);
-        return { headers: fresh };
+    let handler:
+      | ((
+          res: unknown,
+          event: unknown,
+        ) => void)
+      | null =
+      null;
+    anonHtmlCachePlugin(
+      {
+        hooks:
+          {
+            hook: (
+              name,
+              fn,
+            ) => {
+              if (
+                name ===
+                'response'
+              )
+                handler =
+                  fn;
+            },
+          },
       },
+    );
+
+    const reqHeaders =
+      new Headers();
+    if (
+      cookie
+    )
+      reqHeaders.set(
+        'cookie',
+        cookie,
+      );
+
+    const event =
+      {
+        req: {
+          url: `http://rmhstudios.com${path}`,
+          method:
+            'GET',
+          headers:
+            reqHeaders,
+        },
+        // The lazy getter: a brand-new detached response every read, exactly like
+        // `get res() { return this[kEventRes] ||= new H3EventResponse(); }` after
+        // `prepareResponse` has cleared the slot.
+        get res() {
+          const fresh =
+            new Headers();
+          detached.push(
+            fresh,
+          );
+          return {
+            headers:
+              fresh,
+          };
+        },
+      };
+
+    handler!(
+      {
+        headers:
+          sentHeaders,
+      },
+      event,
+    );
+    return {
+      sentHeaders,
+      detached,
     };
-
-    handler!({ headers: sentHeaders }, event);
-    return { sentHeaders, detached };
   }
 
   it('sets Cache-Control on the sent response, not on a detached event.res', () => {
-    const { sentHeaders, detached } = runAgainstRealH3Shape('/');
-    expect(cacheControl(sentHeaders)).toContain('s-maxage=');
+    const {
+      sentHeaders,
+      detached,
+    } =
+      runAgainstRealH3Shape(
+        '/',
+      );
+    expect(
+      cacheControl(
+        sentHeaders,
+      ),
+    ).toContain(
+      's-maxage=',
+    );
     for (const bag of detached) {
-      expect(bag.get('Cache-Control'), 'header landed on a discarded object').toBeNull();
+      expect(
+        bag.get(
+          'Cache-Control',
+        ),
+        'header landed on a discarded object',
+      ).toBeNull();
     }
   });
 
   it('still marks an authenticated document private on the sent response', () => {
-    const { sentHeaders } = runAgainstRealH3Shape('/', 'better-auth.session_token=abc123');
-    expect(cacheControl(sentHeaders)).toBe('private, no-cache, max-age=0, must-revalidate');
-    expect(cacheControl(sentHeaders)).not.toContain('no-store');
+    const {
+      sentHeaders,
+    } =
+      runAgainstRealH3Shape(
+        '/',
+        'better-auth.session_token=abc123',
+      );
+    expect(
+      cacheControl(
+        sentHeaders,
+      ),
+    ).toBe(
+      'private, no-cache, max-age=0, must-revalidate',
+    );
+    expect(
+      cacheControl(
+        sentHeaders,
+      ),
+    ).not.toContain(
+      'no-store',
+    );
   });
 });
 
 describe('anon-html-cache — authenticated requests are never shared (OPT-43)', () => {
   it('never marks an authenticated response `public`, on any path', () => {
-    const leaks: string[] = [];
+    const leaks: string[] =
+      [];
     for (const cookie of SESSION_COOKIES) {
-      for (const path of [...ALLOWLISTED_PATHS, ...NON_ALLOWLISTED_PATHS]) {
-        const value = cacheControl(runPlugin({ path, cookie }));
-        if (value.includes('public')) leaks.push(`${path} + "${cookie}" → ${value}`);
+      for (const path of [
+        ...ALLOWLISTED_PATHS,
+        ...NON_ALLOWLISTED_PATHS,
+      ]) {
+        const value =
+          cacheControl(
+            runPlugin(
+              {
+                path,
+                cookie,
+              },
+            ),
+          );
+        if (
+          value.includes(
+            'public',
+          )
+        )
+          leaks.push(
+            `${path} + "${cookie}" → ${value}`,
+          );
       }
     }
-    expect(leaks, 'A signed-in document was marked shared-cacheable.').toEqual([]);
+    expect(
+      leaks,
+      'A signed-in document was marked shared-cacheable.',
+    ).toEqual(
+      [],
+    );
   });
 
   it('force-marks it `private`, overriding whatever the route set', () => {
-    const headers = runPlugin({
-      path: '/',
-      cookie: SESSION_COOKIES[0],
-      existingCacheControl: 'public, max-age=600',
-    });
-    expect(cacheControl(headers)).toBe('private, no-cache, max-age=0, must-revalidate');
+    const headers =
+      runPlugin(
+        {
+          path: '/',
+          cookie:
+            SESSION_COOKIES[0],
+          existingCacheControl:
+            'public, max-age=600',
+        },
+      );
+    expect(
+      cacheControl(
+        headers,
+      ),
+    ).toBe(
+      'private, no-cache, max-age=0, must-revalidate',
+    );
   });
 
   it('treats a session cookie as authenticating even alongside a locale cookie', () => {
-    const headers = runPlugin({ path: '/', cookie: 'rmh-lang=en; better-auth.session_token=x' });
-    expect(cacheControl(headers)).not.toContain('public');
-    expect(cacheControl(headers)).toContain('private');
+    const headers =
+      runPlugin(
+        {
+          path: '/',
+          cookie:
+            'rmh-lang=en; better-auth.session_token=x',
+        },
+      );
+    expect(
+      cacheControl(
+        headers,
+      ),
+    ).not.toContain(
+      'public',
+    );
+    expect(
+      cacheControl(
+        headers,
+      ),
+    ).toContain(
+      'private',
+    );
   });
 });
 
@@ -221,110 +462,272 @@ describe('anon-html-cache — the authenticated header keeps bfcache (OPT-30)', 
    */
   it('never emits `no-store` for an authenticated document', () => {
     for (const cookie of SESSION_COOKIES) {
-      for (const path of [...ALLOWLISTED_PATHS, ...NON_ALLOWLISTED_PATHS]) {
-        expect(cacheControl(runPlugin({ path, cookie }))).not.toContain('no-store');
+      for (const path of [
+        ...ALLOWLISTED_PATHS,
+        ...NON_ALLOWLISTED_PATHS,
+      ]) {
+        expect(
+          cacheControl(
+            runPlugin(
+              {
+                path,
+                cookie,
+              },
+            ),
+          ),
+        ).not.toContain(
+          'no-store',
+        );
       }
     }
   });
 
   it('keeps every privacy directive the old `no-store` header carried', () => {
-    const value = cacheControl(runPlugin({ path: '/wallet', cookie: SESSION_COOKIES[0] }));
+    const value =
+      cacheControl(
+        runPlugin(
+          {
+            path: '/wallet',
+            cookie:
+              SESSION_COOKIES[0],
+          },
+        ),
+      );
     // `private` is the directive that actually forbids a shared cache from
     // storing the response; the rest forbid reuse without revalidation.
-    expect(value).toContain('private');
-    expect(value).toContain('no-cache');
-    expect(value).toContain('max-age=0');
-    expect(value).toContain('must-revalidate');
+    expect(
+      value,
+    ).toContain(
+      'private',
+    );
+    expect(
+      value,
+    ).toContain(
+      'no-cache',
+    );
+    expect(
+      value,
+    ).toContain(
+      'max-age=0',
+    );
+    expect(
+      value,
+    ).toContain(
+      'must-revalidate',
+    );
   });
 });
 
 describe('anon-html-cache — the locale gate', () => {
   it('never marks a locale-preference request `public`', () => {
     for (const path of ALLOWLISTED_PATHS) {
-      const value = cacheControl(runPlugin({ path, cookie: LOCALE_COOKIE }));
-      expect(value, `${path} with a locale cookie`).not.toContain('public');
+      const value =
+        cacheControl(
+          runPlugin(
+            {
+              path,
+              cookie:
+                LOCALE_COOKIE,
+            },
+          ),
+        );
+      expect(
+        value,
+        `${path} with a locale cookie`,
+      ).not.toContain(
+        'public',
+      );
     }
   });
 
   it('leaves the response header untouched rather than rewriting it', () => {
     // A locale-preference anon visitor is simply origin-rendered — the plugin
     // has no opinion, so a route's own policy survives.
-    const headers = runPlugin({
-      path: '/',
-      cookie: LOCALE_COOKIE,
-      existingCacheControl: 'private, max-age=60',
-    });
-    expect(cacheControl(headers)).toBe('private, max-age=60');
+    const headers =
+      runPlugin(
+        {
+          path: '/',
+          cookie:
+            LOCALE_COOKIE,
+          existingCacheControl:
+            'private, max-age=60',
+        },
+      );
+    expect(
+      cacheControl(
+        headers,
+      ),
+    ).toBe(
+      'private, max-age=60',
+    );
   });
 });
 
 describe('anon-html-cache — a nonce is never shared', () => {
-  const NONCE_POLICY = "default-src 'self'; script-src 'self' 'nonce-3q2+7w==' 'strict-dynamic'";
+  const NONCE_POLICY =
+    "default-src 'self'; script-src 'self' 'nonce-3q2+7w==' 'strict-dynamic'";
 
   it('does not mark a response public when its enforced policy names a nonce', () => {
     for (const path of ALLOWLISTED_PATHS) {
-      const headers = runPlugin({
-        path,
-        responseHeaders: { 'Content-Security-Policy': NONCE_POLICY },
-      });
+      const headers =
+        runPlugin(
+          {
+            path,
+            responseHeaders:
+              {
+                'Content-Security-Policy':
+                  NONCE_POLICY,
+              },
+          },
+        );
       expect(
-        headers.get('Cache-Control'),
+        headers.get(
+          'Cache-Control',
+        ),
         `${path} would replay one nonce to every visitor`,
       ).toBeNull();
-      expect(headers.get('Vary')).toBeNull();
+      expect(
+        headers.get(
+          'Vary',
+        ),
+      ).toBeNull();
     }
   });
 
   it("still shares a response whose nonce policy is Report-Only (today's rollout state)", () => {
-    const headers = runPlugin({
-      path: '/',
-      responseHeaders: {
-        'Content-Security-Policy': "frame-ancestors 'self'",
-        'Content-Security-Policy-Report-Only': NONCE_POLICY,
-      },
-    });
-    expect(cacheControl(headers)).toContain('public');
+    const headers =
+      runPlugin(
+        {
+          path: '/',
+          responseHeaders:
+            {
+              'Content-Security-Policy':
+                "frame-ancestors 'self'",
+              'Content-Security-Policy-Report-Only':
+                NONCE_POLICY,
+            },
+        },
+      );
+    expect(
+      cacheControl(
+        headers,
+      ),
+    ).toContain(
+      'public',
+    );
   });
 
   it('reads only the enforced header', () => {
-    expect(carriesEnforcedNonce(new Headers({ 'Content-Security-Policy': NONCE_POLICY }))).toBe(
+    expect(
+      carriesEnforcedNonce(
+        new Headers(
+          {
+            'Content-Security-Policy':
+              NONCE_POLICY,
+          },
+        ),
+      ),
+    ).toBe(
       true,
     );
     expect(
-      carriesEnforcedNonce(new Headers({ 'Content-Security-Policy-Report-Only': NONCE_POLICY })),
-    ).toBe(false);
+      carriesEnforcedNonce(
+        new Headers(
+          {
+            'Content-Security-Policy-Report-Only':
+              NONCE_POLICY,
+          },
+        ),
+      ),
+    ).toBe(
+      false,
+    );
     expect(
       carriesEnforcedNonce(
-        new Headers({ 'Content-Security-Policy': "script-src 'self' 'sha256-abc='" }),
+        new Headers(
+          {
+            'Content-Security-Policy':
+              "script-src 'self' 'sha256-abc='",
+          },
+        ),
       ),
-    ).toBe(false);
-    expect(carriesEnforcedNonce(new Headers())).toBe(false);
+    ).toBe(
+      false,
+    );
+    expect(
+      carriesEnforcedNonce(
+        new Headers(),
+      ),
+    ).toBe(
+      false,
+    );
   });
 });
 
 describe('anon-html-cache — the path allowlist', () => {
   it('never marks a non-allowlisted path `public`, even with no cookies at all', () => {
     for (const path of NON_ALLOWLISTED_PATHS) {
-      const headers = runPlugin({ path });
-      expect(headers.get('Cache-Control'), `${path} must not be shared`).toBeNull();
-      expect(headers.get('Vary')).toBeNull();
+      const headers =
+        runPlugin(
+          {
+            path,
+          },
+        );
+      expect(
+        headers.get(
+          'Cache-Control',
+        ),
+        `${path} must not be shared`,
+      ).toBeNull();
+      expect(
+        headers.get(
+          'Vary',
+        ),
+      ).toBeNull();
     }
   });
 
   it('marks an allowlisted exact path shared for the short index TTL', () => {
     for (const path of CACHEABLE_ANON_PATHS) {
-      const headers = runPlugin({ path });
-      expect(cacheControl(headers), path).toBe(
+      const headers =
+        runPlugin(
+          {
+            path,
+          },
+        );
+      expect(
+        cacheControl(
+          headers,
+        ),
+        path,
+      ).toBe(
         'public, max-age=0, s-maxage=30, stale-while-revalidate=120',
       );
-      expect(headers.get('Vary'), path).toBe('Accept-Language');
+      expect(
+        headers.get(
+          'Vary',
+        ),
+        path,
+      ).toBe(
+        'Accept-Language',
+      );
     }
   });
 
   it('marks an article path shared for the long content TTL', () => {
     for (const prefix of CACHEABLE_ANON_PREFIXES) {
-      const headers = runPlugin({ path: `${prefix}a-post` });
-      expect(cacheControl(headers), prefix).toBe(
+      const headers =
+        runPlugin(
+          {
+            path: `${prefix}a-post`,
+          },
+        );
+      expect(
+        cacheControl(
+          headers,
+        ),
+        prefix,
+      ).toBe(
         'public, max-age=0, s-maxage=300, stale-while-revalidate=86400',
       );
     }
@@ -334,29 +737,110 @@ describe('anon-html-cache — the path allowlist', () => {
     for (const path of ALLOWLISTED_PATHS) {
       // Without this a signed-out visitor who then signs in is served their own
       // stale anonymous copy out of the browser's HTTP cache.
-      expect(cacheControl(runPlugin({ path })), path).toContain('max-age=0');
+      expect(
+        cacheControl(
+          runPlugin(
+            {
+              path,
+            },
+          ),
+        ),
+        path,
+      ).toContain(
+        'max-age=0',
+      );
     }
   });
 
   it('yields to a policy the route set for itself', () => {
-    const headers = runPlugin({ path: '/', existingCacheControl: 'private, no-store' });
-    expect(cacheControl(headers)).toBe('private, no-store');
+    const headers =
+      runPlugin(
+        {
+          path: '/',
+          existingCacheControl:
+            'private, no-store',
+        },
+      );
+    expect(
+      cacheControl(
+        headers,
+      ),
+    ).toBe(
+      'private, no-store',
+    );
   });
 });
 
 describe('anon-html-cache — the request-shape gates', () => {
   it('only touches HTML', () => {
-    for (const contentType of ['application/json', 'application/rss+xml', 'image/avif', null]) {
-      const headers = runPlugin({ path: '/', contentType });
-      expect(headers.get('Cache-Control'), String(contentType)).toBeNull();
+    for (const contentType of [
+      'application/json',
+      'application/rss+xml',
+      'image/avif',
+      null,
+    ]) {
+      const headers =
+        runPlugin(
+          {
+            path: '/',
+            contentType,
+          },
+        );
+      expect(
+        headers.get(
+          'Cache-Control',
+        ),
+        String(
+          contentType,
+        ),
+      ).toBeNull();
     }
   });
 
   it('caches GET and HEAD only', () => {
-    expect(cacheControl(runPlugin({ path: '/', method: 'GET' }))).toContain('public');
-    expect(cacheControl(runPlugin({ path: '/', method: 'HEAD' }))).toContain('public');
-    for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
-      expect(runPlugin({ path: '/', method }).get('Cache-Control'), method).toBeNull();
+    expect(
+      cacheControl(
+        runPlugin(
+          {
+            path: '/',
+            method:
+              'GET',
+          },
+        ),
+      ),
+    ).toContain(
+      'public',
+    );
+    expect(
+      cacheControl(
+        runPlugin(
+          {
+            path: '/',
+            method:
+              'HEAD',
+          },
+        ),
+      ),
+    ).toContain(
+      'public',
+    );
+    for (const method of [
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+    ]) {
+      expect(
+        runPlugin(
+          {
+            path: '/',
+            method,
+          },
+        ).get(
+          'Cache-Control',
+        ),
+        method,
+      ).toBeNull();
     }
   });
 
@@ -364,24 +848,91 @@ describe('anon-html-cache — the request-shape gates', () => {
     // Cloudflare keys on the full query string, so distinct params are distinct
     // entries; what matters here is that a param can neither smuggle a path onto
     // the allowlist nor smuggle one off it.
-    expect(cacheControl(runPlugin({ path: '/library?view=playlists' }))).toContain('public');
-    expect(runPlugin({ path: '/wallet?from=/' }).get('Cache-Control')).toBeNull();
+    expect(
+      cacheControl(
+        runPlugin(
+          {
+            path: '/library?view=playlists',
+          },
+        ),
+      ),
+    ).toContain(
+      'public',
+    );
+    expect(
+      runPlugin(
+        {
+          path: '/wallet?from=/',
+        },
+      ).get(
+        'Cache-Control',
+      ),
+    ).toBeNull();
   });
 });
 
 describe('anon-html-cache — decideCacheControl (the pure gate)', () => {
   it('reports a shared decision only for an anonymous allowlisted path', () => {
-    expect(decideCacheControl('/', null)).toMatchObject({ shared: true });
-    expect(decideCacheControl('/blog/a-post', null)).toMatchObject({ shared: true });
-    expect(decideCacheControl('/', SESSION_COOKIES[0])).toMatchObject({ shared: false });
-    expect(decideCacheControl('/', LOCALE_COOKIE)).toBeNull();
-    expect(decideCacheControl('/wallet', null)).toBeNull();
+    expect(
+      decideCacheControl(
+        '/',
+        null,
+      ),
+    ).toMatchObject(
+      {
+        shared: true,
+      },
+    );
+    expect(
+      decideCacheControl(
+        '/blog/a-post',
+        null,
+      ),
+    ).toMatchObject(
+      {
+        shared: true,
+      },
+    );
+    expect(
+      decideCacheControl(
+        '/',
+        SESSION_COOKIES[0],
+      ),
+    ).toMatchObject(
+      {
+        shared: false,
+      },
+    );
+    expect(
+      decideCacheControl(
+        '/',
+        LOCALE_COOKIE,
+      ),
+    ).toBeNull();
+    expect(
+      decideCacheControl(
+        '/wallet',
+        null,
+      ),
+    ).toBeNull();
   });
 
   it('lets an exact entry override a prefix TTL', () => {
     // `/news` is an exact entry (index TTL); `/news/x` falls to the prefix.
-    expect(anonCachePolicy('/news')).toContain('s-maxage=30');
-    expect(anonCachePolicy('/news/x')).toContain('s-maxage=300');
+    expect(
+      anonCachePolicy(
+        '/news',
+      ),
+    ).toContain(
+      's-maxage=30',
+    );
+    expect(
+      anonCachePolicy(
+        '/news/x',
+      ),
+    ).toContain(
+      's-maxage=300',
+    );
   });
 });
 
@@ -392,73 +943,261 @@ describe('anon-html-cache — decideCacheControl (the pure gate)', () => {
  * weight that reads like a shipped optimization.
  */
 describe('anon-html-cache — the allowlist matches the route tree', () => {
-  const ROUTES_DIR = resolve(process.cwd(), 'app/routes');
-  const ESCAPED_DOT = '__ESCAPED_DOT__';
+  const ROUTES_DIR =
+    resolve(
+      process.cwd(),
+      'app/routes',
+    );
+  const ESCAPED_DOT =
+    '__ESCAPED_DOT__';
 
-  function pageRouteFiles(dir = ROUTES_DIR, acc: string[] = []): string[] {
-    for (const entry of readdirSync(dir)) {
-      const full = join(dir, entry);
-      if (statSync(full).isDirectory()) {
-        if (entry === 'api') continue;
-        pageRouteFiles(full, acc);
-      } else if (entry.endsWith('.tsx')) {
-        acc.push(full);
+  function pageRouteFiles(
+    dir = ROUTES_DIR,
+    acc: string[] = [],
+  ): string[] {
+    for (const entry of readdirSync(
+      dir,
+    )) {
+      const full =
+        join(
+          dir,
+          entry,
+        );
+      if (
+        statSync(
+          full,
+        ).isDirectory()
+      ) {
+        if (
+          entry ===
+          'api'
+        )
+          continue;
+        pageRouteFiles(
+          full,
+          acc,
+        );
+      } else if (
+        entry.endsWith(
+          '.tsx',
+        )
+      ) {
+        acc.push(
+          full,
+        );
       }
     }
     return acc;
   }
 
   /** A route file's URL path, by TanStack's file-naming rules. */
-  function urlPathFor(file: string): string | null {
-    let rel = file
-      .slice(ROUTES_DIR.length + 1)
-      .replaceAll('\\', '/')
-      .replace(/\.tsx$/, '');
-    if (rel === '__root' || rel === '_site') return null;
-    rel = rel.split('[.]').join(ESCAPED_DOT);
-    const segments = rel
-      .split('/')
-      .flatMap((s) => s.split('.'))
-      .map((s) => s.split(ESCAPED_DOT).join('.'))
-      .filter((s) => s !== '')
-      .filter((s) => !s.startsWith('_'))
-      .map((s) => (s.endsWith('_') ? s.slice(0, -1) : s));
-    const last = segments[segments.length - 1];
-    if (last === 'index' || last === 'route') segments.pop();
+  function urlPathFor(
+    file: string,
+  ):
+    | string
+    | null {
+    let rel =
+      file
+        .slice(
+          ROUTES_DIR.length +
+            1,
+        )
+        .replaceAll(
+          '\\',
+          '/',
+        )
+        .replace(
+          /\.tsx$/,
+          '',
+        );
+    if (
+      rel ===
+        '__root' ||
+      rel ===
+        '_site'
+    )
+      return null;
+    rel =
+      rel
+        .split(
+          '[.]',
+        )
+        .join(
+          ESCAPED_DOT,
+        );
+    const segments =
+      rel
+        .split(
+          '/',
+        )
+        .flatMap(
+          (
+            s,
+          ) =>
+            s.split(
+              '.',
+            ),
+        )
+        .map(
+          (
+            s,
+          ) =>
+            s
+              .split(
+                ESCAPED_DOT,
+              )
+              .join(
+                '.',
+              ),
+        )
+        .filter(
+          (
+            s,
+          ) =>
+            s !==
+            '',
+        )
+        .filter(
+          (
+            s,
+          ) =>
+            !s.startsWith(
+              '_',
+            ),
+        )
+        .map(
+          (
+            s,
+          ) =>
+            s.endsWith(
+              '_',
+            )
+              ? s.slice(
+                  0,
+                  -1,
+                )
+              : s,
+        );
+    const last =
+      segments[
+        segments.length -
+          1
+      ];
+    if (
+      last ===
+        'index' ||
+      last ===
+        'route'
+    )
+      segments.pop();
     return `/${segments.join('/')}`;
   }
 
-  const byPath = new Map<string, string>();
+  const byPath =
+    new Map<
+      string,
+      string
+    >();
   for (const file of pageRouteFiles()) {
-    const path = urlPathFor(file);
-    if (path !== null && !byPath.has(path)) byPath.set(path, file);
+    const path =
+      urlPathFor(
+        file,
+      );
+    if (
+      path !==
+        null &&
+      !byPath.has(
+        path,
+      )
+    )
+      byPath.set(
+        path,
+        file,
+      );
   }
 
   it('lists no path without a page route', () => {
-    const ghosts = [...CACHEABLE_ANON_PATHS].filter((path) => !byPath.has(path));
+    const ghosts =
+      [
+        ...CACHEABLE_ANON_PATHS,
+      ].filter(
+        (
+          path,
+        ) =>
+          !byPath.has(
+            path,
+          ),
+      );
     expect(
       ghosts,
       'These are edge-cached in server/nitro/anon-html-cache.ts but have no route.',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('lists no path that only redirects (a 3xx is not cacheable HTML)', () => {
-    const redirects = [...CACHEABLE_ANON_PATHS].filter((path) => {
-      const file = byPath.get(path);
-      if (!file) return false;
-      const src = readFileSync(file, 'utf8');
-      return (
-        /beforeLoad:[\s\S]{0,240}?throw redirect\(/.test(src) && !/\bcomponent:\s*\w/.test(src)
+    const redirects =
+      [
+        ...CACHEABLE_ANON_PATHS,
+      ].filter(
+        (
+          path,
+        ) => {
+          const file =
+            byPath.get(
+              path,
+            );
+          if (
+            !file
+          )
+            return false;
+          const src =
+            readFileSync(
+              file,
+              'utf8',
+            );
+          return (
+            /beforeLoad:[\s\S]{0,240}?throw redirect\(/.test(
+              src,
+            ) &&
+            !/\bcomponent:\s*\w/.test(
+              src,
+            )
+          );
+        },
       );
-    });
-    expect(redirects, 'These redirect rather than render — remove them.').toEqual([]);
+    expect(
+      redirects,
+      'These redirect rather than render — remove them.',
+    ).toEqual(
+      [],
+    );
   });
 
   it('has at least one real route under every prefix', () => {
-    const empty = CACHEABLE_ANON_PREFIXES.filter(
-      (prefix) => ![...byPath.keys()].some((path) => path.startsWith(prefix)),
+    const empty =
+      CACHEABLE_ANON_PREFIXES.filter(
+        (
+          prefix,
+        ) =>
+          ![
+            ...byPath.keys(),
+          ].some(
+            (
+              path,
+            ) =>
+              path.startsWith(
+                prefix,
+              ),
+          ),
+      );
+    expect(
+      empty,
+      'These prefixes are edge-cached but match no route.',
+    ).toEqual(
+      [],
     );
-    expect(empty, 'These prefixes are edge-cached but match no route.').toEqual([]);
   });
 });
 
@@ -480,41 +1219,87 @@ describe('anon-html-cache — the allowlist matches the route tree', () => {
  * instead of by wondering why the cache-hit ratio never moved.
  */
 describe('cloudflare cache rule stays in sync with the origin allowlist', () => {
-  const script = readFileSync(
-    join(process.cwd(), 'deploy/apply-cloudflare-cache-rules.sh'),
-    'utf8',
-  );
-  const htmlRule = script
-    .split('\n')
-    .find((line) => line.includes('"expression"') && line.includes('session_token'));
+  const script =
+    readFileSync(
+      join(
+        process.cwd(),
+        'deploy/apply-cloudflare-cache-rules.sh',
+      ),
+      'utf8',
+    );
+  const htmlRule =
+    script
+      .split(
+        '\n',
+      )
+      .find(
+        (
+          line,
+        ) =>
+          line.includes(
+            '"expression"',
+          ) &&
+          line.includes(
+            'session_token',
+          ),
+      );
 
   it('has an HTML cache rule to check', () => {
-    expect(htmlRule, 'No cookie-gated HTML rule found in the Cloudflare script.').toBeDefined();
+    expect(
+      htmlRule,
+      'No cookie-gated HTML rule found in the Cloudflare script.',
+    ).toBeDefined();
   });
 
   it('matches every exact path the origin will mark public', () => {
-    const missing = [...CACHEABLE_ANON_PATHS].filter(
-      (path) => !htmlRule?.includes(`\\"${path}\\"`),
-    );
+    const missing =
+      [
+        ...CACHEABLE_ANON_PATHS,
+      ].filter(
+        (
+          path,
+        ) =>
+          !htmlRule?.includes(
+            `\\"${path}\\"`,
+          ),
+      );
     expect(
       missing,
       'The origin marks these edge-cacheable but the Cloudflare rule does not match them, so they are never cached.',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('matches every prefix the origin will mark public', () => {
-    const missing = CACHEABLE_ANON_PREFIXES.filter(
-      (prefix) => !htmlRule?.includes(`starts_with(http.request.uri.path, \\"${prefix}\\")`),
-    );
+    const missing =
+      CACHEABLE_ANON_PREFIXES.filter(
+        (
+          prefix,
+        ) =>
+          !htmlRule?.includes(
+            `starts_with(http.request.uri.path, \\"${prefix}\\")`,
+          ),
+      );
     expect(
       missing,
       'These prefixes are edge-cacheable at the origin but unmatched at the edge.',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('still bypasses cache on the session and locale cookies', () => {
-    expect(htmlRule).toContain('session_token');
-    expect(htmlRule).toContain('rmh-lang=');
+    expect(
+      htmlRule,
+    ).toContain(
+      'session_token',
+    );
+    expect(
+      htmlRule,
+    ).toContain(
+      'rmh-lang=',
+    );
   });
 });
 
@@ -549,40 +1334,102 @@ describe('cloudflare cache rule stays in sync with the origin allowlist', () => 
  * is why the script's header says the PUT replaces the whole phase.
  */
 describe('no static-asset cache rule may capture an HTML route', () => {
-  const rules: { description: string; expression: string }[] = (() => {
-    const script = readFileSync(
-      join(process.cwd(), 'deploy/apply-cloudflare-cache-rules.sh'),
-      'utf8',
-    );
-    // The heredoc body is real JSON once the shell quoting is stripped.
-    const body = script
-      .replaceAll('\r\n', '\n')
-      .split("read -r -d '' BODY <<'JSON' || true\n")[1]
-      ?.split('\nJSON')[0];
-    return JSON.parse(body ?? '{"rules":[]}').rules;
-  })();
+  const rules: {
+    description: string;
+    expression: string;
+  }[] =
+    (() => {
+      const script =
+        readFileSync(
+          join(
+            process.cwd(),
+            'deploy/apply-cloudflare-cache-rules.sh',
+          ),
+          'utf8',
+        );
+      // The heredoc body is real JSON once the shell quoting is stripped.
+      const body =
+        script
+          .replaceAll(
+            '\r\n',
+            '\n',
+          )
+          .split(
+            "read -r -d '' BODY <<'JSON' || true\n",
+          )[1]
+          ?.split(
+            '\nJSON',
+          )[0];
+      return JSON.parse(
+        body ??
+          '{"rules":[]}',
+      )
+        .rules;
+    })();
 
   /** The cookie-gated HTML rule is the one allowed to match HTML paths. */
-  const isHtmlRule = (r: { expression: string }) => r.expression.includes('session_token');
+  const isHtmlRule =
+    (r: {
+      expression: string;
+    }) =>
+      r.expression.includes(
+        'session_token',
+      );
 
   /** Every `starts_with(http.request.uri.path, "X")` prefix in an expression. */
-  const prefixesOf = (expression: string): string[] =>
-    [...expression.matchAll(/starts_with\(http\.request\.uri\.path,\s*"([^"]+)"\)/g)].map(
-      (m) => m[1],
-    );
+  const prefixesOf =
+    (
+      expression: string,
+    ): string[] =>
+      [
+        ...expression.matchAll(
+          /starts_with\(http\.request\.uri\.path,\s*"([^"]+)"\)/g,
+        ),
+      ].map(
+        (
+          m,
+        ) =>
+          m[1],
+      );
 
   it('found the rules to check (a silent parse failure would pass vacuously)', () => {
-    expect(rules.length).toBeGreaterThan(1);
-    expect(rules.filter(isHtmlRule)).toHaveLength(1);
+    expect(
+      rules.length,
+    ).toBeGreaterThan(
+      1,
+    );
+    expect(
+      rules.filter(
+        isHtmlRule,
+      ),
+    ).toHaveLength(
+      1,
+    );
   });
 
   it('no non-HTML rule matches an exact allowlisted HTML path', () => {
-    const collisions: string[] = [];
-    for (const rule of rules.filter((r) => !isHtmlRule(r))) {
-      for (const prefix of prefixesOf(rule.expression)) {
+    const collisions: string[] =
+      [];
+    for (const rule of rules.filter(
+      (
+        r,
+      ) =>
+        !isHtmlRule(
+          r,
+        ),
+    )) {
+      for (const prefix of prefixesOf(
+        rule.expression,
+      )) {
         for (const path of CACHEABLE_ANON_PATHS) {
-          if (path.startsWith(prefix))
-            collisions.push(`${rule.description}: "${prefix}" ⊃ ${path}`);
+          if (
+            path.startsWith(
+              prefix,
+            )
+          )
+            collisions.push(
+              `${rule.description}: "${prefix}" ⊃ ${path}`,
+            );
         }
       }
     }
@@ -591,23 +1438,49 @@ describe('no static-asset cache rule may capture an HTML route', () => {
       'A static-asset rule matches an HTML path the origin marks shareable. Whichever ' +
         'rule wins, the HTML is now governed by a rule with no cookie bypass — add a ' +
         'trailing slash so the prefix means "files under this directory".',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('no non-HTML rule matches an allowlisted HTML prefix', () => {
-    const collisions: string[] = [];
-    for (const rule of rules.filter((r) => !isHtmlRule(r))) {
-      for (const prefix of prefixesOf(rule.expression)) {
+    const collisions: string[] =
+      [];
+    for (const rule of rules.filter(
+      (
+        r,
+      ) =>
+        !isHtmlRule(
+          r,
+        ),
+    )) {
+      for (const prefix of prefixesOf(
+        rule.expression,
+      )) {
         for (const htmlPrefix of CACHEABLE_ANON_PREFIXES) {
           // Either direction is an overlap: the static prefix may sit above the
           // article subtree or inside it.
-          if (htmlPrefix.startsWith(prefix) || prefix.startsWith(htmlPrefix)) {
-            collisions.push(`${rule.description}: "${prefix}" overlaps ${htmlPrefix}`);
+          if (
+            htmlPrefix.startsWith(
+              prefix,
+            ) ||
+            prefix.startsWith(
+              htmlPrefix,
+            )
+          ) {
+            collisions.push(
+              `${rule.description}: "${prefix}" overlaps ${htmlPrefix}`,
+            );
           }
         }
       }
     }
-    expect(collisions, 'A static-asset rule overlaps the article subtrees.').toEqual([]);
+    expect(
+      collisions,
+      'A static-asset rule overlaps the article subtrees.',
+    ).toEqual(
+      [],
+    );
   });
 
   it('static-media prefixes end in a slash, so they cannot swallow a sibling route', () => {
@@ -616,101 +1489,268 @@ describe('no static-asset cache rule may capture an HTML route', () => {
     // so it is asserted directly rather than left implicit in the collision
     // checks above — a future prefix pointing at a directory with no sibling
     // route today would otherwise be free to omit it.
-    const bare: string[] = [];
-    for (const rule of rules.filter((r) => !isHtmlRule(r))) {
+    const bare: string[] =
+      [];
+    for (const rule of rules.filter(
+      (
+        r,
+      ) =>
+        !isHtmlRule(
+          r,
+        ),
+    )) {
       // The image-transform rule targets API path stems, not directories, and is
       // matched against `/api/...` routes that are never HTML.
-      if (rule.expression.includes('/api/')) continue;
-      for (const prefix of prefixesOf(rule.expression)) {
-        if (!prefix.endsWith('/')) bare.push(`${rule.description}: "${prefix}"`);
+      if (
+        rule.expression.includes(
+          '/api/',
+        )
+      )
+        continue;
+      for (const prefix of prefixesOf(
+        rule.expression,
+      )) {
+        if (
+          !prefix.endsWith(
+            '/',
+          )
+        )
+          bare.push(
+            `${rule.description}: "${prefix}"`,
+          );
       }
     }
     expect(
       bare,
       'These path prefixes have no trailing slash, so they also match sibling routes ' +
         'that merely start with the same characters.',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('every rule respects the origin Cache-Control in both directions', () => {
     // The origin is the final gate on what may be stored: it is what refuses to
     // share authenticated HTML. An explicit TTL override on any rule removes that
     // gate, which is what would promote a prefix overlap into a cross-user leak.
-    const script = readFileSync(
-      join(process.cwd(), 'deploy/apply-cloudflare-cache-rules.sh'),
-      'utf8',
-    );
-    const body = script
-      .replaceAll('\r\n', '\n')
-      .split("read -r -d '' BODY <<'JSON' || true\n")[1]
-      ?.split('\nJSON')[0];
-    const parsed = JSON.parse(body ?? '{"rules":[]}').rules as {
-      description: string;
-      action_parameters?: {
-        edge_ttl?: { mode?: string };
-        browser_ttl?: { mode?: string };
-      };
-    }[];
+    const script =
+      readFileSync(
+        join(
+          process.cwd(),
+          'deploy/apply-cloudflare-cache-rules.sh',
+        ),
+        'utf8',
+      );
+    const body =
+      script
+        .replaceAll(
+          '\r\n',
+          '\n',
+        )
+        .split(
+          "read -r -d '' BODY <<'JSON' || true\n",
+        )[1]
+        ?.split(
+          '\nJSON',
+        )[0];
+    const parsed =
+      JSON.parse(
+        body ??
+          '{"rules":[]}',
+      )
+        .rules as {
+        description: string;
+        action_parameters?: {
+          edge_ttl?: {
+            mode?: string;
+          };
+          browser_ttl?: {
+            mode?: string;
+          };
+        };
+      }[];
 
-    const overrides = parsed.flatMap((rule) =>
-      (['edge_ttl', 'browser_ttl'] as const)
-        .filter((key) => {
-          const mode = rule.action_parameters?.[key]?.mode;
-          return mode !== undefined && mode !== 'respect_origin';
-        })
-        .map((key) => `${rule.description}.${key}=${rule.action_parameters?.[key]?.mode}`),
-    );
+    const overrides =
+      parsed.flatMap(
+        (
+          rule,
+        ) =>
+          (
+            [
+              'edge_ttl',
+              'browser_ttl',
+            ] as const
+          )
+            .filter(
+              (
+                key,
+              ) => {
+                const mode =
+                  rule
+                    .action_parameters?.[
+                    key
+                  ]
+                    ?.mode;
+                return (
+                  mode !==
+                    undefined &&
+                  mode !==
+                    'respect_origin'
+                );
+              },
+            )
+            .map(
+              (
+                key,
+              ) =>
+                `${rule.description}.${key}=${rule.action_parameters?.[key]?.mode}`,
+            ),
+      );
     expect(
       overrides,
       'A TTL override ignores the origin Cache-Control, including the `private, no-cache` ' +
         'that keeps authenticated HTML out of the shared cache.',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 });
 
 describe('failed /assets lookups are never cacheable', () => {
   /** Run the real response hook over a fake `Response`-shaped object with a status. */
-  function run(path: string, status: number, cacheControl: string, contentType = 'text/html') {
-    const headers = new Headers({ 'content-type': contentType, 'cache-control': cacheControl });
-    let handler: ((res: unknown, event: unknown) => void) | null = null;
-    anonHtmlCachePlugin({
-      hooks: {
-        hook: (name, fn) => {
-          if (name === 'response') handler = fn;
+  function run(
+    path: string,
+    status: number,
+    cacheControl: string,
+    contentType = 'text/html',
+  ) {
+    const headers =
+      new Headers(
+        {
+          'content-type':
+            contentType,
+          'cache-control':
+            cacheControl,
+        },
+      );
+    let handler:
+      | ((
+          res: unknown,
+          event: unknown,
+        ) => void)
+      | null =
+      null;
+    anonHtmlCachePlugin(
+      {
+        hooks:
+          {
+            hook: (
+              name,
+              fn,
+            ) => {
+              if (
+                name ===
+                'response'
+              )
+                handler =
+                  fn;
+            },
+          },
+      },
+    );
+    handler!(
+      {
+        headers,
+        status,
+      },
+      {
+        req: {
+          url: `http://rmhstudios.com${path}`,
+          method:
+            'GET',
+          headers:
+            new Headers(),
         },
       },
-    });
-    handler!(
-      { headers, status },
-      { req: { url: `http://rmhstudios.com${path}`, method: 'GET', headers: new Headers() } },
     );
     return headers;
   }
 
-  const IMMUTABLE = 'public, max-age=31536000, immutable';
+  const IMMUTABLE =
+    'public, max-age=31536000, immutable';
 
   it("replaces the route rule's immutable year with no-store on a 404 chunk", () => {
     // Observed in production: a deleted chunk answered 404 text/html with this
     // header and Cloudflare cached it (MISS then HIT, rising Age).
-    const h = run('/assets/GameErrorBoundary-x86ofMTg.js', 404, IMMUTABLE);
-    expect(h.get('cache-control')).toBe('no-store');
+    const h =
+      run(
+        '/assets/GameErrorBoundary-x86ofMTg.js',
+        404,
+        IMMUTABLE,
+      );
+    expect(
+      h.get(
+        'cache-control',
+      ),
+    ).toBe(
+      'no-store',
+    );
   });
 
   it('also covers 5xx under /assets/', () => {
     expect(
-      run('/assets/index-abc.js', 500, IMMUTABLE, 'application/json').get('cache-control'),
-    ).toBe('no-store');
+      run(
+        '/assets/index-abc.js',
+        500,
+        IMMUTABLE,
+        'application/json',
+      ).get(
+        'cache-control',
+      ),
+    ).toBe(
+      'no-store',
+    );
   });
 
   it('leaves a successful chunk immutable', () => {
     expect(
-      run('/assets/index-abc.js', 200, IMMUTABLE, 'text/javascript').get('cache-control'),
-    ).toBe(IMMUTABLE);
+      run(
+        '/assets/index-abc.js',
+        200,
+        IMMUTABLE,
+        'text/javascript',
+      ).get(
+        'cache-control',
+      ),
+    ).toBe(
+      IMMUTABLE,
+    );
   });
 
   it('leaves non-asset 404s alone', () => {
-    expect(isUncacheableAssetError('/nope', 404)).toBe(false);
-    expect(isUncacheableAssetError('/assets/x.js', undefined)).toBe(false);
-    expect(isUncacheableAssetError('/assets/x.js', 404)).toBe(true);
+    expect(
+      isUncacheableAssetError(
+        '/nope',
+        404,
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      isUncacheableAssetError(
+        '/assets/x.js',
+        undefined,
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      isUncacheableAssetError(
+        '/assets/x.js',
+        404,
+      ),
+    ).toBe(
+      true,
+    );
   });
 });

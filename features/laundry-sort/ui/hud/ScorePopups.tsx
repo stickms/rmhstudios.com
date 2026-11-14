@@ -10,9 +10,15 @@
  * the right bin to within a few pixels, and it costs nothing per frame.
  */
 
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { ARENA, WASH_COLORS } from '@features/laundry-sort/engine/constants';
+import {
+  ARENA,
+  WASH_COLORS,
+} from '@features/laundry-sort/engine/constants';
 import type { MatchEvent } from '@features/laundry-sort/engine/match';
 
 export interface Popup {
@@ -28,65 +34,187 @@ export interface Popup {
 let nextKey = 1;
 
 /** Turn a batch of match events into popups. Exported for the game root. */
-export function popupsFromEvents(events: MatchEvent[]): Popup[] {
-  return events.map((event) => ({
-    key: nextKey++,
-    type: event.type,
-    points: event.points,
-    combo: event.combo,
-    left: Math.max(4, Math.min(96, ((event.x / ARENA.halfWidth) * 0.5 + 0.5) * 100)),
-    colorIndex: event.colorIndex,
-  }));
+export function popupsFromEvents(
+  events: MatchEvent[],
+): Popup[] {
+  return events.map(
+    (
+      event,
+    ) => ({
+      key: nextKey++,
+      type: event.type,
+      points:
+        event.points,
+      combo:
+        event.combo,
+      left: Math.max(
+        4,
+        Math.min(
+          96,
+          ((event.x /
+            ARENA.halfWidth) *
+            0.5 +
+            0.5) *
+            100,
+        ),
+      ),
+      colorIndex:
+        event.colorIndex,
+    }),
+  );
 }
 
 const LIFETIME_MS = 900;
 
-export function ScorePopups({ popups }: { popups: Popup[] }) {
-  const { t } = useTranslation('c-laundry-sort');
-  const [visible, setVisible] = useState<Popup[]>([]);
+export function ScorePopups({
+  popups,
+}: {
+  popups: Popup[];
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-laundry-sort',
+    );
+  const [
+    visible,
+    setVisible,
+  ] =
+    useState<
+      Popup[]
+    >(
+      [],
+    );
 
   useEffect(() => {
-    if (popups.length === 0) return;
-    setVisible((prev) => [...prev, ...popups].slice(-12));
-    const timer = window.setTimeout(() => {
-      const expired = new Set(popups.map((p) => p.key));
-      setVisible((prev) => prev.filter((p) => !expired.has(p.key)));
-    }, LIFETIME_MS);
-    return () => window.clearTimeout(timer);
-  }, [popups]);
+    if (
+      popups.length ===
+      0
+    )
+      return;
+    setVisible(
+      (
+        prev,
+      ) =>
+        [
+          ...prev,
+          ...popups,
+        ].slice(
+          -12,
+        ),
+    );
+    const timer =
+      window.setTimeout(
+        () => {
+          const expired =
+            new Set(
+              popups.map(
+                (
+                  p,
+                ) =>
+                  p.key,
+              ),
+            );
+          setVisible(
+            (
+              prev,
+            ) =>
+              prev.filter(
+                (
+                  p,
+                ) =>
+                  !expired.has(
+                    p.key,
+                  ),
+              ),
+          );
+        },
+        LIFETIME_MS,
+      );
+    return () =>
+      window.clearTimeout(
+        timer,
+      );
+  }, [
+    popups,
+  ]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden" aria-hidden="true">
-      {visible.map((popup) => {
-        const wash = WASH_COLORS[popup.colorIndex] ?? WASH_COLORS[0];
-        const label =
-          popup.type === 'missed'
-            ? t('popup-missed', { defaultValue: 'Missed' })
-            : popup.points >= 0
-              ? `+${popup.points}`
-              : `${popup.points}`;
-        const color =
-          popup.type === 'sorted'
-            ? 'var(--ls-accent)'
-            : popup.type === 'wrong'
-              ? 'var(--ls-danger)'
-              : 'var(--ls-muted)';
+    <div
+      className="pointer-events-none absolute inset-0 z-20 overflow-hidden"
+      aria-hidden="true"
+    >
+      {visible.map(
+        (
+          popup,
+        ) => {
+          const wash =
+            WASH_COLORS[
+              popup
+                .colorIndex
+            ] ??
+            WASH_COLORS[0];
+          const label =
+            popup.type ===
+            'missed'
+              ? t(
+                  'popup-missed',
+                  {
+                    defaultValue:
+                      'Missed',
+                  },
+                )
+              : popup.points >=
+                  0
+                ? `+${popup.points}`
+                : `${popup.points}`;
+          const color =
+            popup.type ===
+            'sorted'
+              ? 'var(--ls-accent)'
+              : popup.type ===
+                  'wrong'
+                ? 'var(--ls-danger)'
+                : 'var(--ls-muted)';
 
-        return (
-          <div
-            key={popup.key}
-            className="ls-popup ls-numeric absolute text-lg font-black drop-shadow-lg sm:text-2xl"
-            style={{ left: `${popup.left}%`, bottom: '26%', color }}
-          >
-            {label}
-            {popup.type === 'sorted' && popup.combo >= 2 ? (
-              <span className="ml-1 text-xs font-bold" style={{ color: wash.hex }}>
-                ×{popup.combo}
-              </span>
-            ) : null}
-          </div>
-        );
-      })}
+          return (
+            <div
+              key={
+                popup.key
+              }
+              className="ls-popup ls-numeric absolute text-lg font-black drop-shadow-lg sm:text-2xl"
+              style={{
+                left: `${popup.left}%`,
+                bottom:
+                  '26%',
+                color,
+              }}
+            >
+              {
+                label
+              }
+              {popup.type ===
+                'sorted' &&
+              popup.combo >=
+                2 ? (
+                <span
+                  className="ml-1 text-xs font-bold"
+                  style={{
+                    color:
+                      wash.hex,
+                  }}
+                >
+                  ×
+                  {
+                    popup.combo
+                  }
+                </span>
+              ) : null}
+            </div>
+          );
+        },
+      )}
     </div>
   );
 }

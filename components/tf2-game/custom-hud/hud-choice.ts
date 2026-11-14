@@ -10,7 +10,10 @@
  */
 
 import { create } from 'zustand';
-import { prepareHud, type PreparedHud } from '@/lib/tf2-game/client/custom-hud/renderer';
+import {
+  prepareHud,
+  type PreparedHud,
+} from '@/lib/tf2-game/client/custom-hud/renderer';
 import {
   DEFAULT_SELECTION,
   DRAFT_CHANNEL,
@@ -20,9 +23,16 @@ import {
   selectionKey,
   type HudSelection,
 } from '@/lib/tf2-game/client/custom-hud/selection';
-import { HudLoadError, loadHud, type LoadedHud } from '@/lib/tf2-game/client/custom-hud/source';
+import {
+  HudLoadError,
+  loadHud,
+  type LoadedHud,
+} from '@/lib/tf2-game/client/custom-hud/source';
 
-export type HudChoiceError = 'missing' | 'forbidden' | 'network';
+export type HudChoiceError =
+  | 'missing'
+  | 'forbidden'
+  | 'network';
 
 export interface HudChoiceState {
   /** What the player picked (the active HUD once it has loaded). */
@@ -30,104 +40,317 @@ export interface HudChoiceState {
   /** The custom HUD drawn now; null = the game's own (default) HUD. */
   active: PreparedHud | null;
   /** The selection being loaded, if any. */
-  pending: string | null;
+  pending:
+    | string
+    | null;
   error: HudChoiceError | null;
   /** The in-game HUD editor is open (the game pauses offline and gives it the keys). */
   editorOpen: boolean;
   /** Which selection the HUD editor's store holds (so reopening it keeps the work). */
-  editorKey: string | null;
+  editorKey:
+    | string
+    | null;
 
   /** Read the remembered choice once per page. */
   init(): void;
   /** Switch HUD. Resolves true once it is drawn (false: it failed or a later choice won). */
-  choose(selection: HudSelection, opts?: { persist?: boolean }): Promise<boolean>;
+  choose(
+    selection: HudSelection,
+    opts?: {
+      persist?: boolean;
+    },
+  ): Promise<boolean>;
   /** Use a HUD that is already loaded (the editor's "Test in game"). */
-  apply(hud: LoadedHud, opts?: { persist?: boolean }): Promise<boolean>;
-  setEditorOpen(open: boolean): void;
-  setEditorKey(key: string | null): void;
+  apply(
+    hud: LoadedHud,
+    opts?: {
+      persist?: boolean;
+    },
+  ): Promise<boolean>;
+  setEditorOpen(
+    open: boolean,
+  ): void;
+  setEditorKey(
+    key:
+      | string
+      | null,
+  ): void;
   clearError(): void;
 }
 
 let started = false;
 let seq = 0;
 
-function errorOf(e: unknown): HudChoiceError {
-  return e instanceof HudLoadError ? e.reason : 'network';
+function errorOf(
+  e: unknown,
+): HudChoiceError {
+  return e instanceof
+    HudLoadError
+    ? e.reason
+    : 'network';
 }
 
-export const useHudChoice = create<HudChoiceState>((set, get) => {
-  const swapIn = async (hud: LoadedHud, ticket: number): Promise<boolean> => {
-    const prepared = await prepareHud(hud);
-    if (ticket !== seq) return false;
-    set({ active: prepared, pending: null, error: null });
-    return true;
-  };
-
-  return {
-    selection: DEFAULT_SELECTION,
-    active: null,
-    pending: null,
-    error: null,
-    editorOpen: false,
-    editorKey: null,
-
-    init() {
-      if (started || typeof window === 'undefined') return;
-      started = true;
-      const stored = loadSelection();
-      if (stored.kind !== 'default') void get().choose(stored, { persist: false });
-      try {
-        const channel = new BroadcastChannel(DRAFT_CHANNEL);
-        channel.onmessage = (e: MessageEvent) => {
-          const s = get();
-          if (!isDraftSavedMessage(e.data) || s.editorOpen) return;
-          if (s.selection.kind === 'draft' && s.selection.id === e.data.id)
-            void s.choose(s.selection, { persist: false });
+export const useHudChoice =
+  create<HudChoiceState>(
+    (
+      set,
+      get,
+    ) => {
+      const swapIn =
+        async (
+          hud: LoadedHud,
+          ticket: number,
+        ): Promise<boolean> => {
+          const prepared =
+            await prepareHud(
+              hud,
+            );
+          if (
+            ticket !==
+            seq
+          )
+            return false;
+          set(
+            {
+              active:
+                prepared,
+              pending:
+                null,
+              error:
+                null,
+            },
+          );
+          return true;
         };
-      } catch {
-        /* no BroadcastChannel: a reload picks the draft up */
-      }
-    },
 
-    async choose(selection, opts = {}) {
-      const ticket = ++seq;
-      const key = selectionKey(selection);
-      if (opts.persist !== false) saveSelection(selection);
-      if (selection.kind === 'default') {
-        set({ selection, active: null, pending: null, error: null });
-        return true;
-      }
-      set({ selection, pending: key, error: null });
-      try {
-        const hud = await loadHud(selection);
-        if (ticket !== seq) return false;
-        return await swapIn(hud, ticket);
-      } catch (e) {
-        if (ticket === seq) set({ pending: null, error: errorOf(e) });
-        return false;
-      }
-    },
+      return {
+        selection:
+          DEFAULT_SELECTION,
+        active:
+          null,
+        pending:
+          null,
+        error:
+          null,
+        editorOpen: false,
+        editorKey:
+          null,
 
-    async apply(hud, opts = {}) {
-      const ticket = ++seq;
-      if (opts.persist !== false) saveSelection(hud.selection);
-      set({ selection: hud.selection, pending: selectionKey(hud.selection), error: null });
-      try {
-        return await swapIn(hud, ticket);
-      } catch (e) {
-        if (ticket === seq) set({ pending: null, error: errorOf(e) });
-        return false;
-      }
-    },
+        init() {
+          if (
+            started ||
+            typeof window ===
+              'undefined'
+          )
+            return;
+          started = true;
+          const stored =
+            loadSelection();
+          if (
+            stored.kind !==
+            'default'
+          )
+            void get().choose(
+              stored,
+              {
+                persist: false,
+              },
+            );
+          try {
+            const channel =
+              new BroadcastChannel(
+                DRAFT_CHANNEL,
+              );
+            channel.onmessage =
+              (
+                e: MessageEvent,
+              ) => {
+                const s =
+                  get();
+                if (
+                  !isDraftSavedMessage(
+                    e.data,
+                  ) ||
+                  s.editorOpen
+                )
+                  return;
+                if (
+                  s
+                    .selection
+                    .kind ===
+                    'draft' &&
+                  s
+                    .selection
+                    .id ===
+                    e
+                      .data
+                      .id
+                )
+                  void s.choose(
+                    s.selection,
+                    {
+                      persist: false,
+                    },
+                  );
+              };
+          } catch {
+            /* no BroadcastChannel: a reload picks the draft up */
+          }
+        },
 
-    setEditorOpen(open) {
-      set({ editorOpen: open });
+        async choose(
+          selection,
+          opts = {},
+        ) {
+          const ticket =
+            ++seq;
+          const key =
+            selectionKey(
+              selection,
+            );
+          if (
+            opts.persist !==
+            false
+          )
+            saveSelection(
+              selection,
+            );
+          if (
+            selection.kind ===
+            'default'
+          ) {
+            set(
+              {
+                selection,
+                active:
+                  null,
+                pending:
+                  null,
+                error:
+                  null,
+              },
+            );
+            return true;
+          }
+          set(
+            {
+              selection,
+              pending:
+                key,
+              error:
+                null,
+            },
+          );
+          try {
+            const hud =
+              await loadHud(
+                selection,
+              );
+            if (
+              ticket !==
+              seq
+            )
+              return false;
+            return await swapIn(
+              hud,
+              ticket,
+            );
+          } catch (e) {
+            if (
+              ticket ===
+              seq
+            )
+              set(
+                {
+                  pending:
+                    null,
+                  error:
+                    errorOf(
+                      e,
+                    ),
+                },
+              );
+            return false;
+          }
+        },
+
+        async apply(
+          hud,
+          opts = {},
+        ) {
+          const ticket =
+            ++seq;
+          if (
+            opts.persist !==
+            false
+          )
+            saveSelection(
+              hud.selection,
+            );
+          set(
+            {
+              selection:
+                hud.selection,
+              pending:
+                selectionKey(
+                  hud.selection,
+                ),
+              error:
+                null,
+            },
+          );
+          try {
+            return await swapIn(
+              hud,
+              ticket,
+            );
+          } catch (e) {
+            if (
+              ticket ===
+              seq
+            )
+              set(
+                {
+                  pending:
+                    null,
+                  error:
+                    errorOf(
+                      e,
+                    ),
+                },
+              );
+            return false;
+          }
+        },
+
+        setEditorOpen(
+          open,
+        ) {
+          set(
+            {
+              editorOpen:
+                open,
+            },
+          );
+        },
+        setEditorKey(
+          key,
+        ) {
+          set(
+            {
+              editorKey:
+                key,
+            },
+          );
+        },
+        clearError() {
+          set(
+            {
+              error:
+                null,
+            },
+          );
+        },
+      };
     },
-    setEditorKey(key) {
-      set({ editorKey: key });
-    },
-    clearError() {
-      set({ error: null });
-    },
-  };
-});
+  );

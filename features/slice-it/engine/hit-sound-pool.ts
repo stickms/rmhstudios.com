@@ -17,13 +17,16 @@
  */
 
 /** Where the samples live under `public/`. Paths still go through `asset()`. */
-export const HIT_SOUND_DIR = '/music/slice-it/sounds/';
+export const HIT_SOUND_DIR =
+  '/music/slice-it/sounds/';
 
 /** The engine's own synthesised click — no file, and the default for a reason. */
-export const DEFAULT_HIT_SOUND_ID = 'default';
+export const DEFAULT_HIT_SOUND_ID =
+  'default';
 
 /** Draw a different sample for every note. See {@link pickHitSound}. */
-export const RANDOM_HIT_SOUND_ID = 'random';
+export const RANDOM_HIT_SOUND_ID =
+  'random';
 
 export interface HitSoundOption {
   /** Persisted in `store.hitSound`; for a sample this is its filename. */
@@ -34,12 +37,17 @@ export interface HitSoundOption {
   isSample: boolean;
 }
 
-const sample = (id: string, label: string, category: string): HitSoundOption => ({
-  id,
-  label,
-  category,
-  isSample: true,
-});
+const sample =
+  (
+    id: string,
+    label: string,
+    category: string,
+  ): HitSoundOption => ({
+    id,
+    label,
+    category,
+    isSample: true,
+  });
 
 /**
  * Every option the settings drawer offers, in display order.
@@ -49,59 +57,226 @@ const sample = (id: string, label: string, category: string): HitSoundOption => 
  * where they were — a player who knows where "E-Snare B" sits should still find
  * it there.
  */
-export const HIT_SOUND_OPTIONS: readonly HitSoundOption[] = [
-  { id: DEFAULT_HIT_SOUND_ID, label: 'Default (Synth)', category: 'System', isSample: false },
-  { id: RANDOM_HIT_SOUND_ID, label: 'Shuffle (All)', category: 'System', isSample: false },
+export const HIT_SOUND_OPTIONS: readonly HitSoundOption[] =
+  [
+    {
+      id: DEFAULT_HIT_SOUND_ID,
+      label:
+        'Default (Synth)',
+      category:
+        'System',
+      isSample: false,
+    },
+    {
+      id: RANDOM_HIT_SOUND_ID,
+      label:
+        'Shuffle (All)',
+      category:
+        'System',
+      isSample: false,
+    },
 
-  sample('drum-hitclap.wav', 'Hit Clap', 'Drums'),
-  sample('drum-hitfinish.wav', 'Hit Finish', 'Drums'),
-  sample('drum-hitwhistle.wav', 'Hit Whistle', 'Drums'),
-  sample('soft-hitfinish.wav', 'Soft Finish', 'Drums'),
-  sample('soft-hitwhistle.wav', 'Soft Whistle', 'Drums'),
-  sample('all purpose clap.wav', 'All Purpose Clap', 'Drums'),
+    sample(
+      'drum-hitclap.wav',
+      'Hit Clap',
+      'Drums',
+    ),
+    sample(
+      'drum-hitfinish.wav',
+      'Hit Finish',
+      'Drums',
+    ),
+    sample(
+      'drum-hitwhistle.wav',
+      'Hit Whistle',
+      'Drums',
+    ),
+    sample(
+      'soft-hitfinish.wav',
+      'Soft Finish',
+      'Drums',
+    ),
+    sample(
+      'soft-hitwhistle.wav',
+      'Soft Whistle',
+      'Drums',
+    ),
+    sample(
+      'all purpose clap.wav',
+      'All Purpose Clap',
+      'Drums',
+    ),
 
-  sample('snare_a.wav', 'Snare A', 'Snares'),
-  sample('snare_b.wav', 'Snare B', 'Snares'),
-  sample('snare_c.wav', 'Snare C', 'Snares'),
-  sample('snare_electronic_a.wav', 'E-Snare A', 'Snares'),
-  sample('snare_electronic_b.wav', 'E-Snare B', 'Snares'),
-  sample('snare_electronic_c.wav', 'E-Snare C', 'Snares'),
+    sample(
+      'snare_a.wav',
+      'Snare A',
+      'Snares',
+    ),
+    sample(
+      'snare_b.wav',
+      'Snare B',
+      'Snares',
+    ),
+    sample(
+      'snare_c.wav',
+      'Snare C',
+      'Snares',
+    ),
+    sample(
+      'snare_electronic_a.wav',
+      'E-Snare A',
+      'Snares',
+    ),
+    sample(
+      'snare_electronic_b.wav',
+      'E-Snare B',
+      'Snares',
+    ),
+    sample(
+      'snare_electronic_c.wav',
+      'E-Snare C',
+      'Snares',
+    ),
 
-  sample('kick_a.wav', 'Kick A', 'Kicks'),
-  sample('kick_b.wav', 'Kick B', 'Kicks'),
-  sample('kick_c.wav', 'Kick C', 'Kicks'),
-  sample('kick_electronic_a.wav', 'E-Kick A', 'Kicks'),
-  sample('kick_electronic_b.wav', 'E-Kick B', 'Kicks'),
-  sample('kick_electronic_c.wav', 'E-Kick C', 'Kicks'),
+    sample(
+      'kick_a.wav',
+      'Kick A',
+      'Kicks',
+    ),
+    sample(
+      'kick_b.wav',
+      'Kick B',
+      'Kicks',
+    ),
+    sample(
+      'kick_c.wav',
+      'Kick C',
+      'Kicks',
+    ),
+    sample(
+      'kick_electronic_a.wav',
+      'E-Kick A',
+      'Kicks',
+    ),
+    sample(
+      'kick_electronic_b.wav',
+      'E-Kick B',
+      'Kicks',
+    ),
+    sample(
+      'kick_electronic_c.wav',
+      'E-Kick C',
+      'Kicks',
+    ),
 
-  sample('cymbal_a.wav', 'Cymbal A', 'Cymbals'),
-  sample('cymbal_b.wav', 'Cymbal B', 'Cymbals'),
-  sample('cymbal_c.wav', 'Cymbal C', 'Cymbals'),
+    sample(
+      'cymbal_a.wav',
+      'Cymbal A',
+      'Cymbals',
+    ),
+    sample(
+      'cymbal_b.wav',
+      'Cymbal B',
+      'Cymbals',
+    ),
+    sample(
+      'cymbal_c.wav',
+      'Cymbal C',
+      'Cymbals',
+    ),
 
-  sample('tick.wav', 'Tick', 'Clock'),
-  sample('tock.wav', 'Tock', 'Clock'),
+    sample(
+      'tick.wav',
+      'Tick',
+      'Clock',
+    ),
+    sample(
+      'tock.wav',
+      'Tock',
+      'Clock',
+    ),
 
-  // ── Synthesised set (scripts/gen-slice-it-hit-sounds.ts) ─────────────────
-  sample('click_sharp.wav', 'Sharp Click', 'Clicks'),
-  sample('click_glass.wav', 'Glass Click', 'Clicks'),
-  sample('synth_tick.wav', 'Synth Tick', 'Clicks'),
+    // ── Synthesised set (scripts/gen-slice-it-hit-sounds.ts) ─────────────────
+    sample(
+      'click_sharp.wav',
+      'Sharp Click',
+      'Clicks',
+    ),
+    sample(
+      'click_glass.wav',
+      'Glass Click',
+      'Clicks',
+    ),
+    sample(
+      'synth_tick.wav',
+      'Synth Tick',
+      'Clicks',
+    ),
 
-  sample('tap_crisp.wav', 'Crisp Tap', 'Taps'),
-  sample('tap_rim.wav', 'Rim Tap', 'Taps'),
-  sample('pop_soft.wav', 'Soft Pop', 'Taps'),
-  sample('pop_bubble.wav', 'Bubble Pop', 'Taps'),
+    sample(
+      'tap_crisp.wav',
+      'Crisp Tap',
+      'Taps',
+    ),
+    sample(
+      'tap_rim.wav',
+      'Rim Tap',
+      'Taps',
+    ),
+    sample(
+      'pop_soft.wav',
+      'Soft Pop',
+      'Taps',
+    ),
+    sample(
+      'pop_bubble.wav',
+      'Bubble Pop',
+      'Taps',
+    ),
 
-  sample('impact_snap.wav', 'Snap Impact', 'Impacts'),
-  sample('impact_punch.wav', 'Punch Impact', 'Impacts'),
-  sample('bass_thump.wav', 'Bass Thump', 'Impacts'),
+    sample(
+      'impact_snap.wav',
+      'Snap Impact',
+      'Impacts',
+    ),
+    sample(
+      'impact_punch.wav',
+      'Punch Impact',
+      'Impacts',
+    ),
+    sample(
+      'bass_thump.wav',
+      'Bass Thump',
+      'Impacts',
+    ),
 
-  sample('glitch_bit.wav', 'Bit Glitch', 'Digital'),
-  sample('glitch_zap.wav', 'Digital Zap', 'Digital'),
-  sample('arcade_confirm.wav', 'Arcade Confirm', 'Digital'),
+    sample(
+      'glitch_bit.wav',
+      'Bit Glitch',
+      'Digital',
+    ),
+    sample(
+      'glitch_zap.wav',
+      'Digital Zap',
+      'Digital',
+    ),
+    sample(
+      'arcade_confirm.wav',
+      'Arcade Confirm',
+      'Digital',
+    ),
 
-  sample('metal_ping.wav', 'Metal Ping', 'Metallic'),
-  sample('metal_anvil.wav', 'Anvil', 'Metallic'),
-];
+    sample(
+      'metal_ping.wav',
+      'Metal Ping',
+      'Metallic',
+    ),
+    sample(
+      'metal_anvil.wav',
+      'Anvil',
+      'Metallic',
+    ),
+  ];
 
 /**
  * The Shuffle pool: every option backed by a file, in registration order.
@@ -109,12 +284,23 @@ export const HIT_SOUND_OPTIONS: readonly HitSoundOption[] = [
  * Unweighted, because the picker has never been weighted — one entry, one
  * chance. If weights are ever added they belong here, not at the call site.
  */
-export const HIT_SOUND_SAMPLE_IDS: readonly string[] = HIT_SOUND_OPTIONS.filter(
-  (option) => option.isSample,
-).map((option) => option.id);
+export const HIT_SOUND_SAMPLE_IDS: readonly string[] =
+  HIT_SOUND_OPTIONS.filter(
+    (
+      option,
+    ) =>
+      option.isSample,
+  ).map(
+    (
+      option,
+    ) =>
+      option.id,
+  );
 
 /** `public/`-relative path for a sample id. Still needs `asset()` for the CDN. */
-export function hitSoundPath(id: string): string {
+export function hitSoundPath(
+  id: string,
+): string {
   return `${HIT_SOUND_DIR}${id}`;
 }
 
@@ -136,19 +322,55 @@ export function hitSoundPath(id: string): string {
  */
 export function pickHitSound(
   pool: readonly string[],
-  lastPlayed: string | null = null,
+  lastPlayed:
+    | string
+    | null = null,
   random: () => number = Math.random,
-): string | null {
-  if (pool.length === 0) return null;
-  if (pool.length === 1) return pool[0];
+):
+  | string
+  | null {
+  if (
+    pool.length ===
+    0
+  )
+    return null;
+  if (
+    pool.length ===
+    1
+  )
+    return pool[0];
 
-  const eligible = lastPlayed === null ? pool : pool.filter((id) => id !== lastPlayed);
+  const eligible =
+    lastPlayed ===
+    null
+      ? pool
+      : pool.filter(
+          (
+            id,
+          ) =>
+            id !==
+            lastPlayed,
+        );
   // A pool that is entirely `lastPlayed` (duplicate ids) leaves nothing
   // eligible; repeating beats returning null and dropping the sound.
-  const candidates = eligible.length > 0 ? eligible : pool;
+  const candidates =
+    eligible.length >
+    0
+      ? eligible
+      : pool;
 
-  const index = Math.min(candidates.length - 1, Math.floor(random() * candidates.length));
-  return candidates[index];
+  const index =
+    Math.min(
+      candidates.length -
+        1,
+      Math.floor(
+        random() *
+          candidates.length,
+      ),
+    );
+  return candidates[
+    index
+  ];
 }
 
 /**
@@ -160,8 +382,24 @@ export function pickHitSound(
  * A run that opens with a handful of wrong-sounding notes is the thing being
  * bought off here.
  */
-export function hitSoundPreloadList(setting: string | null | undefined): readonly string[] {
-  if (!setting || setting === DEFAULT_HIT_SOUND_ID) return [];
-  if (setting === RANDOM_HIT_SOUND_ID) return HIT_SOUND_SAMPLE_IDS;
-  return [setting];
+export function hitSoundPreloadList(
+  setting:
+    | string
+    | null
+    | undefined,
+): readonly string[] {
+  if (
+    !setting ||
+    setting ===
+      DEFAULT_HIT_SOUND_ID
+  )
+    return [];
+  if (
+    setting ===
+    RANDOM_HIT_SOUND_ID
+  )
+    return HIT_SOUND_SAMPLE_IDS;
+  return [
+    setting,
+  ];
 }

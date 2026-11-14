@@ -18,36 +18,121 @@
  */
 
 const SAMPLE_FRAMES = 40;
-const COMMON_RATES = [30, 50, 60, 75, 90, 100, 120, 144, 165, 180, 200, 240, 300, 360];
+const COMMON_RATES =
+  [
+    30,
+    50,
+    60,
+    75,
+    90,
+    100,
+    120,
+    144,
+    165,
+    180,
+    200,
+    240,
+    300,
+    360,
+  ];
 const FALLBACK_HZ = 60;
 
-let estimate: number | null = null;
+let estimate:
+  | number
+  | null =
+  null;
 let sampling = false;
 
-function snap(hz: number): number {
-  let best = COMMON_RATES[0];
-  for (const r of COMMON_RATES) if (Math.abs(r - hz) < Math.abs(best - hz)) best = r;
+function snap(
+  hz: number,
+): number {
+  let best =
+    COMMON_RATES[0];
+  for (const r of COMMON_RATES)
+    if (
+      Math.abs(
+        r -
+          hz,
+      ) <
+      Math.abs(
+        best -
+          hz,
+      )
+    )
+      best =
+        r;
   // Only snap when close; an odd panel (e.g. 119.88Hz video modes) keeps its own value.
-  return Math.abs(best - hz) / best < 0.06 ? best : Math.round(hz);
+  return Math.abs(
+    best -
+      hz,
+  ) /
+    best <
+    0.06
+    ? best
+    : Math.round(
+        hz,
+      );
 }
 
 function startSampling(): void {
-  if (sampling || typeof requestAnimationFrame === 'undefined') return;
+  if (
+    sampling ||
+    typeof requestAnimationFrame ===
+      'undefined'
+  )
+    return;
   sampling = true;
-  const deltas: number[] = [];
+  const deltas: number[] =
+    [];
   let last = 0;
-  const tick = (now: number) => {
-    if (last) deltas.push(now - last);
-    last = now;
-    if (deltas.length < SAMPLE_FRAMES) {
-      requestAnimationFrame(tick);
-      return;
-    }
-    deltas.sort((a, b) => a - b);
-    const median = deltas[deltas.length >> 1];
-    if (median > 0) estimate = snap(1000 / median);
-  };
-  requestAnimationFrame(tick);
+  const tick =
+    (
+      now: number,
+    ) => {
+      if (
+        last
+      )
+        deltas.push(
+          now -
+            last,
+        );
+      last =
+        now;
+      if (
+        deltas.length <
+        SAMPLE_FRAMES
+      ) {
+        requestAnimationFrame(
+          tick,
+        );
+        return;
+      }
+      deltas.sort(
+        (
+          a,
+          b,
+        ) =>
+          a -
+          b,
+      );
+      const median =
+        deltas[
+          deltas.length >>
+            1
+        ];
+      if (
+        median >
+        0
+      )
+        estimate =
+          snap(
+            1000 /
+              median,
+          );
+    };
+  requestAnimationFrame(
+    tick,
+  );
 }
 
 /**
@@ -55,12 +140,26 @@ function startSampling(): void {
  * the first measurement completes (well under a second at any real rate).
  */
 export function displayRefreshHz(): number {
-  if (estimate === null) startSampling();
-  return estimate ?? FALLBACK_HZ;
+  if (
+    estimate ===
+    null
+  )
+    startSampling();
+  return (
+    estimate ??
+    FALLBACK_HZ
+  );
 }
 
 /** Test seam. */
-export function resetRefreshEstimate(value: number | null = null): void {
-  estimate = value;
-  sampling = value !== null;
+export function resetRefreshEstimate(
+  value:
+    | number
+    | null = null,
+): void {
+  estimate =
+    value;
+  sampling =
+    value !==
+    null;
 }

@@ -20,10 +20,17 @@
 
 import type { ChannelPair } from '@/lib/shared/p2p/channel';
 import type { Scheduler } from '@/lib/shared/p2p/connector';
-import { ReliableLink, LINK_TIMEOUT_MS, type ReliableLinkCloseReason } from '@/lib/shared/p2p/reliable-link';
+import {
+  ReliableLink,
+  LINK_TIMEOUT_MS,
+  type ReliableLinkCloseReason,
+} from '@/lib/shared/p2p/reliable-link';
 import type { Link } from './protocol';
 
-export type ConnKind = 'direct' | 'turn' | 'relay';
+export type ConnKind =
+  | 'direct'
+  | 'turn'
+  | 'relay';
 
 /** The silence after which a link on the hub relay closes (see features/balatro/engine/mp/transport/wire-link.ts). */
 export const RELAY_LINK_TIMEOUT_MS = 60_000;
@@ -33,58 +40,133 @@ const EARLY_MAX = 256;
 export interface ChannelLink extends Link {
   readonly kind: ConnKind;
   /** Fires once, when both channels are open and the link carries traffic (immediately if it already does). */
-  onopen: (() => void) | null;
+  onopen:
+    | (() => void)
+    | null;
   /** Why it closed, or null while it lives. */
   readonly closedReason: ReliableLinkCloseReason | null;
   /** Smoothed round-trip time, for the player list. */
-  readonly rttMs: number | null;
+  readonly rttMs:
+    | number
+    | null;
 }
 
-export function channelPairToLink(pair: ChannelPair, kind: ConnKind, sched: Scheduler): ChannelLink {
-  let listener: ((data: Uint8Array) => void) | null = null;
-  let closeListener: (() => void) | null = null;
-  let openListener: (() => void) | null = null;
-  let early: Uint8Array[] = [];
-  let reason: ReliableLinkCloseReason | null = null;
-  let stopTimer: (() => void) | null = null;
+export function channelPairToLink(
+  pair: ChannelPair,
+  kind: ConnKind,
+  sched: Scheduler,
+): ChannelLink {
+  let listener:
+    | ((
+        data: Uint8Array,
+      ) => void)
+    | null =
+    null;
+  let closeListener:
+    | (() => void)
+    | null =
+    null;
+  let openListener:
+    | (() => void)
+    | null =
+    null;
+  let early: Uint8Array[] =
+    [];
+  let reason: ReliableLinkCloseReason | null =
+    null;
+  let stopTimer:
+    | (() => void)
+    | null =
+    null;
   let opened = false;
   let flushing = false;
 
-  const flush = () => {
-    if (flushing || !listener || early.length === 0) return;
-    flushing = true;
-    queueMicrotask(() => {
-      flushing = false;
-      const held = early;
-      early = [];
-      for (const m of held) listener?.(m);
-    });
-  };
+  const flush =
+    () => {
+      if (
+        flushing ||
+        !listener ||
+        early.length ===
+          0
+      )
+        return;
+      flushing = true;
+      queueMicrotask(
+        () => {
+          flushing = false;
+          const held =
+            early;
+          early =
+            [];
+          for (const m of held)
+            listener?.(
+              m,
+            );
+        },
+      );
+    };
 
-  const rl: ReliableLink = new ReliableLink({
-    unreliable: pair.unreliable,
-    reliable: pair.reliable,
-    now: () => sched.mono(),
-    timeoutMs: kind === 'relay' ? RELAY_LINK_TIMEOUT_MS : LINK_TIMEOUT_MS,
-    onMessage: (bytes) => {
-      if (listener && early.length === 0 && !flushing) listener(bytes);
-      else if (early.length < EARLY_MAX) {
-        early.push(bytes);
-        flush();
-      }
-    },
-    onOpen: () => {
-      opened = true;
-      openListener?.();
-    },
-    onClose: (why) => {
-      reason = why;
-      stopTimer?.();
-      stopTimer = null;
-      closeListener?.();
-    },
-  });
-  stopTimer = sched.every(250, () => rl.update());
+  const rl: ReliableLink =
+    new ReliableLink(
+      {
+        unreliable:
+          pair.unreliable,
+        reliable:
+          pair.reliable,
+        now: () =>
+          sched.mono(),
+        timeoutMs:
+          kind ===
+          'relay'
+            ? RELAY_LINK_TIMEOUT_MS
+            : LINK_TIMEOUT_MS,
+        onMessage:
+          (
+            bytes,
+          ) => {
+            if (
+              listener &&
+              early.length ===
+                0 &&
+              !flushing
+            )
+              listener(
+                bytes,
+              );
+            else if (
+              early.length <
+              EARLY_MAX
+            ) {
+              early.push(
+                bytes,
+              );
+              flush();
+            }
+          },
+        onOpen:
+          () => {
+            opened = true;
+            openListener?.();
+          },
+        onClose:
+          (
+            why,
+          ) => {
+            reason =
+              why;
+            stopTimer?.();
+            stopTimer =
+              null;
+            closeListener?.();
+          },
+      },
+    );
+  stopTimer =
+    sched.every(
+      250,
+      () =>
+        rl.update(),
+    );
 
   return {
     kind,
@@ -95,35 +177,68 @@ export function channelPairToLink(pair: ChannelPair, kind: ConnKind, sched: Sche
       return reason;
     },
     get rttMs() {
-      return rl.stats.rttMs;
+      return rl
+        .stats
+        .rttMs;
     },
-    send(data) {
-      rl.send(data);
+    send(
+      data,
+    ) {
+      rl.send(
+        data,
+      );
     },
     get onmessage() {
       return listener;
     },
-    set onmessage(fn) {
-      listener = fn;
+    set onmessage(
+      fn,
+    ) {
+      listener =
+        fn;
       flush();
     },
     get onclose() {
       return closeListener;
     },
-    set onclose(fn) {
-      closeListener = fn;
+    set onclose(
+      fn,
+    ) {
+      closeListener =
+        fn;
       // A listener that arrives after the close still hears of it (once).
-      if (fn && reason !== null) queueMicrotask(() => closeListener?.());
+      if (
+        fn &&
+        reason !==
+          null
+      )
+        queueMicrotask(
+          () =>
+            closeListener?.(),
+        );
     },
     get onopen() {
       return openListener;
     },
-    set onopen(fn) {
-      openListener = fn;
-      if (fn && opened && rl.isOpen) queueMicrotask(() => openListener?.());
+    set onopen(
+      fn,
+    ) {
+      openListener =
+        fn;
+      if (
+        fn &&
+        opened &&
+        rl.isOpen
+      )
+        queueMicrotask(
+          () =>
+            openListener?.(),
+        );
     },
     close() {
-      rl.close('local');
+      rl.close(
+        'local',
+      );
     },
   };
 }

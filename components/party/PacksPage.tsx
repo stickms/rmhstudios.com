@@ -1,7 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { Flag, Sparkles, Star, Trash2, EyeOff } from 'lucide-react';
+import {
+  Flag,
+  Sparkles,
+  Star,
+  Trash2,
+  EyeOff,
+} from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,230 +22,690 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useSession } from '@/components/Providers';
-import { PACK_MAX_PROMPTS, PACK_MIN_PROMPTS, type PackView } from '@/lib/party/packs';
+import {
+  PACK_MAX_PROMPTS,
+  PACK_MIN_PROMPTS,
+  type PackView,
+} from '@/lib/party/packs';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { createPackApi, listPacksApi, type PackLists } from '@/lib/party/packs.contract';
+import {
+  createPackApi,
+  listPacksApi,
+  type PackLists,
+} from '@/lib/party/packs.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 export function PacksPage() {
-  const { t } = useTranslation('f-party');
-  const session = useSession();
-  const signedIn = !!session.data?.user;
-  const isAdmin = !!(session.data?.user as { isAdmin?: boolean } | undefined)?.isAdmin;
-  const confirm = useConfirm();
-  const [lists, setLists] = useState<PackLists | null>(null);
-  const [name, setName] = useState('');
-  const [text, setText] = useState('');
-  const [busy, setBusy] = useState(false);
-  const arrival = useArrival(lists !== null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-party',
+    );
+  const session =
+    useSession();
+  const signedIn =
+    !!session
+      .data
+      ?.user;
+  const isAdmin =
+    !!(
+      session
+        .data
+        ?.user as
+        | {
+            isAdmin?: boolean;
+          }
+        | undefined
+    )
+      ?.isAdmin;
+  const confirm =
+    useConfirm();
+  const [
+    lists,
+    setLists,
+  ] =
+    useState<PackLists | null>(
+      null,
+    );
+  const [
+    name,
+    setName,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    text,
+    setText,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
+  const arrival =
+    useArrival(
+      lists !==
+        null,
+    );
 
-  const load = useCallback(async () => {
-    try {
-      setLists(await api(listPacksApi));
-    } catch {
-      toast.error(t('load-failed', { defaultValue: 'Could not load packs.' }));
-    }
-  }, [t]);
+  const load =
+    useCallback(async () => {
+      try {
+        setLists(
+          await api(
+            listPacksApi,
+          ),
+        );
+      } catch {
+        toast.error(
+          t(
+            'load-failed',
+            {
+              defaultValue:
+                'Could not load packs.',
+            },
+          ),
+        );
+      }
+    }, [
+      t,
+    ]);
 
   useEffect(() => {
     void load();
-  }, [load, signedIn]);
+  }, [
+    load,
+    signedIn,
+  ]);
 
-  const prompts = text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
+  const prompts =
+    text
+      .split(
+        '\n',
+      )
+      .map(
+        (
+          l,
+        ) =>
+          l.trim(),
+      )
+      .filter(
+        Boolean,
+      );
 
   async function create() {
-    setBusy(true);
+    setBusy(
+      true,
+    );
     try {
-      const { pack } = await api(createPackApi, { body: { name, game: 'wit-war', prompts } });
-      setBusy(false);
-      toast.success(
-        t('created', { defaultValue: 'Pack created. Share code {{code}}.', code: pack.code }),
+      const {
+        pack,
+      } =
+        await api(
+          createPackApi,
+          {
+            body: {
+              name,
+              game: 'wit-war',
+              prompts,
+            },
+          },
+        );
+      setBusy(
+        false,
       );
-      setName('');
-      setText('');
+      toast.success(
+        t(
+          'created',
+          {
+            defaultValue:
+              'Pack created. Share code {{code}}.',
+            code: pack.code,
+          },
+        ),
+      );
+      setName(
+        '',
+      );
+      setText(
+        '',
+      );
       void load();
     } catch (e) {
-      setBusy(false);
+      setBusy(
+        false,
+      );
       toast.error(
-        serverError(e) ?? t('create-failed', { defaultValue: 'Could not create the pack.' }),
+        serverError(
+          e,
+        ) ??
+          t(
+            'create-failed',
+            {
+              defaultValue:
+                'Could not create the pack.',
+            },
+          ),
       );
     }
   }
 
-  async function act(pack: PackView, action: 'report' | 'delete' | 'feature' | 'hide') {
-    if (action === 'report') {
-      const ok = await confirm({
-        title: t('report-title', { defaultValue: 'Report this pack?' }),
-        description: t('report-desc', {
-          defaultValue: 'Packs with several reports are hidden until a moderator reviews them.',
-        }),
-        confirmLabel: t('report', { defaultValue: 'Report' }),
-        danger: true,
-      });
-      if (!ok) return;
+  async function act(
+    pack: PackView,
+    action:
+      | 'report'
+      | 'delete'
+      | 'feature'
+      | 'hide',
+  ) {
+    if (
+      action ===
+      'report'
+    ) {
+      const ok =
+        await confirm(
+          {
+            title:
+              t(
+                'report-title',
+                {
+                  defaultValue:
+                    'Report this pack?',
+                },
+              ),
+            description:
+              t(
+                'report-desc',
+                {
+                  defaultValue:
+                    'Packs with several reports are hidden until a moderator reviews them.',
+                },
+              ),
+            confirmLabel:
+              t(
+                'report',
+                {
+                  defaultValue:
+                    'Report',
+                },
+              ),
+            danger: true,
+          },
+        );
+      if (
+        !ok
+      )
+        return;
     }
     const url = `/api/rmhbox/packs/${pack.id}`;
-    const res = await fetch(
-      action === 'report' ? `${url}/report` : url,
-      action === 'report'
-        ? {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: 'Inappropriate or unsafe prompts' }),
-          }
-        : action === 'delete'
-          ? { method: 'DELETE' }
-          : {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
+    const res =
+      await fetch(
+        action ===
+          'report'
+          ? `${url}/report`
+          : url,
+        action ===
+          'report'
+          ? {
+              method:
+                'POST',
+              headers:
+                {
+                  'Content-Type':
+                    'application/json',
+                },
               body: JSON.stringify(
-                action === 'feature' ? { featured: !pack.featured } : { hidden: !pack.hidden },
+                {
+                  reason:
+                    'Inappropriate or unsafe prompts',
+                },
               ),
+            }
+          : action ===
+              'delete'
+            ? {
+                method:
+                  'DELETE',
+              }
+            : {
+                method:
+                  'PATCH',
+                headers:
+                  {
+                    'Content-Type':
+                      'application/json',
+                  },
+                body: JSON.stringify(
+                  action ===
+                    'feature'
+                    ? {
+                        featured:
+                          !pack.featured,
+                      }
+                    : {
+                        hidden:
+                          !pack.hidden,
+                      },
+                ),
+              },
+      ).catch(
+        () =>
+          null,
+      );
+    if (
+      res?.ok
+    ) {
+      if (
+        action ===
+        'report'
+      )
+        toast.success(
+          t(
+            'reported',
+            {
+              defaultValue:
+                'Thanks, reported.',
             },
-    ).catch(() => null);
-    if (res?.ok) {
-      if (action === 'report') toast.success(t('reported', { defaultValue: 'Thanks, reported.' }));
+          ),
+        );
       void load();
-    } else toast.error(t('action-failed', { defaultValue: 'That did not work.' }));
+    } else
+      toast.error(
+        t(
+          'action-failed',
+          {
+            defaultValue:
+              'That did not work.',
+          },
+        ),
+      );
   }
 
-  const card = (p: PackView) => (
-    <Card key={p.id} className="gap-3 p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="truncate font-semibold text-site-text">{p.name}</h3>
-          <p className="text-xs text-site-text-muted">
-            {t('pack-meta', {
-              defaultValue: '{{count}} prompts by {{author}}',
-              count: p.promptCount,
-              author: p.author?.name ?? p.author?.handle ?? '?',
-            })}
-          </p>
+  const card =
+    (
+      p: PackView,
+    ) => (
+      <Card
+        key={
+          p.id
+        }
+        className="gap-3 p-4"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="truncate font-semibold text-site-text">
+              {
+                p.name
+              }
+            </h3>
+            <p className="text-xs text-site-text-muted">
+              {t(
+                'pack-meta',
+                {
+                  defaultValue:
+                    '{{count}} prompts by {{author}}',
+                  count:
+                    p.promptCount,
+                  author:
+                    p
+                      .author
+                      ?.name ??
+                    p
+                      .author
+                      ?.handle ??
+                    '?',
+                },
+              )}
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            {p.featured ? (
+              <Badge variant="default">
+                {t(
+                  'featured',
+                  {
+                    defaultValue:
+                      'Featured',
+                  },
+                )}
+              </Badge>
+            ) : null}
+            {p.hidden ? (
+              <Badge variant="danger">
+                {t(
+                  'hidden',
+                  {
+                    defaultValue:
+                      'Hidden',
+                  },
+                )}
+              </Badge>
+            ) : null}
+          </div>
         </div>
-        <div className="flex shrink-0 gap-2">
-          {p.featured ? (
-            <Badge variant="default">{t('featured', { defaultValue: 'Featured' })}</Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <code className="surface-field rounded-site px-3 py-2 font-mono text-sm text-site-text">
+            {
+              p.code
+            }
+          </code>
+          <CopyButton
+            value={
+              p.code
+            }
+            size="xs"
+            variant="default"
+            label={t(
+              'copy-code',
+              {
+                defaultValue:
+                  'Copy code',
+              },
+            )}
+          />
+          {signedIn &&
+          !p.mine ? (
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={() =>
+                void act(
+                  p,
+                  'report',
+                )
+              }
+            >
+              <Flag
+                aria-hidden
+              />
+              {t(
+                'report',
+                {
+                  defaultValue:
+                    'Report',
+                },
+              )}
+            </Button>
           ) : null}
-          {p.hidden ? (
-            <Badge variant="danger">{t('hidden', { defaultValue: 'Hidden' })}</Badge>
+          {p.mine ||
+          isAdmin ? (
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={() =>
+                void act(
+                  p,
+                  'delete',
+                )
+              }
+            >
+              <Trash2
+                aria-hidden
+              />
+              {t(
+                'delete',
+                {
+                  defaultValue:
+                    'Delete',
+                },
+              )}
+            </Button>
+          ) : null}
+          {isAdmin ? (
+            <>
+              <Button
+                size="xs"
+                variant="default"
+                onClick={() =>
+                  void act(
+                    p,
+                    'feature',
+                  )
+                }
+              >
+                <Star
+                  aria-hidden
+                />
+                {p.featured
+                  ? t(
+                      'unfeature',
+                      {
+                        defaultValue:
+                          'Unfeature',
+                      },
+                    )
+                  : t(
+                      'feature',
+                      {
+                        defaultValue:
+                          'Feature',
+                      },
+                    )}
+              </Button>
+              <Button
+                size="xs"
+                variant="default"
+                onClick={() =>
+                  void act(
+                    p,
+                    'hide',
+                  )
+                }
+              >
+                <EyeOff
+                  aria-hidden
+                />
+                {p.hidden
+                  ? t(
+                      'unhide',
+                      {
+                        defaultValue:
+                          'Unhide',
+                      },
+                    )
+                  : t(
+                      'hide',
+                      {
+                        defaultValue:
+                          'Hide',
+                      },
+                    )}
+              </Button>
+            </>
           ) : null}
         </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <code className="surface-field rounded-site px-3 py-2 font-mono text-sm text-site-text">
-          {p.code}
-        </code>
-        <CopyButton
-          value={p.code}
-          size="xs"
-          variant="default"
-          label={t('copy-code', { defaultValue: 'Copy code' })}
-        />
-        {signedIn && !p.mine ? (
-          <Button size="xs" variant="ghost" onClick={() => void act(p, 'report')}>
-            <Flag aria-hidden />
-            {t('report', { defaultValue: 'Report' })}
-          </Button>
-        ) : null}
-        {p.mine || isAdmin ? (
-          <Button size="xs" variant="ghost" onClick={() => void act(p, 'delete')}>
-            <Trash2 aria-hidden />
-            {t('delete', { defaultValue: 'Delete' })}
-          </Button>
-        ) : null}
-        {isAdmin ? (
-          <>
-            <Button size="xs" variant="default" onClick={() => void act(p, 'feature')}>
-              <Star aria-hidden />
-              {p.featured
-                ? t('unfeature', { defaultValue: 'Unfeature' })
-                : t('feature', { defaultValue: 'Feature' })}
-            </Button>
-            <Button size="xs" variant="default" onClick={() => void act(p, 'hide')}>
-              <EyeOff aria-hidden />
-              {p.hidden
-                ? t('unhide', { defaultValue: 'Unhide' })
-                : t('hide', { defaultValue: 'Hide' })}
-            </Button>
-          </>
-        ) : null}
-      </div>
-    </Card>
-  );
+      </Card>
+    );
 
-  const section = (title: string, items: PackView[], empty: string) => (
-    <section className={cn('space-y-3', arrival)}>
-      <h2 className="site-section-label">{title}</h2>
-      {items.length ? (
-        <div className="grid gap-3 sm:grid-cols-2">{items.map(card)}</div>
-      ) : (
-        <p className="text-sm text-site-text-muted">{empty}</p>
-      )}
-    </section>
-  );
+  const section =
+    (
+      title: string,
+      items: PackView[],
+      empty: string,
+    ) => (
+      <section
+        className={cn(
+          'space-y-3',
+          arrival,
+        )}
+      >
+        <h2 className="site-section-label">
+          {
+            title
+          }
+        </h2>
+        {items.length ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {items.map(
+              card,
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-site-text-muted">
+            {
+              empty
+            }
+          </p>
+        )}
+      </section>
+    );
 
   return (
     <PageLayout
-      title={t('packs-title', { defaultValue: 'RMHBox prompt packs' })}
-      description={t('packs-desc', {
-        defaultValue:
-          'Write your own Wit-War prompts, share the code, and the host picks it in the lobby game settings.',
-      })}
+      title={t(
+        'packs-title',
+        {
+          defaultValue:
+            'RMHBox prompt packs',
+        },
+      )}
+      description={t(
+        'packs-desc',
+        {
+          defaultValue:
+            'Write your own Wit-War prompts, share the code, and the host picks it in the lobby game settings.',
+        },
+      )}
     >
       <div className="space-y-6 px-4 pt-4 pb-12">
         {signedIn ? (
-          <Card pane className="gap-3 p-4">
+          <Card
+            pane
+            className="gap-3 p-4"
+          >
             <h2 className="site-section-label flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-site-accent" aria-hidden />
-              {t('new-pack', { defaultValue: 'Make a pack' })}
+              <Sparkles
+                className="h-4 w-4 text-site-accent"
+                aria-hidden
+              />
+              {t(
+                'new-pack',
+                {
+                  defaultValue:
+                    'Make a pack',
+                },
+              )}
             </h2>
             <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={60}
-              placeholder={t('name-ph', { defaultValue: 'Pack name' })}
-              aria-label={t('name-ph', { defaultValue: 'Pack name' })}
+              value={
+                name
+              }
+              onChange={(
+                e,
+              ) =>
+                setName(
+                  e
+                    .target
+                    .value,
+                )
+              }
+              maxLength={
+                60
+              }
+              placeholder={t(
+                'name-ph',
+                {
+                  defaultValue:
+                    'Pack name',
+                },
+              )}
+              aria-label={t(
+                'name-ph',
+                {
+                  defaultValue:
+                    'Pack name',
+                },
+              )}
             />
             <Textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={8}
-              aria-label={t('prompts-label', { defaultValue: 'Prompts, one per line' })}
-              placeholder={t('prompts-ph', {
-                defaultValue: 'One prompt per line, e.g. The worst thing to say at a job interview',
-              })}
+              value={
+                text
+              }
+              onChange={(
+                e,
+              ) =>
+                setText(
+                  e
+                    .target
+                    .value,
+                )
+              }
+              rows={
+                8
+              }
+              aria-label={t(
+                'prompts-label',
+                {
+                  defaultValue:
+                    'Prompts, one per line',
+                },
+              )}
+              placeholder={t(
+                'prompts-ph',
+                {
+                  defaultValue:
+                    'One prompt per line, e.g. The worst thing to say at a job interview',
+                },
+              )}
             />
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-site-text-muted">
-                {t('prompt-count', {
-                  defaultValue: '{{count}} prompts (need {{min}} to {{max}})',
-                  count: prompts.length,
-                  min: PACK_MIN_PROMPTS,
-                  max: PACK_MAX_PROMPTS,
-                })}
+                {t(
+                  'prompt-count',
+                  {
+                    defaultValue:
+                      '{{count}} prompts (need {{min}} to {{max}})',
+                    count:
+                      prompts.length,
+                    min: PACK_MIN_PROMPTS,
+                    max: PACK_MAX_PROMPTS,
+                  },
+                )}
               </span>
               <Button
                 variant="default"
                 disabled={
                   busy ||
-                  name.trim().length < 3 ||
-                  prompts.length < PACK_MIN_PROMPTS ||
-                  prompts.length > PACK_MAX_PROMPTS
+                  name.trim()
+                    .length <
+                    3 ||
+                  prompts.length <
+                    PACK_MIN_PROMPTS ||
+                  prompts.length >
+                    PACK_MAX_PROMPTS
                 }
-                onClick={() => void create()}
+                onClick={() =>
+                  void create()
+                }
               >
-                {t('publish', { defaultValue: 'Publish pack' })}
+                {t(
+                  'publish',
+                  {
+                    defaultValue:
+                      'Publish pack',
+                  },
+                )}
               </Button>
             </div>
           </Card>
         ) : (
           <p className="text-sm text-site-text-muted">
-            {t('sign-in', { defaultValue: 'Sign in to make and report packs.' })}
+            {t(
+              'sign-in',
+              {
+                defaultValue:
+                  'Sign in to make and report packs.',
+              },
+            )}
           </p>
         )}
         {!lists ? (
@@ -246,20 +716,56 @@ export function PacksPage() {
           <>
             {signedIn
               ? section(
-                  t('mine', { defaultValue: 'Your packs' }),
+                  t(
+                    'mine',
+                    {
+                      defaultValue:
+                        'Your packs',
+                    },
+                  ),
                   lists.mine,
-                  t('mine-empty', { defaultValue: 'You have not made a pack yet.' }),
+                  t(
+                    'mine-empty',
+                    {
+                      defaultValue:
+                        'You have not made a pack yet.',
+                    },
+                  ),
                 )
               : null}
             {section(
-              t('featured-shelf', { defaultValue: 'Featured packs' }),
+              t(
+                'featured-shelf',
+                {
+                  defaultValue:
+                    'Featured packs',
+                },
+              ),
               lists.featured,
-              t('featured-empty', { defaultValue: 'Nothing featured yet.' }),
+              t(
+                'featured-empty',
+                {
+                  defaultValue:
+                    'Nothing featured yet.',
+                },
+              ),
             )}
             {section(
-              t('community', { defaultValue: 'Community packs' }),
+              t(
+                'community',
+                {
+                  defaultValue:
+                    'Community packs',
+                },
+              ),
               lists.recent,
-              t('community-empty', { defaultValue: 'No community packs yet.' }),
+              t(
+                'community-empty',
+                {
+                  defaultValue:
+                    'No community packs yet.',
+                },
+              ),
             )}
           </>
         )}

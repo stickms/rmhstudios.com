@@ -6,8 +6,14 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": ["不死之水飲者悲", "無言之母示真機"],
-    "en": ["The water that will not die brings grief to the one who drinks", "The mother of silence reveals the true mechanism"]
+    "zh": [
+      "不死之水飲者悲",
+      "無言之母示真機"
+    ],
+    "en": [
+      "The water that will not die brings grief to the one who drinks",
+      "The mother of silence reveals the true mechanism"
+    ]
   },
   "passages": [
     {

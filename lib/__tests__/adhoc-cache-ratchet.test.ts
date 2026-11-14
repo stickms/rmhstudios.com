@@ -22,39 +22,85 @@
  *  - a NEW ad-hoc map fails (count above the baseline) — use `cached()` / `lruL1()`;
  *  - migrating some fails too until BASELINE is lowered to the new count.
  */
-import { globSync, readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import {
+  globSync,
+  readFileSync,
+} from 'node:fs';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
 
 /** Lower this when you migrate files. Never raise it. */
 const BASELINE = 64;
 
-const MODULE_MAP = /^(?:export\s+)?(?:const|let)\s+\w+\s*(?::[^=\n]+)?=\s*new Map\b/m;
-const TTL_WORD = /\b(?:\w*TTL\w*|\w*[tT]tl\w*|expiresAt)\b/;
+const MODULE_MAP =
+  /^(?:export\s+)?(?:const|let)\s+\w+\s*(?::[^=\n]+)?=\s*new Map\b/m;
+const TTL_WORD =
+  /\b(?:\w*TTL\w*|\w*[tT]tl\w*|expiresAt)\b/;
 
-function count(): { total: number; files: string[] } {
-  const files = globSync('{app,lib,server,features}/**/*.{ts,tsx}').filter(
-    (f) =>
-      !/node_modules|__tests__|\.test\.|routeTree\.gen|^lib\/cached\.server\.ts$|generated|^features\/[^/]+\/ui\//.test(f),
-  );
-  const hits: string[] = [];
+function count(): {
+  total: number;
+  files: string[];
+} {
+  const files =
+    globSync(
+      '{app,lib,server,features}/**/*.{ts,tsx}',
+    ).filter(
+      (
+        f,
+      ) =>
+        !/node_modules|__tests__|\.test\.|routeTree\.gen|^lib\/cached\.server\.ts$|generated|^features\/[^/]+\/ui\//.test(
+          f,
+        ),
+    );
+  const hits: string[] =
+    [];
   for (const f of files) {
-    const src = readFileSync(f, 'utf8');
-    if (MODULE_MAP.test(src) && TTL_WORD.test(src)) hits.push(f);
+    const src =
+      readFileSync(
+        f,
+        'utf8',
+      );
+    if (
+      MODULE_MAP.test(
+        src,
+      ) &&
+      TTL_WORD.test(
+        src,
+      )
+    )
+      hits.push(
+        f,
+      );
   }
   hits.sort();
-  return { total: hits.length, files: hits };
+  return {
+    total:
+      hits.length,
+    files:
+      hits,
+  };
 }
 
 describe('ad-hoc TTL map ratchet', () => {
   it('does not grow and is lowered as it shrinks', () => {
-    const { total, files } = count();
+    const {
+      total,
+      files,
+    } =
+      count();
     expect(
       total,
       `module-level Map + TTL files: ${total}, baseline ${BASELINE}.\n` +
-        (total > BASELINE
+        (total >
+        BASELINE
           ? "  A new hand-rolled TTL map: use cached()/lruL1() from '@/lib/cached.server' (see lib/CLAUDE.md §Caching).\n" +
             `  Files: ${files.join(', ')}`
           : `  You migrated some: lower BASELINE in this file to ${total}.`),
-    ).toBe(BASELINE);
+    ).toBe(
+      BASELINE,
+    );
   });
 });

@@ -1,62 +1,136 @@
-import { readJson, writeJson } from '@/lib/core/persist';
-import type { SaveFile, GameState } from './types';
+import {
+  readJson,
+  writeJson,
+} from '@/lib/core/persist';
+import type {
+  SaveFile,
+  GameState,
+} from './types';
 import { api } from '@/lib/contract/client';
-import { loadVersecraftSaveApi, saveVersecraftApi } from './versecraft.contract';
+import {
+  loadVersecraftSaveApi,
+  saveVersecraftApi,
+} from './versecraft.contract';
 
-const SAVE_KEY_PREFIX = 'versecraft-save-';
-const GAME_VERSION = '0.1.0';
+const SAVE_KEY_PREFIX =
+  'versecraft-save-';
+const GAME_VERSION =
+  '0.1.0';
 
-export function saveGame(state: GameState, slotId: number): boolean {
+export function saveGame(
+  state: GameState,
+  slotId: number,
+): boolean {
   try {
-    const { currentPoemScore, screenStack, ...savableState } = state;
-    const saveFile: SaveFile = {
-      version: GAME_VERSION,
-      slotId,
-      timestamp: Date.now(),
-      playtime: state.playtime,
-      state: savableState,
-      chapterTitle: state.currentChapter,
-      playerName: state.settings.playerName,
-    };
-    return writeJson(`${SAVE_KEY_PREFIX}${slotId}`, saveFile);
+    const {
+      currentPoemScore,
+      screenStack,
+      ...savableState
+    } =
+      state;
+    const saveFile: SaveFile =
+      {
+        version:
+          GAME_VERSION,
+        slotId,
+        timestamp:
+          Date.now(),
+        playtime:
+          state.playtime,
+        state:
+          savableState,
+        chapterTitle:
+          state.currentChapter,
+        playerName:
+          state
+            .settings
+            .playerName,
+      };
+    return writeJson(
+      `${SAVE_KEY_PREFIX}${slotId}`,
+      saveFile,
+    );
   } catch {
     return false;
   }
 }
 
-export function loadGame(slotId: number): SaveFile | null {
-  return readJson<SaveFile | null>(`${SAVE_KEY_PREFIX}${slotId}`, null);
+export function loadGame(
+  slotId: number,
+): SaveFile | null {
+  return readJson<SaveFile | null>(
+    `${SAVE_KEY_PREFIX}${slotId}`,
+    null,
+  );
 }
 
-export function deleteSave(slotId: number): void {
+export function deleteSave(
+  slotId: number,
+): void {
   try {
-    localStorage.removeItem(`${SAVE_KEY_PREFIX}${slotId}`);
+    localStorage.removeItem(
+      `${SAVE_KEY_PREFIX}${slotId}`,
+    );
   } catch {
     /* private mode / blocked storage */
   }
 }
 
 export function getAllSaves(): (SaveFile | null)[] {
-  const saves: (SaveFile | null)[] = [];
-  for (let i = 0; i < 10; i++) {
-    saves.push(loadGame(i));
+  const saves: (SaveFile | null)[] =
+    [];
+  for (
+    let i = 0;
+    i <
+    10;
+    i++
+  ) {
+    saves.push(
+      loadGame(
+        i,
+      ),
+    );
   }
   return saves;
 }
 
-export function autoSave(state: GameState): boolean {
-  return saveGame(state, 0);
+export function autoSave(
+  state: GameState,
+): boolean {
+  return saveGame(
+    state,
+    0,
+  );
 }
 
-export function formatPlaytime(seconds: number): string {
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  if (hrs > 0) return `${hrs}h ${mins}m`;
+export function formatPlaytime(
+  seconds: number,
+): string {
+  const hrs =
+    Math.floor(
+      seconds /
+        3600,
+    );
+  const mins =
+    Math.floor(
+      (seconds %
+        3600) /
+        60,
+    );
+  if (
+    hrs >
+    0
+  )
+    return `${hrs}h ${mins}m`;
   return `${mins}m`;
 }
 
-export function formatTimestamp(ts: number): string {
-  return new Date(ts).toLocaleString();
+export function formatTimestamp(
+  ts: number,
+): string {
+  return new Date(
+    ts,
+  ).toLocaleString();
 }
 
 // ─── Database Persistence (for logged-in users) ─────────────────────────────
@@ -83,24 +157,58 @@ export interface DbLoadResponse {
   } | null;
 }
 
-export async function dbSave(state: GameState): Promise<boolean> {
+export async function dbSave(
+  state: GameState,
+): Promise<boolean> {
   try {
-    const { currentPoemScore, screenStack, ...savableState } = state;
+    const {
+      currentPoemScore,
+      screenStack,
+      ...savableState
+    } =
+      state;
     void currentPoemScore;
     void screenStack;
-    const payload: DbSavePayload = {
-      saveData: savableState,
-      progress: {
-        completedChapters: state.completedChapters,
-        unlockedEndings: [],  // TODO: track in state
-        completedRoutes: Object.entries(state.affinity)
-          .filter(([, a]) => a.routeCompleted)
-          .map(([id]) => id),
-        totalPoemsWritten: state.totalPoemsWritten,
-        totalPlaytime: state.playtime,
+    const payload: DbSavePayload =
+      {
+        saveData:
+          savableState,
+        progress:
+          {
+            completedChapters:
+              state.completedChapters,
+            unlockedEndings:
+              [], // TODO: track in state
+            completedRoutes:
+              Object.entries(
+                state.affinity,
+              )
+                .filter(
+                  ([
+                    ,
+                    a,
+                  ]) =>
+                    a.routeCompleted,
+                )
+                .map(
+                  ([
+                    id,
+                  ]) =>
+                    id,
+                ),
+            totalPoemsWritten:
+              state.totalPoemsWritten,
+            totalPlaytime:
+              state.playtime,
+          },
+      };
+    await api(
+      saveVersecraftApi,
+      {
+        body: payload,
+        timeoutMs: 20000,
       },
-    };
-    await api(saveVersecraftApi, { body: payload, timeoutMs: 20000 });
+    );
     return true;
   } catch {
     return false;
@@ -109,7 +217,12 @@ export async function dbSave(state: GameState): Promise<boolean> {
 
 export async function dbLoad(): Promise<DbLoadResponse | null> {
   try {
-    return await api(loadVersecraftSaveApi, { timeoutMs: 20000 });
+    return await api(
+      loadVersecraftSaveApi,
+      {
+        timeoutMs: 20000,
+      },
+    );
   } catch {
     return null;
   }

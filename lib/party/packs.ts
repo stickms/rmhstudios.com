@@ -1,7 +1,10 @@
 /** Games a community pack can target. Prompt format = one plain-text prompt per line. */
 
 export type { CreatePackInput } from './packs-schema';
-export const PACK_GAMES = ['wit-war'] as const;
+export const PACK_GAMES =
+  [
+    'wit-war',
+  ] as const;
 export const PACK_MIN_PROMPTS = 12;
 export const PACK_MAX_PROMPTS = 60;
 export const PACK_CODE_LEN = 6;
@@ -9,19 +12,42 @@ export const PACK_CODE_LEN = 6;
 export const PACK_AUTOHIDE_REPORTS = 3;
 export const MAX_PACKS_PER_MEMBER = 10;
 /** No 0/O/1/I so a code read off a screen is unambiguous. */
-export const PACK_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const PACK_CODE_ALPHABET =
+  'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 /** Case-insensitive de-duplication; returns null when fewer than the minimum remain. */
-export function normalizePrompts(prompts: string[]): string[] | null {
-  const seen = new Set<string>();
-  const out: string[] = [];
+export function normalizePrompts(
+  prompts: string[],
+):
+  | string[]
+  | null {
+  const seen =
+    new Set<string>();
+  const out: string[] =
+    [];
   for (const p of prompts) {
-    const k = p.trim().toLowerCase();
-    if (!k || seen.has(k)) continue;
-    seen.add(k);
-    out.push(p.trim());
+    const k =
+      p
+        .trim()
+        .toLowerCase();
+    if (
+      !k ||
+      seen.has(
+        k,
+      )
+    )
+      continue;
+    seen.add(
+      k,
+    );
+    out.push(
+      p.trim(),
+    );
   }
-  return out.length >= PACK_MIN_PROMPTS ? out : null;
+  return out.length >=
+    PACK_MIN_PROMPTS
+    ? out
+    : null;
 }
 
 export interface PackView {
@@ -33,5 +59,12 @@ export interface PackView {
   featured: boolean;
   hidden?: boolean;
   mine: boolean;
-  author: { name: string | null; handle: string | null } | null;
+  author: {
+    name:
+      | string
+      | null;
+    handle:
+      | string
+      | null;
+  } | null;
 }

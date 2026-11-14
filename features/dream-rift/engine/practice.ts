@@ -1,9 +1,14 @@
-import { readJson, writeJson } from '@/lib/core/persist';
+import {
+  readJson,
+  writeJson,
+} from '@/lib/core/persist';
 /**
  * Spell practice bookkeeping (local storage only). A card becomes practicable
  * once a real run has met it; practice attempts never touch scores or boards.
  */
-export type PracticeBoss = 'mid' | 'boss';
+export type PracticeBoss =
+  | 'mid'
+  | 'boss';
 export interface PracticeTarget {
   stage: number;
   boss: PracticeBoss;
@@ -11,40 +16,121 @@ export interface PracticeTarget {
 }
 export interface PracticeOutcome extends PracticeTarget {
   captured: boolean;
-  reason: 'captured' | 'timeout' | 'died';
+  reason:
+    | 'captured'
+    | 'timeout'
+    | 'died';
 }
 interface PracticeData {
-  reached: Record<string, 1>;
-  stats: Record<string, { attempts: number; captures: number }>;
+  reached: Record<
+    string,
+    1
+  >;
+  stats: Record<
+    string,
+    {
+      attempts: number;
+      captures: number;
+    }
+  >;
 }
 
-const KEY = 'dr.practice.v1';
-export const practiceId = (t: PracticeTarget): string => `${t.stage}.${t.boss}.${t.card}`;
+const KEY =
+  'dr.practice.v1';
+export const practiceId =
+  (
+    t: PracticeTarget,
+  ): string =>
+    `${t.stage}.${t.boss}.${t.card}`;
 
 export function loadPractice(): PracticeData {
-  const raw = readJson<PracticeData | null>(KEY, null);
-  if (raw && typeof raw === 'object') return { reached: raw.reached ?? {}, stats: raw.stats ?? {} };
-  return { reached: {}, stats: {} };
+  const raw =
+    readJson<PracticeData | null>(
+      KEY,
+      null,
+    );
+  if (
+    raw &&
+    typeof raw ===
+      'object'
+  )
+    return {
+      reached:
+        raw.reached ??
+        {},
+      stats:
+        raw.stats ??
+        {},
+    };
+  return {
+    reached:
+      {},
+    stats:
+      {},
+  };
 }
 
-function save(d: PracticeData): void {
-  writeJson(KEY, d);
+function save(
+  d: PracticeData,
+): void {
+  writeJson(
+    KEY,
+    d,
+  );
 }
 
-export function recordReached(t: PracticeTarget): void {
-  const d = loadPractice();
-  const id = practiceId(t);
-  if (d.reached[id]) return;
-  d.reached[id] = 1;
-  save(d);
+export function recordReached(
+  t: PracticeTarget,
+): void {
+  const d =
+    loadPractice();
+  const id =
+    practiceId(
+      t,
+    );
+  if (
+    d
+      .reached[
+      id
+    ]
+  )
+    return;
+  d.reached[
+    id
+  ] =
+    1;
+  save(
+    d,
+  );
 }
 
-export function recordAttempt(o: PracticeOutcome): void {
-  const d = loadPractice();
-  const id = practiceId(o);
-  const s = d.stats[id] ?? { attempts: 0, captures: 0 };
+export function recordAttempt(
+  o: PracticeOutcome,
+): void {
+  const d =
+    loadPractice();
+  const id =
+    practiceId(
+      o,
+    );
+  const s =
+    d
+      .stats[
+      id
+    ] ?? {
+      attempts: 0,
+      captures: 0,
+    };
   s.attempts++;
-  if (o.captured) s.captures++;
-  d.stats[id] = s;
-  save(d);
+  if (
+    o.captured
+  )
+    s.captures++;
+  d.stats[
+    id
+  ] =
+    s;
+  save(
+    d,
+  );
 }

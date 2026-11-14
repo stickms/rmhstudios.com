@@ -19,7 +19,13 @@
 
 // ─── Phase Type ──────────────────────────────────────────────────
 
-export type UEPhase = 'SETUP' | 'WRITE' | 'EDIT' | 'READING' | 'REVIEW' | 'REVEAL';
+export type UEPhase =
+  | 'SETUP'
+  | 'WRITE'
+  | 'EDIT'
+  | 'READING'
+  | 'REVIEW'
+  | 'REVEAL';
 
 // ─── Core State Types ────────────────────────────────────────────
 
@@ -82,36 +88,60 @@ export interface UndercoverEditorState {
   /** Current phase. */
   phase: UEPhase;
   /** One story per player, indexed by storyId (= ownerUserId). */
-  stories: Map<string, ParallelStory>;
+  stories: Map<
+    string,
+    ParallelStory
+  >;
   /**
    * Editor assignment map: editorUserId → storyId they edit.
    * Each player edits exactly one story (not their own).
    */
-  editorAssignments: Map<string, string>;
+  editorAssignments: Map<
+    string,
+    string
+  >;
   /**
    * Round-robin write assignment for the current write round.
    * Map<playerId, storyId> — which story each player writes for this round.
    */
-  writeAssignments: Map<string, string>;
+  writeAssignments: Map<
+    string,
+    string
+  >;
   /**
    * Per-round write submissions. Map<playerId, sentenceText>.
    * Only one story per player per round.
    */
-  roundSubmissions: Map<string, string>;
+  roundSubmissions: Map<
+    string,
+    string
+  >;
   /**
    * Per-round edit status. Map<editorUserId, boolean>.
    * Tracks which editors have completed their edit for this round.
    */
-  roundEditsDone: Map<string, boolean>;
+  roundEditsDone: Map<
+    string,
+    boolean
+  >;
   /**
    * Matching guesses during REVIEW phase.
    * Map<guesserId, Map<storyId, guessedEditorUserId>>.
    */
-  matchGuesses: Map<string, Map<string, string>>;
+  matchGuesses: Map<
+    string,
+    Map<
+      string,
+      string
+    >
+  >;
   /** Players who have confirmed their matching is done. */
   matchLockedIn: Set<string>;
   /** Player scores. */
-  playerScores: Map<string, number>;
+  playerScores: Map<
+    string,
+    number
+  >;
   /** Phase timing. */
   phaseStartedAt: number;
   phaseEndsAt: number;
@@ -197,7 +227,10 @@ export interface ScoreResult {
   userId: string;
   userName: string;
   score: number;
-  breakdown: Record<string, number>;
+  breakdown: Record<
+    string,
+    number
+  >;
 }
 
 /** A player info entry. */
@@ -210,6 +243,9 @@ export interface PlayerInfo {
 
 export interface GameLogAction {
   type: string;
-  payload: Record<string, unknown>;
+  payload: Record<
+    string,
+    unknown
+  >;
   timestamp: number;
 }

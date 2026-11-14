@@ -34,7 +34,9 @@ export interface EntitySpriteSet {
 }
 
 /** Create a fresh animation state for a given animation. */
-export function createAnimState(animation: SpriteAnimation): AnimationState {
+export function createAnimState(
+  animation: SpriteAnimation,
+): AnimationState {
   return {
     animation,
     currentFrame: 0,
@@ -44,21 +46,44 @@ export function createAnimState(animation: SpriteAnimation): AnimationState {
 }
 
 /** Advance the animation by `dt` seconds. */
-export function updateAnimation(state: AnimationState, dt: number): void {
-  if (state.finished) return;
+export function updateAnimation(
+  state: AnimationState,
+  dt: number,
+): void {
+  if (
+    state.finished
+  )
+    return;
 
-  state.elapsed += dt;
-  const { frameDuration, frames, loop } = state.animation;
+  state.elapsed +=
+    dt;
+  const {
+    frameDuration,
+    frames,
+    loop,
+  } =
+    state.animation;
 
-  while (state.elapsed >= frameDuration) {
-    state.elapsed -= frameDuration;
+  while (
+    state.elapsed >=
+    frameDuration
+  ) {
+    state.elapsed -=
+      frameDuration;
     state.currentFrame++;
 
-    if (state.currentFrame >= frames.length) {
-      if (loop) {
+    if (
+      state.currentFrame >=
+      frames.length
+    ) {
+      if (
+        loop
+      ) {
         state.currentFrame = 0;
       } else {
-        state.currentFrame = frames.length - 1;
+        state.currentFrame =
+          frames.length -
+          1;
         state.finished = true;
         break;
       }
@@ -67,8 +92,18 @@ export function updateAnimation(state: AnimationState, dt: number): void {
 }
 
 /** Get the current frame index from the sprite sheet. */
-export function getCurrentFrameIndex(state: AnimationState): number {
-  return state.animation.frames[state.currentFrame] ?? 0;
+export function getCurrentFrameIndex(
+  state: AnimationState,
+): number {
+  return (
+    state
+      .animation
+      .frames[
+      state
+        .currentFrame
+    ] ??
+    0
+  );
 }
 
 /**
@@ -78,8 +113,22 @@ export function getCurrentFrameIndex(state: AnimationState): number {
 export function getFrameRect(
   sheet: SpriteSheet,
   frameIndex: number,
-): { sx: number; sy: number; sw: number; sh: number } {
-  return frameRectInto({ sx: 0, sy: 0, sw: 0, sh: 0 }, sheet, frameIndex);
+): {
+  sx: number;
+  sy: number;
+  sw: number;
+  sh: number;
+} {
+  return frameRectInto(
+    {
+      sx: 0,
+      sy: 0,
+      sw: 0,
+      sh: 0,
+    },
+    sheet,
+    frameIndex,
+  );
 }
 
 /**
@@ -87,16 +136,38 @@ export function getFrameRect(
  * projectile and pickup every frame and used to allocate a fresh rect each time; they share one scratch instead.
  */
 export function frameRectInto(
-  out: { sx: number; sy: number; sw: number; sh: number },
+  out: {
+    sx: number;
+    sy: number;
+    sw: number;
+    sh: number;
+  },
   sheet: SpriteSheet,
   frameIndex: number,
-): { sx: number; sy: number; sw: number; sh: number } {
-  const col = frameIndex % sheet.cols;
-  const row = Math.floor(frameIndex / sheet.cols);
-  out.sx = col * sheet.frameWidth;
-  out.sy = row * sheet.frameHeight;
-  out.sw = sheet.frameWidth;
-  out.sh = sheet.frameHeight;
+): {
+  sx: number;
+  sy: number;
+  sw: number;
+  sh: number;
+} {
+  const col =
+    frameIndex %
+    sheet.cols;
+  const row =
+    Math.floor(
+      frameIndex /
+        sheet.cols,
+    );
+  out.sx =
+    col *
+    sheet.frameWidth;
+  out.sy =
+    row *
+    sheet.frameHeight;
+  out.sw =
+    sheet.frameWidth;
+  out.sh =
+    sheet.frameHeight;
   return out;
 }
 
@@ -109,20 +180,55 @@ export function pickDirectionalAnim(
   vx: number,
   vy: number,
   isMoving: boolean,
-): { animation: SpriteAnimation; flipX: boolean } {
-  if (!isMoving) {
-    return { animation: sprites.idle, flipX: false };
+): {
+  animation: SpriteAnimation;
+  flipX: boolean;
+} {
+  if (
+    !isMoving
+  ) {
+    return {
+      animation:
+        sprites.idle,
+      flipX: false,
+    };
   }
 
-  const absX = Math.abs(vx);
-  const absY = Math.abs(vy);
+  const absX =
+    Math.abs(
+      vx,
+    );
+  const absY =
+    Math.abs(
+      vy,
+    );
 
   // Prefer horizontal if it dominates, otherwise vertical
-  if (absX > absY) {
-    return { animation: sprites.walkSide, flipX: vx < 0 };
-  } else if (vy > 0) {
-    return { animation: sprites.walkDown, flipX: false };
+  if (
+    absX >
+    absY
+  ) {
+    return {
+      animation:
+        sprites.walkSide,
+      flipX:
+        vx <
+        0,
+    };
+  } else if (
+    vy >
+    0
+  ) {
+    return {
+      animation:
+        sprites.walkDown,
+      flipX: false,
+    };
   } else {
-    return { animation: sprites.walkUp, flipX: false };
+    return {
+      animation:
+        sprites.walkUp,
+      flipX: false,
+    };
   }
 }

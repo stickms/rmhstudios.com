@@ -9,79 +9,203 @@
 import React from 'react';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { resolve } from 'node:path';
 
-const h = React.createElement;
-const ACCENT = '#9b7ad8';
-const FG = '#0b0d12';
+const h =
+  React.createElement;
+const ACCENT =
+  '#9b7ad8';
+const FG =
+  '#0b0d12';
 
 // Geist 800 from public/fonts/og (built by scripts/gen-og-fonts.py) -- no network.
 async function loadFont(): Promise<Buffer> {
-  return readFileSync(resolve(process.cwd(), 'public', 'fonts', 'og', 'Geist-800.ttf'));
+  return readFileSync(
+    resolve(
+      process.cwd(),
+      'public',
+      'fonts',
+      'og',
+      'Geist-800.ttf',
+    ),
+  );
 }
 
 /** @param inset padding fraction (0 = full-bleed maskable, >0 = rounded badge). */
-function icon(size: number, inset: number, font: Buffer) {
-  const pad = Math.round(size * inset);
+function icon(
+  size: number,
+  inset: number,
+  font: Buffer,
+) {
+  const pad =
+    Math.round(
+      size *
+        inset,
+    );
   return satori(
     h(
       'div',
       {
-        style: {
-          width: `${size}px`,
-          height: `${size}px`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: inset > 0 ? '#0b0d12' : ACCENT,
-          padding: `${pad}px`,
-        },
+        style:
+          {
+            width: `${size}px`,
+            height: `${size}px`,
+            display:
+              'flex',
+            alignItems:
+              'center',
+            justifyContent:
+              'center',
+            background:
+              inset >
+              0
+                ? '#0b0d12'
+                : ACCENT,
+            padding: `${pad}px`,
+          },
       },
       h(
         'div',
         {
-          style: {
-            width: `${size - pad * 2}px`,
-            height: `${size - pad * 2}px`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: ACCENT,
-            color: FG,
-            borderRadius: inset > 0 ? `${Math.round(size * 0.22)}px` : '0px',
-            fontSize: `${Math.round(size * 0.58)}px`,
-            fontWeight: 800,
-            fontFamily: 'Geist',
-          },
+          style:
+            {
+              width: `${size - pad * 2}px`,
+              height: `${size - pad * 2}px`,
+              display:
+                'flex',
+              alignItems:
+                'center',
+              justifyContent:
+                'center',
+              background:
+                ACCENT,
+              color:
+                FG,
+              borderRadius:
+                inset >
+                0
+                  ? `${Math.round(size * 0.22)}px`
+                  : '0px',
+              fontSize: `${Math.round(size * 0.58)}px`,
+              fontWeight: 800,
+              fontFamily:
+                'Geist',
+            },
         },
         'R',
       ),
     ),
-    { width: size, height: size, fonts: [{ name: 'Geist', data: font, weight: 800, style: 'normal' }] },
+    {
+      width:
+        size,
+      height:
+        size,
+      fonts:
+        [
+          {
+            name: 'Geist',
+            data: font,
+            weight: 800,
+            style:
+              'normal',
+          },
+        ],
+    },
   );
 }
 
 async function main() {
-  const font = await loadFont();
-  const dir = resolve(process.cwd(), 'public/images/icons');
-  mkdirSync(dir, { recursive: true });
+  const font =
+    await loadFont();
+  const dir =
+    resolve(
+      process.cwd(),
+      'public/images/icons',
+    );
+  mkdirSync(
+    dir,
+    {
+      recursive: true,
+    },
+  );
 
-  const targets: Array<[string, number, number]> = [
-    ['icon-192.png', 192, 0.12],
-    ['icon-512.png', 512, 0.12],
-    ['icon-maskable-512.png', 512, 0], // full-bleed for maskable safe zone
-  ];
+  const targets: Array<
+    [
+      string,
+      number,
+      number,
+    ]
+  > =
+    [
+      [
+        'icon-192.png',
+        192,
+        0.12,
+      ],
+      [
+        'icon-512.png',
+        512,
+        0.12,
+      ],
+      [
+        'icon-maskable-512.png',
+        512,
+        0,
+      ], // full-bleed for maskable safe zone
+    ];
 
-  for (const [name, size, inset] of targets) {
-    const svg = await icon(size, inset, font);
-    const png = new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng();
-    writeFileSync(resolve(dir, name), png);
-    console.warn(`wrote ${name} (${png.length} bytes)`);
+  for (const [
+    name,
+    size,
+    inset,
+  ] of targets) {
+    const svg =
+      await icon(
+        size,
+        inset,
+        font,
+      );
+    const png =
+      new Resvg(
+        svg,
+        {
+          fitTo:
+            {
+              mode: 'width',
+              value:
+                size,
+            },
+        },
+      )
+        .render()
+        .asPng();
+    writeFileSync(
+      resolve(
+        dir,
+        name,
+      ),
+      png,
+    );
+    console.warn(
+      `wrote ${name} (${png.length} bytes)`,
+    );
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch(
+  (
+    err,
+  ) => {
+    console.error(
+      err,
+    );
+    process.exit(
+      1,
+    );
+  },
+);

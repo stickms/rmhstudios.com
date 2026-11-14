@@ -23,20 +23,33 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { SpineItem, SpineStation } from '@/components/ui/spine';
-import type { SearchHit, SearchKind } from '@/lib/search/types';
+import {
+  SpineItem,
+  SpineStation,
+} from '@/components/ui/spine';
+import type {
+  SearchHit,
+  SearchKind,
+} from '@/lib/search/types';
 
-export const KIND_ICON: Record<SearchKind, LucideIcon> = {
-  person: User,
-  post: MessageSquare,
-  build: Package,
-  blog: BookOpen,
-  news: Newspaper,
-  library: Library,
-  game: Gamepad2,
-  app: LayoutGrid,
-  page: Compass,
-};
+export const KIND_ICON: Record<
+  SearchKind,
+  LucideIcon
+> =
+  {
+    person:
+      User,
+    post: MessageSquare,
+    build:
+      Package,
+    blog: BookOpen,
+    news: Newspaper,
+    library:
+      Library,
+    game: Gamepad2,
+    app: LayoutGrid,
+    page: Compass,
+  };
 
 /**
  * Kind labels, as one static `t()` call each.
@@ -46,94 +59,287 @@ export const KIND_ICON: Record<SearchKind, LucideIcon> = {
  * serves the English `defaultValue` forever. Spelling the calls out is what
  * makes them extractable.
  */
-export function useKindLabel(): (kind: SearchKind) => string {
-  const { t } = useTranslation('feed');
-  return (kind) => {
-    switch (kind) {
+export function useKindLabel(): (
+  kind: SearchKind,
+) => string {
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  return (
+    kind,
+  ) => {
+    switch (
+      kind
+    ) {
       case 'person':
-        return t('kind-person', { defaultValue: 'Person' });
+        return t(
+          'kind-person',
+          {
+            defaultValue:
+              'Person',
+          },
+        );
       case 'post':
-        return t('kind-post', { defaultValue: 'Post' });
+        return t(
+          'kind-post',
+          {
+            defaultValue:
+              'Post',
+          },
+        );
       case 'build':
-        return t('kind-build', { defaultValue: 'Build' });
+        return t(
+          'kind-build',
+          {
+            defaultValue:
+              'Build',
+          },
+        );
       case 'blog':
-        return t('kind-blog', { defaultValue: 'Blog' });
+        return t(
+          'kind-blog',
+          {
+            defaultValue:
+              'Blog',
+          },
+        );
       case 'news':
-        return t('kind-news', { defaultValue: 'News' });
+        return t(
+          'kind-news',
+          {
+            defaultValue:
+              'News',
+          },
+        );
       case 'library':
-        return t('kind-library', { defaultValue: 'Book' });
+        return t(
+          'kind-library',
+          {
+            defaultValue:
+              'Book',
+          },
+        );
       case 'game':
-        return t('kind-game', { defaultValue: 'Game' });
+        return t(
+          'kind-game',
+          {
+            defaultValue:
+              'Game',
+          },
+        );
       case 'app':
-        return t('kind-app', { defaultValue: 'App' });
+        return t(
+          'kind-app',
+          {
+            defaultValue:
+              'App',
+          },
+        );
       case 'page':
-        return t('kind-page', { defaultValue: 'Page' });
+        return t(
+          'kind-page',
+          {
+            defaultValue:
+              'Page',
+          },
+        );
     }
   };
 }
 
 /** Plural section headings for the per-kind groups on a focused tab. */
-export function useKindHeading(): (kind: SearchKind) => string {
-  const { t } = useTranslation('feed');
-  return (kind) => {
-    switch (kind) {
+export function useKindHeading(): (
+  kind: SearchKind,
+) => string {
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  return (
+    kind,
+  ) => {
+    switch (
+      kind
+    ) {
       case 'person':
-        return t('tab-people', { defaultValue: 'People' });
+        return t(
+          'tab-people',
+          {
+            defaultValue:
+              'People',
+          },
+        );
       case 'post':
-        return t('tab-posts', { defaultValue: 'Posts' });
+        return t(
+          'tab-posts',
+          {
+            defaultValue:
+              'Posts',
+          },
+        );
       case 'build':
-        return t('tab-builds', { defaultValue: 'Builds' });
+        return t(
+          'tab-builds',
+          {
+            defaultValue:
+              'Builds',
+          },
+        );
       case 'blog':
-        return t('tab-blog', { defaultValue: 'Blog' });
+        return t(
+          'tab-blog',
+          {
+            defaultValue:
+              'Blog',
+          },
+        );
       case 'news':
-        return t('heading-news', { defaultValue: 'News' });
+        return t(
+          'heading-news',
+          {
+            defaultValue:
+              'News',
+          },
+        );
       case 'library':
-        return t('heading-library', { defaultValue: 'Library' });
+        return t(
+          'heading-library',
+          {
+            defaultValue:
+              'Library',
+          },
+        );
       case 'game':
-        return t('heading-games', { defaultValue: 'Games' });
+        return t(
+          'heading-games',
+          {
+            defaultValue:
+              'Games',
+          },
+        );
       case 'app':
-        return t('heading-apps', { defaultValue: 'Apps' });
+        return t(
+          'heading-apps',
+          {
+            defaultValue:
+              'Apps',
+          },
+        );
       case 'page':
-        return t('heading-pages', { defaultValue: 'Pages' });
+        return t(
+          'heading-pages',
+          {
+            defaultValue:
+              'Pages',
+          },
+        );
     }
   };
 }
 
 /** Kinds identified by a face rather than a glyph. */
-export const AVATAR_KINDS: ReadonlySet<SearchKind> = new Set<SearchKind>(['person', 'post']);
+export const AVATAR_KINDS: ReadonlySet<SearchKind> =
+  new Set<SearchKind>(
+    [
+      'person',
+      'post',
+    ],
+  );
 
-const ROW_CLASS = 'block text-start';
+const ROW_CLASS =
+  'block text-start';
 
 /**
  * One result: a title, its kind in `t-meta`, a line and a snippet, as a row on the spine (Steel section 10, Explore).
  * No avatar and no icon disc: what it is, is said in words.
  */
-export function SearchHitRow({ hit, showKind = true }: { hit: SearchHit; showKind?: boolean }) {
-  const kindLabel = useKindLabel();
-  const external = Boolean(hit.meta?.external) || /^https?:\/\//.test(hit.href);
+export function SearchHitRow({
+  hit,
+  showKind = true,
+}: {
+  hit: SearchHit;
+  showKind?: boolean;
+}) {
+  const kindLabel =
+    useKindLabel();
+  const external =
+    Boolean(
+      hit
+        .meta
+        ?.external,
+    ) ||
+    /^https?:\/\//.test(
+      hit.href,
+    );
 
-  const body = (
-    <>
-      <div className="flex items-baseline gap-2">
-        <p className="t-body truncate font-semibold">{hit.title}</p>
-        {showKind && <span className="t-meta shrink-0">{kindLabel(hit.kind)}</span>}
-      </div>
-      {hit.subtitle && <p className="t-meta truncate">{hit.subtitle}</p>}
-      {hit.snippet && (
-        <p className="t-body mt-0.5 line-clamp-2 text-site-text-muted">{hit.snippet}</p>
-      )}
-    </>
-  );
+  const body =
+    (
+      <>
+        <div className="flex items-baseline gap-2">
+          <p className="t-body truncate font-semibold">
+            {
+              hit.title
+            }
+          </p>
+          {showKind && (
+            <span className="t-meta shrink-0">
+              {kindLabel(
+                hit.kind,
+              )}
+            </span>
+          )}
+        </div>
+        {hit.subtitle && (
+          <p className="t-meta truncate">
+            {
+              hit.subtitle
+            }
+          </p>
+        )}
+        {hit.snippet && (
+          <p className="t-body mt-0.5 line-clamp-2 text-site-text-muted">
+            {
+              hit.snippet
+            }
+          </p>
+        )}
+      </>
+    );
 
   return (
     <SpineItem>
       {external ? (
-        <a href={hit.href} target="_blank" rel="noopener noreferrer" className={ROW_CLASS}>
-          {body}
+        <a
+          href={
+            hit.href
+          }
+          target="_blank"
+          rel="noopener noreferrer"
+          className={
+            ROW_CLASS
+          }
+        >
+          {
+            body
+          }
         </a>
       ) : (
-        <Link to={hit.href as string} className={ROW_CLASS}>
-          {body}
+        <Link
+          to={
+            hit.href as string
+          }
+          className={
+            ROW_CLASS
+          }
+        >
+          {
+            body
+          }
         </Link>
       )}
     </SpineItem>
@@ -155,13 +361,41 @@ export function SearchHitSection({
   showKind?: boolean;
   className?: string;
 }) {
-  if (hits.length === 0) return null;
+  if (
+    hits.length ===
+    0
+  )
+    return null;
   return (
-    <section className={className}>
-      {heading && <SpineStation>{heading}</SpineStation>}
-      {hits.map((hit) => (
-        <SearchHitRow key={hit.key} hit={hit} showKind={showKind} />
-      ))}
+    <section
+      className={
+        className
+      }
+    >
+      {heading && (
+        <SpineStation>
+          {
+            heading
+          }
+        </SpineStation>
+      )}
+      {hits.map(
+        (
+          hit,
+        ) => (
+          <SearchHitRow
+            key={
+              hit.key
+            }
+            hit={
+              hit
+            }
+            showKind={
+              showKind
+            }
+          />
+        ),
+      )}
     </section>
   );
 }

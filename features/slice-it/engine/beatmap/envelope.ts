@@ -57,7 +57,14 @@ export function computeEnvelope(
   sampleRate: number,
   rate = ENVELOPE_RATE,
 ): PeakEnvelope {
-  const perBucket = Math.max(1, Math.round(sampleRate / rate));
+  const perBucket =
+    Math.max(
+      1,
+      Math.round(
+        sampleRate /
+          rate,
+      ),
+    );
   // The rate the buckets are really at, which is the requested one only when the
   // sample rate divides it. It does not: the analysis signal is 22 050 Hz and
   // `perBucket` rounds 110.25 to 110, so the true rate is 200.4545 and a reader
@@ -75,35 +82,116 @@ export function computeEnvelope(
   // with the data and every reader already takes it from there, so a stored
   // envelope keeps its old rate (and its old drift) until the song is next
   // analysed, and new ones are simply right.
-  const trueRate = sampleRate > 0 && Number.isFinite(sampleRate) ? sampleRate / perBucket : rate;
-  const buckets = Math.max(0, Math.ceil(samples.length / perBucket));
-  const bytes = new Uint8Array(buckets);
+  const trueRate =
+    sampleRate >
+      0 &&
+    Number.isFinite(
+      sampleRate,
+    )
+      ? sampleRate /
+        perBucket
+      : rate;
+  const buckets =
+    Math.max(
+      0,
+      Math.ceil(
+        samples.length /
+          perBucket,
+      ),
+    );
+  const bytes =
+    new Uint8Array(
+      buckets,
+    );
 
-  for (let b = 0; b < buckets; b++) {
-    const start = b * perBucket;
-    const end = Math.min(samples.length, start + perBucket);
+  for (
+    let b = 0;
+    b <
+    buckets;
+    b++
+  ) {
+    const start =
+      b *
+      perBucket;
+    const end =
+      Math.min(
+        samples.length,
+        start +
+          perBucket,
+      );
     let peak = 0;
-    for (let i = start; i < end; i++) {
-      const value = samples[i] < 0 ? -samples[i] : samples[i];
-      if (value > peak) peak = value;
+    for (
+      let i =
+        start;
+      i <
+      end;
+      i++
+    ) {
+      const value =
+        samples[
+          i
+        ] <
+        0
+          ? -samples[
+              i
+            ]
+          : samples[
+              i
+            ];
+      if (
+        value >
+        peak
+      )
+        peak =
+          value;
     }
     // Clamp rather than normalise by the track maximum: a chart whose waveform
     // rescales itself when a louder section is appended is a chart whose visual
     // landmarks move, and the analysis signal is already peak-normalised by
     // `prepareAudio`. Anything over 1 is clipping and reads as full height.
-    bytes[b] = peak >= 1 ? 255 : Math.round(peak * 255);
+    bytes[
+      b
+    ] =
+      peak >=
+      1
+        ? 255
+        : Math.round(
+            peak *
+              255,
+          );
   }
 
-  return { rate: trueRate, data: bytesToBase64(bytes) };
+  return {
+    rate: trueRate,
+    data: bytesToBase64(
+      bytes,
+    ),
+  };
 }
 
 /** Decode a stored envelope back to bytes. Returns an empty array for junk. */
-export function decodeEnvelope(envelope: PeakEnvelope | null | undefined): Uint8Array {
-  if (!envelope || typeof envelope.data !== 'string') return new Uint8Array(0);
+export function decodeEnvelope(
+  envelope:
+    | PeakEnvelope
+    | null
+    | undefined,
+): Uint8Array {
+  if (
+    !envelope ||
+    typeof envelope.data !==
+      'string'
+  )
+    return new Uint8Array(
+      0,
+    );
   try {
-    return base64ToBytes(envelope.data);
+    return base64ToBytes(
+      envelope.data,
+    );
   } catch {
-    return new Uint8Array(0);
+    return new Uint8Array(
+      0,
+    );
   }
 }
 
@@ -123,15 +211,60 @@ export function envelopePeak(
   fromSeconds: number,
   toSeconds: number,
 ): number {
-  if (bytes.length === 0 || !(rate > 0)) return 0;
-  const start = Math.max(0, Math.floor(fromSeconds * rate));
-  const end = Math.min(bytes.length - 1, Math.ceil(toSeconds * rate));
-  if (end < start) return 0;
+  if (
+    bytes.length ===
+      0 ||
+    !(
+      rate >
+      0
+    )
+  )
+    return 0;
+  const start =
+    Math.max(
+      0,
+      Math.floor(
+        fromSeconds *
+          rate,
+      ),
+    );
+  const end =
+    Math.min(
+      bytes.length -
+        1,
+      Math.ceil(
+        toSeconds *
+          rate,
+      ),
+    );
+  if (
+    end <
+    start
+  )
+    return 0;
   let peak = 0;
-  for (let i = start; i <= end; i++) {
-    if (bytes[i] > peak) peak = bytes[i];
+  for (
+    let i =
+      start;
+    i <=
+    end;
+    i++
+  ) {
+    if (
+      bytes[
+        i
+      ] >
+      peak
+    )
+      peak =
+        bytes[
+          i
+        ];
   }
-  return peak / 255;
+  return (
+    peak /
+    255
+  );
 }
 
 /* ── base64, without Node or the DOM ──────────────────────────────────────────
@@ -142,43 +275,216 @@ export function envelopePeak(
  * this module keeps the dependency-free property the rest of the pipeline has.
  */
 
-const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const B64 =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
-export function bytesToBase64(bytes: Uint8Array): string {
-  const maybeBuffer = (
-    globalThis as { Buffer?: { from(b: Uint8Array): { toString(e: string): string } } }
-  ).Buffer;
-  if (maybeBuffer) return maybeBuffer.from(bytes).toString('base64');
+export function bytesToBase64(
+  bytes: Uint8Array,
+): string {
+  const maybeBuffer =
+    (
+      globalThis as {
+        Buffer?: {
+          from(
+            b: Uint8Array,
+          ): {
+            toString(
+              e: string,
+            ): string;
+          };
+        };
+      }
+    )
+      .Buffer;
+  if (
+    maybeBuffer
+  )
+    return maybeBuffer
+      .from(
+        bytes,
+      )
+      .toString(
+        'base64',
+      );
 
-  let out = '';
-  for (let i = 0; i < bytes.length; i += 3) {
-    const a = bytes[i];
-    const b = i + 1 < bytes.length ? bytes[i + 1] : 0;
-    const c = i + 2 < bytes.length ? bytes[i + 2] : 0;
-    out += B64[a >> 2];
-    out += B64[((a & 3) << 4) | (b >> 4)];
-    out += i + 1 < bytes.length ? B64[((b & 15) << 2) | (c >> 6)] : '=';
-    out += i + 2 < bytes.length ? B64[c & 63] : '=';
+  let out =
+    '';
+  for (
+    let i = 0;
+    i <
+    bytes.length;
+    i += 3
+  ) {
+    const a =
+      bytes[
+        i
+      ];
+    const b =
+      i +
+        1 <
+      bytes.length
+        ? bytes[
+            i +
+              1
+          ]
+        : 0;
+    const c =
+      i +
+        2 <
+      bytes.length
+        ? bytes[
+            i +
+              2
+          ]
+        : 0;
+    out +=
+      B64[
+        a >>
+          2
+      ];
+    out +=
+      B64[
+        ((a &
+          3) <<
+          4) |
+          (b >>
+            4)
+      ];
+    out +=
+      i +
+        1 <
+      bytes.length
+        ? B64[
+            ((b &
+              15) <<
+              2) |
+              (c >>
+                6)
+          ]
+        : '=';
+    out +=
+      i +
+        2 <
+      bytes.length
+        ? B64[
+            c &
+              63
+          ]
+        : '=';
   }
   return out;
 }
 
-export function base64ToBytes(text: string): Uint8Array {
-  const maybeBuffer = (globalThis as { Buffer?: { from(s: string, e: string): Uint8Array } })
-    .Buffer;
-  if (maybeBuffer) return new Uint8Array(maybeBuffer.from(text, 'base64'));
+export function base64ToBytes(
+  text: string,
+): Uint8Array {
+  const maybeBuffer =
+    (
+      globalThis as {
+        Buffer?: {
+          from(
+            s: string,
+            e: string,
+          ): Uint8Array;
+        };
+      }
+    )
+      .Buffer;
+  if (
+    maybeBuffer
+  )
+    return new Uint8Array(
+      maybeBuffer.from(
+        text,
+        'base64',
+      ),
+    );
 
-  const clean = text.replace(/[^A-Za-z0-9+/]/g, '');
-  const out = new Uint8Array(Math.floor((clean.length * 3) / 4));
+  const clean =
+    text.replace(
+      /[^A-Za-z0-9+/]/g,
+      '',
+    );
+  const out =
+    new Uint8Array(
+      Math.floor(
+        (clean.length *
+          3) /
+          4,
+      ),
+    );
   let index = 0;
-  for (let i = 0; i < clean.length; i += 4) {
-    const a = B64.indexOf(clean[i]);
-    const b = B64.indexOf(clean[i + 1]);
-    const c = B64.indexOf(clean[i + 2]);
-    const d = B64.indexOf(clean[i + 3]);
-    if (index < out.length) out[index++] = (a << 2) | (b >> 4);
-    if (index < out.length && c >= 0) out[index++] = ((b & 15) << 4) | (c >> 2);
-    if (index < out.length && d >= 0) out[index++] = ((c & 3) << 6) | d;
+  for (
+    let i = 0;
+    i <
+    clean.length;
+    i += 4
+  ) {
+    const a =
+      B64.indexOf(
+        clean[
+          i
+        ],
+      );
+    const b =
+      B64.indexOf(
+        clean[
+          i +
+            1
+        ],
+      );
+    const c =
+      B64.indexOf(
+        clean[
+          i +
+            2
+        ],
+      );
+    const d =
+      B64.indexOf(
+        clean[
+          i +
+            3
+        ],
+      );
+    if (
+      index <
+      out.length
+    )
+      out[
+        index++
+      ] =
+        (a <<
+          2) |
+        (b >>
+          4);
+    if (
+      index <
+        out.length &&
+      c >=
+        0
+    )
+      out[
+        index++
+      ] =
+        ((b &
+          15) <<
+          4) |
+        (c >>
+          2);
+    if (
+      index <
+        out.length &&
+      d >=
+        0
+    )
+      out[
+        index++
+      ] =
+        ((c &
+          3) <<
+          6) |
+        d;
   }
   return out;
 }

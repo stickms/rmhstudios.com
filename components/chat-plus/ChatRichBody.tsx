@@ -1,10 +1,22 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Coins, Dices, ListChecks, BarChart3 } from 'lucide-react';
+import {
+  Check,
+  Coins,
+  Dices,
+  ListChecks,
+  BarChart3,
+} from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
-import { tickChatChecklistApi, voteChatPollApi } from '@/lib/chat-plus/chat.contract';
+import {
+  tickChatChecklistApi,
+  voteChatPollApi,
+} from '@/lib/chat-plus/chat.contract';
 import type {
   ChatRef,
   ChecklistItem,
@@ -39,68 +51,182 @@ export function ChatRichBody({
   /** An optimistic bubble with no server id yet. */
   disabled?: boolean;
 }) {
-  switch (kind) {
+  switch (
+    kind
+  ) {
     case 'dice':
-      return <DiceCard meta={meta as DiceMeta} authorName={authorName} />;
+      return (
+        <DiceCard
+          meta={
+            meta as DiceMeta
+          }
+          authorName={
+            authorName
+          }
+        />
+      );
     case 'coin':
-      return <CoinCard meta={meta as CoinMeta} authorName={authorName} />;
+      return (
+        <CoinCard
+          meta={
+            meta as CoinMeta
+          }
+          authorName={
+            authorName
+          }
+        />
+      );
     case 'checklist':
       return (
         <ChecklistCard
-          chat={chat}
-          messageId={messageId}
-          meta={meta as ChecklistMeta}
-          disabled={disabled}
+          chat={
+            chat
+          }
+          messageId={
+            messageId
+          }
+          meta={
+            meta as ChecklistMeta
+          }
+          disabled={
+            disabled
+          }
         />
       );
     case 'poll':
       return poll ? (
-        <DmPollCard chat={chat} messageId={messageId} poll={poll} disabled={disabled} />
+        <DmPollCard
+          chat={
+            chat
+          }
+          messageId={
+            messageId
+          }
+          poll={
+            poll
+          }
+          disabled={
+            disabled
+          }
+        />
       ) : null;
     default:
       return null;
   }
 }
 
-function DiceCard({ meta, authorName }: { meta: DiceMeta; authorName: string }) {
-  const { t } = useTranslation('f-messaging');
-  if (!meta?.rolls) return null;
+function DiceCard({
+  meta,
+  authorName,
+}: {
+  meta: DiceMeta;
+  authorName: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-messaging',
+    );
+  if (
+    !meta?.rolls
+  )
+    return null;
   return (
     <div className="relative w-56 max-w-full rounded-site p-4 text-site-text">
       <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
-        <Dices className="size-4" aria-hidden />
-        {t('dice-rolled', {
-          name: authorName,
-          dice: `${meta.count}d${meta.sides}`,
-          defaultValue: '{{name}} rolled {{dice}}',
-        })}
+        <Dices
+          className="size-4"
+          aria-hidden
+        />
+        {t(
+          'dice-rolled',
+          {
+            name: authorName,
+            dice: `${meta.count}d${meta.sides}`,
+            defaultValue:
+              '{{name}} rolled {{dice}}',
+          },
+        )}
       </p>
       <p
         className="mt-1 text-3xl font-semibold tabular-nums"
-        aria-label={t('dice-total', { total: meta.total, defaultValue: 'Total {{total}}' })}
+        aria-label={t(
+          'dice-total',
+          {
+            total:
+              meta.total,
+            defaultValue:
+              'Total {{total}}',
+          },
+        )}
       >
-        {meta.total}
+        {
+          meta.total
+        }
       </p>
-      {meta.count > 1 && (
-        <p className="mt-1 text-xs tabular-nums text-site-text-muted">{meta.rolls.join(' + ')}</p>
+      {meta.count >
+        1 && (
+        <p className="mt-1 text-xs tabular-nums text-site-text-muted">
+          {meta.rolls.join(
+            ' + ',
+          )}
+        </p>
       )}
     </div>
   );
 }
 
-function CoinCard({ meta, authorName }: { meta: CoinMeta; authorName: string }) {
-  const { t } = useTranslation('f-messaging');
-  if (!meta?.result) return null;
+function CoinCard({
+  meta,
+  authorName,
+}: {
+  meta: CoinMeta;
+  authorName: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-messaging',
+    );
+  if (
+    !meta?.result
+  )
+    return null;
   return (
     <div className="relative w-56 max-w-full rounded-site p-4 text-site-text">
       <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
-        <Coins className="size-4" aria-hidden />
-        {t('coin-flipped', { name: authorName, defaultValue: '{{name}} flipped a coin' })}
+        <Coins
+          className="size-4"
+          aria-hidden
+        />
+        {t(
+          'coin-flipped',
+          {
+            name: authorName,
+            defaultValue:
+              '{{name}} flipped a coin',
+          },
+        )}
       </p>
       <p className="mt-1 text-2xl font-semibold">
-        {meta.result === 'heads'
-          ? t('coin-heads', { defaultValue: 'Heads' })
-          : t('coin-tails', { defaultValue: 'Tails' })}
+        {meta.result ===
+        'heads'
+          ? t(
+              'coin-heads',
+              {
+                defaultValue:
+                  'Heads',
+              },
+            )
+          : t(
+              'coin-tails',
+              {
+                defaultValue:
+                  'Tails',
+              },
+            )}
       </p>
     </div>
   );
@@ -117,95 +243,221 @@ function ChecklistCard({
   meta: ChecklistMeta;
   disabled?: boolean;
 }) {
-  const { t } = useTranslation('f-messaging');
-  const [items, setItems] = useState<ChecklistItem[]>(meta?.items ?? []);
-  const [busy, setBusy] = useState<number | null>(null);
-  // Live ticks from other people arrive as new `meta` from the parent.
-  useEffect(() => setItems(meta?.items ?? []), [meta]);
-  if (!meta?.items) return null;
-
-  const done = items.filter((i) => i.doneBy).length;
-
-  const toggle = async (index: number) => {
-    if (disabled || busy !== null) return;
-    const before = items;
-    setBusy(index);
-    setItems((prev) =>
-      prev.map((it, i) =>
-        i === index
-          ? {
-              ...it,
-              doneBy: it.doneBy ? null : 'me',
-              doneAt: it.doneBy ? null : new Date().toISOString(),
-            }
-          : it,
-      ),
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-messaging',
     );
-    try {
-      const data = await api(tickChatChecklistApi, {
-        params: { kind: chat.kind, id: chat.id },
-        body: { messageId, index },
-      });
-      setItems(data.items);
-    } catch {
-      setItems(before);
-      toast.error(t('checklist-tick-failed', { defaultValue: 'Could not update the checklist' }));
-    } finally {
-      setBusy(null);
-    }
-  };
+  const [
+    items,
+    setItems,
+  ] =
+    useState<
+      ChecklistItem[]
+    >(
+      meta?.items ??
+        [],
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState<
+      | number
+      | null
+    >(
+      null,
+    );
+  // Live ticks from other people arrive as new `meta` from the parent.
+  useEffect(
+    () =>
+      setItems(
+        meta?.items ??
+          [],
+      ),
+    [
+      meta,
+    ],
+  );
+  if (
+    !meta?.items
+  )
+    return null;
+
+  const done =
+    items.filter(
+      (
+        i,
+      ) =>
+        i.doneBy,
+    ).length;
+
+  const toggle =
+    async (
+      index: number,
+    ) => {
+      if (
+        disabled ||
+        busy !==
+          null
+      )
+        return;
+      const before =
+        items;
+      setBusy(
+        index,
+      );
+      setItems(
+        (
+          prev,
+        ) =>
+          prev.map(
+            (
+              it,
+              i,
+            ) =>
+              i ===
+              index
+                ? {
+                    ...it,
+                    doneBy:
+                      it.doneBy
+                        ? null
+                        : 'me',
+                    doneAt:
+                      it.doneBy
+                        ? null
+                        : new Date().toISOString(),
+                  }
+                : it,
+          ),
+      );
+      try {
+        const data =
+          await api(
+            tickChatChecklistApi,
+            {
+              params:
+                {
+                  kind: chat.kind,
+                  id: chat.id,
+                },
+              body: {
+                messageId,
+                index,
+              },
+            },
+          );
+        setItems(
+          data.items,
+        );
+      } catch {
+        setItems(
+          before,
+        );
+        toast.error(
+          t(
+            'checklist-tick-failed',
+            {
+              defaultValue:
+                'Could not update the checklist',
+            },
+          ),
+        );
+      } finally {
+        setBusy(
+          null,
+        );
+      }
+    };
 
   return (
     <div className="relative w-72 max-w-full rounded-site p-4 text-site-text">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold">
-          <ListChecks className="size-4 shrink-0 text-site-accent" aria-hidden />
-          <span className="truncate">{meta.title}</span>
+          <ListChecks
+            className="size-4 shrink-0 text-site-accent"
+            aria-hidden
+          />
+          <span className="truncate">
+            {
+              meta.title
+            }
+          </span>
         </p>
         <span className="shrink-0 text-xs tabular-nums text-site-text-muted">
-          {t('checklist-progress', {
-            done,
-            total: items.length,
-            defaultValue: '{{done}}/{{total}}',
-          })}
+          {t(
+            'checklist-progress',
+            {
+              done,
+              total:
+                items.length,
+              defaultValue:
+                '{{done}}/{{total}}',
+            },
+          )}
         </span>
       </div>
       <ul className="flex flex-col">
-        {items.map((item, i) => {
-          const checked = !!item.doneBy;
-          return (
-            <li key={i}>
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={checked}
-                disabled={disabled}
-                onClick={() => void toggle(i)}
-                className="flex min-h-9 w-full items-center gap-2.5 rounded-site-sm px-1.5 py-1 text-left text-sm hover:bg-site-surface-hover focus-visible:ring-2 focus-visible:ring-site-accent disabled:opacity-60"
+        {items.map(
+          (
+            item,
+            i,
+          ) => {
+            const checked =
+              !!item.doneBy;
+            return (
+              <li
+                key={
+                  i
+                }
               >
-                <span
-                  aria-hidden
-                  className={cn(
-                    'flex size-5 shrink-0 items-center justify-center rounded-site-sm border',
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={
                     checked
-                      ? 'border-site-accent bg-site-accent text-site-accent-fg'
-                      : 'border-site-text',
-                  )}
+                  }
+                  disabled={
+                    disabled
+                  }
+                  onClick={() =>
+                    void toggle(
+                      i,
+                    )
+                  }
+                  className="flex min-h-9 w-full items-center gap-2.5 rounded-site-sm px-1.5 py-1 text-left text-sm hover:bg-site-surface-hover focus-visible:ring-2 focus-visible:ring-site-accent disabled:opacity-60"
                 >
-                  {checked && <Check className="size-3.5" />}
-                </span>
-                <span
-                  className={cn(
-                    'min-w-0 break-words',
-                    checked && 'text-site-text-muted line-through',
-                  )}
-                >
-                  {item.text}
-                </span>
-              </button>
-            </li>
-          );
-        })}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'flex size-5 shrink-0 items-center justify-center rounded-site-sm border',
+                      checked
+                        ? 'border-site-accent bg-site-accent text-site-accent-fg'
+                        : 'border-site-text',
+                    )}
+                  >
+                    {checked && (
+                      <Check className="size-3.5" />
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      'min-w-0 break-words',
+                      checked &&
+                        'text-site-text-muted line-through',
+                    )}
+                  >
+                    {
+                      item.text
+                    }
+                  </span>
+                </button>
+              </li>
+            );
+          },
+        )}
       </ul>
     </div>
   );
@@ -222,77 +474,214 @@ function DmPollCard({
   poll: PollView;
   disabled?: boolean;
 }) {
-  const { t } = useTranslation('f-messaging');
-  const [view, setView] = useState<PollView>(poll);
-  useEffect(() => setView(poll), [poll]);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-messaging',
+    );
+  const [
+    view,
+    setView,
+  ] =
+    useState<PollView>(
+      poll,
+    );
+  useEffect(
+    () =>
+      setView(
+        poll,
+      ),
+    [
+      poll,
+    ],
+  );
 
-  const voted = view.myVote !== null;
-  const vote = async (optionIdx: number) => {
-    if (disabled || view.myVote === optionIdx) return;
-    const before = view;
-    setView((v) => {
-      const options = v.options.map((o, i) => ({
-        ...o,
-        votes: o.votes + (i === optionIdx ? 1 : 0) - (i === v.myVote ? 1 : 0),
-      }));
-      return {
-        ...v,
-        options,
-        myVote: optionIdx,
-        totalVotes: v.myVote === null ? v.totalVotes + 1 : v.totalVotes,
-      };
-    });
-    try {
-      const data = await api(voteChatPollApi, {
-        params: { kind: chat.kind, id: chat.id },
-        body: { messageId, optionIdx },
-      });
-      setView(data.poll);
-    } catch {
-      setView(before);
-      toast.error(t('poll-vote-failed', { defaultValue: 'Could not record your vote' }));
-    }
-  };
+  const voted =
+    view.myVote !==
+    null;
+  const vote =
+    async (
+      optionIdx: number,
+    ) => {
+      if (
+        disabled ||
+        view.myVote ===
+          optionIdx
+      )
+        return;
+      const before =
+        view;
+      setView(
+        (
+          v,
+        ) => {
+          const options =
+            v.options.map(
+              (
+                o,
+                i,
+              ) => ({
+                ...o,
+                votes:
+                  o.votes +
+                  (i ===
+                  optionIdx
+                    ? 1
+                    : 0) -
+                  (i ===
+                  v.myVote
+                    ? 1
+                    : 0),
+              }),
+            );
+          return {
+            ...v,
+            options,
+            myVote:
+              optionIdx,
+            totalVotes:
+              v.myVote ===
+              null
+                ? v.totalVotes +
+                  1
+                : v.totalVotes,
+          };
+        },
+      );
+      try {
+        const data =
+          await api(
+            voteChatPollApi,
+            {
+              params:
+                {
+                  kind: chat.kind,
+                  id: chat.id,
+                },
+              body: {
+                messageId,
+                optionIdx,
+              },
+            },
+          );
+        setView(
+          data.poll,
+        );
+      } catch {
+        setView(
+          before,
+        );
+        toast.error(
+          t(
+            'poll-vote-failed',
+            {
+              defaultValue:
+                'Could not record your vote',
+            },
+          ),
+        );
+      }
+    };
 
   return (
     <div className="relative w-64 max-w-full rounded-site p-4 text-site-text">
       <p className="mb-2 flex items-start gap-1.5 text-sm font-semibold">
-        <BarChart3 className="mt-0.5 size-4 shrink-0 text-site-accent" aria-hidden />
-        {view.question}
+        <BarChart3
+          className="mt-0.5 size-4 shrink-0 text-site-accent"
+          aria-hidden
+        />
+        {
+          view.question
+        }
       </p>
       <div className="flex flex-col gap-1.5">
-        {view.options.map((o, i) => {
-          const pct = view.totalVotes > 0 ? Math.round((o.votes / view.totalVotes) * 100) : 0;
-          const chosen = view.myVote === i;
-          return (
-            <button
-              key={i}
-              type="button"
-              disabled={disabled}
-              aria-pressed={chosen}
-              onClick={() => void vote(i)}
-              className={cn(
-                'relative overflow-hidden rounded-site-sm border px-3 py-1.5 text-left text-sm focus-visible:ring-2 focus-visible:ring-site-accent',
-                chosen ? 'border-site-accent' : 'border-site-border hover:border-site-text',
-              )}
-            >
-              {voted && (
-                <span
-                  aria-hidden
-                  className="absolute inset-y-0 left-0 bg-site-bg-subtle"
-                  style={{ width: `${pct}%` }}
-                />
-              )}
-              <span className="relative flex items-center justify-between gap-2">
-                <span className={cn('truncate', chosen && 'font-semibold')}>{o.text}</span>
-                {voted && <span className="shrink-0 text-xs text-site-text-muted">{pct}%</span>}
-              </span>
-            </button>
-          );
-        })}
+        {view.options.map(
+          (
+            o,
+            i,
+          ) => {
+            const pct =
+              view.totalVotes >
+              0
+                ? Math.round(
+                    (o.votes /
+                      view.totalVotes) *
+                      100,
+                  )
+                : 0;
+            const chosen =
+              view.myVote ===
+              i;
+            return (
+              <button
+                key={
+                  i
+                }
+                type="button"
+                disabled={
+                  disabled
+                }
+                aria-pressed={
+                  chosen
+                }
+                onClick={() =>
+                  void vote(
+                    i,
+                  )
+                }
+                className={cn(
+                  'relative overflow-hidden rounded-site-sm border px-3 py-1.5 text-left text-sm focus-visible:ring-2 focus-visible:ring-site-accent',
+                  chosen
+                    ? 'border-site-accent'
+                    : 'border-site-border hover:border-site-text',
+                )}
+              >
+                {voted && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-y-0 left-0 bg-site-bg-subtle"
+                    style={{
+                      width: `${pct}%`,
+                    }}
+                  />
+                )}
+                <span className="relative flex items-center justify-between gap-2">
+                  <span
+                    className={cn(
+                      'truncate',
+                      chosen &&
+                        'font-semibold',
+                    )}
+                  >
+                    {
+                      o.text
+                    }
+                  </span>
+                  {voted && (
+                    <span className="shrink-0 text-xs text-site-text-muted">
+                      {
+                        pct
+                      }
+                      %
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          },
+        )}
       </div>
       <p className="mt-2 text-xs text-site-text-muted">
-        {t('poll-votes', { count: view.totalVotes, defaultValue: '{{count}} votes' })}
+        {t(
+          'poll-votes',
+          {
+            count:
+              view.totalVotes,
+            defaultValue:
+              '{{count}} votes',
+          },
+        )}
       </p>
     </div>
   );

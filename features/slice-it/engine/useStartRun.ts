@@ -20,9 +20,17 @@
  *     server run the countdown for everyone at once.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import {
+  useCallback,
+  useRef,
+  useState,
+} from 'react';
 import { AudioManager } from '@/lib/audio/AudioManager';
-import { BEATMAP_VERSION, generateBeatmap, isStaleAnalysis } from './beatmap';
+import {
+  BEATMAP_VERSION,
+  generateBeatmap,
+  isStaleAnalysis,
+} from './beatmap';
 import { COUNTDOWN_SECONDS } from './constants';
 import { useSliceItStore } from './store';
 import { api } from '@/lib/contract/client';
@@ -43,158 +51,382 @@ export interface StartRunOptions {
   multiplayer?: boolean;
 }
 
-export function useStartRun(engine: GameEngine | null) {
-  const [isLoading, setIsLoading] = useState(false);
+export function useStartRun(
+  engine: GameEngine | null,
+) {
+  const [
+    isLoading,
+    setIsLoading,
+  ] =
+    useState(
+      false,
+    );
   /** Guards against a double-click launching two loads of the same song. */
-  const inFlight = useRef(false);
+  const inFlight =
+    useRef(
+      false,
+    );
 
-  const startRun = useCallback(
-    async (songId: string, options: StartRunOptions = {}) => {
-      if (!engine || inFlight.current) return;
-      inFlight.current = true;
+  const startRun =
+    useCallback(
+      async (
+        songId: string,
+        options: StartRunOptions = {},
+      ) => {
+        if (
+          !engine ||
+          inFlight.current
+        )
+          return;
+        inFlight.current = true;
 
-      const store = useSliceItStore.getState();
-      setIsLoading(true);
-      store.setIsLoadingSong(true);
-      store.setLoadingProgress(0);
-      store.setStatus('PLAYING');
-      engine.setMultiplayer(Boolean(options.multiplayer));
+        const store =
+          useSliceItStore.getState();
+        setIsLoading(
+          true,
+        );
+        store.setIsLoadingSong(
+          true,
+        );
+        store.setLoadingProgress(
+          0,
+        );
+        store.setStatus(
+          'PLAYING',
+        );
+        engine.setMultiplayer(
+          Boolean(
+            options.multiplayer,
+          ),
+        );
 
-      try {
-        store.setLoadingProgressText('FETCHING TRACK…');
-        // O7 — ask for the one difficulty this run will play. The tiers are
-        // nested (easy ⊆ normal ⊆ hard ⊆ expert), so the untrimmed response is
-        // mostly the same notes four times, on the exact path
-        // `LOAD_TIMEOUT_MS` exists to accommodate.
-        //
-        // Safe to pin here because the difficulty cannot change between this
-        // read and `loadMap`: it is chosen in the menu before `startRun`, and
-        // `engine.reset()` (H6's restart) reuses the slices it already
-        // resolved rather than re-reading the map.
-        // The raw fetch had no timeout; a full chart on a slow link outlives the 15s default.
-        const song = await api(getSliceSongApi, {
-          params: { id: songId },
-          query: { difficulty: store.modifiers.difficulty },
-          timeoutMs: 60_000,
-        });
-        // The run's receipt, minted by that read. Null for a signed-out player,
-        // whose score is not going on a leaderboard anyway.
-        store.setRunToken(song.runToken ?? null);
-        store.setNowPlaying({
-          title: song.title,
-          artist: song.artist,
-          coverUrl: song.coverUrl ?? null,
-        });
-
-        if (options.countPlay !== false) {
-          // Fire-and-forget: a play count is not worth delaying a song for.
-          void api(recordSongPlayApi, { params: { id: songId } }).catch(() => {});
-        }
-
-        store.setLoadingProgress(20);
-        const audioResponse = await fetch(song.audioUrl);
-        if (!audioResponse.ok) throw new Error(`Audio fetch failed: ${audioResponse.status}`);
-        const arrayBuffer = await audioResponse.arrayBuffer();
-
-        AudioManager.getInstance().initialize();
-        const context = AudioManager.getInstance().getContext();
-        if (!context) throw new Error('Audio context unavailable');
-
-        store.setLoadingProgress(45);
-        store.setLoadingProgressText('DECODING AUDIO…');
-        // `decodeAudioData` never settles on an engine that cannot decode the
-        // stored codec (songs are Ogg Opus; measured on WebKit, where it hung for
-        // good with the loading screen stuck on "DECODING AUDIO… 45%" and no way
-        // out). Bound it so the player is returned to the menu instead.
-        let decodeTimer: ReturnType<typeof setTimeout> | undefined;
-        const audioBuffer = await Promise.race([
-          context.decodeAudioData(arrayBuffer),
-          new Promise<never>((_, reject) => {
-            decodeTimer = setTimeout(
-              () => reject(new Error('This browser could not decode the song audio')),
-              DECODE_TIMEOUT_MS,
+        try {
+          store.setLoadingProgressText(
+            'FETCHING TRACK…',
+          );
+          // O7 — ask for the one difficulty this run will play. The tiers are
+          // nested (easy ⊆ normal ⊆ hard ⊆ expert), so the untrimmed response is
+          // mostly the same notes four times, on the exact path
+          // `LOAD_TIMEOUT_MS` exists to accommodate.
+          //
+          // Safe to pin here because the difficulty cannot change between this
+          // read and `loadMap`: it is chosen in the menu before `startRun`, and
+          // `engine.reset()` (H6's restart) reuses the slices it already
+          // resolved rather than re-reading the map.
+          // The raw fetch had no timeout; a full chart on a slow link outlives the 15s default.
+          const song =
+            await api(
+              getSliceSongApi,
+              {
+                params:
+                  {
+                    id: songId,
+                  },
+                query:
+                  {
+                    difficulty:
+                      store
+                        .modifiers
+                        .difficulty,
+                  },
+                timeoutMs: 60_000,
+              },
             );
-          }),
-        ]).finally(() => clearTimeout(decodeTimer));
+          // The run's receipt, minted by that read. Null for a signed-out player,
+          // whose score is not going on a leaderboard anyway.
+          store.setRunToken(
+            song.runToken ??
+              null,
+          );
+          store.setNowPlaying(
+            {
+              title:
+                song.title,
+              artist:
+                song.artist,
+              coverUrl:
+                song.coverUrl ??
+                null,
+            },
+          );
 
-        let map: BeatMap;
-        if (song.analysisData && !isStaleAnalysis(song.analysisData)) {
-          store.setLoadingProgress(70);
-          store.setLoadingProgressText('RETRIEVING SPECTRAL ANALYSIS…');
-          map = song.analysisData;
-        } else {
-          // Legacy song: no chart, or one from the old detector.
-          store.setLoadingProgress(55);
-          store.setLoadingProgressText('ANALYZING SPECTRAL FLUX…');
-          const generated = generateBeatmap(audioBuffer, {
-            id: song.id,
-            name: song.title,
-            artist: song.artist,
-            bpmHint: song.bpm > 0 ? song.bpm : undefined,
-          });
-          map = generated;
+          if (
+            options.countPlay !==
+            false
+          ) {
+            // Fire-and-forget: a play count is not worth delaying a song for.
+            void api(
+              recordSongPlayApi,
+              {
+                params:
+                  {
+                    id: songId,
+                  },
+              },
+            ).catch(
+              () => {},
+            );
+          }
 
-          // Backfill, so this only ever happens once for this song.
-          void api(patchSongAnalysisApi, {
-            params: { id: song.id },
-            body: { analysisData: { ...generated, analysisVersion: BEATMAP_VERSION } },
-          }).catch(() => {});
+          store.setLoadingProgress(
+            20,
+          );
+          const audioResponse =
+            await fetch(
+              song.audioUrl,
+            );
+          if (
+            !audioResponse.ok
+          )
+            throw new Error(
+              `Audio fetch failed: ${audioResponse.status}`,
+            );
+          const arrayBuffer =
+            await audioResponse.arrayBuffer();
+
+          AudioManager.getInstance().initialize();
+          const context =
+            AudioManager.getInstance().getContext();
+          if (
+            !context
+          )
+            throw new Error(
+              'Audio context unavailable',
+            );
+
+          store.setLoadingProgress(
+            45,
+          );
+          store.setLoadingProgressText(
+            'DECODING AUDIO…',
+          );
+          // `decodeAudioData` never settles on an engine that cannot decode the
+          // stored codec (songs are Ogg Opus; measured on WebKit, where it hung for
+          // good with the loading screen stuck on "DECODING AUDIO… 45%" and no way
+          // out). Bound it so the player is returned to the menu instead.
+          let decodeTimer:
+            | ReturnType<
+                typeof setTimeout
+              >
+            | undefined;
+          const audioBuffer =
+            await Promise.race(
+              [
+                context.decodeAudioData(
+                  arrayBuffer,
+                ),
+                new Promise<never>(
+                  (
+                    _,
+                    reject,
+                  ) => {
+                    decodeTimer =
+                      setTimeout(
+                        () =>
+                          reject(
+                            new Error(
+                              'This browser could not decode the song audio',
+                            ),
+                          ),
+                        DECODE_TIMEOUT_MS,
+                      );
+                  },
+                ),
+              ],
+            ).finally(
+              () =>
+                clearTimeout(
+                  decodeTimer,
+                ),
+            );
+
+          let map: BeatMap;
+          if (
+            song.analysisData &&
+            !isStaleAnalysis(
+              song.analysisData,
+            )
+          ) {
+            store.setLoadingProgress(
+              70,
+            );
+            store.setLoadingProgressText(
+              'RETRIEVING SPECTRAL ANALYSIS…',
+            );
+            map =
+              song.analysisData;
+          } else {
+            // Legacy song: no chart, or one from the old detector.
+            store.setLoadingProgress(
+              55,
+            );
+            store.setLoadingProgressText(
+              'ANALYZING SPECTRAL FLUX…',
+            );
+            const generated =
+              generateBeatmap(
+                audioBuffer,
+                {
+                  id: song.id,
+                  name: song.title,
+                  artist:
+                    song.artist,
+                  bpmHint:
+                    song.bpm >
+                    0
+                      ? song.bpm
+                      : undefined,
+                },
+              );
+            map =
+              generated;
+
+            // Backfill, so this only ever happens once for this song.
+            void api(
+              patchSongAnalysisApi,
+              {
+                params:
+                  {
+                    id: song.id,
+                  },
+                body: {
+                  analysisData:
+                    {
+                      ...generated,
+                      analysisVersion:
+                        BEATMAP_VERSION,
+                    },
+                },
+              },
+            ).catch(
+              () => {},
+            );
+          }
+
+          // The id inside a stored chart may predate the row it belongs to, and
+          // the engine seeds its modifier RNG from it — so pin both.
+          map =
+            {
+              ...map,
+              id: song.id,
+              audioUrl:
+                song.audioUrl,
+            };
+
+          store.setLoadingProgress(
+            85,
+          );
+          store.setLoadingProgressText(
+            'CALIBRATING GAME ENGINE…',
+          );
+          await engine.loadMap(
+            map,
+            audioBuffer,
+          );
+          store.setLoadingProgress(
+            100,
+          );
+
+          if (
+            options.multiplayer
+          ) {
+            store.setLoadingProgressText(
+              'WAITING FOR PLAYERS…',
+            );
+            reportLoaded();
+          } else {
+            store.setIsLoadingSong(
+              false,
+            );
+            runLocalCountdown(
+              engine,
+            );
+          }
+        } catch (error) {
+          console.error(
+            '[slice-it] failed to start run',
+            error,
+          );
+          // Back to the menu rather than stranding the player on a loading screen
+          // that will never finish.
+          const failed =
+            useSliceItStore.getState();
+          failed.setIsLoadingSong(
+            false,
+          );
+          failed.setStatus(
+            'MENU',
+          );
+          throw error;
+        } finally {
+          setIsLoading(
+            false,
+          );
+          inFlight.current = false;
         }
+      },
+      [
+        engine,
+      ],
+    );
 
-        // The id inside a stored chart may predate the row it belongs to, and
-        // the engine seeds its modifier RNG from it — so pin both.
-        map = { ...map, id: song.id, audioUrl: song.audioUrl };
-
-        store.setLoadingProgress(85);
-        store.setLoadingProgressText('CALIBRATING GAME ENGINE…');
-        await engine.loadMap(map, audioBuffer);
-        store.setLoadingProgress(100);
-
-        if (options.multiplayer) {
-          store.setLoadingProgressText('WAITING FOR PLAYERS…');
-          reportLoaded();
-        } else {
-          store.setIsLoadingSong(false);
-          runLocalCountdown(engine);
-        }
-      } catch (error) {
-        console.error('[slice-it] failed to start run', error);
-        // Back to the menu rather than stranding the player on a loading screen
-        // that will never finish.
-        const failed = useSliceItStore.getState();
-        failed.setIsLoadingSong(false);
-        failed.setStatus('MENU');
-        throw error;
-      } finally {
-        setIsLoading(false);
-        inFlight.current = false;
-      }
-    },
-    [engine],
-  );
-
-  return { startRun, isLoading };
+  return {
+    startRun,
+    isLoading,
+  };
 }
 
 /** The single-player 3-2-1, driven off the store so a menu exit cancels it. */
-function runLocalCountdown(engine: GameEngine): void {
-  const store = useSliceItStore.getState();
-  let remaining = COUNTDOWN_SECONDS;
-  store.setCountdown(remaining);
+function runLocalCountdown(
+  engine: GameEngine,
+): void {
+  const store =
+    useSliceItStore.getState();
+  let remaining =
+    COUNTDOWN_SECONDS;
+  store.setCountdown(
+    remaining,
+  );
 
-  const tick = setInterval(() => {
-    // Every tick re-reads the status: leaving the run mid-countdown must not
-    // start audio three seconds later over the menu.
-    if (useSliceItStore.getState().status !== 'PLAYING') {
-      clearInterval(tick);
-      useSliceItStore.getState().setCountdown(0);
-      return;
-    }
-    remaining -= 1;
-    useSliceItStore.getState().setCountdown(Math.max(0, remaining));
-    if (remaining <= 0) {
-      clearInterval(tick);
-      engine.start();
-    }
-  }, 1000);
+  const tick =
+    setInterval(
+      () => {
+        // Every tick re-reads the status: leaving the run mid-countdown must not
+        // start audio three seconds later over the menu.
+        if (
+          useSliceItStore.getState()
+            .status !==
+          'PLAYING'
+        ) {
+          clearInterval(
+            tick,
+          );
+          useSliceItStore
+            .getState()
+            .setCountdown(
+              0,
+            );
+          return;
+        }
+        remaining -= 1;
+        useSliceItStore
+          .getState()
+          .setCountdown(
+            Math.max(
+              0,
+              remaining,
+            ),
+          );
+        if (
+          remaining <=
+          0
+        ) {
+          clearInterval(
+            tick,
+          );
+          engine.start();
+        }
+      },
+      1000,
+    );
 }

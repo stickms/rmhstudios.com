@@ -1,4 +1,8 @@
-import { useCallback, useRef, useState } from 'react';
+import {
+  useCallback,
+  useRef,
+  useState,
+} from 'react';
 import { yieldToMain } from '@/lib/scheduler';
 
 /**
@@ -51,45 +55,95 @@ export interface OptimisticRun {
    */
   commit: () => Promise<unknown>;
   /** Reconcile the UI with the authoritative server payload (response was ok). */
-  reconcile?: (res: Response) => void | Promise<void>;
+  reconcile?: (
+    res: Response,
+  ) => void | Promise<void>;
   /** Runs after rollback on failure — e.g. show a toast. `res` present on a bad status. */
-  onError?: (error: unknown, res?: Response) => void;
+  onError?: (
+    error: unknown,
+    res?: Response,
+  ) => void;
 }
 
 export function useOptimisticAction() {
-  const [pending, setPending] = useState(false);
+  const [
+    pending,
+    setPending,
+  ] =
+    useState(
+      false,
+    );
   // Guard against overlapping runs on the same control (double-tap a like).
-  const inFlight = useRef(false);
+  const inFlight =
+    useRef(
+      false,
+    );
 
-  const run = useCallback(
-    async ({ apply, rollback, commit, reconcile, onError }: OptimisticRun): Promise<boolean> => {
-      if (inFlight.current) return false;
-      inFlight.current = true;
-      apply();
-      setPending(true);
-      try {
-        // Let the optimistic update paint before the request is assembled.
-        await yieldToMain();
-        const res = await commit();
-        const isResponse = res instanceof Response;
-        if (isResponse && !res.ok) {
-          rollback();
-          onError?.(new Error(`Request failed with ${res.status}`), res);
+  const run =
+    useCallback(
+      async ({
+        apply,
+        rollback,
+        commit,
+        reconcile,
+        onError,
+      }: OptimisticRun): Promise<boolean> => {
+        if (
+          inFlight.current
+        )
           return false;
+        inFlight.current = true;
+        apply();
+        setPending(
+          true,
+        );
+        try {
+          // Let the optimistic update paint before the request is assembled.
+          await yieldToMain();
+          const res =
+            await commit();
+          const isResponse =
+            res instanceof
+            Response;
+          if (
+            isResponse &&
+            !res.ok
+          ) {
+            rollback();
+            onError?.(
+              new Error(
+                `Request failed with ${res.status}`,
+              ),
+              res,
+            );
+            return false;
+          }
+          if (
+            reconcile &&
+            isResponse
+          )
+            await reconcile(
+              res,
+            );
+          return true;
+        } catch (error) {
+          rollback();
+          onError?.(
+            error,
+          );
+          return false;
+        } finally {
+          inFlight.current = false;
+          setPending(
+            false,
+          );
         }
-        if (reconcile && isResponse) await reconcile(res);
-        return true;
-      } catch (error) {
-        rollback();
-        onError?.(error);
-        return false;
-      } finally {
-        inFlight.current = false;
-        setPending(false);
-      }
-    },
-    [],
-  );
+      },
+      [],
+    );
 
-  return { run, pending };
+  return {
+    run,
+    pending,
+  };
 }

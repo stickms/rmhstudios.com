@@ -27,8 +27,16 @@
  * pencil where the learner tapped. They are decoration; the lesson says the same in words.
  */
 
-import { useEffect, useId, useRef, useState } from 'react';
-import type { CSSProperties, KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
+import type {
+  CSSProperties,
+  KeyboardEvent,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { playNote } from '@/lib/rmhmusic/learn/audio/voice';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
@@ -47,17 +55,77 @@ import { Notehead } from './Notehead';
 const TAP_NOTE_MS = 700;
 
 /** String thickness in px, low E (index 0) to high E. */
-const GAUGE = [3, 2.5, 2, 1.5, 1.25, 1];
+const GAUGE =
+  [
+    3,
+    2.5,
+    2,
+    1.5,
+    1.25,
+    1,
+  ];
 
 /** Rows top to bottom: the high E first. */
-const ROWS = Array.from({ length: STRING_COUNT }, (_, i) => STRING_COUNT - 1 - i);
-const FRETS = Array.from({ length: FIRST_FRETS + 1 }, (_, i) => i);
+const ROWS =
+  Array.from(
+    {
+      length:
+        STRING_COUNT,
+    },
+    (
+      _,
+      i,
+    ) =>
+      STRING_COUNT -
+      1 -
+      i,
+  );
+const FRETS =
+  Array.from(
+    {
+      length:
+        FIRST_FRETS +
+        1,
+    },
+    (
+      _,
+      i,
+    ) =>
+      i,
+  );
 /** The frets with an inlay dot. */
-const INLAYS = [3, 5];
+const INLAYS =
+  [
+    3,
+    5,
+  ];
 
-const openName = (string: number) => midiToName(STANDARD_TUNING[string]).replace(/-?\d+$/, '');
-const same = (a: FretPosition | null | undefined, string: number, fret: number) =>
-  !!a && a.string === string && a.fret === fret;
+const openName =
+  (
+    string: number,
+  ) =>
+    midiToName(
+      STANDARD_TUNING[
+        string
+      ],
+    ).replace(
+      /-?\d+$/,
+      '',
+    );
+const same =
+  (
+    a:
+      | FretPosition
+      | null
+      | undefined,
+    string: number,
+    fret: number,
+  ) =>
+    !!a &&
+    a.string ===
+      string &&
+    a.fret ===
+      fret;
 
 export function FretboardView({
   asking,
@@ -68,166 +136,471 @@ export function FretboardView({
 }: {
   /** False once the question is answered: the cells stay focusable but answer nothing. */
   asking: boolean;
-  onAnswer: (position: FretPosition) => void;
+  onAnswer: (
+    position: FretPosition,
+  ) => void;
   /** Every place that sounds the target, once answered. */
   right?: readonly FretPosition[];
   /** Where the learner tapped, when that was wrong. */
   wrong?: FretPosition | null;
   className?: string;
 }) {
-  const { t } = useTranslation('c-rmhmusic');
-  const [focus, setFocus] = useState<FretPosition>({ string: STRING_COUNT - 1, fret: 0 });
-  const grid = useRef<HTMLDivElement>(null);
-  const helpId = useId();
-  const releases = useRef(new Set<() => void>());
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhmusic',
+    );
+  const [
+    focus,
+    setFocus,
+  ] =
+    useState<FretPosition>(
+      {
+        string:
+          STRING_COUNT -
+          1,
+        fret: 0,
+      },
+    );
+  const grid =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const helpId =
+    useId();
+  const releases =
+    useRef(
+      new Set<
+        () => void
+      >(),
+    );
 
   // Let go of any note still sounding when the board goes away.
   useEffect(() => {
-    const live = releases.current;
+    const live =
+      releases.current;
     return () => {
-      for (const release of live) release();
+      for (const release of live)
+        release();
       live.clear();
     };
   }, []);
 
-  const sound = (midi: number) => {
-    const release = playNote(midi, 0.8);
-    releases.current.add(release);
-    window.setTimeout(() => {
-      release();
-      releases.current.delete(release);
-    }, TAP_NOTE_MS);
-  };
+  const sound =
+    (
+      midi: number,
+    ) => {
+      const release =
+        playNote(
+          midi,
+          0.8,
+        );
+      releases.current.add(
+        release,
+      );
+      window.setTimeout(
+        () => {
+          release();
+          releases.current.delete(
+            release,
+          );
+        },
+        TAP_NOTE_MS,
+      );
+    };
 
-  const tap = (string: number, fret: number) => {
-    setFocus({ string, fret });
-    if (!asking) return;
-    sound(fretMidi(string, fret));
-    onAnswer({ string, fret });
-  };
+  const tap =
+    (
+      string: number,
+      fret: number,
+    ) => {
+      setFocus(
+        {
+          string,
+          fret,
+        },
+      );
+      if (
+        !asking
+      )
+        return;
+      sound(
+        fretMidi(
+          string,
+          fret,
+        ),
+      );
+      onAnswer(
+        {
+          string,
+          fret,
+        },
+      );
+    };
 
-  const move = (to: FretPosition) => {
-    setFocus(to);
-    grid.current
-      ?.querySelector<HTMLButtonElement>(`[data-string="${to.string}"][data-fret="${to.fret}"]`)
-      ?.focus();
-  };
+  const move =
+    (
+      to: FretPosition,
+    ) => {
+      setFocus(
+        to,
+      );
+      grid.current
+        ?.querySelector<HTMLButtonElement>(
+          `[data-string="${to.string}"][data-fret="${to.fret}"]`,
+        )
+        ?.focus();
+    };
 
-  const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, string: number, fret: number) => {
-    let to: FretPosition | null = null;
-    if (e.key === 'ArrowUp') to = { string: Math.min(STRING_COUNT - 1, string + 1), fret };
-    else if (e.key === 'ArrowDown') to = { string: Math.max(0, string - 1), fret };
-    else if (e.key === 'ArrowRight') to = { string, fret: Math.min(FIRST_FRETS, fret + 1) };
-    else if (e.key === 'ArrowLeft') to = { string, fret: Math.max(0, fret - 1) };
-    else if (e.key === 'Home') to = { string, fret: 0 };
-    else if (e.key === 'End') to = { string, fret: FIRST_FRETS };
-    if (!to) return;
-    e.preventDefault();
-    move(to);
-  };
+  const onKeyDown =
+    (
+      e: KeyboardEvent<HTMLButtonElement>,
+      string: number,
+      fret: number,
+    ) => {
+      let to: FretPosition | null =
+        null;
+      if (
+        e.key ===
+        'ArrowUp'
+      )
+        to =
+          {
+            string:
+              Math.min(
+                STRING_COUNT -
+                  1,
+                string +
+                  1,
+              ),
+            fret,
+          };
+      else if (
+        e.key ===
+        'ArrowDown'
+      )
+        to =
+          {
+            string:
+              Math.max(
+                0,
+                string -
+                  1,
+              ),
+            fret,
+          };
+      else if (
+        e.key ===
+        'ArrowRight'
+      )
+        to =
+          {
+            string,
+            fret: Math.min(
+              FIRST_FRETS,
+              fret +
+                1,
+            ),
+          };
+      else if (
+        e.key ===
+        'ArrowLeft'
+      )
+        to =
+          {
+            string,
+            fret: Math.max(
+              0,
+              fret -
+                1,
+            ),
+          };
+      else if (
+        e.key ===
+        'Home'
+      )
+        to =
+          {
+            string,
+            fret: 0,
+          };
+      else if (
+        e.key ===
+        'End'
+      )
+        to =
+          {
+            string,
+            fret: FIRST_FRETS,
+          };
+      if (
+        !to
+      )
+        return;
+      e.preventDefault();
+      move(
+        to,
+      );
+    };
 
   return (
     // The board runs low frets to high, left to right, in every language (like the piano).
-    <div dir="ltr" className={cn('rmm-fret rmm-sheet', className)} data-jelly-zone="playfield">
+    <div
+      dir="ltr"
+      className={cn(
+        'rmm-fret rmm-sheet',
+        className,
+      )}
+      data-jelly-zone="playfield"
+    >
       <div
-        ref={grid}
+        ref={
+          grid
+        }
         role="group"
-        aria-label={t('find-fretboard', { defaultValue: 'Fretboard, frets 0 to 5' })}
-        aria-describedby={helpId}
+        aria-label={t(
+          'find-fretboard',
+          {
+            defaultValue:
+              'Fretboard, frets 0 to 5',
+          },
+        )}
+        aria-describedby={
+          helpId
+        }
         className="rmm-fret__grid"
       >
         {/* How the arrow keys move, read after the group's name. A sentence rather than
             `aria-description`, which not every screen reader reads yet. */}
-        <span id={helpId} className="sr-only">
-          {t('find-fretboard-help', {
-            defaultValue:
-              'Arrow keys move between strings and frets. Enter or Space answers with that place.',
-          })}
+        <span
+          id={
+            helpId
+          }
+          className="sr-only"
+        >
+          {t(
+            'find-fretboard-help',
+            {
+              defaultValue:
+                'Arrow keys move between strings and frets. Enter or Space answers with that place.',
+            },
+          )}
         </span>
-        {INLAYS.map((fret) => (
-          <span
-            key={`inlay-${fret}`}
-            aria-hidden="true"
-            className="rmm-fret__inlay"
-            style={{ gridColumn: fret + 2 }}
-          >
-            <svg viewBox="0 0 10 10" className="h-2.5 w-2.5">
-              <circle cx="5" cy="5" r="4.2" fill="currentColor" />
-            </svg>
-          </span>
-        ))}
-        {ROWS.map((string, row) => (
-          <div key={string} className="contents">
+        {INLAYS.map(
+          (
+            fret,
+          ) => (
             <span
+              key={`inlay-${fret}`}
               aria-hidden="true"
-              className="rmm-fret__name rmm-display"
-              style={{ gridRow: row + 1, gridColumn: 1 }}
+              className="rmm-fret__inlay"
+              style={{
+                gridColumn:
+                  fret +
+                  2,
+              }}
             >
-              {openName(string)}
+              <svg
+                viewBox="0 0 10 10"
+                className="h-2.5 w-2.5"
+              >
+                <circle
+                  cx="5"
+                  cy="5"
+                  r="4.2"
+                  fill="currentColor"
+                />
+              </svg>
             </span>
-            {FRETS.map((fret) => {
-              const isRight = !!right?.some((p) => same(p, string, fret));
-              const isWrong = same(wrong, string, fret);
-              const n = stringNumber(string);
-              const name = openName(string);
-              return (
-                <button
-                  key={fret}
-                  type="button"
-                  data-string={string}
-                  data-fret={fret}
-                  tabIndex={same(focus, string, fret) ? 0 : -1}
-                  aria-label={
-                    fret === 0
-                      ? t('find-cell-open', {
-                          n,
-                          name,
-                          defaultValue: 'String {{n}}, {{name}}, open',
-                        })
-                      : t('find-cell-fret', {
-                          n,
-                          name,
+          ),
+        )}
+        {ROWS.map(
+          (
+            string,
+            row,
+          ) => (
+            <div
+              key={
+                string
+              }
+              className="contents"
+            >
+              <span
+                aria-hidden="true"
+                className="rmm-fret__name rmm-display"
+                style={{
+                  gridRow:
+                    row +
+                    1,
+                  gridColumn: 1,
+                }}
+              >
+                {openName(
+                  string,
+                )}
+              </span>
+              {FRETS.map(
+                (
+                  fret,
+                ) => {
+                  const isRight =
+                    !!right?.some(
+                      (
+                        p,
+                      ) =>
+                        same(
+                          p,
+                          string,
                           fret,
-                          defaultValue: 'String {{n}}, {{name}}, fret {{fret}}',
-                        })
-                  }
-                  aria-disabled={!asking || undefined}
-                  onClick={() => tap(string, fret)}
-                  onKeyDown={(e) => onKeyDown(e, string, fret)}
-                  onFocus={() => setFocus({ string, fret })}
-                  className="rmm-fret__cell"
-                  style={
-                    {
-                      gridRow: row + 1,
-                      gridColumn: fret + 2,
-                      '--rmm-gauge': `${GAUGE[string]}px`,
-                    } as CSSProperties
-                  }
-                >
-                  {(isRight || isWrong) && (
-                    <Notehead
-                      kind={isRight ? 'filled' : 'open'}
-                      className={cn(
-                        'relative h-4 w-5',
-                        isRight ? 'text-app-accent' : 'text-app-danger',
+                        ),
+                    );
+                  const isWrong =
+                    same(
+                      wrong,
+                      string,
+                      fret,
+                    );
+                  const n =
+                    stringNumber(
+                      string,
+                    );
+                  const name =
+                    openName(
+                      string,
+                    );
+                  return (
+                    <button
+                      key={
+                        fret
+                      }
+                      type="button"
+                      data-string={
+                        string
+                      }
+                      data-fret={
+                        fret
+                      }
+                      tabIndex={
+                        same(
+                          focus,
+                          string,
+                          fret,
+                        )
+                          ? 0
+                          : -1
+                      }
+                      aria-label={
+                        fret ===
+                        0
+                          ? t(
+                              'find-cell-open',
+                              {
+                                n,
+                                name,
+                                defaultValue:
+                                  'String {{n}}, {{name}}, open',
+                              },
+                            )
+                          : t(
+                              'find-cell-fret',
+                              {
+                                n,
+                                name,
+                                fret,
+                                defaultValue:
+                                  'String {{n}}, {{name}}, fret {{fret}}',
+                              },
+                            )
+                      }
+                      aria-disabled={
+                        !asking ||
+                        undefined
+                      }
+                      onClick={() =>
+                        tap(
+                          string,
+                          fret,
+                        )
+                      }
+                      onKeyDown={(
+                        e,
+                      ) =>
+                        onKeyDown(
+                          e,
+                          string,
+                          fret,
+                        )
+                      }
+                      onFocus={() =>
+                        setFocus(
+                          {
+                            string,
+                            fret,
+                          },
+                        )
+                      }
+                      className="rmm-fret__cell"
+                      style={
+                        {
+                          gridRow:
+                            row +
+                            1,
+                          gridColumn:
+                            fret +
+                            2,
+                          '--rmm-gauge': `${GAUGE[string]}px`,
+                        } as CSSProperties
+                      }
+                    >
+                      {(isRight ||
+                        isWrong) && (
+                        <Notehead
+                          kind={
+                            isRight
+                              ? 'filled'
+                              : 'open'
+                          }
+                          className={cn(
+                            'relative h-4 w-5',
+                            isRight
+                              ? 'text-app-accent'
+                              : 'text-app-danger',
+                          )}
+                        />
                       )}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        ))}
-        {FRETS.slice(1).map((fret) => (
-          <span
-            key={`n-${fret}`}
-            aria-hidden="true"
-            className="rmm-fret__number"
-            style={{ gridRow: STRING_COUNT + 1, gridColumn: fret + 2 }}
-          >
-            {fret}
-          </span>
-        ))}
+                    </button>
+                  );
+                },
+              )}
+            </div>
+          ),
+        )}
+        {FRETS.slice(
+          1,
+        ).map(
+          (
+            fret,
+          ) => (
+            <span
+              key={`n-${fret}`}
+              aria-hidden="true"
+              className="rmm-fret__number"
+              style={{
+                gridRow:
+                  STRING_COUNT +
+                  1,
+                gridColumn:
+                  fret +
+                  2,
+              }}
+            >
+              {
+                fret
+              }
+            </span>
+          ),
+        )}
       </div>
     </div>
   );

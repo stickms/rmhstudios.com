@@ -13,39 +13,125 @@
  */
 
 import { decodeRelay } from '../../../../../lib/shared/p2p/relay';
-import { relayPair, type RelayPair, type SignalOut } from '../../../../../lib/shared/p2p/webrtc';
+import {
+  relayPair,
+  type RelayPair,
+  type SignalOut,
+} from '../../../../../lib/shared/p2p/webrtc';
 import { BALATRO_LIMITS } from '../../net/limits';
-import type { HubLike, HubOut } from './types';
+import type {
+  HubLike,
+  HubOut,
+} from './types';
 
 /** A DirectConnection signal → the hub payload, or null when it cannot travel (null candidate, oversize). */
-export function signalPayload(s: SignalOut, to?: string): HubOut<'balatro:p2p:signal'> | null {
-  if (s.description) {
-    if (s.description.sdp.length > BALATRO_LIMITS.SDP_MAX_LENGTH) return null;
-    return { ...(to ? { to } : {}), description: { type: s.description.type, sdp: s.description.sdp } };
+export function signalPayload(
+  s: SignalOut,
+  to?: string,
+): HubOut<'balatro:p2p:signal'> | null {
+  if (
+    s.description
+  ) {
+    if (
+      s
+        .description
+        .sdp
+        .length >
+      BALATRO_LIMITS.SDP_MAX_LENGTH
+    )
+      return null;
+    return {
+      ...(to
+        ? {
+            to,
+          }
+        : {}),
+      description:
+        {
+          type: s
+            .description
+            .type,
+          sdp: s
+            .description
+            .sdp,
+        },
+    };
   }
-  const c = s.candidate;
-  if (!c || c.candidate.length > BALATRO_LIMITS.CANDIDATE_MAX_LENGTH) return null;
-  const mid = c.sdpMid ?? null;
-  const line = c.sdpMLineIndex ?? null;
+  const c =
+    s.candidate;
+  if (
+    !c ||
+    c
+      .candidate
+      .length >
+      BALATRO_LIMITS.CANDIDATE_MAX_LENGTH
+  )
+    return null;
+  const mid =
+    c.sdpMid ??
+    null;
+  const line =
+    c.sdpMLineIndex ??
+    null;
   return {
-    ...(to ? { to } : {}),
-    candidate: {
-      candidate: c.candidate,
-      sdpMid: mid === null ? null : String(mid).slice(0, 64),
-      sdpMLineIndex: line === null || line < 0 || line > 64 ? null : line,
-    },
+    ...(to
+      ? {
+          to,
+        }
+      : {}),
+    candidate:
+      {
+        candidate:
+          c.candidate,
+        sdpMid:
+          mid ===
+          null
+            ? null
+            : String(
+                mid,
+              ).slice(
+                0,
+                64,
+              ),
+        sdpMLineIndex:
+          line ===
+            null ||
+          line <
+            0 ||
+          line >
+            64
+            ? null
+            : line,
+      },
   };
 }
 
 /** A relay channel pair for `slot`, sending through the hub. */
-export function hubRelayPair(hub: HubLike, slot: number): RelayPair {
-  return relayPair(slot, (packet) => {
-    hub.emit('balatro:p2p:relay', packet as Uint8Array<ArrayBuffer>);
-    return true;
-  });
+export function hubRelayPair(
+  hub: HubLike,
+  slot: number,
+): RelayPair {
+  return relayPair(
+    slot,
+    (
+      packet,
+    ) => {
+      hub.emit(
+        'balatro:p2p:relay',
+        packet as Uint8Array<ArrayBuffer>,
+      );
+      return true;
+    },
+  );
 }
 
 /** Decode an incoming relay frame (null for garbage). */
-export function readRelay(bytes: Uint8Array): ReturnType<typeof decodeRelay> {
-  return decodeRelay(bytes);
+export function readRelay(
+  bytes: Uint8Array,
+): ReturnType<
+  typeof decodeRelay
+> {
+  return decodeRelay(
+    bytes,
+  );
 }

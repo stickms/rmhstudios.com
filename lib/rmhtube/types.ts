@@ -7,9 +7,17 @@
 
 // ─── Media Types ─────────────────────────────────────────────────
 
-import type { MediaType, LiveHint, ParsedMedia } from './media';
+import type {
+  MediaType,
+  LiveHint,
+  ParsedMedia,
+} from './media';
 
-export type { MediaType, LiveHint, ParsedMedia };
+export type {
+  MediaType,
+  LiveHint,
+  ParsedMedia,
+};
 
 // ─── Room Settings ───────────────────────────────────────────────
 
@@ -19,11 +27,15 @@ export interface RoomSettings {
   allowMemberQueue: boolean;
   allowMemberSkip: boolean;
   autoPlay: boolean;
-  password: string | null;
+  password:
+    | string
+    | null;
   queueVoting: boolean;
   autoSortByVotes: boolean;
   loopQueue: boolean;
-  customReactions: string[] | null;
+  customReactions:
+    | string[]
+    | null;
   /**
    * Pause the room while somebody is still buffering, rather than leaving them
    * behind to be seek-chased for the rest of the video. The overlay this drives
@@ -39,7 +51,9 @@ export interface RoomSettings {
  * `live` — a sliding window whose "position" is not comparable between
  * viewers, so it is mirrored (play/pause) rather than synchronised.
  */
-export type SyncMode = 'vod' | 'live';
+export type SyncMode =
+  | 'vod'
+  | 'live';
 
 export interface VideoState {
   mode: SyncMode;
@@ -64,33 +78,56 @@ export interface ChatMessage {
   content: string;
   createdAt: number;
   // Phase 1: Message Replies
-  replyToId: string | null;
-  replyToContent: string | null;
-  replyToUserName: string | null;
+  replyToId:
+    | string
+    | null;
+  replyToContent:
+    | string
+    | null;
+  replyToUserName:
+    | string
+    | null;
   // Phase 1: @Mentions
   mentions: string[];
   // Phase 1: Chat Reactions
-  reactions: Record<string, string[]>;
+  reactions: Record<
+    string,
+    string[]
+  >;
   // Phase 2: Timestamp Sharing
-  timestamp: number | null;
+  timestamp:
+    | number
+    | null;
 }
 
 // Phase 1: System Messages
 export interface SystemMessage {
   id: string;
   type: 'system';
-  event: 'join' | 'leave' | 'kick' | 'host_transfer' | 'leader_change' | 'skip' | 'settings_change' | 'now_playing';
+  event:
+    | 'join'
+    | 'leave'
+    | 'kick'
+    | 'host_transfer'
+    | 'leader_change'
+    | 'skip'
+    | 'settings_change'
+    | 'now_playing';
   content: string;
   createdAt: number;
 }
 
-export type ChatEntry = ChatMessage | SystemMessage;
+export type ChatEntry =
+  | ChatMessage
+  | SystemMessage;
 
 // ─── Client-Side State ───────────────────────────────────────────
 
 export interface ClientRoomState {
   roomId: string;
-  name: string | null;
+  name:
+    | string
+    | null;
   hostUserId: string;
   leaderUserId: string;
   settings: RoomSettings;
@@ -115,13 +152,20 @@ export interface ClientRoomState {
   controlRequests?: string[];
 }
 
-export type UserPresenceStatus = 'watching' | 'afk' | 'brb';
-export type MemberRole = 'host' | 'member';
+export type UserPresenceStatus =
+  | 'watching'
+  | 'afk'
+  | 'brb';
+export type MemberRole =
+  | 'host'
+  | 'member';
 
 export interface ClientMemberInfo {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   isConnected: boolean;
   isHost: boolean;
   isLeader: boolean;
@@ -135,8 +179,12 @@ export interface ClientQueueItem {
   url: string;
   mediaType: MediaType;
   title: string;
-  duration: number | null;
-  thumbnailUrl: string | null;
+  duration:
+    | number
+    | null;
+  thumbnailUrl:
+    | string
+    | null;
   addedBy: string;
   addedByName: string;
   addedAt: number;
@@ -160,7 +208,10 @@ export interface ClientQueueItem {
  * auto-sort replaced the client's queue with items whose vote counts had reset
  * to zero.
  */
-export interface QueueBroadcastItem extends Omit<ClientQueueItem, 'votedByMe'> {
+export interface QueueBroadcastItem extends Omit<
+  ClientQueueItem,
+  'votedByMe'
+> {
   voters: string[];
 }
 
@@ -168,14 +219,20 @@ export interface QueueBroadcastItem extends Omit<ClientQueueItem, 'votedByMe'> {
 
 export interface PublicRoomInfo {
   roomId: string;
-  name: string | null;
+  name:
+    | string
+    | null;
   hostName: string;
   memberCount: number;
   maxMembers: number;
-  currentVideo: string | null;
+  currentVideo:
+    | string
+    | null;
   hasPassword: boolean;
   // Phase 4: Room Scheduling
-  scheduledFor: number | null;
+  scheduledFor:
+    | number
+    | null;
 }
 
 // ─── Ban List (Phase 4) ──────────────────────────────────────────
@@ -185,7 +242,9 @@ export interface BannedUser {
   userName: string;
   bannedAt: number;
   bannedBy: string;
-  reason: string | null;
+  reason:
+    | string
+    | null;
 }
 
 // ─── Invite Links (Phase 4) ─────────────────────────────────────
@@ -203,7 +262,9 @@ export interface InviteLink {
 
 export interface RoomHistoryEntry {
   roomId: string;
-  roomName: string | null;
+  roomName:
+    | string
+    | null;
   hostName: string;
   lastVisited: number;
   videoCount: number;
@@ -214,8 +275,12 @@ export interface RoomHistoryStatus {
   isOpen: boolean;
   memberCount: number;
   maxMembers: number;
-  hostName: string | null;
-  currentVideo: string | null;
+  hostName:
+    | string
+    | null;
+  currentVideo:
+    | string
+    | null;
 }
 
 // ─── User Watch Stats (Phase 4) ─────────────────────────────────
@@ -244,8 +309,12 @@ export interface PlaylistItem {
   url: string;
   mediaType: MediaType;
   title: string;
-  duration: number | null;
-  thumbnailUrl: string | null;
+  duration:
+    | number
+    | null;
+  thumbnailUrl:
+    | string
+    | null;
 }
 
 // ─── Room Actions (incremental state updates) ────────────────────

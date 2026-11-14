@@ -1,13 +1,36 @@
-import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
+import {
+  existsSync,
+  readFileSync,
+} from 'node:fs';
 import { resolve } from 'node:path';
-import { buildMeta, ogCardPath, absoluteUrl, SITE_URL, DEFAULT_OG_IMAGE } from '@/lib/seo';
-import { STATIC_CARDS, staticCardFor, staticCardImage } from '@/lib/og/static-cards';
+import {
+  buildMeta,
+  ogCardPath,
+  absoluteUrl,
+  SITE_URL,
+  DEFAULT_OG_IMAGE,
+} from '@/lib/seo';
+import {
+  STATIC_CARDS,
+  staticCardFor,
+  staticCardImage,
+} from '@/lib/og/static-cards';
 import { catalogStatsFor } from '@/lib/og/catalog-stats';
 import { fitText } from '@/lib/og/chrome.server';
-import { MAX_COLLAGE_TILES, collageTiles } from '@/lib/og/collage';
+import {
+  MAX_COLLAGE_TILES,
+  collageTiles,
+} from '@/lib/og/collage';
 import { postCardShowsContent } from '@/lib/og/post-visibility';
-import { appHubHead, appRouteHead } from '@/lib/seo-catalog';
+import {
+  appHubHead,
+  appRouteHead,
+} from '@/lib/seo-catalog';
 import { apps } from '@/lib/catalog';
 
 /**
@@ -20,12 +43,35 @@ import { apps } from '@/lib/catalog';
  * is the one surface nobody has open while editing.
  */
 
-const meta = (arr: ReturnType<typeof buildMeta>, key: string): string | undefined => {
-  const hit = arr.find(
-    (m) => ('property' in m && m.property === key) || ('name' in m && m.name === key),
-  ) as { content?: string } | undefined;
-  return hit?.content;
-};
+const meta =
+  (
+    arr: ReturnType<
+      typeof buildMeta
+    >,
+    key: string,
+  ):
+    | string
+    | undefined => {
+    const hit =
+      arr.find(
+        (
+          m,
+        ) =>
+          ('property' in
+            m &&
+            m.property ===
+              key) ||
+          ('name' in
+            m &&
+            m.name ===
+              key),
+      ) as
+        | {
+            content?: string;
+          }
+        | undefined;
+    return hit?.content;
+  };
 
 describe('static cards', () => {
   it('every card served as a file has that file on disk', () => {
@@ -33,207 +79,876 @@ describe('static cards', () => {
     // `/images/og/default.png` for months while `public/images/og/` did not
     // exist, so every share without a custom card unfurled broken. Only `default`
     // is a file now; every other card is rendered on request.
-    const missing = STATIC_CARDS.filter((card) => staticCardImage(card).startsWith('/images/')).filter(
-      (card) => !existsSync(resolve(process.cwd(), 'public', staticCardImage(card).slice(1))),
+    const missing =
+      STATIC_CARDS.filter(
+        (
+          card,
+        ) =>
+          staticCardImage(
+            card,
+          ).startsWith(
+            '/images/',
+          ),
+      ).filter(
+        (
+          card,
+        ) =>
+          !existsSync(
+            resolve(
+              process.cwd(),
+              'public',
+              staticCardImage(
+                card,
+              ).slice(
+                1,
+              ),
+            ),
+          ),
+      );
+    expect(
+      missing.map(
+        (
+          c,
+        ) =>
+          c.file,
+      ),
+    ).toEqual(
+      [],
     );
-    expect(missing.map((c) => c.file)).toEqual([]);
   });
 
   it('every other card is answered by the section route', () => {
-    for (const card of STATIC_CARDS.filter((c) => c.file !== 'default')) {
-      expect(staticCardImage(card)).toBe(`/api/og/section/${card.file}`);
+    for (const card of STATIC_CARDS.filter(
+      (
+        c,
+      ) =>
+        c.file !==
+        'default',
+    )) {
+      expect(
+        staticCardImage(
+          card,
+        ),
+      ).toBe(
+        `/api/og/section/${card.file}`,
+      );
     }
   });
 
   it('cards that share a file share their copy (the file is the card, the path is only who it answers for)', () => {
-    const byFile = new Map<string, string>();
+    const byFile =
+      new Map<
+        string,
+        string
+      >();
     for (const c of STATIC_CARDS) {
-      const copy = JSON.stringify([c.eyebrow, c.title, c.subtitle]);
-      const seen = byFile.get(c.file);
-      if (seen !== undefined) expect(copy, `${c.path} disagrees with another card on file "${c.file}"`).toBe(seen);
-      byFile.set(c.file, copy);
+      const copy =
+        JSON.stringify(
+          [
+            c.eyebrow,
+            c.title,
+            c.subtitle,
+          ],
+        );
+      const seen =
+        byFile.get(
+          c.file,
+        );
+      if (
+        seen !==
+        undefined
+      )
+        expect(
+          copy,
+          `${c.path} disagrees with another card on file "${c.file}"`,
+        ).toBe(
+          seen,
+        );
+      byFile.set(
+        c.file,
+        copy,
+      );
     }
   });
 
   it('keeps the copy short enough to read at the size an unfurl is drawn', () => {
     for (const c of STATIC_CARDS) {
-      expect(c.eyebrow.length, `${c.file} eyebrow`).toBeLessThanOrEqual(28);
-      expect(c.title.length, `${c.file} title`).toBeLessThanOrEqual(48);
-      expect(c.subtitle.length, `${c.file} subtitle`).toBeLessThanOrEqual(100);
+      expect(
+        c
+          .eyebrow
+          .length,
+        `${c.file} eyebrow`,
+      ).toBeLessThanOrEqual(
+        28,
+      );
+      expect(
+        c
+          .title
+          .length,
+        `${c.file} title`,
+      ).toBeLessThanOrEqual(
+        48,
+      );
+      expect(
+        c
+          .subtitle
+          .length,
+        `${c.file} subtitle`,
+      ).toBeLessThanOrEqual(
+        100,
+      );
     }
   });
 
   it('puts no counts in the copy: the figures are drawn from the catalog', () => {
-    const word = /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b/i;
-    for (const c of STATIC_CARDS.filter((x) => ['default', 'games', 'apps'].includes(x.file))) {
-      expect(word.test(c.title), `${c.file} title`).toBe(false);
-      expect(/\d/.test(c.title), `${c.file} title`).toBe(false);
+    const word =
+      /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b/i;
+    for (const c of STATIC_CARDS.filter(
+      (
+        x,
+      ) =>
+        [
+          'default',
+          'games',
+          'apps',
+        ].includes(
+          x.file,
+        ),
+    )) {
+      expect(
+        word.test(
+          c.title,
+        ),
+        `${c.file} title`,
+      ).toBe(
+        false,
+      );
+      expect(
+        /\d/.test(
+          c.title,
+        ),
+        `${c.file} title`,
+      ).toBe(
+        false,
+      );
     }
   });
 
   it('commits the same figures the catalog has, so the default PNG can not go stale unnoticed', () => {
-    for (const file of ['default', 'games', 'apps']) {
-      const card = STATIC_CARDS.find((c) => c.file === file)!;
-      const live = catalogStatsFor(file)!;
-      expect(card.stats?.map((s) => [s.value, s.label])).toEqual(live.map((s) => [s.value, s.label]));
+    for (const file of [
+      'default',
+      'games',
+      'apps',
+    ]) {
+      const card =
+        STATIC_CARDS.find(
+          (
+            c,
+          ) =>
+            c.file ===
+            file,
+        )!;
+      const live =
+        catalogStatsFor(
+          file,
+        )!;
+      expect(
+        card.stats?.map(
+          (
+            s,
+          ) => [
+            s.value,
+            s.label,
+          ],
+        ),
+      ).toEqual(
+        live.map(
+          (
+            s,
+          ) => [
+            s.value,
+            s.label,
+          ],
+        ),
+      );
     }
   });
 
   it('matches the home page exactly, not by prefix', () => {
-    expect(staticCardFor('/')?.file).toBe('default');
+    expect(
+      staticCardFor(
+        '/',
+      )
+        ?.file,
+    ).toBe(
+      'default',
+    );
     // If `/` matched by prefix it would swallow every path on the site.
-    expect(staticCardFor('/games')?.file).toBe('games');
+    expect(
+      staticCardFor(
+        '/games',
+      )
+        ?.file,
+    ).toBe(
+      'games',
+    );
   });
 
   it('resolves a nested path to its section card', () => {
-    expect(staticCardFor('/library/albums/holiday')?.file).toBe('library');
-    expect(staticCardFor('/blog/some-post')?.file).toBe('blog');
-    expect(staticCardFor('/rmhladder/jobs/abc')?.file).toBe('rmhladder');
+    expect(
+      staticCardFor(
+        '/library/albums/holiday',
+      )
+        ?.file,
+    ).toBe(
+      'library',
+    );
+    expect(
+      staticCardFor(
+        '/blog/some-post',
+      )
+        ?.file,
+    ).toBe(
+      'blog',
+    );
+    expect(
+      staticCardFor(
+        '/rmhladder/jobs/abc',
+      )
+        ?.file,
+    ).toBe(
+      'rmhladder',
+    );
   });
 
   it('does not match a path that merely starts with a section name', () => {
     // `/marketing` is not inside `/market`.
-    expect(staticCardFor('/marketplace-rules')).toBeNull();
+    expect(
+      staticCardFor(
+        '/marketplace-rules',
+      ),
+    ).toBeNull();
   });
 
   it('ignores trailing slashes and query strings', () => {
-    expect(staticCardFor('/games/')?.file).toBe('games');
-    expect(staticCardFor('/games?sort=new')?.file).toBe('games');
+    expect(
+      staticCardFor(
+        '/games/',
+      )
+        ?.file,
+    ).toBe(
+      'games',
+    );
+    expect(
+      staticCardFor(
+        '/games?sort=new',
+      )
+        ?.file,
+    ).toBe(
+      'games',
+    );
   });
 
   it('falls through to null for a path with no section', () => {
-    expect(staticCardFor('/settings/appearance')).toBeNull();
+    expect(
+      staticCardFor(
+        '/settings/appearance',
+      ),
+    ).toBeNull();
   });
 });
 
 describe('buildMeta', () => {
-  const base = { title: 'Title', description: 'Description', path: '/settings/appearance' };
+  const base =
+    {
+      title:
+        'Title',
+      description:
+        'Description',
+      path: '/settings/appearance',
+    };
 
   it('makes a site-relative image absolute', () => {
-    const tags = buildMeta({ ...base, image: '/api/og/post/abc' });
-    expect(meta(tags, 'og:image')).toBe(`${SITE_URL}/api/og/post/abc`);
-    expect(meta(tags, 'twitter:image')).toBe(`${SITE_URL}/api/og/post/abc`);
+    const tags =
+      buildMeta(
+        {
+          ...base,
+          image:
+            '/api/og/post/abc',
+        },
+      );
+    expect(
+      meta(
+        tags,
+        'og:image',
+      ),
+    ).toBe(
+      `${SITE_URL}/api/og/post/abc`,
+    );
+    expect(
+      meta(
+        tags,
+        'twitter:image',
+      ),
+    ).toBe(
+      `${SITE_URL}/api/og/post/abc`,
+    );
   });
 
   it('leaves an absolute image alone', () => {
-    const tags = buildMeta({ ...base, image: 'https://cdn.example.com/a.png' });
-    expect(meta(tags, 'og:image')).toBe('https://cdn.example.com/a.png');
+    const tags =
+      buildMeta(
+        {
+          ...base,
+          image:
+            'https://cdn.example.com/a.png',
+        },
+      );
+    expect(
+      meta(
+        tags,
+        'og:image',
+      ),
+    ).toBe(
+      'https://cdn.example.com/a.png',
+    );
   });
 
   it('falls back to the site default when the path matches no section', () => {
-    expect(meta(buildMeta(base), 'og:image')).toBe(absoluteUrl(DEFAULT_OG_IMAGE));
+    expect(
+      meta(
+        buildMeta(
+          base,
+        ),
+        'og:image',
+      ),
+    ).toBe(
+      absoluteUrl(
+        DEFAULT_OG_IMAGE,
+      ),
+    );
   });
 
   it('uses the section card when the path has one', () => {
-    const tags = buildMeta({ ...base, path: '/library/albums/x' });
-    expect(meta(tags, 'og:image')).toBe(`${SITE_URL}/api/og/section/library`);
+    const tags =
+      buildMeta(
+        {
+          ...base,
+          path: '/library/albums/x',
+        },
+      );
+    expect(
+      meta(
+        tags,
+        'og:image',
+      ),
+    ).toBe(
+      `${SITE_URL}/api/og/section/library`,
+    );
   });
 
   it('declares dimensions for rendered cards', () => {
-    const tags = buildMeta({ ...base, image: '/api/og/post/abc' });
-    expect(meta(tags, 'og:image:width')).toBe('1200');
-    expect(meta(tags, 'og:image:height')).toBe('630');
-    expect(meta(tags, 'twitter:card')).toBe('summary_large_image');
+    const tags =
+      buildMeta(
+        {
+          ...base,
+          image:
+            '/api/og/post/abc',
+        },
+      );
+    expect(
+      meta(
+        tags,
+        'og:image:width',
+      ),
+    ).toBe(
+      '1200',
+    );
+    expect(
+      meta(
+        tags,
+        'og:image:height',
+      ),
+    ).toBe(
+      '630',
+    );
+    expect(
+      meta(
+        tags,
+        'twitter:card',
+      ),
+    ).toBe(
+      'summary_large_image',
+    );
   });
 
   it('omits dimensions and drops to a small card for foreign-sized images', () => {
     // A user-uploaded thumbnail is whatever shape it was uploaded at; claiming
     // 1200×630 for it makes consumers letterbox or crop it wrongly.
-    const tags = buildMeta({ ...base, image: '/uploads/thumb.png', imageSize: null });
-    expect(meta(tags, 'og:image:width')).toBeUndefined();
-    expect(meta(tags, 'og:image:height')).toBeUndefined();
+    const tags =
+      buildMeta(
+        {
+          ...base,
+          image:
+            '/uploads/thumb.png',
+          imageSize:
+            null,
+        },
+      );
+    expect(
+      meta(
+        tags,
+        'og:image:width',
+      ),
+    ).toBeUndefined();
+    expect(
+      meta(
+        tags,
+        'og:image:height',
+      ),
+    ).toBeUndefined();
   });
 
   it('always emits alt text, defaulting to the title', () => {
-    expect(meta(buildMeta(base), 'og:image:alt')).toBe('Title');
-    expect(meta(buildMeta({ ...base, imageAlt: 'A globe' }), 'og:image:alt')).toBe('A globe');
+    expect(
+      meta(
+        buildMeta(
+          base,
+        ),
+        'og:image:alt',
+      ),
+    ).toBe(
+      'Title',
+    );
+    expect(
+      meta(
+        buildMeta(
+          {
+            ...base,
+            imageAlt:
+              'A globe',
+          },
+        ),
+        'og:image:alt',
+      ),
+    ).toBe(
+      'A globe',
+    );
   });
 
   it('emits a canonical og:url for the page', () => {
-    expect(meta(buildMeta(base), 'og:url')).toBe(`${SITE_URL}/settings/appearance`);
+    expect(
+      meta(
+        buildMeta(
+          base,
+        ),
+        'og:url',
+      ),
+    ).toBe(
+      `${SITE_URL}/settings/appearance`,
+    );
   });
 });
 
 describe('appRouteHead', () => {
-  const headMeta = (id: string) => appRouteHead(id).meta as ReturnType<typeof buildMeta>;
+  const headMeta =
+    (
+      id: string,
+    ) =>
+      appRouteHead(
+        id,
+      )
+        .meta as ReturnType<
+        typeof buildMeta
+      >;
 
   it('points an app without its own image at its rendered card', () => {
-    const app = apps.find((a) => !a.ogImagePath && a.href.startsWith('/'));
-    expect(app, 'an app with no ogImagePath').toBeDefined();
-    const tags = headMeta(app!.id);
-    expect(meta(tags, 'og:image')).toBe(`${SITE_URL}/api/og/app/${app!.id}`);
-    expect(meta(tags, 'twitter:image')).toBe(`${SITE_URL}/api/og/app/${app!.id}`);
-    expect(meta(tags, 'og:image:width')).toBe('1200');
-    expect(meta(tags, 'og:image:height')).toBe('630');
-    expect(meta(tags, 'og:image:alt')).toBe(`${app!.title} on RMH Studios.`);
-    expect(meta(tags, 'twitter:card')).toBe('summary_large_image');
+    const app =
+      apps.find(
+        (
+          a,
+        ) =>
+          !a.ogImagePath &&
+          a.href.startsWith(
+            '/',
+          ),
+      );
+    expect(
+      app,
+      'an app with no ogImagePath',
+    ).toBeDefined();
+    const tags =
+      headMeta(
+        app!
+          .id,
+      );
+    expect(
+      meta(
+        tags,
+        'og:image',
+      ),
+    ).toBe(
+      `${SITE_URL}/api/og/app/${app!.id}`,
+    );
+    expect(
+      meta(
+        tags,
+        'twitter:image',
+      ),
+    ).toBe(
+      `${SITE_URL}/api/og/app/${app!.id}`,
+    );
+    expect(
+      meta(
+        tags,
+        'og:image:width',
+      ),
+    ).toBe(
+      '1200',
+    );
+    expect(
+      meta(
+        tags,
+        'og:image:height',
+      ),
+    ).toBe(
+      '630',
+    );
+    expect(
+      meta(
+        tags,
+        'og:image:alt',
+      ),
+    ).toBe(
+      `${app!.title} on RMH Studios.`,
+    );
+    expect(
+      meta(
+        tags,
+        'twitter:card',
+      ),
+    ).toBe(
+      'summary_large_image',
+    );
   });
 
   it('uses a declared ogImagePath, at 1200×630, with its own alt text', () => {
-    const app = apps.find((a) => a.id === 'rmhmusic');
-    expect(app?.ogImagePath).toBe('/images/og/rmhmusic.png');
-    const tags = headMeta('rmhmusic');
-    expect(meta(tags, 'og:image')).toBe(`${SITE_URL}/images/og/rmhmusic.png`);
-    expect(meta(tags, 'twitter:image')).toBe(`${SITE_URL}/images/og/rmhmusic.png`);
-    expect(meta(tags, 'og:image:width')).toBe('1200');
-    expect(meta(tags, 'og:image:height')).toBe('630');
-    expect(meta(tags, 'twitter:card')).toBe('summary_large_image');
-    expect(meta(tags, 'og:image:alt')).toBe(app!.ogImageAlt);
-    expect(meta(tags, 'twitter:image:alt')).toBe(app!.ogImageAlt);
+    const app =
+      apps.find(
+        (
+          a,
+        ) =>
+          a.id ===
+          'rmhmusic',
+      );
+    expect(
+      app?.ogImagePath,
+    ).toBe(
+      '/images/og/rmhmusic.png',
+    );
+    const tags =
+      headMeta(
+        'rmhmusic',
+      );
+    expect(
+      meta(
+        tags,
+        'og:image',
+      ),
+    ).toBe(
+      `${SITE_URL}/images/og/rmhmusic.png`,
+    );
+    expect(
+      meta(
+        tags,
+        'twitter:image',
+      ),
+    ).toBe(
+      `${SITE_URL}/images/og/rmhmusic.png`,
+    );
+    expect(
+      meta(
+        tags,
+        'og:image:width',
+      ),
+    ).toBe(
+      '1200',
+    );
+    expect(
+      meta(
+        tags,
+        'og:image:height',
+      ),
+    ).toBe(
+      '630',
+    );
+    expect(
+      meta(
+        tags,
+        'twitter:card',
+      ),
+    ).toBe(
+      'summary_large_image',
+    );
+    expect(
+      meta(
+        tags,
+        'og:image:alt',
+      ),
+    ).toBe(
+      app!
+        .ogImageAlt,
+    );
+    expect(
+      meta(
+        tags,
+        'twitter:image:alt',
+      ),
+    ).toBe(
+      app!
+        .ogImageAlt,
+    );
   });
 
   it('every declared ogImagePath is a 1200×630 PNG on disk with alt text', () => {
     // The head declares 1200×630 for it (buildMeta's default), so the file has
     // to be exactly that, or the declaration is a lie and consumers crop wrongly.
-    for (const app of apps.filter((a) => a.ogImagePath)) {
-      const path = app.ogImagePath!;
-      expect(path, app.id).toMatch(/^\/images\/og\/[a-z0-9-]+\.png$/);
-      expect(app.ogImageAlt, `${app.id}: ogImageAlt`).toBeTruthy();
-      const file = resolve(process.cwd(), 'public', path.slice(1));
-      expect(existsSync(file), `${app.id}: ${path} missing`).toBe(true);
-      const png = readFileSync(file);
-      expect(png.subarray(1, 4).toString('latin1'), `${app.id}: not a PNG`).toBe('PNG');
-      expect([png.readUInt32BE(16), png.readUInt32BE(20)], `${app.id}: size`).toEqual([1200, 630]);
-      expect(png.length, `${app.id}: keep it under ~400 KB`).toBeLessThanOrEqual(400 * 1024);
+    for (const app of apps.filter(
+      (
+        a,
+      ) =>
+        a.ogImagePath,
+    )) {
+      const path =
+        app.ogImagePath!;
+      expect(
+        path,
+        app.id,
+      ).toMatch(
+        /^\/images\/og\/[a-z0-9-]+\.png$/,
+      );
+      expect(
+        app.ogImageAlt,
+        `${app.id}: ogImageAlt`,
+      ).toBeTruthy();
+      const file =
+        resolve(
+          process.cwd(),
+          'public',
+          path.slice(
+            1,
+          ),
+        );
+      expect(
+        existsSync(
+          file,
+        ),
+        `${app.id}: ${path} missing`,
+      ).toBe(
+        true,
+      );
+      const png =
+        readFileSync(
+          file,
+        );
+      expect(
+        png
+          .subarray(
+            1,
+            4,
+          )
+          .toString(
+            'latin1',
+          ),
+        `${app.id}: not a PNG`,
+      ).toBe(
+        'PNG',
+      );
+      expect(
+        [
+          png.readUInt32BE(
+            16,
+          ),
+          png.readUInt32BE(
+            20,
+          ),
+        ],
+        `${app.id}: size`,
+      ).toEqual(
+        [
+          1200,
+          630,
+        ],
+      );
+      expect(
+        png.length,
+        `${app.id}: keep it under ~400 KB`,
+      ).toBeLessThanOrEqual(
+        400 *
+          1024,
+      );
     }
   });
 });
 
 describe('appHubHead', () => {
   // The app's own route is behind the sign-in gate, so a link-preview bot only ever sees this page.
-  it('carries the app\'s embed and stays out of search', () => {
-    const route = appRouteHead('rmhmusic').meta as ReturnType<typeof buildMeta>;
-    const hub = appHubHead('rmhmusic').meta as ReturnType<typeof buildMeta>;
-    for (const key of ['og:image', 'og:title', 'og:description', 'og:url', 'twitter:card']) {
-      expect(meta(hub, key), key).toBe(meta(route, key));
+  it("carries the app's embed and stays out of search", () => {
+    const route =
+      appRouteHead(
+        'rmhmusic',
+      )
+        .meta as ReturnType<
+        typeof buildMeta
+      >;
+    const hub =
+      appHubHead(
+        'rmhmusic',
+      )
+        .meta as ReturnType<
+        typeof buildMeta
+      >;
+    for (const key of [
+      'og:image',
+      'og:title',
+      'og:description',
+      'og:url',
+      'twitter:card',
+    ]) {
+      expect(
+        meta(
+          hub,
+          key,
+        ),
+        key,
+      ).toBe(
+        meta(
+          route,
+          key,
+        ),
+      );
     }
-    expect(meta(hub, 'og:image')).toBe(`${SITE_URL}/images/og/rmhmusic.png`);
-    expect(hub.some((m) => 'name' in m && m.name === 'robots' && m.content === 'noindex, follow')).toBe(true);
+    expect(
+      meta(
+        hub,
+        'og:image',
+      ),
+    ).toBe(
+      `${SITE_URL}/images/og/rmhmusic.png`,
+    );
+    expect(
+      hub.some(
+        (
+          m,
+        ) =>
+          'name' in
+            m &&
+          m.name ===
+            'robots' &&
+          m.content ===
+            'noindex, follow',
+      ),
+    ).toBe(
+      true,
+    );
   });
 });
 
 describe('ogCardPath', () => {
   it('points at the card route for a kind', () => {
-    expect(ogCardPath('game', 'hearthworks')).toBe('/api/og/game/hearthworks');
-    expect(ogCardPath('app', 'rmhtube')).toBe('/api/og/app/rmhtube');
-    expect(ogCardPath('section', 'tf2-play')).toBe('/api/og/section/tf2-play');
-    expect(ogCardPath('build', 'my-build')).toBe('/api/og/build/my-build');
-    expect(ogCardPath('story', 's')).toBe('/api/og/story/s');
-    expect(ogCardPath('album', 'a')).toBe('/api/og/album/a');
+    expect(
+      ogCardPath(
+        'game',
+        'hearthworks',
+      ),
+    ).toBe(
+      '/api/og/game/hearthworks',
+    );
+    expect(
+      ogCardPath(
+        'app',
+        'rmhtube',
+      ),
+    ).toBe(
+      '/api/og/app/rmhtube',
+    );
+    expect(
+      ogCardPath(
+        'section',
+        'tf2-play',
+      ),
+    ).toBe(
+      '/api/og/section/tf2-play',
+    );
+    expect(
+      ogCardPath(
+        'build',
+        'my-build',
+      ),
+    ).toBe(
+      '/api/og/build/my-build',
+    );
+    expect(
+      ogCardPath(
+        'story',
+        's',
+      ),
+    ).toBe(
+      '/api/og/story/s',
+    );
+    expect(
+      ogCardPath(
+        'album',
+        'a',
+      ),
+    ).toBe(
+      '/api/og/album/a',
+    );
   });
 
   it('encodes ids so a handle with a slash cannot escape the route', () => {
-    expect(ogCardPath('profile', 'a/b')).toBe('/api/og/profile/a%2Fb');
+    expect(
+      ogCardPath(
+        'profile',
+        'a/b',
+      ),
+    ).toBe(
+      '/api/og/profile/a%2Fb',
+    );
   });
 });
 
 describe('postCardShowsContent', () => {
-  const open = { deletedAt: null, audience: 'PUBLIC', unlockPrice: 0, isSensitive: false };
+  const open =
+    {
+      deletedAt:
+        null,
+      audience:
+        'PUBLIC',
+      unlockPrice: 0,
+      isSensitive: false,
+    };
 
   it('shows a public, free, live, unflagged post', () => {
-    expect(postCardShowsContent(open)).toBe(true);
+    expect(
+      postCardShowsContent(
+        open,
+      ),
+    ).toBe(
+      true,
+    );
     // A null price is the same as a free one — most rows have never been priced.
-    expect(postCardShowsContent({ ...open, unlockPrice: null })).toBe(true);
+    expect(
+      postCardShowsContent(
+        {
+          ...open,
+          unlockPrice:
+            null,
+        },
+      ),
+    ).toBe(
+      true,
+    );
   });
 
   it('hides everything the card route must not leak', () => {
@@ -241,96 +956,346 @@ describe('postCardShowsContent', () => {
     // are asserted one by one because the card is a public, uncredentialed
     // surface: a condition dropped from this list is content published to
     // anyone holding the post's id, and nothing else in the system would fail.
-    expect(postCardShowsContent({ ...open, deletedAt: new Date() })).toBe(false);
-    expect(postCardShowsContent({ ...open, audience: 'FOLLOWERS' })).toBe(false);
-    expect(postCardShowsContent({ ...open, audience: 'PRIVATE' })).toBe(false);
-    expect(postCardShowsContent({ ...open, unlockPrice: 25 })).toBe(false);
-    expect(postCardShowsContent({ ...open, isSensitive: true })).toBe(false);
+    expect(
+      postCardShowsContent(
+        {
+          ...open,
+          deletedAt:
+            new Date(),
+        },
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      postCardShowsContent(
+        {
+          ...open,
+          audience:
+            'FOLLOWERS',
+        },
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      postCardShowsContent(
+        {
+          ...open,
+          audience:
+            'PRIVATE',
+        },
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      postCardShowsContent(
+        {
+          ...open,
+          unlockPrice: 25,
+        },
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      postCardShowsContent(
+        {
+          ...open,
+          isSensitive: true,
+        },
+      ),
+    ).toBe(
+      false,
+    );
   });
 
   it('hides a post that does not exist', () => {
     // The route renders a generic card for an unresolvable id, so "no post"
     // must not be the one input that opens the gate.
-    expect(postCardShowsContent(null)).toBe(false);
-    expect(postCardShowsContent(undefined)).toBe(false);
+    expect(
+      postCardShowsContent(
+        null,
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      postCardShowsContent(
+        undefined,
+      ),
+    ).toBe(
+      false,
+    );
     // An empty select is not a public post either.
-    expect(postCardShowsContent({})).toBe(false);
+    expect(
+      postCardShowsContent(
+        {},
+      ),
+    ).toBe(
+      false,
+    );
   });
 });
 
 describe('collageTiles', () => {
-  const box = { width: 406, height: 290 };
+  const box =
+    {
+      width: 406,
+      height: 290,
+    };
   const gap = 8;
 
   it('lays out nothing for nothing', () => {
-    expect(collageTiles(0, box, gap)).toEqual([]);
+    expect(
+      collageTiles(
+        0,
+        box,
+        gap,
+      ),
+    ).toEqual(
+      [],
+    );
   });
 
   it('gives a single picture the whole box', () => {
-    expect(collageTiles(1, box, gap)).toEqual([{ left: 0, top: 0, ...box }]);
+    expect(
+      collageTiles(
+        1,
+        box,
+        gap,
+      ),
+    ).toEqual(
+      [
+        {
+          left: 0,
+          top: 0,
+          ...box,
+        },
+      ],
+    );
   });
 
   it('keeps every tile inside the box', () => {
     // The property that matters: satori does not clip, so a tile that overhangs
     // paints over the pane's rim and the text column beside it.
-    for (let count = 1; count <= MAX_COLLAGE_TILES; count++) {
-      for (const tile of collageTiles(count, box, gap)) {
-        expect(tile.left).toBeGreaterThanOrEqual(0);
-        expect(tile.top).toBeGreaterThanOrEqual(0);
-        expect(tile.left + tile.width).toBeLessThanOrEqual(box.width);
-        expect(tile.top + tile.height).toBeLessThanOrEqual(box.height);
+    for (
+      let count = 1;
+      count <=
+      MAX_COLLAGE_TILES;
+      count++
+    ) {
+      for (const tile of collageTiles(
+        count,
+        box,
+        gap,
+      )) {
+        expect(
+          tile.left,
+        ).toBeGreaterThanOrEqual(
+          0,
+        );
+        expect(
+          tile.top,
+        ).toBeGreaterThanOrEqual(
+          0,
+        );
+        expect(
+          tile.left +
+            tile.width,
+        ).toBeLessThanOrEqual(
+          box.width,
+        );
+        expect(
+          tile.top +
+            tile.height,
+        ).toBeLessThanOrEqual(
+          box.height,
+        );
       }
     }
   });
 
   it('reaches both edges, so the grid is not lopsided', () => {
-    for (let count = 2; count <= MAX_COLLAGE_TILES; count++) {
-      const tiles = collageTiles(count, box, gap);
-      expect(Math.max(...tiles.map((t) => t.left + t.width))).toBe(box.width);
-      expect(Math.max(...tiles.map((t) => t.top + t.height))).toBe(box.height);
+    for (
+      let count = 2;
+      count <=
+      MAX_COLLAGE_TILES;
+      count++
+    ) {
+      const tiles =
+        collageTiles(
+          count,
+          box,
+          gap,
+        );
+      expect(
+        Math.max(
+          ...tiles.map(
+            (
+              t,
+            ) =>
+              t.left +
+              t.width,
+          ),
+        ),
+      ).toBe(
+        box.width,
+      );
+      expect(
+        Math.max(
+          ...tiles.map(
+            (
+              t,
+            ) =>
+              t.top +
+              t.height,
+          ),
+        ),
+      ).toBe(
+        box.height,
+      );
     }
   });
 
   it('leaves at least the gap between neighbours', () => {
     // An odd box width rounds the half down; the gutter absorbs the remainder
     // rather than the tiles overlapping by a pixel.
-    const odd = { width: 405, height: 291 };
-    const [a, b] = collageTiles(2, odd, gap);
-    expect(b.left - (a.left + a.width)).toBeGreaterThanOrEqual(gap);
+    const odd =
+      {
+        width: 405,
+        height: 291,
+      };
+    const [
+      a,
+      b,
+    ] =
+      collageTiles(
+        2,
+        odd,
+        gap,
+      );
+    expect(
+      b.left -
+        (a.left +
+          a.width),
+    ).toBeGreaterThanOrEqual(
+      gap,
+    );
   });
 
   it('draws at most four, whatever it is handed', () => {
-    expect(collageTiles(9, box, gap)).toHaveLength(MAX_COLLAGE_TILES);
+    expect(
+      collageTiles(
+        9,
+        box,
+        gap,
+      ),
+    ).toHaveLength(
+      MAX_COLLAGE_TILES,
+    );
   });
 });
 
 describe('fitText', () => {
-  const box = { width: 1000, height: 200, steps: [96, 72, 56, 40, 28] };
+  const box =
+    {
+      width: 1000,
+      height: 200,
+      steps:
+        [
+          96,
+          72,
+          56,
+          40,
+          28,
+        ],
+    };
 
   it('gives short text the largest step', () => {
-    expect(fitText('Hearthworks', box)).toBe(96);
+    expect(
+      fitText(
+        'Hearthworks',
+        box,
+      ),
+    ).toBe(
+      96,
+    );
   });
 
   it('steps down as the text grows', () => {
-    const short = fitText('A short title', box);
-    const long = fitText('A considerably longer title that has to wrap several times over', box);
-    expect(long).toBeLessThan(short);
+    const short =
+      fitText(
+        'A short title',
+        box,
+      );
+    const long =
+      fitText(
+        'A considerably longer title that has to wrap several times over',
+        box,
+      );
+    expect(
+      long,
+    ).toBeLessThan(
+      short,
+    );
   });
 
   it('never exceeds the box at the size it picks', () => {
     // The property that matters: satori does not clip, so a size that overflows
     // paints over the rows around it.
-    const text = 'x'.repeat(400);
-    const size = fitText(text, box);
-    const perLine = Math.floor(box.width / (size * 0.5));
-    const lines = Math.ceil(text.length / perLine);
+    const text =
+      'x'.repeat(
+        400,
+      );
+    const size =
+      fitText(
+        text,
+        box,
+      );
+    const perLine =
+      Math.floor(
+        box.width /
+          (size *
+            0.5),
+      );
+    const lines =
+      Math.ceil(
+        text.length /
+          perLine,
+      );
     // The smallest step is a floor, so only assert the fit when one was found.
-    if (size !== box.steps[box.steps.length - 1]) {
-      expect(lines * size * 1.28).toBeLessThanOrEqual(box.height);
+    if (
+      size !==
+      box
+        .steps[
+        box
+          .steps
+          .length -
+          1
+      ]
+    ) {
+      expect(
+        lines *
+          size *
+          1.28,
+      ).toBeLessThanOrEqual(
+        box.height,
+      );
     }
   });
 
   it('returns the smallest step rather than nothing when nothing fits', () => {
-    expect(fitText('x'.repeat(5000), box)).toBe(28);
+    expect(
+      fitText(
+        'x'.repeat(
+          5000,
+        ),
+        box,
+      ),
+    ).toBe(
+      28,
+    );
   });
 });

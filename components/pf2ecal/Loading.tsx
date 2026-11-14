@@ -19,7 +19,13 @@
  * is noise.
  */
 
-import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { markRouteArrival } from '@/components/ui/arrive';
 
@@ -28,9 +34,18 @@ import { markRouteArrival } from '@/components/ui/arrive';
 // of every page. The animated status line is the one part that needs
 // framer-motion, and it has nothing to show for the first 600 ms at the
 // earliest, so it loads when the first message exists.
-const StatusLineMotion = lazy(() =>
-  import('./StatusLineMotion').then((m) => ({ default: m.StatusLineMotion })),
-);
+const StatusLineMotion =
+  lazy(
+    () =>
+      import('./StatusLineMotion').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.StatusLineMotion,
+        }),
+      ),
+  );
 
 export interface ProgressiveStep {
   /** Milliseconds after start at which this message takes over. */
@@ -46,25 +61,65 @@ export interface ProgressiveStep {
  * `active` gates the timers rather than the render, so the sequence restarts
  * cleanly on the next load instead of resuming halfway through the last one.
  */
-export function useProgressiveStatus(active: boolean, steps: ProgressiveStep[]): string | null {
-  const [index, setIndex] = useState(-1);
+export function useProgressiveStatus(
+  active: boolean,
+  steps: ProgressiveStep[],
+):
+  | string
+  | null {
+  const [
+    index,
+    setIndex,
+  ] =
+    useState(
+      -1,
+    );
 
   useEffect(() => {
-    if (!active) {
-      setIndex(-1);
+    if (
+      !active
+    ) {
+      setIndex(
+        -1,
+      );
       return;
     }
-    const timers = steps.map((step, i) => window.setTimeout(() => setIndex(i), step.after));
+    const timers =
+      steps.map(
+        (
+          step,
+          i,
+        ) =>
+          window.setTimeout(
+            () =>
+              setIndex(
+                i,
+              ),
+            step.after,
+          ),
+      );
     return () => {
-      for (const timer of timers) window.clearTimeout(timer);
+      for (const timer of timers)
+        window.clearTimeout(
+          timer,
+        );
     };
     // The timings are fixed per call site; depending on `steps` would re-run the
     // effect on every render (the array is rebuilt each time now that its
     // strings are translated) and reset the sequence forever.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [
+    active,
+  ]);
 
-  return index >= 0 ? (steps[index]?.message ?? null) : null;
+  return index >=
+    0
+    ? (steps[
+        index
+      ]
+        ?.message ??
+        null)
+    : null;
 }
 
 /**
@@ -77,51 +132,155 @@ export function useProgressiveStatus(active: boolean, steps: ProgressiveStep[]):
  * they would work in English forever and in no other language, with nothing
  * failing to say so.
  */
-export function useBoardStatus(active: boolean): string | null {
-  const { t } = useTranslation('r-pf2ecal');
-  const steps: ProgressiveStep[] = [
-    { after: 900, message: t('loading-schedule', { defaultValue: 'Loading the schedule…' }) },
-    {
-      after: 4000,
-      message: t('loading-slow', { defaultValue: 'Still loading — the connection looks slow.' }),
-    },
-    {
-      after: 10_000,
-      message: t('loading-very-slow', {
-        defaultValue: 'Taking longer than usual. The page will fill in as soon as it lands.',
-      }),
-    },
-  ];
-  return useProgressiveStatus(active, steps);
+export function useBoardStatus(
+  active: boolean,
+):
+  | string
+  | null {
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-pf2ecal',
+    );
+  const steps: ProgressiveStep[] =
+    [
+      {
+        after: 900,
+        message:
+          t(
+            'loading-schedule',
+            {
+              defaultValue:
+                'Loading the schedule…',
+            },
+          ),
+      },
+      {
+        after: 4000,
+        message:
+          t(
+            'loading-slow',
+            {
+              defaultValue:
+                'Still loading — the connection looks slow.',
+            },
+          ),
+      },
+      {
+        after: 10_000,
+        message:
+          t(
+            'loading-very-slow',
+            {
+              defaultValue:
+                'Taking longer than usual. The page will fill in as soon as it lands.',
+            },
+          ),
+      },
+    ];
+  return useProgressiveStatus(
+    active,
+    steps,
+  );
 }
 
 /** The assistant's. DeepSeek round-trips are seconds, so this starts sooner. */
-export function useAssistantStatus(active: boolean): string | null {
-  const { t } = useTranslation('r-pf2ecal');
-  const steps: ProgressiveStep[] = [
-    { after: 600, message: t('thinking-reading', { defaultValue: 'Reading the board…' }) },
-    { after: 3500, message: t('thinking-still', { defaultValue: 'Still thinking…' }) },
-    {
-      after: 9000,
-      message: t('thinking-long', {
-        defaultValue: 'Nearly there — long answers take a moment.',
-      }),
-    },
-  ];
-  return useProgressiveStatus(active, steps);
+export function useAssistantStatus(
+  active: boolean,
+):
+  | string
+  | null {
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-pf2ecal',
+    );
+  const steps: ProgressiveStep[] =
+    [
+      {
+        after: 600,
+        message:
+          t(
+            'thinking-reading',
+            {
+              defaultValue:
+                'Reading the board…',
+            },
+          ),
+      },
+      {
+        after: 3500,
+        message:
+          t(
+            'thinking-still',
+            {
+              defaultValue:
+                'Still thinking…',
+            },
+          ),
+      },
+      {
+        after: 9000,
+        message:
+          t(
+            'thinking-long',
+            {
+              defaultValue:
+                'Nearly there — long answers take a moment.',
+            },
+          ),
+      },
+    ];
+  return useProgressiveStatus(
+    active,
+    steps,
+  );
 }
 
 /** A polite, announced status line. Renders nothing until there is something to say. */
-export function StatusLine({ message }: { message: string | null }) {
+export function StatusLine({
+  message,
+}: {
+  message:
+    | string
+    | null;
+}) {
   // Once a message has been shown the animated line stays mounted, so the last
   // message can animate out when it clears.
-  const [armed, setArmed] = useState(message !== null);
-  if (message !== null && !armed) setArmed(true);
+  const [
+    armed,
+    setArmed,
+  ] =
+    useState(
+      message !==
+        null,
+    );
+  if (
+    message !==
+      null &&
+    !armed
+  )
+    setArmed(
+      true,
+    );
   return (
-    <div aria-live="polite" aria-atomic="true">
+    <div
+      aria-live="polite"
+      aria-atomic="true"
+    >
       {armed && (
-        <Suspense fallback={null}>
-          <StatusLineMotion message={message} />
+        <Suspense
+          fallback={
+            null
+          }
+        >
+          <StatusLineMotion
+            message={
+              message
+            }
+          />
         </Suspense>
       )}
     </div>
@@ -135,7 +294,10 @@ export function StatusLine({ message }: { message: string | null }) {
 /** Matches `SessionCard`: same padding, same vertical rhythm. */
 export function SessionCardSkeleton() {
   return (
-    <div className="pf2e-card p-4 sm:p-5" aria-hidden>
+    <div
+      className="pf2e-card p-4 sm:p-5"
+      aria-hidden
+    >
       <div className="pf2e-skeleton mb-2 h-3 w-32" />
       <div className="pf2e-skeleton mb-2 h-6 w-2/3" />
       <div className="pf2e-skeleton mb-2 h-5 w-48" />
@@ -155,7 +317,10 @@ export function SessionCardSkeleton() {
 /** Matches `MonthGrid`: the real 7×6 grid, so the aside never resizes. */
 export function MonthGridSkeleton() {
   return (
-    <section className="pf2e-card p-4" aria-hidden>
+    <section
+      className="pf2e-card p-4"
+      aria-hidden
+    >
       <header className="mb-3 flex items-center justify-between gap-2">
         <div className="pf2e-skeleton h-6 w-32" />
         <div className="flex items-center gap-1">
@@ -165,35 +330,82 @@ export function MonthGridSkeleton() {
         </div>
       </header>
       <div className="pf2e-month mb-1">
-        {Array.from({ length: 7 }, (_, i) => (
-          <div key={i} className="flex justify-center py-1">
-            <div className="pf2e-skeleton h-3 w-4" />
-          </div>
-        ))}
+        {Array.from(
+          {
+            length: 7,
+          },
+          (
+            _,
+            i,
+          ) => (
+            <div
+              key={
+                i
+              }
+              className="flex justify-center py-1"
+            >
+              <div className="pf2e-skeleton h-3 w-4" />
+            </div>
+          ),
+        )}
       </div>
       <div className="pf2e-month">
-        {Array.from({ length: 42 }, (_, i) => (
-          <div key={i} className="pf2e-daycell">
-            <div className="pf2e-skeleton h-7 w-7 rounded-full" />
-          </div>
-        ))}
+        {Array.from(
+          {
+            length: 42,
+          },
+          (
+            _,
+            i,
+          ) => (
+            <div
+              key={
+                i
+              }
+              className="pf2e-daycell"
+            >
+              <div className="pf2e-skeleton h-7 w-7 rounded-full" />
+            </div>
+          ),
+        )}
       </div>
     </section>
   );
 }
 
 /** A generic panel skeleton for the announcements and subscribe cards. */
-export function PanelSkeleton({ rows = 2 }: { rows?: number }) {
+export function PanelSkeleton({
+  rows = 2,
+}: {
+  rows?: number;
+}) {
   return (
-    <section className="pf2e-card p-4" aria-hidden>
+    <section
+      className="pf2e-card p-4"
+      aria-hidden
+    >
       <div className="pf2e-skeleton mb-3 h-6 w-40" />
       <div className="flex flex-col gap-2">
-        {Array.from({ length: rows }, (_, i) => (
-          <div key={i} className="pf2e-card-flat p-3">
-            <div className="pf2e-skeleton mb-2 h-4 w-full" />
-            <div className="pf2e-skeleton h-3 w-1/2" />
-          </div>
-        ))}
+        {Array.from(
+          {
+            length:
+              rows,
+          },
+          (
+            _,
+            i,
+          ) => (
+            <div
+              key={
+                i
+              }
+              className="pf2e-card-flat p-3"
+            >
+              <div className="pf2e-skeleton mb-2 h-4 w-full" />
+              <div className="pf2e-skeleton h-3 w-1/2" />
+            </div>
+          ),
+        )}
       </div>
     </section>
   );
@@ -207,7 +419,13 @@ export function PanelSkeleton({ rows = 2 }: { rows?: number }) {
  * grid, panels — before a single byte of data exists. When the loader resolves,
  * the only thing that changes is the text inside the boxes.
  */
-export function BoardSkeleton({ status }: { status?: string | null }) {
+export function BoardSkeleton({
+  status,
+}: {
+  status?:
+    | string
+    | null;
+}) {
   return (
     <div className="pf2e">
       <div className="pf2e-shell pt-8 sm:pt-12">
@@ -221,7 +439,12 @@ export function BoardSkeleton({ status }: { status?: string | null }) {
             <div className="pf2e-skeleton h-[2.375rem] w-28 rounded-full" />
           </div>
           <div className="mt-4">
-            <StatusLine message={status ?? null} />
+            <StatusLine
+              message={
+                status ??
+                null
+              }
+            />
           </div>
         </header>
 
@@ -239,8 +462,16 @@ export function BoardSkeleton({ status }: { status?: string | null }) {
 
           <div className="flex flex-col gap-6">
             <MonthGridSkeleton />
-            <PanelSkeleton rows={2} />
-            <PanelSkeleton rows={1} />
+            <PanelSkeleton
+              rows={
+                2
+              }
+            />
+            <PanelSkeleton
+              rows={
+                1
+              }
+            />
           </div>
         </div>
       </div>
@@ -256,8 +487,24 @@ export function BoardSkeleton({ status }: { status?: string | null }) {
  * resolves, which is exactly the lifetime the escalation should track.
  */
 export function BoardPending() {
-  const status = useBoardStatus(true);
+  const status =
+    useBoardStatus(
+      true,
+    );
   // Steel M9: the board this stands in for fades in when it lands (as RoutePending does).
-  useLayoutEffect(() => () => markRouteArrival('app'), []);
-  return <BoardSkeleton status={status} />;
+  useLayoutEffect(
+    () =>
+      () =>
+        markRouteArrival(
+          'app',
+        ),
+    [],
+  );
+  return (
+    <BoardSkeleton
+      status={
+        status
+      }
+    />
+  );
 }

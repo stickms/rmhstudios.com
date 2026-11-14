@@ -1,61 +1,161 @@
 import { lazy } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { BookMarked, Highlighter, Target } from 'lucide-react';
+import {
+  BookMarked,
+  Highlighter,
+  Target,
+} from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrivalSuspense } from '@/components/ui/arrive';
-import { parseReadingTab, type ReadingTab } from '@/lib/reading/tabs';
+import {
+  parseReadingTab,
+  type ReadingTab,
+} from '@/lib/reading/tabs';
 
-const MyHighlightsPanel = lazy(() => import('./MyHighlightsPanel'));
-const ShelvesPanel = lazy(() => import('./ShelvesPanel'));
-const ChallengePanel = lazy(() => import('./ChallengePanel'));
+const MyHighlightsPanel =
+  lazy(
+    () =>
+      import('./MyHighlightsPanel'),
+  );
+const ShelvesPanel =
+  lazy(
+    () =>
+      import('./ShelvesPanel'),
+  );
+const ChallengePanel =
+  lazy(
+    () =>
+      import('./ChallengePanel'),
+  );
 
 /** /reading — highlights, shelves and the yearly challenge in one place. */
-export function MyReadingPage({ tab }: { tab: ReadingTab }) {
-  const { t } = useTranslation('f-reading');
-  const navigate = useNavigate();
+export function MyReadingPage({
+  tab,
+}: {
+  tab: ReadingTab;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-reading',
+    );
+  const navigate =
+    useNavigate();
   return (
     <PageLayout
-      title={t('my-reading', { defaultValue: 'My reading' })}
-      description={t('my-reading-lede', {
-        defaultValue: 'Your highlights and notes, your shelves, and your reading challenge.',
-      })}
+      title={t(
+        'my-reading',
+        {
+          defaultValue:
+            'My reading',
+        },
+      )}
+      description={t(
+        'my-reading-lede',
+        {
+          defaultValue:
+            'Your highlights and notes, your shelves, and your reading challenge.',
+        },
+      )}
       backTo="/library"
-      backLabel={t('back-to-library', { defaultValue: 'Back to the library' })}
+      backLabel={t(
+        'back-to-library',
+        {
+          defaultValue:
+            'Back to the library',
+        },
+      )}
     >
       <div className="space-y-4 pt-4 pb-12 md:px-4">
         <Tabs
-          aria-label={t('my-reading-tabs', { defaultValue: 'My reading sections' })}
-          value={tab}
-          onChange={(id) =>
-            void navigate({ to: '/reading', search: { tab: parseReadingTab(id) }, replace: true })
+          aria-label={t(
+            'my-reading-tabs',
+            {
+              defaultValue:
+                'My reading sections',
+            },
+          )}
+          value={
+            tab
+          }
+          onChange={(
+            id,
+          ) =>
+            void navigate(
+              {
+                to: '/reading',
+                search:
+                  {
+                    tab: parseReadingTab(
+                      id,
+                    ),
+                  },
+                replace: true,
+              },
+            )
           }
           tabs={[
             {
               id: 'highlights',
-              label: t('tab-highlights', { defaultValue: 'Highlights' }),
+              label:
+                t(
+                  'tab-highlights',
+                  {
+                    defaultValue:
+                      'Highlights',
+                  },
+                ),
               icon: Highlighter,
             },
             {
               id: 'shelves',
-              label: t('tab-shelves', { defaultValue: 'Shelves' }),
+              label:
+                t(
+                  'tab-shelves',
+                  {
+                    defaultValue:
+                      'Shelves',
+                  },
+                ),
               icon: BookMarked,
             },
             {
               id: 'challenge',
-              label: t('tab-challenge', { defaultValue: 'Challenge' }),
+              label:
+                t(
+                  'tab-challenge',
+                  {
+                    defaultValue:
+                      'Challenge',
+                  },
+                ),
               icon: Target,
             },
           ]}
         />
         {/* A box of its own: the column spaces its children, and the fade's wrapper has no box. */}
         <div>
-          <ArrivalSuspense fallback={<Skeleton className="h-40 w-full" />}>
-            {tab === 'highlights' ? <MyHighlightsPanel /> : null}
-            {tab === 'shelves' ? <ShelvesPanel /> : null}
-            {tab === 'challenge' ? <ChallengePanel /> : null}
+          <ArrivalSuspense
+            fallback={
+              <Skeleton className="h-40 w-full" />
+            }
+          >
+            {tab ===
+            'highlights' ? (
+              <MyHighlightsPanel />
+            ) : null}
+            {tab ===
+            'shelves' ? (
+              <ShelvesPanel />
+            ) : null}
+            {tab ===
+            'challenge' ? (
+              <ChallengePanel />
+            ) : null}
           </ArrivalSuspense>
         </div>
       </div>

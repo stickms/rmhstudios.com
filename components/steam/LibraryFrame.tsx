@@ -20,30 +20,72 @@ export function LibraryFrame({
   collections: Collection[];
   signedIn: boolean;
   kind: LibraryKind;
-  onKindChange: (k: LibraryKind) => void;
+  onKindChange: (
+    k: LibraryKind,
+  ) => void;
   children: React.ReactNode;
 }) {
-  const pathname = useLocation({ select: (l) => l.pathname });
-  const onIndex = pathname === '/games' || pathname === '/games/';
-  const activeId = onIndex ? null : (pathname.split('/')[2] ?? null);
+  const pathname =
+    useLocation(
+      {
+        select:
+          (
+            l,
+          ) =>
+            l.pathname,
+      },
+    );
+  const onIndex =
+    pathname ===
+      '/games' ||
+    pathname ===
+      '/games/';
+  const activeId =
+    onIndex
+      ? null
+      : (pathname.split(
+          '/',
+        )[2] ??
+        null);
 
   return (
     <div className="stm-lib">
       <LibraryList
-        kind={kind}
-        onKindChange={onKindChange}
-        recentIds={recentIds}
-        collections={collections}
-        signedIn={signedIn}
-        activeId={activeId}
-        onIndex={onIndex}
+        kind={
+          kind
+        }
+        onKindChange={
+          onKindChange
+        }
+        recentIds={
+          recentIds
+        }
+        collections={
+          collections
+        }
+        signedIn={
+          signedIn
+        }
+        activeId={
+          activeId
+        }
+        onIndex={
+          onIndex
+        }
       />
       <main className="stm-main">
         <PlaytimeNotice />
         {/* Keyed by page so a different game remounts the pane and fades up (`.stm-enter`);
             the list beside it stays mounted, so it keeps its scroll and selection. */}
-        <div key={pathname} className="stm-enter">
-          {children}
+        <div
+          key={
+            pathname
+          }
+          className="stm-enter"
+        >
+          {
+            children
+          }
         </div>
       </main>
     </div>

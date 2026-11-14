@@ -79,7 +79,10 @@
  * not ours to close.
  */
 
-import { rtcConfiguration, type IceServer } from '@/lib/call/ice';
+import {
+  rtcConfiguration,
+  type IceServer,
+} from '@/lib/call/ice';
 import { shouldOffer } from '@/lib/groupcall/state';
 import {
   LEVEL_SAMPLE_MS,
@@ -87,7 +90,10 @@ import {
   SPEAKING_RMS_THRESHOLD,
   type GroupCallPeerStatus,
 } from '@/lib/groupcall/types';
-import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
+import {
+  getAudioContext,
+  resumeAudioContext,
+} from '@/lib/shared/platform';
 
 /* -------------------------------------------------------------------------- */
 /* Callbacks                                                                  */
@@ -104,15 +110,29 @@ import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
  */
 export interface GroupCallMeshCallbacks {
   /** An SDP to relay to one named peer. */
-  onDescription: (toUserId: string, description: RTCSessionDescriptionInit) => void;
+  onDescription: (
+    toUserId: string,
+    description: RTCSessionDescriptionInit,
+  ) => void;
   /** An ICE candidate to relay to one named peer. */
-  onCandidate: (toUserId: string, candidate: RTCIceCandidateInit) => void;
+  onCandidate: (
+    toUserId: string,
+    candidate: RTCIceCandidateInit,
+  ) => void;
   /** One leg's status changed. Fires on the change only, never on every sample. */
-  onPeerStatus: (userId: string, status: GroupCallPeerStatus) => void;
+  onPeerStatus: (
+    userId: string,
+    status: GroupCallPeerStatus,
+  ) => void;
   /** A peer started or stopped talking, after the hysteresis below has settled. */
-  onSpeaking: (userId: string, speaking: boolean) => void;
+  onSpeaking: (
+    userId: string,
+    speaking: boolean,
+  ) => void;
   /** We started or stopped talking. Forced to `false` by a mute. */
-  onLocalSpeaking: (speaking: boolean) => void;
+  onLocalSpeaking: (
+    speaking: boolean,
+  ) => void;
   /**
    * Smoothed 0–1 levels for the avatar rings, batched.
    *
@@ -121,7 +141,15 @@ export interface GroupCallMeshCallbacks {
    * callbacks a second, each of them a store write. Only sent on a tick where
    * something actually moved.
    */
-  onLevels?: (levels: Readonly<Record<string, number>>, localLevel: number) => void;
+  onLevels?: (
+    levels: Readonly<
+      Record<
+        string,
+        number
+      >
+    >,
+    localLevel: number,
+  ) => void;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -137,12 +165,13 @@ export interface GroupCallMeshCallbacks {
  * feed back into each other, and a mesh where one participant has echo
  * cancellation off is a mesh where *everyone* hears the echo.
  */
-const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
-  echoCancellation: true,
-  noiseSuppression: true,
-  autoGainControl: true,
-  channelCount: 1,
-};
+const AUDIO_CONSTRAINTS: MediaTrackConstraints =
+  {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+    channelCount: 1,
+  };
 
 /**
  * Analyser window. 512 samples at 48 kHz is ~10.7 ms of audio — comfortably
@@ -158,7 +187,9 @@ const ANALYSER_FFT_SIZE = 512;
  * the volume that merely counts as talking, or it saturates the moment anyone
  * opens their mouth and stops carrying information.
  */
-const LEVEL_FULL_SCALE_RMS = SPEAKING_RMS_THRESHOLD * 5;
+const LEVEL_FULL_SCALE_RMS =
+  SPEAKING_RMS_THRESHOLD *
+  5;
 
 /** Level release per tick. Instant attack, eased decay — a VU meter's shape. */
 const LEVEL_RELEASE = 0.35;
@@ -241,9 +272,17 @@ interface MeshLeg {
  * mid-negotiation is the normal case, not the edge case.
  */
 export class GroupCallMesh {
-  private readonly legs = new Map<string, MeshLeg>();
+  private readonly legs =
+    new Map<
+      string,
+      MeshLeg
+    >();
   /** Candidates for peers we have not been told about yet. Keyed by userId. */
-  private readonly orphanCandidates = new Map<string, RTCIceCandidateInit[]>();
+  private readonly orphanCandidates =
+    new Map<
+      string,
+      RTCIceCandidateInit[]
+    >();
   /**
    * The last peer list we were asked for, replayed once our own id lands.
    *
@@ -251,26 +290,40 @@ export class GroupCallMesh {
    * the server has told us who we are — and the offer rule cannot run with one
    * operand. Remembering the ask is what stops that ordering from costing a leg.
    */
-  private wanted: readonly string[] = [];
+  private wanted: readonly string[] =
+    [];
 
-  private selfUserId: string | null = null;
-  private localStream: MediaStream | null = null;
+  private selfUserId:
+    | string
+    | null =
+    null;
+  private localStream: MediaStream | null =
+    null;
   private muted = false;
   private closed = false;
 
   /** The page's shared context, resolved once. `null` where Web Audio is unavailable. */
-  private context: AudioContext | null = null;
+  private context: AudioContext | null =
+    null;
   private contextResolved = false;
-  private localSource: MediaStreamAudioSourceNode | null = null;
-  private localAnalyser: AnalyserNode | null = null;
+  private localSource: MediaStreamAudioSourceNode | null =
+    null;
+  private localAnalyser: AnalyserNode | null =
+    null;
   private localSpeaking = false;
   private localLoudAt = 0;
   private localLevel = 0;
 
   /** One timer for every meter in the room, not one per peer. */
-  private ticker: ReturnType<typeof setInterval> | null = null;
+  private ticker: ReturnType<
+    typeof setInterval
+  > | null =
+    null;
   /** Reused across every analyser — they all share {@link ANALYSER_FFT_SIZE}. */
-  private readonly sampleBuffer = new Uint8Array(ANALYSER_FFT_SIZE);
+  private readonly sampleBuffer =
+    new Uint8Array(
+      ANALYSER_FFT_SIZE,
+    );
 
   constructor(
     private iceServers: IceServer[],
@@ -290,11 +343,30 @@ export class GroupCallMesh {
    * recovery ownership to the right side of each pair without disturbing a
    * negotiation already in flight.
    */
-  setSelfId(userId: string): void {
-    if (this.closed || !userId || this.selfUserId === userId) return;
-    this.selfUserId = userId;
-    for (const leg of this.legs.values()) leg.offerer = shouldOffer(userId, leg.userId);
-    this.syncPeers(this.wanted);
+  setSelfId(
+    userId: string,
+  ): void {
+    if (
+      this
+        .closed ||
+      !userId ||
+      this
+        .selfUserId ===
+        userId
+    )
+      return;
+    this.selfUserId =
+      userId;
+    for (const leg of this.legs.values())
+      leg.offerer =
+        shouldOffer(
+          userId,
+          leg.userId,
+        );
+    this.syncPeers(
+      this
+        .wanted,
+    );
   }
 
   /* ---------------------------------------------------------------------- */
@@ -313,32 +385,58 @@ export class GroupCallMesh {
    * from "no such device" — see `describeMicrophoneError` in ./support.
    */
   async openMicrophone(): Promise<void> {
-    if (this.closed || this.localStream) return;
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      throw new Error('getUserMedia is unavailable');
+    if (
+      this
+        .closed ||
+      this
+        .localStream
+    )
+      return;
+    if (
+      typeof navigator ===
+        'undefined' ||
+      !navigator
+        .mediaDevices
+        ?.getUserMedia
+    ) {
+      throw new Error(
+        'getUserMedia is unavailable',
+      );
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: AUDIO_CONSTRAINTS,
-      video: false,
-    });
+    const stream =
+      await navigator.mediaDevices.getUserMedia(
+        {
+          audio:
+            AUDIO_CONSTRAINTS,
+          video: false,
+        },
+      );
 
     // The call can end during the prompt — someone else hung up, the user
     // navigated — and a stream opened into a closed mesh is a recording
     // indicator that never goes off.
-    if (this.closed) {
-      for (const track of stream.getTracks()) track.stop();
+    if (
+      this
+        .closed
+    ) {
+      for (const track of stream.getTracks())
+        track.stop();
       return;
     }
 
-    this.localStream = stream;
+    this.localStream =
+      stream;
     // Mute may have been set before the mic opened; `set-muted` is legal from
     // `joining` in the state machine precisely so that works.
     this.applyMute();
 
     // Legs built before the microphone opened (an early inbound offer) have a
     // recvonly transceiver and no track to send. Give them one now.
-    for (const leg of this.legs.values()) this.addLocalTracks(leg);
+    for (const leg of this.legs.values())
+      this.addLocalTracks(
+        leg,
+      );
 
     this.attachLocalAnalyser();
     this.ensureTicker();
@@ -346,7 +444,11 @@ export class GroupCallMesh {
 
   /** True once the microphone is open. False for a listener-only mesh. */
   hasMicrophone(): boolean {
-    return this.localStream !== null;
+    return (
+      this
+        .localStream !==
+      null
+    );
   }
 
   /**
@@ -357,21 +459,33 @@ export class GroupCallMesh {
    * while sending silence — stopping it would renegotiate N legs and everyone
    * would hear the drop. Same rule as `lib/call/peer.ts`, N times cheaper.
    */
-  setMuted(muted: boolean): void {
-    this.muted = muted;
+  setMuted(
+    muted: boolean,
+  ): void {
+    this.muted =
+      muted;
     this.applyMute();
     // Don't make the room wait out the release window to stop showing us as
     // talking: a mute is a statement, not a decay.
-    if (muted && this.localSpeaking) {
+    if (
+      muted &&
+      this
+        .localSpeaking
+    ) {
       this.localSpeaking = false;
       this.localLevel = 0;
-      this.callbacks.onLocalSpeaking(false);
+      this.callbacks.onLocalSpeaking(
+        false,
+      );
     }
   }
 
   private applyMute(): void {
-    for (const track of this.localStream?.getAudioTracks() ?? []) {
-      track.enabled = !this.muted;
+    for (const track of this.localStream?.getAudioTracks() ??
+      []) {
+      track.enabled =
+        !this
+          .muted;
     }
   }
 
@@ -389,42 +503,114 @@ export class GroupCallMesh {
    * duplicated `PEER_JOINED` or a roster snapshot that repeats what the deltas
    * already said costs nothing.
    */
-  syncPeers(userIds: readonly string[]): void {
-    if (this.closed) return;
-    this.wanted = [...userIds];
+  syncPeers(
+    userIds: readonly string[],
+  ): void {
+    if (
+      this
+        .closed
+    )
+      return;
+    this.wanted =
+      [
+        ...userIds,
+      ];
 
-    const self = this.selfUserId;
-    const wanted = new Set(userIds.filter((id) => Boolean(id) && id !== self));
+    const self =
+      this
+        .selfUserId;
+    const wanted =
+      new Set(
+        userIds.filter(
+          (
+            id,
+          ) =>
+            Boolean(
+              id,
+            ) &&
+            id !==
+              self,
+        ),
+      );
 
-    for (const [userId, leg] of this.legs) {
-      if (wanted.has(userId)) continue;
-      this.teardownLeg(leg, true);
-      this.legs.delete(userId);
+    for (const [
+      userId,
+      leg,
+    ] of this
+      .legs) {
+      if (
+        wanted.has(
+          userId,
+        )
+      )
+        continue;
+      this.teardownLeg(
+        leg,
+        true,
+      );
+      this.legs.delete(
+        userId,
+      );
     }
-    for (const userId of [...this.orphanCandidates.keys()]) {
-      if (!wanted.has(userId)) this.orphanCandidates.delete(userId);
+    for (const userId of [
+      ...this.orphanCandidates.keys(),
+    ]) {
+      if (
+        !wanted.has(
+          userId,
+        )
+      )
+        this.orphanCandidates.delete(
+          userId,
+        );
     }
 
     // Without our own id the offer rule has only one of its two operands, so a
     // leg created now could not decide who offers and both sides might. Wait
     // for `setSelfId`, which replays this list.
-    if (!self) return;
+    if (
+      !self
+    )
+      return;
 
     for (const userId of wanted) {
-      if (this.legs.has(userId)) continue;
-      const leg = this.createLeg(userId);
-      if (leg.offerer) void this.offer(leg);
+      if (
+        this.legs.has(
+          userId,
+        )
+      )
+        continue;
+      const leg =
+        this.createLeg(
+          userId,
+        );
+      if (
+        leg.offerer
+      )
+        void this.offer(
+          leg,
+        );
     }
   }
 
   /** This leg's status, or `null` if there is no such leg. */
-  statusOf(userId: string): GroupCallPeerStatus | null {
-    return this.legs.get(userId)?.status ?? null;
+  statusOf(
+    userId: string,
+  ): GroupCallPeerStatus | null {
+    return (
+      this.legs.get(
+        userId,
+      )
+        ?.status ??
+      null
+    );
   }
 
   /** How many legs are open. Diagnostics only — the roster is the server's. */
   peerCount(): number {
-    return this.legs.size;
+    return this
+      .legs
+      .size;
   }
 
   /* ---------------------------------------------------------------------- */
@@ -445,57 +631,140 @@ export class GroupCallMesh {
     fromUserId: string,
     description: RTCSessionDescriptionInit,
   ): Promise<void> {
-    if (this.closed || !fromUserId || fromUserId === this.selfUserId) return;
+    if (
+      this
+        .closed ||
+      !fromUserId ||
+      fromUserId ===
+        this
+          .selfUserId
+    )
+      return;
 
-    let leg = this.legs.get(fromUserId);
+    let leg =
+      this.legs.get(
+        fromUserId,
+      );
 
     // A dead leg that the far side is trying to rebuild. Start it over rather
     // than pushing an offer into a connection that has already given up: this
     // is the one path by which a `failed` leg comes back without the person
     // leaving and rejoining the room.
-    if (leg && description.type === 'offer' && this.isSpent(leg, description)) {
-      this.teardownLeg(leg, false);
-      this.legs.delete(fromUserId);
-      leg = undefined;
+    if (
+      leg &&
+      description.type ===
+        'offer' &&
+      this.isSpent(
+        leg,
+        description,
+      )
+    ) {
+      this.teardownLeg(
+        leg,
+        false,
+      );
+      this.legs.delete(
+        fromUserId,
+      );
+      leg =
+        undefined;
     }
 
-    if (!leg) {
+    if (
+      !leg
+    ) {
       // An answer with no leg is stale by definition — we never offered.
-      if (description.type !== 'offer') return;
-      leg = this.createLeg(fromUserId);
+      if (
+        description.type !==
+        'offer'
+      )
+        return;
+      leg =
+        this.createLeg(
+          fromUserId,
+        );
     }
 
     // The glare guard. See the header: the id compare means only one side of a
     // pair can hold a pending local offer, so ignoring the collision cannot
     // deadlock, and answering it would half-apply two negotiations at once.
-    if (description.type === 'offer' && leg.offerer && leg.pc.signalingState !== 'stable') return;
+    if (
+      description.type ===
+        'offer' &&
+      leg.offerer &&
+      leg
+        .pc
+        .signalingState !==
+        'stable'
+    )
+      return;
     // An answer to an offer we no longer have pending — the first of two when
     // a lost-offer retry raced the late original. Applying it would throw and
     // mark a working leg failed.
-    if (description.type === 'answer' && leg.pc.signalingState !== 'have-local-offer') return;
+    if (
+      description.type ===
+        'answer' &&
+      leg
+        .pc
+        .signalingState !==
+        'have-local-offer'
+    )
+      return;
 
     try {
-      await leg.pc.setRemoteDescription(new RTCSessionDescription(description));
-      if (leg.closed) return;
+      await leg.pc.setRemoteDescription(
+        new RTCSessionDescription(
+          description,
+        ),
+      );
+      if (
+        leg.closed
+      )
+        return;
 
       // Candidates that raced ahead of the description can be added now.
-      const pending = leg.pending;
-      leg.pending = [];
+      const pending =
+        leg.pending;
+      leg.pending =
+        [];
       for (const candidate of pending) {
-        await leg.pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {
-          /* a stale candidate from a superseded negotiation is not fatal */
-        });
+        await leg.pc
+          .addIceCandidate(
+            new RTCIceCandidate(
+              candidate,
+            ),
+          )
+          .catch(
+            () => {
+              /* a stale candidate from a superseded negotiation is not fatal */
+            },
+          );
       }
 
-      if (description.type === 'offer') {
-        const answer = await leg.pc.createAnswer();
-        if (leg.closed) return;
-        await leg.pc.setLocalDescription(answer);
-        this.callbacks.onDescription(leg.userId, answer);
+      if (
+        description.type ===
+        'offer'
+      ) {
+        const answer =
+          await leg.pc.createAnswer();
+        if (
+          leg.closed
+        )
+          return;
+        await leg.pc.setLocalDescription(
+          answer,
+        );
+        this.callbacks.onDescription(
+          leg.userId,
+          answer,
+        );
       }
     } catch {
       // One leg's negotiation, not the room's. Everyone else keeps talking.
-      this.setStatus(leg, 'failed');
+      this.setStatus(
+        leg,
+        'failed',
+      );
     }
   }
 
@@ -507,24 +776,67 @@ export class GroupCallMesh {
    * — and buffered per *userId* when there is no leg at all yet, for the same
    * reason `handleDescription` builds one on demand.
    */
-  async handleCandidate(fromUserId: string, candidate: RTCIceCandidateInit): Promise<void> {
-    if (this.closed || !fromUserId || fromUserId === this.selfUserId) return;
+  async handleCandidate(
+    fromUserId: string,
+    candidate: RTCIceCandidateInit,
+  ): Promise<void> {
+    if (
+      this
+        .closed ||
+      !fromUserId ||
+      fromUserId ===
+        this
+          .selfUserId
+    )
+      return;
 
-    const leg = this.legs.get(fromUserId);
-    if (!leg) {
-      const orphans = this.orphanCandidates.get(fromUserId) ?? [];
-      if (orphans.length < MAX_ORPHAN_CANDIDATES) orphans.push(candidate);
-      this.orphanCandidates.set(fromUserId, orphans);
+    const leg =
+      this.legs.get(
+        fromUserId,
+      );
+    if (
+      !leg
+    ) {
+      const orphans =
+        this.orphanCandidates.get(
+          fromUserId,
+        ) ??
+        [];
+      if (
+        orphans.length <
+        MAX_ORPHAN_CANDIDATES
+      )
+        orphans.push(
+          candidate,
+        );
+      this.orphanCandidates.set(
+        fromUserId,
+        orphans,
+      );
       return;
     }
 
-    if (!leg.pc.remoteDescription) {
-      leg.pending.push(candidate);
+    if (
+      !leg
+        .pc
+        .remoteDescription
+    ) {
+      leg.pending.push(
+        candidate,
+      );
       return;
     }
-    await leg.pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {
-      /* a malformed or stale candidate is not fatal to the leg */
-    });
+    await leg.pc
+      .addIceCandidate(
+        new RTCIceCandidate(
+          candidate,
+        ),
+      )
+      .catch(
+        () => {
+          /* a malformed or stale candidate is not fatal to the leg */
+        },
+      );
   }
 
   /* ---------------------------------------------------------------------- */
@@ -543,60 +855,119 @@ export class GroupCallMesh {
    * The shared `AudioContext` is deliberately left open — see the file header.
    */
   close(): void {
-    if (this.closed) return;
+    if (
+      this
+        .closed
+    )
+      return;
     this.closed = true;
 
     this.stopTicker();
-    for (const leg of this.legs.values()) this.teardownLeg(leg, false);
+    for (const leg of this.legs.values())
+      this.teardownLeg(
+        leg,
+        false,
+      );
     this.legs.clear();
     this.orphanCandidates.clear();
-    this.wanted = [];
+    this.wanted =
+      [];
 
     this.detachLocalAnalyser();
     // Stopping tracks is what actually turns the browser's recording indicator
     // off. Leaving them running after a call is the bug users notice.
-    for (const track of this.localStream?.getTracks() ?? []) track.stop();
-    this.localStream = null;
+    for (const track of this.localStream?.getTracks() ??
+      [])
+      track.stop();
+    this.localStream =
+      null;
     this.localSpeaking = false;
     this.localLevel = 0;
-    this.context = null;
+    this.context =
+      null;
   }
 
   /* ---------------------------------------------------------------------- */
   /* Legs                                                                   */
   /* ---------------------------------------------------------------------- */
 
-  private createLeg(userId: string): MeshLeg {
-    const pc = new RTCPeerConnection(rtcConfiguration(this.iceServers));
-    const leg: MeshLeg = {
-      userId,
-      pc,
-      offerer: this.selfUserId ? shouldOffer(this.selfUserId, userId) : false,
-      status: 'new',
-      changedAt: Date.now(),
-      everConnected: false,
-      restarts: 0,
-      pending: [],
-      audio: null,
-      source: null,
-      analyser: null,
-      speaking: false,
-      loudAt: 0,
-      level: 0,
-      closed: false,
-    };
+  private createLeg(
+    userId: string,
+  ): MeshLeg {
+    const pc =
+      new RTCPeerConnection(
+        rtcConfiguration(
+          this
+            .iceServers,
+        ),
+      );
+    const leg: MeshLeg =
+      {
+        userId,
+        pc,
+        offerer:
+          this
+            .selfUserId
+            ? shouldOffer(
+                this
+                  .selfUserId,
+                userId,
+              )
+            : false,
+        status:
+          'new',
+        changedAt:
+          Date.now(),
+        everConnected: false,
+        restarts: 0,
+        pending:
+          [],
+        audio:
+          null,
+        source:
+          null,
+        analyser:
+          null,
+        speaking: false,
+        loudAt: 0,
+        level: 0,
+        closed: false,
+      };
 
-    this.addLocalTracks(leg);
+    this.addLocalTracks(
+      leg,
+    );
 
-    pc.onicecandidate = (event) => {
-      if (event.candidate && !leg.closed)
-        this.callbacks.onCandidate(userId, event.candidate.toJSON());
-    };
+    pc.onicecandidate =
+      (
+        event,
+      ) => {
+        if (
+          event.candidate &&
+          !leg.closed
+        )
+          this.callbacks.onCandidate(
+            userId,
+            event.candidate.toJSON(),
+          );
+      };
 
-    pc.ontrack = (event) => {
-      const [stream] = event.streams;
-      if (stream) this.attachRemote(leg, stream);
-    };
+    pc.ontrack =
+      (
+        event,
+      ) => {
+        const [
+          stream,
+        ] =
+          event.streams;
+        if (
+          stream
+        )
+          this.attachRemote(
+            leg,
+            stream,
+          );
+      };
 
     // `negotiationneeded` is deliberately unhandled. It fires once, when the
     // local track is added before the first offer, and this file offers on its
@@ -604,77 +975,176 @@ export class GroupCallMesh {
     // id compare. Reacting to the event instead would hand the decision to
     // whichever side happened to add a track first, which is the glare the
     // compare exists to prevent.
-    pc.onconnectionstatechange = () => {
-      if (leg.closed || this.closed) return;
-      switch (pc.connectionState) {
-        case 'new':
-          this.setStatus(leg, 'new');
-          break;
-        case 'connecting':
-          this.setStatus(leg, leg.everConnected ? 'reconnecting' : 'connecting');
-          break;
-        case 'connected':
-          leg.everConnected = true;
-          leg.restarts = 0;
-          this.setStatus(leg, 'connected');
-          break;
-        case 'disconnected':
-          // Not terminal, and routinely transient — a lift, a handover. Keep
-          // the tile and let the deadline in `checkStalled` decide.
-          this.setStatus(leg, leg.everConnected ? 'reconnecting' : 'connecting');
-          break;
-        case 'failed':
-          this.recover(leg);
-          break;
-        case 'closed':
-          this.setStatus(leg, 'closed');
-          break;
-      }
-    };
+    pc.onconnectionstatechange =
+      () => {
+        if (
+          leg.closed ||
+          this
+            .closed
+        )
+          return;
+        switch (
+          pc.connectionState
+        ) {
+          case 'new':
+            this.setStatus(
+              leg,
+              'new',
+            );
+            break;
+          case 'connecting':
+            this.setStatus(
+              leg,
+              leg.everConnected
+                ? 'reconnecting'
+                : 'connecting',
+            );
+            break;
+          case 'connected':
+            leg.everConnected = true;
+            leg.restarts = 0;
+            this.setStatus(
+              leg,
+              'connected',
+            );
+            break;
+          case 'disconnected':
+            // Not terminal, and routinely transient — a lift, a handover. Keep
+            // the tile and let the deadline in `checkStalled` decide.
+            this.setStatus(
+              leg,
+              leg.everConnected
+                ? 'reconnecting'
+                : 'connecting',
+            );
+            break;
+          case 'failed':
+            this.recover(
+              leg,
+            );
+            break;
+          case 'closed':
+            this.setStatus(
+              leg,
+              'closed',
+            );
+            break;
+        }
+      };
 
-    this.legs.set(userId, leg);
+    this.legs.set(
+      userId,
+      leg,
+    );
 
     // Drain anything that arrived before we knew about this person.
-    const orphans = this.orphanCandidates.get(userId);
-    if (orphans) {
-      this.orphanCandidates.delete(userId);
-      leg.pending.push(...orphans);
+    const orphans =
+      this.orphanCandidates.get(
+        userId,
+      );
+    if (
+      orphans
+    ) {
+      this.orphanCandidates.delete(
+        userId,
+      );
+      leg.pending.push(
+        ...orphans,
+      );
     }
 
     this.ensureTicker();
     return leg;
   }
 
-  private addLocalTracks(leg: MeshLeg): void {
-    const stream = this.localStream;
-    if (stream) {
+  private addLocalTracks(
+    leg: MeshLeg,
+  ): void {
+    const stream =
+      this
+        .localStream;
+    if (
+      stream
+    ) {
       // The same track object on every connection: one capture, N senders.
       // Adding it twice would be an error, so only do it for a fresh leg.
-      if (leg.pc.getSenders().some((sender) => sender.track)) return;
-      for (const track of stream.getAudioTracks()) leg.pc.addTrack(track, stream);
+      if (
+        leg.pc
+          .getSenders()
+          .some(
+            (
+              sender,
+            ) =>
+              sender.track,
+          )
+      )
+        return;
+      for (const track of stream.getAudioTracks())
+        leg.pc.addTrack(
+          track,
+          stream,
+        );
       return;
     }
     // With no microphone there is nothing to send, but the transceiver still
     // has to exist or the other side has nothing to answer. Same trick as
     // `lib/massive-march/voice.ts` uses for its text-only players; here it is
     // a defensive path, since the store opens the mic before it joins.
-    if (leg.pc.getTransceivers().length === 0) {
-      leg.pc.addTransceiver('audio', { direction: 'recvonly' });
+    if (
+      leg.pc.getTransceivers()
+        .length ===
+      0
+    ) {
+      leg.pc.addTransceiver(
+        'audio',
+        {
+          direction:
+            'recvonly',
+        },
+      );
     }
   }
 
   /** Produce and publish an offer for one leg. Offerer side only. */
-  private async offer(leg: MeshLeg, options?: RTCOfferOptions): Promise<void> {
-    if (leg.closed || this.closed) return;
+  private async offer(
+    leg: MeshLeg,
+    options?: RTCOfferOptions,
+  ): Promise<void> {
+    if (
+      leg.closed ||
+      this
+        .closed
+    )
+      return;
     try {
-      const description = await leg.pc.createOffer(options);
+      const description =
+        await leg.pc.createOffer(
+          options,
+        );
       // A whole negotiation can complete while that promise was in flight.
-      if (leg.closed || this.closed || leg.pc.signalingState === 'closed') return;
-      await leg.pc.setLocalDescription(description);
-      this.callbacks.onDescription(leg.userId, description);
+      if (
+        leg.closed ||
+        this
+          .closed ||
+        leg
+          .pc
+          .signalingState ===
+          'closed'
+      )
+        return;
+      await leg.pc.setLocalDescription(
+        description,
+      );
+      this.callbacks.onDescription(
+        leg.userId,
+        description,
+      );
     } catch {
       // A failed negotiation leaves that one peer silent; everything else stands.
-      this.setStatus(leg, 'failed');
+      this.setStatus(
+        leg,
+        'failed',
+      );
     }
   }
 
@@ -690,19 +1160,45 @@ export class GroupCallMesh {
    * The answering side just waits and says `reconnecting`; if nothing comes,
    * the deadline in {@link checkStalled} calls it.
    */
-  private recover(leg: MeshLeg): void {
-    if (leg.closed || this.closed) return;
-    if (!leg.offerer) {
-      this.setStatus(leg, 'reconnecting');
+  private recover(
+    leg: MeshLeg,
+  ): void {
+    if (
+      leg.closed ||
+      this
+        .closed
+    )
+      return;
+    if (
+      !leg.offerer
+    ) {
+      this.setStatus(
+        leg,
+        'reconnecting',
+      );
       return;
     }
-    if (leg.restarts >= MAX_ICE_RESTARTS) {
-      this.setStatus(leg, 'failed');
+    if (
+      leg.restarts >=
+      MAX_ICE_RESTARTS
+    ) {
+      this.setStatus(
+        leg,
+        'failed',
+      );
       return;
     }
     leg.restarts += 1;
-    this.setStatus(leg, 'reconnecting');
-    void this.offer(leg, { iceRestart: true });
+    this.setStatus(
+      leg,
+      'reconnecting',
+    );
+    void this.offer(
+      leg,
+      {
+        iceRestart: true,
+      },
+    );
   }
 
   /**
@@ -711,14 +1207,29 @@ export class GroupCallMesh {
    * uses the new list, and live legs adopt it so their next restart can
    * allocate a relay.
    */
-  setIceServers(servers: IceServer[]): void {
-    if (this.closed) return;
-    this.iceServers = servers;
-    const configuration = rtcConfiguration(servers);
+  setIceServers(
+    servers: IceServer[],
+  ): void {
+    if (
+      this
+        .closed
+    )
+      return;
+    this.iceServers =
+      servers;
+    const configuration =
+      rtcConfiguration(
+        servers,
+      );
     for (const leg of this.legs.values()) {
-      if (leg.closed) continue;
+      if (
+        leg.closed
+      )
+        continue;
       try {
-        leg.pc.setConfiguration(configuration);
+        leg.pc.setConfiguration(
+          configuration,
+        );
       } catch {
         /* a connection that refuses the change keeps its old servers */
       }
@@ -736,62 +1247,147 @@ export class GroupCallMesh {
    * does need a rebuild is a far side that started over: its new connection
    * carries a new DTLS fingerprint, which no existing session can adopt.
    */
-  private isSpent(leg: MeshLeg, offer: RTCSessionDescriptionInit): boolean {
-    if (leg.closed || leg.pc.signalingState === 'closed' || leg.pc.connectionState === 'closed') {
+  private isSpent(
+    leg: MeshLeg,
+    offer: RTCSessionDescriptionInit,
+  ): boolean {
+    if (
+      leg.closed ||
+      leg
+        .pc
+        .signalingState ===
+        'closed' ||
+      leg
+        .pc
+        .connectionState ===
+        'closed'
+    ) {
       return true;
     }
-    const current = dtlsFingerprint(leg.pc.remoteDescription?.sdp);
-    const incoming = dtlsFingerprint(offer.sdp);
-    if (current && incoming && current !== incoming) return true;
+    const current =
+      dtlsFingerprint(
+        leg
+          .pc
+          .remoteDescription
+          ?.sdp,
+      );
+    const incoming =
+      dtlsFingerprint(
+        offer.sdp,
+      );
+    if (
+      current &&
+      incoming &&
+      current !==
+        incoming
+    )
+      return true;
     // A negotiation of ours that failed before anything remote was applied has
     // no session to preserve; starting clean is the safe answer.
-    return leg.status === 'failed' && !leg.pc.remoteDescription;
+    return (
+      leg.status ===
+        'failed' &&
+      !leg
+        .pc
+        .remoteDescription
+    );
   }
 
-  private setStatus(leg: MeshLeg, status: GroupCallPeerStatus): void {
-    if (leg.status === status) return;
+  private setStatus(
+    leg: MeshLeg,
+    status: GroupCallPeerStatus,
+  ): void {
+    if (
+      leg.status ===
+      status
+    )
+      return;
     // A torn-down leg's late rejection must not speak for the peer's
     // replacement leg: status is reported by userId, not by leg.
-    if (leg.closed && status !== 'closed') return;
-    leg.status = status;
-    leg.changedAt = Date.now();
-    if (!this.closed) this.callbacks.onPeerStatus(leg.userId, status);
+    if (
+      leg.closed &&
+      status !==
+        'closed'
+    )
+      return;
+    leg.status =
+      status;
+    leg.changedAt =
+      Date.now();
+    if (
+      !this
+        .closed
+    )
+      this.callbacks.onPeerStatus(
+        leg.userId,
+        status,
+      );
   }
 
-  private teardownLeg(leg: MeshLeg, notify: boolean): void {
-    if (leg.closed) return;
+  private teardownLeg(
+    leg: MeshLeg,
+    notify: boolean,
+  ): void {
+    if (
+      leg.closed
+    )
+      return;
     leg.closed = true;
 
     leg.source?.disconnect();
-    leg.source = null;
+    leg.source =
+      null;
     leg.analyser?.disconnect();
-    leg.analyser = null;
+    leg.analyser =
+      null;
 
-    if (leg.audio) {
+    if (
+      leg.audio
+    ) {
       leg.audio.pause();
-      leg.audio.srcObject = null;
+      leg.audio.srcObject =
+        null;
       leg.audio.remove();
-      leg.audio = null;
+      leg.audio =
+        null;
     }
 
-    leg.pc.onicecandidate = null;
-    leg.pc.ontrack = null;
-    leg.pc.onconnectionstatechange = null;
+    leg.pc.onicecandidate =
+      null;
+    leg.pc.ontrack =
+      null;
+    leg.pc.onconnectionstatechange =
+      null;
     try {
       leg.pc.close();
     } catch {
       /* already closed by the engine — nothing to undo */
     }
-    leg.pending = [];
+    leg.pending =
+      [];
 
-    if (notify && !this.closed) {
-      if (leg.speaking) {
+    if (
+      notify &&
+      !this
+        .closed
+    ) {
+      if (
+        leg.speaking
+      ) {
         leg.speaking = false;
-        this.callbacks.onSpeaking(leg.userId, false);
+        this.callbacks.onSpeaking(
+          leg.userId,
+          false,
+        );
       }
-      leg.status = 'closed';
-      leg.changedAt = Date.now();
-      this.callbacks.onPeerStatus(leg.userId, 'closed');
+      leg.status =
+        'closed';
+      leg.changedAt =
+        Date.now();
+      this.callbacks.onPeerStatus(
+        leg.userId,
+        'closed',
+      );
     }
   }
 
@@ -799,24 +1395,43 @@ export class GroupCallMesh {
   /* Audio                                                                  */
   /* ---------------------------------------------------------------------- */
 
-  private attachRemote(leg: MeshLeg, stream: MediaStream): void {
-    if (leg.closed || this.closed) return;
+  private attachRemote(
+    leg: MeshLeg,
+    stream: MediaStream,
+  ): void {
+    if (
+      leg.closed ||
+      this
+        .closed
+    )
+      return;
 
     // Playback goes through a detached element rather than the DOM: a call must
     // keep working while the user navigates, and an element owned by a React
     // tree dies with it. `teardownLeg` is the only thing that frees these, which
     // is why it runs on every removal path.
-    if (!leg.audio) {
-      leg.audio = new Audio();
+    if (
+      !leg.audio
+    ) {
+      leg.audio =
+        new Audio();
       leg.audio.autoplay = true;
     }
-    leg.audio.srcObject = stream;
-    void leg.audio.play().catch(() => {
-      /* autoplay policy — the gesture that joined the call covers us, but never
+    leg.audio.srcObject =
+      stream;
+    void leg.audio
+      .play()
+      .catch(
+        () => {
+          /* autoplay policy — the gesture that joined the call covers us, but never
          let a rejected promise take a leg down */
-    });
+        },
+      );
 
-    this.attachAnalyser(leg, stream);
+    this.attachAnalyser(
+      leg,
+      stream,
+    );
   }
 
   /**
@@ -827,33 +1442,60 @@ export class GroupCallMesh {
    * which is exactly what a phone does during a call.
    */
   private audioContext(): AudioContext | null {
-    if (!this.contextResolved) {
+    if (
+      !this
+        .contextResolved
+    ) {
       this.contextResolved = true;
-      this.context = getAudioContext();
+      this.context =
+        getAudioContext();
     }
-    if (this.context) resumeAudioContext();
-    return this.context;
+    if (
+      this
+        .context
+    )
+      resumeAudioContext();
+    return this
+      .context;
   }
 
-  private attachAnalyser(leg: MeshLeg, stream: MediaStream): void {
-    const context = this.audioContext();
-    if (!context) return;
+  private attachAnalyser(
+    leg: MeshLeg,
+    stream: MediaStream,
+  ): void {
+    const context =
+      this.audioContext();
+    if (
+      !context
+    )
+      return;
 
     leg.source?.disconnect();
     leg.analyser?.disconnect();
-    leg.source = null;
-    leg.analyser = null;
+    leg.source =
+      null;
+    leg.analyser =
+      null;
 
     try {
-      const source = context.createMediaStreamSource(stream);
-      const analyser = context.createAnalyser();
-      analyser.fftSize = ANALYSER_FFT_SIZE;
+      const source =
+        context.createMediaStreamSource(
+          stream,
+        );
+      const analyser =
+        context.createAnalyser();
+      analyser.fftSize =
+        ANALYSER_FFT_SIZE;
       // Deliberately NOT connected to `context.destination`: the audio element
       // above is what the user hears, and wiring the graph through as well
       // would play every remote stream twice.
-      source.connect(analyser);
-      leg.source = source;
-      leg.analyser = analyser;
+      source.connect(
+        analyser,
+      );
+      leg.source =
+        source;
+      leg.analyser =
+        analyser;
     } catch {
       // No meter for this peer. The call is unaffected — the ring just sits at
       // rest, which is a better outcome than a thrown exception mid-join.
@@ -862,18 +1504,34 @@ export class GroupCallMesh {
   }
 
   private attachLocalAnalyser(): void {
-    const context = this.audioContext();
-    const stream = this.localStream;
-    if (!context || !stream) return;
+    const context =
+      this.audioContext();
+    const stream =
+      this
+        .localStream;
+    if (
+      !context ||
+      !stream
+    )
+      return;
 
     this.detachLocalAnalyser();
     try {
-      const source = context.createMediaStreamSource(stream);
-      const analyser = context.createAnalyser();
-      analyser.fftSize = ANALYSER_FFT_SIZE;
-      source.connect(analyser);
-      this.localSource = source;
-      this.localAnalyser = analyser;
+      const source =
+        context.createMediaStreamSource(
+          stream,
+        );
+      const analyser =
+        context.createAnalyser();
+      analyser.fftSize =
+        ANALYSER_FFT_SIZE;
+      source.connect(
+        analyser,
+      );
+      this.localSource =
+        source;
+      this.localAnalyser =
+        analyser;
     } catch {
       // Same as above: no local meter, working call.
     }
@@ -881,9 +1539,11 @@ export class GroupCallMesh {
 
   private detachLocalAnalyser(): void {
     this.localSource?.disconnect();
-    this.localSource = null;
+    this.localSource =
+      null;
     this.localAnalyser?.disconnect();
-    this.localAnalyser = null;
+    this.localAnalyser =
+      null;
   }
 
   /* ---------------------------------------------------------------------- */
@@ -901,73 +1561,218 @@ export class GroupCallMesh {
    * honest way to hold it.
    */
   private ensureTicker(): void {
-    if (this.ticker || this.closed || typeof window === 'undefined') return;
-    this.ticker = setInterval(() => this.tick(), LEVEL_SAMPLE_MS);
+    if (
+      this
+        .ticker ||
+      this
+        .closed ||
+      typeof window ===
+        'undefined'
+    )
+      return;
+    this.ticker =
+      setInterval(
+        () =>
+          this.tick(),
+        LEVEL_SAMPLE_MS,
+      );
   }
 
   private stopTicker(): void {
-    if (!this.ticker) return;
-    clearInterval(this.ticker);
-    this.ticker = null;
+    if (
+      !this
+        .ticker
+    )
+      return;
+    clearInterval(
+      this
+        .ticker,
+    );
+    this.ticker =
+      null;
   }
 
   private tick(): void {
-    if (this.closed) return;
-    const now = Date.now();
+    if (
+      this
+        .closed
+    )
+      return;
+    const now =
+      Date.now();
 
-    let levels: Record<string, number> | null = null;
+    let levels: Record<
+      string,
+      number
+    > | null =
+      null;
     let dirty = false;
 
     for (const leg of this.legs.values()) {
-      if (leg.closed || !leg.analyser) continue;
-      const rms = this.readRms(leg.analyser);
+      if (
+        leg.closed ||
+        !leg.analyser
+      )
+        continue;
+      const rms =
+        this.readRms(
+          leg.analyser,
+        );
 
-      const speaking = this.evaluateSpeaking(rms, leg.speaking, leg.loudAt, now);
-      if (rms >= SPEAKING_RMS_THRESHOLD) leg.loudAt = now;
-      if (speaking !== leg.speaking) {
-        leg.speaking = speaking;
-        this.callbacks.onSpeaking(leg.userId, speaking);
+      const speaking =
+        this.evaluateSpeaking(
+          rms,
+          leg.speaking,
+          leg.loudAt,
+          now,
+        );
+      if (
+        rms >=
+        SPEAKING_RMS_THRESHOLD
+      )
+        leg.loudAt =
+          now;
+      if (
+        speaking !==
+        leg.speaking
+      ) {
+        leg.speaking =
+          speaking;
+        this.callbacks.onSpeaking(
+          leg.userId,
+          speaking,
+        );
       }
 
-      const level = smoothLevel(leg.level, rms);
-      if (Math.abs(level - leg.level) >= LEVEL_EPSILON) dirty = true;
-      leg.level = level;
-      levels ??= {};
-      levels[leg.userId] = level;
+      const level =
+        smoothLevel(
+          leg.level,
+          rms,
+        );
+      if (
+        Math.abs(
+          level -
+            leg.level,
+        ) >=
+        LEVEL_EPSILON
+      )
+        dirty = true;
+      leg.level =
+        level;
+      levels ??=
+        {};
+      levels[
+        leg.userId
+      ] =
+        level;
     }
 
     // A muted microphone delivers silence, so this reads 0 on its own — but
     // `setMuted` has already said so, and re-deriving it here would only add a
     // release window's worth of lag.
-    if (this.localAnalyser && !this.muted) {
-      const rms = this.readRms(this.localAnalyser);
-      const speaking = this.evaluateSpeaking(rms, this.localSpeaking, this.localLoudAt, now);
-      if (rms >= SPEAKING_RMS_THRESHOLD) this.localLoudAt = now;
-      if (speaking !== this.localSpeaking) {
-        this.localSpeaking = speaking;
-        this.callbacks.onLocalSpeaking(speaking);
+    if (
+      this
+        .localAnalyser &&
+      !this
+        .muted
+    ) {
+      const rms =
+        this.readRms(
+          this
+            .localAnalyser,
+        );
+      const speaking =
+        this.evaluateSpeaking(
+          rms,
+          this
+            .localSpeaking,
+          this
+            .localLoudAt,
+          now,
+        );
+      if (
+        rms >=
+        SPEAKING_RMS_THRESHOLD
+      )
+        this.localLoudAt =
+          now;
+      if (
+        speaking !==
+        this
+          .localSpeaking
+      ) {
+        this.localSpeaking =
+          speaking;
+        this.callbacks.onLocalSpeaking(
+          speaking,
+        );
       }
-      const level = smoothLevel(this.localLevel, rms);
-      if (Math.abs(level - this.localLevel) >= LEVEL_EPSILON) dirty = true;
-      this.localLevel = level;
+      const level =
+        smoothLevel(
+          this
+            .localLevel,
+          rms,
+        );
+      if (
+        Math.abs(
+          level -
+            this
+              .localLevel,
+        ) >=
+        LEVEL_EPSILON
+      )
+        dirty = true;
+      this.localLevel =
+        level;
     }
 
-    if (dirty) this.callbacks.onLevels?.(levels ?? {}, this.localLevel);
+    if (
+      dirty
+    )
+      this.callbacks.onLevels?.(
+        levels ??
+          {},
+        this
+          .localLevel,
+      );
 
-    this.checkStalled(now);
+    this.checkStalled(
+      now,
+    );
   }
 
   /** Root-mean-square of one analyser window, 0–1. */
-  private readRms(analyser: AnalyserNode): number {
-    const buffer = this.sampleBuffer;
-    analyser.getByteTimeDomainData(buffer);
+  private readRms(
+    analyser: AnalyserNode,
+  ): number {
+    const buffer =
+      this
+        .sampleBuffer;
+    analyser.getByteTimeDomainData(
+      buffer,
+    );
     let sum = 0;
-    for (let i = 0; i < buffer.length; i += 1) {
+    for (
+      let i = 0;
+      i <
+      buffer.length;
+      i += 1
+    ) {
       // Byte time-domain data is centred on 128; ±128 is full scale.
-      const sample = (buffer[i] - 128) / 128;
-      sum += sample * sample;
+      const sample =
+        (buffer[
+          i
+        ] -
+          128) /
+        128;
+      sum +=
+        sample *
+        sample;
     }
-    return Math.sqrt(sum / buffer.length);
+    return Math.sqrt(
+      sum /
+        buffer.length,
+    );
   }
 
   /**
@@ -975,9 +1780,23 @@ export class GroupCallMesh {
    * start, and stay under it for {@link SPEAKING_RELEASE_MS} to stop. Speech is
    * full of gaps, and a symmetric rule strobes on every one of them.
    */
-  private evaluateSpeaking(rms: number, speaking: boolean, loudAt: number, now: number): boolean {
-    if (rms >= SPEAKING_RMS_THRESHOLD) return true;
-    return speaking && now - loudAt < SPEAKING_RELEASE_MS;
+  private evaluateSpeaking(
+    rms: number,
+    speaking: boolean,
+    loudAt: number,
+    now: number,
+  ): boolean {
+    if (
+      rms >=
+      SPEAKING_RMS_THRESHOLD
+    )
+      return true;
+    return (
+      speaking &&
+      now -
+        loudAt <
+        SPEAKING_RELEASE_MS
+    );
   }
 
   /**
@@ -987,34 +1806,98 @@ export class GroupCallMesh {
    * deadlines are tens of seconds and the tick is 80 ms, so the resolution is
    * free and there is nothing extra to cancel on teardown.
    */
-  private checkStalled(now: number): void {
+  private checkStalled(
+    now: number,
+  ): void {
     for (const leg of this.legs.values()) {
-      if (leg.closed) continue;
-      const age = now - leg.changedAt;
-      if ((leg.status === 'new' || leg.status === 'connecting') && age > NEGOTIATION_TIMEOUT_MS) {
+      if (
+        leg.closed
+      )
+        continue;
+      const age =
+        now -
+        leg.changedAt;
+      if (
+        (leg.status ===
+          'new' ||
+          leg.status ===
+            'connecting') &&
+        age >
+          NEGOTIATION_TIMEOUT_MS
+      ) {
         // An offer can be lost in transit (relayed while the far side was
         // re-binding its socket) and the connection then never reaches
         // `failed` on its own, so the offerer re-offers from here; `recover`
         // gives up once the restart budget is spent.
-        if (leg.offerer) this.recover(leg);
-        else this.setStatus(leg, 'failed');
-      } else if (leg.status === 'reconnecting' && age > RECONNECT_TIMEOUT_MS) {
-        this.setStatus(leg, 'failed');
+        if (
+          leg.offerer
+        )
+          this.recover(
+            leg,
+          );
+        else
+          this.setStatus(
+            leg,
+            'failed',
+          );
+      } else if (
+        leg.status ===
+          'reconnecting' &&
+        age >
+          RECONNECT_TIMEOUT_MS
+      ) {
+        this.setStatus(
+          leg,
+          'failed',
+        );
       }
     }
   }
 }
 
 /** The `a=fingerprint` line of an SDP, which identifies the DTLS session's peer. */
-function dtlsFingerprint(sdp: string | undefined): string | null {
-  if (!sdp) return null;
-  const match = /^a=fingerprint:(.+)$/m.exec(sdp);
-  return match ? match[1].trim().toLowerCase() : null;
+function dtlsFingerprint(
+  sdp:
+    | string
+    | undefined,
+):
+  | string
+  | null {
+  if (
+    !sdp
+  )
+    return null;
+  const match =
+    /^a=fingerprint:(.+)$/m.exec(
+      sdp,
+    );
+  return match
+    ? match[1]
+        .trim()
+        .toLowerCase()
+    : null;
 }
 
 /** Instant attack, eased release — the shape a level meter has to have. */
-function smoothLevel(previous: number, rms: number): number {
-  const target = Math.min(1, rms / LEVEL_FULL_SCALE_RMS);
-  if (target >= previous) return target;
-  return previous + (target - previous) * LEVEL_RELEASE;
+function smoothLevel(
+  previous: number,
+  rms: number,
+): number {
+  const target =
+    Math.min(
+      1,
+      rms /
+        LEVEL_FULL_SCALE_RMS,
+    );
+  if (
+    target >=
+    previous
+  )
+    return target;
+  return (
+    previous +
+    (target -
+      previous) *
+      LEVEL_RELEASE
+  );
 }

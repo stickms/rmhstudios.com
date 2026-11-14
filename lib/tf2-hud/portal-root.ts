@@ -8,19 +8,43 @@
  * root would be invisible there. Pure DOM logic, tested with fakes.
  */
 
-export const THEME_ROOT = '.tf2hud-theme';
+export const THEME_ROOT =
+  '.tf2hud-theme';
 
 export interface PortalDoc {
-  querySelector<E extends Element = Element>(selectors: string): E | null;
+  querySelector<
+    E extends
+      Element =
+      Element,
+  >(
+    selectors: string,
+  ): E | null;
   fullscreenElement?: Element | null;
   webkitFullscreenElement?: Element | null;
 }
 
-export function portalRoot(doc: PortalDoc = document): HTMLElement | null {
-  const fs = doc.fullscreenElement ?? doc.webkitFullscreenElement ?? null;
-  if (fs) {
-    const own = fs.matches(THEME_ROOT) ? fs : fs.querySelector(THEME_ROOT);
-    return (own ?? fs) as HTMLElement;
+export function portalRoot(
+  doc: PortalDoc = document,
+): HTMLElement | null {
+  const fs =
+    doc.fullscreenElement ??
+    doc.webkitFullscreenElement ??
+    null;
+  if (
+    fs
+  ) {
+    const own =
+      fs.matches(
+        THEME_ROOT,
+      )
+        ? fs
+        : fs.querySelector(
+            THEME_ROOT,
+          );
+    return (own ??
+      fs) as HTMLElement;
   }
-  return doc.querySelector<HTMLElement>(THEME_ROOT);
+  return doc.querySelector<HTMLElement>(
+    THEME_ROOT,
+  );
 }

@@ -13,76 +13,126 @@ import {
   sanitizePages,
   LIBRARY_USER_QUOTA,
 } from './upload-validation';
-import { libraryFileKey, libraryCoverKey, libraryContentType, slugifyTitle, type LibraryFormat } from './keys';
+import {
+  libraryFileKey,
+  libraryCoverKey,
+  libraryContentType,
+  slugifyTitle,
+  type LibraryFormat,
+} from './keys';
 import { isGzipped } from './compress.server';
 
-export type CreateDocInput = {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  pages: number;
-  format: LibraryFormat;
-  pdfKey: string;
-  coverKey: string | null;
-  sizeBytes: number;
-  uploadedByUserId: string;
-  /** Curated/official entry — admin uploads land in the curated section. */
-  official: boolean;
-};
+export type CreateDocInput =
+  {
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    pages: number;
+    format: LibraryFormat;
+    pdfKey: string;
+    coverKey:
+      | string
+      | null;
+    sizeBytes: number;
+    uploadedByUserId: string;
+    /** Curated/official entry — admin uploads land in the curated section. */
+    official: boolean;
+  };
 
-export type UploadDeps = {
-  putObject: (
-    key: string,
-    body: Buffer,
-    contentType: string,
-    contentEncoding?: string
-  ) => Promise<void>;
-  createDoc: (data: CreateDocInput) => Promise<{ slug: string }>;
-  countUserDocs: (userId: string) => Promise<number>;
-  slugExists: (slug: string) => Promise<boolean>;
-  newId: () => string;
-  /** Compress the file for at-rest storage (gzip when smaller). */
-  compress: (file: Buffer) => Buffer;
-};
+export type UploadDeps =
+  {
+    putObject: (
+      key: string,
+      body: Buffer,
+      contentType: string,
+      contentEncoding?: string,
+    ) => Promise<void>;
+    createDoc: (
+      data: CreateDocInput,
+    ) => Promise<{
+      slug: string;
+    }>;
+    countUserDocs: (
+      userId: string,
+    ) => Promise<number>;
+    slugExists: (
+      slug: string,
+    ) => Promise<boolean>;
+    newId: () => string;
+    /** Compress the file for at-rest storage (gzip when smaller). */
+    compress: (
+      file: Buffer,
+    ) => Buffer;
+  };
 
-export type UploadInput = {
-  userId: string;
-  /** The uploaded book bytes (PDF or EPUB; the format is detected by magic bytes). */
-  file: Buffer;
-  cover: Buffer | null;
-  title: string;
-  description: string;
-  pages: number;
-  /** Whether the uploader is an admin (raises the size ceiling, marks curated). */
-  isAdmin: boolean;
-  /** Effective per-account book cap for this user (defaults to LIBRARY_USER_QUOTA). */
-  quota?: number;
-};
+export type UploadInput =
+  {
+    userId: string;
+    /** The uploaded book bytes (PDF or EPUB; the format is detected by magic bytes). */
+    file: Buffer;
+    cover: Buffer | null;
+    title: string;
+    description: string;
+    pages: number;
+    /** Whether the uploader is an admin (raises the size ceiling, marks curated). */
+    isAdmin: boolean;
+    /** Effective per-account book cap for this user (defaults to LIBRARY_USER_QUOTA). */
+    quota?: number;
+  };
 
 export type UploadResult =
-  | { ok: true; slug: string }
-  | { ok: false; status: number; error: string };
+  | {
+      ok: true;
+      slug: string;
+    }
+  | {
+      ok: false;
+      status: number;
+      error: string;
+    };
 
 async function resolveUniqueSlug(
   base: string,
-  slugExists: (slug: string) => Promise<boolean>
+  slugExists: (
+    slug: string,
+  ) => Promise<boolean>,
 ): Promise<string> {
-  if (!(await slugExists(base))) return base;
+  if (
+    !(await slugExists(
+      base,
+    ))
+  )
+    return base;
   let n = 2;
-  while (await slugExists(`${base}-${n}`)) n++;
+  while (
+    await slugExists(
+      `${base}-${n}`,
+    )
+  )
+    n++;
   return `${base}-${n}`;
 }
 
 export async function processLibraryUpload(
   deps: UploadDeps,
-  input: UploadInput
+  input: UploadInput,
 ): Promise<UploadResult> {
   // Admins are uncapped; regular users have a per-account book quota.
-  if (!input.isAdmin) {
-    const quota = input.quota ?? LIBRARY_USER_QUOTA;
-    const count = await deps.countUserDocs(input.userId);
-    if (count >= quota) {
+  if (
+    !input.isAdmin
+  ) {
+    const quota =
+      input.quota ??
+      LIBRARY_USER_QUOTA;
+    const count =
+      await deps.countUserDocs(
+        input.userId,
+      );
+    if (
+      count >=
+      quota
+    ) {
       return {
         ok: false,
         status: 429,
@@ -91,12 +141,32 @@ export async function processLibraryUpload(
     }
   }
 
-  const bookCheck = validateBookBuffer(input.file);
-  if (!bookCheck.ok) return { ok: false, status: 415, error: bookCheck.error };
-  const format = bookCheck.format!;
+  const bookCheck =
+    validateBookBuffer(
+      input.file,
+    );
+  if (
+    !bookCheck.ok
+  )
+    return {
+      ok: false,
+      status: 415,
+      error:
+        bookCheck.error,
+    };
+  const format =
+    bookCheck.format!;
 
-  const maxBytes = libraryPdfMaxBytes(input.isAdmin);
-  if (input.file.length > maxBytes) {
+  const maxBytes =
+    libraryPdfMaxBytes(
+      input.isAdmin,
+    );
+  if (
+    input
+      .file
+      .length >
+    maxBytes
+  ) {
     return {
       ok: false,
       status: 413,
@@ -104,44 +174,107 @@ export async function processLibraryUpload(
     };
   }
 
-  const fieldCheck = validateBookFields({
-    title: input.title,
-    pages: input.pages,
-    description: input.description,
-  });
-  if (!fieldCheck.ok) return { ok: false, status: 422, error: fieldCheck.error };
+  const fieldCheck =
+    validateBookFields(
+      {
+        title:
+          input.title,
+        pages:
+          input.pages,
+        description:
+          input.description,
+      },
+    );
+  if (
+    !fieldCheck.ok
+  )
+    return {
+      ok: false,
+      status: 422,
+      error:
+        fieldCheck.error,
+    };
 
-  const id = deps.newId();
-  const slug = await resolveUniqueSlug(slugifyTitle(input.title), deps.slugExists);
-  const fileKey = libraryFileKey(id, format);
-  const coverKey = input.cover ? libraryCoverKey(id) : null;
+  const id =
+    deps.newId();
+  const slug =
+    await resolveUniqueSlug(
+      slugifyTitle(
+        input.title,
+      ),
+      deps.slugExists,
+    );
+  const fileKey =
+    libraryFileKey(
+      id,
+      format,
+    );
+  const coverKey =
+    input.cover
+      ? libraryCoverKey(
+          id,
+        )
+      : null;
 
   // Compress before storage; record Content-Encoding so the serve route (and any
   // CDN in front of it) doesn't have to sniff the bytes to know it's gzipped.
-  const stored = deps.compress(input.file);
+  const stored =
+    deps.compress(
+      input.file,
+    );
   await deps.putObject(
     fileKey,
     stored,
-    libraryContentType(format),
-    isGzipped(stored) ? 'gzip' : undefined,
+    libraryContentType(
+      format,
+    ),
+    isGzipped(
+      stored,
+    )
+      ? 'gzip'
+      : undefined,
   );
-  if (input.cover && coverKey) {
-    await deps.putObject(coverKey, input.cover, 'image/jpeg');
+  if (
+    input.cover &&
+    coverKey
+  ) {
+    await deps.putObject(
+      coverKey,
+      input.cover,
+      'image/jpeg',
+    );
   }
 
-  await deps.createDoc({
-    id,
-    slug,
-    title: input.title.trim(),
-    description: input.description ?? '',
-    pages: sanitizePages(input.pages),
-    format,
-    pdfKey: fileKey,
-    coverKey,
-    sizeBytes: input.file.length,
-    uploadedByUserId: input.userId,
-    official: input.isAdmin,
-  });
+  await deps.createDoc(
+    {
+      id,
+      slug,
+      title:
+        input.title.trim(),
+      description:
+        input.description ??
+        '',
+      pages:
+        sanitizePages(
+          input.pages,
+        ),
+      format,
+      pdfKey:
+        fileKey,
+      coverKey,
+      sizeBytes:
+        input
+          .file
+          .length,
+      uploadedByUserId:
+        input.userId,
+      official:
+        input.isAdmin,
+    },
+  );
 
-  return { ok: true, slug };
+  return {
+    ok: true,
+    slug,
+  };
 }

@@ -3,11 +3,31 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { getWeeklyRecap } from '@/lib/recap.server';
 import type { YearlyWrapped } from '@/lib/wrapped/wrapped.server';
 
-export const getWrappedApi = endpoint<{
-  query: { year?: number };
-  res: YearlyWrapped;
-}>()({ method: 'GET', path: '/api/wrapped' });
+export const getWrappedApi =
+  endpoint<{
+    query: {
+      year?: number;
+    };
+    res: YearlyWrapped;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/wrapped',
+    },
+  );
 
-export const getRecapApi = endpoint<{
-  res: Awaited<ReturnType<typeof getWeeklyRecap>>;
-}>()({ method: 'GET', path: '/api/recap' });
+export const getRecapApi =
+  endpoint<{
+    res: Awaited<
+      ReturnType<
+        typeof getWeeklyRecap
+      >
+    >;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/recap',
+    },
+  );

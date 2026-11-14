@@ -34,54 +34,127 @@ export const MIN_SCALE = 0.5;
 
 export interface RenderGovernor {
   /** One frame interval in ms; returns the new scale when it should change. */
-  push(dt: number): number | null;
+  push(
+    dt: number,
+  ):
+    | number
+    | null;
   /** Forget the window in progress and wait out a warm-up (a resize, a tab switch). */
   hold(): void;
   readonly scale: number;
 }
 
-function median(xs: number[]): number {
-  const sorted = [...xs].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)];
+function median(
+  xs: number[],
+): number {
+  const sorted =
+    [
+      ...xs,
+    ].sort(
+      (
+        a,
+        b,
+      ) =>
+        a -
+        b,
+    );
+  return sorted[
+    Math.floor(
+      sorted.length /
+        2,
+    )
+  ];
 }
 
 export function createGovernor(): RenderGovernor {
   let scale = 1;
-  let warm = WARMUP_MS;
+  let warm =
+    WARMUP_MS;
   let windowMs = 0;
-  let frames: number[] = [];
+  let frames: number[] =
+    [];
   let slow = 0;
 
-  const reset = (warmup: number) => {
-    warm = warmup;
-    windowMs = 0;
-    frames = [];
-    slow = 0;
-  };
+  const reset =
+    (
+      warmup: number,
+    ) => {
+      warm =
+        warmup;
+      windowMs = 0;
+      frames =
+        [];
+      slow = 0;
+    };
 
   return {
     get scale() {
       return scale;
     },
     hold() {
-      reset(WARMUP_MS);
+      reset(
+        WARMUP_MS,
+      );
     },
-    push(dt) {
-      if (warm > 0) {
-        warm -= dt;
+    push(
+      dt,
+    ) {
+      if (
+        warm >
+        0
+      ) {
+        warm -=
+          dt;
         return null;
       }
-      frames.push(dt);
-      windowMs += dt;
-      if (windowMs < WINDOW_MS) return null;
-      const typical = median(frames);
-      frames = [];
+      frames.push(
+        dt,
+      );
+      windowMs +=
+        dt;
+      if (
+        windowMs <
+        WINDOW_MS
+      )
+        return null;
+      const typical =
+        median(
+          frames,
+        );
+      frames =
+        [];
       windowMs = 0;
-      slow = typical > SLOW_FRAME_MS ? slow + 1 : 0;
-      if (slow < SLOW_WINDOWS || scale <= MIN_SCALE) return null;
-      const step = typical > CRAWL_MS ? CRAWL_STEP : STEP;
-      scale = Math.max(MIN_SCALE, Math.round(scale * step * 1000) / 1000);
-      reset(WARMUP_MS);
+      slow =
+        typical >
+        SLOW_FRAME_MS
+          ? slow +
+            1
+          : 0;
+      if (
+        slow <
+          SLOW_WINDOWS ||
+        scale <=
+          MIN_SCALE
+      )
+        return null;
+      const step =
+        typical >
+        CRAWL_MS
+          ? CRAWL_STEP
+          : STEP;
+      scale =
+        Math.max(
+          MIN_SCALE,
+          Math.round(
+            scale *
+              step *
+              1000,
+          ) /
+            1000,
+        );
+      reset(
+        WARMUP_MS,
+      );
       return scale;
     },
   };

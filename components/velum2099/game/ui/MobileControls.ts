@@ -7,7 +7,8 @@
    Only mounts on touch-capable devices.
    ═══════════════════════════════════════════ */
 
-const STYLE_ID = 'neurodrive-mc-style';
+const STYLE_ID =
+  'neurodrive-mc-style';
 const CSS = `
 /* Safe-area inset, not \`inset:0\`: drift, gas and fire all pin to the right edge
    and the exit button to the top-right — the corner a landscape phone hides
@@ -49,24 +50,44 @@ const CSS = `
 `;
 
 export class MobileControls {
-    static isTouch() {
-        return typeof window !== 'undefined' &&
-            (('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0);
-    }
+  static isTouch() {
+    return (
+      typeof window !==
+        'undefined' &&
+      ('ontouchstart' in
+        window ||
+        (navigator.maxTouchPoints ||
+          0) >
+          0)
+    );
+  }
 
-    constructor(container, vehicle, opts = {}) {
-        this._container = container;
-        this.vehicle = vehicle;
-        this.onExit = opts.onExit || (() => {});
-        this._radius = 60;            // px deflection for full input
-        this._deadzone = 0.12;
-        this._joyId = null;
-        this._gasHeld = false;
-        this._injectStyle();
+  constructor(
+    container,
+    vehicle,
+    opts = {},
+  ) {
+    this._container =
+      container;
+    this.vehicle =
+      vehicle;
+    this.onExit =
+      opts.onExit ||
+      (() => {});
+    this._radius = 60; // px deflection for full input
+    this._deadzone = 0.12;
+    this._joyId =
+      null;
+    this._gasHeld = false;
+    this._injectStyle();
 
-        const root = document.createElement('div');
-        root.className = 'nd-mc';
-        root.innerHTML = `
+    const root =
+      document.createElement(
+        'div',
+      );
+    root.className =
+      'nd-mc';
+    root.innerHTML = `
           <div class="zone"></div>
           <div class="base"><div class="knob"></div></div>
           <button class="btn drift" type="button">DRIFT</button>
@@ -75,131 +96,460 @@ export class MobileControls {
           <button class="btn exit" type="button">EXIT</button>
           <div class="hint">左摇杆转向/油门 · GAS 加速 · DRIFT 漂移 · FIRE 开火</div>
         `;
-        container.appendChild(root);
-        this._root = root;
-        this._zone = root.querySelector('.zone');
-        this._base = root.querySelector('.base');
-        this._knob = root.querySelector('.knob');
-        this._driftBtn = root.querySelector('.drift');
-        this._gasBtn = root.querySelector('.gas');
-        this._fireBtn = root.querySelector('.fire');
-        this._exitBtn = root.querySelector('.exit');
+    container.appendChild(
+      root,
+    );
+    this._root =
+      root;
+    this._zone =
+      root.querySelector(
+        '.zone',
+      );
+    this._base =
+      root.querySelector(
+        '.base',
+      );
+    this._knob =
+      root.querySelector(
+        '.knob',
+      );
+    this._driftBtn =
+      root.querySelector(
+        '.drift',
+      );
+    this._gasBtn =
+      root.querySelector(
+        '.gas',
+      );
+    this._fireBtn =
+      root.querySelector(
+        '.fire',
+      );
+    this._exitBtn =
+      root.querySelector(
+        '.exit',
+      );
 
-        this._bind();
-        this.vehicle.mobileInput.active = true;
-    }
+    this._bind();
+    this.vehicle.mobileInput.active = true;
+  }
 
-    _bind() {
-        // ── Joystick (floating within the left zone) ──
-        this._onZoneDown = (e) => {
-            if (this._joyId !== null) return;
-            e.preventDefault();
-            this._joyId = e.pointerId;
-            this._origin = { x: e.clientX, y: e.clientY };
-            this._base.style.left = `${e.clientX}px`;
-            this._base.style.top = `${e.clientY}px`;
-            this._base.style.display = 'block';
-            this._knob.style.left = '50%';
-            this._knob.style.top = '50%';
-            try { this._zone.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-        };
-        this._onZoneMove = (e) => {
-            if (e.pointerId !== this._joyId) return;
-            e.preventDefault();
-            let dx = e.clientX - this._origin.x;
-            let dy = e.clientY - this._origin.y;
-            const len = Math.hypot(dx, dy);
-            const max = this._radius;
-            if (len > max) { dx = dx / len * max; dy = dy / len * max; }
-            this._knob.style.left = `${70 + dx}px`;
-            this._knob.style.top = `${70 + dy}px`;
+  _bind() {
+    // ── Joystick (floating within the left zone) ──
+    this._onZoneDown =
+      (
+        e,
+      ) => {
+        if (
+          this
+            ._joyId !==
+          null
+        )
+          return;
+        e.preventDefault();
+        this._joyId =
+          e.pointerId;
+        this._origin =
+          {
+            x: e.clientX,
+            y: e.clientY,
+          };
+        this._base.style.left = `${e.clientX}px`;
+        this._base.style.top = `${e.clientY}px`;
+        this._base.style.display =
+          'block';
+        this._knob.style.left =
+          '50%';
+        this._knob.style.top =
+          '50%';
+        try {
+          this._zone.setPointerCapture(
+            e.pointerId,
+          );
+        } catch {
+          /* ignore */
+        }
+      };
+    this._onZoneMove =
+      (
+        e,
+      ) => {
+        if (
+          e.pointerId !==
+          this
+            ._joyId
+        )
+          return;
+        e.preventDefault();
+        let dx =
+          e.clientX -
+          this
+            ._origin
+            .x;
+        let dy =
+          e.clientY -
+          this
+            ._origin
+            .y;
+        const len =
+          Math.hypot(
+            dx,
+            dy,
+          );
+        const max =
+          this
+            ._radius;
+        if (
+          len >
+          max
+        ) {
+          dx =
+            (dx /
+              len) *
+            max;
+          dy =
+            (dy /
+              len) *
+            max;
+        }
+        this._knob.style.left = `${70 + dx}px`;
+        this._knob.style.top = `${70 + dy}px`;
 
-            const nx = dx / max;
-            const ny = dy / max;
-            // steer: finger right (nx>0) → steer right → negative (matches keys)
-            const steer = Math.abs(nx) > this._deadzone ? -nx : 0;
-            // throttle up / brake down
-            let throttle = 0, brake = 0;
-            if (-ny > this._deadzone) throttle = Math.min(1, -ny);
-            else if (ny > this._deadzone) brake = Math.min(1, ny);
+        const nx =
+          dx /
+          max;
+        const ny =
+          dy /
+          max;
+        // steer: finger right (nx>0) → steer right → negative (matches keys)
+        const steer =
+          Math.abs(
+            nx,
+          ) >
+          this
+            ._deadzone
+            ? -nx
+            : 0;
+        // throttle up / brake down
+        let throttle = 0,
+          brake = 0;
+        if (
+          -ny >
+          this
+            ._deadzone
+        )
+          throttle =
+            Math.min(
+              1,
+              -ny,
+            );
+        else if (
+          ny >
+          this
+            ._deadzone
+        )
+          brake =
+            Math.min(
+              1,
+              ny,
+            );
 
-            const mi = this.vehicle.mobileInput;
-            mi.steer = steer;
-            // GAS button forces full throttle if held and joystick isn't braking
-            if (this._gasHeld && brake === 0) throttle = 1;
-            mi.throttle = throttle;
-            mi.brake = brake;
-        };
-        this._onZoneUp = (e) => {
-            if (e.pointerId !== this._joyId) return;
-            this._joyId = null;
-            this._base.style.display = 'none';
-            const mi = this.vehicle.mobileInput;
-            mi.steer = 0;
-            mi.throttle = this._gasHeld ? 1 : 0;
-            mi.brake = 0;
-            try { this._zone.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
-        };
-        this._zone.addEventListener('pointerdown', this._onZoneDown);
-        this._zone.addEventListener('pointermove', this._onZoneMove);
-        this._zone.addEventListener('pointerup', this._onZoneUp);
-        this._zone.addEventListener('pointercancel', this._onZoneUp);
+        const mi =
+          this
+            .vehicle
+            .mobileInput;
+        mi.steer =
+          steer;
+        // GAS button forces full throttle if held and joystick isn't braking
+        if (
+          this
+            ._gasHeld &&
+          brake ===
+            0
+        )
+          throttle = 1;
+        mi.throttle =
+          throttle;
+        mi.brake =
+          brake;
+      };
+    this._onZoneUp =
+      (
+        e,
+      ) => {
+        if (
+          e.pointerId !==
+          this
+            ._joyId
+        )
+          return;
+        this._joyId =
+          null;
+        this._base.style.display =
+          'none';
+        const mi =
+          this
+            .vehicle
+            .mobileInput;
+        mi.steer = 0;
+        mi.throttle =
+          this
+            ._gasHeld
+            ? 1
+            : 0;
+        mi.brake = 0;
+        try {
+          this._zone.releasePointerCapture(
+            e.pointerId,
+          );
+        } catch {
+          /* ignore */
+        }
+      };
+    this._zone.addEventListener(
+      'pointerdown',
+      this
+        ._onZoneDown,
+    );
+    this._zone.addEventListener(
+      'pointermove',
+      this
+        ._onZoneMove,
+    );
+    this._zone.addEventListener(
+      'pointerup',
+      this
+        ._onZoneUp,
+    );
+    this._zone.addEventListener(
+      'pointercancel',
+      this
+        ._onZoneUp,
+    );
 
-        // ── DRIFT button (hold = handbrake) ──
-        this._onDriftDown = (e) => { e.preventDefault(); this.vehicle.mobileInput.handbrake = true; this._driftBtn.classList.add('on'); };
-        this._onDriftUp = (e) => { e.preventDefault(); this.vehicle.mobileInput.handbrake = false; this._driftBtn.classList.remove('on'); };
-        this._driftBtn.addEventListener('pointerdown', this._onDriftDown);
-        this._driftBtn.addEventListener('pointerup', this._onDriftUp);
-        this._driftBtn.addEventListener('pointercancel', this._onDriftUp);
-        this._driftBtn.addEventListener('pointerleave', this._onDriftUp);
+    // ── DRIFT button (hold = handbrake) ──
+    this._onDriftDown =
+      (
+        e,
+      ) => {
+        e.preventDefault();
+        this.vehicle.mobileInput.handbrake = true;
+        this._driftBtn.classList.add(
+          'on',
+        );
+      };
+    this._onDriftUp =
+      (
+        e,
+      ) => {
+        e.preventDefault();
+        this.vehicle.mobileInput.handbrake = false;
+        this._driftBtn.classList.remove(
+          'on',
+        );
+      };
+    this._driftBtn.addEventListener(
+      'pointerdown',
+      this
+        ._onDriftDown,
+    );
+    this._driftBtn.addEventListener(
+      'pointerup',
+      this
+        ._onDriftUp,
+    );
+    this._driftBtn.addEventListener(
+      'pointercancel',
+      this
+        ._onDriftUp,
+    );
+    this._driftBtn.addEventListener(
+      'pointerleave',
+      this
+        ._onDriftUp,
+    );
 
-        // ── GAS button (hold = auto throttle, frees the thumb for steering) ──
-        this._onGasDown = (e) => { e.preventDefault(); this._gasHeld = true; this.vehicle.mobileInput.throttle = 1; this._gasBtn.classList.add('on'); };
-        this._onGasUp = (e) => { e.preventDefault(); this._gasHeld = false; if (this._joyId === null) this.vehicle.mobileInput.throttle = 0; this._gasBtn.classList.remove('on'); };
-        this._gasBtn.addEventListener('pointerdown', this._onGasDown);
-        this._gasBtn.addEventListener('pointerup', this._onGasUp);
-        this._gasBtn.addEventListener('pointercancel', this._onGasUp);
-        this._gasBtn.addEventListener('pointerleave', this._onGasUp);
-
-        // ── FIRE button (hold = fire laser) ──
-        this._onFireDown = (e) => { e.preventDefault(); this.vehicle.mobileInput.fire = true; this._fireBtn.classList.add('on'); };
-        this._onFireUp = (e) => { e.preventDefault(); this.vehicle.mobileInput.fire = false; this._fireBtn.classList.remove('on'); };
-        this._fireBtn.addEventListener('pointerdown', this._onFireDown);
-        this._fireBtn.addEventListener('pointerup', this._onFireUp);
-        this._fireBtn.addEventListener('pointercancel', this._onFireUp);
-        this._fireBtn.addEventListener('pointerleave', this._onFireUp);
-
-        // ── EXIT button ──
-        this._onExit = (e) => { e.preventDefault(); this.onExit(); };
-        this._exitBtn.addEventListener('pointerup', this._onExit);
-    }
-
-    show() { if (this._root) this._root.style.display = 'block'; }
-    hide() {
-        if (this._root) this._root.style.display = 'none';
-        this._resetInput();
-    }
-
-    _resetInput() {
-        const mi = this.vehicle.mobileInput;
-        mi.steer = 0; mi.throttle = 0; mi.brake = 0; mi.handbrake = false; mi.fire = false;
+    // ── GAS button (hold = auto throttle, frees the thumb for steering) ──
+    this._onGasDown =
+      (
+        e,
+      ) => {
+        e.preventDefault();
+        this._gasHeld = true;
+        this.vehicle.mobileInput.throttle = 1;
+        this._gasBtn.classList.add(
+          'on',
+        );
+      };
+    this._onGasUp =
+      (
+        e,
+      ) => {
+        e.preventDefault();
         this._gasHeld = false;
-        this._joyId = null;
-        if (this._base) this._base.style.display = 'none';
-    }
+        if (
+          this
+            ._joyId ===
+          null
+        )
+          this.vehicle.mobileInput.throttle = 0;
+        this._gasBtn.classList.remove(
+          'on',
+        );
+      };
+    this._gasBtn.addEventListener(
+      'pointerdown',
+      this
+        ._onGasDown,
+    );
+    this._gasBtn.addEventListener(
+      'pointerup',
+      this
+        ._onGasUp,
+    );
+    this._gasBtn.addEventListener(
+      'pointercancel',
+      this
+        ._onGasUp,
+    );
+    this._gasBtn.addEventListener(
+      'pointerleave',
+      this
+        ._onGasUp,
+    );
 
-    _injectStyle() {
-        if (document.getElementById(STYLE_ID)) return;
-        const s = document.createElement('style');
-        s.id = STYLE_ID;
-        s.textContent = CSS;
-        document.head.appendChild(s);
-    }
+    // ── FIRE button (hold = fire laser) ──
+    this._onFireDown =
+      (
+        e,
+      ) => {
+        e.preventDefault();
+        this.vehicle.mobileInput.fire = true;
+        this._fireBtn.classList.add(
+          'on',
+        );
+      };
+    this._onFireUp =
+      (
+        e,
+      ) => {
+        e.preventDefault();
+        this.vehicle.mobileInput.fire = false;
+        this._fireBtn.classList.remove(
+          'on',
+        );
+      };
+    this._fireBtn.addEventListener(
+      'pointerdown',
+      this
+        ._onFireDown,
+    );
+    this._fireBtn.addEventListener(
+      'pointerup',
+      this
+        ._onFireUp,
+    );
+    this._fireBtn.addEventListener(
+      'pointercancel',
+      this
+        ._onFireUp,
+    );
+    this._fireBtn.addEventListener(
+      'pointerleave',
+      this
+        ._onFireUp,
+    );
 
-    dispose() {
-        this._resetInput();
-        if (this.vehicle && this.vehicle.mobileInput) this.vehicle.mobileInput.active = false;
-        if (this._root) this._root.remove();
-        this._root = null;
-    }
+    // ── EXIT button ──
+    this._onExit =
+      (
+        e,
+      ) => {
+        e.preventDefault();
+        this.onExit();
+      };
+    this._exitBtn.addEventListener(
+      'pointerup',
+      this
+        ._onExit,
+    );
+  }
+
+  show() {
+    if (
+      this
+        ._root
+    )
+      this._root.style.display =
+        'block';
+  }
+  hide() {
+    if (
+      this
+        ._root
+    )
+      this._root.style.display =
+        'none';
+    this._resetInput();
+  }
+
+  _resetInput() {
+    const mi =
+      this
+        .vehicle
+        .mobileInput;
+    mi.steer = 0;
+    mi.throttle = 0;
+    mi.brake = 0;
+    mi.handbrake = false;
+    mi.fire = false;
+    this._gasHeld = false;
+    this._joyId =
+      null;
+    if (
+      this
+        ._base
+    )
+      this._base.style.display =
+        'none';
+  }
+
+  _injectStyle() {
+    if (
+      document.getElementById(
+        STYLE_ID,
+      )
+    )
+      return;
+    const s =
+      document.createElement(
+        'style',
+      );
+    s.id =
+      STYLE_ID;
+    s.textContent =
+      CSS;
+    document.head.appendChild(
+      s,
+    );
+  }
+
+  dispose() {
+    this._resetInput();
+    if (
+      this
+        .vehicle &&
+      this
+        .vehicle
+        .mobileInput
+    )
+      this.vehicle.mobileInput.active = false;
+    if (
+      this
+        ._root
+    )
+      this._root.remove();
+    this._root =
+      null;
+  }
 }

@@ -6,16 +6,45 @@ export interface NeonDriftwayRow {
   highScore: number;
 }
 
-export const neonDriftwayLeaderboardApi = endpoint<{
-  res: NeonDriftwayRow[];
-}>()({ method: 'GET', path: '/api/neon-driftway/leaderboard' });
+export const neonDriftwayLeaderboardApi =
+  endpoint<{
+    res: NeonDriftwayRow[];
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/neon-driftway/leaderboard',
+    },
+  );
 
 /** The saved livery code, or null. */
-export const getLiveryApi = endpoint<{
-  res: { code: string | null };
-}>()({ method: 'GET', path: '/api/neon-driftway/livery' });
+export const getLiveryApi =
+  endpoint<{
+    res: {
+      code:
+        | string
+        | null;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/neon-driftway/livery',
+    },
+  );
 
-export const saveLiveryApi = endpoint<{
-  body: { code: string };
-  res: { code: string };
-}>()({ method: 'PUT', path: '/api/neon-driftway/livery' });
+export const saveLiveryApi =
+  endpoint<{
+    body: {
+      code: string;
+    };
+    res: {
+      code: string;
+    };
+  }>()(
+    {
+      method:
+        'PUT',
+      path: '/api/neon-driftway/livery',
+    },
+  );

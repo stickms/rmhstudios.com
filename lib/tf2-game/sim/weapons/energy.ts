@@ -19,8 +19,14 @@ import { TF_COND } from '../conditions';
 import type { Entity } from '../entity';
 import type { NetRecord } from '../net-schema';
 import { PLAYERANIMEVENT_ATTACK_PRIMARY } from '../player';
-import { TF_RELOAD_START, type WeaponSpec } from '../weapon-api';
-import { ACT, TF_WEAPON_PRIMARY_MODE } from './constants';
+import {
+  TF_RELOAD_START,
+  type WeaponSpec,
+} from '../weapon-api';
+import {
+  ACT,
+  TF_WEAPON_PRIMARY_MODE,
+} from './constants';
 import { TFWeaponGun } from './gun';
 import { num } from './tf-weapon';
 
@@ -36,8 +42,12 @@ const POMSON_MUZZLE_DROP = 13;
 
 /** CTFRaygun: the Righteous Bison. */
 export class Raygun extends TFWeaponGun {
-  constructor(spec: WeaponSpec) {
-    super(spec);
+  constructor(
+    spec: WeaponSpec,
+  ) {
+    super(
+      spec,
+    );
     this.initEnergy();
   }
 
@@ -47,7 +57,13 @@ export class Raygun extends TFWeaponGun {
 
   /** Energy_GetShotCost (0 with energy_weapon_no_drain) / Energy_GetRechargeCost. */
   override energyShotCost(): number {
-    return this.attributes.apply('energy_weapon_no_drain', 0) > 0 ? 0 : 5;
+    return this.attributes.apply(
+      'energy_weapon_no_drain',
+      0,
+    ) >
+      0
+      ? 0
+      : 5;
   }
 
   override energyRechargeCost(): number {
@@ -55,9 +71,16 @@ export class Raygun extends TFWeaponGun {
   }
 
   /** SDK: CTFRaygun::PrimaryAttack. */
-  override primaryAttack(cmd: UserCmd): void {
-    if (!this.energyHasEnergy()) return;
-    super.primaryAttack(cmd);
+  override primaryAttack(
+    cmd: UserCmd,
+  ): void {
+    if (
+      !this.energyHasEnergy()
+    )
+      return;
+    super.primaryAttack(
+      cmd,
+    );
   }
 
   override energySpeed(): number {
@@ -67,8 +90,11 @@ export class Raygun extends TFWeaponGun {
 
 /** CTFDRGPomson. */
 export class DRGPomson extends Raygun {
-  override adjustEnergySource(src: Vec3): void {
-    src.z -= POMSON_MUZZLE_DROP;
+  override adjustEnergySource(
+    src: Vec3,
+  ): void {
+    src.z -=
+      POMSON_MUZZLE_DROP;
   }
 }
 
@@ -79,8 +105,12 @@ export class ParticleCannon extends TFWeaponGun {
   /** m_bChargedShot. */
   chargedShot = false;
 
-  constructor(spec: WeaponSpec) {
-    super(spec);
+  constructor(
+    spec: WeaponSpec,
+  ) {
+    super(
+      spec,
+    );
     this.initEnergy();
   }
 
@@ -105,78 +135,192 @@ export class ParticleCannon extends TFWeaponGun {
     return PARTICLE_CANNON_AFTERBURN;
   }
 
-  override energyExtra(): Record<string, number | string | boolean> {
-    return { charged: this.chargedShot, afterburn: PARTICLE_CANNON_AFTERBURN };
+  override energyExtra(): Record<
+    string,
+    | number
+    | string
+    | boolean
+  > {
+    return {
+      charged:
+        this
+          .chargedShot,
+      afterburn:
+        PARTICLE_CANNON_AFTERBURN,
+    };
   }
 
   /** SDK: CTFParticleCannon::PlayWeaponShootSound — the charged shot has its own (special2). */
   override playShootSound(): void {
-    if (this.chargedShot) this.weaponSound('special2');
-    else this.weaponSound('single_shot');
+    if (
+      this
+        .chargedShot
+    )
+      this.weaponSound(
+        'special2',
+      );
+    else
+      this.weaponSound(
+        'single_shot',
+      );
   }
 
   /** The charged shot spends the whole charge (ModifyProjectile → Energy_DrainEnergy( max )). */
   override removeProjectileAmmo(): void {
-    if (this.chargedShot) this.clip = 0;
-    else super.removeProjectileAmmo();
+    if (
+      this
+        .chargedShot
+    )
+      this.clip = 0;
+    else
+      super.removeProjectileAmmo();
   }
 
   /** SDK: CTFParticleCannon::PrimaryAttack. */
-  override primaryAttack(cmd: UserCmd): void {
-    if (this.chargeBeginTime > 0) return;
-    if (!this.energyHasEnergy()) return;
+  override primaryAttack(
+    cmd: UserCmd,
+  ): void {
+    if (
+      this
+        .chargeBeginTime >
+      0
+    )
+      return;
+    if (
+      !this.energyHasEnergy()
+    )
+      return;
     this.chargedShot = false;
-    super.primaryAttack(cmd);
+    super.primaryAttack(
+      cmd,
+    );
   }
 
   /** SDK: CTFParticleCannon::SecondaryAttack — the charged shot, from a full charge only. */
-  override secondaryAttack(_cmd: UserCmd): void {
-    const o = this.owner;
-    if (!o) return;
-    if (this.clip < this.maxClip) {
+  override secondaryAttack(
+    _cmd: UserCmd,
+  ): void {
+    const o =
+      this
+        .owner;
+    if (
+      !o
+    )
+      return;
+    if (
+      this
+        .clip <
+      this
+        .maxClip
+    ) {
       this.reload();
       return;
     }
-    if (this.nextPrimaryAttack > this.t || this.chargeBeginTime > 0) return;
-    if (!this.canAttack()) {
+    if (
+      this
+        .nextPrimaryAttack >
+        this
+          .t ||
+      this
+        .chargeBeginTime >
+        0
+    )
+      return;
+    if (
+      !this.canAttack()
+    ) {
       this.chargeBeginTime = 0;
       return;
     }
     this.chargedShot = true;
-    this.weaponMode = TF_WEAPON_PRIMARY_MODE;
-    this.chargeBeginTime = this.t;
-    this.sendWeaponAnim(ACT.VM_PRIMARYATTACK);
-    o.doAnimationEvent(PLAYERANIMEVENT_ATTACK_PRIMARY);
-    this.weaponSound('special1');
-    o.cond.add(TF_COND.AIMING);
+    this.weaponMode =
+      TF_WEAPON_PRIMARY_MODE;
+    this.chargeBeginTime =
+      this.t;
+    this.sendWeaponAnim(
+      ACT.VM_PRIMARYATTACK,
+    );
+    o.doAnimationEvent(
+      PLAYERANIMEVENT_ATTACK_PRIMARY,
+    );
+    this.weaponSound(
+      'special1',
+    );
+    o.cond.add(
+      TF_COND.AIMING,
+    );
   }
 
   /** SDK: CTFParticleCannon::FireChargedShot. */
-  fireChargedShot(cmd: UserCmd): void {
-    const o = this.owner;
-    if (!o || !o.alive) return;
-    o.cond.remove(TF_COND.AIMING);
-    this.fireProjectile(cmd);
-    this.nextPrimaryAttack = this.t + this.fireDelay();
-    this.reloadMode = TF_RELOAD_START;
+  fireChargedShot(
+    cmd: UserCmd,
+  ): void {
+    const o =
+      this
+        .owner;
+    if (
+      !o ||
+      !o.alive
+    )
+      return;
+    o.cond.remove(
+      TF_COND.AIMING,
+    );
+    this.fireProjectile(
+      cmd,
+    );
+    this.nextPrimaryAttack =
+      this
+        .t +
+      this.fireDelay();
+    this.reloadMode =
+      TF_RELOAD_START;
     this.chargeBeginTime = 0;
   }
 
-  override itemPostFrame(cmd: UserCmd): void {
-    super.itemPostFrame(cmd);
-    if (this.chargeBeginTime > 0 && this.t - this.chargeBeginTime >= TF_PARTICLE_MAX_CHARGE_TIME)
-      this.fireChargedShot(cmd);
+  override itemPostFrame(
+    cmd: UserCmd,
+  ): void {
+    super.itemPostFrame(
+      cmd,
+    );
+    if (
+      this
+        .chargeBeginTime >
+        0 &&
+      this
+        .t -
+        this
+          .chargeBeginTime >=
+        TF_PARTICLE_MAX_CHARGE_TIME
+    )
+      this.fireChargedShot(
+        cmd,
+      );
   }
 
   /** SDK: CTFParticleCannon::Holster — not while charging (aiming), else the charge is dropped. */
   override canHolster(): boolean {
-    return this.chargeBeginTime <= 0 && super.canHolster();
+    return (
+      this
+        .chargeBeginTime <=
+        0 &&
+      super.canHolster()
+    );
   }
 
-  override holster(next: Parameters<TFWeaponGun['holster']>[0]): boolean {
+  override holster(
+    next: Parameters<
+      TFWeaponGun['holster']
+    >[0],
+  ): boolean {
     this.chargeBeginTime = 0;
-    this.owner?.cond.remove(TF_COND.AIMING);
-    return super.holster(next);
+    this.owner?.cond.remove(
+      TF_COND.AIMING,
+    );
+    return super.holster(
+      next,
+    );
   }
 
   override refill(): void {
@@ -185,17 +329,39 @@ export class ParticleCannon extends TFWeaponGun {
     this.chargedShot = false;
   }
 
-  protected override writeWeaponNet(out: NetRecord): void {
-    out.aux0 = this.chargeBeginTime;
-    out.aux1 = this.chargedShot ? 1 : 0;
+  protected override writeWeaponNet(
+    out: NetRecord,
+  ): void {
+    out.aux0 =
+      this.chargeBeginTime;
+    out.aux1 =
+      this
+        .chargedShot
+        ? 1
+        : 0;
   }
 
-  protected override readWeaponNet(rec: NetRecord): void {
-    this.chargeBeginTime = num(rec.aux0);
-    this.chargedShot = num(rec.aux1) !== 0;
+  protected override readWeaponNet(
+    rec: NetRecord,
+  ): void {
+    this.chargeBeginTime =
+      num(
+        rec.aux0,
+      );
+    this.chargedShot =
+      num(
+        rec.aux1,
+      ) !==
+      0;
   }
 }
 
 /** The energy projectiles a weapon fired (tests, bots). */
-export const isEnergyProjectile = (e: Entity): boolean =>
-  e.classname === 'tf_projectile_energy_ring' || e.classname === 'tf_projectile_energy_ball';
+export const isEnergyProjectile =
+  (
+    e: Entity,
+  ): boolean =>
+    e.classname ===
+      'tf_projectile_energy_ring' ||
+    e.classname ===
+      'tf_projectile_energy_ball';

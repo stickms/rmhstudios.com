@@ -29,7 +29,9 @@
  * (design-language §0.5). Do not re-derive either set locally.
  */
 
-const DEG = Math.PI / 180;
+const DEG =
+  Math.PI /
+  180;
 
 /**
  * Perspective, as a multiple of the sphere's radius.
@@ -42,8 +44,15 @@ const DEG = Math.PI / 180;
 export const GLOBE_PERSP = 3.1;
 
 /** Foreshortening at depth `z` on the unit sphere (z = 1 front, −1 back). */
-export function globeK(z: number): number {
-  return GLOBE_PERSP / (GLOBE_PERSP - z * 0.5);
+export function globeK(
+  z: number,
+): number {
+  return (
+    GLOBE_PERSP /
+    (GLOBE_PERSP -
+      z *
+        0.5)
+  );
 }
 
 /**
@@ -76,14 +85,34 @@ export interface GlobeAnchor {
  * has to be up on the screen, and the alternative — flipping it at every draw
  * site — is how a globe ends up with its data upside down in one view only.
  */
-export function anchorAt(latDeg: number, lonDeg: number): GlobeAnchor {
-  const cl = Math.cos(latDeg * DEG);
+export function anchorAt(
+  latDeg: number,
+  lonDeg: number,
+): GlobeAnchor {
+  const cl =
+    Math.cos(
+      latDeg *
+        DEG,
+    );
   return {
     latDeg,
     lonDeg,
-    bx: cl * Math.sin(lonDeg * DEG),
-    by: -Math.sin(latDeg * DEG),
-    bz: cl * Math.cos(lonDeg * DEG),
+    bx:
+      cl *
+      Math.sin(
+        lonDeg *
+          DEG,
+      ),
+    by: -Math.sin(
+      latDeg *
+        DEG,
+    ),
+    bz:
+      cl *
+      Math.cos(
+        lonDeg *
+          DEG,
+      ),
   };
 }
 
@@ -104,25 +133,73 @@ export interface GlobeView {
  * the data slides off the wireframe it is supposed to be stuck to.
  */
 export function viewOf(
-  anchor: { bx: number; by: number; bz: number },
+  anchor: {
+    bx: number;
+    by: number;
+    bz: number;
+  },
   yawDeg: number,
   pitchDeg: number,
   swell = 1,
   out?: GlobeView,
 ): GlobeView {
-  const cy = Math.cos(yawDeg * DEG);
-  const sy = Math.sin(yawDeg * DEG);
-  const cp = Math.cos(pitchDeg * DEG);
-  const sp = Math.sin(pitchDeg * DEG);
-  const bx = anchor.bx * swell;
-  const by = anchor.by * swell;
-  const bz = anchor.bz * swell;
-  const x1 = bx * cy + bz * sy;
-  const z1 = -bx * sy + bz * cy;
-  const result = out ?? { x: 0, y: 0, z: 0 };
-  result.x = x1;
-  result.y = by * cp - z1 * sp;
-  result.z = by * sp + z1 * cp;
+  const cy =
+    Math.cos(
+      yawDeg *
+        DEG,
+    );
+  const sy =
+    Math.sin(
+      yawDeg *
+        DEG,
+    );
+  const cp =
+    Math.cos(
+      pitchDeg *
+        DEG,
+    );
+  const sp =
+    Math.sin(
+      pitchDeg *
+        DEG,
+    );
+  const bx =
+    anchor.bx *
+    swell;
+  const by =
+    anchor.by *
+    swell;
+  const bz =
+    anchor.bz *
+    swell;
+  const x1 =
+    bx *
+      cy +
+    bz *
+      sy;
+  const z1 =
+    -bx *
+      sy +
+    bz *
+      cy;
+  const result =
+    out ?? {
+      x: 0,
+      y: 0,
+      z: 0,
+    };
+  result.x =
+    x1;
+  result.y =
+    by *
+      cp -
+    z1 *
+      sp;
+  result.z =
+    by *
+      sp +
+    z1 *
+      cp;
   return result;
 }
 
@@ -133,9 +210,29 @@ export function viewOf(
  * projection — the renderer sorts by it, and the hit test reads it to reject
  * anything on the far face.
  */
-export function toScreen(view: GlobeView, radius: number): { x: number; y: number; k: number } {
-  const k = globeK(view.z);
-  return { x: view.x * radius * k, y: view.y * radius * k, k };
+export function toScreen(
+  view: GlobeView,
+  radius: number,
+): {
+  x: number;
+  y: number;
+  k: number;
+} {
+  const k =
+    globeK(
+      view.z,
+    );
+  return {
+    x:
+      view.x *
+      radius *
+      k,
+    y:
+      view.y *
+      radius *
+      k,
+    k,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -147,8 +244,25 @@ export function toScreen(view: GlobeView, radius: number): { x: number; y: numbe
  * of latitude — the same thirteen circles the navigation globe is drawn from, so
  * the two spheres are recognisably the same object.
  */
-export const MERIDIANS: readonly number[] = [0, 30, 60, 90, 120, 150];
-export const PARALLELS: readonly number[] = [-60, -40, -20, 0, 20, 40, 60];
+export const MERIDIANS: readonly number[] =
+  [
+    0,
+    30,
+    60,
+    90,
+    120,
+    150,
+  ];
+export const PARALLELS: readonly number[] =
+  [
+    -60,
+    -40,
+    -20,
+    0,
+    20,
+    40,
+    60,
+  ];
 
 /** Samples per ring — a projected circle is a conic section, so it is polylined. */
 export const RING_SAMPLES = 64;
@@ -161,12 +275,39 @@ export const RING_SAMPLES = 64;
  * per frame to arrive at the same numbers — the exact waste the navigation
  * globe's cage records having measured.
  */
-export const RING_COS = new Float64Array(RING_SAMPLES + 1);
-export const RING_SIN = new Float64Array(RING_SAMPLES + 1);
-for (let s = 0; s <= RING_SAMPLES; s++) {
-  const theta = (s / RING_SAMPLES) * Math.PI * 2;
-  RING_COS[s] = Math.cos(theta);
-  RING_SIN[s] = Math.sin(theta);
+export const RING_COS =
+  new Float64Array(
+    RING_SAMPLES +
+      1,
+  );
+export const RING_SIN =
+  new Float64Array(
+    RING_SAMPLES +
+      1,
+  );
+for (
+  let s = 0;
+  s <=
+  RING_SAMPLES;
+  s++
+) {
+  const theta =
+    (s /
+      RING_SAMPLES) *
+    Math.PI *
+    2;
+  RING_COS[
+    s
+  ] =
+    Math.cos(
+      theta,
+    );
+  RING_SIN[
+    s
+  ] =
+    Math.sin(
+      theta,
+    );
 }
 
 /**
@@ -194,22 +335,54 @@ export const GLOBE_MAX_DPR = 2;
  * that a hit area is not the mark.
  */
 export function pickNearest(
-  points: readonly { sx: number; sy: number; depth: number }[],
+  points: readonly {
+    sx: number;
+    sy: number;
+    depth: number;
+  }[],
   px: number,
   py: number,
   maxDistance: number,
 ): number {
-  let best = -1;
-  let bestD = maxDistance * maxDistance;
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i]!;
-    if (p.depth <= 0.02) continue;
-    const dx = p.sx - px;
-    const dy = p.sy - py;
-    const d = dx * dx + dy * dy;
-    if (d < bestD) {
-      bestD = d;
-      best = i;
+  let best =
+    -1;
+  let bestD =
+    maxDistance *
+    maxDistance;
+  for (
+    let i = 0;
+    i <
+    points.length;
+    i++
+  ) {
+    const p =
+      points[
+        i
+      ]!;
+    if (
+      p.depth <=
+      0.02
+    )
+      continue;
+    const dx =
+      p.sx -
+      px;
+    const dy =
+      p.sy -
+      py;
+    const d =
+      dx *
+        dx +
+      dy *
+        dy;
+    if (
+      d <
+      bestD
+    ) {
+      bestD =
+        d;
+      best =
+        i;
     }
   }
   return best;
@@ -224,8 +397,16 @@ export function pickNearest(
  * keeps sliding after you stop dragging it is one you cannot hold a value still
  * on. Pick per globe; both limits are this same number.
  */
-export function clampPitch(pitchDeg: number): number {
-  return pitchDeg < -PITCH_LIMIT ? -PITCH_LIMIT : pitchDeg > PITCH_LIMIT ? PITCH_LIMIT : pitchDeg;
+export function clampPitch(
+  pitchDeg: number,
+): number {
+  return pitchDeg <
+    -PITCH_LIMIT
+    ? -PITCH_LIMIT
+    : pitchDeg >
+        PITCH_LIMIT
+      ? PITCH_LIMIT
+      : pitchDeg;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -239,7 +420,12 @@ export function clampPitch(pitchDeg: number): number {
  * spiral of pins from stacking into visible columns the way any rational
  * fraction of a turn does.
  */
-export const GOLDEN_DEG = 180 * (3 - Math.sqrt(5));
+export const GOLDEN_DEG =
+  180 *
+  (3 -
+    Math.sqrt(
+      5,
+    ));
 
 /**
  * Place item `i` of `count` evenly over the sphere — the layout the navigation
@@ -254,9 +440,35 @@ export const GOLDEN_DEG = 180 * (3 - Math.sqrt(5));
  * navigation globe that is muscle memory, and for a menu it is being able to say
  * "the one at the top" and have it still be there next time.
  */
-export function spiralAnchor(index: number, count: number): GlobeAnchor {
-  const sinLat = count <= 1 ? 0 : (1 - (2 * (index + 0.5)) / count) * Math.sin(LAT_SPAN_DEG * DEG);
-  const latDeg = Math.asin(sinLat) / DEG;
-  const lonDeg = ((index * GOLDEN_DEG) % 360) - 180;
-  return anchorAt(latDeg, lonDeg);
+export function spiralAnchor(
+  index: number,
+  count: number,
+): GlobeAnchor {
+  const sinLat =
+    count <=
+    1
+      ? 0
+      : (1 -
+          (2 *
+            (index +
+              0.5)) /
+            count) *
+        Math.sin(
+          LAT_SPAN_DEG *
+            DEG,
+        );
+  const latDeg =
+    Math.asin(
+      sinLat,
+    ) /
+    DEG;
+  const lonDeg =
+    ((index *
+      GOLDEN_DEG) %
+      360) -
+    180;
+  return anchorAt(
+    latDeg,
+    lonDeg,
+  );
 }

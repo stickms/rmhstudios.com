@@ -11,26 +11,74 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, AlertCircle, Vote, Gamepad2 } from 'lucide-react';
+import {
+  X,
+  AlertCircle,
+  Vote,
+  Gamepad2,
+} from 'lucide-react';
 import { getAllMinigames } from '@/lib/rmhbox/minigame-registry';
 import { useTranslation } from 'react-i18next';
 import { MINIGAME_ICONS } from './minigame-icons';
 
 /** Resolve a minigame icon string to a Lucide component, falling back to Gamepad2 */
-function GameIcon({ icon, className }: { icon: string; className?: string }) {
-  const LucideIcon = MINIGAME_ICONS[icon];
-  if (LucideIcon) return <LucideIcon className={className} />;
+function GameIcon({
+  icon,
+  className,
+}: {
+  icon: string;
+  className?: string;
+}) {
+  const LucideIcon =
+    MINIGAME_ICONS[
+      icon
+    ];
+  if (
+    LucideIcon
+  )
+    return (
+      <LucideIcon
+        className={
+          className
+        }
+      />
+    );
   // Fallback: if icon is an emoji, show it; otherwise show default
-  if (/^\p{Emoji}/u.test(icon)) return <span className={className}>{icon}</span>;
-  return <Gamepad2 className={className} />;
+  if (
+    /^\p{Emoji}/u.test(
+      icon,
+    )
+  )
+    return (
+      <span
+        className={
+          className
+        }
+      >
+        {
+          icon
+        }
+      </span>
+    );
+  return (
+    <Gamepad2
+      className={
+        className
+      }
+    />
+  );
 }
 
 interface GamePickerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPick: (minigameId: string) => void;
+  onPick: (
+    minigameId: string,
+  ) => void;
   playerCount: number;
-  currentPickId?: string | null;
+  currentPickId?:
+    | string
+    | null;
 }
 
 export default function GamePickerModal({
@@ -40,63 +88,140 @@ export default function GamePickerModal({
   playerCount,
   currentPickId,
 }: GamePickerModalProps) {
-  const { t } = useTranslation("c-rmhbox");
-  const [confirmGame, setConfirmGame] = useState<string | null>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
+  const [
+    confirmGame,
+    setConfirmGame,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
 
-  if (!isOpen) return null;
+  if (
+    !isOpen
+  )
+    return null;
 
-  const allGames = getAllMinigames();
+  const allGames =
+    getAllMinigames();
 
-  const handlePick = (minigameId: string) => {
-    // Check if playable
-    if (minigameId !== '__vote__') {
-      const game = allGames.find((g) => g.id === minigameId);
-      if (game && (playerCount < game.minPlayers || playerCount > game.maxPlayers)) {
-        if (confirmGame === minigameId) {
-          // Second click — force pick anyway (server will validate at start time)
-          onPick(minigameId);
-          setConfirmGame(null);
-          onClose();
+  const handlePick =
+    (
+      minigameId: string,
+    ) => {
+      // Check if playable
+      if (
+        minigameId !==
+        '__vote__'
+      ) {
+        const game =
+          allGames.find(
+            (
+              g,
+            ) =>
+              g.id ===
+              minigameId,
+          );
+        if (
+          game &&
+          (playerCount <
+            game.minPlayers ||
+            playerCount >
+              game.maxPlayers)
+        ) {
+          if (
+            confirmGame ===
+            minigameId
+          ) {
+            // Second click — force pick anyway (server will validate at start time)
+            onPick(
+              minigameId,
+            );
+            setConfirmGame(
+              null,
+            );
+            onClose();
+            return;
+          }
+          setConfirmGame(
+            minigameId,
+          );
           return;
         }
-        setConfirmGame(minigameId);
-        return;
       }
-    }
-    onPick(minigameId);
-    setConfirmGame(null);
-    onClose();
-  };
+      onPick(
+        minigameId,
+      );
+      setConfirmGame(
+        null,
+      );
+      onClose();
+    };
 
   return createPortal(
     <>
       {/* Backdrop */}
       <div
         className="app-overlay fixed inset-0 z-60 bg-app-scrim"
-        onClick={() => { setConfirmGame(null); onClose(); }}
+        onClick={() => {
+          setConfirmGame(
+            null,
+          );
+          onClose();
+        }}
       />
 
       {/* Panel */}
       <div
         className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-md -translate-y-1/2 rounded-app border p-5 shadow-app"
         style={{
-          backgroundColor: 'var(--app-surface)',
-          borderColor: 'var(--app-border)',
-          maxHeight: '85dvh',
-          display: 'flex',
-          flexDirection: 'column',
+          backgroundColor:
+            'var(--app-surface)',
+          borderColor:
+            'var(--app-border)',
+          maxHeight:
+            '85dvh',
+          display:
+            'flex',
+          flexDirection:
+            'column',
         }}
       >
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-app-text">
             <Gamepad2 className="h-5 w-5 text-app-accent" />
-            {t("pick-a-game", { defaultValue: "Pick a Game" })}
+            {t(
+              'pick-a-game',
+              {
+                defaultValue:
+                  'Pick a Game',
+              },
+            )}
           </h2>
           <button
-            onClick={() => { setConfirmGame(null); onClose(); }}
-            aria-label={t("close", { defaultValue: "Close" })}
-                className="rounded-app-sm p-2 text-app-text-muted transition-colors hover:text-app-text"
+            onClick={() => {
+              setConfirmGame(
+                null,
+              );
+              onClose();
+            }}
+            aria-label={t(
+              'close',
+              {
+                defaultValue:
+                  'Close',
+              },
+            )}
+            className="rounded-app-sm p-2 text-app-text-muted transition-colors hover:text-app-text"
           >
             <X className="h-5 w-5" />
           </button>
@@ -107,95 +232,198 @@ export default function GamePickerModal({
           {/* Vote option */}
           <div className="mb-3">
             <button
-              onClick={() => handlePick('__vote__')}
+              onClick={() =>
+                handlePick(
+                  '__vote__',
+                )
+              }
               className="flex w-full items-center gap-2 rounded-app-sm px-3 py-2 transition-colors"
               style={{
-                backgroundColor: currentPickId === '__vote__' ? 'var(--app-accent)' : 'var(--app-bg)',
-                border: '1px solid var(--app-border)',
-                color: currentPickId === '__vote__' ? 'var(--app-accent-fg)' : undefined,
+                backgroundColor:
+                  currentPickId ===
+                  '__vote__'
+                    ? 'var(--app-accent)'
+                    : 'var(--app-bg)',
+                border:
+                  '1px solid var(--app-border)',
+                color:
+                  currentPickId ===
+                  '__vote__'
+                    ? 'var(--app-accent-fg)'
+                    : undefined,
               }}
             >
               <div
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-app-accent-fg"
-                style={{ backgroundColor: currentPickId === '__vote__' ? 'color-mix(in srgb, var(--app-accent-fg) 20%, transparent)' : 'var(--app-accent)' }}
+                style={{
+                  backgroundColor:
+                    currentPickId ===
+                    '__vote__'
+                      ? 'color-mix(in srgb, var(--app-accent-fg) 20%, transparent)'
+                      : 'var(--app-accent)',
+                }}
               >
                 <Vote className="h-3.5 w-3.5" />
               </div>
-              <span className={`flex-1 truncate text-sm font-medium ${currentPickId === '__vote__' ? 'text-app-accent-fg' : 'text-app-text'}`}>
-                {t("let-players-vote", { defaultValue: "Let Players Vote" })}
+              <span
+                className={`flex-1 truncate text-sm font-medium ${currentPickId === '__vote__' ? 'text-app-accent-fg' : 'text-app-text'}`}
+              >
+                {t(
+                  'let-players-vote',
+                  {
+                    defaultValue:
+                      'Let Players Vote',
+                  },
+                )}
               </span>
-              {currentPickId === '__vote__' && (
-                <span className="shrink-0 text-xs font-semibold">✓</span>
+              {currentPickId ===
+                '__vote__' && (
+                <span className="shrink-0 text-xs font-semibold">
+                  ✓
+                </span>
               )}
             </button>
           </div>
 
           {/* Section header */}
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-app-text-muted">
-            {t("games-count", { defaultValue: "Games ({{count}})", count: allGames.length })}
+            {t(
+              'games-count',
+              {
+                defaultValue:
+                  'Games ({{count}})',
+                count:
+                  allGames.length,
+              },
+            )}
           </h3>
 
           {/* All games */}
           <div className="max-h-64 space-y-1 overflow-y-auto">
-            {allGames.map((game) => {
-              const isPlayable = playerCount >= game.minPlayers && playerCount <= game.maxPlayers;
-              const isSelected = currentPickId === game.id;
-              const isConfirming = confirmGame === game.id;
+            {allGames.map(
+              (
+                game,
+              ) => {
+                const isPlayable =
+                  playerCount >=
+                    game.minPlayers &&
+                  playerCount <=
+                    game.maxPlayers;
+                const isSelected =
+                  currentPickId ===
+                  game.id;
+                const isConfirming =
+                  confirmGame ===
+                  game.id;
 
-              return (
-                <button
-                  key={game.id}
-                  onClick={() => handlePick(game.id)}
-                  className="flex w-full items-center gap-2 rounded-app-sm px-3 py-2 transition-colors"
-                  style={{
-                    backgroundColor: isSelected
-                      ? 'var(--app-accent)'
-                      : isConfirming
-                        ? 'var(--app-bg)'
-                        : 'var(--app-bg)',
-                    border: isConfirming
-                      ? '1px solid var(--app-warning)'
-                      : '1px solid var(--app-border)',
-                    color: isSelected ? 'white' : undefined,
-                  }}
-                >
-                  <div
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                return (
+                  <button
+                    key={
+                      game.id
+                    }
+                    onClick={() =>
+                      handlePick(
+                        game.id,
+                      )
+                    }
+                    className="flex w-full items-center gap-2 rounded-app-sm px-3 py-2 transition-colors"
                     style={{
-                      backgroundColor: isSelected ? 'color-mix(in srgb, var(--app-accent-fg) 20%, transparent)' : 'var(--app-bg-subtle)',
-                      color: isSelected ? 'var(--app-accent-fg)' : 'var(--app-text-muted)',
+                      backgroundColor:
+                        isSelected
+                          ? 'var(--app-accent)'
+                          : isConfirming
+                            ? 'var(--app-bg)'
+                            : 'var(--app-bg)',
+                      border:
+                        isConfirming
+                          ? '1px solid var(--app-warning)'
+                          : '1px solid var(--app-border)',
+                      color:
+                        isSelected
+                          ? 'white'
+                          : undefined,
                     }}
                   >
-                    <GameIcon icon={game.icon} className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-medium ${isSelected ? 'text-app-accent-fg' : 'text-app-text'}`}>
-                        {game.displayName}
-                      </span>
-                      {!isPlayable && !isSelected && (
-                        <AlertCircle className="h-3.5 w-3.5 shrink-0 text-app-warning" />
+                    <div
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                      style={{
+                        backgroundColor:
+                          isSelected
+                            ? 'color-mix(in srgb, var(--app-accent-fg) 20%, transparent)'
+                            : 'var(--app-bg-subtle)',
+                        color:
+                          isSelected
+                            ? 'var(--app-accent-fg)'
+                            : 'var(--app-text-muted)',
+                      }}
+                    >
+                      <GameIcon
+                        icon={
+                          game.icon
+                        }
+                        className="h-3.5 w-3.5"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-sm font-medium ${isSelected ? 'text-app-accent-fg' : 'text-app-text'}`}
+                        >
+                          {
+                            game.displayName
+                          }
+                        </span>
+                        {!isPlayable &&
+                          !isSelected && (
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0 text-app-warning" />
+                          )}
+                      </div>
+                      <div
+                        className={`text-xs text-left ${isSelected ? 'text-app-accent-fg/70' : 'text-app-text-muted'}`}
+                      >
+                        {t(
+                          'game-player-range',
+                          {
+                            defaultValue:
+                              '{{category}} · {{min}}–{{max}} players',
+                            category:
+                              game.category,
+                            min: game.minPlayers,
+                            max: game.maxPlayers,
+                          },
+                        )}
+                      </div>
+                      {isConfirming && (
+                        <div className="text-xs font-semibold text-app-warning mt-0.5">
+                          {t(
+                            'confirm-incompatible',
+                            {
+                              defaultValue:
+                                'Requires {{min}}–{{max}} players (you have {{playerCount}}). Tap again to pick anyway.',
+                              min: game.minPlayers,
+                              max: game.maxPlayers,
+                              playerCount,
+                            },
+                          )}
+                        </div>
                       )}
                     </div>
-                    <div className={`text-xs text-left ${isSelected ? 'text-app-accent-fg/70' : 'text-app-text-muted'}`}>
-                      {t("game-player-range", { defaultValue: "{{category}} · {{min}}–{{max}} players", category: game.category, min: game.minPlayers, max: game.maxPlayers })}
-                    </div>
-                    {isConfirming && (
-                      <div className="text-xs font-semibold text-app-warning mt-0.5">
-                        {t("confirm-incompatible", { defaultValue: "Requires {{min}}–{{max}} players (you have {{playerCount}}). Tap again to pick anyway.", min: game.minPlayers, max: game.maxPlayers, playerCount })}
-                      </div>
+                    {isSelected && (
+                      <span className="shrink-0 text-xs font-semibold">
+                        ✓
+                      </span>
                     )}
-                  </div>
-                  {isSelected && (
-                    <span className="shrink-0 text-xs font-semibold">✓</span>
-                  )}
-                </button>
-              );
-            })}
+                  </button>
+                );
+              },
+            )}
           </div>
         </div>
       </div>
     </>,
-    document.querySelector('.rmhbox-theme') ?? document.body,
+    document.querySelector(
+      '.rmhbox-theme',
+    ) ??
+      document.body,
   );
 }

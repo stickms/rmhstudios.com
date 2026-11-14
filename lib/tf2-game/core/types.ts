@@ -5,7 +5,10 @@
  * The SDK equivalents are CUserCmd, trace_t / CGameTrace and IEngineTrace.
  */
 
-import type { Vec3, QAngle } from './vec';
+import type {
+  Vec3,
+  QAngle,
+} from './vec';
 
 /** One tick of player input (usercmd.h). Built client-side, simulated by both. */
 export interface UserCmd {
@@ -26,22 +29,29 @@ export interface UserCmd {
   randomSeed: number;
 }
 
-export const emptyUserCmd = (): UserCmd => ({
-  commandNumber: 0,
-  tickCount: 0,
-  viewAngles: { x: 0, y: 0, z: 0 },
-  forwardMove: 0,
-  sideMove: 0,
-  upMove: 0,
-  buttons: 0,
-  weaponSelect: 0,
-  randomSeed: 0,
-});
+export const emptyUserCmd =
+  (): UserCmd => ({
+    commandNumber: 0,
+    tickCount: 0,
+    viewAngles:
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+    forwardMove: 0,
+    sideMove: 0,
+    upMove: 0,
+    buttons: 0,
+    weaponSelect: 0,
+    randomSeed: 0,
+  });
 
 /** Entity index meaning "the world" in a trace. */
 export const WORLD_ENTITY = 0;
 /** Entity index meaning "nothing was hit". */
-export const NO_ENTITY = -1;
+export const NO_ENTITY =
+  -1;
 
 export interface TracePlane {
   normal: Vec3;
@@ -72,14 +82,30 @@ export interface TraceResult {
 export function emptyTrace(): TraceResult {
   return {
     fraction: 1,
-    endPos: { x: 0, y: 0, z: 0 },
-    plane: { normal: { x: 0, y: 0, z: 0 }, dist: 0 },
+    endPos:
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+    plane:
+      {
+        normal:
+          {
+            x: 0,
+            y: 0,
+            z: 0,
+          },
+        dist: 0,
+      },
     startSolid: false,
     allSolid: false,
     contents: 0,
     surfaceFlags: 0,
-    surfaceName: '',
-    entity: NO_ENTITY,
+    surfaceName:
+      '',
+    entity:
+      NO_ENTITY,
     hitGroup: 0,
   };
 }
@@ -98,7 +124,11 @@ export const HITGROUP_RIGHTLEG = 7;
  * Decides whether a trace may hit an entity. Returning false passes through it
  * (the SDK's ITraceFilter::ShouldHitEntity). The world is always tested.
  */
-export type TraceFilter = (entityId: number, contentsMask: number) => boolean;
+export type TraceFilter =
+  (
+    entityId: number,
+    contentsMask: number,
+  ) => boolean;
 
 /**
  * Everything a trace can hit: the map (BSP brushes, displacements, static
@@ -118,7 +148,15 @@ export interface CollisionWorld {
     out: TraceResult,
   ): TraceResult;
   /** A zero-size trace. */
-  traceLine(start: Vec3, end: Vec3, mask: number, filter: TraceFilter | null, out: TraceResult): TraceResult;
+  traceLine(
+    start: Vec3,
+    end: Vec3,
+    mask: number,
+    filter: TraceFilter | null,
+    out: TraceResult,
+  ): TraceResult;
   /** CONTENTS_* at a point (map only, including brush entities). */
-  pointContents(point: Vec3): number;
+  pointContents(
+    point: Vec3,
+  ): number;
 }

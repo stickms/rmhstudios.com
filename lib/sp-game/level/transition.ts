@@ -24,7 +24,10 @@ export interface CarriedPlayer {
   suitPower: number;
   flashlight: boolean;
   /** Portal: weapon_portalgun held, and which portals it can fire. */
-  portalgun: { canFire1: boolean; canFire2: boolean } | null;
+  portalgun: {
+    canFire1: boolean;
+    canFire2: boolean;
+  } | null;
 }
 
 export interface CarriedEntity {
@@ -39,7 +42,12 @@ export interface CarriedEntity {
   angularVelocity: Vec3;
   skin: number;
   /** The original keyvalues (outputs kept), to re-create it. */
-  keyvalues: Array<[string, string]>;
+  keyvalues: Array<
+    [
+      string,
+      string,
+    ]
+  >;
 }
 
 export interface TransitionData {
@@ -48,5 +56,8 @@ export interface TransitionData {
   landmark: string;
   player: CarriedPlayer;
   entities: CarriedEntity[];
-  globals: Record<string, number>;
+  globals: Record<
+    string,
+    number
+  >;
 }

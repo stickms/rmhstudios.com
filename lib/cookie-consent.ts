@@ -21,5 +21,7 @@
  * frame; hydration then unmounts it. A first-time visitor sees it in the very
  * first paint instead of seconds later.
  */
-export const COOKIE_CONSENT_STORAGE_KEY = 'rmh-cookie-consent';
-export const COOKIE_CONSENTED_CLASS = 'cookie-consented';
+export const COOKIE_CONSENT_STORAGE_KEY =
+  'rmh-cookie-consent';
+export const COOKIE_CONSENTED_CLASS =
+  'cookie-consented';

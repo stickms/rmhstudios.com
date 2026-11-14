@@ -30,8 +30,14 @@ import {
   unpackPack,
 } from '../../../../features/balatro/engine/runtime';
 import { createOptionalPacks } from '../../../../features/balatro/engine/mp/optional-packs';
-import { attachTextInput, TEXT_FILE } from '../../../../features/balatro/engine/text-input';
-import { extractEntry, readZip } from '../../../../features/balatro/engine/zip';
+import {
+  attachTextInput,
+  TEXT_FILE,
+} from '../../../../features/balatro/engine/text-input';
+import {
+  extractEntry,
+  readZip,
+} from '../../../../features/balatro/engine/zip';
 import luaFiles from 'virtual:balatro-mp-test-lua';
 import {
   CHANNEL,
@@ -42,246 +48,777 @@ import {
 } from '../../lib/channel';
 
 interface Fs {
-  mkdir(path: string): void;
-  writeFile(path: string, data: Uint8Array | string): void;
-  readFile(path: string, opts?: { encoding: 'utf8' }): Uint8Array | string;
-  unlink(path: string): void;
-  analyzePath(path: string): { exists: boolean };
+  mkdir(
+    path: string,
+  ): void;
+  writeFile(
+    path: string,
+    data:
+      | Uint8Array
+      | string,
+  ): void;
+  readFile(
+    path: string,
+    opts?: {
+      encoding: 'utf8';
+    },
+  ):
+    | Uint8Array
+    | string;
+  unlink(
+    path: string,
+  ): void;
+  analyzePath(
+    path: string,
+  ): {
+    exists: boolean;
+  };
 }
 interface LoveModuleLike {
   FS?: Fs;
-  preRun?: Array<() => void>;
+  preRun?: Array<
+    () => void
+  >;
 }
-type LoveFn = (m: LoveModuleLike) => Promise<unknown>;
+type LoveFn =
+  (
+    m: LoveModuleLike,
+  ) => Promise<unknown>;
 
-type Status = 'booting' | 'ready' | 'crashed' | 'failed';
+type Status =
+  | 'booting'
+  | 'ready'
+  | 'crashed'
+  | 'failed';
 interface Pending {
-  resolve: (v: { ok: boolean; data: unknown }) => void;
+  resolve: (v: {
+    ok: boolean;
+    data: unknown;
+  }) => void;
 }
 
-const params = new URLSearchParams(location.search);
-const state = {
-  status: 'booting' as Status,
-  version: '',
-  error: '',
-  logs: [] as string[],
-  specs: [] as SpecResult[],
-  badLines: [] as string[],
-  phases: [] as string[],
-};
-const pending = new Map<string, Pending>();
-let fs: Fs | null = null;
+const params =
+  new URLSearchParams(
+    location.search,
+  );
+const state =
+  {
+    status:
+      'booting' as Status,
+    version:
+      '',
+    error:
+      '',
+    logs: [] as string[],
+    specs:
+      [] as SpecResult[],
+    badLines:
+      [] as string[],
+    phases:
+      [] as string[],
+  };
+const pending =
+  new Map<
+    string,
+    Pending
+  >();
+let fs: Fs | null =
+  null;
 let seq = 0;
 
 /** Lines not yet handed to the test runner (drain()). */
-let fresh: string[] = [];
-const log = (line: string) => {
-  state.logs.push(line);
-  if (fresh.length < 5000) fresh.push(line);
-  if (state.logs.length > 5000) state.logs.splice(0, 1000);
-};
+let fresh: string[] =
+  [];
+const log =
+  (
+    line: string,
+  ) => {
+    state.logs.push(
+      line,
+    );
+    if (
+      fresh.length <
+      5000
+    )
+      fresh.push(
+        line,
+      );
+    if (
+      state
+        .logs
+        .length >
+      5000
+    )
+      state.logs.splice(
+        0,
+        1000,
+      );
+  };
 
-function mkdirp(target: Fs, dir: string) {
-  let at = '';
-  for (const part of dir.split('/').filter(Boolean)) {
+function mkdirp(
+  target: Fs,
+  dir: string,
+) {
+  let at =
+    '';
+  for (const part of dir
+    .split(
+      '/',
+    )
+    .filter(
+      Boolean,
+    )) {
     at += `/${part}`;
-    if (!target.analyzePath(at).exists) target.mkdir(at);
+    if (
+      !target.analyzePath(
+        at,
+      )
+        .exists
+    )
+      target.mkdir(
+        at,
+      );
   }
 }
 
-function writeTree(target: Fs, files: Array<{ path: string; data: Uint8Array | string }>) {
+function writeTree(
+  target: Fs,
+  files: Array<{
+    path: string;
+    data:
+      | Uint8Array
+      | string;
+  }>,
+) {
   for (const f of files) {
     const full = `/Balatro/${f.path}`;
-    mkdirp(target, full.slice(0, full.lastIndexOf('/')));
-    target.writeFile(full, f.data);
+    mkdirp(
+      target,
+      full.slice(
+        0,
+        full.lastIndexOf(
+          '/',
+        ),
+      ),
+    );
+    target.writeFile(
+      full,
+      f.data,
+    );
   }
 }
 
-let mpFiles: Array<{ path: string; data: Uint8Array }> = [];
+let mpFiles: Array<{
+  path: string;
+  data: Uint8Array;
+}> =
+  [];
 
 async function loadMpPack(): Promise<void> {
-  const info = (pack as Record<string, unknown>).mp as { file?: string } | undefined;
-  if (params.get('mp') !== '1') return;
-  if (!info?.file) throw new Error('mp=1 but features/balatro/engine/game-pack.json has no mp pack yet');
-  const res = await fetch(`/api/balatro/pack/${info.file}`);
-  if (!res.ok) throw new Error(`mp pack HTTP ${res.status}`);
-  const zip = readZip(new Uint8Array(await res.arrayBuffer()));
+  const info =
+    (
+      pack as Record<
+        string,
+        unknown
+      >
+    )
+      .mp as
+      | {
+          file?: string;
+        }
+      | undefined;
+  if (
+    params.get(
+      'mp',
+    ) !==
+    '1'
+  )
+    return;
+  if (
+    !info?.file
+  )
+    throw new Error(
+      'mp=1 but features/balatro/engine/game-pack.json has no mp pack yet',
+    );
+  const res =
+    await fetch(
+      `/api/balatro/pack/${info.file}`,
+    );
+  if (
+    !res.ok
+  )
+    throw new Error(
+      `mp pack HTTP ${res.status}`,
+    );
+  const zip =
+    readZip(
+      new Uint8Array(
+        await res.arrayBuffer(),
+      ),
+    );
   for (const entry of zip.entries) {
-    if (entry.name.endsWith('/')) continue;
-    const rel = entry.name.startsWith('rmh_mp/') ? entry.name : `rmh_mp/${entry.name}`;
-    mpFiles.push({ path: rel, data: await extractEntry(zip, entry) });
+    if (
+      entry.name.endsWith(
+        '/',
+      )
+    )
+      continue;
+    const rel =
+      entry.name.startsWith(
+        'rmh_mp/',
+      )
+        ? entry.name
+        : `rmh_mp/${entry.name}`;
+    mpFiles.push(
+      {
+        path: rel,
+        data: await extractEntry(
+          zip,
+          entry,
+        ),
+      },
+    );
   }
-  log(`mp pack: ${mpFiles.length} files`);
+  log(
+    `mp pack: ${mpFiles.length} files`,
+  );
 }
 
-let installStep = 'start';
-function install(target: Fs) {
-  fs = target;
-  installStep = 'lua files';
+let installStep =
+  'start';
+function install(
+  target: Fs,
+) {
+  fs =
+    target;
+  installStep =
+    'lua files';
   writeTree(
     target,
-    luaFiles.map((f) => ({ path: f.path, data: f.text })),
+    luaFiles.map(
+      (
+        f,
+      ) => ({
+        path: f.path,
+        data: f.text,
+      }),
+    ),
   );
-  if (mpFiles.length) writeTree(target, mpFiles);
-  mpFiles = [];
-  installStep = 'main.lua';
-  const main = target.readFile('/Balatro/main.lua', { encoding: 'utf8' }) as string;
-  target.writeFile('/Balatro/main.lua', `${main}\nrequire "rmh_mp_test.harness"\n`);
-  installStep = 'channel';
-  mkdirp(target, CHANNEL.DIR);
-  target.writeFile(CHANNEL.MARKER, '1');
+  if (
+    mpFiles.length
+  )
+    writeTree(
+      target,
+      mpFiles,
+    );
+  mpFiles =
+    [];
+  installStep =
+    'main.lua';
+  const main =
+    target.readFile(
+      '/Balatro/main.lua',
+      {
+        encoding:
+          'utf8',
+      },
+    ) as string;
+  target.writeFile(
+    '/Balatro/main.lua',
+    `${main}\nrequire "rmh_mp_test.harness"\n`,
+  );
+  installStep =
+    'channel';
+  mkdirp(
+    target,
+    CHANNEL.DIR,
+  );
+  target.writeFile(
+    CHANNEL.MARKER,
+    '1',
+  );
 }
 
 // The runtime calls window.Love(module); wrap it to add the harness's preRun step.
-let realLove: LoveFn | undefined;
-Object.defineProperty(window, 'Love', {
-  configurable: true,
-  get() {
-    return (
-      realLove &&
-      ((m: LoveModuleLike) => {
-        m.preRun = m.preRun ?? [];
-        // Emscripten runs Module.preRun in REVERSE array order (each entry is
-        // unshifted onto its queue), so the first entry runs last: after the
-        // runtime's own step has written the pack into /Balatro.
-        m.preRun.unshift(() => {
-          if (!m.FS) throw new Error('harness: engine has no FS export');
-          try {
-            install(m.FS);
-          } catch (e) {
-            const err = e as { errno?: number; code?: string; message?: string };
-            throw new Error(
-              `harness install failed at ${installStep}: ${err.code ?? err.errno ?? ''} ${err.message ?? String(e)}`,
-              { cause: e },
-            );
-          }
-        });
-        return realLove!(m);
-      })
-    );
+let realLove:
+  | LoveFn
+  | undefined;
+Object.defineProperty(
+  window,
+  'Love',
+  {
+    configurable: true,
+    get() {
+      return (
+        realLove &&
+        ((
+          m: LoveModuleLike,
+        ) => {
+          m.preRun =
+            m.preRun ??
+            [];
+          // Emscripten runs Module.preRun in REVERSE array order (each entry is
+          // unshifted onto its queue), so the first entry runs last: after the
+          // runtime's own step has written the pack into /Balatro.
+          m.preRun.unshift(
+            () => {
+              if (
+                !m.FS
+              )
+                throw new Error(
+                  'harness: engine has no FS export',
+                );
+              try {
+                install(
+                  m.FS,
+                );
+              } catch (e) {
+                const err =
+                  e as {
+                    errno?: number;
+                    code?: string;
+                    message?: string;
+                  };
+                throw new Error(
+                  `harness install failed at ${installStep}: ${err.code ?? err.errno ?? ''} ${err.message ?? String(e)}`,
+                  {
+                    cause:
+                      e,
+                  },
+                );
+              }
+            },
+          );
+          return realLove!(
+            m,
+          );
+        })
+      );
+    },
+    set(
+      v: LoveFn,
+    ) {
+      realLove =
+        v;
+    },
   },
-  set(v: LoveFn) {
-    realLove = v;
-  },
-});
+);
 
-function handle(msg: HarnessMessage) {
-  switch (msg.t) {
+function handle(
+  msg: HarnessMessage,
+) {
+  switch (
+    msg.t
+  ) {
     case 'ready':
-      state.status = 'ready';
-      state.version = msg.version;
+      state.status =
+        'ready';
+      state.version =
+        msg.version;
       break;
     case 'spec':
-      state.specs.push(msg.r);
+      state.specs.push(
+        msg.r,
+      );
       log(
         `${msg.r.skip ? 'skip' : msg.r.ok ? 'ok  ' : 'FAIL'} ${msg.r.name}${msg.r.msg ? `: ${msg.r.msg}` : ''}`,
       );
       break;
     case 'crash':
-      state.status = 'crashed';
-      state.error = msg.msg;
-      log(`CRASH ${msg.msg}`);
+      state.status =
+        'crashed';
+      state.error =
+        msg.msg;
+      log(
+        `CRASH ${msg.msg}`,
+      );
       for (const p of pending.values())
-        p.resolve({ ok: false, data: { error: `engine crashed: ${msg.msg}` } });
+        p.resolve(
+          {
+            ok: false,
+            data: {
+              error: `engine crashed: ${msg.msg}`,
+            },
+          },
+        );
       pending.clear();
       break;
     case 'res': {
-      const p = msg.id ? pending.get(msg.id) : undefined;
-      if (msg.id) pending.delete(msg.id);
-      if (p) p.resolve({ ok: msg.ok, data: msg.data });
-      else log(`unmatched result ${JSON.stringify(msg)}`);
+      const p =
+        msg.id
+          ? pending.get(
+              msg.id,
+            )
+          : undefined;
+      if (
+        msg.id
+      )
+        pending.delete(
+          msg.id,
+        );
+      if (
+        p
+      )
+        p.resolve(
+          {
+            ok: msg.ok,
+            data: msg.data,
+          },
+        );
+      else
+        log(
+          `unmatched result ${JSON.stringify(msg)}`,
+        );
       break;
     }
   }
 }
 
-const WANT_PACK = '/rmh/test/want_pack';
-const optionalPacks = createOptionalPacks({
-  mounted: (kind) => !!fs?.analyzePath(optionalPackMarker(kind)).exists,
-  fetch: async (kind) => {
-    const info = optionalPackInfo(kind);
-    if (!info) throw new Error(`features/balatro/engine/game-pack.json has no ${kind} pack`);
-    return unpackPack(await loadPack(kind, info));
-  },
-  mount: (kind, files) => {
-    if (fs) mountOptionalFiles(fs, kind, files, optionalPackInfo(kind)?.sha256.slice(0, 12) ?? 'dev');
-  },
-  log: (m, isError) => log(`${isError ? 'ERR ' : ''}${m}`),
-});
+const WANT_PACK =
+  '/rmh/test/want_pack';
+const optionalPacks =
+  createOptionalPacks(
+    {
+      mounted:
+        (
+          kind,
+        ) =>
+          !!fs?.analyzePath(
+            optionalPackMarker(
+              kind,
+            ),
+          )
+            .exists,
+      fetch:
+        async (
+          kind,
+        ) => {
+          const info =
+            optionalPackInfo(
+              kind,
+            );
+          if (
+            !info
+          )
+            throw new Error(
+              `features/balatro/engine/game-pack.json has no ${kind} pack`,
+            );
+          return unpackPack(
+            await loadPack(
+              kind,
+              info,
+            ),
+          );
+        },
+      mount:
+        (
+          kind,
+          files,
+        ) => {
+          if (
+            fs
+          )
+            mountOptionalFiles(
+              fs,
+              kind,
+              files,
+              optionalPackInfo(
+                kind,
+              )?.sha256.slice(
+                0,
+                12,
+              ) ??
+                'dev',
+            );
+        },
+      log: (
+        m,
+        isError,
+      ) =>
+        log(
+          `${isError ? 'ERR ' : ''}${m}`,
+        ),
+    },
+  );
 
 function pollPackRequest() {
-  if (!fs || !fs.analyzePath(WANT_PACK).exists) return;
-  const kind = String(fs.readFile(WANT_PACK, { encoding: 'utf8' })).trim();
-  fs.unlink(WANT_PACK);
-  if (kind !== 'release') return log(`ERR unknown optional pack ${kind}`);
-  void optionalPacks.ensure(kind).then((ok) => {
-    if (!ok && fs) fs.writeFile('/rmh/test/pack_error', kind);
-  });
+  if (
+    !fs ||
+    !fs.analyzePath(
+      WANT_PACK,
+    )
+      .exists
+  )
+    return;
+  const kind =
+    String(
+      fs.readFile(
+        WANT_PACK,
+        {
+          encoding:
+            'utf8',
+        },
+      ),
+    ).trim();
+  fs.unlink(
+    WANT_PACK,
+  );
+  if (
+    kind !==
+    'release'
+  )
+    return log(
+      `ERR unknown optional pack ${kind}`,
+    );
+  void optionalPacks
+    .ensure(
+      kind,
+    )
+    .then(
+      (
+        ok,
+      ) => {
+        if (
+          !ok &&
+          fs
+        )
+          fs.writeFile(
+            '/rmh/test/pack_error',
+            kind,
+          );
+      },
+    );
 }
 
 function poll() {
   pollPackRequest();
-  if (!fs || !fs.analyzePath(CHANNEL.RES).exists) return;
-  const text = fs.readFile(CHANNEL.RES, { encoding: 'utf8' }) as string;
-  fs.unlink(CHANNEL.RES);
-  const { messages, bad } = parseMessages(text);
+  if (
+    !fs ||
+    !fs.analyzePath(
+      CHANNEL.RES,
+    )
+      .exists
+  )
+    return;
+  const text =
+    fs.readFile(
+      CHANNEL.RES,
+      {
+        encoding:
+          'utf8',
+      },
+    ) as string;
+  fs.unlink(
+    CHANNEL.RES,
+  );
+  const {
+    messages,
+    bad,
+  } =
+    parseMessages(
+      text,
+    );
   for (const line of bad) {
-    state.badLines.push(line);
-    log(`bad line ${line.slice(0, 200)}`);
+    state.badLines.push(
+      line,
+    );
+    log(
+      `bad line ${line.slice(0, 200)}`,
+    );
   }
-  for (const m of messages) handle(m);
+  for (const m of messages)
+    handle(
+      m,
+    );
 }
 
 function call(
   cmd: string,
-  args: unknown[] | Record<string, unknown> = [],
-): Promise<{ ok: boolean; data: unknown }> {
-  if (!fs) return Promise.resolve({ ok: false, data: { error: 'engine not started' } });
-  if (state.status === 'crashed')
-    return Promise.resolve({ ok: false, data: { error: 'engine crashed' } });
+  args:
+    | unknown[]
+    | Record<
+        string,
+        unknown
+      > = [],
+): Promise<{
+  ok: boolean;
+  data: unknown;
+}> {
+  if (
+    !fs
+  )
+    return Promise.resolve(
+      {
+        ok: false,
+        data: {
+          error:
+            'engine not started',
+        },
+      },
+    );
+  if (
+    state.status ===
+    'crashed'
+  )
+    return Promise.resolve(
+      {
+        ok: false,
+        data: {
+          error:
+            'engine crashed',
+        },
+      },
+    );
   const id = `c${++seq}`;
-  const line = encodeCommand(id, cmd, args);
-  const prior = fs.analyzePath(CHANNEL.CMD).exists
-    ? (fs.readFile(CHANNEL.CMD, { encoding: 'utf8' }) as string)
-    : '';
-  fs.writeFile(CHANNEL.CMD, prior + line);
-  return new Promise((resolve) => pending.set(id, { resolve }));
+  const line =
+    encodeCommand(
+      id,
+      cmd,
+      args,
+    );
+  const prior =
+    fs.analyzePath(
+      CHANNEL.CMD,
+    )
+      .exists
+      ? (fs.readFile(
+          CHANNEL.CMD,
+          {
+            encoding:
+              'utf8',
+          },
+        ) as string)
+      : '';
+  fs.writeFile(
+    CHANNEL.CMD,
+    prior +
+      line,
+  );
+  return new Promise(
+    (
+      resolve,
+    ) =>
+      pending.set(
+        id,
+        {
+          resolve,
+        },
+      ),
+  );
 }
 
-const drain = () => {
-  const out = fresh;
-  fresh = [];
-  return out;
-};
+const drain =
+  () => {
+    const out =
+      fresh;
+    fresh =
+      [];
+    return out;
+  };
 /** What Lua published for the phone keyboard (features/balatro/engine/text-input.ts). */
-const text = () =>
-  fs && fs.analyzePath(TEXT_FILE).exists ? (fs.readFile(TEXT_FILE, { encoding: 'utf8' }) as string) : null;
-const api = { state, call, drain, text };
-(window as unknown as { __balatroEngine: typeof api }).__balatroEngine = api;
+const text =
+  () =>
+    fs &&
+    fs.analyzePath(
+      TEXT_FILE,
+    )
+      .exists
+      ? (fs.readFile(
+          TEXT_FILE,
+          {
+            encoding:
+              'utf8',
+          },
+        ) as string)
+      : null;
+const api =
+  {
+    state,
+    call,
+    drain,
+    text,
+  };
+(
+  window as unknown as {
+    __balatroEngine: typeof api;
+  }
+).__balatroEngine =
+  api;
 
-window.setInterval(poll, 25);
+window.setInterval(
+  poll,
+  25,
+);
 
-const t0 = performance.now();
+const t0 =
+  performance.now();
 void (async () => {
   try {
     await loadMpPack();
-    const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-    const frame = document.getElementById('frame')!;
-    attachTextInput({ frame, canvas, read: text });
-    await bootBalatro({
-      canvas,
-      frame,
-      cloud: null,
-      onPhase: (p) => {
-        if (p === 'start' || p === 'running')
-          state.phases.push(`${p}@${Math.round(performance.now() - t0)}ms`);
+    const canvas =
+      document.getElementById(
+        'canvas',
+      ) as HTMLCanvasElement;
+    const frame =
+      document.getElementById(
+        'frame',
+      )!;
+    attachTextInput(
+      {
+        frame,
+        canvas,
+        read: text,
       },
-      onLog: (line, isError) => log(`${isError ? 'ERR ' : ''}${line}`),
-      onAudioError: (e) => log(`audio pack unavailable: ${String(e)}`),
-    });
+    );
+    await bootBalatro(
+      {
+        canvas,
+        frame,
+        cloud:
+          null,
+        onPhase:
+          (
+            p,
+          ) => {
+            if (
+              p ===
+                'start' ||
+              p ===
+                'running'
+            )
+              state.phases.push(
+                `${p}@${Math.round(performance.now() - t0)}ms`,
+              );
+          },
+        onLog:
+          (
+            line,
+            isError,
+          ) =>
+            log(
+              `${isError ? 'ERR ' : ''}${line}`,
+            ),
+        onAudioError:
+          (
+            e,
+          ) =>
+            log(
+              `audio pack unavailable: ${String(e)}`,
+            ),
+      },
+    );
   } catch (e) {
-    state.status = 'failed';
-    state.error = e instanceof Error ? e.message : String(e);
-    log(`FATAL ${state.error}`);
+    state.status =
+      'failed';
+    state.error =
+      e instanceof
+      Error
+        ? e.message
+        : String(
+            e,
+          );
+    log(
+      `FATAL ${state.error}`,
+    );
   }
 })();

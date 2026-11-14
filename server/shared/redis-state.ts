@@ -13,7 +13,13 @@ import Redis from 'ioredis';
 
 export const STATE_REDIS_CONNECT_TIMEOUT_MS = 3_000;
 
-export type StateRedisConnection = { redis: Redis } | { error: string };
+export type StateRedisConnection =
+  | {
+      redis: Redis;
+    }
+  | {
+      error: string;
+    };
 
 /**
  * Connect once. Never throws: a failure comes back as `{ error }` with the
@@ -23,31 +29,79 @@ export type StateRedisConnection = { redis: Redis } | { error: string };
  *   error after boot must never crash the hub; what a failed command means is
  *   decided by the code that issued it.
  */
-export async function connectStateRedis(url: string, onError: (err: Error) => void): Promise<StateRedisConnection> {
-  const redis = new Redis(url, {
-    lazyConnect: true,
-    connectTimeout: STATE_REDIS_CONNECT_TIMEOUT_MS,
-    // Boot only: give up quickly instead of retrying forever if Redis is down.
-    retryStrategy: () => null,
-    // A command that cannot be sent fails instead of waiting: callers bound
-    // every write and decide what a failed one means.
-    maxRetriesPerRequest: 1,
-  });
-  redis.on('error', onError);
+export async function connectStateRedis(
+  url: string,
+  onError: (
+    err: Error,
+  ) => void,
+): Promise<StateRedisConnection> {
+  const redis =
+    new Redis(
+      url,
+      {
+        lazyConnect: true,
+        connectTimeout:
+          STATE_REDIS_CONNECT_TIMEOUT_MS,
+        // Boot only: give up quickly instead of retrying forever if Redis is down.
+        retryStrategy:
+          () =>
+            null,
+        // A command that cannot be sent fails instead of waiting: callers bound
+        // every write and decide what a failed one means.
+        maxRetriesPerRequest: 1,
+      },
+    );
+  redis.on(
+    'error',
+    onError,
+  );
 
   try {
-    await Promise.race([
-      redis.connect(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('connect timeout')), STATE_REDIS_CONNECT_TIMEOUT_MS + 500).unref(),
-      ),
-    ]);
+    await Promise.race(
+      [
+        redis.connect(),
+        new Promise(
+          (
+            _,
+            reject,
+          ) =>
+            setTimeout(
+              () =>
+                reject(
+                  new Error(
+                    'connect timeout',
+                  ),
+                ),
+              STATE_REDIS_CONNECT_TIMEOUT_MS +
+                500,
+            ).unref(),
+        ),
+      ],
+    );
   } catch (err) {
     redis.disconnect();
-    return { error: err instanceof Error ? err.message : String(err) };
+    return {
+      error:
+        err instanceof
+        Error
+          ? err.message
+          : String(
+              err,
+            ),
+    };
   }
 
   // Connected: allow normal reconnects from here on.
-  redis.options.retryStrategy = (times) => Math.min(times * 200, 5_000);
-  return { redis };
+  redis.options.retryStrategy =
+    (
+      times,
+    ) =>
+      Math.min(
+        times *
+          200,
+        5_000,
+      );
+  return {
+    redis,
+  };
 }

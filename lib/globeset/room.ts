@@ -50,14 +50,27 @@
  * behind a globe, not a video call; asking for more costs battery and thermal
  * headroom on exactly the devices this mode exists for.
  */
-export const ROOM_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
-  facingMode: { ideal: 'environment' },
-  width: { ideal: 1280 },
-  height: { ideal: 720 },
-};
+export const ROOM_VIDEO_CONSTRAINTS: MediaTrackConstraints =
+  {
+    facingMode:
+      {
+        ideal:
+          'environment',
+      },
+    width:
+      {
+        ideal: 1280,
+      },
+    height:
+      {
+        ideal: 720,
+      },
+  };
 
 interface MediaCapableNavigator {
-  mediaDevices?: { getUserMedia?: unknown };
+  mediaDevices?: {
+    getUserMedia?: unknown;
+  };
 }
 
 /**
@@ -67,9 +80,20 @@ interface MediaCapableNavigator {
  * is what lets it run on mount to decide whether to render the button.
  */
 export function hasCamera(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  const media = (navigator as MediaCapableNavigator).mediaDevices;
-  return typeof media?.getUserMedia === 'function';
+  if (
+    typeof navigator ===
+    'undefined'
+  )
+    return false;
+  const media =
+    (
+      navigator as MediaCapableNavigator
+    )
+      .mediaDevices;
+  return (
+    typeof media?.getUserMedia ===
+    'function'
+  );
 }
 
 /**
@@ -80,8 +104,15 @@ export function hasCamera(): boolean {
  * touch count is the one thing it does not lie about.
  */
 export function isHandheld(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  return navigator.maxTouchPoints > 0;
+  if (
+    typeof navigator ===
+    'undefined'
+  )
+    return false;
+  return (
+    navigator.maxTouchPoints >
+    0
+  );
 }
 
 /**
@@ -94,16 +125,33 @@ export function isHandheld(): boolean {
  * is unavailable — because where `GlobeSetXr` can run, it is strictly better.
  */
 export function roomModeSupported(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.isSecureContext && hasCamera() && isHandheld();
+  if (
+    typeof window ===
+    'undefined'
+  )
+    return false;
+  return (
+    window.isSecureContext &&
+    hasCamera() &&
+    isHandheld()
+  );
 }
 
 /** Why the camera could not be opened, in terms the UI can speak to. */
-export type RoomCameraError = 'denied' | 'unavailable' | 'in-use';
+export type RoomCameraError =
+  | 'denied'
+  | 'unavailable'
+  | 'in-use';
 
 export type RoomCameraResult =
-  | { ok: true; stream: MediaStream }
-  | { ok: false; reason: RoomCameraError };
+  | {
+      ok: true;
+      stream: MediaStream;
+    }
+  | {
+      ok: false;
+      reason: RoomCameraError;
+    };
 
 /**
  * Open the rear camera.
@@ -118,22 +166,62 @@ export type RoomCameraResult =
  * the camera and closing it would fix things.
  */
 export async function openRoomCamera(): Promise<RoomCameraResult> {
-  if (!hasCamera()) return { ok: false, reason: 'unavailable' };
+  if (
+    !hasCamera()
+  )
+    return {
+      ok: false,
+      reason:
+        'unavailable',
+    };
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: ROOM_VIDEO_CONSTRAINTS,
-      audio: false,
-    });
-    return { ok: true, stream };
+    const stream =
+      await navigator.mediaDevices.getUserMedia(
+        {
+          video:
+            ROOM_VIDEO_CONSTRAINTS,
+          audio: false,
+        },
+      );
+    return {
+      ok: true,
+      stream,
+    };
   } catch (error) {
-    const name = error instanceof DOMException ? error.name : '';
-    if (name === 'NotAllowedError' || name === 'SecurityError') {
-      return { ok: false, reason: 'denied' };
+    const name =
+      error instanceof
+      DOMException
+        ? error.name
+        : '';
+    if (
+      name ===
+        'NotAllowedError' ||
+      name ===
+        'SecurityError'
+    ) {
+      return {
+        ok: false,
+        reason:
+          'denied',
+      };
     }
-    if (name === 'NotReadableError' || name === 'AbortError') {
-      return { ok: false, reason: 'in-use' };
+    if (
+      name ===
+        'NotReadableError' ||
+      name ===
+        'AbortError'
+    ) {
+      return {
+        ok: false,
+        reason:
+          'in-use',
+      };
     }
-    return { ok: false, reason: 'unavailable' };
+    return {
+      ok: false,
+      reason:
+        'unavailable',
+    };
   }
 }
 
@@ -145,8 +233,16 @@ export async function openRoomCamera(): Promise<RoomCameraResult> {
  * as the site spying long after the player left the mode. Written to tolerate
  * a null stream so teardown paths can call it unconditionally.
  */
-export function closeRoomCamera(stream: MediaStream | null | undefined): void {
-  if (!stream) return;
+export function closeRoomCamera(
+  stream:
+    | MediaStream
+    | null
+    | undefined,
+): void {
+  if (
+    !stream
+  )
+    return;
   for (const track of stream.getTracks()) {
     try {
       track.stop();

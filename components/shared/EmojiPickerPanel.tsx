@@ -27,7 +27,13 @@
  * existing call sites keep working.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Clock,
@@ -59,7 +65,10 @@ import {
   type FrequentEntry,
 } from '@/lib/emoji/catalog';
 import { loadShortcodes } from '@/lib/emoji/shortcodes';
-import type { InstalledPack, PackItem } from '@/lib/emoji/packs';
+import type {
+  InstalledPack,
+  PackItem,
+} from '@/lib/emoji/packs';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { installedPacksApi } from '@/lib/emoji/packs.contract';
@@ -71,8 +80,12 @@ interface EmojiPickerPanelProps {
    * which is what the composer already knows how to render, so no call site
    * has to learn a second shape.
    */
-  onSelect: (emoji: string) => void;
-  width?: number | string;
+  onSelect: (
+    emoji: string,
+  ) => void;
+  width?:
+    | number
+    | string;
   height?: number;
 }
 
@@ -90,46 +103,160 @@ interface EmojiPickerPanelProps {
  * Keep in sync with `CATEGORY_META` in `lib/emoji/catalog.ts`; an unlisted name
  * falls back to `Smile`, exactly as the dynamic lookup did.
  */
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  Clock,
-  Coffee,
-  Flag,
-  Hash,
-  Leaf,
-  Lightbulb,
-  Plane,
-  Smile,
-  Sticker,
-  Trophy,
-  User,
-};
+const CATEGORY_ICONS: Record<
+  string,
+  LucideIcon
+> =
+  {
+    Clock,
+    Coffee,
+    Flag,
+    Hash,
+    Leaf,
+    Lightbulb,
+    Plane,
+    Smile,
+    Sticker,
+    Trophy,
+    User,
+  };
 
-function CategoryIcon({ name, className }: { name: string; className?: string }) {
-  const Cmp = CATEGORY_ICONS[name] ?? Smile;
-  return <Cmp className={className} />;
+function CategoryIcon({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) {
+  const Cmp =
+    CATEGORY_ICONS[
+      name
+    ] ??
+    Smile;
+  return (
+    <Cmp
+      className={
+        className
+      }
+    />
+  );
 }
 
 /** Category labels as literal `t()` calls — a computed key never extracts. */
 function categoryLabels(
-  t: (k: string, o: { defaultValue: string }) => string,
-): Record<EmojiCategory, string> {
+  t: (
+    k: string,
+    o: {
+      defaultValue: string;
+    },
+  ) => string,
+): Record<
+  EmojiCategory,
+  string
+> {
   return {
-    frequent: t('emoji-cat-frequent', { defaultValue: 'Frequently used' }),
-    custom: t('emoji-cat-custom', { defaultValue: 'Your packs' }),
-    smileys: t('emoji-cat-smileys', { defaultValue: 'Smileys & emotion' }),
-    people: t('emoji-cat-people', { defaultValue: 'People & body' }),
-    nature: t('emoji-cat-nature', { defaultValue: 'Animals & nature' }),
-    food: t('emoji-cat-food', { defaultValue: 'Food & drink' }),
-    activity: t('emoji-cat-activity', { defaultValue: 'Activities' }),
-    travel: t('emoji-cat-travel', { defaultValue: 'Travel & places' }),
-    objects: t('emoji-cat-objects', { defaultValue: 'Objects' }),
-    symbols: t('emoji-cat-symbols', { defaultValue: 'Symbols' }),
-    flags: t('emoji-cat-flags', { defaultValue: 'Flags' }),
+    frequent:
+      t(
+        'emoji-cat-frequent',
+        {
+          defaultValue:
+            'Frequently used',
+        },
+      ),
+    custom:
+      t(
+        'emoji-cat-custom',
+        {
+          defaultValue:
+            'Your packs',
+        },
+      ),
+    smileys:
+      t(
+        'emoji-cat-smileys',
+        {
+          defaultValue:
+            'Smileys & emotion',
+        },
+      ),
+    people:
+      t(
+        'emoji-cat-people',
+        {
+          defaultValue:
+            'People & body',
+        },
+      ),
+    nature:
+      t(
+        'emoji-cat-nature',
+        {
+          defaultValue:
+            'Animals & nature',
+        },
+      ),
+    food: t(
+      'emoji-cat-food',
+      {
+        defaultValue:
+          'Food & drink',
+      },
+    ),
+    activity:
+      t(
+        'emoji-cat-activity',
+        {
+          defaultValue:
+            'Activities',
+        },
+      ),
+    travel:
+      t(
+        'emoji-cat-travel',
+        {
+          defaultValue:
+            'Travel & places',
+        },
+      ),
+    objects:
+      t(
+        'emoji-cat-objects',
+        {
+          defaultValue:
+            'Objects',
+        },
+      ),
+    symbols:
+      t(
+        'emoji-cat-symbols',
+        {
+          defaultValue:
+            'Symbols',
+        },
+      ),
+    flags:
+      t(
+        'emoji-cat-flags',
+        {
+          defaultValue:
+            'Flags',
+        },
+      ),
   };
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="px-1 pt-2 pb-1 text-xs font-semibold text-site-text-muted">{children}</p>;
+function SectionLabel({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <p className="px-1 pt-2 pb-1 text-xs font-semibold text-site-text-muted">
+      {
+        children
+      }
+    </p>
+  );
 }
 
 export default function EmojiPickerPanel({
@@ -137,26 +264,88 @@ export default function EmojiPickerPanel({
   width = 320,
   height = 380,
 }: EmojiPickerPanelProps) {
-  const { t } = useTranslation('feed');
-  const labels = categoryLabels(t);
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const labels =
+    categoryLabels(
+      t,
+    );
 
-  const [shortcodes, setShortcodes] = useState<Record<string, string> | null>(null);
-  const [packs, setPacks] = useState<InstalledPack[]>([]);
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<EmojiCategory>('smileys');
-  const [frequent, setFrequent] = useState<FrequentEntry[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [
+    shortcodes,
+    setShortcodes,
+  ] =
+    useState<Record<
+      string,
+      string
+    > | null>(
+      null,
+    );
+  const [
+    packs,
+    setPacks,
+  ] =
+    useState<
+      InstalledPack[]
+    >(
+      [],
+    );
+  const [
+    query,
+    setQuery,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    category,
+    setCategory,
+  ] =
+    useState<EmojiCategory>(
+      'smileys',
+    );
+  const [
+    frequent,
+    setFrequent,
+  ] =
+    useState<
+      FrequentEntry[]
+    >(
+      [],
+    );
+  const scrollRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
   // Steel M9: the grid replaces "Loading…" once the shortcode map is in.
-  const arrival = useArrival(!!shortcodes);
+  const arrival =
+    useArrival(
+      !!shortcodes,
+    );
 
   // The shortcode map is a lazy chunk shared with `:code:` completion, so this
   // is usually already warm.
   useEffect(() => {
     let alive = true;
-    void loadShortcodes().then((map) => {
-      if (alive) setShortcodes(map);
-    });
-    setFrequent(readFrequent());
+    void loadShortcodes().then(
+      (
+        map,
+      ) => {
+        if (
+          alive
+        )
+          setShortcodes(
+            map,
+          );
+      },
+    );
+    setFrequent(
+      readFrequent(),
+    );
     return () => {
       alive = false;
     };
@@ -166,100 +355,295 @@ export default function EmojiPickerPanel({
   // usable with Unicode alone, so the custom section simply doesn't appear.
   useEffect(() => {
     let alive = true;
-    void api(installedPacksApi)
-      .then((body) => {
-        if (alive && body.installed) setPacks(body.installed);
-      })
-      .catch(() => {});
+    void api(
+      installedPacksApi,
+    )
+      .then(
+        (
+          body,
+        ) => {
+          if (
+            alive &&
+            body.installed
+          )
+            setPacks(
+              body.installed,
+            );
+        },
+      )
+      .catch(
+        () => {},
+      );
     return () => {
       alive = false;
     };
   }, []);
 
-  const catalog = useMemo(() => (shortcodes ? buildCatalog(shortcodes) : []), [shortcodes]);
-  const grouped = useMemo(() => (catalog.length ? groupByCategory(catalog) : null), [catalog]);
-  const customItems = useMemo(() => packs.flatMap((p) => p.items), [packs]);
+  const catalog =
+    useMemo(
+      () =>
+        shortcodes
+          ? buildCatalog(
+              shortcodes,
+            )
+          : [],
+      [
+        shortcodes,
+      ],
+    );
+  const grouped =
+    useMemo(
+      () =>
+        catalog.length
+          ? groupByCategory(
+              catalog,
+            )
+          : null,
+      [
+        catalog,
+      ],
+    );
+  const customItems =
+    useMemo(
+      () =>
+        packs.flatMap(
+          (
+            p,
+          ) =>
+            p.items,
+        ),
+      [
+        packs,
+      ],
+    );
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return null;
-    return {
-      custom: customItems.filter((i) => i.name.includes(q)).slice(0, 24),
-      unicode: searchCatalog(catalog, q, 60),
-    };
-  }, [query, catalog, customItems]);
+  const results =
+    useMemo(() => {
+      const q =
+        query
+          .trim()
+          .toLowerCase();
+      if (
+        !q
+      )
+        return null;
+      return {
+        custom:
+          customItems
+            .filter(
+              (
+                i,
+              ) =>
+                i.name.includes(
+                  q,
+                ),
+            )
+            .slice(
+              0,
+              24,
+            ),
+        unicode:
+          searchCatalog(
+            catalog,
+            q,
+            60,
+          ),
+      };
+    }, [
+      query,
+      catalog,
+      customItems,
+    ]);
 
-  const pick = useCallback(
-    (key: string, insert: string) => {
-      const next = recordFrequent(key, frequent);
-      setFrequent(next);
-      writeFrequent(next);
-      onSelect(insert);
-    },
-    [frequent, onSelect],
-  );
+  const pick =
+    useCallback(
+      (
+        key: string,
+        insert: string,
+      ) => {
+        const next =
+          recordFrequent(
+            key,
+            frequent,
+          );
+        setFrequent(
+          next,
+        );
+        writeFrequent(
+          next,
+        );
+        onSelect(
+          insert,
+        );
+      },
+      [
+        frequent,
+        onSelect,
+      ],
+    );
 
   /** Resolve a stored frequent key back to something renderable. */
-  const frequentEntries = useMemo(() => {
-    return frequent
-      .map((f) => {
-        if (f.key.startsWith('custom:')) {
-          const id = f.key.slice('custom:'.length);
-          const item = customItems.find((i) => i.id === id);
-          return item ? { kind: 'custom' as const, item } : null;
-        }
-        return { kind: 'unicode' as const, char: f.key };
-      })
-      .filter(Boolean)
-      .slice(0, 24) as Array<
-      { kind: 'custom'; item: PackItem } | { kind: 'unicode'; char: string }
-    >;
-  }, [frequent, customItems]);
+  const frequentEntries =
+    useMemo(() => {
+      return frequent
+        .map(
+          (
+            f,
+          ) => {
+            if (
+              f.key.startsWith(
+                'custom:',
+              )
+            ) {
+              const id =
+                f.key.slice(
+                  'custom:'
+                    .length,
+                );
+              const item =
+                customItems.find(
+                  (
+                    i,
+                  ) =>
+                    i.id ===
+                    id,
+                );
+              return item
+                ? {
+                    kind: 'custom' as const,
+                    item,
+                  }
+                : null;
+            }
+            return {
+              kind: 'unicode' as const,
+              char: f.key,
+            };
+          },
+        )
+        .filter(
+          Boolean,
+        )
+        .slice(
+          0,
+          24,
+        ) as Array<
+        | {
+            kind: 'custom';
+            item: PackItem;
+          }
+        | {
+            kind: 'unicode';
+            char: string;
+          }
+      >;
+    }, [
+      frequent,
+      customItems,
+    ]);
 
-  const visibleCategories = EMOJI_CATEGORIES.filter((c) => {
-    if (c === 'frequent') return frequentEntries.length > 0;
-    if (c === 'custom') return customItems.length > 0;
-    return true;
-  });
+  const visibleCategories =
+    EMOJI_CATEGORIES.filter(
+      (
+        c,
+      ) => {
+        if (
+          c ===
+          'frequent'
+        )
+          return (
+            frequentEntries.length >
+            0
+          );
+        if (
+          c ===
+          'custom'
+        )
+          return (
+            customItems.length >
+            0
+          );
+        return true;
+      },
+    );
 
   // Jump the scroller to the top when the section changes, or a new category
   // opens mid-scroll and reads as nothing having happened.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
-  }, [category, query]);
+    scrollRef.current?.scrollTo(
+      {
+        top: 0,
+      },
+    );
+  }, [
+    category,
+    query,
+  ]);
 
   const cellClass =
     'flex h-11 w-11 items-center justify-center rounded-site-sm text-2xl leading-none ' +
     'transition-colors hover:bg-site-surface-hover focus-visible:bg-site-surface-hover ' +
     'sm:h-9 sm:w-9 sm:text-xl';
 
-  const gridClass = 'grid grid-cols-6 gap-0.5 sm:grid-cols-8';
+  const gridClass =
+    'grid grid-cols-6 gap-0.5 sm:grid-cols-8';
 
-  function UnicodeCell({ entry }: { entry: CatalogEntry }) {
+  function UnicodeCell({
+    entry,
+  }: {
+    entry: CatalogEntry;
+  }) {
     return (
       <button
         type="button"
-        className={cellClass}
-        onClick={() => pick(entry.char, entry.char)}
+        className={
+          cellClass
+        }
+        onClick={() =>
+          pick(
+            entry.char,
+            entry.char,
+          )
+        }
         title={`:${entry.name}:`}
-        aria-label={entry.name}
+        aria-label={
+          entry.name
+        }
       >
-        {entry.char}
+        {
+          entry.char
+        }
       </button>
     );
   }
 
-  function CustomCell({ item }: { item: PackItem }) {
+  function CustomCell({
+    item,
+  }: {
+    item: PackItem;
+  }) {
     return (
       <button
         type="button"
-        className={cellClass}
-        onClick={() => pick(`custom:${item.id}`, `:${item.name}:`)}
+        className={
+          cellClass
+        }
+        onClick={() =>
+          pick(
+            `custom:${item.id}`,
+            `:${item.name}:`,
+          )
+        }
         title={`:${item.name}:`}
-        aria-label={item.alt || item.name}
+        aria-label={
+          item.alt ||
+          item.name
+        }
       >
         <img
-          src={item.url}
+          src={
+            item.url
+          }
           alt=""
           loading="lazy"
           decoding="async"
@@ -273,96 +657,275 @@ export default function EmojiPickerPanel({
     <div
       // No glass tier here: the popover that owns this panel is already L4.
       className="flex flex-col overflow-hidden rounded-site"
-      style={{ width, height, maxWidth: 'calc(100vw - 1.5rem)' }}
+      style={{
+        width,
+        height,
+        maxWidth:
+          'calc(100vw - 1.5rem)',
+      }}
     >
       {/* Search */}
       <div className="shrink-0 p-2">
         <div className="surface-field flex items-center gap-2 rounded-site-sm px-2">
-          <Search className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
+          <Search
+            className="h-4 w-4 shrink-0 text-site-text-muted"
+            aria-hidden
+          />
           <input
             type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('emoji-picker-search-placeholder', { defaultValue: 'Search emojis…' })}
-            aria-label={t('emoji-picker-search-placeholder', { defaultValue: 'Search emojis…' })}
+            value={
+              query
+            }
+            onChange={(
+              e,
+            ) =>
+              setQuery(
+                e
+                  .target
+                  .value,
+              )
+            }
+            placeholder={t(
+              'emoji-picker-search-placeholder',
+              {
+                defaultValue:
+                  'Search emojis…',
+              },
+            )}
+            aria-label={t(
+              'emoji-picker-search-placeholder',
+              {
+                defaultValue:
+                  'Search emojis…',
+              },
+            )}
             className="h-9 min-w-0 flex-1 bg-transparent text-sm text-site-text outline-none placeholder:text-site-text-muted"
           />
           {query && (
             <button
               type="button"
-              onClick={() => setQuery('')}
-              aria-label={t('emoji-picker-clear', { defaultValue: 'Clear search' })}
+              onClick={() =>
+                setQuery(
+                  '',
+                )
+              }
+              aria-label={t(
+                'emoji-picker-clear',
+                {
+                  defaultValue:
+                    'Clear search',
+                },
+              )}
               className="shrink-0 p-1 text-site-text-muted transition-colors hover:text-site-text"
             >
-              <X className="h-4 w-4" aria-hidden />
+              <X
+                className="h-4 w-4"
+                aria-hidden
+              />
             </button>
           )}
         </div>
       </div>
 
       {/* Grid */}
-      <div ref={scrollRef} className={cn('min-h-0 flex-1 overflow-y-auto px-2 pb-2', arrival)}>
+      <div
+        ref={
+          scrollRef
+        }
+        className={cn(
+          'min-h-0 flex-1 overflow-y-auto px-2 pb-2',
+          arrival,
+        )}
+      >
         {!shortcodes ? (
           <p className="p-4 text-center text-sm text-site-text-muted">
-            {t('emoji-picker-loading', { defaultValue: 'Loading…' })}
+            {t(
+              'emoji-picker-loading',
+              {
+                defaultValue:
+                  'Loading…',
+              },
+            )}
           </p>
         ) : results ? (
-          results.custom.length + results.unicode.length === 0 ? (
+          results
+            .custom
+            .length +
+            results
+              .unicode
+              .length ===
+          0 ? (
             <p className="p-4 text-center text-sm text-site-text-muted">
-              {t('emoji-picker-no-results', { defaultValue: 'No emoji found' })}
+              {t(
+                'emoji-picker-no-results',
+                {
+                  defaultValue:
+                    'No emoji found',
+                },
+              )}
             </p>
           ) : (
             <>
-              {results.custom.length > 0 && (
+              {results
+                .custom
+                .length >
+                0 && (
                 <>
-                  <SectionLabel>{labels.custom}</SectionLabel>
-                  <div className={gridClass}>
-                    {results.custom.map((item) => (
-                      <CustomCell key={item.id} item={item} />
-                    ))}
+                  <SectionLabel>
+                    {
+                      labels.custom
+                    }
+                  </SectionLabel>
+                  <div
+                    className={
+                      gridClass
+                    }
+                  >
+                    {results.custom.map(
+                      (
+                        item,
+                      ) => (
+                        <CustomCell
+                          key={
+                            item.id
+                          }
+                          item={
+                            item
+                          }
+                        />
+                      ),
+                    )}
                   </div>
                 </>
               )}
-              {results.unicode.length > 0 && (
-                <div className={gridClass}>
-                  {results.unicode.map((entry) => (
-                    <UnicodeCell key={entry.char} entry={entry} />
-                  ))}
+              {results
+                .unicode
+                .length >
+                0 && (
+                <div
+                  className={
+                    gridClass
+                  }
+                >
+                  {results.unicode.map(
+                    (
+                      entry,
+                    ) => (
+                      <UnicodeCell
+                        key={
+                          entry.char
+                        }
+                        entry={
+                          entry
+                        }
+                      />
+                    ),
+                  )}
                 </div>
               )}
             </>
           )
-        ) : category === 'frequent' ? (
-          <div className={gridClass}>
-            {frequentEntries.map((e, i) =>
-              e.kind === 'custom' ? (
-                <CustomCell key={`f-${e.item.id}`} item={e.item} />
-              ) : (
+        ) : category ===
+          'frequent' ? (
+          <div
+            className={
+              gridClass
+            }
+          >
+            {frequentEntries.map(
+              (
+                e,
+                i,
+              ) =>
+                e.kind ===
+                'custom' ? (
+                  <CustomCell
+                    key={`f-${e.item.id}`}
+                    item={
+                      e.item
+                    }
+                  />
+                ) : (
+                  <UnicodeCell
+                    key={`f-${e.char}-${i}`}
+                    entry={{
+                      char: e.char,
+                      name: e.char,
+                      aliases:
+                        [],
+                      category:
+                        'symbols',
+                    }}
+                  />
+                ),
+            )}
+          </div>
+        ) : category ===
+          'custom' ? (
+          <>
+            {packs.map(
+              (
+                pack,
+              ) => (
+                <div
+                  key={
+                    pack.id
+                  }
+                >
+                  <SectionLabel>
+                    {
+                      pack.name
+                    }
+                  </SectionLabel>
+                  <div
+                    className={
+                      gridClass
+                    }
+                  >
+                    {pack.items.map(
+                      (
+                        item,
+                      ) => (
+                        <CustomCell
+                          key={
+                            item.id
+                          }
+                          item={
+                            item
+                          }
+                        />
+                      ),
+                    )}
+                  </div>
+                </div>
+              ),
+            )}
+          </>
+        ) : (
+          <div
+            className={
+              gridClass
+            }
+          >
+            {(
+              grouped?.[
+                category
+              ] ??
+              []
+            ).map(
+              (
+                entry,
+              ) => (
                 <UnicodeCell
-                  key={`f-${e.char}-${i}`}
-                  entry={{ char: e.char, name: e.char, aliases: [], category: 'symbols' }}
+                  key={
+                    entry.char
+                  }
+                  entry={
+                    entry
+                  }
                 />
               ),
             )}
-          </div>
-        ) : category === 'custom' ? (
-          <>
-            {packs.map((pack) => (
-              <div key={pack.id}>
-                <SectionLabel>{pack.name}</SectionLabel>
-                <div className={gridClass}>
-                  {pack.items.map((item) => (
-                    <CustomCell key={item.id} item={item} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </>
-        ) : (
-          <div className={gridClass}>
-            {(grouped?.[category] ?? []).map((entry) => (
-              <UnicodeCell key={entry.char} entry={entry} />
-            ))}
           </div>
         )}
       </div>
@@ -370,29 +933,67 @@ export default function EmojiPickerPanel({
       {/* Category rail — toggles, not tabs; the tablist grammar is Tabs'. */}
       <nav
         className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-t border-site-border px-1 py-1"
-        aria-label={t('emoji-picker-categories', { defaultValue: 'Emoji categories' })}
+        aria-label={t(
+          'emoji-picker-categories',
+          {
+            defaultValue:
+              'Emoji categories',
+          },
+        )}
       >
-        {visibleCategories.map((id) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => {
-              setQuery('');
-              setCategory(id);
-            }}
-            aria-pressed={!query && category === id}
-            aria-label={labels[id]}
-            title={labels[id]}
-            className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm transition-colors',
-              !query && category === id
-                ? 'bg-site-bg-subtle text-site-accent'
-                : 'text-site-text-muted hover:text-site-text',
-            )}
-          >
-            <CategoryIcon name={CATEGORY_META[id].icon} className="h-4 w-4" />
-          </button>
-        ))}
+        {visibleCategories.map(
+          (
+            id,
+          ) => (
+            <button
+              key={
+                id
+              }
+              type="button"
+              onClick={() => {
+                setQuery(
+                  '',
+                );
+                setCategory(
+                  id,
+                );
+              }}
+              aria-pressed={
+                !query &&
+                category ===
+                  id
+              }
+              aria-label={
+                labels[
+                  id
+                ]
+              }
+              title={
+                labels[
+                  id
+                ]
+              }
+              className={cn(
+                'flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm transition-colors',
+                !query &&
+                  category ===
+                    id
+                  ? 'bg-site-bg-subtle text-site-accent'
+                  : 'text-site-text-muted hover:text-site-text',
+              )}
+            >
+              <CategoryIcon
+                name={
+                  CATEGORY_META[
+                    id
+                  ]
+                    .icon
+                }
+                className="h-4 w-4"
+              />
+            </button>
+          ),
+        )}
       </nav>
     </div>
   );

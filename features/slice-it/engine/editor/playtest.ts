@@ -32,29 +32,55 @@
  */
 
 import { AudioManager } from '@/lib/audio/AudioManager';
-import { GameEngine, type Feedback } from '@features/slice-it/engine/engine';
+import {
+  GameEngine,
+  type Feedback,
+} from '@features/slice-it/engine/engine';
 import { DEFAULT_MODIFIERS } from '@features/slice-it/engine/modifiers';
 import { useSliceItStore } from '@features/slice-it/engine/store';
-import type { BeatMap, Modifiers, Slice } from '@features/slice-it/engine/types';
+import type {
+  BeatMap,
+  Modifiers,
+  Slice,
+} from '@features/slice-it/engine/types';
 import { editorState } from './store';
 import { toSlices } from './types';
 import type { EditorNote } from './types';
 
 /** Every map built for a playtest carries this. It is the run's passport. */
-export const EDITOR_MAP_PREFIX = 'editor:';
+export const EDITOR_MAP_PREFIX =
+  'editor:';
 
-export function editorMapId(songId: string): string {
+export function editorMapId(
+  songId: string,
+): string {
   return `${EDITOR_MAP_PREFIX}${songId}`;
 }
 
-export function isEditorMapId(id: string | null | undefined): boolean {
-  return typeof id === 'string' && id.startsWith(EDITOR_MAP_PREFIX);
+export function isEditorMapId(
+  id:
+    | string
+    | null
+    | undefined,
+): boolean {
+  return (
+    typeof id ===
+      'string' &&
+    id.startsWith(
+      EDITOR_MAP_PREFIX,
+    )
+  );
 }
 
 export class PlaytestForbiddenError extends Error {
-  constructor(message = 'A playtest run cannot be scored or submitted.') {
-    super(message);
-    this.name = 'PlaytestForbiddenError';
+  constructor(
+    message = 'A playtest run cannot be scored or submitted.',
+  ) {
+    super(
+      message,
+    );
+    this.name =
+      'PlaytestForbiddenError';
   }
 }
 
@@ -65,8 +91,18 @@ export class PlaytestForbiddenError extends Error {
  * boolean submits an editor run to the leaderboard, and a caller that forgets to
  * catch this gets a stack trace pointing at the exact line that tried.
  */
-export function assertSubmittable(mapId: string | null | undefined): void {
-  if (isEditorMapId(mapId)) throw new PlaytestForbiddenError();
+export function assertSubmittable(
+  mapId:
+    | string
+    | null
+    | undefined,
+): void {
+  if (
+    isEditorMapId(
+      mapId,
+    )
+  )
+    throw new PlaytestForbiddenError();
 }
 
 /** The song fields a playtest needs — a subset of the editor's `EditorSong`. */
@@ -86,14 +122,28 @@ export interface PlaytestSong {
  * objects that also carry editor state would let a stale `selected` flag ride
  * into the game's renderer.
  */
-export function buildPlaytestMap(song: PlaytestSong, notes: readonly EditorNote[]): BeatMap {
+export function buildPlaytestMap(
+  song: PlaytestSong,
+  notes: readonly EditorNote[],
+): BeatMap {
   return {
-    id: editorMapId(song.id),
+    id: editorMapId(
+      song.id,
+    ),
     name: song.title,
-    artist: song.artist,
-    audioUrl: song.audioUrl,
-    bpm: song.bpm > 0 ? song.bpm : 120,
-    slices: toSlices(notes),
+    artist:
+      song.artist,
+    audioUrl:
+      song.audioUrl,
+    bpm:
+      song.bpm >
+      0
+        ? song.bpm
+        : 120,
+    slices:
+      toSlices(
+        notes,
+      ),
   };
 }
 
@@ -111,7 +161,10 @@ export interface PlaytestStartInput {
   /** Where the transport starts. Never 0 unless the author is at 0 (§10). */
   from: number;
   /** Loop the selection: plays this range on repeat until stopped. */
-  loop?: { start: number; end: number } | null;
+  loop?: {
+    start: number;
+    end: number;
+  } | null;
 }
 
 /** The AudioManager cannot seek — see the note on {@link seekAudio}. */
@@ -131,20 +184,34 @@ interface SeekableAudio {
  * bookkeeping is at a known zero. The two-line `seek(seconds)` that makes this
  * honest is requested in `docs/_handoff/editor-phase45-requests.md`.
  */
-function seekAudio(audio: AudioManager, seconds: number): void {
+function seekAudio(
+  audio: AudioManager,
+  seconds: number,
+): void {
   audio.stop();
-  (audio as unknown as SeekableAudio).pauseTime = Math.max(0, seconds);
+  (
+    audio as unknown as SeekableAudio
+  ).pauseTime =
+    Math.max(
+      0,
+      seconds,
+    );
 }
 
 /** The game-store fields a playtest borrows and must hand back. */
 interface StoreSnapshot {
-  status: ReturnType<typeof useSliceItStore.getState>['status'];
+  status: ReturnType<
+    typeof useSliceItStore.getState
+  >['status'];
   isPaused: boolean;
-  songId: string | null;
+  songId:
+    | string
+    | null;
   modifiers: Modifiers;
 }
 
-let active: PlaytestSession | null = null;
+let active: PlaytestSession | null =
+  null;
 
 /**
  * The running playtest, if any.
@@ -170,23 +237,42 @@ export class PlaytestSession {
   private readonly audio: AudioManager;
   private readonly map: BeatMap;
   private readonly snapshot: StoreSnapshot;
-  private readonly hits = new Map<string, HitMark>();
-  private buffer: AudioBuffer | null = null;
-  private loop: { start: number; end: number } | null;
+  private readonly hits =
+    new Map<
+      string,
+      HitMark
+    >();
+  private buffer: AudioBuffer | null =
+    null;
+  private loop: {
+    start: number;
+    end: number;
+  } | null;
   private startedFrom: number;
   private lastTime: number;
   private scanCursor = 0;
   private wrapping = false;
   private stopped = false;
 
-  private constructor(map: BeatMap, snapshot: StoreSnapshot, from: number) {
-    this.#engine = new GameEngine();
-    this.audio = AudioManager.getInstance();
-    this.map = map;
-    this.snapshot = snapshot;
-    this.loop = null;
-    this.startedFrom = from;
-    this.lastTime = from;
+  private constructor(
+    map: BeatMap,
+    snapshot: StoreSnapshot,
+    from: number,
+  ) {
+    this.#engine =
+      new GameEngine();
+    this.audio =
+      AudioManager.getInstance();
+    this.map =
+      map;
+    this.snapshot =
+      snapshot;
+    this.loop =
+      null;
+    this.startedFrom =
+      from;
+    this.lastTime =
+      from;
   }
 
   /**
@@ -199,45 +285,94 @@ export class PlaytestSession {
    * otherwise opening the editor would quietly rewrite the player's mod
    * selection.
    */
-  static async start(input: PlaytestStartInput): Promise<PlaytestSession> {
+  static async start(
+    input: PlaytestStartInput,
+  ): Promise<PlaytestSession> {
     active?.stop();
 
-    const store = useSliceItStore.getState();
-    const snapshot: StoreSnapshot = {
-      status: store.status,
-      isPaused: store.isPaused,
-      songId: store.songId,
-      modifiers: store.modifiers,
-    };
+    const store =
+      useSliceItStore.getState();
+    const snapshot: StoreSnapshot =
+      {
+        status:
+          store.status,
+        isPaused:
+          store.isPaused,
+        songId:
+          store.songId,
+        modifiers:
+          store.modifiers,
+      };
 
-    const map = buildPlaytestMap(input.song, input.notes);
-    const session = new PlaytestSession(map, snapshot, input.from);
-    session.loop = input.loop ?? null;
-    active = session;
+    const map =
+      buildPlaytestMap(
+        input.song,
+        input.notes,
+      );
+    const session =
+      new PlaytestSession(
+        map,
+        snapshot,
+        input.from,
+      );
+    session.loop =
+      input.loop ??
+      null;
+    active =
+      session;
 
-    store.setModifiers({ ...DEFAULT_MODIFIERS });
-    store.setStatus('PLAYING');
-    store.setIsPaused(false);
+    store.setModifiers(
+      {
+        ...DEFAULT_MODIFIERS,
+      },
+    );
+    store.setStatus(
+      'PLAYING',
+    );
+    store.setIsPaused(
+      false,
+    );
 
     try {
-      session.buffer = await session.audio.loadTrack(map.audioUrl);
+      session.buffer =
+        await session.audio.loadTrack(
+          map.audioUrl,
+        );
     } catch {
       // No audio (offline, or a song whose file has gone): the run still judges
       // against the audio clock, which simply never advances. Better than
       // throwing out of a button press.
-      session.buffer = null;
+      session.buffer =
+        null;
     }
-    if (session.stopped) return session;
+    if (
+      session.stopped
+    )
+      return session;
 
-    await session.#engine.loadMap(map, session.buffer ?? undefined);
-    session.play(input.from);
+    await session.#engine.loadMap(
+      map,
+      session.buffer ??
+        undefined,
+    );
+    session.play(
+      input.from,
+    );
     return session;
   }
 
-  private play(from: number): void {
-    seekAudio(this.audio, from);
-    this.startedFrom = from;
-    this.lastTime = from;
+  private play(
+    from: number,
+  ): void {
+    seekAudio(
+      this
+        .audio,
+      from,
+    );
+    this.startedFrom =
+      from;
+    this.lastTime =
+      from;
     this.#engine.start();
   }
 
@@ -249,15 +384,35 @@ export class PlaytestSession {
    * different moments.
    */
   tick(): number {
-    if (this.stopped) return this.lastTime;
+    if (
+      this
+        .stopped
+    )
+      return this
+        .lastTime;
     this.#engine.update();
-    const time = this.audio.getCurrentTime();
-    this.lastTime = time;
+    const time =
+      this.audio.getCurrentTime();
+    this.lastTime =
+      time;
     this.collectHits();
 
-    if (this.loop && !this.wrapping && time >= this.loop.end) {
+    if (
+      this
+        .loop &&
+      !this
+        .wrapping &&
+      time >=
+        this
+          .loop
+          .end
+    ) {
       this.wrapping = true;
-      void this.rewind(this.loop.start);
+      void this.rewind(
+        this
+          .loop
+          .start,
+      );
     }
     return time;
   }
@@ -270,34 +425,84 @@ export class PlaytestSession {
    * loop that only moved the audio would play the second lap with every note
    * already spent.
    */
-  private async rewind(at: number): Promise<void> {
+  private async rewind(
+    at: number,
+  ): Promise<void> {
     try {
-      await this.#engine.loadMap(this.map, this.buffer ?? undefined);
-      if (this.stopped) return;
+      await this.#engine.loadMap(
+        this
+          .map,
+        this
+          .buffer ??
+          undefined,
+      );
+      if (
+        this
+          .stopped
+      )
+        return;
       this.hits.clear();
       this.scanCursor = 0;
-      useSliceItStore.getState().setStatus('PLAYING');
-      useSliceItStore.getState().setIsPaused(false);
-      this.play(at);
+      useSliceItStore
+        .getState()
+        .setStatus(
+          'PLAYING',
+        );
+      useSliceItStore
+        .getState()
+        .setIsPaused(
+          false,
+        );
+      this.play(
+        at,
+      );
     } finally {
       this.wrapping = false;
     }
   }
 
   /** Forward a key press to the judge. `at` is `event.timeStamp` (§10). */
-  press(lane: number, at?: number): void {
-    if (!this.stopped) this.#engine.submitInput(lane, at);
+  press(
+    lane: number,
+    at?: number,
+  ): void {
+    if (
+      !this
+        .stopped
+    )
+      this.#engine.submitInput(
+        lane,
+        at,
+      );
   }
 
-  release(lane: number): void {
-    if (!this.stopped) this.#engine.submitRelease(lane);
+  release(
+    lane: number,
+  ): void {
+    if (
+      !this
+        .stopped
+    )
+      this.#engine.submitRelease(
+        lane,
+      );
   }
 
   /** Judgement text the HUD prints, drained so it is shown once. */
   drainFeedback(): Feedback[] {
-    const queue = this.#engine.feedbackQueue;
-    if (queue.length === 0) return [];
-    return queue.splice(0, queue.length);
+    const queue =
+      this
+        .#engine
+        .feedbackQueue;
+    if (
+      queue.length ===
+      0
+    )
+      return [];
+    return queue.splice(
+      0,
+      queue.length,
+    );
   }
 
   /**
@@ -308,43 +513,82 @@ export class PlaytestSession {
    * through a second channel that could disagree with what was scored.
    */
   private collectHits(): void {
-    const slices = this.#engine.getSlices();
-    for (let i = this.scanCursor; i < slices.length; i++) {
-      const slice: Slice = slices[i];
-      if (slice.hitTime === undefined) {
+    const slices =
+      this.#engine.getSlices();
+    for (
+      let i =
+        this
+          .scanCursor;
+      i <
+      slices.length;
+      i++
+    ) {
+      const slice: Slice =
+        slices[
+          i
+        ];
+      if (
+        slice.hitTime ===
+        undefined
+      ) {
         // Notes resolve in time order, so the first unresolved note is where the
         // next scan starts — the alternative is walking a 1200-note chart every
         // frame to find the two that changed.
-        this.scanCursor = i;
+        this.scanCursor =
+          i;
         return;
       }
-      this.hits.set(slice.id, { hit: slice.hit === true, at: slice.hitTime });
+      this.hits.set(
+        slice.id,
+        {
+          hit:
+            slice.hit ===
+            true,
+          at: slice.hitTime,
+        },
+      );
     }
-    this.scanCursor = slices.length;
+    this.scanCursor =
+      slices.length;
   }
 
-  hitOf(noteId: string): HitMark | undefined {
-    return this.hits.get(noteId);
+  hitOf(
+    noteId: string,
+  ):
+    | HitMark
+    | undefined {
+    return this.hits.get(
+      noteId,
+    );
   }
 
   get time(): number {
-    return this.lastTime;
+    return this
+      .lastTime;
   }
 
   get from(): number {
-    return this.startedFrom;
+    return this
+      .startedFrom;
   }
 
   get looping(): boolean {
-    return this.loop !== null;
+    return (
+      this
+        .loop !==
+      null
+    );
   }
 
   get mapId(): string {
-    return this.map.id;
+    return this
+      .map
+      .id;
   }
 
   get running(): boolean {
-    return !this.stopped;
+    return !this
+      .stopped;
   }
 
   /**
@@ -355,19 +599,55 @@ export class PlaytestSession {
    * playhead, and the author is looking at the bar they just heard.
    */
   stop(): number {
-    if (this.stopped) return this.lastTime;
+    if (
+      this
+        .stopped
+    )
+      return this
+        .lastTime;
     this.stopped = true;
-    const at = this.audio.getCurrentTime() || this.lastTime;
-    this.lastTime = at;
+    const at =
+      this.audio.getCurrentTime() ||
+      this
+        .lastTime;
+    this.lastTime =
+      at;
     this.audio.stop();
 
-    const store = useSliceItStore.getState();
-    store.setModifiers(this.snapshot.modifiers);
-    store.setStatus(this.snapshot.status);
-    store.setIsPaused(this.snapshot.isPaused);
-    if (this.snapshot.songId) store.setSongId(this.snapshot.songId);
+    const store =
+      useSliceItStore.getState();
+    store.setModifiers(
+      this
+        .snapshot
+        .modifiers,
+    );
+    store.setStatus(
+      this
+        .snapshot
+        .status,
+    );
+    store.setIsPaused(
+      this
+        .snapshot
+        .isPaused,
+    );
+    if (
+      this
+        .snapshot
+        .songId
+    )
+      store.setSongId(
+        this
+          .snapshot
+          .songId,
+      );
 
-    if (active === this) active = null;
+    if (
+      active ===
+      this
+    )
+      active =
+        null;
     return at;
   }
 
@@ -394,16 +674,58 @@ export class PlaytestSession {
  * selected — then the editor's own A/B markers. A loop with neither is not a
  * loop, so `null` falls back to plain playback rather than guessing a range.
  */
-export function selectionRange(): { start: number; end: number } | null {
-  const state = editorState();
-  const selected = state.charts[state.active].notes.filter((note) => note.selected);
-  if (selected.length >= 2) {
-    const start = selected[0].time;
-    const end = selected[selected.length - 1].time;
+export function selectionRange(): {
+  start: number;
+  end: number;
+} | null {
+  const state =
+    editorState();
+  const selected =
+    state.charts[
+      state
+        .active
+    ].notes.filter(
+      (
+        note,
+      ) =>
+        note.selected,
+    );
+  if (
+    selected.length >=
+    2
+  ) {
+    const start =
+      selected[0]
+        .time;
+    const end =
+      selected[
+        selected.length -
+          1
+      ]
+        .time;
     // A tail of one beat, so the last note of the pattern is heard resolving
     // rather than cut off by the wrap.
-    const tail = 60 / (state.song?.bpm || 120);
-    if (end > start) return { start: Math.max(0, start - 0.1), end: end + tail };
+    const tail =
+      60 /
+      (state
+        .song
+        ?.bpm ||
+        120);
+    if (
+      end >
+      start
+    )
+      return {
+        start:
+          Math.max(
+            0,
+            start -
+              0.1,
+          ),
+        end:
+          end +
+          tail,
+      };
   }
   return state.loop;
 }
@@ -415,22 +737,49 @@ export function selectionRange(): { start: number; end: number } | null {
  * 2:40 of song. `Space` plays from where they are looking; `Ctrl+Space` loops
  * what they have selected.
  */
-export async function startEditorPlaytest(options: { loop?: boolean } = {}): Promise<void> {
-  const state = editorState();
-  if (!state.song || state.playtesting) return;
+export async function startEditorPlaytest(
+  options: {
+    loop?: boolean;
+  } = {},
+): Promise<void> {
+  const state =
+    editorState();
+  if (
+    !state.song ||
+    state.playtesting
+  )
+    return;
 
-  const loop = options.loop ? selectionRange() : null;
-  const from = loop ? loop.start : state.playhead;
-  state.setPlaytesting(true);
+  const loop =
+    options.loop
+      ? selectionRange()
+      : null;
+  const from =
+    loop
+      ? loop.start
+      : state.playhead;
+  state.setPlaytesting(
+    true,
+  );
   try {
-    await PlaytestSession.start({
-      song: state.song,
-      notes: state.charts[state.active].notes,
-      from,
-      loop,
-    });
+    await PlaytestSession.start(
+      {
+        song: state.song,
+        notes:
+          state
+            .charts[
+            state
+              .active
+          ]
+            .notes,
+        from,
+        loop,
+      },
+    );
   } catch {
-    state.setPlaytesting(false);
+    state.setPlaytesting(
+      false,
+    );
     activePlaytest()?.stop();
   }
 }
@@ -443,10 +792,19 @@ export async function startEditorPlaytest(options: { loop?: boolean } = {}): Pro
  * the bar they just heard.
  */
 export function stopEditorPlaytest(): number {
-  const state = editorState();
-  const session = activePlaytest();
-  const at = session ? session.stop() : state.playhead;
-  state.setPlaytesting(false);
-  state.setPlayhead(at);
+  const state =
+    editorState();
+  const session =
+    activePlaytest();
+  const at =
+    session
+      ? session.stop()
+      : state.playhead;
+  state.setPlaytesting(
+    false,
+  );
+  state.setPlayhead(
+    at,
+  );
   return at;
 }

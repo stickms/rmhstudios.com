@@ -10,9 +10,21 @@ export const MAX_WAGER_STAKE = 100_000;
 export const WAGER_RAKE_BPS = 250;
 
 /** How long an unaccepted challenge stays open before it auto-refunds. */
-export const WAGER_DEFAULT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24h
-export const WAGER_MIN_EXPIRY_MS = 5 * 60 * 1000; // 5m
-export const WAGER_MAX_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7d
+export const WAGER_DEFAULT_EXPIRY_MS =
+  24 *
+  60 *
+  60 *
+  1000; // 24h
+export const WAGER_MIN_EXPIRY_MS =
+  5 *
+  60 *
+  1000; // 5m
+export const WAGER_MAX_EXPIRY_MS =
+  7 *
+  24 *
+  60 *
+  60 *
+  1000; // 7d
 
 /** Tournament sizing + economics. */
 export const MIN_TOURNAMENT_PLAYERS = 2;
@@ -27,14 +39,39 @@ export const TOURNAMENT_RAKE_BPS = 500; // 5%
  * by entrant count bucket. Must each sum to 10_000. The bracket engine picks the
  * closest bucket <= entrant count.
  */
-export const TOURNAMENT_PAYOUT_SPLITS: Record<number, number[]> = {
-  2: [10_000], // winner takes all
-  4: [7_000, 3_000], // 1st / 2nd
-  8: [6_000, 3_000, 1_000], // 1st / 2nd / semis
-  16: [5_000, 2_500, 1_250, 1_250],
-};
+export const TOURNAMENT_PAYOUT_SPLITS: Record<
+  number,
+  number[]
+> =
+  {
+    2: [
+      10_000,
+    ], // winner takes all
+    4: [
+      7_000,
+      3_000,
+    ], // 1st / 2nd
+    8: [
+      6_000,
+      3_000,
+      1_000,
+    ], // 1st / 2nd / semis
+    16: [
+      5_000,
+      2_500,
+      1_250,
+      1_250,
+    ],
+  };
 
 /** Compute a rake amount (floored) from a pot and bps. */
-export function rakeOf(pot: number, bps: number): number {
-  return Math.floor((pot * bps) / 10_000);
+export function rakeOf(
+  pot: number,
+  bps: number,
+): number {
+  return Math.floor(
+    (pot *
+      bps) /
+      10_000,
+  );
 }

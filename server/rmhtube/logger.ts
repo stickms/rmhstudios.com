@@ -4,4 +4,7 @@
  */
 import { createLogger } from '../shared/logger';
 
-export const logger = createLogger('rmhtube');
+export const logger =
+  createLogger(
+    'rmhtube',
+  );

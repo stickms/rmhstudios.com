@@ -7,26 +7,113 @@ import { z } from 'zod';
 /** Longest review body. The page truncates to this and shows a counter near it. */
 export const REVIEW_BODY_MAX = 2000;
 
-export const reviewUpsertSchema = z.object({
-  stars: z.number().int().min(1).max(5),
-  body: z.string().trim().max(REVIEW_BODY_MAX).nullable().optional(),
-});
+export const reviewUpsertSchema =
+  z.object(
+    {
+      stars:
+        z
+          .number()
+          .int()
+          .min(
+            1,
+          )
+          .max(
+            5,
+          ),
+      body: z
+        .string()
+        .trim()
+        .max(
+          REVIEW_BODY_MAX,
+        )
+        .nullable()
+        .optional(),
+    },
+  );
 
-export const reviewVoteSchema = z.object({ helpful: z.boolean() });
+export const reviewVoteSchema =
+  z.object(
+    {
+      helpful:
+        z.boolean(),
+    },
+  );
 
-export const guideCreateSchema = z.object({
-  gameId: z.string().min(1).max(40),
-  title: z.string().trim().min(3).max(120),
-  body: z.string().trim().min(1).max(40_000),
-});
+export const guideCreateSchema =
+  z.object(
+    {
+      gameId:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            40,
+          ),
+      title:
+        z
+          .string()
+          .trim()
+          .min(
+            3,
+          )
+          .max(
+            120,
+          ),
+      body: z
+        .string()
+        .trim()
+        .min(
+          1,
+        )
+        .max(
+          40_000,
+        ),
+    },
+  );
 
-export const guidePublishBody = z.object({ published: z.boolean() });
+export const guidePublishBody =
+  z.object(
+    {
+      published:
+        z.boolean(),
+    },
+  );
 
-export const guideUpdateSchema = z.object({
-  title: z.string().trim().min(3).max(120).optional(),
-  body: z.string().trim().min(1).max(40_000).optional(),
-  note: z.string().trim().max(120).optional(),
-});
+export const guideUpdateSchema =
+  z.object(
+    {
+      title:
+        z
+          .string()
+          .trim()
+          .min(
+            3,
+          )
+          .max(
+            120,
+          )
+          .optional(),
+      body: z
+        .string()
+        .trim()
+        .min(
+          1,
+        )
+        .max(
+          40_000,
+        )
+        .optional(),
+      note: z
+        .string()
+        .trim()
+        .max(
+          120,
+        )
+        .optional(),
+    },
+  );
 
 export interface RatingAgg {
   average: number;
@@ -39,17 +126,36 @@ export interface ReviewView {
   id: string;
   userId: string;
   stars: number;
-  body: string | null;
+  body:
+    | string
+    | null;
   createdAt: string;
   updatedAt: string;
   helpfulCount: number;
-  author: { name: string | null; handle: string | null; image: string | null };
-  myVote?: boolean | null;
+  author: {
+    name:
+      | string
+      | null;
+    handle:
+      | string
+      | null;
+    image:
+      | string
+      | null;
+  };
+  myVote?:
+    | boolean
+    | null;
   isMine?: boolean;
   /** The author's time on record, if their playtime setting lets this viewer see it. */
-  playtimeSeconds?: number | null;
+  playtimeSeconds?:
+    | number
+    | null;
   /** Awards this review has received, most first. */
-  awards?: { awardId: string; count: number }[];
+  awards?: {
+    awardId: string;
+    count: number;
+  }[];
 }
 
 export interface GuideSummary {
@@ -57,5 +163,12 @@ export interface GuideSummary {
   title: string;
   published: boolean;
   updatedAt: string;
-  author: { name: string | null; handle: string | null };
+  author: {
+    name:
+      | string
+      | null;
+    handle:
+      | string
+      | null;
+  };
 }

@@ -63,113 +63,285 @@ const MAX_SLEW_SECONDS = 0.0005;
 /** A timestamp older than this is stale (a suspended context), ms. */
 const MAX_TIMESTAMP_AGE_MS = 1500;
 
-type Mode = 'timestamp' | 'estimate';
+type Mode =
+  | 'timestamp'
+  | 'estimate';
 
 export class OutputClock {
-  private samples: number[] = [];
-  private mode: Mode | null = null;
-  private applied: number | null = null;
+  private samples: number[] =
+    [];
+  private mode: Mode | null =
+    null;
+  private applied:
+    | number
+    | null =
+    null;
   private outliers = 0;
 
   /** Forget everything — a new context, or a device change we were told about. */
   reset(): void {
-    this.samples = [];
-    this.mode = null;
-    this.applied = null;
+    this.samples =
+      [];
+    this.mode =
+      null;
+    this.applied =
+      null;
     this.outliers = 0;
   }
 
   /** Which source the estimate is currently built from (for diagnostics). */
   get source(): Mode | null {
-    return this.mode;
+    return this
+      .mode;
   }
 
   /** Feed one reading of the audio and page clocks. */
-  observe(o: ClockObservation): void {
-    if (!Number.isFinite(o.contextTime) || !Number.isFinite(o.perfMs)) return;
+  observe(
+    o: ClockObservation,
+  ): void {
+    if (
+      !Number.isFinite(
+        o.contextTime,
+      ) ||
+      !Number.isFinite(
+        o.perfMs,
+      )
+    )
+      return;
 
-    const ts = o.timestamp;
+    const ts =
+      o.timestamp;
     const usable =
-      ts !== null &&
-      ts.performanceTime > 0 &&
-      ts.contextTime > 0 &&
-      ts.performanceTime <= o.perfMs + 5 &&
-      o.perfMs - ts.performanceTime < MAX_TIMESTAMP_AGE_MS;
+      ts !==
+        null &&
+      ts.performanceTime >
+        0 &&
+      ts.contextTime >
+        0 &&
+      ts.performanceTime <=
+        o.perfMs +
+          5 &&
+      o.perfMs -
+        ts.performanceTime <
+        MAX_TIMESTAMP_AGE_MS;
 
-    const mode: Mode = usable ? 'timestamp' : 'estimate';
-    const sample = usable
-      ? ts.contextTime - ts.performanceTime / 1000
-      : o.contextTime - o.perfMs / 1000 - Math.max(0, o.latencySeconds);
+    const mode: Mode =
+      usable
+        ? 'timestamp'
+        : 'estimate';
+    const sample =
+      usable
+        ? ts.contextTime -
+          ts.performanceTime /
+            1000
+        : o.contextTime -
+          o.perfMs /
+            1000 -
+          Math.max(
+            0,
+            o.latencySeconds,
+          );
 
-    if (mode !== this.mode) {
-      this.samples = [];
+    if (
+      mode !==
+      this
+        .mode
+    ) {
+      this.samples =
+        [];
       this.outliers = 0;
-      this.mode = mode;
-      this.applied = null;
+      this.mode =
+        mode;
+      this.applied =
+        null;
     }
 
-    const current = this.estimate();
-    if (current !== null && Math.abs(sample - current) > JUMP_SECONDS) {
+    const current =
+      this.estimate();
+    if (
+      current !==
+        null &&
+      Math.abs(
+        sample -
+          current,
+      ) >
+        JUMP_SECONDS
+    ) {
       // Bluetooth connecting, a different output device, a context restarted: the
       // constant has genuinely moved. Wait for it to persist, then snap.
-      this.outliers++;
-      if (this.outliers < JUMP_COUNT) return;
-      this.samples = [];
+      this
+        .outliers++;
+      if (
+        this
+          .outliers <
+        JUMP_COUNT
+      )
+        return;
+      this.samples =
+        [];
       this.outliers = 0;
-      this.applied = null;
+      this.applied =
+        null;
     } else {
       this.outliers = 0;
     }
 
-    this.samples.push(sample);
-    if (this.samples.length > WINDOW) this.samples.shift();
+    this.samples.push(
+      sample,
+    );
+    if (
+      this
+        .samples
+        .length >
+      WINDOW
+    )
+      this.samples.shift();
 
-    const target = this.estimate();
-    if (target === null) return;
-    if (this.applied === null) {
-      this.applied = target;
+    const target =
+      this.estimate();
+    if (
+      target ===
+      null
+    )
+      return;
+    if (
+      this
+        .applied ===
+      null
+    ) {
+      this.applied =
+        target;
       return;
     }
     // Slewed: the estimate sharpens as readings arrive, but the clock the notes ride
     // never lurches. 0.5 ms per observation is invisible and still converges in a
     // few frames.
-    const delta = Math.max(-MAX_SLEW_SECONDS, Math.min(MAX_SLEW_SECONDS, target - this.applied));
-    this.applied += delta;
+    const delta =
+      Math.max(
+        -MAX_SLEW_SECONDS,
+        Math.min(
+          MAX_SLEW_SECONDS,
+          target -
+            this
+              .applied,
+        ),
+      );
+    this.applied +=
+      delta;
   }
 
   /** True once there is an estimate to read. */
   get ready(): boolean {
-    return this.applied !== null;
+    return (
+      this
+        .applied !==
+      null
+    );
   }
 
   /**
    * The context time of the sound being heard at page time `perfMs`.
    * Callers check {@link ready} first; before the first observation this is NaN.
    */
-  contextTimeAt(perfMs: number): number {
-    return this.applied === null ? Number.NaN : this.applied + perfMs / 1000;
+  contextTimeAt(
+    perfMs: number,
+  ): number {
+    return this
+      .applied ===
+      null
+      ? Number.NaN
+      : this
+          .applied +
+          perfMs /
+            1000;
   }
 
   /**
    * The page time at which the sound scheduled at context time `contextTime` is
    * heard — what a calibration tap should be measured against.
    */
-  perfTimeHeard(contextTime: number): number {
-    return this.applied === null ? Number.NaN : (contextTime - this.applied) * 1000;
+  perfTimeHeard(
+    contextTime: number,
+  ): number {
+    return this
+      .applied ===
+      null
+      ? Number.NaN
+      : (contextTime -
+          this
+            .applied) *
+          1000;
   }
 
-  private estimate(): number | null {
-    const n = this.samples.length;
-    if (n === 0) return null;
-    if (this.mode === 'estimate') {
+  private estimate():
+    | number
+    | null {
+    const n =
+      this
+        .samples
+        .length;
+    if (
+      n ===
+      0
+    )
+      return null;
+    if (
+      this
+        .mode ===
+      'estimate'
+    ) {
       // One-sided noise: `currentTime` only under-reports, so the largest recent
       // reading is the closest to the truth.
-      let max = this.samples[0];
-      for (let i = 1; i < n; i++) if (this.samples[i] > max) max = this.samples[i];
+      let max =
+        this
+          .samples[0];
+      for (
+        let i = 1;
+        i <
+        n;
+        i++
+      )
+        if (
+          this
+            .samples[
+            i
+          ] >
+          max
+        )
+          max =
+            this
+              .samples[
+              i
+            ];
       return max;
     }
-    const sorted = [...this.samples].sort((a, b) => a - b);
-    const mid = n >> 1;
-    return n % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    const sorted =
+      [
+        ...this
+          .samples,
+      ].sort(
+        (
+          a,
+          b,
+        ) =>
+          a -
+          b,
+      );
+    const mid =
+      n >>
+      1;
+    return n %
+      2
+      ? sorted[
+          mid
+        ]
+      : (sorted[
+          mid -
+            1
+        ] +
+          sorted[
+            mid
+          ]) /
+          2;
   }
 }

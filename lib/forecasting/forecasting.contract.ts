@@ -30,18 +30,47 @@ export interface SeasonBoard {
     points: number;
     scored: number;
     brier: number;
-    user: { name: string | null; handle: string | null } | null;
+    user: {
+      name:
+        | string
+        | null;
+      handle:
+        | string
+        | null;
+    } | null;
   }[];
 }
 
 /** The caller's own calibration profile. */
-export const calibrationApi = endpoint<{ res: { calibration: Calibration | null } }>()({
-  method: 'GET',
-  path: '/api/forecasting/calibration',
-});
+export const calibrationApi =
+  endpoint<{
+    res: {
+      calibration: Calibration | null;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/forecasting/calibration',
+    },
+  );
 
 /** Season list plus one season's leaderboard (newest by default). */
-export const seasonsApi = endpoint<{
-  query: { id?: string | undefined };
-  res: { seasons: SeasonSummary[]; board: SeasonBoard | null };
-}>()({ method: 'GET', path: '/api/forecasting/seasons' });
+export const seasonsApi =
+  endpoint<{
+    query: {
+      id?:
+        | string
+        | undefined;
+    };
+    res: {
+      seasons: SeasonSummary[];
+      board: SeasonBoard | null;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/forecasting/seasons',
+    },
+  );

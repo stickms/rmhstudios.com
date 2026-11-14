@@ -9,7 +9,13 @@ export interface FollowToggleResult {
   following: boolean;
 }
 
-export const toggleFollowApi = endpoint<{ res: FollowToggleResult }>()({
-  method: 'POST',
-  path: '/api/profile/$id/follow',
-});
+export const toggleFollowApi =
+  endpoint<{
+    res: FollowToggleResult;
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/profile/$id/follow',
+    },
+  );

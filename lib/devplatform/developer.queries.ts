@@ -3,8 +3,30 @@ import { listDeveloperKeysApi } from '@/lib/devplatform/keys.contract';
 import { listRecipesApi } from '@/lib/devplatform/recipes.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const developerKeysQuery = () =>
-  contractQuery(['developer', 'keys'], listDeveloperKeysApi, undefined, { staleTime: 15_000 });
+export const developerKeysQuery =
+  () =>
+    contractQuery(
+      [
+        'developer',
+        'keys',
+      ],
+      listDeveloperKeysApi,
+      undefined,
+      {
+        staleTime: 15_000,
+      },
+    );
 
-export const recipesQuery = () =>
-  contractQuery(['developer', 'recipes'], listRecipesApi, undefined, { staleTime: 15_000 });
+export const recipesQuery =
+  () =>
+    contractQuery(
+      [
+        'developer',
+        'recipes',
+      ],
+      listRecipesApi,
+      undefined,
+      {
+        staleTime: 15_000,
+      },
+    );

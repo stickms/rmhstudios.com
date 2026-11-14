@@ -14,43 +14,131 @@
  * counters rather than ancestor walks keep it O(nodes).
  */
 
-const CLASS_HELPERS = new Set(['cn', 'clsx', 'cva', 'twMerge', 'classNames']);
+const CLASS_HELPERS =
+  new Set(
+    [
+      'cn',
+      'clsx',
+      'cva',
+      'twMerge',
+      'classNames',
+    ],
+  );
 
-function isClassAttribute(node) {
+function isClassAttribute(
+  node,
+) {
   return (
     node.name &&
-    node.name.type === 'JSXIdentifier' &&
-    (node.name.name === 'className' || node.name.name === 'class')
+    node
+      .name
+      .type ===
+      'JSXIdentifier' &&
+    (node
+      .name
+      .name ===
+      'className' ||
+      node
+        .name
+        .name ===
+        'class')
   );
 }
 
-function isClassHelperCall(node) {
-  return node.callee.type === 'Identifier' && CLASS_HELPERS.has(node.callee.name);
+function isClassHelperCall(
+  node,
+) {
+  return (
+    node
+      .callee
+      .type ===
+      'Identifier' &&
+    CLASS_HELPERS.has(
+      node
+        .callee
+        .name,
+    )
+  );
 }
 
 /**
  * @param {(node: import('estree').Node, text: string) => void} check
  */
-export function classStringVisitors(check) {
+export function classStringVisitors(
+  check,
+) {
   let depth = 0;
   return {
-    JSXAttribute(node) {
-      if (isClassAttribute(node)) depth++;
+    JSXAttribute(
+      node,
+    ) {
+      if (
+        isClassAttribute(
+          node,
+        )
+      )
+        depth++;
     },
-    'JSXAttribute:exit'(node) {
-      if (isClassAttribute(node)) depth--;
+    'JSXAttribute:exit'(
+      node,
+    ) {
+      if (
+        isClassAttribute(
+          node,
+        )
+      )
+        depth--;
     },
-    CallExpression(node) {
-      if (isClassHelperCall(node)) depth++;
+    CallExpression(
+      node,
+    ) {
+      if (
+        isClassHelperCall(
+          node,
+        )
+      )
+        depth++;
     },
-    'CallExpression:exit'(node) {
-      if (isClassHelperCall(node)) depth--;
+    'CallExpression:exit'(
+      node,
+    ) {
+      if (
+        isClassHelperCall(
+          node,
+        )
+      )
+        depth--;
     },
-    Literal(node) {
-      if (depth > 0 && typeof node.value === 'string') check(node, node.value);
+    Literal(
+      node,
+    ) {
+      if (
+        depth >
+          0 &&
+        typeof node.value ===
+          'string'
+      )
+        check(
+          node,
+          node.value,
+        );
     },
-    TemplateElement(node) {
-      if (depth > 0) check(node, node.value.cooked ?? node.value.raw);
+    TemplateElement(
+      node,
+    ) {
+      if (
+        depth >
+        0
+      )
+        check(
+          node,
+          node
+            .value
+            .cooked ??
+            node
+              .value
+              .raw,
+        );
     },
   };
 }
@@ -63,23 +151,60 @@ export function classStringVisitors(check) {
  * @param {string} opts.message   may use `{{match}}`
  * @param {RegExp} opts.pattern   must carry the `g` flag
  */
-export function createPatternRule({ description, message, pattern }) {
+export function createPatternRule({
+  description,
+  message,
+  pattern,
+}) {
   return {
     meta: {
       type: 'problem',
-      docs: { description },
-      schema: [],
-      messages: { found: message },
+      docs: {
+        description,
+      },
+      schema:
+        [],
+      messages:
+        {
+          found:
+            message,
+        },
     },
-    create(context) {
-      return classStringVisitors((node, text) => {
-        pattern.lastIndex = 0;
-        let m;
-        while ((m = pattern.exec(text))) {
-          context.report({ node, messageId: 'found', data: { match: m[0] } });
-          if (m[0] === '') pattern.lastIndex++;
-        }
-      });
+    create(
+      context,
+    ) {
+      return classStringVisitors(
+        (
+          node,
+          text,
+        ) => {
+          pattern.lastIndex = 0;
+          let m;
+          while (
+            (m =
+              pattern.exec(
+                text,
+              ))
+          ) {
+            context.report(
+              {
+                node,
+                messageId:
+                  'found',
+                data: {
+                  match:
+                    m[0],
+                },
+              },
+            );
+            if (
+              m[0] ===
+              ''
+            )
+              pattern.lastIndex++;
+          }
+        },
+      );
     },
   };
 }

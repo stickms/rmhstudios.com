@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
 import {
   buildIconManifest,
   buildModelManifest,
@@ -30,103 +34,285 @@ const ITEMS_GAME = `
 const ENGLISH = `"lang" { "Tokens" { "T_Gun" "Gun" "T_Hat" "Hat" } }`;
 
 describe('buildModelManifest', () => {
-  const m = buildModelManifest(ITEMS_GAME, ENGLISH);
+  const m =
+    buildModelManifest(
+      ITEMS_GAME,
+      ENGLISH,
+    );
 
   it('lists one shared model, normalising the path', () => {
-    expect(m.find((i) => i.id === 13)?.models).toEqual([
-      { mdl: 'models/weapons/c_scattergun.mdl', role: 'main', glb: '13.glb' },
-    ]);
+    expect(
+      m.find(
+        (
+          i,
+        ) =>
+          i.id ===
+          13,
+      )
+        ?.models,
+    ).toEqual(
+      [
+        {
+          mdl: 'models/weapons/c_scattergun.mdl',
+          role: 'main',
+          glb: '13.glb',
+        },
+      ],
+    );
   });
 
   it('expands a per-class basename, using the game\'s "demo" spelling', () => {
-    expect(m.find((i) => i.id === 940)?.models).toEqual([
-      {
-        class: 'soldier',
-        mdl: 'models/player/items/all_class/gibus_soldier.mdl',
-        role: 'main',
-        glb: '940_soldier.glb',
-      },
-      {
-        class: 'demoman',
-        mdl: 'models/player/items/all_class/gibus_demo.mdl',
-        role: 'main',
-        glb: '940_demoman.glb',
-      },
-    ]);
+    expect(
+      m.find(
+        (
+          i,
+        ) =>
+          i.id ===
+          940,
+      )
+        ?.models,
+    ).toEqual(
+      [
+        {
+          class:
+            'soldier',
+          mdl: 'models/player/items/all_class/gibus_soldier.mdl',
+          role: 'main',
+          glb: '940_soldier.glb',
+        },
+        {
+          class:
+            'demoman',
+          mdl: 'models/player/items/all_class/gibus_demo.mdl',
+          role: 'main',
+          glb: '940_demoman.glb',
+        },
+      ],
+    );
   });
 
   it('fills every %s of a basename (a class folder and a class file name)', () => {
     const bill =
       '"944" { "name" "Bill" "prefab" "base_hat" "item_name" "#T_Hat" "model_player_per_class" ' +
       '{ "basename" "models/player/items/%s/%s_bill.mdl" } "used_by_classes" { "demoman" "1" } }';
-    const out = buildModelManifest(ITEMS_GAME.replace('"943"', `${bill}\n    "943"`), ENGLISH);
-    expect(out.find((i) => i.id === 944)?.models[0]?.mdl).toBe(
+    const out =
+      buildModelManifest(
+        ITEMS_GAME.replace(
+          '"943"',
+          `${bill}\n    "943"`,
+        ),
+        ENGLISH,
+      );
+    expect(
+      out.find(
+        (
+          i,
+        ) =>
+          i.id ===
+          944,
+      )
+        ?.models[0]
+        ?.mdl,
+    ).toBe(
       'models/player/items/demo/demo_bill.mdl',
     );
   });
 
   it('includes an extra wearable in the weapon so every viewer loads it', () => {
-    expect(m.find((i) => i.id === 941)?.models).toEqual([
-      {
-        mdl: 'models/w/shield.mdl',
-        role: 'main',
-        glb: '941.glb',
-        attachments: [{ mdl: 'models/w/shield_back.mdl', skin: 0 }],
-      },
-    ]);
+    expect(
+      m.find(
+        (
+          i,
+        ) =>
+          i.id ===
+          941,
+      )
+        ?.models,
+    ).toEqual(
+      [
+        {
+          mdl: 'models/w/shield.mdl',
+          role: 'main',
+          glb: '941.glb',
+          attachments:
+            [
+              {
+                mdl: 'models/w/shield_back.mdl',
+                skin: 0,
+              },
+            ],
+        },
+      ],
+    );
   });
 
   it('skips excluded families and items with no model', () => {
-    expect(m.map((i) => i.id)).toEqual([13, 940, 941]);
+    expect(
+      m.map(
+        (
+          i,
+        ) =>
+          i.id,
+      ),
+    ).toEqual(
+      [
+        13,
+        940,
+        941,
+      ],
+    );
   });
 
   it('lists each .mdl once', () => {
-    expect(uniqueModels(m)).toHaveLength(5);
+    expect(
+      uniqueModels(
+        m,
+      ),
+    ).toHaveLength(
+      5,
+    );
   });
 });
 
 describe('pickModel', () => {
-  const ids = new Set(['940_soldier', '13']);
+  const ids =
+    new Set(
+      [
+        '940_soldier',
+        '13',
+      ],
+    );
   it('prefers the per-class variant, then the shared model, else none', () => {
-    expect(pickModel(ids, 940, 'soldier')).toBe('940_soldier');
-    expect(pickModel(ids, 940, 'scout')).toBeNull();
-    expect(pickModel(ids, 13, 'scout')).toBe('13');
-    expect(pickModel(ids, 7)).toBeNull();
+    expect(
+      pickModel(
+        ids,
+        940,
+        'soldier',
+      ),
+    ).toBe(
+      '940_soldier',
+    );
+    expect(
+      pickModel(
+        ids,
+        940,
+        'scout',
+      ),
+    ).toBeNull();
+    expect(
+      pickModel(
+        ids,
+        13,
+        'scout',
+      ),
+    ).toBe(
+      '13',
+    );
+    expect(
+      pickModel(
+        ids,
+        7,
+      ),
+    ).toBeNull();
   });
 });
 
 describe('buildIconManifest', () => {
-  const icons = buildIconManifest(ITEMS_GAME, ENGLISH);
+  const icons =
+    buildIconManifest(
+      ITEMS_GAME,
+      ENGLISH,
+    );
 
   it('lists the inventory icon of every loadout item, normalised, including ones with no model', () => {
-    expect(icons).toEqual([
-      { id: 13, icon: 'backpack/weapons/c_models/c_scattergun/c_scattergun', file: '13.webp' },
-      { id: 943, icon: 'backpack/player/items/scout/nomodel', file: '943.webp' },
-    ]);
+    expect(
+      icons,
+    ).toEqual(
+      [
+        {
+          id: 13,
+          icon: 'backpack/weapons/c_models/c_scattergun/c_scattergun',
+          file: '13.webp',
+        },
+        {
+          id: 943,
+          icon: 'backpack/player/items/scout/nomodel',
+          file: '943.webp',
+        },
+      ],
+    );
   });
 
   it('skips excluded families', () => {
-    expect(icons.some((i) => i.id === 942)).toBe(false);
+    expect(
+      icons.some(
+        (
+          i,
+        ) =>
+          i.id ===
+          942,
+      ),
+    ).toBe(
+      false,
+    );
   });
 });
 
 describe('classModelEntries', () => {
-  const entry = classModelEntries();
+  const entry =
+    classModelEntries();
 
   it("lists the nine class bodies, with the game's file-name spellings", () => {
-    expect(entry.models).toHaveLength(9);
-    expect(entry.models.find((m) => m.class === 'demoman')).toEqual({
-      class: 'demoman',
-      mdl: 'models/player/demo.mdl',
-      role: 'main',
-      glb: 'class_demoman.glb',
-    });
+    expect(
+      entry.models,
+    ).toHaveLength(
+      9,
+    );
+    expect(
+      entry.models.find(
+        (
+          m,
+        ) =>
+          m.class ===
+          'demoman',
+      ),
+    ).toEqual(
+      {
+        class:
+          'demoman',
+        mdl: 'models/player/demo.mdl',
+        role: 'main',
+        glb: 'class_demoman.glb',
+      },
+    );
   });
 
   it('names every body in a form the model routes accept, and nothing like an item id', () => {
-    for (const m of entry.models) expect(MODEL_NAME.test(m.glb.replace(/\.glb$/, ''))).toBe(true);
-    expect(MODEL_NAME.test('class_')).toBe(false);
-    expect(MODEL_NAME.test('class_../x')).toBe(false);
+    for (const m of entry.models)
+      expect(
+        MODEL_NAME.test(
+          m.glb.replace(
+            /\.glb$/,
+            '',
+          ),
+        ),
+      ).toBe(
+        true,
+      );
+    expect(
+      MODEL_NAME.test(
+        'class_',
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      MODEL_NAME.test(
+        'class_../x',
+      ),
+    ).toBe(
+      false,
+    );
   });
 });
 
@@ -142,17 +328,61 @@ describe('stock weapons', () => {
     "200" { "name" "Internal" "prefab" "weapon_base" "hidden" "1" "model_player" "models/w/internal.mdl" "used_by_classes" { "soldier" "1" } }
   }
 }`;
-    expect(buildModelManifest(items, ENGLISH).map((i) => i.id)).toEqual([199]);
+    expect(
+      buildModelManifest(
+        items,
+        ENGLISH,
+      ).map(
+        (
+          i,
+        ) =>
+          i.id,
+      ),
+    ).toEqual(
+      [
+        199,
+      ],
+    );
   });
 });
 
 describe('animation clip names', () => {
   it('are accepted by the model routes, and nothing path-like is', () => {
-    expect(MODEL_NAME.test('anim_scout_taunt_conga')).toBe(true);
-    expect(MODEL_NAME.test('anim_demoman_taunt_rps_rock_win')).toBe(true);
-    expect(MODEL_NAME.test('anim_scout_../x')).toBe(false);
-    expect(MODEL_NAME.test('anim_scout_')).toBe(false);
-    expect(MODEL_NAME.test('anim__taunt')).toBe(false);
+    expect(
+      MODEL_NAME.test(
+        'anim_scout_taunt_conga',
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      MODEL_NAME.test(
+        'anim_demoman_taunt_rps_rock_win',
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      MODEL_NAME.test(
+        'anim_scout_../x',
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      MODEL_NAME.test(
+        'anim_scout_',
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      MODEL_NAME.test(
+        'anim__taunt',
+      ),
+    ).toBe(
+      false,
+    );
   });
 });
 
@@ -173,9 +403,29 @@ describe('buildTauntManifest', () => {
   }
 }`;
   it('lists the scene each class plays, as a bare name, including a class with several', () => {
-    expect(buildTauntManifest(items, ENGLISH)).toEqual([
-      { id: 1118, scenes: { scout: ['taunt_conga'], pyro: ['taunt_conga', 'taunt_conga2'] } },
-    ]);
+    expect(
+      buildTauntManifest(
+        items,
+        ENGLISH,
+      ),
+    ).toEqual(
+      [
+        {
+          id: 1118,
+          scenes:
+            {
+              scout:
+                [
+                  'taunt_conga',
+                ],
+              pyro: [
+                'taunt_conga',
+                'taunt_conga2',
+              ],
+            },
+        },
+      ],
+    );
   });
 });
 
@@ -197,18 +447,78 @@ describe('item styles', () => {
       "visuals" { "styles" { "1" { "name" "Alt" "model_player_per_class" { "basename" "models/p/ch_alt_%s.mdl" } } } } }
   }
 }`;
-  const m = buildModelManifest(items, ENGLISH);
+  const m =
+    buildModelManifest(
+      items,
+      ENGLISH,
+    );
   it('publishes a style that changes the model, or only the skin, as its own file', () => {
-    expect(m.find((i) => i.id === 701)?.models).toEqual([
-      { mdl: 'models/p/hat.mdl', role: 'main', glb: '701.glb' },
-      { mdl: 'models/p/hat_alt.mdl', role: 'main', glb: '701_s1.glb', style: 1 },
-      { mdl: 'models/p/hat.mdl', role: 'main', glb: '701_s2.glb', style: 2, skin: 2, skinBlu: 3 },
-    ]);
+    expect(
+      m.find(
+        (
+          i,
+        ) =>
+          i.id ===
+          701,
+      )
+        ?.models,
+    ).toEqual(
+      [
+        {
+          mdl: 'models/p/hat.mdl',
+          role: 'main',
+          glb: '701.glb',
+        },
+        {
+          mdl: 'models/p/hat_alt.mdl',
+          role: 'main',
+          glb: '701_s1.glb',
+          style: 1,
+        },
+        {
+          mdl: 'models/p/hat.mdl',
+          role: 'main',
+          glb: '701_s2.glb',
+          style: 2,
+          skin: 2,
+          skinBlu: 3,
+        },
+      ],
+    );
   });
   it('names per-class style models by class and style, in a form the routes accept', () => {
-    const models = m.find((i) => i.id === 702)!.models;
-    expect(models.map((x) => x.glb)).toEqual(['702_demoman.glb', '702_demoman_s1.glb']);
-    for (const x of models) expect(MODEL_NAME.test(x.glb.replace(/\.glb$/, ''))).toBe(true);
+    const models =
+      m.find(
+        (
+          i,
+        ) =>
+          i.id ===
+          702,
+      )!.models;
+    expect(
+      models.map(
+        (
+          x,
+        ) =>
+          x.glb,
+      ),
+    ).toEqual(
+      [
+        '702_demoman.glb',
+        '702_demoman_s1.glb',
+      ],
+    );
+    for (const x of models)
+      expect(
+        MODEL_NAME.test(
+          x.glb.replace(
+            /\.glb$/,
+            '',
+          ),
+        ),
+      ).toBe(
+        true,
+      );
   });
 });
 
@@ -226,28 +536,135 @@ describe('team skins', () => {
           "extra_wearable" "models/p/head.mdl" "visuals_red" { "skin" "6" } "visuals_blu" { "skin" "7" } }
       }
     }`;
-    const byId = Object.fromEntries(buildModelManifest(items, ENGLISH).map((m) => [m.id, m]));
-    expect(byId[801].models[0]).toEqual({ mdl: 'models/p/a.mdl', role: 'main', glb: '801.glb' });
-    expect(byId[802].models[0]).toMatchObject({ skin: 2, skinBlu: 3 });
+    const byId =
+      Object.fromEntries(
+        buildModelManifest(
+          items,
+          ENGLISH,
+        ).map(
+          (
+            m,
+          ) => [
+            m.id,
+            m,
+          ],
+        ),
+      );
+    expect(
+      byId[801]
+        .models[0],
+    ).toEqual(
+      {
+        mdl: 'models/p/a.mdl',
+        role: 'main',
+        glb: '801.glb',
+      },
+    );
+    expect(
+      byId[802]
+        .models[0],
+    ).toMatchObject(
+      {
+        skin: 2,
+        skinBlu: 3,
+      },
+    );
     // A style that sets one `skin` shows it on both teams (no team colours to switch).
-    expect(byId[803].models).toEqual([
-      { mdl: 'models/p/c.mdl', role: 'main', glb: '803.glb', skinBlu: 0 },
-      { mdl: 'models/p/c.mdl', role: 'main', glb: '803_s1.glb', style: 1, skin: 1, skinBlu: 1 },
-    ]);
-    expect(byId[804].models[0].attachments).toEqual([
-      { mdl: 'models/p/head.mdl', skin: 6, skinBlu: 7 },
-    ]);
+    expect(
+      byId[803]
+        .models,
+    ).toEqual(
+      [
+        {
+          mdl: 'models/p/c.mdl',
+          role: 'main',
+          glb: '803.glb',
+          skinBlu: 0,
+        },
+        {
+          mdl: 'models/p/c.mdl',
+          role: 'main',
+          glb: '803_s1.glb',
+          style: 1,
+          skin: 1,
+          skinBlu: 1,
+        },
+      ],
+    );
+    expect(
+      byId[804]
+        .models[0]
+        .attachments,
+    ).toEqual(
+      [
+        {
+          mdl: 'models/p/head.mdl',
+          skin: 6,
+          skinBlu: 7,
+        },
+      ],
+    );
   });
 });
 
 describe('pickModel with styles', () => {
   it('prefers the style file, then the class file, then the shared one', () => {
-    const ids = new Set(['701', '701_s1', '702_demoman', '702_demoman_s1']);
-    expect(pickModel(ids, 701, 'scout', 1)).toBe('701_s1');
-    expect(pickModel(ids, 701, 'scout', 2)).toBe('701');
-    expect(pickModel(ids, 702, 'demoman', 1)).toBe('702_demoman_s1');
-    expect(pickModel(ids, 702, 'demoman')).toBe('702_demoman');
-    expect(pickModel(ids, 999, 'demoman', 1)).toBeNull();
+    const ids =
+      new Set(
+        [
+          '701',
+          '701_s1',
+          '702_demoman',
+          '702_demoman_s1',
+        ],
+      );
+    expect(
+      pickModel(
+        ids,
+        701,
+        'scout',
+        1,
+      ),
+    ).toBe(
+      '701_s1',
+    );
+    expect(
+      pickModel(
+        ids,
+        701,
+        'scout',
+        2,
+      ),
+    ).toBe(
+      '701',
+    );
+    expect(
+      pickModel(
+        ids,
+        702,
+        'demoman',
+        1,
+      ),
+    ).toBe(
+      '702_demoman_s1',
+    );
+    expect(
+      pickModel(
+        ids,
+        702,
+        'demoman',
+      ),
+    ).toBe(
+      '702_demoman',
+    );
+    expect(
+      pickModel(
+        ids,
+        999,
+        'demoman',
+        1,
+      ),
+    ).toBeNull();
   });
 });
 
@@ -262,10 +679,37 @@ describe('per-class cosmetics', () => {
         "166" { "name" "Also plain" "prefab" "hat" "model_player" "models/p/cap.mdl" }
       }
     }`;
-    const byId = Object.fromEntries(buildModelManifest(items, ENGLISH).map((m) => [m.id, m]));
-    expect(byId[164].models[0].classBodygroup).toBe(true);
-    expect(byId[165].models[0].classBodygroup).toBeUndefined();
-    expect(byId[166].models[0].classBodygroup).toBeUndefined();
+    const byId =
+      Object.fromEntries(
+        buildModelManifest(
+          items,
+          ENGLISH,
+        ).map(
+          (
+            m,
+          ) => [
+            m.id,
+            m,
+          ],
+        ),
+      );
+    expect(
+      byId[164]
+        .models[0]
+        .classBodygroup,
+    ).toBe(
+      true,
+    );
+    expect(
+      byId[165]
+        .models[0]
+        .classBodygroup,
+    ).toBeUndefined();
+    expect(
+      byId[166]
+        .models[0]
+        .classBodygroup,
+    ).toBeUndefined();
   });
 });
 
@@ -284,17 +728,43 @@ describe('weapon attachment dependencies', () => {
         } }
       } }
     }`;
-    const manifest = buildModelManifest(items, ENGLISH);
-    expect(manifest[0].models[0].attachments).toEqual([
-      { mdl: 'models/head.mdl', skin: 6 },
-      { mdl: 'models/chain.mdl', skin: 6 },
-      { mdl: 'models/lights.mdl', skin: 6, festive: true },
-    ]);
-    expect(uniqueModels(manifest)).toEqual([
-      'models/chain.mdl',
-      'models/gun.mdl',
-      'models/head.mdl',
-      'models/lights.mdl',
-    ]);
+    const manifest =
+      buildModelManifest(
+        items,
+        ENGLISH,
+      );
+    expect(
+      manifest[0]
+        .models[0]
+        .attachments,
+    ).toEqual(
+      [
+        {
+          mdl: 'models/head.mdl',
+          skin: 6,
+        },
+        {
+          mdl: 'models/chain.mdl',
+          skin: 6,
+        },
+        {
+          mdl: 'models/lights.mdl',
+          skin: 6,
+          festive: true,
+        },
+      ],
+    );
+    expect(
+      uniqueModels(
+        manifest,
+      ),
+    ).toEqual(
+      [
+        'models/chain.mdl',
+        'models/gun.mdl',
+        'models/head.mdl',
+        'models/lights.mdl',
+      ],
+    );
   });
 });

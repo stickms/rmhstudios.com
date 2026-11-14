@@ -1,8 +1,24 @@
-import { describe, it, expect } from 'vitest';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+} from 'node:fs';
 import { join } from 'node:path';
-import { games, apps } from '@/lib/catalog';
-import { GAME_CAPABILITIES, playabilityFor, type GameCapabilities } from '@/lib/game-capabilities';
+import {
+  games,
+  apps,
+} from '@/lib/catalog';
+import {
+  GAME_CAPABILITIES,
+  playabilityFor,
+  type GameCapabilities,
+} from '@/lib/game-capabilities';
 import { SHARED_SAVE_GAMES } from '@/lib/game-saves/registry';
 import { WAGER_ELIGIBLE_GAMES } from '@/lib/wager/eligible-games';
 
@@ -14,19 +30,62 @@ import { WAGER_ELIGIBLE_GAMES } from '@/lib/wager/eligible-games';
  * against a realtime module, save scope against the save registry.
  */
 
-const ROOT = process.cwd();
+const ROOT =
+  process.cwd();
 
-function readSources(dirs: string[]): string {
-  let out = '';
-  const walk = (dir: string) => {
-    if (!existsSync(dir)) return;
-    for (const entry of readdirSync(dir)) {
-      const p = join(dir, entry);
-      if (statSync(p).isDirectory()) walk(p);
-      else if (/\.(ts|tsx)$/.test(p) && !p.includes('__tests__')) out += readFileSync(p, 'utf8');
-    }
-  };
-  for (const d of dirs) walk(join(ROOT, d));
+function readSources(
+  dirs: string[],
+): string {
+  let out =
+    '';
+  const walk =
+    (
+      dir: string,
+    ) => {
+      if (
+        !existsSync(
+          dir,
+        )
+      )
+        return;
+      for (const entry of readdirSync(
+        dir,
+      )) {
+        const p =
+          join(
+            dir,
+            entry,
+          );
+        if (
+          statSync(
+            p,
+          ).isDirectory()
+        )
+          walk(
+            p,
+          );
+        else if (
+          /\.(ts|tsx)$/.test(
+            p,
+          ) &&
+          !p.includes(
+            '__tests__',
+          )
+        )
+          out +=
+            readFileSync(
+              p,
+              'utf8',
+            );
+      }
+    };
+  for (const d of dirs)
+    walk(
+      join(
+        ROOT,
+        d,
+      ),
+    );
   return out;
 }
 
@@ -36,64 +95,249 @@ function readSources(dirs: string[]): string {
  * wrapper and a stylesheet — so the convention would check the wrong files and
  * report a game with a full multiplayer lobby as having none.
  */
-const SOURCE_OVERRIDES: Record<string, string[]> = {
-  'slice-it': ['lib/game', 'components/game', 'features/slice-it/engine', 'features/slice-it/ui'],
-  // The Valve games share one browser engine: the SP simulation, the game client and the HUD.
-  'half-life-2': ['lib/sp-game', 'lib/tf2-game/client', 'components/sp-game', 'components/tf2-game'],
-  portal: ['lib/sp-game', 'lib/tf2-game/client', 'components/sp-game', 'components/tf2-game'],
-  csgo: ['lib/csgo-game', 'lib/tf2-game/client', 'components/csgo-game', 'components/tf2-game'],
-};
+const SOURCE_OVERRIDES: Record<
+  string,
+  string[]
+> =
+  {
+    'slice-it':
+      [
+        'lib/game',
+        'components/game',
+        'features/slice-it/engine',
+        'features/slice-it/ui',
+      ],
+    // The Valve games share one browser engine: the SP simulation, the game client and the HUD.
+    'half-life-2':
+      [
+        'lib/sp-game',
+        'lib/tf2-game/client',
+        'components/sp-game',
+        'components/tf2-game',
+      ],
+    portal:
+      [
+        'lib/sp-game',
+        'lib/tf2-game/client',
+        'components/sp-game',
+        'components/tf2-game',
+      ],
+    csgo: [
+      'lib/csgo-game',
+      'lib/tf2-game/client',
+      'components/csgo-game',
+      'components/tf2-game',
+    ],
+  };
 
 /** Every source file that belongs to a game, by convention or override. */
-function sourcesFor(gameId: string): string {
-  return readSources(SOURCE_OVERRIDES[gameId] ?? [`lib/${gameId}`, `components/${gameId}`]);
+function sourcesFor(
+  gameId: string,
+): string {
+  return readSources(
+    SOURCE_OVERRIDES[
+      gameId
+    ] ?? [
+      `lib/${gameId}`,
+      `components/${gameId}`,
+    ],
+  );
 }
 
 /**
  * Every socket handler source: the hub's `handlers/*.ts` plus each moved feature's
  * `features/<id>/server/*.ts` (redesign A1).
  */
-function handlerSources(): { file: string; src: string }[] {
-  const dirs = [join(ROOT, 'server/socket-server/handlers')];
-  const featuresDir = join(ROOT, 'features');
-  if (existsSync(featuresDir)) {
-    for (const id of readdirSync(featuresDir)) {
-      const d = join(featuresDir, id, 'server');
-      if (existsSync(d) && statSync(d).isDirectory()) dirs.push(d);
+function handlerSources(): {
+  file: string;
+  src: string;
+}[] {
+  const dirs =
+    [
+      join(
+        ROOT,
+        'server/socket-server/handlers',
+      ),
+    ];
+  const featuresDir =
+    join(
+      ROOT,
+      'features',
+    );
+  if (
+    existsSync(
+      featuresDir,
+    )
+  ) {
+    for (const id of readdirSync(
+      featuresDir,
+    )) {
+      const d =
+        join(
+          featuresDir,
+          id,
+          'server',
+        );
+      if (
+        existsSync(
+          d,
+        ) &&
+        statSync(
+          d,
+        ).isDirectory()
+      )
+        dirs.push(
+          d,
+        );
     }
   }
-  return dirs.flatMap((d) =>
-    readdirSync(d)
-      .filter((n) => n.endsWith('.ts') && !n.endsWith('.test.ts'))
-      .map((n) => ({ file: n, src: readFileSync(join(d, n), 'utf8') })),
+  return dirs.flatMap(
+    (
+      d,
+    ) =>
+      readdirSync(
+        d,
+      )
+        .filter(
+          (
+            n,
+          ) =>
+            n.endsWith(
+              '.ts',
+            ) &&
+            !n.endsWith(
+              '.test.ts',
+            ),
+        )
+        .map(
+          (
+            n,
+          ) => ({
+            file: n,
+            src: readFileSync(
+              join(
+                d,
+                n,
+              ),
+              'utf8',
+            ),
+          }),
+        ),
   );
 }
 
 describe('game capabilities', () => {
   it('covers exactly the game catalog — no missing, no stale entries', () => {
-    const catalog = games.map((g) => g.id).sort();
-    const declared = Object.keys(GAME_CAPABILITIES).sort();
+    const catalog =
+      games
+        .map(
+          (
+            g,
+          ) =>
+            g.id,
+        )
+        .sort();
+    const declared =
+      Object.keys(
+        GAME_CAPABILITIES,
+      ).sort();
     // Missing: a game shipped without capability data, so it can't be filtered,
     // can't get a device badge, and can't get a structured-data block.
-    expect(catalog.filter((id) => !declared.includes(id))).toEqual([]);
+    expect(
+      catalog.filter(
+        (
+          id,
+        ) =>
+          !declared.includes(
+            id,
+          ),
+      ),
+    ).toEqual(
+      [],
+    );
     // Stale: an entry whose game is gone from the catalog.
-    expect(declared.filter((id) => !catalog.includes(id))).toEqual([]);
+    expect(
+      declared.filter(
+        (
+          id,
+        ) =>
+          !catalog.includes(
+            id,
+          ),
+      ),
+    ).toEqual(
+      [],
+    );
   });
 
   it('declares a coherent input contract', () => {
-    for (const [id, caps] of Object.entries(GAME_CAPABILITIES)) {
+    for (const [
+      id,
+      caps,
+    ] of Object.entries(
+      GAME_CAPABILITIES,
+    )) {
       // Anything required must also be listed as supported, or the device badge
       // computes a game as unplayable on hardware it actually runs on.
-      const unsupported = caps.input.required.filter((m) => !caps.input.supported.includes(m));
-      expect({ id, unsupported }).toEqual({ id, unsupported: [] });
-      expect(caps.input.supported.length).toBeGreaterThan(0);
+      const unsupported =
+        caps.input.required.filter(
+          (
+            m,
+          ) =>
+            !caps.input.supported.includes(
+              m,
+            ),
+        );
+      expect(
+        {
+          id,
+          unsupported,
+        },
+      ).toEqual(
+        {
+          id,
+          unsupported:
+            [],
+        },
+      );
+      expect(
+        caps
+          .input
+          .supported
+          .length,
+      ).toBeGreaterThan(
+        0,
+      );
     }
   });
 
   it('declares a sane session range', () => {
-    for (const [id, caps] of Object.entries(GAME_CAPABILITIES)) {
-      const [min, max] = caps.sessionMinutes;
-      expect({ id, ok: min > 0 && max >= min }).toEqual({ id, ok: true });
+    for (const [
+      id,
+      caps,
+    ] of Object.entries(
+      GAME_CAPABILITIES,
+    )) {
+      const [
+        min,
+        max,
+      ] =
+        caps.sessionMinutes;
+      expect(
+        {
+          id,
+          ok:
+            min >
+              0 &&
+            max >=
+              min,
+        },
+      ).toEqual(
+        {
+          id,
+          ok: true,
+        },
+      );
     }
   });
 
@@ -102,11 +346,42 @@ describe('game capabilities', () => {
     // cap, and inventing a number to satisfy a test would be exactly the kind of
     // decorative metadata this registry exists to avoid. Omission is the honest
     // answer, so the check is one-directional.
-    for (const [id, caps] of Object.entries(GAME_CAPABILITIES)) {
-      const online = caps.players.some((p) => p === 'online-versus' || p === 'online-coop');
-      if (caps.maxPlayers !== undefined) {
-        expect({ id, online }).toEqual({ id, online: true });
-        expect(caps.maxPlayers).toBeGreaterThan(1);
+    for (const [
+      id,
+      caps,
+    ] of Object.entries(
+      GAME_CAPABILITIES,
+    )) {
+      const online =
+        caps.players.some(
+          (
+            p,
+          ) =>
+            p ===
+              'online-versus' ||
+            p ===
+              'online-coop',
+        );
+      if (
+        caps.maxPlayers !==
+        undefined
+      ) {
+        expect(
+          {
+            id,
+            online,
+          },
+        ).toEqual(
+          {
+            id,
+            online: true,
+          },
+        );
+        expect(
+          caps.maxPlayers,
+        ).toBeGreaterThan(
+          1,
+        );
       }
     }
   });
@@ -114,43 +389,132 @@ describe('game capabilities', () => {
   // ── Claims checked against the code, not restated ────────────────────────
 
   it('save scope agrees with the shared-save registry', () => {
-    const declaredShared = Object.entries(GAME_CAPABILITIES)
-      .filter(([, c]) => c.save === 'shared-table')
-      .map(([id]) => id)
-      .sort();
-    expect(declaredShared).toEqual([...SHARED_SAVE_GAMES].sort());
+    const declaredShared =
+      Object.entries(
+        GAME_CAPABILITIES,
+      )
+        .filter(
+          ([
+            ,
+            c,
+          ]) =>
+            c.save ===
+            'shared-table',
+        )
+        .map(
+          ([
+            id,
+          ]) =>
+            id,
+        )
+        .sort();
+    expect(
+      declaredShared,
+    ).toEqual(
+      [
+        ...SHARED_SAVE_GAMES,
+      ].sort(),
+    );
   });
 
   it('every game claiming touch support has touch handling in its source', () => {
-    const TOUCH = /TouchControls|MobileControls|onTouchStart|touchstart|pointerdown|PointerEvent/;
-    const missing: string[] = [];
-    for (const [id, caps] of Object.entries(GAME_CAPABILITIES)) {
-      if (!caps.input.supported.includes('touch')) continue;
-      const src = sourcesFor(id);
+    const TOUCH =
+      /TouchControls|MobileControls|onTouchStart|touchstart|pointerdown|PointerEvent/;
+    const missing: string[] =
+      [];
+    for (const [
+      id,
+      caps,
+    ] of Object.entries(
+      GAME_CAPABILITIES,
+    )) {
+      if (
+        !caps.input.supported.includes(
+          'touch',
+        )
+      )
+        continue;
+      const src =
+        sourcesFor(
+          id,
+        );
       // A game with no directory of its own (its code lives in a shared shell or
       // a route file) can't be checked this way; skip rather than fail falsely.
-      if (!src) continue;
+      if (
+        !src
+      )
+        continue;
       // `dom` games are React components — touch works through ordinary click
       // handling, so there is nothing specific to find.
-      if (caps.engine === 'dom') continue;
-      if (!TOUCH.test(src)) missing.push(id);
+      if (
+        caps.engine ===
+        'dom'
+      )
+        continue;
+      if (
+        !TOUCH.test(
+          src,
+        )
+      )
+        missing.push(
+          id,
+        );
     }
-    expect(missing).toEqual([]);
+    expect(
+      missing,
+    ).toEqual(
+      [],
+    );
   });
 
   it('every game claiming online play has a realtime module', () => {
-    const missing: string[] = [];
-    for (const [id, caps] of Object.entries(GAME_CAPABILITIES)) {
-      const online = caps.players.some((p) => p === 'online-versus' || p === 'online-coop');
-      if (!online) continue;
-      const src = sourcesFor(id);
-      if (!src) continue;
-      if (!/socket|multiplayer|realtime/i.test(src)) missing.push(id);
+    const missing: string[] =
+      [];
+    for (const [
+      id,
+      caps,
+    ] of Object.entries(
+      GAME_CAPABILITIES,
+    )) {
+      const online =
+        caps.players.some(
+          (
+            p,
+          ) =>
+            p ===
+              'online-versus' ||
+            p ===
+              'online-coop',
+        );
+      if (
+        !online
+      )
+        continue;
+      const src =
+        sourcesFor(
+          id,
+        );
+      if (
+        !src
+      )
+        continue;
+      if (
+        !/socket|multiplayer|realtime/i.test(
+          src,
+        )
+      )
+        missing.push(
+          id,
+        );
     }
-    expect(missing).toEqual([]);
+    expect(
+      missing,
+    ).toEqual(
+      [],
+    );
   });
 
-  it('partyCapable matches the socket server\'s party registry exactly', () => {
+  it("partyCapable matches the socket server's party registry exactly", () => {
     // The badge this drives says "you can bring your party straight into this".
     // A claim without a registry entry is a button that errors; a registry
     // entry without a claim is a feature nobody is told about. Both directions
@@ -159,41 +523,143 @@ describe('game capabilities', () => {
     // Resolve both spellings: a literal id, and the `GAME_ID` constant that
     // Bum's Rush registers with. A test that only saw literals would quietly
     // stop covering any game that tidied its id into a constant.
-    const registered = new Set<string>();
-    for (const { file: f, src } of handlerSources()) {
-      const call = src.match(/registerPartyGame\(\s*(?:'([^']+)'|([A-Za-z_$][\w$]*))/);
-      if (!call) continue;
-      if (call[1]) {
-        registered.add(call[1]);
+    const registered =
+      new Set<string>();
+    for (const {
+      file: f,
+      src,
+    } of handlerSources()) {
+      const call =
+        src.match(
+          /registerPartyGame\(\s*(?:'([^']+)'|([A-Za-z_$][\w$]*))/,
+        );
+      if (
+        !call
+      )
+        continue;
+      if (
+        call[1]
+      ) {
+        registered.add(
+          call[1],
+        );
         continue;
       }
-      const constant = src.match(new RegExp(`const ${call[2]}\\s*=\\s*'([^']+)'`));
-      expect({ file: f, resolved: Boolean(constant) }).toEqual({ file: f, resolved: true });
-      if (constant) registered.add(constant[1]);
+      const constant =
+        src.match(
+          new RegExp(
+            `const ${call[2]}\\s*=\\s*'([^']+)'`,
+          ),
+        );
+      expect(
+        {
+          file: f,
+          resolved:
+            Boolean(
+              constant,
+            ),
+        },
+      ).toEqual(
+        {
+          file: f,
+          resolved: true,
+        },
+      );
+      if (
+        constant
+      )
+        registered.add(
+          constant[1],
+        );
     }
 
-    const claimed = Object.entries(GAME_CAPABILITIES)
-      .filter(([, c]) => c.partyCapable)
-      .map(([id]) => id)
-      .sort();
+    const claimed =
+      Object.entries(
+        GAME_CAPABILITIES,
+      )
+        .filter(
+          ([
+            ,
+            c,
+          ]) =>
+            c.partyCapable,
+        )
+        .map(
+          ([
+            id,
+          ]) =>
+            id,
+        )
+        .sort();
 
     // Intersect with the catalog: the casino tables register too (hold'em is
     // party-capable and real), and they have no `GameInfo` entry to carry a
     // flag, so they are legitimately registered-but-unclaimed.
-    const catalogIds = new Set(games.map((g) => g.id));
-    const registeredInCatalog = [...registered].filter((id) => catalogIds.has(id)).sort();
+    const catalogIds =
+      new Set(
+        games.map(
+          (
+            g,
+          ) =>
+            g.id,
+        ),
+      );
+    const registeredInCatalog =
+      [
+        ...registered,
+      ]
+        .filter(
+          (
+            id,
+          ) =>
+            catalogIds.has(
+              id,
+            ),
+        )
+        .sort();
 
-    expect(claimed).toEqual(registeredInCatalog);
+    expect(
+      claimed,
+    ).toEqual(
+      registeredInCatalog,
+    );
   });
 
   it('no game claims party support without also claiming online play', () => {
     // A party is several people in one room. A game that says it is
     // single-player only and also says it seats a party is describing two
     // different games.
-    for (const [id, caps] of Object.entries(GAME_CAPABILITIES)) {
-      if (!caps.partyCapable) continue;
-      const online = caps.players.some((p) => p === 'online-versus' || p === 'online-coop');
-      expect({ id, online }).toEqual({ id, online: true });
+    for (const [
+      id,
+      caps,
+    ] of Object.entries(
+      GAME_CAPABILITIES,
+    )) {
+      if (
+        !caps.partyCapable
+      )
+        continue;
+      const online =
+        caps.players.some(
+          (
+            p,
+          ) =>
+            p ===
+              'online-versus' ||
+            p ===
+              'online-coop',
+        );
+      expect(
+        {
+          id,
+          online,
+        },
+      ).toEqual(
+        {
+          id,
+          online: true,
+        },
+      );
     }
   });
 
@@ -208,29 +674,106 @@ describe('game capabilities', () => {
     // sweep. The sweepers must respect PARTY_ROOM_GRACE_MS — without it they
     // delete the party's room before it can arrive, which is the opposite bug
     // and just as fatal, so a sweeping game must name the constant.
-    const registered: { id: string; file: string; src: string }[] = [];
-    for (const { file: f, src } of handlerSources()) {
-      const m = src.match(/registerPartyGame\(\s*(?:'([^']+)'|([A-Z_]+))/);
-      if (m) registered.push({ id: m[1] ?? m[2], file: f, src });
+    const registered: {
+      id: string;
+      file: string;
+      src: string;
+    }[] =
+      [];
+    for (const {
+      file: f,
+      src,
+    } of handlerSources()) {
+      const m =
+        src.match(
+          /registerPartyGame\(\s*(?:'([^']+)'|([A-Z_]+))/,
+        );
+      if (
+        m
+      )
+        registered.push(
+          {
+            id:
+              m[1] ??
+              m[2],
+            file: f,
+            src,
+          },
+        );
     }
-    expect(registered.length).toBeGreaterThan(0);
+    expect(
+      registered.length,
+    ).toBeGreaterThan(
+      0,
+    );
 
-    for (const { id, src } of registered) {
-      const reaps = /reapIfEmpty\s*\(/.test(src);
-      const sweeps = /setInterval\(/.test(src) && src.includes('PARTY_ROOM_GRACE_MS');
-      expect({ id, reclaimable: reaps || sweeps }).toEqual({ id, reclaimable: true });
+    for (const {
+      id,
+      src,
+    } of registered) {
+      const reaps =
+        /reapIfEmpty\s*\(/.test(
+          src,
+        );
+      const sweeps =
+        /setInterval\(/.test(
+          src,
+        ) &&
+        src.includes(
+          'PARTY_ROOM_GRACE_MS',
+        );
+      expect(
+        {
+          id,
+          reclaimable:
+            reaps ||
+            sweeps,
+        },
+      ).toEqual(
+        {
+          id,
+          reclaimable: true,
+        },
+      );
     }
   });
 
   it('every webgl game actually reaches for webgl', () => {
-    const missing: string[] = [];
-    for (const [id, caps] of Object.entries(GAME_CAPABILITIES)) {
-      if (caps.engine !== 'webgl') continue;
-      const src = sourcesFor(id);
-      if (!src) continue;
-      if (!/from ['"]three|getContext\(['"]webgl|WebGLRenderer/.test(src)) missing.push(id);
+    const missing: string[] =
+      [];
+    for (const [
+      id,
+      caps,
+    ] of Object.entries(
+      GAME_CAPABILITIES,
+    )) {
+      if (
+        caps.engine !==
+        'webgl'
+      )
+        continue;
+      const src =
+        sourcesFor(
+          id,
+        );
+      if (
+        !src
+      )
+        continue;
+      if (
+        !/from ['"]three|getContext\(['"]webgl|WebGLRenderer/.test(
+          src,
+        )
+      )
+        missing.push(
+          id,
+        );
     }
-    expect(missing).toEqual([]);
+    expect(
+      missing,
+    ).toEqual(
+      [],
+    );
   });
 
   it('never marks a dom game as demanding', () => {
@@ -239,85 +782,325 @@ describe('game capabilities', () => {
     // 2D game with a 3D shell, and `engine` records the heaviest renderer a game
     // reaches for, not how hard it works. A DOM game has no GPU scene at all,
     // which is the half of the rule that actually holds.
-    const wrong = Object.entries(GAME_CAPABILITIES)
-      .filter(([, c]) => c.engine === 'dom' && c.demanding)
-      .map(([id]) => id);
-    expect(wrong).toEqual([]);
+    const wrong =
+      Object.entries(
+        GAME_CAPABILITIES,
+      )
+        .filter(
+          ([
+            ,
+            c,
+          ]) =>
+            c.engine ===
+              'dom' &&
+            c.demanding,
+        )
+        .map(
+          ([
+            id,
+          ]) =>
+            id,
+        );
+    expect(
+      wrong,
+    ).toEqual(
+      [],
+    );
   });
 
   // ── Cross-registry consistency ───────────────────────────────────────────
 
   it('every wager-eligible id resolves to a real game or app', () => {
-    const known = new Set([...games.map((g) => g.id), ...apps.map((a) => a.id)]);
-    const dangling = WAGER_ELIGIBLE_GAMES.filter((g) => !known.has(g.id)).map((g) => g.id);
-    expect(dangling).toEqual([]);
+    const known =
+      new Set(
+        [
+          ...games.map(
+            (
+              g,
+            ) =>
+              g.id,
+          ),
+          ...apps.map(
+            (
+              a,
+            ) =>
+              a.id,
+          ),
+        ],
+      );
+    const dangling =
+      WAGER_ELIGIBLE_GAMES.filter(
+        (
+          g,
+        ) =>
+          !known.has(
+            g.id,
+          ),
+      ).map(
+        (
+          g,
+        ) =>
+          g.id,
+      );
+    expect(
+      dangling,
+    ).toEqual(
+      [],
+    );
   });
 
   it('every wager-eligible game in the games catalog supports head-to-head play', () => {
     // A wager needs two players and a winner. An id in the wager registry that
     // the capability data calls single-player-only is one of the two lying.
-    const inCatalog = new Set(games.map((g) => g.id));
-    const bad = WAGER_ELIGIBLE_GAMES.filter((w) => inCatalog.has(w.id)).filter((w) => {
-      const caps = GAME_CAPABILITIES[w.id];
-      return !caps?.players.some((p) => p === 'online-versus' || p === 'async-leaderboard');
-    });
-    expect(bad.map((w) => w.id)).toEqual([]);
+    const inCatalog =
+      new Set(
+        games.map(
+          (
+            g,
+          ) =>
+            g.id,
+        ),
+      );
+    const bad =
+      WAGER_ELIGIBLE_GAMES.filter(
+        (
+          w,
+        ) =>
+          inCatalog.has(
+            w.id,
+          ),
+      ).filter(
+        (
+          w,
+        ) => {
+          const caps =
+            GAME_CAPABILITIES[
+              w
+                .id
+            ];
+          return !caps?.players.some(
+            (
+              p,
+            ) =>
+              p ===
+                'online-versus' ||
+              p ===
+                'async-leaderboard',
+          );
+        },
+      );
+    expect(
+      bad.map(
+        (
+          w,
+        ) =>
+          w.id,
+      ),
+    ).toEqual(
+      [],
+    );
   });
 });
 
 describe('playabilityFor', () => {
-  const base: GameCapabilities = {
-    genre: ['puzzle'],
-    players: ['single'],
-    input: { supported: ['mouse', 'touch'], required: [] },
-    sessionMinutes: [5, 10],
-    engine: 'dom',
-    demanding: false,
-    save: 'none',
-    accessibility: [],
-  };
-  const desktop = { coarsePointer: false, lowEnd: false };
-  const phone = { coarsePointer: true, lowEnd: false };
+  const base: GameCapabilities =
+    {
+      genre:
+        [
+          'puzzle',
+        ],
+      players:
+        [
+          'single',
+        ],
+      input:
+        {
+          supported:
+            [
+              'mouse',
+              'touch',
+            ],
+          required:
+            [],
+        },
+      sessionMinutes:
+        [
+          5,
+          10,
+        ],
+      engine:
+        'dom',
+      demanding: false,
+      save: 'none',
+      accessibility:
+        [],
+    };
+  const desktop =
+    {
+      coarsePointer: false,
+      lowEnd: false,
+    };
+  const phone =
+    {
+      coarsePointer: true,
+      lowEnd: false,
+    };
 
   it('passes a touch-friendly game on a phone', () => {
-    expect(playabilityFor(base, phone)).toEqual({ playable: true });
+    expect(
+      playabilityFor(
+        base,
+        phone,
+      ),
+    ).toEqual(
+      {
+        playable: true,
+      },
+    );
   });
 
   it('blocks a keyboard-required game on a phone with a reason', () => {
-    const caps = { ...base, input: { supported: ['keyboard'], required: ['keyboard'] } } as const;
-    expect(playabilityFor(caps as GameCapabilities, phone)).toEqual({
-      playable: false,
-      reason: 'needs-keyboard',
-    });
+    const caps =
+      {
+        ...base,
+        input:
+          {
+            supported:
+              [
+                'keyboard',
+              ],
+            required:
+              [
+                'keyboard',
+              ],
+          },
+      } as const;
+    expect(
+      playabilityFor(
+        caps as GameCapabilities,
+        phone,
+      ),
+    ).toEqual(
+      {
+        playable: false,
+        reason:
+          'needs-keyboard',
+      },
+    );
   });
 
   it('blocks a mouse-only game on a phone', () => {
-    const caps = { ...base, input: { supported: ['mouse'], required: [] } } as const;
-    expect(playabilityFor(caps as GameCapabilities, phone)).toEqual({
-      playable: false,
-      reason: 'needs-pointer',
-    });
+    const caps =
+      {
+        ...base,
+        input:
+          {
+            supported:
+              [
+                'mouse',
+              ],
+            required:
+              [],
+          },
+      } as const;
+    expect(
+      playabilityFor(
+        caps as GameCapabilities,
+        phone,
+      ),
+    ).toEqual(
+      {
+        playable: false,
+        reason:
+          'needs-pointer',
+      },
+    );
   });
 
   it('blocks a demanding game on a low-end device', () => {
-    expect(playabilityFor({ ...base, demanding: true }, { ...desktop, lowEnd: true })).toEqual({
-      playable: false,
-      reason: 'too-demanding',
-    });
+    expect(
+      playabilityFor(
+        {
+          ...base,
+          demanding: true,
+        },
+        {
+          ...desktop,
+          lowEnd: true,
+        },
+      ),
+    ).toEqual(
+      {
+        playable: false,
+        reason:
+          'too-demanding',
+      },
+    );
   });
 
   it('lets a demanding game through on a capable device', () => {
-    expect(playabilityFor({ ...base, demanding: true }, desktop)).toEqual({ playable: true });
+    expect(
+      playabilityFor(
+        {
+          ...base,
+          demanding: true,
+        },
+        desktop,
+      ),
+    ).toEqual(
+      {
+        playable: true,
+      },
+    );
   });
 
   it('accepts a gyro game on a phone even without touch', () => {
-    const caps = { ...base, input: { supported: ['gyro'], required: [] } } as const;
-    expect(playabilityFor(caps as GameCapabilities, phone)).toEqual({ playable: true });
+    const caps =
+      {
+        ...base,
+        input:
+          {
+            supported:
+              [
+                'gyro',
+              ],
+            required:
+              [],
+          },
+      } as const;
+    expect(
+      playabilityFor(
+        caps as GameCapabilities,
+        phone,
+      ),
+    ).toEqual(
+      {
+        playable: true,
+      },
+    );
   });
 
   it('holds for every real game in the catalog on a desktop', () => {
-    for (const [id, caps] of Object.entries(GAME_CAPABILITIES)) {
-      expect({ id, ...playabilityFor(caps, desktop) }).toEqual({ id, playable: true });
+    for (const [
+      id,
+      caps,
+    ] of Object.entries(
+      GAME_CAPABILITIES,
+    )) {
+      expect(
+        {
+          id,
+          ...playabilityFor(
+            caps,
+            desktop,
+          ),
+        },
+      ).toEqual(
+        {
+          id,
+          playable: true,
+        },
+      );
     }
   });
 });

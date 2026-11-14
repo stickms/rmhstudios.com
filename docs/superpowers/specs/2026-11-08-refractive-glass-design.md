@@ -1,129 +1,1451 @@
 # Refractive glass for every main-site surface (and the end of `perf-lite`)
 
-Status: draft for owner approval. Builds on `2026-11-07-css-first-jelly-design.md`. Depends on PR #1484 (the cheap
-resting material) being merged first.
+Status:
+draft
+for
+owner
+approval.
+Builds
+on
+`2026-11-07-css-first-jelly-design.md`.
+Depends
+on
+PR
+#1484
+(the
+cheap
+resting
+material)
+being
+merged
+first.
 
 ## Intent and why
 
-The owner wants real liquid-glass refraction, in every browser, on all glass surfaces of the main site. The CSS-first
-migration removed the old WebGL rim, which refracted a page snapshot at each glass edge, and left a lit-only CSS rim.
-The owner has shared reference work (kube.io, tonnitools, nikdelvin/liquid-glass) and wants that look. They also want
-`perf-lite` removed, because the CSS-first material is meant to be fast enough for everyone.
+The
+owner
+wants
+real
+liquid-glass
+refraction,
+in
+every
+browser,
+on
+all
+glass
+surfaces
+of
+the
+main
+site.
+The
+CSS-first
+migration
+removed
+the
+old
+WebGL
+rim,
+which
+refracted
+a
+page
+snapshot
+at
+each
+glass
+edge,
+and
+left
+a
+lit-only
+CSS
+rim.
+The
+owner
+has
+shared
+reference
+work
+(kube.io,
+tonnitools,
+nikdelvin/liquid-glass)
+and
+wants
+that
+look.
+They
+also
+want
+`perf-lite`
+removed,
+because
+the
+CSS-first
+material
+is
+meant
+to
+be
+fast
+enough
+for
+everyone.
 
 ## What we learned (evidence, 2026-11-08)
 
-- `backdrop-filter: url(#svg)` bends the backdrop only in Chromium. Firefox and WebKit parse it and draw nothing.
-- A plain `filter: url(#svg)` (feDisplacementMap with an feImage map) on an HTML clone clipped to a rounded rect renders
-  identically in Chromium, Firefox and WebKit, 60 fps for a static pill (software GL).
-- The page snapshot exists: `lib/liquid/glass/scene-feed.ts` / `scene.ts` (the globe uses it). A picture is 100–300 ms of
-  time-sliced main-thread work, taken on route, theme, resize and tab-visible, never on scroll. It is viewport-sized.
-  The old engine placed it by scroll offset and faded the refracted rim out when it could no longer cover.
-- Refracting a flat ground shows nothing; the effect shows where something real is behind a surface.
+- `backdrop-filter: url(#svg)`
+  bends
+  the
+  backdrop
+  only
+  in
+  Chromium.
+  Firefox
+  and
+  WebKit
+  parse
+  it
+  and
+  draw
+  nothing.
+- A
+  plain
+  `filter: url(#svg)`
+  (feDisplacementMap
+  with
+  an
+  feImage
+  map)
+  on
+  an
+  HTML
+  clone
+  clipped
+  to
+  a
+  rounded
+  rect
+  renders
+  identically
+  in
+  Chromium,
+  Firefox
+  and
+  WebKit,
+  60
+  fps
+  for
+  a
+  static
+  pill
+  (software
+  GL).
+- The
+  page
+  snapshot
+  exists:
+  `lib/liquid/glass/scene-feed.ts`
+  /
+  `scene.ts`
+  (the
+  globe
+  uses
+  it).
+  A
+  picture
+  is
+  100–300
+  ms
+  of
+  time-sliced
+  main-thread
+  work,
+  taken
+  on
+  route,
+  theme,
+  resize
+  and
+  tab-visible,
+  never
+  on
+  scroll.
+  It
+  is
+  viewport-sized.
+  The
+  old
+  engine
+  placed
+  it
+  by
+  scroll
+  offset
+  and
+  faded
+  the
+  refracted
+  rim
+  out
+  when
+  it
+  could
+  no
+  longer
+  cover.
+- Refracting
+  a
+  flat
+  ground
+  shows
+  nothing;
+  the
+  effect
+  shows
+  where
+  something
+  real
+  is
+  behind
+  a
+  surface.
 
 ## Goals
 
-1. Every glass role surface on the main site (`glass-fill/-pane/-chrome/-overlay`, and `-inset` fields where it reads)
-   refracts the page behind its rim, in Chromium, Firefox and WebKit, with the RGB dispersion the design language
-   already specifies.
-2. Nothing runs at rest. Refraction is redrawn only when the snapshot or the surface's box changes.
-3. No measurable regression in Firefox and WebKit against the PR #1484 numbers (see Acceptance).
-4. `perf-lite` is gone as a material tier.
+1. Every
+   glass
+   role
+   surface
+   on
+   the
+   main
+   site
+   (`glass-fill/-pane/-chrome/-overlay`,
+   and
+   `-inset`
+   fields
+   where
+   it
+   reads)
+   refracts
+   the
+   page
+   behind
+   its
+   rim,
+   in
+   Chromium,
+   Firefox
+   and
+   WebKit,
+   with
+   the
+   RGB
+   dispersion
+   the
+   design
+   language
+   already
+   specifies.
+2. Nothing
+   runs
+   at
+   rest.
+   Refraction
+   is
+   redrawn
+   only
+   when
+   the
+   snapshot
+   or
+   the
+   surface's
+   box
+   changes.
+3. No
+   measurable
+   regression
+   in
+   Firefox
+   and
+   WebKit
+   against
+   the
+   PR
+   #1484
+   numbers
+   (see
+   Acceptance).
+4. `perf-lite`
+   is
+   gone
+   as
+   a
+   material
+   tier.
 
 ## Non-goals and anti-goals
 
-- Not the page background. Not games or apps that carry their own scheme (`native-material` routes, `/games*`,
-  `/tf2*`, the `--app-*` tier, `data-jelly-zone="playfield"`).
-- No `backdrop-filter` in any glass role (standing rule). No main-thread WebGL. No per-frame work, no `infinite`
-  animations, no new rAF loop.
-- No layout change, no movement beyond the existing squash bounds.
-- Anti-goal: a fix that makes surfaces look right in Chromium and flat elsewhere.
+- Not
+  the
+  page
+  background.
+  Not
+  games
+  or
+  apps
+  that
+  carry
+  their
+  own
+  scheme
+  (`native-material`
+  routes,
+  `/games*`,
+  `/tf2*`,
+  the
+  `--app-*`
+  tier,
+  `data-jelly-zone="playfield"`).
+- No
+  `backdrop-filter`
+  in
+  any
+  glass
+  role
+  (standing
+  rule).
+  No
+  main-thread
+  WebGL.
+  No
+  per-frame
+  work,
+  no
+  `infinite`
+  animations,
+  no
+  new
+  rAF
+  loop.
+- No
+  layout
+  change,
+  no
+  movement
+  beyond
+  the
+  existing
+  squash
+  bounds.
+- Anti-goal:
+  a
+  fix
+  that
+  makes
+  surfaces
+  look
+  right
+  in
+  Chromium
+  and
+  flat
+  elsewhere.
 
 ## Approaches considered
 
-1. **Shared snapshot, filtered rim band, all surfaces (chosen by the owner).** Each surface draws the snapshot behind
-   its own rim through an SVG displacement filter; the interior stays clear gel.
-2. Same technique on chrome, overlay and pane only; cards stay lit-only. Cheaper, not "all surfaces".
-3. Bake per known background. Free at runtime, only for fixed backgrounds.
+1. **Shared
+   snapshot,
+   filtered
+   rim
+   band,
+   all
+   surfaces
+   (chosen
+   by
+   the
+   owner).**
+   Each
+   surface
+   draws
+   the
+   snapshot
+   behind
+   its
+   own
+   rim
+   through
+   an
+   SVG
+   displacement
+   filter;
+   the
+   interior
+   stays
+   clear
+   gel.
+2. Same
+   technique
+   on
+   chrome,
+   overlay
+   and
+   pane
+   only;
+   cards
+   stay
+   lit-only.
+   Cheaper,
+   not
+   "all
+   surfaces".
+3. Bake
+   per
+   known
+   background.
+   Free
+   at
+   runtime,
+   only
+   for
+   fixed
+   backgrounds.
 
-Rejected for good: `backdrop-filter: url()` (Chromium only), re-adding the WebGL engine (the cost we removed).
+Rejected
+for
+good:
+`backdrop-filter: url()`
+(Chromium
+only),
+re-adding
+the
+WebGL
+engine
+(the
+cost
+we
+removed).
 
 ## Design
 
-**Rim layer.** A decorative `aria-hidden` layer on each glass host, a band along the rim (width = the existing
-`--gel-shoulder`/bevel), showing the snapshot positioned so it lines up with the page behind the host, filtered by a
-displacement filter whose map is the rim profile (neutral inside, outward-normal toward the edge, lens-like falloff).
-Red, green and blue use slightly different displacement scales (the dispersion) via three channel-split filters or one
-filter with per-channel maps.
+**Rim
+layer.**
+A
+decorative
+`aria-hidden`
+layer
+on
+each
+glass
+host,
+a
+band
+along
+the
+rim
+(width
+=
+the
+existing
+`--gel-shoulder`/bevel),
+showing
+the
+snapshot
+positioned
+so
+it
+lines
+up
+with
+the
+page
+behind
+the
+host,
+filtered
+by
+a
+displacement
+filter
+whose
+map
+is
+the
+rim
+profile
+(neutral
+inside,
+outward-normal
+toward
+the
+edge,
+lens-like
+falloff).
+Red,
+green
+and
+blue
+use
+slightly
+different
+displacement
+scales
+(the
+dispersion)
+via
+three
+channel-split
+filters
+or
+one
+filter
+with
+per-channel
+maps.
 
-**Filter cache.** One SVG `<filter>` per size class (quantised width × height × radius), created lazily and shared, so
-hundreds of surfaces share a handful of filters. The map is a small generated image, built once per class.
+**Filter
+cache.**
+One
+SVG
+`<filter>`
+per
+size
+class
+(quantised
+width
+×
+height
+×
+radius),
+created
+lazily
+and
+shared,
+so
+hundreds
+of
+surfaces
+share
+a
+handful
+of
+filters.
+The
+map
+is
+a
+small
+generated
+image,
+built
+once
+per
+class.
 
-**Placement and scroll.** The snapshot is viewport-sized. In-flow surfaces scroll with the page, so their offset to
-the snapshot is fixed. Sticky or fixed surfaces (top bar, chrome, menus, dialogs) sit over content that moves, so
-the snapshot is **displaced by the scroll delta since it was taken** (exact for static content: what is under a
-sticky bar moved by exactly that much). To keep it covering, the capture takes an **overscan** (one viewport above and
-below, scale-capped) and the rim refraction **fades out** where the displaced picture no longer covers or while
-the content is mid-change. A fresh picture is requested when scrolling settles (the existing 260 ms settle).
-We do not re-capture during scroll: a picture costs 100–300 ms.
+**Placement
+and
+scroll.**
+The
+snapshot
+is
+viewport-sized.
+In-flow
+surfaces
+scroll
+with
+the
+page,
+so
+their
+offset
+to
+the
+snapshot
+is
+fixed.
+Sticky
+or
+fixed
+surfaces
+(top
+bar,
+chrome,
+menus,
+dialogs)
+sit
+over
+content
+that
+moves,
+so
+the
+snapshot
+is
+**displaced
+by
+the
+scroll
+delta
+since
+it
+was
+taken**
+(exact
+for
+static
+content:
+what
+is
+under
+a
+sticky
+bar
+moved
+by
+exactly
+that
+much).
+To
+keep
+it
+covering,
+the
+capture
+takes
+an
+**overscan**
+(one
+viewport
+above
+and
+below,
+scale-capped)
+and
+the
+rim
+refraction
+**fades
+out**
+where
+the
+displaced
+picture
+no
+longer
+covers
+or
+while
+the
+content
+is
+mid-change.
+A
+fresh
+picture
+is
+requested
+when
+scrolling
+settles
+(the
+existing
+260
+ms
+settle).
+We
+do
+not
+re-capture
+during
+scroll:
+a
+picture
+costs
+100–300
+ms.
 
-**Budget.** Only surfaces on screen (IntersectionObserver) refract, nearest to the viewport centre first, capped per
-tier (`JELLY_BUDGETS`); the rest keep the lit rim. Cap chosen by measurement, not guessed.
+**Budget.**
+Only
+surfaces
+on
+screen
+(IntersectionObserver)
+refract,
+nearest
+to
+the
+viewport
+centre
+first,
+capped
+per
+tier
+(`JELLY_BUDGETS`);
+the
+rest
+keep
+the
+lit
+rim.
+Cap
+chosen
+by
+measurement,
+not
+guessed.
 
-**Press and squash.** Unchanged: the layer lives inside the host, so it moves with the host's CSS squash and adds
-nothing to the spring.
+**Press
+and
+squash.**
+Unchanged:
+the
+layer
+lives
+inside
+the
+host,
+so
+it
+moves
+with
+the
+host's
+CSS
+squash
+and
+adds
+nothing
+to
+the
+spring.
 
-**Degradation.** Print and the app high-contrast mode stay opaque. Jelly motion Still does not matter (refraction is
-static). There is no `perf-lite`.
+**Degradation.**
+Print
+and
+the
+app
+high-contrast
+mode
+stay
+opaque.
+Jelly
+motion
+Still
+does
+not
+matter
+(refraction
+is
+static).
+There
+is
+no
+`perf-lite`.
 
-**`perf-lite` removal (owner's call, my scoping).** Remove the class, `lib/perf-tier.ts`'s stamping,
-`reconcileSoftRender`'s tier effect, and every consumer (about 30 files: aurora layers, blob field, `.lg-goo`,
-`useLiquidBackground`, `liquid-morph`, the orphaned `lib/performance-tier.ts`, docs, tests, ratchets). **My call, for
-the owner to check:** the globe keeps its capability fallback (no usable WebGL in a worker, or software rendering →
-the CSS glass globe), because that is a "can this machine draw it" test, not a perf tier, and it is what protects
-users with hardware acceleration off, who started this whole effort. Everything else runs for everyone, including
-Data Saver and low-memory devices.
+**`perf-lite`
+removal
+(owner's
+call,
+my
+scoping).**
+Remove
+the
+class,
+`lib/perf-tier.ts`'s
+stamping,
+`reconcileSoftRender`'s
+tier
+effect,
+and
+every
+consumer
+(about
+30
+files:
+aurora
+layers,
+blob
+field,
+`.lg-goo`,
+`useLiquidBackground`,
+`liquid-morph`,
+the
+orphaned
+`lib/performance-tier.ts`,
+docs,
+tests,
+ratchets).
+**My
+call,
+for
+the
+owner
+to
+check:**
+the
+globe
+keeps
+its
+capability
+fallback
+(no
+usable
+WebGL
+in
+a
+worker,
+or
+software
+rendering
+→
+the
+CSS
+glass
+globe),
+because
+that
+is
+a
+"can
+this
+machine
+draw
+it"
+test,
+not
+a
+perf
+tier,
+and
+it
+is
+what
+protects
+users
+with
+hardware
+acceleration
+off,
+who
+started
+this
+whole
+effort.
+Everything
+else
+runs
+for
+everyone,
+including
+Data
+Saver
+and
+low-memory
+devices.
 
 ## Acceptance
 
-- Visual: both themes, phone and desktop, Chromium/Firefox/WebKit screenshots show the rim refracting real content
-  (top bar over a feed image, a menu over cards, a dialog) with the RGB split.
-- Performance, production build, software GL, median of 5 interleaved runs. **Baseline: PR #1484 re-measured with
-  `perf-lite` forced off** (software renderers are stamped `perf-lite` today, so the earlier numbers may be partly the
-  lite tier). Versus that baseline: Firefox `/` and `/jelly`
-  scroll p95 within 10%; WebKit theme switch, press p95 and scroll p95 within 10%; Chromium rest CPU and layers
-  unchanged; at rest, zero rAF and no new layers per surface beyond the cap. If this fails, fall back to Approach 2.
-- Tests and gates: the jelly ratchets, a new refraction contract test (filter cache size, no `backdrop-filter`, nothing
-  at rest), `pnpm check:consistency`.
+- Visual:
+  both
+  themes,
+  phone
+  and
+  desktop,
+  Chromium/Firefox/WebKit
+  screenshots
+  show
+  the
+  rim
+  refracting
+  real
+  content
+  (top
+  bar
+  over
+  a
+  feed
+  image,
+  a
+  menu
+  over
+  cards,
+  a
+  dialog)
+  with
+  the
+  RGB
+  split.
+- Performance,
+  production
+  build,
+  software
+  GL,
+  median
+  of
+  5
+  interleaved
+  runs.
+  **Baseline:
+  PR
+  #1484
+  re-measured
+  with
+  `perf-lite`
+  forced
+  off**
+  (software
+  renderers
+  are
+  stamped
+  `perf-lite`
+  today,
+  so
+  the
+  earlier
+  numbers
+  may
+  be
+  partly
+  the
+  lite
+  tier).
+  Versus
+  that
+  baseline:
+  Firefox
+  `/`
+  and
+  `/jelly`
+  scroll
+  p95
+  within
+  10%;
+  WebKit
+  theme
+  switch,
+  press
+  p95
+  and
+  scroll
+  p95
+  within
+  10%;
+  Chromium
+  rest
+  CPU
+  and
+  layers
+  unchanged;
+  at
+  rest,
+  zero
+  rAF
+  and
+  no
+  new
+  layers
+  per
+  surface
+  beyond
+  the
+  cap.
+  If
+  this
+  fails,
+  fall
+  back
+  to
+  Approach 2.
+- Tests
+  and
+  gates:
+  the
+  jelly
+  ratchets,
+  a
+  new
+  refraction
+  contract
+  test
+  (filter
+  cache
+  size,
+  no
+  `backdrop-filter`,
+  nothing
+  at
+  rest),
+  `pnpm check:consistency`.
 
 ## Left to the builder
 
-The exact displacement map and dispersion scales, the filter size quantisation, the per-tier cap, the overscan size,
-how the layer attaches (pseudo-element versus an injected child), how to feed the snapshot to many consumers (a shared
-`ImageBitmap`, a blob URL, or a canvas), and the order of the `perf-lite` removal (a separate PR first is fine).
+The
+exact
+displacement
+map
+and
+dispersion
+scales,
+the
+filter
+size
+quantisation,
+the
+per-tier
+cap,
+the
+overscan
+size,
+how
+the
+layer
+attaches
+(pseudo-element
+versus
+an
+injected
+child),
+how
+to
+feed
+the
+snapshot
+to
+many
+consumers
+(a
+shared
+`ImageBitmap`,
+a
+blob
+URL,
+or
+a
+canvas),
+and
+the
+order
+of
+the
+`perf-lite`
+removal
+(a
+separate
+PR
+first
+is
+fine).
 
 ## Calls made while writing this (review notes from the builder check; owner may overrule any)
 
-1. **`perf-lite` removal ships first, as its own PR, and is measured on its own.** Software-rendering browsers (the
-   ones this effort started for) get the full tier once it is gone. We measure that on software GL with the
-   refraction absent. If removal alone regresses Firefox/WebKit past the bar, we report it to the owner with numbers
-   rather than quietly re-adding a downscale under another name. The refraction PR then ships or falls back to
-   Approach 2 on its own measurement; the removal does not depend on it.
-2. **Games, apps and the globe keep a low-end CAPABILITY signal.** It is renamed, derived from the same capability
-   reads, no longer stamped on `<html>`, and read by nothing in the site material. It exists so games that need
-   more than a weak device, the app tier, RUM and the globe's CSS fallback keep working. Their own low-end
-   behaviour is outside this spec's scope.
-3. **Phones.** Handheld gets a snapshot with a conservative policy (lower scale cap, longer interval) only if it
-   fits the WebKit press and scroll budget; if not, phones keep the lit rim and the phone screenshots in
-   Acceptance show that. The builder measures and reports; it is not assumed.
-4. **What a card's rim refracts.** A surface refracts what is behind it. Chrome and overlay are already hidden
-   from the picture (`SCENE_HIDE`), so they see everything under them, cards included. Cards, panes and fills stay
-   in the picture, and the refraction layers themselves are excluded from it so a rim never refracts itself or
-   feeds the next picture. Over flat ground a card therefore looks as it does today, which is physically correct;
-   the effect shows over images, other glass and bright content. The builder checks that a card's own edge does
-   not double in its rim and, if it does, hides the host from the picture for that surface.
-5. **No overscan in the first version, and no change to the shared eversion capture.** The viewport picture is
-   shifted by scroll and faded where it stops covering; sticky surfaces therefore fade sooner than with overscan. A
-   fresh picture is taken at scroll rest only while a visible sticky, fixed or overlay refracting surface needs
-   one, at the existing minimum interval. The performance bar is a hard gate. If captures after scroll stops cost
-   too much on long feeds, the order of giving way is: capture less often (stale or faded rims last longer), then
-   consider overscan, never a missed bar.
+1. **`perf-lite`
+   removal
+   ships
+   first,
+   as
+   its
+   own
+   PR,
+   and
+   is
+   measured
+   on
+   its
+   own.**
+   Software-rendering
+   browsers
+   (the
+   ones
+   this
+   effort
+   started
+   for)
+   get
+   the
+   full
+   tier
+   once
+   it
+   is
+   gone.
+   We
+   measure
+   that
+   on
+   software
+   GL
+   with
+   the
+   refraction
+   absent.
+   If
+   removal
+   alone
+   regresses
+   Firefox/WebKit
+   past
+   the
+   bar,
+   we
+   report
+   it
+   to
+   the
+   owner
+   with
+   numbers
+   rather
+   than
+   quietly
+   re-adding
+   a
+   downscale
+   under
+   another
+   name.
+   The
+   refraction
+   PR
+   then
+   ships
+   or
+   falls
+   back
+   to
+   Approach
+   2
+   on
+   its
+   own
+   measurement;
+   the
+   removal
+   does
+   not
+   depend
+   on
+   it.
+2. **Games,
+   apps
+   and
+   the
+   globe
+   keep
+   a
+   low-end
+   CAPABILITY
+   signal.**
+   It
+   is
+   renamed,
+   derived
+   from
+   the
+   same
+   capability
+   reads,
+   no
+   longer
+   stamped
+   on
+   `<html>`,
+   and
+   read
+   by
+   nothing
+   in
+   the
+   site
+   material.
+   It
+   exists
+   so
+   games
+   that
+   need
+   more
+   than
+   a
+   weak
+   device,
+   the
+   app
+   tier,
+   RUM
+   and
+   the
+   globe's
+   CSS
+   fallback
+   keep
+   working.
+   Their
+   own
+   low-end
+   behaviour
+   is
+   outside
+   this
+   spec's
+   scope.
+3. **Phones.**
+   Handheld
+   gets
+   a
+   snapshot
+   with
+   a
+   conservative
+   policy
+   (lower
+   scale
+   cap,
+   longer
+   interval)
+   only
+   if
+   it
+   fits
+   the
+   WebKit
+   press
+   and
+   scroll
+   budget;
+   if
+   not,
+   phones
+   keep
+   the
+   lit
+   rim
+   and
+   the
+   phone
+   screenshots
+   in
+   Acceptance
+   show
+   that.
+   The
+   builder
+   measures
+   and
+   reports;
+   it
+   is
+   not
+   assumed.
+4. **What
+   a
+   card's
+   rim
+   refracts.**
+   A
+   surface
+   refracts
+   what
+   is
+   behind
+   it.
+   Chrome
+   and
+   overlay
+   are
+   already
+   hidden
+   from
+   the
+   picture
+   (`SCENE_HIDE`),
+   so
+   they
+   see
+   everything
+   under
+   them,
+   cards
+   included.
+   Cards,
+   panes
+   and
+   fills
+   stay
+   in
+   the
+   picture,
+   and
+   the
+   refraction
+   layers
+   themselves
+   are
+   excluded
+   from
+   it
+   so
+   a
+   rim
+   never
+   refracts
+   itself
+   or
+   feeds
+   the
+   next
+   picture.
+   Over
+   flat
+   ground
+   a
+   card
+   therefore
+   looks
+   as
+   it
+   does
+   today,
+   which
+   is
+   physically
+   correct;
+   the
+   effect
+   shows
+   over
+   images,
+   other
+   glass
+   and
+   bright
+   content.
+   The
+   builder
+   checks
+   that
+   a
+   card's
+   own
+   edge
+   does
+   not
+   double
+   in
+   its
+   rim
+   and,
+   if
+   it
+   does,
+   hides
+   the
+   host
+   from
+   the
+   picture
+   for
+   that
+   surface.
+5. **No
+   overscan
+   in
+   the
+   first
+   version,
+   and
+   no
+   change
+   to
+   the
+   shared
+   eversion
+   capture.**
+   The
+   viewport
+   picture
+   is
+   shifted
+   by
+   scroll
+   and
+   faded
+   where
+   it
+   stops
+   covering;
+   sticky
+   surfaces
+   therefore
+   fade
+   sooner
+   than
+   with
+   overscan.
+   A
+   fresh
+   picture
+   is
+   taken
+   at
+   scroll
+   rest
+   only
+   while
+   a
+   visible
+   sticky,
+   fixed
+   or
+   overlay
+   refracting
+   surface
+   needs
+   one,
+   at
+   the
+   existing
+   minimum
+   interval.
+   The
+   performance
+   bar
+   is
+   a
+   hard
+   gate.
+   If
+   captures
+   after
+   scroll
+   stops
+   cost
+   too
+   much
+   on
+   long
+   feeds,
+   the
+   order
+   of
+   giving
+   way
+   is:
+   capture
+   less
+   often
+   (stale
+   or
+   faded
+   rims
+   last
+   longer),
+   then
+   consider
+   overscan,
+   never
+   a
+   missed
+   bar.

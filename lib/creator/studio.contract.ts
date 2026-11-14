@@ -2,7 +2,15 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { StudioOverview } from '@/lib/creator/studio.server';
 
-export const studioOverviewApi = endpoint<{ res: { overview: StudioOverview } }>()({
-  method: 'GET',
-  path: '/api/creator/studio-overview',
-});
+export const studioOverviewApi =
+  endpoint<{
+    res: {
+      overview: StudioOverview;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/creator/studio-overview',
+    },
+  );

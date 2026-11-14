@@ -1,7 +1,10 @@
 /** The mod tools tab: queue, AutoMod, flairs, settings, onboarding, related, and (private communities) requests and invites. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tabs, type TabItem } from '@/components/ui/tabs';
+import {
+  Tabs,
+  type TabItem,
+} from '@/components/ui/tabs';
 import { ModAutomod } from '@/components/communities/ModAutomod';
 import { ModFlairs } from '@/components/communities/ModFlairs';
 import { ModInvites } from '@/components/communities/ModInvites';
@@ -24,46 +27,228 @@ export default function ModPanel({
   extras: CommunityExtrasDTO | null;
   onExtrasChange: () => void;
 }) {
-  const { t } = useTranslation('f-communities-plus');
-  const [sub, setSub] = useState('queue');
-  const tabs: TabItem[] = [
-    { id: 'queue', label: t('mod-queue', { defaultValue: 'Queue' }) },
-    { id: 'automod', label: t('mod-automod', { defaultValue: 'AutoMod' }) },
-    { id: 'flairs', label: t('mod-flairs', { defaultValue: 'Flairs' }) },
-    { id: 'settings', label: t('mod-settings', { defaultValue: 'Posting rules' }) },
-    { id: 'onboarding', label: t('mod-onboarding', { defaultValue: 'Onboarding' }) },
-    { id: 'related', label: t('mod-related', { defaultValue: 'Related' }) },
-    ...(isPrivate
-      ? [
-          { id: 'requests', label: t('mod-requests', { defaultValue: 'Requests' }) },
-          { id: 'invites', label: t('mod-invites', { defaultValue: 'Invites' }) },
-        ]
-      : []),
-  ];
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-communities-plus',
+    );
+  const [
+    sub,
+    setSub,
+  ] =
+    useState(
+      'queue',
+    );
+  const tabs: TabItem[] =
+    [
+      {
+        id: 'queue',
+        label:
+          t(
+            'mod-queue',
+            {
+              defaultValue:
+                'Queue',
+            },
+          ),
+      },
+      {
+        id: 'automod',
+        label:
+          t(
+            'mod-automod',
+            {
+              defaultValue:
+                'AutoMod',
+            },
+          ),
+      },
+      {
+        id: 'flairs',
+        label:
+          t(
+            'mod-flairs',
+            {
+              defaultValue:
+                'Flairs',
+            },
+          ),
+      },
+      {
+        id: 'settings',
+        label:
+          t(
+            'mod-settings',
+            {
+              defaultValue:
+                'Posting rules',
+            },
+          ),
+      },
+      {
+        id: 'onboarding',
+        label:
+          t(
+            'mod-onboarding',
+            {
+              defaultValue:
+                'Onboarding',
+            },
+          ),
+      },
+      {
+        id: 'related',
+        label:
+          t(
+            'mod-related',
+            {
+              defaultValue:
+                'Related',
+            },
+          ),
+      },
+      ...(isPrivate
+        ? [
+            {
+              id: 'requests',
+              label:
+                t(
+                  'mod-requests',
+                  {
+                    defaultValue:
+                      'Requests',
+                  },
+                ),
+            },
+            {
+              id: 'invites',
+              label:
+                t(
+                  'mod-invites',
+                  {
+                    defaultValue:
+                      'Invites',
+                  },
+                ),
+            },
+          ]
+        : []),
+    ];
   return (
     <div className="flex flex-col gap-4 px-3 py-3">
       <Tabs
-        tabs={tabs}
-        value={sub}
-        onChange={setSub}
-        aria-label={t('mod-tools', { defaultValue: 'Mod tools' })}
+        tabs={
+          tabs
+        }
+        value={
+          sub
+        }
+        onChange={
+          setSub
+        }
+        aria-label={t(
+          'mod-tools',
+          {
+            defaultValue:
+              'Mod tools',
+          },
+        )}
       />
-      {sub === 'queue' && <ModQueue slug={slug} />}
-      {sub === 'automod' && <ModAutomod slug={slug} />}
-      {sub === 'flairs' && (
-        <ModFlairs slug={slug} flairs={extras?.flairs ?? []} onChange={onExtrasChange} />
+      {sub ===
+        'queue' && (
+        <ModQueue
+          slug={
+            slug
+          }
+        />
       )}
-      {sub === 'settings' && extras && (
-        <ModSettings slug={slug} extras={extras} onChange={onExtrasChange} />
+      {sub ===
+        'automod' && (
+        <ModAutomod
+          slug={
+            slug
+          }
+        />
       )}
-      {sub === 'onboarding' && (
-        <ModOnboarding slug={slug} flairs={extras?.flairs ?? []} onChange={onExtrasChange} />
+      {sub ===
+        'flairs' && (
+        <ModFlairs
+          slug={
+            slug
+          }
+          flairs={
+            extras?.flairs ??
+            []
+          }
+          onChange={
+            onExtrasChange
+          }
+        />
       )}
-      {sub === 'requests' && isPrivate && <ModRequests slug={slug} />}
-      {sub === 'invites' && isPrivate && <ModInvites slug={slug} />}
-      {sub === 'related' && extras && (
-        <ModSisters slug={slug} sisters={extras.sisters} onChange={onExtrasChange} />
+      {sub ===
+        'settings' &&
+        extras && (
+          <ModSettings
+            slug={
+              slug
+            }
+            extras={
+              extras
+            }
+            onChange={
+              onExtrasChange
+            }
+          />
+        )}
+      {sub ===
+        'onboarding' && (
+        <ModOnboarding
+          slug={
+            slug
+          }
+          flairs={
+            extras?.flairs ??
+            []
+          }
+          onChange={
+            onExtrasChange
+          }
+        />
       )}
+      {sub ===
+        'requests' &&
+        isPrivate && (
+          <ModRequests
+            slug={
+              slug
+            }
+          />
+        )}
+      {sub ===
+        'invites' &&
+        isPrivate && (
+          <ModInvites
+            slug={
+              slug
+            }
+          />
+        )}
+      {sub ===
+        'related' &&
+        extras && (
+          <ModSisters
+            slug={
+              slug
+            }
+            sisters={
+              extras.sisters
+            }
+            onChange={
+              onExtrasChange
+            }
+          />
+        )}
     </div>
   );
 }

@@ -28,22 +28,72 @@ export interface PlayedPitch {
  * Signed error in cents: negative is flat, positive sharp. A non-finite `cents` counts as 0; a
  * non-finite `midi` (or target) gives NaN or ±Infinity, which no verdict or score treats as close.
  */
-export function centsOff(targetMidi: number, played: PlayedPitch): number {
-  const cents = Number.isFinite(played.cents) ? (played.cents as number) : 0;
-  return (played.midi - targetMidi) * 100 + cents;
+export function centsOff(
+  targetMidi: number,
+  played: PlayedPitch,
+): number {
+  const cents =
+    Number.isFinite(
+      played.cents,
+    )
+      ? (played.cents as number)
+      : 0;
+  return (
+    (played.midi -
+      targetMidi) *
+      100 +
+    cents
+  );
 }
 
 /** 0..100 for how close `played` is to `targetMidi` (see the header). */
-export function pitchPoints(targetMidi: number, played: PlayedPitch): number {
-  if (!Number.isFinite(targetMidi) || !Number.isFinite(played.midi)) return 0;
-  const off = Math.abs(centsOff(targetMidi, played));
-  if (off <= SPOT_ON_CENTS) return 100;
-  if (off >= MISS_CENTS) return 0;
-  return ((MISS_CENTS - off) / (MISS_CENTS - SPOT_ON_CENTS)) * 100;
+export function pitchPoints(
+  targetMidi: number,
+  played: PlayedPitch,
+): number {
+  if (
+    !Number.isFinite(
+      targetMidi,
+    ) ||
+    !Number.isFinite(
+      played.midi,
+    )
+  )
+    return 0;
+  const off =
+    Math.abs(
+      centsOff(
+        targetMidi,
+        played,
+      ),
+    );
+  if (
+    off <=
+    SPOT_ON_CENTS
+  )
+    return 100;
+  if (
+    off >=
+    MISS_CENTS
+  )
+    return 0;
+  return (
+    ((MISS_CENTS -
+      off) /
+      (MISS_CENTS -
+        SPOT_ON_CENTS)) *
+    100
+  );
 }
 
 export type PitchVerdictKind =
-  'spot-on' | 'a-little-flat' | 'a-little-sharp' | 'flat' | 'sharp' | 'octave' | 'wrong';
+  | 'spot-on'
+  | 'a-little-flat'
+  | 'a-little-sharp'
+  | 'flat'
+  | 'sharp'
+  | 'octave'
+  | 'wrong';
 
 /**
  * What to tell the learner about one note: spot on, a little (≤ 50 cents) or more flat or sharp
@@ -53,16 +103,70 @@ export type PitchVerdictKind =
 export function pitchVerdict(
   targetMidi: number,
   played: PlayedPitch,
-): { kind: PitchVerdictKind; heard: number } {
-  const off = centsOff(targetMidi, played);
-  const heard = Math.round(targetMidi + off / 100);
-  const size = Math.abs(off);
-  if (size <= SPOT_ON_CENTS) return { kind: 'spot-on', heard };
-  if (size < MISS_CENTS) {
-    if (size <= A_LITTLE_CENTS)
-      return { kind: off < 0 ? 'a-little-flat' : 'a-little-sharp', heard };
-    return { kind: off < 0 ? 'flat' : 'sharp', heard };
+): {
+  kind: PitchVerdictKind;
+  heard: number;
+} {
+  const off =
+    centsOff(
+      targetMidi,
+      played,
+    );
+  const heard =
+    Math.round(
+      targetMidi +
+        off /
+          100,
+    );
+  const size =
+    Math.abs(
+      off,
+    );
+  if (
+    size <=
+    SPOT_ON_CENTS
+  )
+    return {
+      kind: 'spot-on',
+      heard,
+    };
+  if (
+    size <
+    MISS_CENTS
+  ) {
+    if (
+      size <=
+      A_LITTLE_CENTS
+    )
+      return {
+        kind:
+          off <
+          0
+            ? 'a-little-flat'
+            : 'a-little-sharp',
+        heard,
+      };
+    return {
+      kind:
+        off <
+        0
+          ? 'flat'
+          : 'sharp',
+      heard,
+    };
   }
-  const apart = heard - targetMidi;
-  return { kind: apart !== 0 && apart % 12 === 0 ? 'octave' : 'wrong', heard };
+  const apart =
+    heard -
+    targetMidi;
+  return {
+    kind:
+      apart !==
+        0 &&
+      apart %
+        12 ===
+        0
+        ? 'octave'
+        : 'wrong',
+    heard,
+  };
 }

@@ -5,8 +5,17 @@
  */
 
 export type { NotifPrefsInput } from './categories-schema';
-export const NOTIFY_CATEGORIES = ['social', 'replies', 'follows', 'economy', 'events', 'system'] as const;
-export type NotifyCategory = (typeof NOTIFY_CATEGORIES)[number];
+export const NOTIFY_CATEGORIES =
+  [
+    'social',
+    'replies',
+    'follows',
+    'economy',
+    'events',
+    'system',
+  ] as const;
+export type NotifyCategory =
+  (typeof NOTIFY_CATEGORIES)[number];
 
 export interface ChannelPrefs {
   inapp: boolean;
@@ -15,26 +24,86 @@ export interface ChannelPrefs {
 }
 
 /** Per-category channel defaults. Email defaults off except for `system`. */
-export const CATEGORY_DEFAULTS: Record<NotifyCategory, ChannelPrefs> = {
-  social: { inapp: true, push: true, email: false },
-  replies: { inapp: true, push: true, email: false },
-  follows: { inapp: true, push: true, email: false },
-  economy: { inapp: true, push: true, email: false },
-  events: { inapp: true, push: true, email: false },
-  system: { inapp: true, push: true, email: true },
-};
+export const CATEGORY_DEFAULTS: Record<
+  NotifyCategory,
+  ChannelPrefs
+> =
+  {
+    social:
+      {
+        inapp: true,
+        push: true,
+        email: false,
+      },
+    replies:
+      {
+        inapp: true,
+        push: true,
+        email: false,
+      },
+    follows:
+      {
+        inapp: true,
+        push: true,
+        email: false,
+      },
+    economy:
+      {
+        inapp: true,
+        push: true,
+        email: false,
+      },
+    events:
+      {
+        inapp: true,
+        push: true,
+        email: false,
+      },
+    system:
+      {
+        inapp: true,
+        push: true,
+        email: true,
+      },
+  };
 
-export type NotifyMatrix = Partial<Record<NotifyCategory, Partial<ChannelPrefs>>>;
+export type NotifyMatrix =
+  Partial<
+    Record<
+      NotifyCategory,
+      Partial<ChannelPrefs>
+    >
+  >;
 
 /** Resolve the effective channels for a category (matrix over defaults). */
-export function resolveChannels(matrix: NotifyMatrix | undefined, category: NotifyCategory): ChannelPrefs {
-  const base = CATEGORY_DEFAULTS[category];
-  const override = matrix?.[category];
-  if (!override) return base;
+export function resolveChannels(
+  matrix:
+    | NotifyMatrix
+    | undefined,
+  category: NotifyCategory,
+): ChannelPrefs {
+  const base =
+    CATEGORY_DEFAULTS[
+      category
+    ];
+  const override =
+    matrix?.[
+      category
+    ];
+  if (
+    !override
+  )
+    return base;
   return {
-    inapp: override.inapp ?? base.inapp,
-    push: override.push ?? base.push,
-    email: override.email ?? base.email,
+    inapp:
+      override.inapp ??
+      base.inapp,
+    push:
+      override.push ??
+      base.push,
+    email:
+      override.email ??
+      base.email,
   };
 }
 
@@ -44,39 +113,126 @@ export function resolveChannels(matrix: NotifyMatrix | undefined, category: Noti
  */
 export function inQuietHours(
   nowMinutes: number,
-  quietStart: number | null | undefined,
-  quietEnd: number | null | undefined,
+  quietStart:
+    | number
+    | null
+    | undefined,
+  quietEnd:
+    | number
+    | null
+    | undefined,
 ): boolean {
-  if (quietStart == null || quietEnd == null) return false;
-  if (quietStart === quietEnd) return false;
-  if (quietStart < quietEnd) return nowMinutes >= quietStart && nowMinutes < quietEnd;
+  if (
+    quietStart ==
+      null ||
+    quietEnd ==
+      null
+  )
+    return false;
+  if (
+    quietStart ===
+    quietEnd
+  )
+    return false;
+  if (
+    quietStart <
+    quietEnd
+  )
+    return (
+      nowMinutes >=
+        quietStart &&
+      nowMinutes <
+        quietEnd
+    );
   // Cross-midnight: inside if after start OR before end.
-  return nowMinutes >= quietStart || nowMinutes < quietEnd;
+  return (
+    nowMinutes >=
+      quietStart ||
+    nowMinutes <
+      quietEnd
+  );
 }
 
 /** Minutes-from-midnight in a given IANA tz for a UTC instant. */
-export function minutesInTz(date: Date, tz: string | null | undefined): number {
+export function minutesInTz(
+  date: Date,
+  tz:
+    | string
+    | null
+    | undefined,
+): number {
   try {
-    const fmt = new Intl.DateTimeFormat('en-US', {
-      timeZone: tz || 'UTC',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-    const parts = fmt.formatToParts(date);
-    const h = Number(parts.find((p) => p.type === 'hour')?.value ?? '0');
-    const m = Number(parts.find((p) => p.type === 'minute')?.value ?? '0');
-    return (h % 24) * 60 + m;
+    const fmt =
+      new Intl.DateTimeFormat(
+        'en-US',
+        {
+          timeZone:
+            tz ||
+            'UTC',
+          hour: '2-digit',
+          minute:
+            '2-digit',
+          hour12: false,
+        },
+      );
+    const parts =
+      fmt.formatToParts(
+        date,
+      );
+    const h =
+      Number(
+        parts.find(
+          (
+            p,
+          ) =>
+            p.type ===
+            'hour',
+        )
+          ?.value ??
+          '0',
+      );
+    const m =
+      Number(
+        parts.find(
+          (
+            p,
+          ) =>
+            p.type ===
+            'minute',
+        )
+          ?.value ??
+          '0',
+      );
+    return (
+      (h %
+        24) *
+        60 +
+      m
+    );
   } catch {
-    return date.getUTCHours() * 60 + date.getUTCMinutes();
+    return (
+      date.getUTCHours() *
+        60 +
+      date.getUTCMinutes()
+    );
   }
 }
 
-export const CATEGORY_LABELS: Record<NotifyCategory, string> = {
-  social: 'Likes & reposts',
-  replies: 'Replies & mentions',
-  follows: 'Follows',
-  economy: 'Tips, awards & sales',
-  events: 'Events & live',
-  system: 'System',
-};
+export const CATEGORY_LABELS: Record<
+  NotifyCategory,
+  string
+> =
+  {
+    social:
+      'Likes & reposts',
+    replies:
+      'Replies & mentions',
+    follows:
+      'Follows',
+    economy:
+      'Tips, awards & sales',
+    events:
+      'Events & live',
+    system:
+      'System',
+  };

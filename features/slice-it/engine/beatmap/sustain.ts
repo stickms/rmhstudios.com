@@ -68,42 +68,158 @@ export interface SustainOnset {
  * lag that smoothing adds is taken back off the answer.
  */
 function followTrace(
-  energyAt: (g: number) => number,
+  energyAt: (
+    g: number,
+  ) => number,
   f: number,
   last: number,
   floor: number,
   minPlateau = 0,
   reattack = false,
-): number | null {
+):
+  | number
+  | null {
   // A hold that would end inside the settling window is a hit.
-  if (last < f + SETTLE_FRAMES + 2) return null;
-  const lateStart = f + SETTLE_FRAMES - 2;
-  const settle: number[] = [];
-  for (let g = lateStart; g <= f + SETTLE_FRAMES + 2; g++) settle.push(energyAt(g));
-  settle.sort((a, c) => a - c);
-  const plateau = settle[settle.length >> 1];
-  if (!(plateau > floor * PLATEAU_OVER_FLOOR) || plateau < minPlateau) return null;
+  if (
+    last <
+    f +
+      SETTLE_FRAMES +
+      2
+  )
+    return null;
+  const lateStart =
+    f +
+    SETTLE_FRAMES -
+    2;
+  const settle: number[] =
+    [];
+  for (
+    let g =
+      lateStart;
+    g <=
+    f +
+      SETTLE_FRAMES +
+      2;
+    g++
+  )
+    settle.push(
+      energyAt(
+        g,
+      ),
+    );
+  settle.sort(
+    (
+      a,
+      c,
+    ) =>
+      a -
+      c,
+  );
+  const plateau =
+    settle[
+      settle.length >>
+        1
+    ];
+  if (
+    !(
+      plateau >
+      floor *
+        PLATEAU_OVER_FLOOR
+    ) ||
+    plateau <
+      minPlateau
+  )
+    return null;
 
-  const smoothed = (g: number): number => {
-    let m = 0;
-    for (let k = 0; k < SMOOTH_FRAMES; k++) m = Math.max(m, energyAt(g - k));
-    return m;
-  };
+  const smoothed =
+    (
+      g: number,
+    ): number => {
+      let m = 0;
+      for (
+        let k = 0;
+        k <
+        SMOOTH_FRAMES;
+        k++
+      )
+        m =
+          Math.max(
+            m,
+            energyAt(
+              g -
+                k,
+            ),
+          );
+      return m;
+    };
 
   let low = 0;
-  let prev2 = energyAt(f + SETTLE_FRAMES - 1);
-  let prev1 = energyAt(f + SETTLE_FRAMES);
-  for (let g = f + SETTLE_FRAMES + 1; g <= last; g++) {
-    const e = energyAt(g);
-    if (reattack && e > prev2 * LOW_REATTACK_FACTOR && e > plateau * 0.9 && e > prev1) return g - 1;
-    prev2 = prev1;
-    prev1 = e;
-    if (smoothed(g) < plateau * RELEASE_FRACTION) {
+  let prev2 =
+    energyAt(
+      f +
+        SETTLE_FRAMES -
+        1,
+    );
+  let prev1 =
+    energyAt(
+      f +
+        SETTLE_FRAMES,
+    );
+  for (
+    let g =
+      f +
+      SETTLE_FRAMES +
+      1;
+    g <=
+    last;
+    g++
+  ) {
+    const e =
+      energyAt(
+        g,
+      );
+    if (
+      reattack &&
+      e >
+        prev2 *
+          LOW_REATTACK_FACTOR &&
+      e >
+        plateau *
+          0.9 &&
+      e >
+        prev1
+    )
+      return (
+        g -
+        1
+      );
+    prev2 =
+      prev1;
+    prev1 =
+      e;
+    if (
+      smoothed(
+        g,
+      ) <
+      plateau *
+        RELEASE_FRACTION
+    ) {
       low++;
       // `smoothed(g)` is low only when the last SMOOTH_FRAMES raw frames all were,
       // so the release began SMOOTH_FRAMES - 1 frames before the first low `g`.
-      if (low >= RELEASE_FRAMES) {
-        return Math.max(f + SETTLE_FRAMES, g - RELEASE_FRAMES + 1 - (SMOOTH_FRAMES - 1));
+      if (
+        low >=
+        RELEASE_FRAMES
+      ) {
+        return Math.max(
+          f +
+            SETTLE_FRAMES,
+          g -
+            RELEASE_FRAMES +
+            1 -
+            (SMOOTH_FRAMES -
+              1),
+        );
       }
     } else {
       low = 0;
@@ -125,62 +241,260 @@ export function measureSustainEnds(
   onsets: readonly SustainOnset[],
   maxSeconds: number,
   lowEnvelope?: Float32Array,
-): (number | null)[] {
-  const { data, frames, bands, frameDuration } = spec;
-  const maxFrames = Math.max(SETTLE_FRAMES + 4, Math.ceil(maxSeconds / frameDuration));
-  const out: (number | null)[] = new Array(onsets.length).fill(null);
-  if (frames === 0 || bands === 0) return out;
+): (
+  | number
+  | null
+)[] {
+  const {
+    data,
+    frames,
+    bands,
+    frameDuration,
+  } =
+    spec;
+  const maxFrames =
+    Math.max(
+      SETTLE_FRAMES +
+        4,
+      Math.ceil(
+        maxSeconds /
+          frameDuration,
+      ),
+    );
+  const out: (
+    | number
+    | null
+  )[] =
+    new Array(
+      onsets.length,
+    ).fill(
+      null,
+    );
+  if (
+    frames ===
+      0 ||
+    bands ===
+      0
+  )
+    return out;
 
   // What counts as a loud low end in THIS track, so room hiss and rumble do not
   // register as bass notes.
   let lowLoud = 0;
-  if (lowEnvelope && lowEnvelope.length > 0) {
-    const sorted = Float32Array.from(lowEnvelope).sort();
-    lowLoud = sorted[Math.floor(sorted.length * 0.9)] * LOW_SIGNIFICANCE;
+  if (
+    lowEnvelope &&
+    lowEnvelope.length >
+      0
+  ) {
+    const sorted =
+      Float32Array.from(
+        lowEnvelope,
+      ).sort();
+    lowLoud =
+      sorted[
+        Math.floor(
+          sorted.length *
+            0.9,
+        )
+      ] *
+      LOW_SIGNIFICANCE;
   }
 
-  const bandSet: number[] = [];
-  const picked = new Uint8Array(bands);
+  const bandSet: number[] =
+    [];
+  const picked =
+    new Uint8Array(
+      bands,
+    );
 
-  for (let i = 0; i < onsets.length; i++) {
-    const f = onsets[i].frame;
-    if (f < 5 || f + SETTLE_FRAMES + 2 >= frames) continue;
-    let last = Math.min(frames - 1, f + maxFrames);
+  for (
+    let i = 0;
+    i <
+    onsets.length;
+    i++
+  ) {
+    const f =
+      onsets[
+        i
+      ]
+        .frame;
+    if (
+      f <
+        5 ||
+      f +
+        SETTLE_FRAMES +
+        2 >=
+        frames
+    )
+      continue;
+    let last =
+      Math.min(
+        frames -
+          1,
+        f +
+          maxFrames,
+      );
     // A new note of the same sound ends this one where it starts. A drum hit in
     // other bands does not: that is exactly the snare that used to cut every pad
     // that began on a downbeat to one beat long.
-    const here = onsets[i];
-    for (let j = i + 1; j < onsets.length && onsets[j].frame <= last; j++) {
-      const next = onsets[j];
-      if ((next.strength ?? 1) < NEW_NOTE_STRENGTH) continue;
+    const here =
+      onsets[
+        i
+      ];
+    for (
+      let j =
+        i +
+        1;
+      j <
+        onsets.length &&
+      onsets[
+        j
+      ]
+        .frame <=
+        last;
+      j++
+    ) {
+      const next =
+        onsets[
+          j
+        ];
+      if (
+        (next.strength ??
+          1) <
+        NEW_NOTE_STRENGTH
+      )
+        continue;
       const similar =
-        here.centroid === undefined ||
-        next.centroid === undefined ||
-        Math.abs(next.centroid - here.centroid) <= SAME_SOUND_OCTAVES;
-      if (similar) {
-        last = Math.min(last, next.frame - 1);
+        here.centroid ===
+          undefined ||
+        next.centroid ===
+          undefined ||
+        Math.abs(
+          next.centroid -
+            here.centroid,
+        ) <=
+          SAME_SOUND_OCTAVES;
+      if (
+        similar
+      ) {
+        last =
+          Math.min(
+            last,
+            next.frame -
+              1,
+          );
         break;
       }
     }
-    let endFrame: number | null = null;
+    let endFrame:
+      | number
+      | null =
+      null;
 
     /* View 1: the bands this attack raised. */
-    const before = (f - 4) * bands;
-    const after = (f + 2) * bands;
+    const before =
+      (f -
+        4) *
+      bands;
+    const after =
+      (f +
+        2) *
+      bands;
     let maxRise = 0;
-    for (let b = 0; b < bands; b++) maxRise = Math.max(maxRise, data[after + b] - data[before + b]);
-    if (maxRise >= MIN_RISE) {
-      const ranked: { b: number; rise: number }[] = [];
-      for (let b = 0; b < bands; b++) {
-        const rise = data[after + b] - data[before + b];
-        if (rise >= maxRise * BAND_RISE_SHARE && rise >= MIN_RISE * 0.8) ranked.push({ b, rise });
+    for (
+      let b = 0;
+      b <
+      bands;
+      b++
+    )
+      maxRise =
+        Math.max(
+          maxRise,
+          data[
+            after +
+              b
+          ] -
+            data[
+              before +
+                b
+            ],
+        );
+    if (
+      maxRise >=
+      MIN_RISE
+    ) {
+      const ranked: {
+        b: number;
+        rise: number;
+      }[] =
+        [];
+      for (
+        let b = 0;
+        b <
+        bands;
+        b++
+      ) {
+        const rise =
+          data[
+            after +
+              b
+          ] -
+          data[
+            before +
+              b
+          ];
+        if (
+          rise >=
+            maxRise *
+              BAND_RISE_SHARE &&
+          rise >=
+            MIN_RISE *
+              0.8
+        )
+          ranked.push(
+            {
+              b,
+              rise,
+            },
+          );
       }
-      ranked.sort((a, c) => c.rise - a.rise);
-      picked.fill(0);
-      for (const { b } of ranked.slice(0, MAX_BANDS)) {
-        for (let d = -1; d <= 1; d++) {
-          const nb = b + d;
-          if (nb >= 0 && nb < bands) picked[nb] = 1;
+      ranked.sort(
+        (
+          a,
+          c,
+        ) =>
+          c.rise -
+          a.rise,
+      );
+      picked.fill(
+        0,
+      );
+      for (const {
+        b,
+      } of ranked.slice(
+        0,
+        MAX_BANDS,
+      )) {
+        for (
+          let d =
+            -1;
+          d <=
+          1;
+          d++
+        ) {
+          const nb =
+            b +
+            d;
+          if (
+            nb >=
+              0 &&
+            nb <
+              bands
+          )
+            picked[
+              nb
+            ] =
+              1;
         }
       }
 
@@ -189,39 +503,207 @@ export function measureSustainEnds(
        * of the drum's — gone in 100 ms — and the note's. Averaging all of them
        * makes the drum's decay look like the note releasing. Keeping the bands that
        * persist follows the NOTE. */
-      const lateStart = f + SETTLE_FRAMES - 2;
+      const lateStart =
+        f +
+        SETTLE_FRAMES -
+        2;
       bandSet.length = 0;
-      for (let b = 0; b < bands; b++) {
-        if (!picked[b]) continue;
-        const floorB = Math.expm1(data[(f - 4) * bands + b]);
+      for (
+        let b = 0;
+        b <
+        bands;
+        b++
+      ) {
+        if (
+          !picked[
+            b
+          ]
+        )
+          continue;
+        const floorB =
+          Math.expm1(
+            data[
+              (f -
+                4) *
+                bands +
+                b
+            ],
+          );
         let early = 0;
-        for (let g = f + 2; g <= f + 4; g++) early = Math.max(early, Math.expm1(data[g * bands + b]));
+        for (
+          let g =
+            f +
+            2;
+          g <=
+          f +
+            4;
+          g++
+        )
+          early =
+            Math.max(
+              early,
+              Math.expm1(
+                data[
+                  g *
+                    bands +
+                    b
+                ],
+              ),
+            );
         let late = 0;
-        for (let g = lateStart; g <= f + SETTLE_FRAMES; g++) late += Math.expm1(data[g * bands + b]);
-        late /= f + SETTLE_FRAMES - lateStart + 1;
-        if (late >= early * BAND_PERSISTENCE && late > floorB * PLATEAU_OVER_FLOOR) bandSet.push(b);
+        for (
+          let g =
+            lateStart;
+          g <=
+          f +
+            SETTLE_FRAMES;
+          g++
+        )
+          late +=
+            Math.expm1(
+              data[
+                g *
+                  bands +
+                  b
+              ],
+            );
+        late /=
+          f +
+          SETTLE_FRAMES -
+          lateStart +
+          1;
+        if (
+          late >=
+            early *
+              BAND_PERSISTENCE &&
+          late >
+            floorB *
+              PLATEAU_OVER_FLOOR
+        )
+          bandSet.push(
+            b,
+          );
       }
-      if (bandSet.length > 0) {
-        const energyAt = (g: number): number => {
-          const row = g * bands;
-          let sum = 0;
-          for (let k = 0; k < bandSet.length; k++) sum += Math.expm1(data[row + bandSet[k]]);
-          return sum / bandSet.length;
-        };
-        const floor = Math.min(energyAt(f - 4), energyAt(f - 3)) + 1e-6;
-        endFrame = followTrace(energyAt, f, last, floor);
+      if (
+        bandSet.length >
+        0
+      ) {
+        const energyAt =
+          (
+            g: number,
+          ): number => {
+            const row =
+              g *
+              bands;
+            let sum = 0;
+            for (
+              let k = 0;
+              k <
+              bandSet.length;
+              k++
+            )
+              sum +=
+                Math.expm1(
+                  data[
+                    row +
+                      bandSet[
+                        k
+                      ]
+                  ],
+                );
+            return (
+              sum /
+              bandSet.length
+            );
+          };
+        const floor =
+          Math.min(
+            energyAt(
+              f -
+                4,
+            ),
+            energyAt(
+              f -
+                3,
+            ),
+          ) +
+          1e-6;
+        endFrame =
+          followTrace(
+            energyAt,
+            f,
+            last,
+            floor,
+          );
       }
     }
 
     /* View 2: the low end, which the bands above cannot resolve. */
-    const lowAt = (g: number): number => (lowEnvelope ? lowEnvelope[Math.min(g, lowEnvelope.length - 1)] : 0);
-    const lowFloor = Math.min(lowAt(f - 4), lowAt(f - 3)) + 1e-6;
-    if (lowEnvelope && lowAt(f + 3) >= lowFloor * LOW_RISE_FACTOR) {
-      const lowEnd = followTrace(lowAt, f, last, lowFloor, lowLoud, true);
-      if (lowEnd !== null && (endFrame === null || lowEnd > endFrame)) endFrame = lowEnd;
+    const lowAt =
+      (
+        g: number,
+      ): number =>
+        lowEnvelope
+          ? lowEnvelope[
+              Math.min(
+                g,
+                lowEnvelope.length -
+                  1,
+              )
+            ]
+          : 0;
+    const lowFloor =
+      Math.min(
+        lowAt(
+          f -
+            4,
+        ),
+        lowAt(
+          f -
+            3,
+        ),
+      ) +
+      1e-6;
+    if (
+      lowEnvelope &&
+      lowAt(
+        f +
+          3,
+      ) >=
+        lowFloor *
+          LOW_RISE_FACTOR
+    ) {
+      const lowEnd =
+        followTrace(
+          lowAt,
+          f,
+          last,
+          lowFloor,
+          lowLoud,
+          true,
+        );
+      if (
+        lowEnd !==
+          null &&
+        (endFrame ===
+          null ||
+          lowEnd >
+            endFrame)
+      )
+        endFrame =
+          lowEnd;
     }
 
-    if (endFrame !== null) out[i] = spec.frameTime(endFrame);
+    if (
+      endFrame !==
+      null
+    )
+      out[
+        i
+      ] =
+        spec.frameTime(
+          endFrame,
+        );
   }
 
   return out;

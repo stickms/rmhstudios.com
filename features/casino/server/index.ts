@@ -32,7 +32,10 @@ import {
   restoreRouletteTables,
 } from './roulette';
 import { logger } from '../../../server/socket-server/logger';
-import { openCasinoTableStore, type CasinoTableStore } from './table-store';
+import {
+  openCasinoTableStore,
+  type CasinoTableStore,
+} from './table-store';
 
 /**
  * The casino's socket surface (Blackjack, Hold'em, Baccarat, Roulette), registered by
@@ -40,35 +43,77 @@ import { openCasinoTableStore, type CasinoTableStore } from './table-store';
  * Studio Jam and Lights Out. Registration and disconnect order is blackjack, holdem, baccarat,
  * roulette, as before.
  */
-const casino: FeatureSocketServer = {
-  id: 'casino',
-  slot: 'casino',
-  register(io, socket) {
-    registerBlackjackHandlers(io, socket);
-    registerHoldemHandlers(io, socket);
-    registerBaccaratHandlers(io, socket);
-    registerRouletteHandlers(io, socket);
-  },
-  onDisconnect(io, socket) {
-    handleBlackjackDisconnect(io, socket);
-    handleHoldemDisconnect(io, socket);
-    handleBaccaratDisconnect(io, socket);
-    handleRouletteDisconnect(io, socket);
-  },
-};
+const casino: FeatureSocketServer =
+  {
+    id: 'casino',
+    slot: 'casino',
+    register(
+      io,
+      socket,
+    ) {
+      registerBlackjackHandlers(
+        io,
+        socket,
+      );
+      registerHoldemHandlers(
+        io,
+        socket,
+      );
+      registerBaccaratHandlers(
+        io,
+        socket,
+      );
+      registerRouletteHandlers(
+        io,
+        socket,
+      );
+    },
+    onDisconnect(
+      io,
+      socket,
+    ) {
+      handleBlackjackDisconnect(
+        io,
+        socket,
+      );
+      handleHoldemDisconnect(
+        io,
+        socket,
+      );
+      handleBaccaratDisconnect(
+        io,
+        socket,
+      );
+      handleRouletteDisconnect(
+        io,
+        socket,
+      );
+    },
+  };
 
 export default casino;
 
 /** Boot: each table module opens its public table / lobby broadcaster. Called once after `listen()`. */
-export function initializeCasino(io: Server): void {
-  initializeBlackjackPublicTable(io);
-  initializeHoldem(io);
-  initializeBaccarat(io);
-  initializeRoulette(io);
+export function initializeCasino(
+  io: Server,
+): void {
+  initializeBlackjackPublicTable(
+    io,
+  );
+  initializeHoldem(
+    io,
+  );
+  initializeBaccarat(
+    io,
+  );
+  initializeRoulette(
+    io,
+  );
 }
 
 /** The durable table store this process opened at boot, or `null` (the default: `CASINO_DURABLE_TABLES` is off). */
-let tableStore: CasinoTableStore | null = null;
+let tableStore: CasinoTableStore | null =
+  null;
 
 /**
  * Boot, BEFORE `listen()`: open the durable table store and bring back the tables the previous process saved
@@ -83,42 +128,97 @@ let tableStore: CasinoTableStore | null = null;
  *
  * @param store a test's own store; production passes nothing and the environment decides.
  */
-export async function restoreCasinoTables(io: Server, store?: CasinoTableStore): Promise<void> {
+export async function restoreCasinoTables(
+  io: Server,
+  store?: CasinoTableStore,
+): Promise<void> {
   try {
-    tableStore = store ?? (await openCasinoTableStore(logger));
+    tableStore =
+      store ??
+      (await openCasinoTableStore(
+        logger,
+      ));
   } catch (err) {
-    logger.error({ event: 'casino_tables_restore_error', error: String(err) });
+    logger.error(
+      {
+        event:
+          'casino_tables_restore_error',
+        error:
+          String(
+            err,
+          ),
+      },
+    );
     return;
   }
-  if (!tableStore) return;
-  const games = [
-    ['blackjack', restoreBlackjackTables],
-    ['roulette', restoreRouletteTables],
-    ['baccarat', restoreBaccaratTables],
-  ] as const;
-  for (const [game, restore] of games) {
+  if (
+    !tableStore
+  )
+    return;
+  const games =
+    [
+      [
+        'blackjack',
+        restoreBlackjackTables,
+      ],
+      [
+        'roulette',
+        restoreRouletteTables,
+      ],
+      [
+        'baccarat',
+        restoreBaccaratTables,
+      ],
+    ] as const;
+  for (const [
+    game,
+    restore,
+  ] of games) {
     try {
-      await restore(io, tableStore);
+      await restore(
+        io,
+        tableStore,
+      );
     } catch (err) {
-      logger.error({ event: 'casino_tables_restore_error', game, error: String(err) });
+      logger.error(
+        {
+          event:
+            'casino_tables_restore_error',
+          game,
+          error:
+            String(
+              err,
+            ),
+        },
+      );
     }
   }
 }
 
 /** Shutdown, after {@link CASINO_SHUTDOWN_REFUNDS} have settled: close the store's connection. */
 export async function closeCasinoTableStore(): Promise<void> {
-  const store = tableStore;
-  tableStore = null;
-  await store?.close().catch(() => {});
+  const store =
+    tableStore;
+  tableStore =
+    null;
+  await store
+    ?.close()
+    .catch(
+      () => {},
+    );
 }
 
 /** The read-only lobby snapshot served at `/internal/casino-rooms` (no identities, hands or balances). */
 export function listCasinoRooms() {
   return {
-    blackjack: listBlackjackRooms(),
-    holdem: listHoldemRooms(),
-    baccarat: listBaccaratRooms(),
-    roulette: listRouletteRooms(),
+    blackjack:
+      listBlackjackRooms(),
+    holdem:
+      listHoldemRooms(),
+    baccarat:
+      listBaccaratRooms(),
+    roulette:
+      listRouletteRooms(),
   };
 }
 
@@ -130,11 +230,31 @@ export function listCasinoRooms() {
  * With durable tables on, the blackjack, roulette and baccarat entries save their tables instead of refunding
  * them (same call, same synchronous claim: each snapshots and empties its rooms before it awaits anything).
  */
-export const CASINO_SHUTDOWN_REFUNDS: ReadonlyArray<readonly [game: string, run: (deadlineMs: number) => Promise<unknown>]> = [
-  ['blackjack', refundBlackjackOnShutdown],
-  ['roulette', refundRouletteOnShutdown],
-  ['baccarat', refundBaccaratOnShutdown],
-  ['holdem', cashOutHoldemOnShutdown],
-];
+export const CASINO_SHUTDOWN_REFUNDS: ReadonlyArray<
+  readonly [
+    game: string,
+    run: (
+      deadlineMs: number,
+    ) => Promise<unknown>,
+  ]
+> =
+  [
+    [
+      'blackjack',
+      refundBlackjackOnShutdown,
+    ],
+    [
+      'roulette',
+      refundRouletteOnShutdown,
+    ],
+    [
+      'baccarat',
+      refundBaccaratOnShutdown,
+    ],
+    [
+      'holdem',
+      cashOutHoldemOnShutdown,
+    ],
+  ];
 
 export { CASINO_SHUTDOWN_DEADLINE_MS } from './casino-shutdown';

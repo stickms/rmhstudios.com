@@ -25,12 +25,39 @@ export const SWIPE_MIN_PX = 40;
 /** A black key's width as a share of a white key's (27px at the 44px minimum: over WCAG 2.5.8's 24px). */
 export const BLACK_SHARE = 0.62;
 
-const WHITE_SEMITONES = new Set([0, 2, 4, 5, 7, 9, 11]);
+const WHITE_SEMITONES =
+  new Set(
+    [
+      0,
+      2,
+      4,
+      5,
+      7,
+      9,
+      11,
+    ],
+  );
 
 /** White keys shown at a keyboard width of `px` CSS pixels. */
-export function whiteKeysFor(px: number): number {
-  const n = Math.floor((Number.isFinite(px) ? px : 0) / MIN_WHITE_PX);
-  return Math.max(MIN_WHITE_KEYS, Math.min(MAX_WHITE_KEYS, n));
+export function whiteKeysFor(
+  px: number,
+): number {
+  const n =
+    Math.floor(
+      (Number.isFinite(
+        px,
+      )
+        ? px
+        : 0) /
+        MIN_WHITE_PX,
+    );
+  return Math.max(
+    MIN_WHITE_KEYS,
+    Math.min(
+      MAX_WHITE_KEYS,
+      n,
+    ),
+  );
 }
 
 export interface PianoKey {
@@ -41,14 +68,41 @@ export interface PianoKey {
 }
 
 /** The two octaves the window can show from `octave`'s C (the CSS shows the first N whites). */
-export function windowKeys(octave: number): PianoKey[] {
-  const first = 12 * (octave + 1);
-  const out: PianoKey[] = [];
+export function windowKeys(
+  octave: number,
+): PianoKey[] {
+  const first =
+    12 *
+    (octave +
+      1);
+  const out: PianoKey[] =
+    [];
   let whites = 0;
-  for (let midi = first; midi < first + 24; midi++) {
-    const black = !WHITE_SEMITONES.has(midi % 12);
-    out.push({ midi, black, whiteBefore: whites });
-    if (!black) whites++;
+  for (
+    let midi =
+      first;
+    midi <
+    first +
+      24;
+    midi++
+  ) {
+    const black =
+      !WHITE_SEMITONES.has(
+        midi %
+          12,
+      );
+    out.push(
+      {
+        midi,
+        black,
+        whiteBefore:
+          whites,
+      },
+    );
+    if (
+      !black
+    )
+      whites++;
   }
   return out;
 }
@@ -58,21 +112,59 @@ export function windowKeys(octave: number): PianoKey[] {
  * key to its right is in view too: the one past the last white would be a sliver at the clipped
  * edge, so the CSS collapses it (`.rmm-keys__black`, `--rmm-shown`) and it leaves the tab order.
  */
-export function inView(key: PianoKey, whites: number): boolean {
-  return key.whiteBefore < whites;
+export function inView(
+  key: PianoKey,
+  whites: number,
+): boolean {
+  return (
+    key.whiteBefore <
+    whites
+  );
 }
 
-export function clampOctave(octave: number): number {
-  return Math.max(MIN_OCTAVE, Math.min(MAX_OCTAVE, Math.round(octave)));
+export function clampOctave(
+  octave: number,
+): number {
+  return Math.max(
+    MIN_OCTAVE,
+    Math.min(
+      MAX_OCTAVE,
+      Math.round(
+        octave,
+      ),
+    ),
+  );
 }
 
 /**
  * A swipe along the strip: −1 (to lower notes: the finger moved right, dragging the keys along),
  * +1 (to higher notes) or 0 (too short, or more up-and-down than sideways: a scroll).
  */
-export function swipeShift(dx: number, dy: number): -1 | 0 | 1 {
-  if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < 1.5 * Math.abs(dy)) return 0;
-  return dx > 0 ? -1 : 1;
+export function swipeShift(
+  dx: number,
+  dy: number,
+):
+  | -1
+  | 0
+  | 1 {
+  if (
+    Math.abs(
+      dx,
+    ) <
+      SWIPE_MIN_PX ||
+    Math.abs(
+      dx,
+    ) <
+      1.5 *
+        Math.abs(
+          dy,
+        )
+  )
+    return 0;
+  return dx >
+    0
+    ? -1
+    : 1;
 }
 
 /**
@@ -81,16 +173,53 @@ export function swipeShift(dx: number, dy: number): -1 | 0 | 1 {
  * range). A key no window can show leaves the window where it is. `whites` is how many white keys
  * fit ({@link whiteKeysFor}).
  */
-export function octaveShowing(midi: number, octave: number, whites: number): number {
-  let best = octave;
-  let bestDistance = Infinity;
-  for (let o = MIN_OCTAVE; o <= MAX_OCTAVE; o++) {
-    const key = windowKeys(o).find((k) => k.midi === midi);
-    if (!key || !inView(key, whites)) continue;
-    const distance = Math.abs(o - octave);
-    if (distance < bestDistance) {
-      best = o;
-      bestDistance = distance;
+export function octaveShowing(
+  midi: number,
+  octave: number,
+  whites: number,
+): number {
+  let best =
+    octave;
+  let bestDistance =
+    Infinity;
+  for (
+    let o =
+      MIN_OCTAVE;
+    o <=
+    MAX_OCTAVE;
+    o++
+  ) {
+    const key =
+      windowKeys(
+        o,
+      ).find(
+        (
+          k,
+        ) =>
+          k.midi ===
+          midi,
+      );
+    if (
+      !key ||
+      !inView(
+        key,
+        whites,
+      )
+    )
+      continue;
+    const distance =
+      Math.abs(
+        o -
+          octave,
+      );
+    if (
+      distance <
+      bestDistance
+    ) {
+      best =
+        o;
+      bestDistance =
+        distance;
     }
   }
   return best;

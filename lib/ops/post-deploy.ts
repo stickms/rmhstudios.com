@@ -14,7 +14,13 @@ import {
   type SeriesRow,
 } from './alarm-rules';
 
-export const GUARDED_ALARMS = new Set(['A08', 'A09']);
+export const GUARDED_ALARMS =
+  new Set(
+    [
+      'A08',
+      'A09',
+    ],
+  );
 
 export interface GuardVerdict {
   rollback: boolean;
@@ -27,14 +33,48 @@ export function guardVerdict(
   since: number,
   now: number,
 ): GuardVerdict {
-  const rules = effectiveRules(overrides).filter((r) => GUARDED_ALARMS.has(r.id));
-  const afterDeploy = rows.filter((r) => new Date(r.at).getTime() >= since);
-  const firing = evaluateRules(rules, afterDeploy, now).filter((e) => e.active);
+  const rules =
+    effectiveRules(
+      overrides,
+    ).filter(
+      (
+        r,
+      ) =>
+        GUARDED_ALARMS.has(
+          r.id,
+        ),
+    );
+  const afterDeploy =
+    rows.filter(
+      (
+        r,
+      ) =>
+        new Date(
+          r.at,
+        ).getTime() >=
+        since,
+    );
+  const firing =
+    evaluateRules(
+      rules,
+      afterDeploy,
+      now,
+    ).filter(
+      (
+        e,
+      ) =>
+        e.active,
+    );
   return {
-    rollback: firing.length > 0,
-    reasons: firing.map(
-      (e) =>
-        `${e.rule.id} ${e.rule.title}${e.dim ? ` (${e.dim})` : ''}: ${formatValue(e.current, e.rule.unit)} > ${formatValue(e.rule.threshold, e.rule.unit)}`,
-    ),
+    rollback:
+      firing.length >
+      0,
+    reasons:
+      firing.map(
+        (
+          e,
+        ) =>
+          `${e.rule.id} ${e.rule.title}${e.dim ? ` (${e.dim})` : ''}: ${formatValue(e.current, e.rule.unit)} > ${formatValue(e.rule.threshold, e.rule.unit)}`,
+      ),
   };
 }

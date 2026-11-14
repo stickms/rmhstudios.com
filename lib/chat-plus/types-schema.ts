@@ -8,10 +8,26 @@ import { z } from 'zod';
 
 import { CHAT_KINDS } from './types';
 
-export const chatKindSchema = z.enum(CHAT_KINDS);
+export const chatKindSchema =
+  z.enum(
+    CHAT_KINDS,
+  );
 
-export const chatRefSchema = z.object({
-  kind: chatKindSchema,
-  id: z.string().min(1).max(60),
-});
-export type ChatRef = z.infer<typeof chatRefSchema>;
+export const chatRefSchema =
+  z.object(
+    {
+      kind: chatKindSchema,
+      id: z
+        .string()
+        .min(
+          1,
+        )
+        .max(
+          60,
+        ),
+    },
+  );
+export type ChatRef =
+  z.infer<
+    typeof chatRefSchema
+  >;

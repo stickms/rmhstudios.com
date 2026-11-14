@@ -21,28 +21,48 @@
  */
 
 /** The search param every query-shaped invite link uses. */
-export const LOBBY_LINK_PARAM = 'lobby';
+export const LOBBY_LINK_PARAM =
+  'lobby';
 
 /**
  * Codes across the games are 4–8 alphanumerics, except Neon Driftway's
  * hyphenated room ids. Anything else in the slot is not a code that could join
  * anything, so it is rejected rather than passed to a socket.
  */
-const LOBBY_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$/;
+const LOBBY_CODE_PATTERN =
+  /^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$/;
 
 /**
  * A code from an untrusted place (a URL, a paste) as something joinable, or
  * `null`. Whitespace is forgiving because links get wrapped by mail clients.
  */
-export function sanitizeLobbyCode(raw: unknown): string | null {
-  if (typeof raw !== 'string') return null;
-  const code = raw.trim();
-  return LOBBY_CODE_PATTERN.test(code) ? code : null;
+export function sanitizeLobbyCode(
+  raw: unknown,
+):
+  | string
+  | null {
+  if (
+    typeof raw !==
+    'string'
+  )
+    return null;
+  const code =
+    raw.trim();
+  return LOBBY_CODE_PATTERN.test(
+    code,
+  )
+    ? code
+    : null;
 }
 
 /** The origin to build links against, or `''` during SSR. */
 function origin(): string {
-  return typeof window === 'undefined' ? '' : window.location.origin;
+  return typeof window ===
+    'undefined'
+    ? ''
+    : window
+        .location
+        .origin;
 }
 
 /**
@@ -53,11 +73,28 @@ function origin(): string {
  * Returns `''` when there is no `window` (SSR), so a caller that renders the
  * link renders nothing rather than a half-formed URL.
  */
-export function lobbyLink(code: string, path?: string): string {
-  const base = origin();
-  if (!base) return '';
-  const url = new URL(path ?? window.location.pathname, base);
-  url.searchParams.set(LOBBY_LINK_PARAM, code);
+export function lobbyLink(
+  code: string,
+  path?: string,
+): string {
+  const base =
+    origin();
+  if (
+    !base
+  )
+    return '';
+  const url =
+    new URL(
+      path ??
+        window
+          .location
+          .pathname,
+      base,
+    );
+  url.searchParams.set(
+    LOBBY_LINK_PARAM,
+    code,
+  );
   return url.toString();
 }
 
@@ -65,9 +102,17 @@ export function lobbyLink(code: string, path?: string): string {
  * `https://rmhstudios.com/rmhbox/AB12CD` — an absolute link for a game whose
  * lobby is already its own route, so the code lives in the path.
  */
-export function lobbyPathLink(path: string): string {
-  const base = origin();
-  return base ? new URL(path, base).toString() : '';
+export function lobbyPathLink(
+  path: string,
+): string {
+  const base =
+    origin();
+  return base
+    ? new URL(
+        path,
+        base,
+      ).toString()
+    : '';
 }
 
 /**
@@ -80,15 +125,40 @@ export function lobbyPathLink(path: string): string {
  * person: a friend who is not signed in. Dropping the code on the way through
  * login is dropping the invitation.
  */
-export function lobbyReturnPath(path: string, code?: string | null): string {
-  return code ? `${path}?${LOBBY_LINK_PARAM}=${encodeURIComponent(code)}` : path;
+export function lobbyReturnPath(
+  path: string,
+  code?:
+    | string
+    | null,
+): string {
+  return code
+    ? `${path}?${LOBBY_LINK_PARAM}=${encodeURIComponent(code)}`
+    : path;
 }
 
 /**
  * The invite code in a query string, for code that has no router to ask —
  * Velum 2099's lobby overlay is plain DOM, built long before this.
  */
-export function readLobbyCodeFromSearch(search: string = typeof window === 'undefined' ? '' : window.location.search): string | null {
-  if (!search) return null;
-  return sanitizeLobbyCode(new URLSearchParams(search).get(LOBBY_LINK_PARAM));
+export function readLobbyCodeFromSearch(
+  search: string = typeof window ===
+  'undefined'
+    ? ''
+    : window
+        .location
+        .search,
+):
+  | string
+  | null {
+  if (
+    !search
+  )
+    return null;
+  return sanitizeLobbyCode(
+    new URLSearchParams(
+      search,
+    ).get(
+      LOBBY_LINK_PARAM,
+    ),
+  );
 }

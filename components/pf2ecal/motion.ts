@@ -23,41 +23,86 @@
 import type { Transition } from 'framer-motion';
 
 /** The page's easing curve. Matches `--pf2e-ease`. */
-export const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+export const EASE: [
+  number,
+  number,
+  number,
+  number,
+] =
+  [
+    0.22,
+    1,
+    0.36,
+    1,
+  ];
 
 /** Durations in seconds, matching `--pf2e-fast` / `--pf2e-base` in the CSS. */
-export const DURATION = {
-  /** 130ms — a state change on something already on screen. */
-  fast: 0.13,
-  /** 220ms — something entering or leaving. */
-  base: 0.22,
-  /** 300ms — a whole section expanding. */
-  slow: 0.3,
-} as const;
+export const DURATION =
+  {
+    /** 130ms — a state change on something already on screen. */
+    fast: 0.13,
+    /** 220ms — something entering or leaving. */
+    base: 0.22,
+    /** 300ms — a whole section expanding. */
+    slow: 0.3,
+  } as const;
 
 /** Press feedback: stiff enough that the finger never outruns it. */
-export const SPRING_PRESS: Transition = { type: 'spring', stiffness: 500, damping: 30 };
+export const SPRING_PRESS: Transition =
+  {
+    type: 'spring',
+    stiffness: 500,
+    damping: 30,
+  };
 
 /** A sheet or panel arriving. Slightly softer, with a hint of settle. */
-export const SPRING_PANEL: Transition = {
-  type: 'spring',
-  stiffness: 420,
-  damping: 38,
-  mass: 0.9,
-};
+export const SPRING_PANEL: Transition =
+  {
+    type: 'spring',
+    stiffness: 420,
+    damping: 38,
+    mass: 0.9,
+  };
 
 /** A list reordering under its own content — no overshoot, nothing to read past. */
-export const SPRING_LIST: Transition = { type: 'spring', stiffness: 380, damping: 38 };
+export const SPRING_LIST: Transition =
+  {
+    type: 'spring',
+    stiffness: 380,
+    damping: 38,
+  };
 
 /** The standard enter/leave transition for anything that fades or rises. */
-export const TRANSITION: Transition = { duration: DURATION.base, ease: EASE };
+export const TRANSITION: Transition =
+  {
+    duration:
+      DURATION.base,
+    ease: EASE,
+  };
 
 /** The quicker one, for something leaving or swapping in place. */
-export const TRANSITION_FAST: Transition = { duration: DURATION.fast, ease: EASE };
+export const TRANSITION_FAST: Transition =
+  {
+    duration:
+      DURATION.fast,
+    ease: EASE,
+  };
 
 /** Fade in, rise slightly. The page's default entrance. */
-export const FADE_RISE = {
-  initial: { opacity: 0, y: 6 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: 6 },
-} as const;
+export const FADE_RISE =
+  {
+    initial:
+      {
+        opacity: 0,
+        y: 6,
+      },
+    animate:
+      {
+        opacity: 1,
+        y: 0,
+      },
+    exit: {
+      opacity: 0,
+      y: 6,
+    },
+  } as const;

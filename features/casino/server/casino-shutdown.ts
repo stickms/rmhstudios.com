@@ -26,12 +26,19 @@
  * first half; closing Prisma and the auth pool gets the rest.
  */
 
-import { createHash, randomUUID } from 'crypto';
+import {
+  createHash,
+  randomUUID,
+} from 'crypto';
 import { creditCoinsOn } from '../../../lib/economy/ledger-core';
 import { getPrismaClient } from '../../../server/socket-server/prisma-client';
 import { logger } from '../../../server/socket-server/logger';
 
-export type CasinoGame = 'blackjack' | 'roulette' | 'baccarat' | 'holdem';
+export type CasinoGame =
+  | 'blackjack'
+  | 'roulette'
+  | 'baccarat'
+  | 'holdem';
 
 /** How long the casino modules may spend refunding before shutdown moves on. */
 export const CASINO_SHUTDOWN_DEADLINE_MS = 5_000;
@@ -74,63 +81,134 @@ export interface ShutdownRefundSummary {
  * off by `process.exit`.
  */
 export class InFlight {
-  private readonly pending = new Set<Promise<unknown>>();
+  private readonly pending =
+    new Set<
+      Promise<unknown>
+    >();
 
-  track<T>(work: Promise<T>): Promise<T> {
-    this.pending.add(work);
-    const done = () => {
-      this.pending.delete(work);
-    };
-    work.then(done, done);
+  track<
+    T,
+  >(
+    work: Promise<T>,
+  ): Promise<T> {
+    this.pending.add(
+      work,
+    );
+    const done =
+      () => {
+        this.pending.delete(
+          work,
+        );
+      };
+    work.then(
+      done,
+      done,
+    );
     return work;
   }
 
   get size(): number {
-    return this.pending.size;
+    return this
+      .pending
+      .size;
   }
 
   /** Resolves once nothing is in flight (work that settles may start more). */
   async drain(): Promise<void> {
-    while (this.pending.size > 0) await Promise.allSettled([...this.pending]);
+    while (
+      this
+        .pending
+        .size >
+      0
+    )
+      await Promise.allSettled(
+        [
+          ...this
+            .pending,
+        ],
+      );
   }
 }
 
 /** One key per claim: a retry (or a hand re-run) of the same refund is a no-op. */
-function idempotencyKeyFor(claim: StakeClaim, shutdownId: string): string {
-  if (claim.idempotencyKey) return claim.idempotencyKey;
+function idempotencyKeyFor(
+  claim: StakeClaim,
+  shutdownId: string,
+): string {
+  if (
+    claim.idempotencyKey
+  )
+    return claim.idempotencyKey;
   const key = `casino-shutdown:${claim.game}:${claim.roomId}:${claim.userId}:${shutdownId}`;
   // coin_transaction.idempotency_key is VARCHAR(128); user ids are not length-capped.
-  if (key.length <= 128) return key;
+  if (
+    key.length <=
+    128
+  )
+    return key;
   return `casino-shutdown:${createHash('sha256').update(key).digest('hex')}`;
 }
 
-const NOTES: Record<CasinoGame, string> = {
-  blackjack: 'Blackjack stake refund (server restart)',
-  roulette: 'Roulette stake refund (server restart)',
-  baccarat: 'Baccarat stake refund (server restart)',
-  holdem: "Hold'em cash out (server restart)",
-};
-
-async function creditClaim(claim: StakeClaim, idempotencyKey: string): Promise<void> {
-  const opts = {
-    type: 'WAGER' as const,
-    entityType: claim.game,
-    entityId: claim.roomId,
-    note: NOTES[claim.game],
-    idempotencyKey,
+const NOTES: Record<
+  CasinoGame,
+  string
+> =
+  {
+    blackjack:
+      'Blackjack stake refund (server restart)',
+    roulette:
+      'Roulette stake refund (server restart)',
+    baccarat:
+      'Baccarat stake refund (server restart)',
+    holdem:
+      "Hold'em cash out (server restart)",
   };
+
+async function creditClaim(
+  claim: StakeClaim,
+  idempotencyKey: string,
+): Promise<void> {
+  const opts =
+    {
+      type: 'WAGER' as const,
+      entityType:
+        claim.game,
+      entityId:
+        claim.roomId,
+      note: NOTES[
+        claim
+          .game
+      ],
+      idempotencyKey,
+    };
   try {
-    await creditCoinsOn(getPrismaClient(), claim.userId, claim.amount, opts);
+    await creditCoinsOn(
+      getPrismaClient(),
+      claim.userId,
+      claim.amount,
+      opts,
+    );
   } catch (first) {
     // One retry. The key makes it safe even if the first attempt committed and
     // only its acknowledgement was lost: the ledger reports a replay instead.
-    logger.warn({
-      event: 'casino_shutdown_refund_retry',
-      ...claim,
-      idempotencyKey,
-      error: String(first),
-    });
-    await creditCoinsOn(getPrismaClient(), claim.userId, claim.amount, opts);
+    logger.warn(
+      {
+        event:
+          'casino_shutdown_refund_retry',
+        ...claim,
+        idempotencyKey,
+        error:
+          String(
+            first,
+          ),
+      },
+    );
+    await creditCoinsOn(
+      getPrismaClient(),
+      claim.userId,
+      claim.amount,
+      opts,
+    );
   }
 }
 
@@ -148,75 +226,198 @@ export async function settleShutdownClaims(
   inFlight: InFlight,
   deadlineMs: number = CASINO_SHUTDOWN_DEADLINE_MS,
 ): Promise<ShutdownRefundSummary> {
-  const shutdownId = randomUUID().slice(0, 8);
-  const status = new Map<StakeClaim, 'pending' | 'refunded' | 'failed'>();
-  const keys = new Map<StakeClaim, string>();
+  const shutdownId =
+    randomUUID().slice(
+      0,
+      8,
+    );
+  const status =
+    new Map<
+      StakeClaim,
+      | 'pending'
+      | 'refunded'
+      | 'failed'
+    >();
+  const keys =
+    new Map<
+      StakeClaim,
+      string
+    >();
 
-  const refunds = claims.map((claim) => {
-    const key = idempotencyKeyFor(claim, shutdownId);
-    keys.set(claim, key);
-    status.set(claim, 'pending');
-    return creditClaim(claim, key).then(
-      () => {
-        status.set(claim, 'refunded');
-      },
-      (err: unknown) => {
-        status.set(claim, 'failed');
-        logger.error({
-          event: 'casino_shutdown_refund_failed',
-          ...claim,
-          idempotencyKey: key,
-          error: String(err),
-        });
+  const refunds =
+    claims.map(
+      (
+        claim,
+      ) => {
+        const key =
+          idempotencyKeyFor(
+            claim,
+            shutdownId,
+          );
+        keys.set(
+          claim,
+          key,
+        );
+        status.set(
+          claim,
+          'pending',
+        );
+        return creditClaim(
+          claim,
+          key,
+        ).then(
+          () => {
+            status.set(
+              claim,
+              'refunded',
+            );
+          },
+          (
+            err: unknown,
+          ) => {
+            status.set(
+              claim,
+              'failed',
+            );
+            logger.error(
+              {
+                event:
+                  'casino_shutdown_refund_failed',
+                ...claim,
+                idempotencyKey:
+                  key,
+                error:
+                  String(
+                    err,
+                  ),
+              },
+            );
+          },
+        );
       },
     );
-  });
 
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timedOut = await Promise.race([
-    Promise.all([Promise.all(refunds), inFlight.drain()]).then(() => false),
-    new Promise<boolean>((resolve) => {
-      timer = setTimeout(() => resolve(true), deadlineMs);
-    }),
-  ]);
-  if (timer) clearTimeout(timer);
+  let timer:
+    | ReturnType<
+        typeof setTimeout
+      >
+    | undefined;
+  const timedOut =
+    await Promise.race(
+      [
+        Promise.all(
+          [
+            Promise.all(
+              refunds,
+            ),
+            inFlight.drain(),
+          ],
+        ).then(
+          () =>
+            false,
+        ),
+        new Promise<boolean>(
+          (
+            resolve,
+          ) => {
+            timer =
+              setTimeout(
+                () =>
+                  resolve(
+                    true,
+                  ),
+                deadlineMs,
+              );
+          },
+        ),
+      ],
+    );
+  if (
+    timer
+  )
+    clearTimeout(
+      timer,
+    );
 
   let refunded = 0;
   let failed = 0;
   let unconfirmed = 0;
   for (const claim of claims) {
-    const s = status.get(claim);
-    if (s === 'refunded') refunded++;
-    else if (s === 'failed') failed++;
+    const s =
+      status.get(
+        claim,
+      );
+    if (
+      s ===
+      'refunded'
+    )
+      refunded++;
+    else if (
+      s ===
+      'failed'
+    )
+      failed++;
     else {
       unconfirmed++;
-      logger.error({
-        event: 'casino_shutdown_refund_unconfirmed',
-        ...claim,
-        idempotencyKey: keys.get(claim),
-        deadlineMs,
-      });
+      logger.error(
+        {
+          event:
+            'casino_shutdown_refund_unconfirmed',
+          ...claim,
+          idempotencyKey:
+            keys.get(
+              claim,
+            ),
+          deadlineMs,
+        },
+      );
     }
   }
-  if (timedOut && inFlight.size > 0) {
+  if (
+    timedOut &&
+    inFlight.size >
+      0
+  ) {
     // Their own error paths log the userId/amount when they fail; this only
     // says that some were still running when the process moved on.
-    logger.error({
-      event: 'casino_shutdown_inflight_unsettled',
-      game,
-      pending: inFlight.size,
-      deadlineMs,
-    });
+    logger.error(
+      {
+        event:
+          'casino_shutdown_inflight_unsettled',
+        game,
+        pending:
+          inFlight.size,
+        deadlineMs,
+      },
+    );
   }
 
-  const summary: ShutdownRefundSummary = {
-    game,
-    claims: claims.length,
-    amount: claims.reduce((sum, c) => sum + c.amount, 0),
-    refunded,
-    failed,
-    unconfirmed,
-  };
-  logger.info({ event: 'casino_shutdown_refunds', ...summary, timedOut });
+  const summary: ShutdownRefundSummary =
+    {
+      game,
+      claims:
+        claims.length,
+      amount:
+        claims.reduce(
+          (
+            sum,
+            c,
+          ) =>
+            sum +
+            c.amount,
+          0,
+        ),
+      refunded,
+      failed,
+      unconfirmed,
+    };
+  logger.info(
+    {
+      event:
+        'casino_shutdown_refunds',
+      ...summary,
+      timedOut,
+    },
+  );
   return summary;
 }

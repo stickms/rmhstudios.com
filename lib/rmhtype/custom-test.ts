@@ -22,7 +22,12 @@
  * Pure, client-safe, zod-free — see the note in `./keystats`.
  */
 
-import { MIN_ATTEMPTS_FOR_READING, SPACE_KEY, worstKeys, type KeyStatAggregate } from './keystats';
+import {
+  MIN_ATTEMPTS_FOR_READING,
+  SPACE_KEY,
+  worstKeys,
+  type KeyStatAggregate,
+} from './keystats';
 
 /* -------------------------------------------------------------------------- */
 /* Word lists                                                                 */
@@ -41,208 +46,209 @@ import { MIN_ATTEMPTS_FOR_READING, SPACE_KEY, worstKeys, type KeyStatAggregate }
  * module.
  */
 // prettier-ignore — the grid layout is how a 200-word list stays readable.
-const ENGLISH_WORDS = [
-  'the',
-  'be',
-  'of',
-  'and',
-  'a',
-  'to',
-  'in',
-  'he',
-  'have',
-  'it',
-  'that',
-  'for',
-  'they',
-  'with',
-  'as',
-  'not',
-  'on',
-  'she',
-  'at',
-  'by',
-  'this',
-  'we',
-  'you',
-  'do',
-  'but',
-  'from',
-  'or',
-  'which',
-  'one',
-  'would',
-  'all',
-  'will',
-  'there',
-  'say',
-  'who',
-  'make',
-  'when',
-  'can',
-  'more',
-  'if',
-  'no',
-  'man',
-  'out',
-  'other',
-  'so',
-  'what',
-  'time',
-  'up',
-  'go',
-  'about',
-  'than',
-  'into',
-  'could',
-  'state',
-  'only',
-  'new',
-  'year',
-  'some',
-  'take',
-  'come',
-  'these',
-  'know',
-  'see',
-  'use',
-  'get',
-  'like',
-  'then',
-  'first',
-  'any',
-  'work',
-  'now',
-  'may',
-  'such',
-  'give',
-  'over',
-  'think',
-  'most',
-  'even',
-  'find',
-  'day',
-  'also',
-  'after',
-  'way',
-  'many',
-  'must',
-  'look',
-  'before',
-  'great',
-  'back',
-  'through',
-  'long',
-  'where',
-  'much',
-  'should',
-  'well',
-  'people',
-  'down',
-  'own',
-  'just',
-  'because',
-  'good',
-  'each',
-  'those',
-  'feel',
-  'seem',
-  'how',
-  'high',
-  'too',
-  'place',
-  'little',
-  'world',
-  'very',
-  'still',
-  'nation',
-  'hand',
-  'old',
-  'life',
-  'tell',
-  'write',
-  'become',
-  'here',
-  'show',
-  'house',
-  'both',
-  'between',
-  'need',
-  'mean',
-  'call',
-  'develop',
-  'under',
-  'last',
-  'right',
-  'move',
-  'thing',
-  'general',
-  'school',
-  'never',
-  'same',
-  'another',
-  'begin',
-  'while',
-  'number',
-  'part',
-  'turn',
-  'real',
-  'leave',
-  'might',
-  'want',
-  'point',
-  'form',
-  'off',
-  'child',
-  'few',
-  'small',
-  'since',
-  'against',
-  'ask',
-  'late',
-  'home',
-  'interest',
-  'large',
-  'person',
-  'end',
-  'open',
-  'public',
-  'follow',
-  'during',
-  'present',
-  'without',
-  'again',
-  'hold',
-  'govern',
-  'around',
-  'possible',
-  'head',
-  'consider',
-  'word',
-  'program',
-  'problem',
-  'however',
-  'lead',
-  'system',
-  'set',
-  'order',
-  'eye',
-  'plan',
-  'run',
-  'keep',
-  'face',
-  'fact',
-  'group',
-  'play',
-  'stand',
-  'increase',
-  'early',
-  'course',
-  'change',
-  'help',
-  'line',
-  'quick',
-] as const;
+const ENGLISH_WORDS =
+  [
+    'the',
+    'be',
+    'of',
+    'and',
+    'a',
+    'to',
+    'in',
+    'he',
+    'have',
+    'it',
+    'that',
+    'for',
+    'they',
+    'with',
+    'as',
+    'not',
+    'on',
+    'she',
+    'at',
+    'by',
+    'this',
+    'we',
+    'you',
+    'do',
+    'but',
+    'from',
+    'or',
+    'which',
+    'one',
+    'would',
+    'all',
+    'will',
+    'there',
+    'say',
+    'who',
+    'make',
+    'when',
+    'can',
+    'more',
+    'if',
+    'no',
+    'man',
+    'out',
+    'other',
+    'so',
+    'what',
+    'time',
+    'up',
+    'go',
+    'about',
+    'than',
+    'into',
+    'could',
+    'state',
+    'only',
+    'new',
+    'year',
+    'some',
+    'take',
+    'come',
+    'these',
+    'know',
+    'see',
+    'use',
+    'get',
+    'like',
+    'then',
+    'first',
+    'any',
+    'work',
+    'now',
+    'may',
+    'such',
+    'give',
+    'over',
+    'think',
+    'most',
+    'even',
+    'find',
+    'day',
+    'also',
+    'after',
+    'way',
+    'many',
+    'must',
+    'look',
+    'before',
+    'great',
+    'back',
+    'through',
+    'long',
+    'where',
+    'much',
+    'should',
+    'well',
+    'people',
+    'down',
+    'own',
+    'just',
+    'because',
+    'good',
+    'each',
+    'those',
+    'feel',
+    'seem',
+    'how',
+    'high',
+    'too',
+    'place',
+    'little',
+    'world',
+    'very',
+    'still',
+    'nation',
+    'hand',
+    'old',
+    'life',
+    'tell',
+    'write',
+    'become',
+    'here',
+    'show',
+    'house',
+    'both',
+    'between',
+    'need',
+    'mean',
+    'call',
+    'develop',
+    'under',
+    'last',
+    'right',
+    'move',
+    'thing',
+    'general',
+    'school',
+    'never',
+    'same',
+    'another',
+    'begin',
+    'while',
+    'number',
+    'part',
+    'turn',
+    'real',
+    'leave',
+    'might',
+    'want',
+    'point',
+    'form',
+    'off',
+    'child',
+    'few',
+    'small',
+    'since',
+    'against',
+    'ask',
+    'late',
+    'home',
+    'interest',
+    'large',
+    'person',
+    'end',
+    'open',
+    'public',
+    'follow',
+    'during',
+    'present',
+    'without',
+    'again',
+    'hold',
+    'govern',
+    'around',
+    'possible',
+    'head',
+    'consider',
+    'word',
+    'program',
+    'problem',
+    'however',
+    'lead',
+    'system',
+    'set',
+    'order',
+    'eye',
+    'plan',
+    'run',
+    'keep',
+    'face',
+    'fact',
+    'group',
+    'play',
+    'stand',
+    'increase',
+    'early',
+    'course',
+    'change',
+    'help',
+    'line',
+    'quick',
+  ] as const;
 
 /**
  * Extra English words carrying the letters common English barely uses.
@@ -267,21 +273,58 @@ const RARE_LETTER_WORDS = [
 ] as const;
 
 /** Word pools by language tag. English is the only one with real vocabulary. */
-export const LANGUAGE_WORD_LISTS: Record<string, readonly string[]> = {
-  en: ENGLISH_WORDS,
-};
+export const LANGUAGE_WORD_LISTS: Record<
+  string,
+  readonly string[]
+> =
+  {
+    en: ENGLISH_WORDS,
+  };
 
-export function wordListFor(language: string): readonly string[] {
-  return LANGUAGE_WORD_LISTS[language] ?? ENGLISH_WORDS;
+export function wordListFor(
+  language: string,
+): readonly string[] {
+  return (
+    LANGUAGE_WORD_LISTS[
+      language
+    ] ??
+    ENGLISH_WORDS
+  );
 }
 
 /** Turn arbitrary text (a paste, a locale pack) into a usable word pool. */
-export function deriveWordList(text: string, max = 500): string[] {
-  const words = text
-    .split(/\s+/)
-    .map((w) => w.trim())
-    .filter((w) => w.length > 0 && w.length <= 24);
-  return [...new Set(words)].slice(0, max);
+export function deriveWordList(
+  text: string,
+  max = 500,
+): string[] {
+  const words =
+    text
+      .split(
+        /\s+/,
+      )
+      .map(
+        (
+          w,
+        ) =>
+          w.trim(),
+      )
+      .filter(
+        (
+          w,
+        ) =>
+          w.length >
+            0 &&
+          w.length <=
+            24,
+      );
+  return [
+    ...new Set(
+      words,
+    ),
+  ].slice(
+    0,
+    max,
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -327,7 +370,11 @@ export interface GeneratedTest {
   targetedKeys: string[];
 }
 
-export const TEST_LENGTH_BOUNDS = { min: 5, max: 200 } as const;
+export const TEST_LENGTH_BOUNDS =
+  {
+    min: 5,
+    max: 200,
+  } as const;
 /** Hard cap on a pasted passage. Long enough for a chapter, short enough to store. */
 export const CUSTOM_TEXT_MAX = 5_000;
 
@@ -338,7 +385,12 @@ export const CUSTOM_TEXT_MAX = 5_000;
  * point at, and so the day a fixed, server-chosen "daily custom" becomes
  * comparable, exactly one place changes.
  */
-export function isLeaderboardEligible(_test: Pick<GeneratedTest, 'mode'>): boolean {
+export function isLeaderboardEligible(
+  _test: Pick<
+    GeneratedTest,
+    'mode'
+  >,
+): boolean {
   return false;
 }
 
@@ -347,35 +399,131 @@ export function isLeaderboardEligible(_test: Pick<GeneratedTest, 'mode'>): boole
 /* -------------------------------------------------------------------------- */
 
 /** mulberry32 — the same small deterministic generator the games use. */
-function createRng(seed: number): () => number {
-  let a = seed >>> 0;
+function createRng(
+  seed: number,
+): () => number {
+  let a =
+    seed >>>
+    0;
   return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    a =
+      (a +
+        0x6d2b79f5) >>>
+      0;
+    let t =
+      a;
+    t =
+      Math.imul(
+        t ^
+          (t >>>
+            15),
+        t |
+          1,
+      );
+    t ^=
+      t +
+      Math.imul(
+        t ^
+          (t >>>
+            7),
+        t |
+          61,
+      );
+    return (
+      ((t ^
+        (t >>>
+          14)) >>>
+        0) /
+      4294967296
+    );
   };
 }
 
-function clampLength(length: number | undefined): number {
-  const n = Math.trunc(length ?? 30);
-  if (!Number.isFinite(n)) return 30;
-  return Math.min(Math.max(n, TEST_LENGTH_BOUNDS.min), TEST_LENGTH_BOUNDS.max);
+function clampLength(
+  length:
+    | number
+    | undefined,
+): number {
+  const n =
+    Math.trunc(
+      length ??
+        30,
+    );
+  if (
+    !Number.isFinite(
+      n,
+    )
+  )
+    return 30;
+  return Math.min(
+    Math.max(
+      n,
+      TEST_LENGTH_BOUNDS.min,
+    ),
+    TEST_LENGTH_BOUNDS.max,
+  );
 }
 
-const PUNCTUATION = ['.', ',', '!', '?', ';', ':'] as const;
+const PUNCTUATION =
+  [
+    '.',
+    ',',
+    '!',
+    '?',
+    ';',
+    ':',
+  ] as const;
 
 /** Pick an index from `weights` proportionally. `weights` must be non-empty. */
-function weightedIndex(weights: readonly number[], roll: number): number {
-  const total = weights.reduce((sum, w) => sum + w, 0);
-  if (total <= 0) return Math.min(weights.length - 1, Math.floor(roll * weights.length));
-  let target = roll * total;
-  for (let i = 0; i < weights.length; i++) {
-    target -= weights[i];
-    if (target <= 0) return i;
+function weightedIndex(
+  weights: readonly number[],
+  roll: number,
+): number {
+  const total =
+    weights.reduce(
+      (
+        sum,
+        w,
+      ) =>
+        sum +
+        w,
+      0,
+    );
+  if (
+    total <=
+    0
+  )
+    return Math.min(
+      weights.length -
+        1,
+      Math.floor(
+        roll *
+          weights.length,
+      ),
+    );
+  let target =
+    roll *
+    total;
+  for (
+    let i = 0;
+    i <
+    weights.length;
+    i++
+  ) {
+    target -=
+      weights[
+        i
+      ];
+    if (
+      target <=
+      0
+    )
+      return i;
   }
-  return weights.length - 1;
+  return (
+    weights.length -
+    1
+  );
 }
 
 /**
@@ -387,11 +535,30 @@ function weightedIndex(weights: readonly number[], roll: number): number {
  * ever emits four words is a drill, not a test, and it stops measuring anything
  * after the second run.
  */
-export function practiceWeight(word: string, weights: ReadonlyMap<string, number>): number {
-  if (word.length === 0) return 1;
+export function practiceWeight(
+  word: string,
+  weights: ReadonlyMap<
+    string,
+    number
+  >,
+): number {
+  if (
+    word.length ===
+    0
+  )
+    return 1;
   let score = 0;
-  for (const char of word.toLowerCase()) score += weights.get(char) ?? 0;
-  return 1 + score / word.length;
+  for (const char of word.toLowerCase())
+    score +=
+      weights.get(
+        char,
+      ) ??
+      0;
+  return (
+    1 +
+    score /
+      word.length
+  );
 }
 
 /**
@@ -401,81 +568,251 @@ export function practiceWeight(word: string, weights: ReadonlyMap<string, number
  * the typist chose it, and "helpfully" editing someone's paste is how a test
  * stops matching the thing they wanted to practise.
  */
-export function buildCustomTest(options: CustomTestOptions): GeneratedTest {
-  const seed = options.seed ?? Math.floor(Math.random() * 0xffffffff);
-  const rng = createRng(seed);
+export function buildCustomTest(
+  options: CustomTestOptions,
+): GeneratedTest {
+  const seed =
+    options.seed ??
+    Math.floor(
+      Math.random() *
+        0xffffffff,
+    );
+  const rng =
+    createRng(
+      seed,
+    );
 
-  if (options.mode === 'custom') {
-    const text = (options.text ?? '').replace(/\s+/g, ' ').trim().slice(0, CUSTOM_TEXT_MAX);
+  if (
+    options.mode ===
+    'custom'
+  ) {
+    const text =
+      (
+        options.text ??
+        ''
+      )
+        .replace(
+          /\s+/g,
+          ' ',
+        )
+        .trim()
+        .slice(
+          0,
+          CUSTOM_TEXT_MAX,
+        );
     return {
       text,
       mode: 'custom',
       seed,
-      wordCount: text.length === 0 ? 0 : text.split(' ').length,
+      wordCount:
+        text.length ===
+        0
+          ? 0
+          : text.split(
+              ' ',
+            )
+              .length,
       leaderboardEligible: false,
-      targetedKeys: [],
+      targetedKeys:
+        [],
     };
   }
 
-  const callerPool = options.words?.length ? options.words : null;
+  const callerPool =
+    options
+      .words
+      ?.length
+      ? options.words
+      : null;
   // Practice draws from the common pool PLUS the rare-letter words, because the
   // common pool alone cannot drill the letters a typist is actually slow on.
   // A caller-supplied pool is left exactly as given — a French word list must
   // not quietly gain English words.
   const pool =
     callerPool ??
-    (options.mode === 'practice' && (options.language ?? 'en') === 'en'
-      ? [...ENGLISH_WORDS, ...RARE_LETTER_WORDS]
-      : wordListFor(options.language ?? 'en'));
-  const length = clampLength(options.length);
+    (options.mode ===
+      'practice' &&
+    (options.language ??
+      'en') ===
+      'en'
+      ? [
+          ...ENGLISH_WORDS,
+          ...RARE_LETTER_WORDS,
+        ]
+      : wordListFor(
+          options.language ??
+            'en',
+        ));
+  const length =
+    clampLength(
+      options.length,
+    );
 
   // `practice` biases the pool toward the typist's weak keys; `words` leaves it
   // uniform. Both draw from the SAME pool, so a practice test still reads as
   // English rather than as a letter drill.
-  let weights: number[] | null = null;
-  let targetedKeys: string[] = [];
-  if (options.mode === 'practice' && options.stats?.length) {
-    const worst = worstKeys(options.stats, { limit: 8, minAttempts: MIN_ATTEMPTS_FOR_READING });
-    targetedKeys = worst.map((k) => k.key);
-    if (worst.length > 0) {
+  let weights:
+    | number[]
+    | null =
+    null;
+  let targetedKeys: string[] =
+    [];
+  if (
+    options.mode ===
+      'practice' &&
+    options
+      .stats
+      ?.length
+  ) {
+    const worst =
+      worstKeys(
+        options.stats,
+        {
+          limit: 8,
+          minAttempts:
+            MIN_ATTEMPTS_FOR_READING,
+        },
+      );
+    targetedKeys =
+      worst.map(
+        (
+          k,
+        ) =>
+          k.key,
+      );
+    if (
+      worst.length >
+      0
+    ) {
       // Normalise weakness to 0–1 so the weighting is about relative difficulty,
       // not about absolute milliseconds.
-      const max = Math.max(...worst.map((k) => k.weakness));
-      const weightByKey = new Map(
-        worst
-          .filter((k) => k.key !== SPACE_KEY)
-          .map((k) => [k.key, max > 0 ? k.weakness / max : 0] as const),
+      const max =
+        Math.max(
+          ...worst.map(
+            (
+              k,
+            ) =>
+              k.weakness,
+          ),
+        );
+      const weightByKey =
+        new Map(
+          worst
+            .filter(
+              (
+                k,
+              ) =>
+                k.key !==
+                SPACE_KEY,
+            )
+            .map(
+              (
+                k,
+              ) =>
+                [
+                  k.key,
+                  max >
+                  0
+                    ? k.weakness /
+                      max
+                    : 0,
+                ] as const,
+            ),
+        );
+      weights =
+        pool.map(
+          (
+            word,
+          ) =>
+            practiceWeight(
+              word,
+              weightByKey,
+            ),
+        );
+    }
+  }
+
+  const words: string[] =
+    [];
+  for (
+    let i = 0;
+    i <
+    length;
+    i++
+  ) {
+    const index =
+      weights
+        ? weightedIndex(
+            weights,
+            rng(),
+          )
+        : Math.floor(
+            rng() *
+              pool.length,
+          ) %
+          pool.length;
+    let word =
+      pool[
+        index
+      ];
+
+    if (
+      options.numbers &&
+      rng() <
+        0.1
+    ) {
+      word =
+        String(
+          Math.floor(
+            rng() *
+              10_000,
+          ),
+        );
+    }
+    if (
+      options.punctuation &&
+      rng() <
+        0.15
+    ) {
+      word +=
+        PUNCTUATION[
+          Math.floor(
+            rng() *
+              PUNCTUATION.length,
+          )
+        ];
+    }
+    words.push(
+      word,
+    );
+  }
+
+  if (
+    options.punctuation &&
+    words.length >
+      0
+  ) {
+    words[0] =
+      words[0]
+        .charAt(
+          0,
+        )
+        .toUpperCase() +
+      words[0].slice(
+        1,
       );
-      weights = pool.map((word) => practiceWeight(word, weightByKey));
-    }
   }
 
-  const words: string[] = [];
-  for (let i = 0; i < length; i++) {
-    const index = weights
-      ? weightedIndex(weights, rng())
-      : Math.floor(rng() * pool.length) % pool.length;
-    let word = pool[index];
-
-    if (options.numbers && rng() < 0.1) {
-      word = String(Math.floor(rng() * 10_000));
-    }
-    if (options.punctuation && rng() < 0.15) {
-      word += PUNCTUATION[Math.floor(rng() * PUNCTUATION.length)];
-    }
-    words.push(word);
-  }
-
-  if (options.punctuation && words.length > 0) {
-    words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
-  }
-
-  const text = words.join(' ');
+  const text =
+    words.join(
+      ' ',
+    );
   return {
     text,
     mode: options.mode,
     seed,
-    wordCount: words.length,
+    wordCount:
+      words.length,
     leaderboardEligible: false,
     targetedKeys,
   };

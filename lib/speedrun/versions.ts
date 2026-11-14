@@ -18,10 +18,16 @@
  * server ranks when it queries, and neither may disagree about who is first.
  */
 
-import { ALL_VERSIONS, type SpeedrunEntryView, type SpeedrunMetric } from './types';
+import {
+  ALL_VERSIONS,
+  type SpeedrunEntryView,
+  type SpeedrunMetric,
+} from './types';
 
 /** A board scoped to one game version. */
-export interface VersionBucket<T> {
+export interface VersionBucket<
+  T,
+> {
   version: string;
   entries: T[];
 }
@@ -35,22 +41,92 @@ export interface VersionBucket<T> {
  * which would hand the picker's default — the newest board — to an old version
  * the moment a game reaches its tenth revision.
  */
-export function compareVersions(a: string, b: string): number {
-  const split = (v: string): [string, number] => {
-    const match = /^(.*?)(\d+)$/.exec(v);
-    return match ? [match[1], Number(match[2])] : [v, Number.NaN];
-  };
-  const [prefixA, numA] = split(a);
-  const [prefixB, numB] = split(b);
-  if (prefixA === prefixB && Number.isFinite(numA) && Number.isFinite(numB)) {
-    return numB - numA;
+export function compareVersions(
+  a: string,
+  b: string,
+): number {
+  const split =
+    (
+      v: string,
+    ): [
+      string,
+      number,
+    ] => {
+      const match =
+        /^(.*?)(\d+)$/.exec(
+          v,
+        );
+      return match
+        ? [
+            match[1],
+            Number(
+              match[2],
+            ),
+          ]
+        : [
+            v,
+            Number.NaN,
+          ];
+    };
+  const [
+    prefixA,
+    numA,
+  ] =
+    split(
+      a,
+    );
+  const [
+    prefixB,
+    numB,
+  ] =
+    split(
+      b,
+    );
+  if (
+    prefixA ===
+      prefixB &&
+    Number.isFinite(
+      numA,
+    ) &&
+    Number.isFinite(
+      numB,
+    )
+  ) {
+    return (
+      numB -
+      numA
+    );
   }
-  return a < b ? -1 : a > b ? 1 : 0;
+  return a <
+    b
+    ? -1
+    : a >
+        b
+      ? 1
+      : 0;
 }
 
 /** Every distinct version present, newest first. */
-export function versionsOf<T extends { version: string }>(items: readonly T[]): string[] {
-  return [...new Set(items.map((i) => i.version))].sort(compareVersions);
+export function versionsOf<
+  T extends
+    {
+      version: string;
+    },
+>(
+  items: readonly T[],
+): string[] {
+  return [
+    ...new Set(
+      items.map(
+        (
+          i,
+        ) =>
+          i.version,
+      ),
+    ),
+  ].sort(
+    compareVersions,
+  );
 }
 
 /**
@@ -58,27 +134,90 @@ export function versionsOf<T extends { version: string }>(items: readonly T[]): 
  * "all versions" view, which renders the buckets in sequence — each with its own
  * ranking — instead of one merged list.
  */
-export function bucketByVersion<T extends { version: string }>(
+export function bucketByVersion<
+  T extends
+    {
+      version: string;
+    },
+>(
   items: readonly T[],
 ): VersionBucket<T>[] {
-  const buckets = new Map<string, T[]>();
+  const buckets =
+    new Map<
+      string,
+      T[]
+    >();
   for (const item of items) {
-    const bucket = buckets.get(item.version);
-    if (bucket) bucket.push(item);
-    else buckets.set(item.version, [item]);
+    const bucket =
+      buckets.get(
+        item.version,
+      );
+    if (
+      bucket
+    )
+      bucket.push(
+        item,
+      );
+    else
+      buckets.set(
+        item.version,
+        [
+          item,
+        ],
+      );
   }
-  return [...buckets.entries()]
-    .sort(([a], [b]) => compareVersions(a, b))
-    .map(([version, entries]) => ({ version, entries }));
+  return [
+    ...buckets.entries(),
+  ]
+    .sort(
+      (
+        [
+          a,
+        ],
+        [
+          b,
+        ],
+      ) =>
+        compareVersions(
+          a,
+          b,
+        ),
+    )
+    .map(
+      ([
+        version,
+        entries,
+      ]) => ({
+        version,
+        entries,
+      }),
+    );
 }
 
 /** `'all'` keeps everything; any other value filters to that one version. */
-export function filterVersion<T extends { version: string }>(
+export function filterVersion<
+  T extends
+    {
+      version: string;
+    },
+>(
   items: readonly T[],
   version: string,
 ): T[] {
-  if (version === ALL_VERSIONS) return [...items];
-  return items.filter((i) => i.version === version);
+  if (
+    version ===
+    ALL_VERSIONS
+  )
+    return [
+      ...items,
+    ];
+  return items.filter(
+    (
+      i,
+    ) =>
+      i.version ===
+      version,
+  );
 }
 
 /**
@@ -93,20 +232,69 @@ export function filterVersion<T extends { version: string }>(
  * given a position on the board.
  */
 export function rankEntries<
-  T extends { timeMs: number; score: number | null; status: string; createdAt: string },
->(entries: readonly T[], metric: SpeedrunMetric): T[] {
+  T extends
+    {
+      timeMs: number;
+      score:
+        | number
+        | null;
+      status: string;
+      createdAt: string;
+    },
+>(
+  entries: readonly T[],
+  metric: SpeedrunMetric,
+): T[] {
   return entries
-    .filter((e) => e.status === 'verified')
+    .filter(
+      (
+        e,
+      ) =>
+        e.status ===
+        'verified',
+    )
     .slice()
-    .sort((a, b) => {
-      if (metric === 'score') {
-        const scoreA = a.score ?? Number.NEGATIVE_INFINITY;
-        const scoreB = b.score ?? Number.NEGATIVE_INFINITY;
-        if (scoreA !== scoreB) return scoreB - scoreA;
-      }
-      if (a.timeMs !== b.timeMs) return a.timeMs - b.timeMs;
-      return a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0;
-    });
+    .sort(
+      (
+        a,
+        b,
+      ) => {
+        if (
+          metric ===
+          'score'
+        ) {
+          const scoreA =
+            a.score ??
+            Number.NEGATIVE_INFINITY;
+          const scoreB =
+            b.score ??
+            Number.NEGATIVE_INFINITY;
+          if (
+            scoreA !==
+            scoreB
+          )
+            return (
+              scoreB -
+              scoreA
+            );
+        }
+        if (
+          a.timeMs !==
+          b.timeMs
+        )
+          return (
+            a.timeMs -
+            b.timeMs
+          );
+        return a.createdAt <
+          b.createdAt
+          ? -1
+          : a.createdAt >
+              b.createdAt
+            ? 1
+            : 0;
+      },
+    );
 }
 
 /**
@@ -121,22 +309,75 @@ export function buildBoard(
   metric: SpeedrunMetric,
   version: string,
 ): VersionBucket<SpeedrunEntryView>[] {
-  const scoped = filterVersion(entries, version);
-  return bucketByVersion(scoped).map((bucket) => ({
-    version: bucket.version,
-    entries: rankEntries(bucket.entries, metric),
-  }));
+  const scoped =
+    filterVersion(
+      entries,
+      version,
+    );
+  return bucketByVersion(
+    scoped,
+  ).map(
+    (
+      bucket,
+    ) => ({
+      version:
+        bucket.version,
+      entries:
+        rankEntries(
+          bucket.entries,
+          metric,
+        ),
+    }),
+  );
 }
 
 /** `mm:ss.mmm` — the speedrun convention, not a localized duration. */
-export function formatRunTime(timeMs: number): string {
-  const safe = Math.max(0, Math.trunc(timeMs));
-  const ms = safe % 1000;
-  const totalSeconds = Math.floor(safe / 1000);
-  const seconds = totalSeconds % 60;
-  const minutes = Math.floor(totalSeconds / 60) % 60;
-  const hours = Math.floor(totalSeconds / 3600);
-  const pad = (n: number, width = 2) => String(n).padStart(width, '0');
+export function formatRunTime(
+  timeMs: number,
+): string {
+  const safe =
+    Math.max(
+      0,
+      Math.trunc(
+        timeMs,
+      ),
+    );
+  const ms =
+    safe %
+    1000;
+  const totalSeconds =
+    Math.floor(
+      safe /
+        1000,
+    );
+  const seconds =
+    totalSeconds %
+    60;
+  const minutes =
+    Math.floor(
+      totalSeconds /
+        60,
+    ) %
+    60;
+  const hours =
+    Math.floor(
+      totalSeconds /
+        3600,
+    );
+  const pad =
+    (
+      n: number,
+      width = 2,
+    ) =>
+      String(
+        n,
+      ).padStart(
+        width,
+        '0',
+      );
   const body = `${pad(minutes)}:${pad(seconds)}.${pad(ms, 3)}`;
-  return hours > 0 ? `${hours}:${body}` : body;
+  return hours >
+    0
+    ? `${hours}:${body}`
+    : body;
 }

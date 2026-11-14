@@ -5,36 +5,68 @@
  * Displayed below the guessing area in the AudienceView.
  */
 
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next';
 import type { CorrectGuesserInfo } from './EmojiCinemaGame';
 
 interface CorrectGuessersPanelProps {
   correctGuessers: CorrectGuesserInfo[];
 }
 
-export default function CorrectGuessersPanel({ correctGuessers }: CorrectGuessersPanelProps) {
-  const { t } = useTranslation("c-rmhbox");
+export default function CorrectGuessersPanel({
+  correctGuessers,
+}: CorrectGuessersPanelProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
 
-  if (correctGuessers.length === 0) return null;
+  if (
+    correctGuessers.length ===
+    0
+  )
+    return null;
 
   return (
     <div className="w-full flex flex-col gap-1">
       <span className="text-xs font-semibold text-app-text-muted uppercase tracking-wide">
-        {t("correct-guessers", { defaultValue: "Correct Guessers" })}
+        {t(
+          'correct-guessers',
+          {
+            defaultValue:
+              'Correct Guessers',
+          },
+        )}
       </span>
       <div className="flex flex-col gap-1">
-        {correctGuessers.map((g) => (
-          <div
-            key={g.userId}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-app-sm bg-app-surface text-sm"
-          >
-            <span className="text-app-success">✅</span>
-            <span className="text-app-text">{g.userName}</span>
-            <span className="ml-auto text-xs text-app-text-muted">
-              #{g.rank}
-            </span>
-          </div>
-        ))}
+        {correctGuessers.map(
+          (
+            g,
+          ) => (
+            <div
+              key={
+                g.userId
+              }
+              className="flex items-center gap-2 px-3 py-1.5 rounded-app-sm bg-app-surface text-sm"
+            >
+              <span className="text-app-success">
+                ✅
+              </span>
+              <span className="text-app-text">
+                {
+                  g.userName
+                }
+              </span>
+              <span className="ml-auto text-xs text-app-text-muted">
+                #
+                {
+                  g.rank
+                }
+              </span>
+            </div>
+          ),
+        )}
       </div>
     </div>
   );

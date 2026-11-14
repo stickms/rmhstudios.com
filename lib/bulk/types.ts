@@ -22,27 +22,56 @@ export type { BulkFilter };
 /* Kinds                                                                      */
 /* -------------------------------------------------------------------------- */
 
-export const BULK_KINDS = [
-  'delete-posts',
-  'delete-comments',
-  'unfollow',
-  'clear-history',
-  'clear-bookmarks',
-] as const;
+export const BULK_KINDS =
+  [
+    'delete-posts',
+    'delete-comments',
+    'unfollow',
+    'clear-history',
+    'clear-bookmarks',
+  ] as const;
 
-export type BulkKind = (typeof BULK_KINDS)[number];
+export type BulkKind =
+  (typeof BULK_KINDS)[number];
 
-export function isBulkKind(value: unknown): value is BulkKind {
-  return typeof value === 'string' && (BULK_KINDS as readonly string[]).includes(value);
+export function isBulkKind(
+  value: unknown,
+): value is BulkKind {
+  return (
+    typeof value ===
+      'string' &&
+    (
+      BULK_KINDS as readonly string[]
+    ).includes(
+      value,
+    )
+  );
 }
 
 /** Mirrors `BulkOperation.status` (`VarChar(12)`). */
-export const BULK_STATUSES = ['PENDING', 'RUNNING', 'DONE', 'CANCELLED', 'FAILED'] as const;
-export type BulkStatus = (typeof BULK_STATUSES)[number];
+export const BULK_STATUSES =
+  [
+    'PENDING',
+    'RUNNING',
+    'DONE',
+    'CANCELLED',
+    'FAILED',
+  ] as const;
+export type BulkStatus =
+  (typeof BULK_STATUSES)[number];
 
 /** A run in one of these states is finished; nothing will move it again. */
-export function isTerminal(status: string): boolean {
-  return status === 'DONE' || status === 'CANCELLED' || status === 'FAILED';
+export function isTerminal(
+  status: string,
+): boolean {
+  return (
+    status ===
+      'DONE' ||
+    status ===
+      'CANCELLED' ||
+    status ===
+      'FAILED'
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -63,17 +92,53 @@ export const BULK_SAMPLE_SIZE = 10;
 export const MAX_OLDER_THAN_DAYS = 3650;
 
 /** Which filter fields each kind actually understands. */
-export const FILTER_SUPPORT: Record<BulkKind, readonly (keyof BulkFilter)[]> = {
-  'delete-posts': ['olderThanDays', 'before', 'maxLikes', 'onlyReplies', 'tag'],
-  'delete-comments': ['olderThanDays', 'before', 'maxLikes', 'onlyReplies'],
-  // A follow edge has a creation date and nothing else worth filtering on.
-  unfollow: ['olderThanDays', 'before'],
-  'clear-history': ['olderThanDays', 'before'],
-  'clear-bookmarks': ['olderThanDays', 'before'],
-};
+export const FILTER_SUPPORT: Record<
+  BulkKind,
+  readonly (keyof BulkFilter)[]
+> =
+  {
+    'delete-posts':
+      [
+        'olderThanDays',
+        'before',
+        'maxLikes',
+        'onlyReplies',
+        'tag',
+      ],
+    'delete-comments':
+      [
+        'olderThanDays',
+        'before',
+        'maxLikes',
+        'onlyReplies',
+      ],
+    // A follow edge has a creation date and nothing else worth filtering on.
+    unfollow:
+      [
+        'olderThanDays',
+        'before',
+      ],
+    'clear-history':
+      [
+        'olderThanDays',
+        'before',
+      ],
+    'clear-bookmarks':
+      [
+        'olderThanDays',
+        'before',
+      ],
+  };
 
-export function supportsFilter(kind: BulkKind, field: keyof BulkFilter): boolean {
-  return FILTER_SUPPORT[kind].includes(field);
+export function supportsFilter(
+  kind: BulkKind,
+  field: keyof BulkFilter,
+): boolean {
+  return FILTER_SUPPORT[
+    kind
+  ].includes(
+    field,
+  );
 }
 
 /**
@@ -85,28 +150,70 @@ export function supportsFilter(kind: BulkKind, field: keyof BulkFilter): boolean
  * first and show the user the normalised filter, and `describeDropped` names
  * what was removed so the UI can say so out loud.
  */
-export function normalizeFilter(kind: BulkKind, filter: BulkFilter): BulkFilter {
-  const allowed = FILTER_SUPPORT[kind];
-  const out: BulkFilter = {};
+export function normalizeFilter(
+  kind: BulkKind,
+  filter: BulkFilter,
+): BulkFilter {
+  const allowed =
+    FILTER_SUPPORT[
+      kind
+    ];
+  const out: BulkFilter =
+    {};
   for (const key of allowed) {
-    const value = filter[key];
-    if (value !== undefined) {
+    const value =
+      filter[
+        key
+      ];
+    if (
+      value !==
+      undefined
+    ) {
       // Assigning through a union of optional props needs the widening cast;
       // `allowed` is typed from the same key set, so this is sound.
-      (out as Record<string, unknown>)[key] = value;
+      (
+        out as Record<
+          string,
+          unknown
+        >
+      )[
+        key
+      ] =
+        value;
     }
   }
   return out;
 }
 
 /** Filter fields the caller supplied that this kind will ignore. */
-export function droppedFilters(kind: BulkKind, filter: BulkFilter): (keyof BulkFilter)[] {
-  return (Object.keys(filter) as (keyof BulkFilter)[]).filter(
-    (key) => filter[key] !== undefined && !supportsFilter(kind, key),
+export function droppedFilters(
+  kind: BulkKind,
+  filter: BulkFilter,
+): (keyof BulkFilter)[] {
+  return (
+    Object.keys(
+      filter,
+    ) as (keyof BulkFilter)[]
+  ).filter(
+    (
+      key,
+    ) =>
+      filter[
+        key
+      ] !==
+        undefined &&
+      !supportsFilter(
+        kind,
+        key,
+      ),
   );
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const DAY_MS =
+  24 *
+  60 *
+  60 *
+  1000;
 
 /**
  * The "created before" instant a filter implies, or `null` for no bound.
@@ -116,17 +223,49 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * either clause on its own asked for, which is the wrong direction for a
  * destructive operation.
  */
-export function createdBefore(filter: BulkFilter, now: Date): Date | null {
-  const bounds: number[] = [];
-  if (filter.olderThanDays !== undefined) {
-    bounds.push(now.getTime() - filter.olderThanDays * DAY_MS);
+export function createdBefore(
+  filter: BulkFilter,
+  now: Date,
+): Date | null {
+  const bounds: number[] =
+    [];
+  if (
+    filter.olderThanDays !==
+    undefined
+  ) {
+    bounds.push(
+      now.getTime() -
+        filter.olderThanDays *
+          DAY_MS,
+    );
   }
-  if (filter.before !== undefined) {
-    const parsed = Date.parse(filter.before);
-    if (!Number.isNaN(parsed)) bounds.push(parsed);
+  if (
+    filter.before !==
+    undefined
+  ) {
+    const parsed =
+      Date.parse(
+        filter.before,
+      );
+    if (
+      !Number.isNaN(
+        parsed,
+      )
+    )
+      bounds.push(
+        parsed,
+      );
   }
-  if (bounds.length === 0) return null;
-  return new Date(Math.min(...bounds));
+  if (
+    bounds.length ===
+    0
+  )
+    return null;
+  return new Date(
+    Math.min(
+      ...bounds,
+    ),
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -140,7 +279,11 @@ export function createdBefore(filter: BulkFilter, now: Date): Date | null {
  * from `lib/entitlements.ts`). The server module passes them straight to Prisma,
  * which type-checks them at that call site.
  */
-export type WhereShape = Record<string, unknown>;
+export type WhereShape =
+  Record<
+    string,
+    unknown
+  >;
 
 /**
  * Posts eligible for a bulk delete.
@@ -155,13 +298,56 @@ export type WhereShape = Record<string, unknown>;
  * a standalone one. RMHark has no post-replies-to-post edge other than this and
  * quote-reposts, and a quote-repost is not a reply.
  */
-export function buildPostWhere(userId: string, filter: BulkFilter, now: Date): WhereShape {
-  const where: WhereShape = { userId, deletedAt: null };
-  const before = createdBefore(filter, now);
-  if (before) where.createdAt = { lt: before };
-  if (filter.maxLikes !== undefined) where.likeCount = { lte: filter.maxLikes };
-  if (filter.onlyReplies) where.threadRootId = { not: null };
-  if (filter.tag) where.hashtags = { some: { hashtag: { tag: filter.tag.toLowerCase() } } };
+export function buildPostWhere(
+  userId: string,
+  filter: BulkFilter,
+  now: Date,
+): WhereShape {
+  const where: WhereShape =
+    {
+      userId,
+      deletedAt:
+        null,
+    };
+  const before =
+    createdBefore(
+      filter,
+      now,
+    );
+  if (
+    before
+  )
+    where.createdAt =
+      {
+        lt: before,
+      };
+  if (
+    filter.maxLikes !==
+    undefined
+  )
+    where.likeCount =
+      {
+        lte: filter.maxLikes,
+      };
+  if (
+    filter.onlyReplies
+  )
+    where.threadRootId =
+      {
+        not: null,
+      };
+  if (
+    filter.tag
+  )
+    where.hashtags =
+      {
+        some: {
+          hashtag:
+            {
+              tag: filter.tag.toLowerCase(),
+            },
+        },
+      };
   return where;
 }
 
@@ -170,36 +356,120 @@ export function buildPostWhere(userId: string, filter: BulkFilter, now: Date): W
  * a comment that replies to another comment (`parentId` set) rather than to the
  * post.
  */
-export function buildCommentWhere(userId: string, filter: BulkFilter, now: Date): WhereShape {
-  const where: WhereShape = { userId, deletedAt: null };
-  const before = createdBefore(filter, now);
-  if (before) where.createdAt = { lt: before };
-  if (filter.maxLikes !== undefined) where.likeCount = { lte: filter.maxLikes };
-  if (filter.onlyReplies) where.parentId = { not: null };
+export function buildCommentWhere(
+  userId: string,
+  filter: BulkFilter,
+  now: Date,
+): WhereShape {
+  const where: WhereShape =
+    {
+      userId,
+      deletedAt:
+        null,
+    };
+  const before =
+    createdBefore(
+      filter,
+      now,
+    );
+  if (
+    before
+  )
+    where.createdAt =
+      {
+        lt: before,
+      };
+  if (
+    filter.maxLikes !==
+    undefined
+  )
+    where.likeCount =
+      {
+        lte: filter.maxLikes,
+      };
+  if (
+    filter.onlyReplies
+  )
+    where.parentId =
+      {
+        not: null,
+      };
   return where;
 }
 
 /** Follow edges the caller owns (they are the follower — never the followed). */
-export function buildFollowWhere(userId: string, filter: BulkFilter, now: Date): WhereShape {
-  const where: WhereShape = { followerId: userId };
-  const before = createdBefore(filter, now);
-  if (before) where.createdAt = { lt: before };
+export function buildFollowWhere(
+  userId: string,
+  filter: BulkFilter,
+  now: Date,
+): WhereShape {
+  const where: WhereShape =
+    {
+      followerId:
+        userId,
+    };
+  const before =
+    createdBefore(
+      filter,
+      now,
+    );
+  if (
+    before
+  )
+    where.createdAt =
+      {
+        lt: before,
+      };
   return where;
 }
 
 /** History rows. `HistoryEntry` records last-visit time, so it filters on `updatedAt`. */
-export function buildHistoryWhere(userId: string, filter: BulkFilter, now: Date): WhereShape {
-  const where: WhereShape = { userId };
-  const before = createdBefore(filter, now);
-  if (before) where.updatedAt = { lt: before };
+export function buildHistoryWhere(
+  userId: string,
+  filter: BulkFilter,
+  now: Date,
+): WhereShape {
+  const where: WhereShape =
+    {
+      userId,
+    };
+  const before =
+    createdBefore(
+      filter,
+      now,
+    );
+  if (
+    before
+  )
+    where.updatedAt =
+      {
+        lt: before,
+      };
   return where;
 }
 
 /** Bookmark rows. */
-export function buildBookmarkWhere(userId: string, filter: BulkFilter, now: Date): WhereShape {
-  const where: WhereShape = { userId };
-  const before = createdBefore(filter, now);
-  if (before) where.createdAt = { lt: before };
+export function buildBookmarkWhere(
+  userId: string,
+  filter: BulkFilter,
+  now: Date,
+): WhereShape {
+  const where: WhereShape =
+    {
+      userId,
+    };
+  const before =
+    createdBefore(
+      filter,
+      now,
+    );
+  if (
+    before
+  )
+    where.createdAt =
+      {
+        lt: before,
+      };
   return where;
 }
 
@@ -210,18 +480,44 @@ export function buildWhere(
   filter: BulkFilter,
   now: Date,
 ): WhereShape {
-  const normalized = normalizeFilter(kind, filter);
-  switch (kind) {
+  const normalized =
+    normalizeFilter(
+      kind,
+      filter,
+    );
+  switch (
+    kind
+  ) {
     case 'delete-posts':
-      return buildPostWhere(userId, normalized, now);
+      return buildPostWhere(
+        userId,
+        normalized,
+        now,
+      );
     case 'delete-comments':
-      return buildCommentWhere(userId, normalized, now);
+      return buildCommentWhere(
+        userId,
+        normalized,
+        now,
+      );
     case 'unfollow':
-      return buildFollowWhere(userId, normalized, now);
+      return buildFollowWhere(
+        userId,
+        normalized,
+        now,
+      );
     case 'clear-history':
-      return buildHistoryWhere(userId, normalized, now);
+      return buildHistoryWhere(
+        userId,
+        normalized,
+        now,
+      );
     case 'clear-bookmarks':
-      return buildBookmarkWhere(userId, normalized, now);
+      return buildBookmarkWhere(
+        userId,
+        normalized,
+        now,
+      );
   }
 }
 
@@ -235,7 +531,9 @@ export interface BulkSample {
   /** A one-line preview: post/comment text, an @handle, or an entity label. */
   label: string;
   /** Secondary line — a date, a like count, an entity type. */
-  detail: string | null;
+  detail:
+    | string
+    | null;
 }
 
 export interface BulkPreview {
@@ -255,13 +553,34 @@ export interface BulkOperationView {
   status: BulkStatus;
   total: number;
   processed: number;
-  error: string | null;
+  error:
+    | string
+    | null;
   createdAt: string;
-  finishedAt: string | null;
+  finishedAt:
+    | string
+    | null;
 }
 
 /** Percent complete, 0–100. `total: 0` is a finished no-op, not a division. */
-export function bulkProgress(op: Pick<BulkOperationView, 'total' | 'processed'>): number {
-  if (op.total <= 0) return 100;
-  return Math.min(100, Math.round((op.processed / op.total) * 100));
+export function bulkProgress(
+  op: Pick<
+    BulkOperationView,
+    | 'total'
+    | 'processed'
+  >,
+): number {
+  if (
+    op.total <=
+    0
+  )
+    return 100;
+  return Math.min(
+    100,
+    Math.round(
+      (op.processed /
+        op.total) *
+        100,
+    ),
+  );
 }

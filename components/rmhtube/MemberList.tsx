@@ -9,7 +9,12 @@
  *  - Presence status (watching / afk / brb) with self-selector
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { useTranslation } from 'react-i18next';
 import {
@@ -27,31 +32,80 @@ import {
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
-import type { ClientMemberInfo, UserPresenceStatus } from '@/lib/rmhtube/types';
+import type {
+  ClientMemberInfo,
+  UserPresenceStatus,
+} from '@/lib/rmhtube/types';
 
 // ─── Presence helpers ──────────────────────────────────────────
 
-const STATUS_OPTIONS: { value: UserPresenceStatus; label: string }[] = [
-  { value: 'watching', label: 'Watching' },
-  { value: 'afk', label: 'AFK' },
-  { value: 'brb', label: 'BRB' },
-];
+const STATUS_OPTIONS: {
+  value: UserPresenceStatus;
+  label: string;
+}[] =
+  [
+    {
+      value:
+        'watching',
+      label:
+        'Watching',
+    },
+    {
+      value:
+        'afk',
+      label:
+        'AFK',
+    },
+    {
+      value:
+        'brb',
+      label:
+        'BRB',
+    },
+  ];
 
-function PresenceBadge({ status }: { status: UserPresenceStatus }) {
-  const { t } = useTranslation("c-rmhtube");
-  if (status === 'afk') {
+function PresenceBadge({
+  status,
+}: {
+  status: UserPresenceStatus;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhtube',
+    );
+  if (
+    status ===
+    'afk'
+  ) {
     return (
       <span className="inline-flex items-center gap-0.5 rounded-app-sm px-1 py-0.5 text-xs font-semibold leading-none bg-app-warning-dim text-app-warning">
         <Coffee className="h-2.5 w-2.5" />
-        {t("status-afk", { defaultValue: "AFK" })}
+        {t(
+          'status-afk',
+          {
+            defaultValue:
+              'AFK',
+          },
+        )}
       </span>
     );
   }
-  if (status === 'brb') {
+  if (
+    status ===
+    'brb'
+  ) {
     return (
       <span className="inline-flex items-center gap-0.5 rounded-app-sm px-1 py-0.5 text-xs font-semibold leading-none bg-app-info-dim text-app-info">
         <Clock className="h-2.5 w-2.5" />
-        {t("status-brb", { defaultValue: "BRB" })}
+        {t(
+          'status-brb',
+          {
+            defaultValue:
+              'BRB',
+          },
+        )}
       </span>
     );
   }
@@ -61,88 +115,270 @@ function PresenceBadge({ status }: { status: UserPresenceStatus }) {
 
 // ─── Sorting ───────────────────────────────────────────────────
 
-function sortMembers(members: ClientMemberInfo[]): ClientMemberInfo[] {
-  return [...members].sort((a, b) => {
-    // Host first, then leader, then everyone else
-    const pa = a.isHost ? 0 : a.isLeader ? 1 : 2;
-    const pb = b.isHost ? 0 : b.isLeader ? 1 : 2;
-    if (pa !== pb) return pa - pb;
-    // Secondary: connected before disconnected
-    if (a.isConnected !== b.isConnected) return a.isConnected ? -1 : 1;
-    // Tertiary: alphabetical
-    return a.userName.localeCompare(b.userName);
-  });
+function sortMembers(
+  members: ClientMemberInfo[],
+): ClientMemberInfo[] {
+  return [
+    ...members,
+  ].sort(
+    (
+      a,
+      b,
+    ) => {
+      // Host first, then leader, then everyone else
+      const pa =
+        a.isHost
+          ? 0
+          : a.isLeader
+            ? 1
+            : 2;
+      const pb =
+        b.isHost
+          ? 0
+          : b.isLeader
+            ? 1
+            : 2;
+      if (
+        pa !==
+        pb
+      )
+        return (
+          pa -
+          pb
+        );
+      // Secondary: connected before disconnected
+      if (
+        a.isConnected !==
+        b.isConnected
+      )
+        return a.isConnected
+          ? -1
+          : 1;
+      // Tertiary: alphabetical
+      return a.userName.localeCompare(
+        b.userName,
+      );
+    },
+  );
 }
 
 // ─── Status Selector (for the current user) ───────────────────
 
-function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }) {
-  const { t } = useTranslation("c-rmhtube");
-  const [open, setOpen] = useState(false);
+function StatusSelector({
+  currentStatus,
+}: {
+  currentStatus: UserPresenceStatus;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhtube',
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
   // Held mounted for its close (globals.css §7.1); the backdrop below stays on
   // the raw flag so a leaving menu stops swallowing presses.
-  const { present, state } = usePopPresence(open);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const {
+    present,
+    state,
+  } =
+    usePopPresence(
+      open,
+    );
+  const btnRef =
+    useRef<HTMLButtonElement>(
+      null,
+    );
+  const [
+    pos,
+    setPos,
+  ] =
+    useState(
+      {
+        top: 0,
+        right: 0,
+      },
+    );
 
-  const handleOpen = useCallback(() => {
-    setOpen((o) => {
-      if (!o && btnRef.current) {
-        const rect = btnRef.current.getBoundingClientRect();
-        setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-      }
-      return !o;
-    });
-  }, []);
+  const handleOpen =
+    useCallback(() => {
+      setOpen(
+        (
+          o,
+        ) => {
+          if (
+            !o &&
+            btnRef.current
+          ) {
+            const rect =
+              btnRef.current.getBoundingClientRect();
+            setPos(
+              {
+                top:
+                  rect.bottom +
+                  4,
+                right:
+                  window.innerWidth -
+                  rect.right,
+              },
+            );
+          }
+          return !o;
+        },
+      );
+    }, []);
 
-  const handleChange = useCallback((status: UserPresenceStatus) => {
-    emit(C2S.ROOM_SET_STATUS, { status });
-    setOpen(false);
-  }, []);
+  const handleChange =
+    useCallback(
+      (
+        status: UserPresenceStatus,
+      ) => {
+        emit(
+          C2S.ROOM_SET_STATUS,
+          {
+            status,
+          },
+        );
+        setOpen(
+          false,
+        );
+      },
+      [],
+    );
 
   // Icon for current status
   const StatusIcon =
-    currentStatus === 'afk' ? Coffee : currentStatus === 'brb' ? Clock : Eye;
+    currentStatus ===
+    'afk'
+      ? Coffee
+      : currentStatus ===
+          'brb'
+        ? Clock
+        : Eye;
 
   return (
     <>
       <button
-        ref={btnRef}
-        onClick={handleOpen}
+        ref={
+          btnRef
+        }
+        onClick={
+          handleOpen
+        }
         className="flex items-center gap-1 rounded-app-sm px-1.5 py-0.5 text-xs font-medium transition-colors
           text-app-text-dim hover:text-app-text hover:bg-app-surface-hover"
-        title={t("change-your-status", { defaultValue: "Change your status" })}
+        title={t(
+          'change-your-status',
+          {
+            defaultValue:
+              'Change your status',
+          },
+        )}
       >
         <StatusIcon className="h-3 w-3" />
-        {currentStatus === 'watching' ? t("status-watching", { defaultValue: "Watching" }) : currentStatus.toUpperCase()}
+        {currentStatus ===
+        'watching'
+          ? t(
+              'status-watching',
+              {
+                defaultValue:
+                  'Watching',
+              },
+            )
+          : currentStatus.toUpperCase()}
       </button>
 
       {present && (
         <>
           {/* Invisible backdrop to close on outside click */}
-          {open && <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />}
+          {open && (
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() =>
+                setOpen(
+                  false,
+                )
+              }
+            />
+          )}
           <div
             data-motion="pop"
-            data-state={state}
+            data-state={
+              state
+            }
             className="fixed z-50 min-w-27.5 origin-top-right rounded-app-sm app-glass py-1"
-            style={{ top: pos.top, right: pos.right }}
+            style={{
+              top: pos.top,
+              right:
+                pos.right,
+            }}
           >
-            {STATUS_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => handleChange(opt.value)}
-                className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors hover:bg-app-surface-hover ${
-                  opt.value === currentStatus
-                    ? 'text-app-accent font-semibold'
-                    : 'text-app-text'
-                }`}
-              >
-                {opt.value === 'watching' && <Eye className="h-3 w-3 text-app-success" />}
-                {opt.value === 'afk' && <Coffee className="h-3 w-3 text-app-warning" />}
-                {opt.value === 'brb' && <Clock className="h-3 w-3 text-app-info" />}
-                {opt.value === 'watching' ? t("status-watching", { defaultValue: "Watching" }) : opt.value === 'afk' ? t("status-afk", { defaultValue: "AFK" }) : t("status-brb", { defaultValue: "BRB" })}
-              </button>
-            ))}
+            {STATUS_OPTIONS.map(
+              (
+                opt,
+              ) => (
+                <button
+                  key={
+                    opt.value
+                  }
+                  onClick={() =>
+                    handleChange(
+                      opt.value,
+                    )
+                  }
+                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors hover:bg-app-surface-hover ${
+                    opt.value ===
+                    currentStatus
+                      ? 'text-app-accent font-semibold'
+                      : 'text-app-text'
+                  }`}
+                >
+                  {opt.value ===
+                    'watching' && (
+                    <Eye className="h-3 w-3 text-app-success" />
+                  )}
+                  {opt.value ===
+                    'afk' && (
+                    <Coffee className="h-3 w-3 text-app-warning" />
+                  )}
+                  {opt.value ===
+                    'brb' && (
+                    <Clock className="h-3 w-3 text-app-info" />
+                  )}
+                  {opt.value ===
+                  'watching'
+                    ? t(
+                        'status-watching',
+                        {
+                          defaultValue:
+                            'Watching',
+                        },
+                      )
+                    : opt.value ===
+                        'afk'
+                      ? t(
+                          'status-afk',
+                          {
+                            defaultValue:
+                              'AFK',
+                          },
+                        )
+                      : t(
+                          'status-brb',
+                          {
+                            defaultValue:
+                              'BRB',
+                          },
+                        )}
+                </button>
+              ),
+            )}
           </div>
         </>
       )}
@@ -152,20 +388,43 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
 
 // ─── Role Badge ────────────────────────────────────────────────
 
-function RoleBadge({ isHost, isLeader }: { isHost: boolean; isLeader: boolean }) {
-  const { t } = useTranslation("c-rmhtube");
+function RoleBadge({
+  isHost,
+  isLeader,
+}: {
+  isHost: boolean;
+  isLeader: boolean;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhtube',
+    );
   return (
     <>
       {isHost && (
         <span className="inline-flex items-center gap-0.5 rounded-app-sm px-1 py-0.5 text-xs font-semibold leading-none bg-app-warning/20 text-app-warning">
           <Crown className="h-2.5 w-2.5" />
-          {t("role-host", { defaultValue: "Host" })}
+          {t(
+            'role-host',
+            {
+              defaultValue:
+                'Host',
+            },
+          )}
         </span>
       )}
       {isLeader && (
         <span className="inline-flex items-center gap-0.5 rounded-app-sm px-1 py-0.5 text-xs font-semibold leading-none bg-app-info/20 text-app-info">
           <Star className="h-2.5 w-2.5" />
-          {t("role-leader", { defaultValue: "Leader" })}
+          {t(
+            'role-leader',
+            {
+              defaultValue:
+                'Leader',
+            },
+          )}
         </span>
       )}
     </>
@@ -180,46 +439,115 @@ function BanConfirmDialog({
   onCancel,
 }: {
   memberName: string;
-  onConfirm: (reason: string) => void;
+  onConfirm: (
+    reason: string,
+  ) => void;
   onCancel: () => void;
 }) {
-  const { t } = useTranslation("c-rmhtube");
-  const [reason, setReason] = useState('');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhtube',
+    );
+  const [
+    reason,
+    setReason,
+  ] =
+    useState(
+      '',
+    );
 
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 z-50 app-scrim" onClick={onCancel} />
+      <div
+        className="fixed inset-0 z-50 app-scrim"
+        onClick={
+          onCancel
+        }
+      />
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
         <div
           className="pointer-events-auto w-80 rounded-app-sm app-glass p-4"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(
+            e,
+          ) =>
+            e.stopPropagation()
+          }
         >
           <h4 className="text-sm font-semibold text-app-text mb-2">
-            {t("ban-dialog-title", { defaultValue: "Ban {{name}}?", name: memberName })}
+            {t(
+              'ban-dialog-title',
+              {
+                defaultValue:
+                  'Ban {{name}}?',
+                name: memberName,
+              },
+            )}
           </h4>
           <p className="text-xs text-app-text-muted mb-3">
-            {t("ban-dialog-description", { defaultValue: "This will remove them from the room and prevent them from rejoining." })}
+            {t(
+              'ban-dialog-description',
+              {
+                defaultValue:
+                  'This will remove them from the room and prevent them from rejoining.',
+              },
+            )}
           </p>
           <input
             type="text"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder={t("ban-reason-placeholder", { defaultValue: "Reason (optional)" })}
+            value={
+              reason
+            }
+            onChange={(
+              e,
+            ) =>
+              setReason(
+                e
+                  .target
+                  .value,
+              )
+            }
+            placeholder={t(
+              'ban-reason-placeholder',
+              {
+                defaultValue:
+                  'Reason (optional)',
+              },
+            )}
             className="w-full rounded-app-sm border border-app-border bg-app-bg px-2 py-1.5 text-xs text-app-text placeholder:text-app-text-dim focus:outline-none focus:border-app-accent mb-3"
           />
           <div className="flex justify-end gap-2">
             <button
-              onClick={onCancel}
+              onClick={
+                onCancel
+              }
               className="rounded-app-sm px-3 py-1.5 text-xs font-medium text-app-text-muted hover:bg-app-surface-hover transition-colors"
             >
-              {t("cancel", { defaultValue: "Cancel" })}
+              {t(
+                'cancel',
+                {
+                  defaultValue:
+                    'Cancel',
+                },
+              )}
             </button>
             <button
-              onClick={() => onConfirm(reason)}
+              onClick={() =>
+                onConfirm(
+                  reason,
+                )
+              }
               className="rounded-app-sm px-3 py-1.5 text-xs font-medium bg-app-danger text-app-bg hover:opacity-90 transition-opacity"
             >
-              {t("ban-confirm", { defaultValue: "Ban" })}
+              {t(
+                'ban-confirm',
+                {
+                  defaultValue:
+                    'Ban',
+                },
+              )}
             </button>
           </div>
         </div>
@@ -231,208 +559,463 @@ function BanConfirmDialog({
 // ─── Main Component ────────────────────────────────────────────
 
 export default function MemberList() {
-  const { t } = useTranslation("c-rmhtube");
-  const room = useRmhTubeStore((s) => s.room);
-  const [banTarget, setBanTarget] = useState<ClientMemberInfo | null>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhtube',
+    );
+  const room =
+    useRmhTubeStore(
+      (
+        s,
+      ) =>
+        s.room,
+    );
+  const [
+    banTarget,
+    setBanTarget,
+  ] =
+    useState<ClientMemberInfo | null>(
+      null,
+    );
 
   // ── Actions ──
 
-  const handleKick = useCallback((targetUserId: string) => {
-    emit(C2S.ROOM_KICK, { targetUserId });
-  }, []);
+  const handleKick =
+    useCallback(
+      (
+        targetUserId: string,
+      ) => {
+        emit(
+          C2S.ROOM_KICK,
+          {
+            targetUserId,
+          },
+        );
+      },
+      [],
+    );
 
-  const handleTransferHost = useCallback((targetUserId: string) => {
-    emit(C2S.ROOM_TRANSFER_HOST, { targetUserId });
-  }, []);
+  const handleTransferHost =
+    useCallback(
+      (
+        targetUserId: string,
+      ) => {
+        emit(
+          C2S.ROOM_TRANSFER_HOST,
+          {
+            targetUserId,
+          },
+        );
+      },
+      [],
+    );
 
-  const handleSetLeader = useCallback((targetUserId: string) => {
-    emit(C2S.ROOM_SET_LEADER, { targetUserId });
-  }, []);
+  const handleSetLeader =
+    useCallback(
+      (
+        targetUserId: string,
+      ) => {
+        emit(
+          C2S.ROOM_SET_LEADER,
+          {
+            targetUserId,
+          },
+        );
+      },
+      [],
+    );
 
-  const handleBanConfirm = useCallback(
-    (reason: string) => {
-      if (!banTarget) return;
-      emit(C2S.ROOM_BAN, { targetUserId: banTarget.userId, ...(reason ? { reason } : {}) });
-      setBanTarget(null);
-    },
-    [banTarget],
-  );
+  const handleBanConfirm =
+    useCallback(
+      (
+        reason: string,
+      ) => {
+        if (
+          !banTarget
+        )
+          return;
+        emit(
+          C2S.ROOM_BAN,
+          {
+            targetUserId:
+              banTarget.userId,
+            ...(reason
+              ? {
+                  reason,
+                }
+              : {}),
+          },
+        );
+        setBanTarget(
+          null,
+        );
+      },
+      [
+        banTarget,
+      ],
+    );
 
   // ── Derived state ──
 
-  const sortedMembers = useMemo(
-    () => (room ? sortMembers(room.members) : []),
-    [room],
-  );
+  const sortedMembers =
+    useMemo(
+      () =>
+        room
+          ? sortMembers(
+              room.members,
+            )
+          : [],
+      [
+        room,
+      ],
+    );
 
-  if (!room) return null;
+  if (
+    !room
+  )
+    return null;
 
-  const myMember = room.members.find((m) => m.userId === room.myUserId);
-  const isHost = room.myUserId === room.hostUserId;
-  const isLeader = room.myUserId === room.leaderUserId;
-  const canSetLeader = isHost || isLeader;
+  const myMember =
+    room.members.find(
+      (
+        m,
+      ) =>
+        m.userId ===
+        room.myUserId,
+    );
+  const isHost =
+    room.myUserId ===
+    room.hostUserId;
+  const isLeader =
+    room.myUserId ===
+    room.leaderUserId;
+  const canSetLeader =
+    isHost ||
+    isLeader;
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-3 py-2 border-b border-app-border flex items-center justify-between">
         <h3 className="text-sm font-semibold text-app-text-muted">
-          {t("members-header", { defaultValue: "Members ({{count}})", count: room.members.length })}
+          {t(
+            'members-header',
+            {
+              defaultValue:
+                'Members ({{count}})',
+              count:
+                room
+                  .members
+                  .length,
+            },
+          )}
         </h3>
         <div className="flex items-center gap-1.5">
           {/* The host can always take playback control back. */}
-          {isHost && !isLeader && (
-            <button
-              onClick={() => handleSetLeader(room.myUserId)}
-              className="flex items-center gap-1 rounded-app-sm px-2 py-1 text-xs font-medium transition-colors text-app-info hover:bg-app-info-dim"
-            >
-              <Star className="h-3 w-3" aria-hidden />
-              {t("take-control", { defaultValue: "Take control" })}
-            </button>
-          )}
+          {isHost &&
+            !isLeader && (
+              <button
+                onClick={() =>
+                  handleSetLeader(
+                    room.myUserId,
+                  )
+                }
+                className="flex items-center gap-1 rounded-app-sm px-2 py-1 text-xs font-medium transition-colors text-app-info hover:bg-app-info-dim"
+              >
+                <Star
+                  className="h-3 w-3"
+                  aria-hidden
+                />
+                {t(
+                  'take-control',
+                  {
+                    defaultValue:
+                      'Take control',
+                  },
+                )}
+              </button>
+            )}
           {/* Status selector for current user */}
-          {myMember && <StatusSelector currentStatus={myMember.status} />}
+          {myMember && (
+            <StatusSelector
+              currentStatus={
+                myMember.status
+              }
+            />
+          )}
         </div>
       </div>
 
       {/* Member list */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
-        {sortedMembers.map((member) => {
-          const isMe = member.userId === room.myUserId;
-          const memberIsHost = member.isHost;
-          const memberIsLeader = member.isLeader;
+        {sortedMembers.map(
+          (
+            member,
+          ) => {
+            const isMe =
+              member.userId ===
+              room.myUserId;
+            const memberIsHost =
+              member.isHost;
+            const memberIsLeader =
+              member.isLeader;
 
-          // Determine which controls are available for this member
-          // A disconnected member can't report or control anything, and the
-          // server refuses the handover anyway.
-          const showMakeLeader = canSetLeader && !isMe && !memberIsLeader && member.isConnected;
-          const wantsControl = (room.controlRequests ?? []).includes(member.userId) && !memberIsLeader;
-          const showKick = isHost && !isMe;
-          const showBan = isHost && !isMe;
-          const showTransfer = isHost && !isMe;
+            // Determine which controls are available for this member
+            // A disconnected member can't report or control anything, and the
+            // server refuses the handover anyway.
+            const showMakeLeader =
+              canSetLeader &&
+              !isMe &&
+              !memberIsLeader &&
+              member.isConnected;
+            const wantsControl =
+              (
+                room.controlRequests ??
+                []
+              ).includes(
+                member.userId,
+              ) &&
+              !memberIsLeader;
+            const showKick =
+              isHost &&
+              !isMe;
+            const showBan =
+              isHost &&
+              !isMe;
+            const showTransfer =
+              isHost &&
+              !isMe;
 
-          return (
-            <div
-              key={member.userId}
-              className={`flex items-center gap-2 p-2 rounded-app-sm transition-colors hover:bg-app-surface-hover ${
-                !member.isConnected ? 'opacity-50' : ''
-              }`}
-            >
-              {/* Avatar */}
-              {member.avatarUrl ? (
-                <img
-                  src={member.avatarUrl}
-                  alt=""
-                  className="shrink-0 w-8 h-8 rounded-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
-                />
-              ) : (
-                <div className="shrink-0 w-8 h-8 rounded-full bg-app-surface-active flex items-center justify-center text-xs font-bold text-app-text-muted">
-                  {member.userName.charAt(0).toUpperCase()}
-                </div>
-              )}
+            return (
+              <div
+                key={
+                  member.userId
+                }
+                className={`flex items-center gap-2 p-2 rounded-app-sm transition-colors hover:bg-app-surface-hover ${
+                  !member.isConnected
+                    ? 'opacity-50'
+                    : ''
+                }`}
+              >
+                {/* Avatar */}
+                {member.avatarUrl ? (
+                  <img
+                    src={
+                      member.avatarUrl
+                    }
+                    alt=""
+                    className="shrink-0 w-8 h-8 rounded-full object-cover"
+                    onError={(
+                      e,
+                    ) => {
+                      (
+                        e.target as HTMLImageElement
+                      ).src =
+                        '/images/social/default_avatar.png';
+                    }}
+                  />
+                ) : (
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-app-surface-active flex items-center justify-center text-xs font-bold text-app-text-muted">
+                    {member.userName
+                      .charAt(
+                        0,
+                      )
+                      .toUpperCase()}
+                  </div>
+                )}
 
-              {/* Name + role badge + presence */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span
-                    className={`text-sm font-medium truncate ${
-                      member.isHost
-                        ? 'text-app-accent'
-                        : 'text-app-text'
-                    }`}
-                  >
-                    {member.userName}
-                  </span>
-                  <RoleBadge isHost={memberIsHost} isLeader={memberIsLeader} />
-                  {isMe && (
-                    <span className="text-xs text-app-text-dim">{t("you-label", { defaultValue: "(you)" })}</span>
-                  )}
-                  {wantsControl && (
-                    <span className="rounded-full bg-app-info-dim px-1.5 py-0.5 text-xs font-semibold text-app-info">
-                      {t("wants-control", { defaultValue: "Wants control" })}
+                {/* Name + role badge + presence */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span
+                      className={`text-sm font-medium truncate ${
+                        member.isHost
+                          ? 'text-app-accent'
+                          : 'text-app-text'
+                      }`}
+                    >
+                      {
+                        member.userName
+                      }
                     </span>
+                    <RoleBadge
+                      isHost={
+                        memberIsHost
+                      }
+                      isLeader={
+                        memberIsLeader
+                      }
+                    />
+                    {isMe && (
+                      <span className="text-xs text-app-text-dim">
+                        {t(
+                          'you-label',
+                          {
+                            defaultValue:
+                              '(you)',
+                          },
+                        )}
+                      </span>
+                    )}
+                    {wantsControl && (
+                      <span className="rounded-full bg-app-info-dim px-1.5 py-0.5 text-xs font-semibold text-app-info">
+                        {t(
+                          'wants-control',
+                          {
+                            defaultValue:
+                              'Wants control',
+                          },
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  {/* Presence badge (afk / brb) shown below the name row */}
+                  {member.status !==
+                    'watching' && (
+                    <div className="mt-0.5">
+                      <PresenceBadge
+                        status={
+                          member.status
+                        }
+                      />
+                    </div>
                   )}
                 </div>
-                {/* Presence badge (afk / brb) shown below the name row */}
-                {member.status !== 'watching' && (
-                  <div className="mt-0.5">
-                    <PresenceBadge status={member.status} />
+
+                {/* Connection status */}
+                <div className="shrink-0">
+                  {member.isConnected ? (
+                    <Wifi className="h-3.5 w-3.5 text-app-success" />
+                  ) : (
+                    <WifiOff className="h-3.5 w-3.5 text-app-danger" />
+                  )}
+                </div>
+
+                {/* Controls */}
+                {(showTransfer ||
+                  showMakeLeader ||
+                  showKick ||
+                  showBan) && (
+                  <div className="shrink-0 flex gap-1">
+                    {/* Transfer host (host only) */}
+                    {showTransfer && (
+                      <button
+                        onClick={() =>
+                          handleTransferHost(
+                            member.userId,
+                          )
+                        }
+                        className="rounded-app-sm p-1 transition-colors text-app-text-dim hover:text-app-warning hover:bg-app-warning-dim"
+                        title={t(
+                          'transfer-host',
+                          {
+                            defaultValue:
+                              'Transfer host',
+                          },
+                        )}
+                      >
+                        <ArrowRightLeft className="h-3 w-3" />
+                      </button>
+                    )}
+
+                    {/* Make leader (host or current leader can set) */}
+                    {showMakeLeader && (
+                      <button
+                        onClick={() =>
+                          handleSetLeader(
+                            member.userId,
+                          )
+                        }
+                        className={`rounded-app-sm p-1 transition-colors hover:text-app-info hover:bg-app-info-dim ${
+                          wantsControl
+                            ? 'text-app-info bg-app-info-dim'
+                            : 'text-app-text-dim'
+                        }`}
+                        title={t(
+                          'make-leader',
+                          {
+                            defaultValue:
+                              'Make leader',
+                          },
+                        )}
+                        aria-label={t(
+                          'make-leader-named',
+                          {
+                            defaultValue:
+                              'Make {{name}} the leader',
+                            name: member.userName,
+                          },
+                        )}
+                      >
+                        <Star className="h-3 w-3" />
+                      </button>
+                    )}
+
+                    {/* Kick (host only) */}
+                    {showKick && (
+                      <button
+                        onClick={() =>
+                          handleKick(
+                            member.userId,
+                          )
+                        }
+                        className="rounded-app-sm p-1 transition-colors text-app-text-dim hover:text-app-danger hover:bg-app-danger-dim"
+                        title={t(
+                          'kick',
+                          {
+                            defaultValue:
+                              'Kick',
+                          },
+                        )}
+                      >
+                        <UserX className="h-3 w-3" />
+                      </button>
+                    )}
+
+                    {/* Ban (host only) */}
+                    {showBan && (
+                      <button
+                        onClick={() =>
+                          setBanTarget(
+                            member,
+                          )
+                        }
+                        className="rounded-app-sm p-1 transition-colors text-app-text-dim hover:text-app-danger hover:bg-app-danger-dim"
+                        title={t(
+                          'ban',
+                          {
+                            defaultValue:
+                              'Ban',
+                          },
+                        )}
+                      >
+                        <Ban className="h-3 w-3" />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
-
-              {/* Connection status */}
-              <div className="shrink-0">
-                {member.isConnected ? (
-                  <Wifi className="h-3.5 w-3.5 text-app-success" />
-                ) : (
-                  <WifiOff className="h-3.5 w-3.5 text-app-danger" />
-                )}
-              </div>
-
-              {/* Controls */}
-              {(showTransfer || showMakeLeader || showKick || showBan) && (
-                <div className="shrink-0 flex gap-1">
-                  {/* Transfer host (host only) */}
-                  {showTransfer && (
-                    <button
-                      onClick={() => handleTransferHost(member.userId)}
-                      className="rounded-app-sm p-1 transition-colors text-app-text-dim hover:text-app-warning hover:bg-app-warning-dim"
-                      title={t("transfer-host", { defaultValue: "Transfer host" })}
-                    >
-                      <ArrowRightLeft className="h-3 w-3" />
-                    </button>
-                  )}
-
-                  {/* Make leader (host or current leader can set) */}
-                  {showMakeLeader && (
-                    <button
-                      onClick={() => handleSetLeader(member.userId)}
-                      className={`rounded-app-sm p-1 transition-colors hover:text-app-info hover:bg-app-info-dim ${
-                        wantsControl ? 'text-app-info bg-app-info-dim' : 'text-app-text-dim'
-                      }`}
-                      title={t("make-leader", { defaultValue: "Make leader" })}
-                      aria-label={t("make-leader-named", { defaultValue: "Make {{name}} the leader", name: member.userName })}
-                    >
-                      <Star className="h-3 w-3" />
-                    </button>
-                  )}
-
-                  {/* Kick (host only) */}
-                  {showKick && (
-                    <button
-                      onClick={() => handleKick(member.userId)}
-                      className="rounded-app-sm p-1 transition-colors text-app-text-dim hover:text-app-danger hover:bg-app-danger-dim"
-                      title={t("kick", { defaultValue: "Kick" })}
-                    >
-                      <UserX className="h-3 w-3" />
-                    </button>
-                  )}
-
-                  {/* Ban (host only) */}
-                  {showBan && (
-                    <button
-                      onClick={() => setBanTarget(member)}
-                      className="rounded-app-sm p-1 transition-colors text-app-text-dim hover:text-app-danger hover:bg-app-danger-dim"
-                      title={t("ban", { defaultValue: "Ban" })}
-                    >
-                      <Ban className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          },
+        )}
       </div>
 
       {/* Ban confirmation dialog */}
       {banTarget && (
         <BanConfirmDialog
-          memberName={banTarget.userName}
-          onConfirm={handleBanConfirm}
-          onCancel={() => setBanTarget(null)}
+          memberName={
+            banTarget.userName
+          }
+          onConfirm={
+            handleBanConfirm
+          }
+          onCancel={() =>
+            setBanTarget(
+              null,
+            )
+          }
         />
       )}
     </div>

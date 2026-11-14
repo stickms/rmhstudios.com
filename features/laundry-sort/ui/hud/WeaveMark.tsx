@@ -15,36 +15,128 @@ interface Props {
   className?: string;
 }
 
-export function WeaveMark({ weave, color, size = 16, className }: Props) {
+export function WeaveMark({
+  weave,
+  color,
+  size = 16,
+  className,
+}: Props) {
   return (
     <svg
-      width={size}
-      height={size}
+      width={
+        size
+      }
+      height={
+        size
+      }
       viewBox="0 0 16 16"
-      className={className}
+      className={
+        className
+      }
       aria-hidden="true"
       focusable="false"
     >
-      {weave === 'solid' ? <circle cx="8" cy="8" r="6.5" fill={color} /> : null}
-      {weave === 'stripe' ? (
+      {weave ===
+      'solid' ? (
+        <circle
+          cx="8"
+          cy="8"
+          r="6.5"
+          fill={
+            color
+          }
+        />
+      ) : null}
+      {weave ===
+      'stripe' ? (
         <>
-          <rect x="1" y="2" width="14" height="3" fill={color} />
-          <rect x="1" y="6.5" width="14" height="3" fill={color} />
-          <rect x="1" y="11" width="14" height="3" fill={color} />
+          <rect
+            x="1"
+            y="2"
+            width="14"
+            height="3"
+            fill={
+              color
+            }
+          />
+          <rect
+            x="1"
+            y="6.5"
+            width="14"
+            height="3"
+            fill={
+              color
+            }
+          />
+          <rect
+            x="1"
+            y="11"
+            width="14"
+            height="3"
+            fill={
+              color
+            }
+          />
         </>
       ) : null}
-      {weave === 'check' ? (
+      {weave ===
+      'check' ? (
         <>
-          <rect x="1" y="1" width="6.5" height="6.5" fill={color} />
-          <rect x="8.5" y="8.5" width="6.5" height="6.5" fill={color} />
+          <rect
+            x="1"
+            y="1"
+            width="6.5"
+            height="6.5"
+            fill={
+              color
+            }
+          />
+          <rect
+            x="8.5"
+            y="8.5"
+            width="6.5"
+            height="6.5"
+            fill={
+              color
+            }
+          />
         </>
       ) : null}
-      {weave === 'dot' ? (
+      {weave ===
+      'dot' ? (
         <>
-          <circle cx="5" cy="5" r="2.6" fill={color} />
-          <circle cx="11" cy="5" r="2.6" fill={color} />
-          <circle cx="5" cy="11" r="2.6" fill={color} />
-          <circle cx="11" cy="11" r="2.6" fill={color} />
+          <circle
+            cx="5"
+            cy="5"
+            r="2.6"
+            fill={
+              color
+            }
+          />
+          <circle
+            cx="11"
+            cy="5"
+            r="2.6"
+            fill={
+              color
+            }
+          />
+          <circle
+            cx="5"
+            cy="11"
+            r="2.6"
+            fill={
+              color
+            }
+          />
+          <circle
+            cx="11"
+            cy="11"
+            r="2.6"
+            fill={
+              color
+            }
+          />
         </>
       ) : null}
     </svg>

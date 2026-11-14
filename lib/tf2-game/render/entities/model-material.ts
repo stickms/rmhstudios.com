@@ -55,7 +55,11 @@ export interface ModelMaterialExtras {
     tint?: number[];
     baseAlphaMask?: boolean;
   };
-  rimlight?: { exponent?: number; boost?: number; mask?: boolean };
+  rimlight?: {
+    exponent?: number;
+    boost?: number;
+    mask?: boolean;
+  };
   lightwarp?: string;
   eye?: boolean;
   missing?: string;
@@ -73,24 +77,52 @@ export interface ModelMaterialExtras {
 
 /** Per-instance uniforms shared by all of an instance's materials. */
 export interface InstanceUniforms {
-  [k: string]: { value: unknown };
-  uAmbientCube: { value: Vector3[] };
-  uSunDir: { value: Vector3 };
-  uSunColor: { value: Vector3 };
+  [
+    k: string
+  ]: {
+    value: unknown;
+  };
+  uAmbientCube: {
+    value: Vector3[];
+  };
+  uSunDir: {
+    value: Vector3;
+  };
+  uSunColor: {
+    value: Vector3;
+  };
   /** Up to two local world lights (direction toward the light, three space; colour at the model). */
-  uLocalDir: { value: Vector3[] };
-  uLocalColor: { value: Vector3[] };
+  uLocalDir: {
+    value: Vector3[];
+  };
+  uLocalColor: {
+    value: Vector3[];
+  };
   /** Multiplies the lit colour (disguise-kit tint, burning darken). */
-  uTint: { value: Vector3 };
+  uTint: {
+    value: Vector3;
+  };
   /** Added glow colour on the rim (crit boost, über flash). */
-  uGlow: { value: Vector3 };
+  uGlow: {
+    value: Vector3;
+  };
   /** Screen-door fade, 1 = opaque. */
-  uAlpha: { value: number };
+  uAlpha: {
+    value: number;
+  };
   /** Cloak dissolve 0 (visible) … 1 (gone). */
-  uCloak: { value: number };
-  uCloakColor: { value: Vector3 };
-  uFogColor: { value: Vector4 };
-  uFogRange: { value: Vector2 };
+  uCloak: {
+    value: number;
+  };
+  uCloakColor: {
+    value: Vector3;
+  };
+  uFogColor: {
+    value: Vector4;
+  };
+  uFogRange: {
+    value: Vector2;
+  };
 }
 
 /**
@@ -98,35 +130,154 @@ export interface InstanceUniforms {
  * them — the uniform objects are shared, so writes through `.value` reach both) plus its own
  * paint: `uPaint` (linear colour) and `uPaintOn`, read by PAINT materials only.
  */
-export function paintUniforms(owner: InstanceUniforms): InstanceUniforms {
+export function paintUniforms(
+  owner: InstanceUniforms,
+): InstanceUniforms {
   return {
     ...owner,
-    uPaint: { value: new Vector3(1, 1, 1) },
-    uPaintOn: { value: 0 },
+    uPaint:
+      {
+        value:
+          new Vector3(
+            1,
+            1,
+            1,
+          ),
+      },
+    uPaintOn:
+      {
+        value: 0,
+      },
     // A killstreak sheen (rgb linear, strength; 0: none) and its clock: the item's own.
-    uSheen: { value: new Vector4(0, 0, 0, 0) },
-    uSheenTime: { value: 0 },
+    uSheen:
+      {
+        value:
+          new Vector4(
+            0,
+            0,
+            0,
+            0,
+          ),
+      },
+    uSheenTime:
+      {
+        value: 0,
+      },
   };
 }
 
 export function createInstanceUniforms(fog?: {
-  uFogColor: { value: Vector4 };
-  uFogRange: { value: Vector2 };
+  uFogColor: {
+    value: Vector4;
+  };
+  uFogRange: {
+    value: Vector2;
+  };
 }): InstanceUniforms {
   return {
-    uAmbientCube: { value: Array.from({ length: 6 }, () => new Vector3(0.3, 0.3, 0.3)) },
-    uSunDir: { value: new Vector3(0, 1, 0) },
-    uSunColor: { value: new Vector3() },
-    uLocalDir: { value: [new Vector3(0, 1, 0), new Vector3(0, 1, 0)] },
-    uLocalColor: { value: [new Vector3(), new Vector3()] },
-    uTint: { value: new Vector3(1, 1, 1) },
-    uGlow: { value: new Vector3() },
-    uAlpha: { value: 1 },
-    uCloak: { value: 0 },
-    uCloakColor: { value: new Vector3(0.6, 0.65, 0.7) },
+    uAmbientCube:
+      {
+        value:
+          Array.from(
+            {
+              length: 6,
+            },
+            () =>
+              new Vector3(
+                0.3,
+                0.3,
+                0.3,
+              ),
+          ),
+      },
+    uSunDir:
+      {
+        value:
+          new Vector3(
+            0,
+            1,
+            0,
+          ),
+      },
+    uSunColor:
+      {
+        value:
+          new Vector3(),
+      },
+    uLocalDir:
+      {
+        value:
+          [
+            new Vector3(
+              0,
+              1,
+              0,
+            ),
+            new Vector3(
+              0,
+              1,
+              0,
+            ),
+          ],
+      },
+    uLocalColor:
+      {
+        value:
+          [
+            new Vector3(),
+            new Vector3(),
+          ],
+      },
+    uTint:
+      {
+        value:
+          new Vector3(
+            1,
+            1,
+            1,
+          ),
+      },
+    uGlow:
+      {
+        value:
+          new Vector3(),
+      },
+    uAlpha:
+      {
+        value: 1,
+      },
+    uCloak:
+      {
+        value: 0,
+      },
+    uCloakColor:
+      {
+        value:
+          new Vector3(
+            0.6,
+            0.65,
+            0.7,
+          ),
+      },
     // Shared with the world when given, so models fog with the map.
-    uFogColor: fog?.uFogColor ?? { value: new Vector4(0, 0, 0, 0) },
-    uFogRange: fog?.uFogRange ?? { value: new Vector2(1, 0) },
+    uFogColor:
+      fog?.uFogColor ?? {
+        value:
+          new Vector4(
+            0,
+            0,
+            0,
+            0,
+          ),
+      },
+    uFogRange:
+      fog?.uFogRange ?? {
+        value:
+          new Vector2(
+            1,
+            0,
+          ),
+      },
   };
 }
 
@@ -298,97 +449,364 @@ void main() {
 `;
 
 /** TF2 team colours for untextured team materials (linear). */
-export const TEAM_FALLBACK_COLOR = {
-  red: new Color().setRGB(0.72, 0.23, 0.2, 'srgb'),
-  blue: new Color().setRGB(0.36, 0.5, 0.62, 'srgb'),
-} as const;
+export const TEAM_FALLBACK_COLOR =
+  {
+    red: new Color().setRGB(
+      0.72,
+      0.23,
+      0.2,
+      'srgb',
+    ),
+    blue: new Color().setRGB(
+      0.36,
+      0.5,
+      0.62,
+      'srgb',
+    ),
+  } as const;
 
 /** An untextured material's colour: its team's when its name says RED/BLU (exported for team skins). */
-export function fallbackColor(src: Material & { color?: Color }, ud: ModelMaterialExtras): Color {
-  const name = (ud.material ?? src.name ?? '').toLowerCase();
-  if (/(^|[_/])(blue|blu)([_/.]|$)|_blue|_blu\b/.test(name))
+export function fallbackColor(
+  src: Material & {
+    color?: Color;
+  },
+  ud: ModelMaterialExtras,
+): Color {
+  const name =
+    (
+      ud.material ??
+      src.name ??
+      ''
+    ).toLowerCase();
+  if (
+    /(^|[_/])(blue|blu)([_/.]|$)|_blue|_blu\b/.test(
+      name,
+    )
+  )
     return TEAM_FALLBACK_COLOR.blue.clone();
-  if (/(^|[_/])red([_/.]|$)|_red/.test(name)) return TEAM_FALLBACK_COLOR.red.clone();
-  if (ud.eye || ud.shader === 'eyerefract' || ud.shader === 'eyes')
-    return new Color(0.85, 0.85, 0.85);
-  return src.color?.clone() ?? new Color(0.6, 0.6, 0.6);
+  if (
+    /(^|[_/])red([_/.]|$)|_red/.test(
+      name,
+    )
+  )
+    return TEAM_FALLBACK_COLOR.red.clone();
+  if (
+    ud.eye ||
+    ud.shader ===
+      'eyerefract' ||
+    ud.shader ===
+      'eyes'
+  )
+    return new Color(
+      0.85,
+      0.85,
+      0.85,
+    );
+  return (
+    src.color?.clone() ??
+    new Color(
+      0.6,
+      0.6,
+      0.6,
+    )
+  );
 }
 
 /** Template data for one glTF material (shared by all instances of a model). */
 export interface MaterialTemplate {
   name: string;
-  defines: Record<string, string>;
-  uniforms: Record<string, { value: unknown }>;
+  defines: Record<
+    string,
+    string
+  >;
+  uniforms: Record<
+    string,
+    {
+      value: unknown;
+    }
+  >;
   transparent: boolean;
   additive: boolean;
   doubleSided: boolean;
 }
 
-export function materialTemplate(src: Material): MaterialTemplate {
-  const ud = (src.userData ?? {}) as ModelMaterialExtras;
-  const s = src as Material & { map?: Texture | null; color?: Color; alphaTest?: number };
-  const defines: Record<string, string> = {};
-  const translucent = !!(ud.translucent || ud.additive);
-  if (ud.alphatest || (!translucent && (s.alphaTest ?? 0) > 0)) defines.ALPHATEST = '';
-  if (translucent) defines.TRANSLUCENT = '';
-  if (ud.selfillum) defines.SELFILLUM = '';
-  if (ud.unlit || ud.shader === 'unlitgeneric') defines.UNLIT = '';
-  if (ud.tint) defines.PAINT = '';
-  const paintDefault = new Color(1, 1, 1);
-  if (ud.tintDefault?.length === 3)
-    paintDefault.setRGB(ud.tintDefault[0], ud.tintDefault[1], ud.tintDefault[2], SRGBColorSpace);
-  const hasMap = !!s.map;
-  const phong = ud.phong;
-  const rim = ud.rimlight;
-  const fr = phong?.fresnelRanges ?? [0, 0.5, 1];
-  const tint = ud.selfillumTint ?? [1, 1, 1];
+export function materialTemplate(
+  src: Material,
+): MaterialTemplate {
+  const ud =
+    (src.userData ??
+      {}) as ModelMaterialExtras;
+  const s =
+    src as Material & {
+      map?: Texture | null;
+      color?: Color;
+      alphaTest?: number;
+    };
+  const defines: Record<
+    string,
+    string
+  > =
+    {};
+  const translucent =
+    !!(
+      ud.translucent ||
+      ud.additive
+    );
+  if (
+    ud.alphatest ||
+    (!translucent &&
+      (s.alphaTest ??
+        0) >
+        0)
+  )
+    defines.ALPHATEST =
+      '';
+  if (
+    translucent
+  )
+    defines.TRANSLUCENT =
+      '';
+  if (
+    ud.selfillum
+  )
+    defines.SELFILLUM =
+      '';
+  if (
+    ud.unlit ||
+    ud.shader ===
+      'unlitgeneric'
+  )
+    defines.UNLIT =
+      '';
+  if (
+    ud.tint
+  )
+    defines.PAINT =
+      '';
+  const paintDefault =
+    new Color(
+      1,
+      1,
+      1,
+    );
+  if (
+    ud
+      .tintDefault
+      ?.length ===
+    3
+  )
+    paintDefault.setRGB(
+      ud
+        .tintDefault[0],
+      ud
+        .tintDefault[1],
+      ud
+        .tintDefault[2],
+      SRGBColorSpace,
+    );
+  const hasMap =
+    !!s.map;
+  const phong =
+    ud.phong;
+  const rim =
+    ud.rimlight;
+  const fr =
+    phong?.fresnelRanges ?? [
+      0,
+      0.5,
+      1,
+    ];
+  const tint =
+    ud.selfillumTint ?? [
+      1,
+      1,
+      1,
+    ];
   return {
     name: src.name,
     defines,
-    uniforms: {
-      uMap: { value: s.map ?? null },
-      uHasMap: { value: hasMap ? 1 : 0 },
-      uColor: { value: hasMap ? new Color(1, 1, 1) : fallbackColor(s, ud) },
-      uCutoff: { value: ud.cutoff ?? (s.alphaTest || 0.5) },
-      uPhong: {
-        value: new Vector4(
-          phong?.exponent ?? 5,
-          phong?.boost ?? 1,
-          phong?.baseAlphaMask ? 1 : 0,
-          phong ? 1 : 0,
-        ),
+    uniforms:
+      {
+        uMap: {
+          value:
+            s.map ??
+            null,
+        },
+        uHasMap:
+          {
+            value:
+              hasMap
+                ? 1
+                : 0,
+          },
+        uColor:
+          {
+            value:
+              hasMap
+                ? new Color(
+                    1,
+                    1,
+                    1,
+                  )
+                : fallbackColor(
+                    s,
+                    ud,
+                  ),
+          },
+        uCutoff:
+          {
+            value:
+              ud.cutoff ??
+              (s.alphaTest ||
+                0.5),
+          },
+        uPhong:
+          {
+            value:
+              new Vector4(
+                phong?.exponent ??
+                  5,
+                phong?.boost ??
+                  1,
+                phong?.baseAlphaMask
+                  ? 1
+                  : 0,
+                phong
+                  ? 1
+                  : 0,
+              ),
+          },
+        uFresnel:
+          {
+            value:
+              new Vector3(
+                fr[0] ??
+                  0,
+                fr[1] ??
+                  0.5,
+                fr[2] ??
+                  1,
+              ),
+          },
+        uRim: {
+          value:
+            new Vector3(
+              rim?.exponent ??
+                4,
+              rim?.boost ??
+                1,
+              rim
+                ? 1
+                : 0,
+            ),
+        },
+        uSelfIllumTint:
+          {
+            value:
+              new Vector3(
+                tint[0] ??
+                  1,
+                tint[1] ??
+                  1,
+                tint[2] ??
+                  1,
+              ),
+          },
+        uPaintDefault:
+          {
+            value:
+              new Vector3(
+                paintDefault.r,
+                paintDefault.g,
+                paintDefault.b,
+              ),
+          },
+        uPaintReplace:
+          {
+            value:
+              ud.tintReplace ??
+              0,
+          },
+        uPaintMasked:
+          {
+            value:
+              ud.tintWhole
+                ? 0
+                : 1,
+          },
+        // Unpainted and unsheened unless the instance brings its own (paintUniforms).
+        uPaint:
+          {
+            value:
+              new Vector3(
+                1,
+                1,
+                1,
+              ),
+          },
+        uPaintOn:
+          {
+            value: 0,
+          },
+        uSheen:
+          {
+            value:
+              new Vector4(
+                0,
+                0,
+                0,
+                0,
+              ),
+          },
+        uSheenTime:
+          {
+            value: 0,
+          },
       },
-      uFresnel: { value: new Vector3(fr[0] ?? 0, fr[1] ?? 0.5, fr[2] ?? 1) },
-      uRim: { value: new Vector3(rim?.exponent ?? 4, rim?.boost ?? 1, rim ? 1 : 0) },
-      uSelfIllumTint: { value: new Vector3(tint[0] ?? 1, tint[1] ?? 1, tint[2] ?? 1) },
-      uPaintDefault: { value: new Vector3(paintDefault.r, paintDefault.g, paintDefault.b) },
-      uPaintReplace: { value: ud.tintReplace ?? 0 },
-      uPaintMasked: { value: ud.tintWhole ? 0 : 1 },
-      // Unpainted and unsheened unless the instance brings its own (paintUniforms).
-      uPaint: { value: new Vector3(1, 1, 1) },
-      uPaintOn: { value: 0 },
-      uSheen: { value: new Vector4(0, 0, 0, 0) },
-      uSheenTime: { value: 0 },
-    },
-    transparent: translucent,
-    additive: !!ud.additive,
-    doubleSided: !!ud.nocull || src.side === DoubleSide,
+    transparent:
+      translucent,
+    additive:
+      !!ud.additive,
+    doubleSided:
+      !!ud.nocull ||
+      src.side ===
+        DoubleSide,
   };
 }
 
 /** A material for one instance: the template's own uniforms plus the instance's shared set. */
-export function createModelMaterial(t: MaterialTemplate, inst: InstanceUniforms): ShaderMaterial {
-  const m = new ShaderMaterial({
-    name: t.name,
-    vertexShader: VERT,
-    fragmentShader: FRAG,
-    defines: t.defines,
-    uniforms: { ...t.uniforms, ...inst },
-    transparent: t.transparent,
-    depthWrite: !t.transparent,
-    blending: t.additive ? AdditiveBlending : NormalBlending,
-    side: t.doubleSided ? DoubleSide : FrontSide,
-  });
+export function createModelMaterial(
+  t: MaterialTemplate,
+  inst: InstanceUniforms,
+): ShaderMaterial {
+  const m =
+    new ShaderMaterial(
+      {
+        name: t.name,
+        vertexShader:
+          VERT,
+        fragmentShader:
+          FRAG,
+        defines:
+          t.defines,
+        uniforms:
+          {
+            ...t.uniforms,
+            ...inst,
+          },
+        transparent:
+          t.transparent,
+        depthWrite:
+          !t.transparent,
+        blending:
+          t.additive
+            ? AdditiveBlending
+            : NormalBlending,
+        side: t.doubleSided
+          ? DoubleSide
+          : FrontSide,
+      },
+    );
   return m;
 }
 
@@ -400,8 +818,38 @@ export function setInstanceLighting(
   sunColor: Vector3,
   sunScale: number,
 ): void {
-  for (let k = 0; k < 6; k++)
-    u.uAmbientCube.value[k].set(cube[k * 3], cube[k * 3 + 1], cube[k * 3 + 2]);
-  u.uSunDir.value.copy(sunDir);
-  u.uSunColor.value.copy(sunColor).multiplyScalar(sunScale);
+  for (
+    let k = 0;
+    k <
+    6;
+    k++
+  )
+    u.uAmbientCube.value[
+      k
+    ].set(
+      cube[
+        k *
+          3
+      ],
+      cube[
+        k *
+          3 +
+          1
+      ],
+      cube[
+        k *
+          3 +
+          2
+      ],
+    );
+  u.uSunDir.value.copy(
+    sunDir,
+  );
+  u.uSunColor.value
+    .copy(
+      sunColor,
+    )
+    .multiplyScalar(
+      sunScale,
+    );
 }

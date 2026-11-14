@@ -1,4 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
 import { join } from 'node:path';
 import { readCss } from './css-source';
 
@@ -38,33 +42,94 @@ import { readCss } from './css-source';
  * the pointer away from the OS again.
  */
 
-const ROOT = process.cwd();
+const ROOT =
+  process.cwd();
 
-const SHEETS = [
-  join('app', 'globals.css'),
-  join('components', 'feed', 'feed.css'),
-  join('components', 'shared', 'app-theme.css'),
-  // Steel: the flat surface roles (the old material's sheets are deleted) stay filter-free too.
-  join('app', 'styles', 'steel-surfaces.css'),
-];
+const SHEETS =
+  [
+    join(
+      'app',
+      'globals.css',
+    ),
+    join(
+      'components',
+      'feed',
+      'feed.css',
+    ),
+    join(
+      'components',
+      'shared',
+      'app-theme.css',
+    ),
+    // Steel: the flat surface roles (the old material's sheets are deleted) stay filter-free too.
+    join(
+      'app',
+      'styles',
+      'steel-surfaces.css',
+    ),
+  ];
 
-const read = (rel: string) => readCss(join(ROOT, rel));
+const read =
+  (
+    rel: string,
+  ) =>
+    readCss(
+      join(
+        ROOT,
+        rel,
+      ),
+    );
 
 /**
  * Source with `/* … *\/` comments removed. Every rule here is about what the CSS
  * DOES, and this repo documents its own history heavily — the prose explaining
  * why a filter was deleted must not read as the filter being back.
  */
-const code = (rel: string) => read(rel).replace(/\/\*[\s\S]*?\*\//g, '');
+const code =
+  (
+    rel: string,
+  ) =>
+    read(
+      rel,
+    ).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    );
 
 /** Every `selector { … }` block in a stylesheet, flattened to one string each. */
-function ruleBlocks(css: string): { selector: string; body: string }[] {
-  const out: { selector: string; body: string }[] = [];
-  const bare = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  const re = /([^{}]+)\{([^{}]*)\}/g;
+function ruleBlocks(
+  css: string,
+): {
+  selector: string;
+  body: string;
+}[] {
+  const out: {
+    selector: string;
+    body: string;
+  }[] =
+    [];
+  const bare =
+    css.replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    );
+  const re =
+    /([^{}]+)\{([^{}]*)\}/g;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(bare)) !== null) {
-    out.push({ selector: m[1].trim(), body: m[2] });
+  while (
+    (m =
+      re.exec(
+        bare,
+      )) !==
+    null
+  ) {
+    out.push(
+      {
+        selector:
+          m[1].trim(),
+        body: m[2],
+      },
+    );
   }
   return out;
 }
@@ -75,31 +140,70 @@ describe('SVG filter cost budget', () => {
     // / the app tiers use `url()` filters. A declaration qualifies when a
     // `url(...)` is followed by anything that looks like `name(`, e.g.
     // `url(#goo) drop-shadow(0 0 2px red)`.
-    const offenders: string[] = [];
+    const offenders: string[] =
+      [];
     for (const sheet of SHEETS) {
       let css: string;
       try {
-        css = code(sheet);
+        css =
+          code(
+            sheet,
+          );
       } catch {
         continue; // a sheet that moved is not this test's business
       }
-      for (const m of css.matchAll(/(?:^|[\s;{])filter:\s*([^;}]+)/g)) {
-        const value = m[1].replace(/\s+/g, ' ').trim();
-        if (!/\burl\(/.test(value)) continue;
+      for (const m of css.matchAll(
+        /(?:^|[\s;{])filter:\s*([^;}]+)/g,
+      )) {
+        const value =
+          m[1]
+            .replace(
+              /\s+/g,
+              ' ',
+            )
+            .trim();
+        if (
+          !/\burl\(/.test(
+            value,
+          )
+        )
+          continue;
         // Strip the url(...) token(s), then look for a remaining `fn(` call.
-        const rest = value.replace(/\burl\([^)]*\)/g, ' ');
-        if (/[a-z-]+\(/i.test(rest)) offenders.push(`${sheet}: filter: ${value}`);
+        const rest =
+          value.replace(
+            /\burl\([^)]*\)/g,
+            ' ',
+          );
+        if (
+          /[a-z-]+\(/i.test(
+            rest,
+          )
+        )
+          offenders.push(
+            `${sheet}: filter: ${value}`,
+          );
       }
     }
     expect(
       offenders,
       `\nA CSS filter function is chained after a url() filter:\n` +
-        offenders.map((s) => `  ${s}`).join('\n') +
+        offenders
+          .map(
+            (
+              s,
+            ) =>
+              `  ${s}`,
+          )
+          .join(
+            '\n',
+          ) +
         `\n\nThat combination takes Chromium off its fast path hard enough to ` +
         `block the main thread (measured: a 1s setInterval did not fire in 10s, ` +
         `vs ~0.4ms/frame for the url() alone). Move the extra passes INSIDE the ` +
         `referenced <filter> as filter primitives.\n`,
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('nothing hides the visitor’s cursor document-wide', () => {
@@ -108,29 +212,60 @@ describe('SVG filter cost budget', () => {
     // pointer move — above every overlay, since it WAS the pointer. It is gone.
     // Per-element cursors (`pointer` on a control, `grab` on a drag handle) are
     // fine and unaffected; blanking the platform's is not.
-    const offenders: string[] = [];
+    const offenders: string[] =
+      [];
     for (const sheet of SHEETS) {
       let css: string;
       try {
-        css = code(sheet);
+        css =
+          code(
+            sheet,
+          );
       } catch {
         continue;
       }
-      for (const { selector, body } of ruleBlocks(css)) {
-        if (!/cursor:\s*none/.test(body)) continue;
+      for (const {
+        selector,
+        body,
+      } of ruleBlocks(
+        css,
+      )) {
+        if (
+          !/cursor:\s*none/.test(
+            body,
+          )
+        )
+          continue;
         // Reaching `body`, `html`, `:root` or `*` = every element on the page.
-        if (/(^|[\s,>+~])(\*|html|body|:root)(?![\w-])/.test(selector)) {
-          offenders.push(`${sheet}: ${selector.replace(/\s+/g, ' ')}`);
+        if (
+          /(^|[\s,>+~])(\*|html|body|:root)(?![\w-])/.test(
+            selector,
+          )
+        ) {
+          offenders.push(
+            `${sheet}: ${selector.replace(/\s+/g, ' ')}`,
+          );
         }
       }
     }
     expect(
       offenders,
       `\n\`cursor: none\` applied document-wide:\n` +
-        offenders.map((s) => `  ${s}`).join('\n') +
+        offenders
+          .map(
+            (
+              s,
+            ) =>
+              `  ${s}`,
+          )
+          .join(
+            '\n',
+          ) +
         `\n\nThe OS cursor is the platform's to draw, and the compositor draws it ` +
         `for free. A page-painted replacement has to repaint every pointer move, ` +
         `above every overlay — which is what "the cursor is laggy" was.\n`,
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 });

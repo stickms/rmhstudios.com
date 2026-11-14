@@ -11,7 +11,9 @@ interface AppleHeroProps {
   /** Optional call-to-action row (buttons, links). */
   actions?: ReactNode;
   /** Centered (marketing) or start-aligned (index pages). */
-  align?: 'center' | 'start';
+  align?:
+    | 'center'
+    | 'start';
   /** Compact removes the tall vertical padding for denser pages. */
   compact?: boolean;
   className?: string;
@@ -38,18 +40,50 @@ export function AppleHero({
       data-slot="apple-hero"
       className={cn(
         'apple-hero',
-        align === 'center' ? 'apple-hero--center' : 'apple-hero--start',
-        compact && 'apple-hero--compact',
+        align ===
+          'center'
+          ? 'apple-hero--center'
+          : 'apple-hero--start',
+        compact &&
+          'apple-hero--compact',
         className,
       )}
     >
-      <span className="apple-hero__aura apple-hero__aura--a u-parallax-hero" aria-hidden />
-      <span className="apple-hero__aura apple-hero__aura--b u-parallax-hero" aria-hidden />
+      <span
+        className="apple-hero__aura apple-hero__aura--a u-parallax-hero"
+        aria-hidden
+      />
+      <span
+        className="apple-hero__aura apple-hero__aura--b u-parallax-hero"
+        aria-hidden
+      />
       <div className="apple-hero__inner">
-        {eyebrow ? <p className="apple-hero__eyebrow">{eyebrow}</p> : null}
-        <h1 className="apple-hero__title display-hero">{title}</h1>
-        {subtitle ? <p className="apple-hero__sub text-pretty">{subtitle}</p> : null}
-        {actions ? <div className="apple-hero__actions">{actions}</div> : null}
+        {eyebrow ? (
+          <p className="apple-hero__eyebrow">
+            {
+              eyebrow
+            }
+          </p>
+        ) : null}
+        <h1 className="apple-hero__title display-hero">
+          {
+            title
+          }
+        </h1>
+        {subtitle ? (
+          <p className="apple-hero__sub text-pretty">
+            {
+              subtitle
+            }
+          </p>
+        ) : null}
+        {actions ? (
+          <div className="apple-hero__actions">
+            {
+              actions
+            }
+          </div>
+        ) : null}
       </div>
     </section>
   );

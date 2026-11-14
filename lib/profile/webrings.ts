@@ -19,28 +19,54 @@ export const RING_MAX_MEMBERS = 500;
 export const RING_STRIP_MAX = 3;
 
 /** A URL slug from a ring name: lowercase ascii words joined by `-`. */
-export function ringSlugBase(name: string): string {
-  const slug = name
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48);
-  return slug || 'ring';
+export function ringSlugBase(
+  name: string,
+): string {
+  const slug =
+    name
+      .normalize(
+        'NFKD',
+      )
+      .replace(
+        /[̀-ͯ]/g,
+        '',
+      )
+      .toLowerCase()
+      .replace(
+        /[^a-z0-9]+/g,
+        '-',
+      )
+      .replace(
+        /^-+|-+$/g,
+        '',
+      )
+      .slice(
+        0,
+        48,
+      );
+  return (
+    slug ||
+    'ring'
+  );
 }
 
 export interface RingSummary {
   slug: string;
   name: string;
-  description: string | null;
+  description:
+    | string
+    | null;
   memberCount: number;
 }
 
 export interface RingNeighbour {
   id: string;
-  handle: string | null;
-  name: string | null;
+  handle:
+    | string
+    | null;
+  name:
+    | string
+    | null;
 }
 
 /** One ring on a profile: where this member sits and who is next door. */

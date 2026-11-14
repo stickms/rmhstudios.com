@@ -65,36 +65,83 @@ export const CHART_TICK_MS = 2_000;
  * chart, because the panel is a tab strip — the chart you are looking at and the
  * ones you are not share this single interval either way.
  */
-export function useChartClock(asOfMs: number): number {
-  const [now, setNow] = useState(asOfMs);
-  const reduced = useReducedMotion();
+export function useChartClock(
+  asOfMs: number,
+): number {
+  const [
+    now,
+    setNow,
+  ] =
+    useState(
+      asOfMs,
+    );
+  const reduced =
+    useReducedMotion();
 
   useEffect(() => {
     // Reduced motion still advances — a compounding chart that has stopped
     // compounding is wrong, not calm — it just does so slowly enough that
     // nothing on screen appears to move.
-    const period = reduced ? 10_000 : CHART_TICK_MS;
-    let timer: ReturnType<typeof setInterval> | null = null;
+    const period =
+      reduced
+        ? 10_000
+        : CHART_TICK_MS;
+    let timer: ReturnType<
+      typeof setInterval
+    > | null =
+      null;
 
-    const tick = () => setNow(Date.now());
-    const start = () => {
-      if (timer) return;
-      tick();
-      timer = setInterval(tick, period);
-    };
-    const stop = () => {
-      if (timer) clearInterval(timer);
-      timer = null;
-    };
-    const sync = () => (document.visibilityState === 'visible' ? start() : stop());
+    const tick =
+      () =>
+        setNow(
+          Date.now(),
+        );
+    const start =
+      () => {
+        if (
+          timer
+        )
+          return;
+        tick();
+        timer =
+          setInterval(
+            tick,
+            period,
+          );
+      };
+    const stop =
+      () => {
+        if (
+          timer
+        )
+          clearInterval(
+            timer,
+          );
+        timer =
+          null;
+      };
+    const sync =
+      () =>
+        document.visibilityState ===
+        'visible'
+          ? start()
+          : stop();
 
-    document.addEventListener('visibilitychange', sync);
+    document.addEventListener(
+      'visibilitychange',
+      sync,
+    );
     sync();
     return () => {
       stop();
-      document.removeEventListener('visibilitychange', sync);
+      document.removeEventListener(
+        'visibilitychange',
+        sync,
+      );
     };
-  }, [reduced]);
+  }, [
+    reduced,
+  ]);
 
   return now;
 }
@@ -123,12 +170,23 @@ export interface Plot {
 export function makePlot(
   width: number,
   height: number,
-  padding: { left: number; right: number; top: number; bottom: number },
+  padding: {
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+  },
 ): Plot {
-  const innerLeft = padding.left;
-  const innerRight = width - padding.right;
-  const innerTop = padding.top;
-  const innerBottom = height - padding.bottom;
+  const innerLeft =
+    padding.left;
+  const innerRight =
+    width -
+    padding.right;
+  const innerTop =
+    padding.top;
+  const innerBottom =
+    height -
+    padding.bottom;
   return {
     width,
     height,
@@ -137,8 +195,18 @@ export function makePlot(
     innerRight,
     innerTop,
     innerBottom,
-    innerWidth: Math.max(1, innerRight - innerLeft),
-    innerHeight: Math.max(1, innerBottom - innerTop),
+    innerWidth:
+      Math.max(
+        1,
+        innerRight -
+          innerLeft,
+      ),
+    innerHeight:
+      Math.max(
+        1,
+        innerBottom -
+          innerTop,
+      ),
   };
 }
 
@@ -152,12 +220,33 @@ export function makePlot(
 export function pointerInViewBox(
   event: ReactPointerEvent<SVGSVGElement>,
   plot: Plot,
-): { x: number; y: number } {
-  const rect = event.currentTarget.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0) return { x: -1, y: -1 };
+): {
+  x: number;
+  y: number;
+} {
+  const rect =
+    event.currentTarget.getBoundingClientRect();
+  if (
+    rect.width ===
+      0 ||
+    rect.height ===
+      0
+  )
+    return {
+      x: -1,
+      y: -1,
+    };
   return {
-    x: ((event.clientX - rect.left) / rect.width) * plot.width,
-    y: ((event.clientY - rect.top) / rect.height) * plot.height,
+    x:
+      ((event.clientX -
+        rect.left) /
+        rect.width) *
+      plot.width,
+    y:
+      ((event.clientY -
+        rect.top) /
+        rect.height) *
+      plot.height,
   };
 }
 
@@ -173,9 +262,13 @@ interface ChartFrameProps {
   description?: string;
   className?: string;
   children: ReactNode;
-  onPointerMove?: (event: ReactPointerEvent<SVGSVGElement>) => void;
+  onPointerMove?: (
+    event: ReactPointerEvent<SVGSVGElement>,
+  ) => void;
   onPointerLeave?: () => void;
-  onPointerDown?: (event: ReactPointerEvent<SVGSVGElement>) => void;
+  onPointerDown?: (
+    event: ReactPointerEvent<SVGSVGElement>,
+  ) => void;
 }
 
 /**
@@ -200,39 +293,90 @@ export function ChartFrame({
   return (
     <svg
       viewBox={`0 0 ${plot.width} ${plot.height}`}
-      className={cn('kd-chart', className)}
+      className={cn(
+        'kd-chart',
+        className,
+      )}
       role="img"
-      onPointerMove={onPointerMove}
-      onPointerLeave={onPointerLeave}
-      onPointerDown={onPointerDown}
+      onPointerMove={
+        onPointerMove
+      }
+      onPointerLeave={
+        onPointerLeave
+      }
+      onPointerDown={
+        onPointerDown
+      }
     >
-      <title>{title}</title>
-      {description && <desc>{description}</desc>}
-      {children}
+      <title>
+        {
+          title
+        }
+      </title>
+      {description && (
+        <desc>
+          {
+            description
+          }
+        </desc>
+      )}
+      {
+        children
+      }
     </svg>
   );
 }
 
 /** Horizontal gridlines at the given y positions, plus the baseline. */
-export function GridLines({ plot, ys }: { plot: Plot; ys: readonly number[] }) {
+export function GridLines({
+  plot,
+  ys,
+}: {
+  plot: Plot;
+  ys: readonly number[];
+}) {
   return (
-    <g aria-hidden>
-      {ys.map((y) => (
-        <line
-          key={y}
-          className="kd-chart__grid"
-          x1={plot.innerLeft}
-          x2={plot.innerRight}
-          y1={y}
-          y2={y}
-        />
-      ))}
+    <g
+      aria-hidden
+    >
+      {ys.map(
+        (
+          y,
+        ) => (
+          <line
+            key={
+              y
+            }
+            className="kd-chart__grid"
+            x1={
+              plot.innerLeft
+            }
+            x2={
+              plot.innerRight
+            }
+            y1={
+              y
+            }
+            y2={
+              y
+            }
+          />
+        ),
+      )}
       <line
         className="kd-chart__axis"
-        x1={plot.innerLeft}
-        x2={plot.innerRight}
-        y1={plot.innerBottom}
-        y2={plot.innerBottom}
+        x1={
+          plot.innerLeft
+        }
+        x2={
+          plot.innerRight
+        }
+        y1={
+          plot.innerBottom
+        }
+        y2={
+          plot.innerBottom
+        }
       />
     </g>
   );
@@ -243,23 +387,47 @@ export function AxisLabels({
   items,
   anchor = 'end',
 }: {
-  items: readonly { key: string; x: number; y: number; text: string }[];
-  anchor?: 'start' | 'middle' | 'end';
+  items: readonly {
+    key: string;
+    x: number;
+    y: number;
+    text: string;
+  }[];
+  anchor?:
+    | 'start'
+    | 'middle'
+    | 'end';
 }) {
   return (
-    <g aria-hidden>
-      {items.map((item) => (
-        <text
-          key={item.key}
-          className="kd-chart__label"
-          x={item.x}
-          y={item.y}
-          textAnchor={anchor}
-          dominantBaseline="middle"
-        >
-          {item.text}
-        </text>
-      ))}
+    <g
+      aria-hidden
+    >
+      {items.map(
+        (
+          item,
+        ) => (
+          <text
+            key={
+              item.key
+            }
+            className="kd-chart__label"
+            x={
+              item.x
+            }
+            y={
+              item.y
+            }
+            textAnchor={
+              anchor
+            }
+            dominantBaseline="middle"
+          >
+            {
+              item.text
+            }
+          </text>
+        ),
+      )}
     </g>
   );
 }
@@ -291,7 +459,9 @@ export function Readout({
   y: number;
   children: ReactNode;
 }) {
-  const flip = x > 0.6;
+  const flip =
+    x >
+    0.6;
   return (
     <div
       className="kd-readout surface-overlay rounded-site-sm px-2.5 py-2 text-xs "
@@ -303,7 +473,9 @@ export function Readout({
       role="status"
       aria-live="off"
     >
-      {children}
+      {
+        children
+      }
     </div>
   );
 }
@@ -321,26 +493,52 @@ export function ReadoutRow({
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="flex min-w-0 items-center gap-1.5 text-site-text-muted">
-        {seriesIndex !== undefined && <Swatch seriesIndex={seriesIndex} />}
-        <span className="truncate">{label}</span>
+        {seriesIndex !==
+          undefined && (
+          <Swatch
+            seriesIndex={
+              seriesIndex
+            }
+          />
+        )}
+        <span className="truncate">
+          {
+            label
+          }
+        </span>
       </span>
-      <span className="shrink-0 font-medium text-site-text tabular-nums">{value}</span>
+      <span className="shrink-0 font-medium text-site-text tabular-nums">
+        {
+          value
+        }
+      </span>
     </div>
   );
 }
 
 /** The colour chip. Its own component so no call site can invent a second one. */
-export function Swatch({ seriesIndex }: { seriesIndex: number }) {
+export function Swatch({
+  seriesIndex,
+}: {
+  seriesIndex: number;
+}) {
   return (
     <span
       aria-hidden
-      className={cn('inline-block size-2.5 shrink-0 rounded-full bg-current', seriesClass(seriesIndex))}
+      className={cn(
+        'inline-block size-2.5 shrink-0 rounded-full bg-current',
+        seriesClass(
+          seriesIndex,
+        ),
+      )}
     />
   );
 }
 
 /** `.kd-series-n`, wrapped so the modulo lives in exactly one place. */
-export function seriesClass(index: number): string {
+export function seriesClass(
+  index: number,
+): string {
   return `kd-series-${((index % 8) + 8) % 8}`;
 }
 
@@ -376,46 +574,96 @@ export function Legend({
   items: readonly LegendItem[];
   /** Empty set = nothing filtered, i.e. everything shown. */
   selected: ReadonlySet<string>;
-  onToggle?: (id: string) => void;
+  onToggle?: (
+    id: string,
+  ) => void;
   label: string;
 }) {
-  const filtering = selected.size > 0;
+  const filtering =
+    selected.size >
+    0;
   return (
-    <ul className="flex flex-wrap gap-x-3 gap-y-1.5" aria-label={label}>
-      {items.map((item) => {
-        const active = !filtering || selected.has(item.id);
-        const content = (
-          <>
-            <Swatch seriesIndex={item.seriesIndex} />
-            <span className="truncate">{item.label}</span>
-            {item.value && (
-              <span className="text-site-text-muted tabular-nums">{item.value}</span>
-            )}
-          </>
-        );
-        return (
-          <li key={item.id} className="min-w-0">
-            {onToggle ? (
-              <button
-                type="button"
-                onClick={() => onToggle(item.id)}
-                aria-pressed={filtering && selected.has(item.id)}
-                className={cn(
-                  'flex min-w-0 items-center gap-1.5 rounded-site-sm px-1.5 py-1 text-xs transition-colors',
-                  'hover:bg-site-surface-active focus-visible:bg-site-surface-active',
-                  active ? 'text-site-text' : 'text-site-text-muted opacity-45',
+    <ul
+      className="flex flex-wrap gap-x-3 gap-y-1.5"
+      aria-label={
+        label
+      }
+    >
+      {items.map(
+        (
+          item,
+        ) => {
+          const active =
+            !filtering ||
+            selected.has(
+              item.id,
+            );
+          const content =
+            (
+              <>
+                <Swatch
+                  seriesIndex={
+                    item.seriesIndex
+                  }
+                />
+                <span className="truncate">
+                  {
+                    item.label
+                  }
+                </span>
+                {item.value && (
+                  <span className="text-site-text-muted tabular-nums">
+                    {
+                      item.value
+                    }
+                  </span>
                 )}
-              >
-                {content}
-              </button>
-            ) : (
-              <span className="flex min-w-0 items-center gap-1.5 px-1.5 py-1 text-xs text-site-text">
-                {content}
-              </span>
-            )}
-          </li>
-        );
-      })}
+              </>
+            );
+          return (
+            <li
+              key={
+                item.id
+              }
+              className="min-w-0"
+            >
+              {onToggle ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onToggle(
+                      item.id,
+                    )
+                  }
+                  aria-pressed={
+                    filtering &&
+                    selected.has(
+                      item.id,
+                    )
+                  }
+                  className={cn(
+                    'flex min-w-0 items-center gap-1.5 rounded-site-sm px-1.5 py-1 text-xs transition-colors',
+                    'hover:bg-site-surface-active focus-visible:bg-site-surface-active',
+                    active
+                      ? 'text-site-text'
+                      : 'text-site-text-muted opacity-45',
+                  )}
+                >
+                  {
+                    content
+                  }
+                </button>
+              ) : (
+                <span className="flex min-w-0 items-center gap-1.5 px-1.5 py-1 text-xs text-site-text">
+                  {
+                    content
+                  }
+                </span>
+              )}
+            </li>
+          );
+        },
+      )}
     </ul>
   );
 }
@@ -449,16 +697,43 @@ export function ChartCard({
   className?: string;
 }) {
   return (
-    <section className={cn('surface-card flex flex-col gap-3 rounded-site p-2.5 sm:p-4', className)}>
+    <section
+      className={cn(
+        'surface-card flex flex-col gap-3 rounded-site p-2.5 sm:p-4',
+        className,
+      )}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <h3 className="font-display text-sm font-semibold text-site-text">{title}</h3>
-          {hint && <p className="text-xs text-pretty text-site-text-muted">{hint}</p>}
+          <h3 className="font-display text-sm font-semibold text-site-text">
+            {
+              title
+            }
+          </h3>
+          {hint && (
+            <p className="text-xs text-pretty text-site-text-muted">
+              {
+                hint
+              }
+            </p>
+          )}
         </div>
-        {controls && <div className="flex shrink-0 flex-wrap items-center gap-2">{controls}</div>}
+        {controls && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {
+              controls
+            }
+          </div>
+        )}
       </div>
-      <div className="relative">{children}</div>
-      {footer}
+      <div className="relative">
+        {
+          children
+        }
+      </div>
+      {
+        footer
+      }
     </section>
   );
 }
@@ -483,16 +758,26 @@ export function ChartToggle({
   title,
 }: {
   pressed: boolean;
-  onPressedChange: (next: boolean) => void;
+  onPressedChange: (
+    next: boolean,
+  ) => void;
   children: ReactNode;
   title?: string;
 }) {
   return (
     <button
       type="button"
-      aria-pressed={pressed}
-      title={title}
-      onClick={() => onPressedChange(!pressed)}
+      aria-pressed={
+        pressed
+      }
+      title={
+        title
+      }
+      onClick={() =>
+        onPressedChange(
+          !pressed,
+        )
+      }
       className={cn(
         'surface-card surface-press flex min-h-8 items-center gap-1.5 rounded-site-sm px-2 py-1 text-xs transition-colors pointer-coarse:min-h-11',
         pressed
@@ -500,7 +785,9 @@ export function ChartToggle({
           : 'text-site-text-muted hover:text-site-text',
       )}
     >
-      {children}
+      {
+        children
+      }
     </button>
   );
 }
@@ -513,15 +800,45 @@ export function ChartToggle({
  * entered the bar. Returned as a tuple so a chart reads like `const [hover,
  * setHover] = useHoverIndex()`.
  */
-export function useHoverIndex(): [number, (next: number) => void] {
-  const [index, setIndex] = useState(-1);
-  const ref = useRef(-1);
-  const set = useCallback((next: number) => {
-    if (ref.current === next) return;
-    ref.current = next;
-    setIndex(next);
-  }, []);
-  return [index, set];
+export function useHoverIndex(): [
+  number,
+  (
+    next: number,
+  ) => void,
+] {
+  const [
+    index,
+    setIndex,
+  ] =
+    useState(
+      -1,
+    );
+  const ref =
+    useRef(
+      -1,
+    );
+  const set =
+    useCallback(
+      (
+        next: number,
+      ) => {
+        if (
+          ref.current ===
+          next
+        )
+          return;
+        ref.current =
+          next;
+        setIndex(
+          next,
+        );
+      },
+      [],
+    );
+  return [
+    index,
+    set,
+  ];
 }
 
 /**
@@ -533,27 +850,93 @@ export function useHoverIndex(): [number, (next: number) => void] {
  */
 export function useToggleSet(): {
   selected: ReadonlySet<string>;
-  toggle: (id: string) => void;
+  toggle: (
+    id: string,
+  ) => void;
   clear: () => void;
-  isOn: (id: string) => boolean;
+  isOn: (
+    id: string,
+  ) => boolean;
 } {
-  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  const [
+    selected,
+    setSelected,
+  ] =
+    useState<
+      ReadonlySet<string>
+    >(
+      () =>
+        new Set(),
+    );
 
-  const toggle = useCallback((id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
+  const toggle =
+    useCallback(
+      (
+        id: string,
+      ) => {
+        setSelected(
+          (
+            prev,
+          ) => {
+            const next =
+              new Set(
+                prev,
+              );
+            if (
+              next.has(
+                id,
+              )
+            )
+              next.delete(
+                id,
+              );
+            else
+              next.add(
+                id,
+              );
+            return next;
+          },
+        );
+      },
+      [],
+    );
 
-  const clear = useCallback(() => setSelected(new Set()), []);
+  const clear =
+    useCallback(
+      () =>
+        setSelected(
+          new Set(),
+        ),
+      [],
+    );
 
-  const isOn = useCallback(
-    (id: string) => selected.size === 0 || selected.has(id),
-    [selected],
+  const isOn =
+    useCallback(
+      (
+        id: string,
+      ) =>
+        selected.size ===
+          0 ||
+        selected.has(
+          id,
+        ),
+      [
+        selected,
+      ],
+    );
+
+  return useMemo(
+    () => ({
+      selected,
+      toggle,
+      clear,
+      isOn,
+    }),
+    [
+      selected,
+      toggle,
+      clear,
+      isOn,
+    ],
   );
-
-  return useMemo(() => ({ selected, toggle, clear, isOn }), [selected, toggle, clear, isOn]);
 }

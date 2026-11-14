@@ -69,10 +69,19 @@
  * scanned set too.
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import {
+  readdirSync,
+  readFileSync,
+  statSync,
+} from 'node:fs';
 import { resolve } from 'node:path';
 
-const MIGRATIONS_DIR = resolve(process.cwd(), 'prisma', 'migrations');
+const MIGRATIONS_DIR =
+  resolve(
+    process.cwd(),
+    'prisma',
+    'migrations',
+  );
 
 /**
  * The newest migration that existed when this check landed (2026-08-05).
@@ -80,13 +89,34 @@ const MIGRATIONS_DIR = resolve(process.cwd(), 'prisma', 'migrations');
  * above. Do NOT advance this to silence a finding on a new migration; fix the
  * migration or acknowledge it in the file.
  */
-const BASELINE = '20260805000000_game_save';
+const BASELINE =
+  '20260805000000_game_save';
 
-const args = process.argv.slice(2);
-const checkMode = args.includes('--check');
-const scanAll = args.includes('--all');
-const baselineIdx = args.indexOf('--baseline');
-const baseline = baselineIdx >= 0 ? (args[baselineIdx + 1] ?? BASELINE) : BASELINE;
+const args =
+  process.argv.slice(
+    2,
+  );
+const checkMode =
+  args.includes(
+    '--check',
+  );
+const scanAll =
+  args.includes(
+    '--all',
+  );
+const baselineIdx =
+  args.indexOf(
+    '--baseline',
+  );
+const baseline =
+  baselineIdx >=
+  0
+    ? (args[
+        baselineIdx +
+          1
+      ] ??
+      BASELINE)
+    : BASELINE;
 
 /**
  * File-level acknowledgement, optionally scoped to ONE rule.
@@ -108,30 +138,71 @@ const ACK_RE =
 
 interface Acknowledgement {
   /** Null = applies to every rule in the file. */
-  rule: string | null;
+  rule:
+    | string
+    | null;
   reason: string;
 }
 
-function parseAcknowledgements(sql: string): Acknowledgement[] {
-  const out: Acknowledgement[] = [];
+function parseAcknowledgements(
+  sql: string,
+): Acknowledgement[] {
+  const out: Acknowledgement[] =
+    [];
   ACK_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
-  while ((m = ACK_RE.exec(sql)) !== null) {
-    out.push({ rule: m[1] ?? null, reason: m[2].trim() });
+  while (
+    (m =
+      ACK_RE.exec(
+        sql,
+      )) !==
+    null
+  ) {
+    out.push(
+      {
+        rule:
+          m[1] ??
+          null,
+        reason:
+          m[2].trim(),
+      },
+    );
   }
   return out;
 }
 
 /** The acknowledgement covering a finding, if any. */
-function ackFor(acks: Acknowledgement[], finding: Finding): Acknowledgement | undefined {
+function ackFor(
+  acks: Acknowledgement[],
+  finding: Finding,
+):
+  | Acknowledgement
+  | undefined {
   // A blanket (unscoped) acknowledgement deliberately does NOT cover
   // `drop-protected-column`. Those drops are proposed automatically on every
   // `migrate dev`, so the odds that a blanket ack written for something else
   // silences one by accident are high — and the failure is invisible.
-  if (finding.id === 'drop-protected-column') {
-    return acks.find((a) => a.rule === finding.id);
+  if (
+    finding.id ===
+    'drop-protected-column'
+  ) {
+    return acks.find(
+      (
+        a,
+      ) =>
+        a.rule ===
+        finding.id,
+    );
   }
-  return acks.find((a) => a.rule === null || a.rule === finding.id);
+  return acks.find(
+    (
+      a,
+    ) =>
+      a.rule ===
+        null ||
+      a.rule ===
+        finding.id,
+  );
 }
 
 interface Finding {
@@ -160,7 +231,10 @@ interface MigrationReport {
   /** Findings with no covering acknowledgement — these fail the build. */
   findings: Finding[];
   /** Findings a scoped or blanket acknowledgement covers, kept for the report. */
-  excused: { finding: Finding; reason: string }[];
+  excused: {
+    finding: Finding;
+    reason: string;
+  }[];
 }
 
 /**
@@ -174,61 +248,222 @@ interface MigrationReport {
  * then on. Same lesson the design-consistency gate records about scanning
  * `className=` values rather than string literals generally.
  */
-function blankNonCode(sql: string): string {
-  const out = sql.split('');
+function blankNonCode(
+  sql: string,
+): string {
+  const out =
+    sql.split(
+      '',
+    );
   let i = 0;
-  while (i < sql.length) {
-    const two = sql.slice(i, i + 2);
-    if (two === '--') {
-      while (i < sql.length && sql[i] !== '\n') {
-        out[i] = ' ';
+  while (
+    i <
+    sql.length
+  ) {
+    const two =
+      sql.slice(
+        i,
+        i +
+          2,
+      );
+    if (
+      two ===
+      '--'
+    ) {
+      while (
+        i <
+          sql.length &&
+        sql[
+          i
+        ] !==
+          '\n'
+      ) {
+        out[
+          i
+        ] =
+          ' ';
         i++;
       }
-    } else if (two === '/*') {
-      const end = sql.indexOf('*/', i + 2);
-      const stop = end === -1 ? sql.length : end + 2;
-      for (; i < stop; i++) if (sql[i] !== '\n') out[i] = ' ';
-    } else if (sql[i] === "'") {
-      out[i] = ' ';
+    } else if (
+      two ===
+      '/*'
+    ) {
+      const end =
+        sql.indexOf(
+          '*/',
+          i +
+            2,
+        );
+      const stop =
+        end ===
+        -1
+          ? sql.length
+          : end +
+            2;
+      for (
+        ;
+        i <
+        stop;
+        i++
+      )
+        if (
+          sql[
+            i
+          ] !==
+          '\n'
+        )
+          out[
+            i
+          ] =
+            ' ';
+    } else if (
+      sql[
+        i
+      ] ===
+      "'"
+    ) {
+      out[
+        i
+      ] =
+        ' ';
       i++;
-      while (i < sql.length) {
-        if (sql[i] === "'" && sql[i + 1] === "'") {
-          out[i] = ' ';
-          out[i + 1] = ' ';
+      while (
+        i <
+        sql.length
+      ) {
+        if (
+          sql[
+            i
+          ] ===
+            "'" &&
+          sql[
+            i +
+              1
+          ] ===
+            "'"
+        ) {
+          out[
+            i
+          ] =
+            ' ';
+          out[
+            i +
+              1
+          ] =
+            ' ';
           i += 2;
           continue;
         }
-        const done = sql[i] === "'";
-        if (sql[i] !== '\n') out[i] = ' ';
+        const done =
+          sql[
+            i
+          ] ===
+          "'";
+        if (
+          sql[
+            i
+          ] !==
+          '\n'
+        )
+          out[
+            i
+          ] =
+            ' ';
         i++;
-        if (done) break;
+        if (
+          done
+        )
+          break;
       }
     } else {
       i++;
     }
   }
-  return out.join('');
+  return out.join(
+    '',
+  );
 }
 
 /** 1-based line number for a source-string index. */
-function lineAt(src: string, idx: number): number {
+function lineAt(
+  src: string,
+  idx: number,
+): number {
   let line = 1;
-  for (let i = 0; i < idx && i < src.length; i++) if (src[i] === '\n') line++;
+  for (
+    let i = 0;
+    i <
+      idx &&
+    i <
+      src.length;
+    i++
+  )
+    if (
+      src[
+        i
+      ] ===
+      '\n'
+    )
+      line++;
   return line;
 }
 
 /** A short, single-line excerpt of the offending statement for the report. */
-function excerpt(src: string, idx: number): string {
-  const end = src.indexOf(';', idx);
-  const raw = src.slice(idx, end === -1 ? Math.min(src.length, idx + 160) : end);
-  return raw.replace(/\s+/g, ' ').trim().slice(0, 140);
+function excerpt(
+  src: string,
+  idx: number,
+): string {
+  const end =
+    src.indexOf(
+      ';',
+      idx,
+    );
+  const raw =
+    src.slice(
+      idx,
+      end ===
+        -1
+        ? Math.min(
+            src.length,
+            idx +
+              160,
+          )
+        : end,
+    );
+  return raw
+    .replace(
+      /\s+/g,
+      ' ',
+    )
+    .trim()
+    .slice(
+      0,
+      140,
+    );
 }
 
 /** Table names created by this migration — indexes on them are cheap and safe. */
-function tablesCreatedHere(code: string): Set<string> {
-  const created = new Set<string>();
-  const re = /\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?"?([\w.]+)"?/gi;
-  for (let m = re.exec(code); m; m = re.exec(code)) created.add(m[1].toLowerCase());
+function tablesCreatedHere(
+  code: string,
+): Set<string> {
+  const created =
+    new Set<string>();
+  const re =
+    /\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?"?([\w.]+)"?/gi;
+  for (
+    let m =
+      re.exec(
+        code,
+      );
+    m;
+    m =
+      re.exec(
+        code,
+      )
+  )
+    created.add(
+      m[1].toLowerCase(),
+    );
   return created;
 }
 
@@ -248,92 +483,206 @@ function tablesCreatedHere(code: string): Set<string> {
  * needs its own scoped ack naming the rule, which is a hard thing to type by
  * accident.
  */
-const PROTECTED_COLUMNS: readonly { table: string; column: string; why: string }[] = [
-  {
-    table: 'rmheet',
-    column: 'content_tsv',
-    why: 'a GENERATED tsvector Prisma cannot model, read by raw SQL in lib/search/posts.server.ts. Every `prisma migrate dev` proposes this drop; accepting it silently destroys post full-text search.',
-  },
-];
-
-function scanSql(sql: string): Finding[] {
-  const code = blankNonCode(sql);
-  const findings: Finding[] = [];
-  const newTables = tablesCreatedHere(code);
-
-  // Protected columns — checked before the generic DROP COLUMN rule so the
-  // report names the specific consequence rather than the generic one.
-  for (const { table, column, why } of PROTECTED_COLUMNS) {
-    const re = new RegExp(`\\bDROP\\s+COLUMN\\s+(?:IF\\s+EXISTS\\s+)?"?${column}"?`, 'gi');
-    for (let m = re.exec(code); m; m = re.exec(code)) {
-      findings.push({
-        id: 'drop-protected-column',
-        rule: `DROP COLUMN "${table}"."${column}"`,
-        line: lineAt(code, m.index),
-        statement: excerpt(sql, m.index),
-        why,
-      });
-    }
-  }
-
-  const simpleRules: { id: RuleId; rule: string; re: RegExp; why: string }[] = [
+const PROTECTED_COLUMNS: readonly {
+  table: string;
+  column: string;
+  why: string;
+}[] =
+  [
     {
-      id: 'drop-column',
-      rule: 'DROP COLUMN',
-      re: /\bDROP\s+COLUMN\b/gi,
-      why: 'the old code still names this column in its SELECT list — every read of the table fails until the swap completes, and a rollback cannot bring the data back. Stop reading it, deploy, drop it next time.',
-    },
-    {
-      id: 'set-not-null',
-      rule: 'SET NOT NULL',
-      re: /\bALTER\s+COLUMN\s+(?:"[^"]+"|\w+)\s+SET\s+NOT\s+NULL\b/gi,
-      why: 'the old code still INSERTs rows without this column — every write to the table fails. Add nullable, backfill, ship the code that always writes it, then tighten.',
-    },
-    {
-      id: 'rename-column',
-      rule: 'RENAME COLUMN',
-      re: /\bRENAME\s+COLUMN\b/gi,
-      why: 'only one of the two names exists at a time, so whichever version of the code is not currently deployed is broken. Expand/contract across three deploys instead.',
+      table:
+        'rmheet',
+      column:
+        'content_tsv',
+      why: 'a GENERATED tsvector Prisma cannot model, read by raw SQL in lib/search/posts.server.ts. Every `prisma migrate dev` proposes this drop; accepting it silently destroys post full-text search.',
     },
   ];
 
-  for (const { id, rule, re, why } of simpleRules) {
-    for (let m = re.exec(code); m; m = re.exec(code)) {
-      const line = lineAt(code, m.index);
+function scanSql(
+  sql: string,
+): Finding[] {
+  const code =
+    blankNonCode(
+      sql,
+    );
+  const findings: Finding[] =
+    [];
+  const newTables =
+    tablesCreatedHere(
+      code,
+    );
+
+  // Protected columns — checked before the generic DROP COLUMN rule so the
+  // report names the specific consequence rather than the generic one.
+  for (const {
+    table,
+    column,
+    why,
+  } of PROTECTED_COLUMNS) {
+    const re =
+      new RegExp(
+        `\\bDROP\\s+COLUMN\\s+(?:IF\\s+EXISTS\\s+)?"?${column}"?`,
+        'gi',
+      );
+    for (
+      let m =
+        re.exec(
+          code,
+        );
+      m;
+      m =
+        re.exec(
+          code,
+        )
+    ) {
+      findings.push(
+        {
+          id: 'drop-protected-column',
+          rule: `DROP COLUMN "${table}"."${column}"`,
+          line: lineAt(
+            code,
+            m.index,
+          ),
+          statement:
+            excerpt(
+              sql,
+              m.index,
+            ),
+          why,
+        },
+      );
+    }
+  }
+
+  const simpleRules: {
+    id: RuleId;
+    rule: string;
+    re: RegExp;
+    why: string;
+  }[] =
+    [
+      {
+        id: 'drop-column',
+        rule: 'DROP COLUMN',
+        re: /\bDROP\s+COLUMN\b/gi,
+        why: 'the old code still names this column in its SELECT list — every read of the table fails until the swap completes, and a rollback cannot bring the data back. Stop reading it, deploy, drop it next time.',
+      },
+      {
+        id: 'set-not-null',
+        rule: 'SET NOT NULL',
+        re: /\bALTER\s+COLUMN\s+(?:"[^"]+"|\w+)\s+SET\s+NOT\s+NULL\b/gi,
+        why: 'the old code still INSERTs rows without this column — every write to the table fails. Add nullable, backfill, ship the code that always writes it, then tighten.',
+      },
+      {
+        id: 'rename-column',
+        rule: 'RENAME COLUMN',
+        re: /\bRENAME\s+COLUMN\b/gi,
+        why: 'only one of the two names exists at a time, so whichever version of the code is not currently deployed is broken. Expand/contract across three deploys instead.',
+      },
+    ];
+
+  for (const {
+    id,
+    rule,
+    re,
+    why,
+  } of simpleRules) {
+    for (
+      let m =
+        re.exec(
+          code,
+        );
+      m;
+      m =
+        re.exec(
+          code,
+        )
+    ) {
+      const line =
+        lineAt(
+          code,
+          m.index,
+        );
       // A protected-column drop already produced a more specific finding on
       // this line. Reporting the generic one too would mean acknowledging the
       // specific rule still failed the build on the generic one — which reads
       // as the tool being broken.
       if (
-        id === 'drop-column' &&
-        findings.some((f) => f.id === 'drop-protected-column' && f.line === line)
+        id ===
+          'drop-column' &&
+        findings.some(
+          (
+            f,
+          ) =>
+            f.id ===
+              'drop-protected-column' &&
+            f.line ===
+              line,
+        )
       ) {
         continue;
       }
-      findings.push({
-        id,
-        rule,
-        line,
-        statement: excerpt(sql, m.index),
-        why,
-      });
+      findings.push(
+        {
+          id,
+          rule,
+          line,
+          statement:
+            excerpt(
+              sql,
+              m.index,
+            ),
+          why,
+        },
+      );
     }
   }
 
   // CREATE [UNIQUE] INDEX [CONCURRENTLY] [IF NOT EXISTS] "name" ON "table"
   const idxRe =
     /\bCREATE\s+(UNIQUE\s+)?INDEX\s+(CONCURRENTLY\s+)?(?:IF\s+NOT\s+EXISTS\s+)?"?[\w.]+"?\s+ON\s+"?([\w.]+)"?/gi;
-  for (let m = idxRe.exec(code); m; m = idxRe.exec(code)) {
-    if (m[2]) continue; // CONCURRENTLY — fine
-    const table = (m[3] ?? '').toLowerCase();
-    if (newTables.has(table)) continue; // empty table created in this same migration
-    findings.push({
-      id: 'create-index-not-concurrent',
-      rule: 'CREATE INDEX without CONCURRENTLY',
-      line: lineAt(code, m.index),
-      statement: excerpt(sql, m.index),
-      why: `a plain CREATE INDEX holds a SHARE lock on "${table}" for the whole build, blocking every write to it. Build it CONCURRENTLY (outside the migration transaction), or acknowledge it if the table is small.`,
-    });
+  for (
+    let m =
+      idxRe.exec(
+        code,
+      );
+    m;
+    m =
+      idxRe.exec(
+        code,
+      )
+  ) {
+    if (
+      m[2]
+    )
+      continue; // CONCURRENTLY — fine
+    const table =
+      (
+        m[3] ??
+        ''
+      ).toLowerCase();
+    if (
+      newTables.has(
+        table,
+      )
+    )
+      continue; // empty table created in this same migration
+    findings.push(
+      {
+        id: 'create-index-not-concurrent',
+        rule: 'CREATE INDEX without CONCURRENTLY',
+        line: lineAt(
+          code,
+          m.index,
+        ),
+        statement:
+          excerpt(
+            sql,
+            m.index,
+          ),
+        why: `a plain CREATE INDEX holds a SHARE lock on "${table}" for the whole build, blocking every write to it. Build it CONCURRENTLY (outside the migration transaction), or acknowledge it if the table is small.`,
+      },
+    );
   }
 
   return findings;
@@ -342,46 +691,131 @@ function scanSql(sql: string): Finding[] {
 function listMigrations(): string[] {
   let entries: string[];
   try {
-    entries = readdirSync(MIGRATIONS_DIR);
+    entries =
+      readdirSync(
+        MIGRATIONS_DIR,
+      );
   } catch {
-    console.error(`No migrations directory at ${MIGRATIONS_DIR}`);
-    process.exit(1);
+    console.error(
+      `No migrations directory at ${MIGRATIONS_DIR}`,
+    );
+    process.exit(
+      1,
+    );
   }
   return entries
-    .filter((name) => {
-      try {
-        return statSync(resolve(MIGRATIONS_DIR, name)).isDirectory();
-      } catch {
-        return false;
-      }
-    })
+    .filter(
+      (
+        name,
+      ) => {
+        try {
+          return statSync(
+            resolve(
+              MIGRATIONS_DIR,
+              name,
+            ),
+          ).isDirectory();
+        } catch {
+          return false;
+        }
+      },
+    )
     .sort();
 }
 
-const all = listMigrations();
-const scanned = scanAll ? all : all.filter((name) => name > baseline);
+const all =
+  listMigrations();
+const scanned =
+  scanAll
+    ? all
+    : all.filter(
+        (
+          name,
+        ) =>
+          name >
+          baseline,
+      );
 
-const reports: MigrationReport[] = [];
+const reports: MigrationReport[] =
+  [];
 for (const name of scanned) {
   let sql: string;
   try {
-    sql = readFileSync(resolve(MIGRATIONS_DIR, name, 'migration.sql'), 'utf-8');
+    sql =
+      readFileSync(
+        resolve(
+          MIGRATIONS_DIR,
+          name,
+          'migration.sql',
+        ),
+        'utf-8',
+      );
   } catch {
     continue; // no migration.sql — nothing to check
   }
-  const acks = parseAcknowledgements(sql);
-  const findings: Finding[] = [];
-  const excused: { finding: Finding; reason: string }[] = [];
-  for (const finding of scanSql(sql)) {
-    const ack = ackFor(acks, finding);
-    if (ack) excused.push({ finding, reason: ack.reason });
-    else findings.push(finding);
+  const acks =
+    parseAcknowledgements(
+      sql,
+    );
+  const findings: Finding[] =
+    [];
+  const excused: {
+    finding: Finding;
+    reason: string;
+  }[] =
+    [];
+  for (const finding of scanSql(
+    sql,
+  )) {
+    const ack =
+      ackFor(
+        acks,
+        finding,
+      );
+    if (
+      ack
+    )
+      excused.push(
+        {
+          finding,
+          reason:
+            ack.reason,
+        },
+      );
+    else
+      findings.push(
+        finding,
+      );
   }
-  reports.push({ name, findings, excused });
+  reports.push(
+    {
+      name,
+      findings,
+      excused,
+    },
+  );
 }
 
-const unacknowledged = reports.filter((r) => r.findings.length > 0);
-const acknowledged = reports.filter((r) => r.excused.length > 0);
+const unacknowledged =
+  reports.filter(
+    (
+      r,
+    ) =>
+      r
+        .findings
+        .length >
+      0,
+  );
+const acknowledged =
+  reports.filter(
+    (
+      r,
+    ) =>
+      r
+        .excused
+        .length >
+      0,
+  );
 
 console.log(
   `\nMigration safety (blue/green: old code runs against the new schema during the swap)\n`,
@@ -393,24 +827,50 @@ console.log(
         `(${all.length - scanned.length} predate the check)`,
 );
 
-if (!checkMode && acknowledged.length > 0) {
-  console.log(`\nAcknowledged (${acknowledged.length} migration(s)):`);
+if (
+  !checkMode &&
+  acknowledged.length >
+    0
+) {
+  console.log(
+    `\nAcknowledged (${acknowledged.length} migration(s)):`,
+  );
   for (const r of acknowledged) {
-    console.log(`  ${r.name} — ${r.excused.length} finding(s)`);
-    for (const { finding, reason } of r.excused) {
-      console.log(`    · ${finding.id} (line ${finding.line}) — ${reason}`);
+    console.log(
+      `  ${r.name} — ${r.excused.length} finding(s)`,
+    );
+    for (const {
+      finding,
+      reason,
+    } of r.excused) {
+      console.log(
+        `    · ${finding.id} (line ${finding.line}) — ${reason}`,
+      );
     }
   }
 }
 
-if (unacknowledged.length > 0) {
-  console.log(`\nUNSAFE (${unacknowledged.length} migration(s)):`);
+if (
+  unacknowledged.length >
+  0
+) {
+  console.log(
+    `\nUNSAFE (${unacknowledged.length} migration(s)):`,
+  );
   for (const r of unacknowledged) {
-    console.log(`\n  ${r.name}/migration.sql`);
+    console.log(
+      `\n  ${r.name}/migration.sql`,
+    );
     for (const f of r.findings) {
-      console.log(`    line ${f.line}  ${f.rule}  [${f.id}]`);
-      console.log(`      ${f.statement}`);
-      console.log(`      ${f.why}`);
+      console.log(
+        `    line ${f.line}  ${f.rule}  [${f.id}]`,
+      );
+      console.log(
+        `      ${f.statement}`,
+      );
+      console.log(
+        `      ${f.why}`,
+      );
     }
   }
   console.log(
@@ -420,9 +880,13 @@ if (unacknowledged.length > 0) {
       `  The reason is required. Do NOT advance BASELINE in ` +
       `scripts/check-migration-safety.ts to silence it.\n`,
   );
-  process.exit(1);
+  process.exit(
+    1,
+  );
 }
 
 // Same wording in both modes: a caller (or a test) grepping for success should
 // not have to know which flag was passed.
-console.log(`\n  no unsafe statements found\n`);
+console.log(
+  `\n  no unsafe statements found\n`,
+);

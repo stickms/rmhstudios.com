@@ -1,4 +1,7 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import {
+  Link,
+  useRouterState,
+} from '@tanstack/react-router';
 import {
   Bell,
   BriefcaseBusiness,
@@ -15,39 +18,118 @@ import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
-import { Tabs, type TabItem } from '@/components/ui/tabs';
+import {
+  Tabs,
+  type TabItem,
+} from '@/components/ui/tabs';
 
-type NavItem = {
-  label: string;
-  to: string;
-  icon: LucideIcon;
-};
+type NavItem =
+  {
+    label: string;
+    to: string;
+    icon: LucideIcon;
+  };
 
-const PUBLIC_NAV: NavItem[] = [
-  { label: 'Overview', to: '/rmhladder', icon: LayoutDashboard },
-  { label: 'Jobs', to: '/rmhladder/jobs', icon: BriefcaseBusiness },
-];
+const PUBLIC_NAV: NavItem[] =
+  [
+    {
+      label:
+        'Overview',
+      to: '/rmhladder',
+      icon: LayoutDashboard,
+    },
+    {
+      label:
+        'Jobs',
+      to: '/rmhladder/jobs',
+      icon: BriefcaseBusiness,
+    },
+  ];
 
-const PERSONAL_NAV: NavItem[] = [
-  { label: 'Resume', to: '/rmhladder/resume', icon: FileText },
-  { label: 'Referrals', to: '/rmhladder/referrals', icon: Handshake },
-  { label: 'Pipeline', to: '/rmhladder/pipeline', icon: GitPullRequestArrow },
-  { label: 'Alerts', to: '/rmhladder/alerts', icon: Bell },
-  { label: 'Settings', to: '/rmhladder/settings', icon: Settings },
-];
+const PERSONAL_NAV: NavItem[] =
+  [
+    {
+      label:
+        'Resume',
+      to: '/rmhladder/resume',
+      icon: FileText,
+    },
+    {
+      label:
+        'Referrals',
+      to: '/rmhladder/referrals',
+      icon: Handshake,
+    },
+    {
+      label:
+        'Pipeline',
+      to: '/rmhladder/pipeline',
+      icon: GitPullRequestArrow,
+    },
+    {
+      label:
+        'Alerts',
+      to: '/rmhladder/alerts',
+      icon: Bell,
+    },
+    {
+      label:
+        'Settings',
+      to: '/rmhladder/settings',
+      icon: Settings,
+    },
+  ];
 
-const ADMIN_NAV: NavItem[] = [
-  { label: 'Review', to: '/rmhladder/review', icon: ShieldCheck },
-  { label: 'Companies', to: '/rmhladder/companies', icon: Building2 },
-  { label: 'Health', to: '/rmhladder/health', icon: Gauge },
-];
+const ADMIN_NAV: NavItem[] =
+  [
+    {
+      label:
+        'Review',
+      to: '/rmhladder/review',
+      icon: ShieldCheck,
+    },
+    {
+      label:
+        'Companies',
+      to: '/rmhladder/companies',
+      icon: Building2,
+    },
+    {
+      label:
+        'Health',
+      to: '/rmhladder/health',
+      icon: Gauge,
+    },
+  ];
 
-function pageTitle(pathname: string) {
-  if (/^\/rmhladder\/jobs\/.+/.test(pathname)) return 'Job details';
-  const item = [...PUBLIC_NAV, ...PERSONAL_NAV, ...ADMIN_NAV].find(
-    ({ to }) => to !== '/rmhladder' && pathname.startsWith(to),
+function pageTitle(
+  pathname: string,
+) {
+  if (
+    /^\/rmhladder\/jobs\/.+/.test(
+      pathname,
+    )
+  )
+    return 'Job details';
+  const item =
+    [
+      ...PUBLIC_NAV,
+      ...PERSONAL_NAV,
+      ...ADMIN_NAV,
+    ].find(
+      ({
+        to,
+      }) =>
+        to !==
+          '/rmhladder' &&
+        pathname.startsWith(
+          to,
+        ),
+    );
+  return (
+    item?.label ??
+    'RMH Ladder'
   );
-  return item?.label ?? 'RMH Ladder';
 }
 
 export default function RmhLadderShell({
@@ -59,18 +141,55 @@ export default function RmhLadderShell({
   isAuthenticated: boolean;
   isAdmin: boolean;
 }) {
-  const { t } = useTranslation('site');
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isJobDetail = /^\/rmhladder\/jobs\/.+/.test(pathname);
-  const navItems = [
-    ...PUBLIC_NAV,
-    ...(isAuthenticated ? PERSONAL_NAV : []),
-    ...(isAdmin ? ADMIN_NAV : []),
-  ];
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
+  const pathname =
+    useRouterState(
+      {
+        select:
+          (
+            state,
+          ) =>
+            state
+              .location
+              .pathname,
+      },
+    );
+  const isJobDetail =
+    /^\/rmhladder\/jobs\/.+/.test(
+      pathname,
+    );
+  const navItems =
+    [
+      ...PUBLIC_NAV,
+      ...(isAuthenticated
+        ? PERSONAL_NAV
+        : []),
+      ...(isAdmin
+        ? ADMIN_NAV
+        : []),
+    ];
 
-  function isActive(to: string) {
-    if (to === '/rmhladder') return pathname === '/rmhladder' || pathname === '/rmhladder/';
-    return pathname.startsWith(to);
+  function isActive(
+    to: string,
+  ) {
+    if (
+      to ===
+      '/rmhladder'
+    )
+      return (
+        pathname ===
+          '/rmhladder' ||
+        pathname ===
+          '/rmhladder/'
+      );
+    return pathname.startsWith(
+      to,
+    );
   }
 
   // §16.2: the sub-nav is the shared Tabs sheet in LINK MODE — route <Link>s
@@ -78,40 +197,105 @@ export default function RmhLadderShell({
   // while Tabs owns the sheet, the flowing capsule + morph and the visual
   // grammar every other strip uses (one renderer, one look). The shell is a layout
   // route (Outlet) so the capsule survives navigation and morphs between routes.
-  const tabs: TabItem[] = navItems.map(({ label, to, icon }) => ({
-    id: to,
-    label: t(`ladder.nav.${label.toLowerCase()}`, { defaultValue: label }),
-    icon,
-  }));
-  const activeTo = navItems.find((i) => isActive(i.to))?.to ?? navItems[0]?.to ?? '';
+  const tabs: TabItem[] =
+    navItems.map(
+      ({
+        label,
+        to,
+        icon,
+      }) => ({
+        id: to,
+        label:
+          t(
+            `ladder.nav.${label.toLowerCase()}`,
+            {
+              defaultValue:
+                label,
+            },
+          ),
+        icon,
+      }),
+    );
+  const activeTo =
+    navItems.find(
+      (
+        i,
+      ) =>
+        isActive(
+          i.to,
+        ),
+    )
+      ?.to ??
+    navItems[0]
+      ?.to ??
+    '';
 
   return (
     <PageLayout
-      title={pageTitle(pathname)}
+      title={pageTitle(
+        pathname,
+      )}
       wide
-      backTo={isJobDetail ? '/rmhladder/jobs' : undefined}
-      backLabel={isJobDetail ? t('ladder.backToJobs', { defaultValue: 'Back to jobs' }) : undefined}
+      backTo={
+        isJobDetail
+          ? '/rmhladder/jobs'
+          : undefined
+      }
+      backLabel={
+        isJobDetail
+          ? t(
+              'ladder.backToJobs',
+              {
+                defaultValue:
+                  'Back to jobs',
+              },
+            )
+          : undefined
+      }
     >
       <div className="rmhladder min-w-0 px-4 pt-4 pb-12">
         {/* §5.45: the sub-nav rides a standalone glass sheet (pill) below the page
             title; the sign-in CTA stays a sibling outside the sheet, pushed right. */}
         <div className="mb-4 flex items-center gap-2">
           <Tabs
-            tabs={tabs}
-            value={activeTo}
-            aria-label={t('ladder.navigation', { defaultValue: 'RMH Ladder navigation' })}
-            renderTab={(tab, props) => (
+            tabs={
+              tabs
+            }
+            value={
+              activeTo
+            }
+            aria-label={t(
+              'ladder.navigation',
+              {
+                defaultValue:
+                  'RMH Ladder navigation',
+              },
+            )}
+            renderTab={(
+              tab,
+              props,
+            ) => (
               // Bare <Link> wearing Tabs' own tab class (props.className) so
               // the route tab matches every other strip exactly; `min-h-11` keeps
               // the 44px touch target the ladder nav had. props.children is the
               // pre-composed icon + label at z-1 above the flowing capsule.
               <Link
-                to={tab.id}
-                id={props.id}
-                aria-current={props['aria-current']}
+                to={
+                  tab.id
+                }
+                id={
+                  props.id
+                }
+                aria-current={
+                  props[
+                    'aria-current'
+                  ]
+                }
                 className={`${props.className} min-h-11`}
               >
-                {props.children}
+                {
+                  props.children
+                }
               </Link>
             )}
           />
@@ -122,13 +306,27 @@ export default function RmhLadderShell({
               variant="default"
               className="ml-auto min-h-11 shrink-0"
             >
-              <Link to="/login" search={{ callbackURL: pathname }}>
-                {t('ladder.signIn', { defaultValue: 'Sign in to save jobs' })}
+              <Link
+                to="/login"
+                search={{
+                  callbackURL:
+                    pathname,
+                }}
+              >
+                {t(
+                  'ladder.signIn',
+                  {
+                    defaultValue:
+                      'Sign in to save jobs',
+                  },
+                )}
               </Link>
             </Button>
           )}
         </div>
-        {children}
+        {
+          children
+        }
       </div>
     </PageLayout>
   );

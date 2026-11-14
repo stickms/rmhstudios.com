@@ -6,8 +6,14 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": ["問罪燈前算無缺", "沉默如國誰能出"],
-    "en": ["An accounting by lamplight — the calculus is without flaw", "Silence becomes a country no one can leave"]
+    "zh": [
+      "問罪燈前算無缺",
+      "沉默如國誰能出"
+    ],
+    "en": [
+      "An accounting by lamplight — the calculus is without flaw",
+      "Silence becomes a country no one can leave"
+    ]
   },
   "passages": [
     {

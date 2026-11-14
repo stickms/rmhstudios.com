@@ -16,38 +16,77 @@
  * an import is paid at load time, not at call time.
  */
 
-import { Suspense, lazy, useEffect } from 'react';
+import {
+  Suspense,
+  lazy,
+  useEffect,
+} from 'react';
 import { useSession } from '@/components/Providers';
 
 // Lazy so the overlay's own tree (and, through the store, socket.io-client)
 // stays out of the shared entry chunk. Anonymous viewers never render it, so
 // they never fetch it.
-const CallOverlay = lazy(() =>
-  import('@/components/call/CallOverlay').then((m) => ({ default: m.CallOverlay })),
-);
+const CallOverlay =
+  lazy(
+    () =>
+      import('@/components/call/CallOverlay').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.CallOverlay,
+        }),
+      ),
+  );
 
 export function CallMount() {
-  const { data: session } = useSession();
-  const userId = session?.user?.id ?? null;
+  const {
+    data: session,
+  } =
+    useSession();
+  const userId =
+    session
+      ?.user
+      ?.id ??
+    null;
 
   useEffect(() => {
-    if (!userId) return;
+    if (
+      !userId
+    )
+      return;
     let cancelled = false;
     // Dynamic so socket.io-client is fetched only for a viewer who can actually
     // receive a call. The cancel flag covers a sign-out (or unmount) that lands
     // while the chunk is still in flight — without it, `initCalls()` would open
     // a socket for a session that no longer exists.
-    void import('@/lib/call/store').then(({ initCalls }) => {
-      if (!cancelled) initCalls();
-    });
+    void import('@/lib/call/store').then(
+      ({
+        initCalls,
+      }) => {
+        if (
+          !cancelled
+        )
+          initCalls();
+      },
+    );
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [
+    userId,
+  ]);
 
-  if (!userId) return null;
+  if (
+    !userId
+  )
+    return null;
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        null
+      }
+    >
       <CallOverlay />
     </Suspense>
   );

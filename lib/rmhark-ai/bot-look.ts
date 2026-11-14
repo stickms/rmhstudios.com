@@ -16,63 +16,121 @@
  */
 import { AVATAR_STYLES } from './persona';
 
-const HOUR_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * HOUR_MS;
+const HOUR_MS =
+  60 *
+  60 *
+  1000;
+const DAY_MS =
+  24 *
+  HOUR_MS;
 
 /** A bot younger than this is never refreshed: a brand-new account does not redecorate. */
-export const REFRESH_MIN_AGE_MS = 14 * DAY_MS;
+export const REFRESH_MIN_AGE_MS =
+  14 *
+  DAY_MS;
 
-export type AvatarKind = 'photo' | 'cartoon' | 'initials';
+export type AvatarKind =
+  | 'photo'
+  | 'cartoon'
+  | 'initials';
 
 /** The share of each avatar kind. Photos dominate; the rest are what real users also have. */
-export const AVATAR_KIND_WEIGHTS: Readonly<Record<AvatarKind, number>> = {
-  photo: 0.72,
-  cartoon: 0.16,
-  initials: 0.12,
-};
+export const AVATAR_KIND_WEIGHTS: Readonly<
+  Record<
+    AvatarKind,
+    number
+  >
+> =
+  {
+    photo: 0.72,
+    cartoon: 0.16,
+    initials: 0.12,
+  };
 
 /** Share of bots that carry a banner. */
 export const BANNER_SHARE = 0.65;
 
-export function rollAvatarKind(r: number): AvatarKind {
-  if (r < AVATAR_KIND_WEIGHTS.photo) return 'photo';
-  if (r < AVATAR_KIND_WEIGHTS.photo + AVATAR_KIND_WEIGHTS.cartoon) return 'cartoon';
+export function rollAvatarKind(
+  r: number,
+): AvatarKind {
+  if (
+    r <
+    AVATAR_KIND_WEIGHTS.photo
+  )
+    return 'photo';
+  if (
+    r <
+    AVATAR_KIND_WEIGHTS.photo +
+      AVATAR_KIND_WEIGHTS.cartoon
+  )
+    return 'cartoon';
   return 'initials';
 }
 
-export function wantsBanner(r: number): boolean {
-  return r < BANNER_SHARE;
+export function wantsBanner(
+  r: number,
+): boolean {
+  return (
+    r <
+    BANNER_SHARE
+  );
 }
 
 /** Soft background fills for DiceBear avatars (hex without `#`, as the API takes them). */
-const DICEBEAR_BACKGROUNDS = [
-  'b6e3f4',
-  'c0aede',
-  'd1d4f9',
-  'ffd5dc',
-  'ffdfbf',
-  'c1f0c1',
-  'f4e1c1',
-  'e0e0e0',
-  '2f3e46',
-  '1d3557',
-] as const;
+const DICEBEAR_BACKGROUNDS =
+  [
+    'b6e3f4',
+    'c0aede',
+    'd1d4f9',
+    'ffd5dc',
+    'ffdfbf',
+    'c1f0c1',
+    'f4e1c1',
+    'e0e0e0',
+    '2f3e46',
+    '1d3557',
+  ] as const;
 
-function pick<T>(items: readonly T[], r: number): T {
-  return items[Math.min(items.length - 1, Math.floor(r * items.length))]!;
+function pick<
+  T,
+>(
+  items: readonly T[],
+  r: number,
+): T {
+  return items[
+    Math.min(
+      items.length -
+        1,
+      Math.floor(
+        r *
+          items.length,
+      ),
+    )
+  ]!;
 }
 
 /**
  * A cartoon avatar. It always carries `backgroundColor`, which is what tells it
  * apart from the placeholder every bot used to be minted with (see `needsFirstUpdate`).
  */
-export function cartoonAvatarUrl(seed: string, rStyle: number, rBg: number): string {
-  const style = pick(AVATAR_STYLES, rStyle);
+export function cartoonAvatarUrl(
+  seed: string,
+  rStyle: number,
+  rBg: number,
+): string {
+  const style =
+    pick(
+      AVATAR_STYLES,
+      rStyle,
+    );
   return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${pick(DICEBEAR_BACKGROUNDS, rBg)}`;
 }
 
 /** An initials avatar from the display name. */
-export function initialsAvatarUrl(name: string, rBg: number): string {
+export function initialsAvatarUrl(
+  name: string,
+  rBg: number,
+): string {
   return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${pick(DICEBEAR_BACKGROUNDS, rBg)}`;
 }
 
@@ -81,9 +139,24 @@ export function initialsAvatarUrl(name: string, rBg: number): string {
  * background. A bot wearing one has not had its first update yet. New bots are
  * minted with `cartoonAvatarUrl`, so after the first pass none is left.
  */
-export function needsFirstUpdate(url: string | null | undefined): boolean {
-  if (!url) return true;
-  return url.startsWith('https://api.dicebear.com/') && !url.includes('backgroundColor=');
+export function needsFirstUpdate(
+  url:
+    | string
+    | null
+    | undefined,
+): boolean {
+  if (
+    !url
+  )
+    return true;
+  return (
+    url.startsWith(
+      'https://api.dicebear.com/',
+    ) &&
+    !url.includes(
+      'backgroundColor=',
+    )
+  );
 }
 
 /**
@@ -91,50 +164,62 @@ export function needsFirstUpdate(url: string | null | undefined): boolean {
  * places, animals and faceless people only: a stranger's face is never used as
  * a persona's own.
  */
-export const GENERIC_AVATAR_QUERIES = [
-  'cat portrait',
-  'dog portrait',
-  'golden retriever',
-  'sunset',
-  'mountain lake',
-  'coffee cup',
-  'houseplant',
-  'vinyl record',
-  'film camera',
-  'skateboard',
-  'bicycle',
-  'ocean wave',
-  'night city lights',
-  'silhouette at sunset',
-  'hands holding coffee',
-  'sunflower',
-  'bookshelf',
-  'guitar',
-  'hiking trail',
-  'retro car',
-] as const;
+export const GENERIC_AVATAR_QUERIES =
+  [
+    'cat portrait',
+    'dog portrait',
+    'golden retriever',
+    'sunset',
+    'mountain lake',
+    'coffee cup',
+    'houseplant',
+    'vinyl record',
+    'film camera',
+    'skateboard',
+    'bicycle',
+    'ocean wave',
+    'night city lights',
+    'silhouette at sunset',
+    'hands holding coffee',
+    'sunflower',
+    'bookshelf',
+    'guitar',
+    'hiking trail',
+    'retro car',
+  ] as const;
 
-export const GENERIC_BANNER_QUERIES = [
-  'mountain landscape',
-  'ocean horizon',
-  'city skyline at night',
-  'forest path',
-  'desert dunes',
-  'starry night sky',
-  'autumn leaves',
-  'snowy mountains',
-  'beach sunset',
-  'rolling hills',
-  'lake reflection',
-  'northern lights',
-] as const;
+export const GENERIC_BANNER_QUERIES =
+  [
+    'mountain landscape',
+    'ocean horizon',
+    'city skyline at night',
+    'forest path',
+    'desert dunes',
+    'starry night sky',
+    'autumn leaves',
+    'snowy mountains',
+    'beach sunset',
+    'rolling hills',
+    'lake reflection',
+    'northern lights',
+  ] as const;
 
-export function genericAvatarQuery(r: number): string {
-  return pick(GENERIC_AVATAR_QUERIES, r);
+export function genericAvatarQuery(
+  r: number,
+): string {
+  return pick(
+    GENERIC_AVATAR_QUERIES,
+    r,
+  );
 }
 
-export function genericBannerQuery(r: number): string {
-  return pick(GENERIC_BANNER_QUERIES, r);
+export function genericBannerQuery(
+  r: number,
+): string {
+  return pick(
+    GENERIC_BANNER_QUERIES,
+    r,
+  );
 }
 
 /** Mean days between changes of each field. */
@@ -147,7 +232,9 @@ export interface DriftConfig {
 
 export interface RefreshInput {
   createdAt: Date;
-  image: string | null;
+  image:
+    | string
+    | null;
 }
 
 export interface RefreshPlan {
@@ -158,9 +245,23 @@ export interface RefreshPlan {
 }
 
 /** The chance that a field with a `meanDays` mean gap changes in one hourly run. */
-export function hourlyChance(meanDays: number): number {
-  if (!Number.isFinite(meanDays) || meanDays <= 0) return 0;
-  return Math.min(1, 1 / (meanDays * 24));
+export function hourlyChance(
+  meanDays: number,
+): number {
+  if (
+    !Number.isFinite(
+      meanDays,
+    ) ||
+    meanDays <=
+      0
+  )
+    return 0;
+  return Math.min(
+    1,
+    1 /
+      (meanDays *
+        24),
+  );
 }
 
 /**
@@ -174,13 +275,38 @@ export function refreshPlan(
   now: number,
   random: () => number,
 ): RefreshPlan {
-  if (now - bot.createdAt.getTime() < REFRESH_MIN_AGE_MS) {
-    return { avatar: false, banner: false, bio: false, name: false };
+  if (
+    now -
+      bot.createdAt.getTime() <
+    REFRESH_MIN_AGE_MS
+  ) {
+    return {
+      avatar: false,
+      banner: false,
+      bio: false,
+      name: false,
+    };
   }
   return {
-    avatar: random() < hourlyChance(cfg.avatarDays),
-    banner: random() < hourlyChance(cfg.bannerDays),
-    bio: random() < hourlyChance(cfg.bioDays),
-    name: random() < hourlyChance(cfg.nameDays),
+    avatar:
+      random() <
+      hourlyChance(
+        cfg.avatarDays,
+      ),
+    banner:
+      random() <
+      hourlyChance(
+        cfg.bannerDays,
+      ),
+    bio:
+      random() <
+      hourlyChance(
+        cfg.bioDays,
+      ),
+    name:
+      random() <
+      hourlyChance(
+        cfg.nameDays,
+      ),
   };
 }

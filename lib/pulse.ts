@@ -21,40 +21,87 @@
  */
 
 import { api } from '@/lib/contract/client';
-import { pulseApi, type PulseSection } from '@/lib/pulse.contract';
+import {
+  pulseApi,
+  type PulseSection,
+} from '@/lib/pulse.contract';
 
 export interface PulseData {
   notifications: number;
-  friends: unknown[] | null;
-  activeFriends: unknown[] | null;
+  friends:
+    | unknown[]
+    | null;
+  activeFriends:
+    | unknown[]
+    | null;
 }
 
 /** One tick a minute; the old timers were 45–60s and this replaces all of them. */
 const PULSE_INTERVAL_MS = 60_000;
 
-type Listener = (data: PulseData) => void;
+type Listener =
+  (
+    data: PulseData,
+  ) => void;
 
-const data: PulseData = { notifications: 0, friends: null, activeFriends: null };
+const data: PulseData =
+  {
+    notifications: 0,
+    friends:
+      null,
+    activeFriends:
+      null,
+  };
 
 /** section → number of live consumers. A section is requested while count > 0. */
-const demand = new Map<PulseSection, number>();
-const listeners = new Set<Listener>();
+const demand =
+  new Map<
+    PulseSection,
+    number
+  >();
+const listeners =
+  new Set<Listener>();
 
-let timer: ReturnType<typeof setInterval> | null = null;
+let timer: ReturnType<
+  typeof setInterval
+> | null =
+  null;
 let listenersBound = false;
-let inFlight: Promise<void> | null = null;
+let inFlight: Promise<void> | null =
+  null;
 /** The section set the in-flight request was built with (see requestPulse). */
-let inFlightWant: PulseSection[] = [];
-let controller: AbortController | null = null;
+let inFlightWant: PulseSection[] =
+  [];
+let controller: AbortController | null =
+  null;
 /** Bumped on teardown so a response that raced it cannot repopulate the cache. */
 let generation = 0;
 
 function broadcast() {
-  for (const l of listeners) l(data);
+  for (const l of listeners)
+    l(
+      data,
+    );
 }
 
 function wanted(): PulseSection[] {
-  return [...demand.entries()].filter(([, n]) => n > 0).map(([s]) => s);
+  return [
+    ...demand.entries(),
+  ]
+    .filter(
+      ([
+        ,
+        n,
+      ]) =>
+        n >
+        0,
+    )
+    .map(
+      ([
+        s,
+      ]) =>
+        s,
+    );
 }
 
 /**
@@ -62,68 +109,138 @@ function wanted(): PulseSection[] {
  * all land together) share the single in-flight request.
  */
 export function requestPulse(): Promise<void> {
-  if (inFlight) {
+  if (
+    inFlight
+  ) {
     // The in-flight request asked for whatever was demanded when it was built. If
     // a consumer has mounted since and added a section, that section is NOT in it
     // — sharing it would make the new consumer wait a full interval for its first
     // value. Chain a follow-up instead. The follow-up asks for the complete
     // current set, so this settles after one extra round trip.
-    const covered = wanted().every((s) => inFlightWant.includes(s));
-    if (covered) return inFlight;
-    return inFlight.then(() => requestPulse());
+    const covered =
+      wanted().every(
+        (
+          s,
+        ) =>
+          inFlightWant.includes(
+            s,
+          ),
+      );
+    if (
+      covered
+    )
+      return inFlight;
+    return inFlight.then(
+      () =>
+        requestPulse(),
+    );
   }
 
-  const requestGeneration = generation;
-  inFlightWant = wanted();
-  const ac = new AbortController();
-  controller = ac;
+  const requestGeneration =
+    generation;
+  inFlightWant =
+    wanted();
+  const ac =
+    new AbortController();
+  controller =
+    ac;
 
   // Start in a microtask so `inFlight` owns the request before any mocked or
   // platform fetch implementation can throw synchronously.
-  const run = Promise.resolve()
-    .then(async () => {
-      // A refusal or a dropped connection throws and lands in the catch below: keep the last values.
-      const body = await api(pulseApi, { body: { want: wanted() }, signal: ac.signal });
-      // Ignore a response that raced teardown, so one user's values can never
-      // repopulate the cache after the last subscriber left (and, on a shared
-      // device, after a sign-out).
-      if (requestGeneration !== generation) return;
+  const run =
+    Promise.resolve()
+      .then(
+        async () => {
+          // A refusal or a dropped connection throws and lands in the catch below: keep the last values.
+          const body =
+            await api(
+              pulseApi,
+              {
+                body: {
+                  want: wanted(),
+                },
+                signal:
+                  ac.signal,
+              },
+            );
+          // Ignore a response that raced teardown, so one user's values can never
+          // repopulate the cache after the last subscriber left (and, on a shared
+          // device, after a sign-out).
+          if (
+            requestGeneration !==
+            generation
+          )
+            return;
 
-      // Absent sections keep their previous value — a section the server skipped
-      // or failed is not the same as "it is now empty".
-      let changed = false;
-      if (typeof body.notifications === 'number' && body.notifications !== data.notifications) {
-        data.notifications = body.notifications;
-        changed = true;
-      }
-      if (Array.isArray(body.friends)) {
-        data.friends = body.friends;
-        changed = true;
-      }
-      if (Array.isArray(body.activeFriends)) {
-        data.activeFriends = body.activeFriends;
-        changed = true;
-      }
-      if (changed) broadcast();
-    })
-    .catch(() => {
-      // Network hiccup or teardown abort — keep the last known values.
-    })
-    .finally(() => {
-      // A stopped transport may already have started a newer request; only the
-      // request that still owns these slots may clear them.
-      if (controller === ac) {
-        controller = null;
-        inFlight = null;
-      }
-    });
+          // Absent sections keep their previous value — a section the server skipped
+          // or failed is not the same as "it is now empty".
+          let changed = false;
+          if (
+            typeof body.notifications ===
+              'number' &&
+            body.notifications !==
+              data.notifications
+          ) {
+            data.notifications =
+              body.notifications;
+            changed = true;
+          }
+          if (
+            Array.isArray(
+              body.friends,
+            )
+          ) {
+            data.friends =
+              body.friends;
+            changed = true;
+          }
+          if (
+            Array.isArray(
+              body.activeFriends,
+            )
+          ) {
+            data.activeFriends =
+              body.activeFriends;
+            changed = true;
+          }
+          if (
+            changed
+          )
+            broadcast();
+        },
+      )
+      .catch(
+        () => {
+          // Network hiccup or teardown abort — keep the last known values.
+        },
+      )
+      .finally(
+        () => {
+          // A stopped transport may already have started a newer request; only the
+          // request that still owns these slots may clear them.
+          if (
+            controller ===
+            ac
+          ) {
+            controller =
+              null;
+            inFlight =
+              null;
+          }
+        },
+      );
 
-  inFlight = run;
+  inFlight =
+    run;
   return run;
 }
 
 function onVisible() {
-  if (document.visibilityState === 'visible') void requestPulse();
+  if (
+    document.visibilityState ===
+    'visible'
+  )
+    void requestPulse();
 }
 
 function onFocus() {
@@ -131,41 +248,78 @@ function onFocus() {
 }
 
 function start() {
-  if (timer) return;
+  if (
+    timer
+  )
+    return;
   void requestPulse();
   // A hidden tab does not tick — it has nothing to display and its user is not
   // "online now" in any meaningful sense (the heartbeat this carries deliberately
   // behaved the same way). Returning to the tab fires `visibilitychange`, which
   // pulses immediately, so the first visible frame is already fresh.
-  timer = setInterval(() => {
-    if (document.visibilityState !== 'visible') return;
-    void requestPulse();
-  }, PULSE_INTERVAL_MS);
-  if (!listenersBound) {
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('focus', onFocus);
+  timer =
+    setInterval(
+      () => {
+        if (
+          document.visibilityState !==
+          'visible'
+        )
+          return;
+        void requestPulse();
+      },
+      PULSE_INTERVAL_MS,
+    );
+  if (
+    !listenersBound
+  ) {
+    document.addEventListener(
+      'visibilitychange',
+      onVisible,
+    );
+    window.addEventListener(
+      'focus',
+      onFocus,
+    );
     listenersBound = true;
   }
 }
 
 function stop() {
   generation++;
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
+  if (
+    timer
+  ) {
+    clearInterval(
+      timer,
+    );
+    timer =
+      null;
   }
   controller?.abort();
-  controller = null;
-  inFlight = null;
-  inFlightWant = [];
-  if (listenersBound) {
-    document.removeEventListener('visibilitychange', onVisible);
-    window.removeEventListener('focus', onFocus);
+  controller =
+    null;
+  inFlight =
+    null;
+  inFlightWant =
+    [];
+  if (
+    listenersBound
+  ) {
+    document.removeEventListener(
+      'visibilitychange',
+      onVisible,
+    );
+    window.removeEventListener(
+      'focus',
+      onFocus,
+    );
     listenersBound = false;
   }
   data.notifications = 0;
-  data.friends = null;
-  data.activeFriends = null;
+  data.friends =
+    null;
+  data.activeFriends =
+    null;
 }
 
 /**
@@ -176,30 +330,80 @@ function stop() {
  * Pass `[]` to keep the pulse (and therefore the presence heartbeat) running
  * without needing any of its payload.
  */
-export function subscribePulse(sections: PulseSection[], listener: Listener): () => void {
-  for (const s of sections) demand.set(s, (demand.get(s) ?? 0) + 1);
-  listeners.add(listener);
+export function subscribePulse(
+  sections: PulseSection[],
+  listener: Listener,
+): () => void {
+  for (const s of sections)
+    demand.set(
+      s,
+      (demand.get(
+        s,
+      ) ??
+        0) +
+        1,
+    );
+  listeners.add(
+    listener,
+  );
 
   // A newly-mounted consumer may have arrived after this section's first fetch,
   // or may have just added a section nobody was asking for. Re-pulse when the
   // requested set grew; otherwise replay what we already have.
-  const isFirst = listeners.size === 1;
-  if (isFirst) {
+  const isFirst =
+    listeners.size ===
+    1;
+  if (
+    isFirst
+  ) {
     start();
-  } else if (sections.some((s) => demand.get(s) === 1)) {
+  } else if (
+    sections.some(
+      (
+        s,
+      ) =>
+        demand.get(
+          s,
+        ) ===
+        1,
+    )
+  ) {
     void requestPulse();
   } else {
-    listener(data);
+    listener(
+      data,
+    );
   }
 
   return () => {
     for (const s of sections) {
-      const n = (demand.get(s) ?? 1) - 1;
-      if (n <= 0) demand.delete(s);
-      else demand.set(s, n);
+      const n =
+        (demand.get(
+          s,
+        ) ??
+          1) -
+        1;
+      if (
+        n <=
+        0
+      )
+        demand.delete(
+          s,
+        );
+      else
+        demand.set(
+          s,
+          n,
+        );
     }
-    listeners.delete(listener);
-    if (listeners.size === 0) stop();
+    listeners.delete(
+      listener,
+    );
+    if (
+      listeners.size ===
+      0
+    )
+      stop();
   };
 }
 
@@ -213,8 +417,15 @@ export function pulseSnapshot(): PulseData {
  * optimistically when the user reads their notifications, so it must not wait a
  * full interval to reflect an action the user just took.
  */
-export function setPulseNotifications(n: number) {
-  if (data.notifications === n) return;
-  data.notifications = n;
+export function setPulseNotifications(
+  n: number,
+) {
+  if (
+    data.notifications ===
+    n
+  )
+    return;
+  data.notifications =
+    n;
   broadcast();
 }

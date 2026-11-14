@@ -2,5 +2,16 @@
 import { getFeedSignalsApi } from '@/lib/feed/signals.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const feedSignalsQuery = () =>
-  contractQuery(['feed', 'signals'], getFeedSignalsApi, undefined, { staleTime: 30_000 });
+export const feedSignalsQuery =
+  () =>
+    contractQuery(
+      [
+        'feed',
+        'signals',
+      ],
+      getFeedSignalsApi,
+      undefined,
+      {
+        staleTime: 30_000,
+      },
+    );

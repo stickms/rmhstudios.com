@@ -70,15 +70,36 @@ import {
  * the fraction across the container — which is how the readout is positioned,
  * with no measurement pass, no ResizeObserver and no layout read in an event.
  */
-const PLOT: Plot = makePlot(720, 300, { left: 58, right: 14, top: 14, bottom: 30 });
+const PLOT: Plot =
+  makePlot(
+    720,
+    300,
+    {
+      left: 58,
+      right: 14,
+      top: 14,
+      bottom: 30,
+    },
+  );
 
 /** How far ahead the dashed half runs, keyed by the horizon control. */
-const HORIZONS = [
-  { id: 'month', days: 30 },
-  { id: 'year', days: 365 },
-  { id: 'decade', days: 3_652 },
-] as const;
-type HorizonId = (typeof HORIZONS)[number]['id'];
+const HORIZONS =
+  [
+    {
+      id: 'month',
+      days: 30,
+    },
+    {
+      id: 'year',
+      days: 365,
+    },
+    {
+      id: 'decade',
+      days: 3_652,
+    },
+  ] as const;
+type HorizonId =
+  (typeof HORIZONS)[number]['id'];
 
 interface AccrualChartProps {
   timeline: readonly TimelineBucket[];
@@ -87,9 +108,13 @@ interface AccrualChartProps {
   /** The panel's shared clock. */
   nowMs: number;
   logScaleOn: boolean;
-  onLogScaleChange: (next: boolean) => void;
+  onLogScaleChange: (
+    next: boolean,
+  ) => void;
   horizon: HorizonId;
-  onHorizonChange: (next: HorizonId) => void;
+  onHorizonChange: (
+    next: HorizonId,
+  ) => void;
 }
 
 export function AccrualChart({
@@ -101,99 +126,314 @@ export function AccrualChart({
   horizon,
   onHorizonChange,
 }: AccrualChartProps) {
-  const { t } = useTranslation('c-kaikai-debt');
-  const [hover, setHover] = useHoverIndex();
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-kaikai-debt',
+    );
+  const [
+    hover,
+    setHover,
+  ] =
+    useHoverIndex();
 
-  const model = useMemo(() => {
-    const history = withCumulative(timeline);
-    const horizonDays = HORIZONS.find((h) => h.id === horizon)?.days ?? 365;
-    const toMs = nowMs + horizonDays * 86_400_000;
-    const forward = projectSeries(basisCents, nowMs, toMs, 60);
+  const model =
+    useMemo(() => {
+      const history =
+        withCumulative(
+          timeline,
+        );
+      const horizonDays =
+        HORIZONS.find(
+          (
+            h,
+          ) =>
+            h.id ===
+            horizon,
+        )
+          ?.days ??
+        365;
+      const toMs =
+        nowMs +
+        horizonDays *
+          86_400_000;
+      const forward =
+        projectSeries(
+          basisCents,
+          nowMs,
+          toMs,
+          60,
+        );
 
-    // One merged series so the crosshair is continuous across the seam. A
-    // reader dragging along the line should not find a dead zone at "now".
-    const points = [
-      ...history.map((bucket) => ({
-        atMs: bucket.startMs,
-        cents: bucket.valueAtCents,
-        principalCents: bucket.cumulativePrincipalCents,
-        count: bucket.count,
-        projected: false,
-      })),
-      ...forward.map((point) => ({
-        atMs: point.atMs,
-        cents: point.cents,
-        principalCents: history[history.length - 1]?.cumulativePrincipalCents ?? 0,
-        count: 0,
-        projected: true,
-      })),
-    ];
+      // One merged series so the crosshair is continuous across the seam. A
+      // reader dragging along the line should not find a dead zone at "now".
+      const points =
+        [
+          ...history.map(
+            (
+              bucket,
+            ) => ({
+              atMs: bucket.startMs,
+              cents:
+                bucket.valueAtCents,
+              principalCents:
+                bucket.cumulativePrincipalCents,
+              count:
+                bucket.count,
+              projected: false,
+            }),
+          ),
+          ...forward.map(
+            (
+              point,
+            ) => ({
+              atMs: point.atMs,
+              cents:
+                point.cents,
+              principalCents:
+                history[
+                  history.length -
+                    1
+                ]
+                  ?.cumulativePrincipalCents ??
+                0,
+              count: 0,
+              projected: true,
+            }),
+          ),
+        ];
 
-    const fromMs = points[0]?.atMs ?? nowMs;
-    const maxCents = points.reduce((max, p) => Math.max(max, p.cents), 1);
-    // The log axis starts at the smallest value actually on the line, not at one
-    // cent. Flooring at a cent is defensible and wastes half the plot: the
-    // earliest month is already thousands of cents, so five of the ten decades
-    // on the axis were empty and the curve was squashed into the top third.
-    const minCents = points.reduce((min, p) => (p.cents > 0 ? Math.min(min, p.cents) : min), Infinity);
-    return {
-      history,
-      points,
-      fromMs,
-      toMs,
-      maxCents,
-      minCents: Number.isFinite(minCents) ? minCents : 1,
-      splitIndex: history.length,
-    };
-  }, [timeline, basisCents, nowMs, horizon]);
+      const fromMs =
+        points[0]
+          ?.atMs ??
+        nowMs;
+      const maxCents =
+        points.reduce(
+          (
+            max,
+            p,
+          ) =>
+            Math.max(
+              max,
+              p.cents,
+            ),
+          1,
+        );
+      // The log axis starts at the smallest value actually on the line, not at one
+      // cent. Flooring at a cent is defensible and wastes half the plot: the
+      // earliest month is already thousands of cents, so five of the ten decades
+      // on the axis were empty and the curve was squashed into the top third.
+      const minCents =
+        points.reduce(
+          (
+            min,
+            p,
+          ) =>
+            p.cents >
+            0
+              ? Math.min(
+                  min,
+                  p.cents,
+                )
+              : min,
+          Infinity,
+        );
+      return {
+        history,
+        points,
+        fromMs,
+        toMs,
+        maxCents,
+        minCents:
+          Number.isFinite(
+            minCents,
+          )
+            ? minCents
+            : 1,
+        splitIndex:
+          history.length,
+      };
+    }, [
+      timeline,
+      basisCents,
+      nowMs,
+      horizon,
+    ]);
 
-  const x = useMemo(
-    () => linearScale(model.fromMs, model.toMs, PLOT.innerLeft, PLOT.innerRight),
-    [model.fromMs, model.toMs],
-  );
-  const y = useMemo(
-    () =>
-      logScaleOn
-        ? logScale(model.minCents, model.maxCents, PLOT.innerBottom, PLOT.innerTop, 1)
-        : linearScale(0, model.maxCents, PLOT.innerBottom, PLOT.innerTop),
-    [logScaleOn, model.minCents, model.maxCents],
-  );
+  const x =
+    useMemo(
+      () =>
+        linearScale(
+          model.fromMs,
+          model.toMs,
+          PLOT.innerLeft,
+          PLOT.innerRight,
+        ),
+      [
+        model.fromMs,
+        model.toMs,
+      ],
+    );
+  const y =
+    useMemo(
+      () =>
+        logScaleOn
+          ? logScale(
+              model.minCents,
+              model.maxCents,
+              PLOT.innerBottom,
+              PLOT.innerTop,
+              1,
+            )
+          : linearScale(
+              0,
+              model.maxCents,
+              PLOT.innerBottom,
+              PLOT.innerTop,
+            ),
+      [
+        logScaleOn,
+        model.minCents,
+        model.maxCents,
+      ],
+    );
 
-  const xs = useMemo(() => model.points.map((p) => x(p.atMs)), [model.points, x]);
+  const xs =
+    useMemo(
+      () =>
+        model.points.map(
+          (
+            p,
+          ) =>
+            x(
+              p.atMs,
+            ),
+        ),
+      [
+        model.points,
+        x,
+      ],
+    );
 
-  const paths = useMemo(() => {
-    const projected = model.points.map((p) => ({ x: x(p.atMs), y: y(p.cents) }));
-    // The solid half includes the seam point so the two halves meet rather than
-    // leaving a one-pixel gap at "now".
-    const past = projected.slice(0, model.splitIndex + 1);
-    const future = projected.slice(Math.max(0, model.splitIndex - 1));
-    return {
-      past: linePath(past),
-      future: linePath(future),
-      area: areaPath(past, PLOT.innerBottom),
-    };
-  }, [model.points, model.splitIndex, x, y]);
+  const paths =
+    useMemo(() => {
+      const projected =
+        model.points.map(
+          (
+            p,
+          ) => ({
+            x: x(
+              p.atMs,
+            ),
+            y: y(
+              p.cents,
+            ),
+          }),
+        );
+      // The solid half includes the seam point so the two halves meet rather than
+      // leaving a one-pixel gap at "now".
+      const past =
+        projected.slice(
+          0,
+          model.splitIndex +
+            1,
+        );
+      const future =
+        projected.slice(
+          Math.max(
+            0,
+            model.splitIndex -
+              1,
+          ),
+        );
+      return {
+        past: linePath(
+          past,
+        ),
+        future:
+          linePath(
+            future,
+          ),
+        area: areaPath(
+          past,
+          PLOT.innerBottom,
+        ),
+      };
+    }, [
+      model.points,
+      model.splitIndex,
+      x,
+      y,
+    ]);
 
-  const ticks = useMemo(
-    () =>
-      logScaleOn ? logTicks(model.minCents, model.maxCents) : niceTicks(0, model.maxCents, 5),
-    [logScaleOn, model.minCents, model.maxCents],
-  );
+  const ticks =
+    useMemo(
+      () =>
+        logScaleOn
+          ? logTicks(
+              model.minCents,
+              model.maxCents,
+            )
+          : niceTicks(
+              0,
+              model.maxCents,
+              5,
+            ),
+      [
+        logScaleOn,
+        model.minCents,
+        model.maxCents,
+      ],
+    );
 
-  const active = hover >= 0 ? model.points[hover] : null;
+  const active =
+    hover >=
+    0
+      ? model
+          .points[
+          hover
+        ]
+      : null;
 
-  const empty = model.history.length === 0;
+  const empty =
+    model
+      .history
+      .length ===
+    0;
 
   return (
     <ChartCard
-      title={t('stats.accrual.title', { defaultValue: 'What he has owed, and what he will' })}
-      hint={t('stats.accrual.hint', {
-        defaultValue:
-          'Solid is history — everything logged by that month, compounded to that month. Dashed is the same curve run forward from today’s books, assuming nobody adds another thing.',
-      })}
+      title={t(
+        'stats.accrual.title',
+        {
+          defaultValue:
+            'What he has owed, and what he will',
+        },
+      )}
+      hint={t(
+        'stats.accrual.hint',
+        {
+          defaultValue:
+            'Solid is history — everything logged by that month, compounded to that month. Dashed is the same curve run forward from today’s books, assuming nobody adds another thing.',
+        },
+      )}
       controls={
-        <ChartToggle pressed={logScaleOn} onPressedChange={onLogScaleChange}>
-          {t('stats.control.log', { defaultValue: 'Log scale' })}
+        <ChartToggle
+          pressed={
+            logScaleOn
+          }
+          onPressedChange={
+            onLogScaleChange
+          }
+        >
+          {t(
+            'stats.control.log',
+            {
+              defaultValue:
+                'Log scale',
+            },
+          )}
         </ChartToggle>
       }
       footer={
@@ -205,105 +445,334 @@ export function AccrualChart({
            another button it wrapped onto two rows and read as a floating box. */
         <Tabs
           size="sm"
-          value={horizon}
-          onChange={(id) => onHorizonChange(id as HorizonId)}
-          aria-label={t('stats.horizon.label', { defaultValue: 'How far ahead to project' })}
+          value={
+            horizon
+          }
+          onChange={(
+            id,
+          ) =>
+            onHorizonChange(
+              id as HorizonId,
+            )
+          }
+          aria-label={t(
+            'stats.horizon.label',
+            {
+              defaultValue:
+                'How far ahead to project',
+            },
+          )}
           tabs={[
-            { id: 'month', label: t('stats.horizon.month', { defaultValue: 'Next 30 days' }) },
-            { id: 'year', label: t('stats.horizon.year', { defaultValue: 'Next year' }) },
-            { id: 'decade', label: t('stats.horizon.decade', { defaultValue: 'Next decade' }) },
+            {
+              id: 'month',
+              label:
+                t(
+                  'stats.horizon.month',
+                  {
+                    defaultValue:
+                      'Next 30 days',
+                  },
+                ),
+            },
+            {
+              id: 'year',
+              label:
+                t(
+                  'stats.horizon.year',
+                  {
+                    defaultValue:
+                      'Next year',
+                  },
+                ),
+            },
+            {
+              id: 'decade',
+              label:
+                t(
+                  'stats.horizon.decade',
+                  {
+                    defaultValue:
+                      'Next decade',
+                  },
+                ),
+            },
           ]}
         />
       }
     >
       {empty ? (
         <p className="py-10 text-center text-sm text-site-text-muted">
-          {t('stats.empty', { defaultValue: 'Nothing on the books yet — add a line and it appears here.' })}
+          {t(
+            'stats.empty',
+            {
+              defaultValue:
+                'Nothing on the books yet — add a line and it appears here.',
+            },
+          )}
         </p>
       ) : (
         <>
           <ChartFrame
-            plot={PLOT}
-            title={t('stats.accrual.title', { defaultValue: 'What he has owed, and what he will' })}
-            description={t('stats.accrual.desc', {
-              defaultValue:
-                'A line chart of the total debt over time, compounding continuously, with a dashed forward projection from the current balance.',
-            })}
-            onPointerMove={(event) => {
-              const point = pointerInViewBox(event, PLOT);
-              setHover(point.x < 0 ? -1 : nearestIndex(xs, point.x));
+            plot={
+              PLOT
+            }
+            title={t(
+              'stats.accrual.title',
+              {
+                defaultValue:
+                  'What he has owed, and what he will',
+              },
+            )}
+            description={t(
+              'stats.accrual.desc',
+              {
+                defaultValue:
+                  'A line chart of the total debt over time, compounding continuously, with a dashed forward projection from the current balance.',
+              },
+            )}
+            onPointerMove={(
+              event,
+            ) => {
+              const point =
+                pointerInViewBox(
+                  event,
+                  PLOT,
+                );
+              setHover(
+                point.x <
+                  0
+                  ? -1
+                  : nearestIndex(
+                      xs,
+                      point.x,
+                    ),
+              );
             }}
-            onPointerLeave={() => setHover(-1)}
+            onPointerLeave={() =>
+              setHover(
+                -1,
+              )
+            }
           >
-            <GridLines plot={PLOT} ys={ticks.map((value) => y(value))} />
+            <GridLines
+              plot={
+                PLOT
+              }
+              ys={ticks.map(
+                (
+                  value,
+                ) =>
+                  y(
+                    value,
+                  ),
+              )}
+            />
             <AxisLabels
-              items={ticks.map((value) => ({
-                key: String(value),
-                x: PLOT.innerLeft - 8,
-                y: y(value),
-                text: formatCompactDebt(value),
-              }))}
+              items={ticks.map(
+                (
+                  value,
+                ) => ({
+                  key: String(
+                    value,
+                  ),
+                  x:
+                    PLOT.innerLeft -
+                    8,
+                  y: y(
+                    value,
+                  ),
+                  text: formatCompactDebt(
+                    value,
+                  ),
+                }),
+              )}
             />
             <AxisLabels
               anchor="middle"
               items={[
-                { key: 'from', x: PLOT.innerLeft + 18, y: PLOT.innerBottom + 16, text: formatMonth(model.fromMs) },
-                { key: 'now', x: x(nowMs), y: PLOT.innerBottom + 16, text: t('stats.now', { defaultValue: 'now' }) },
-                { key: 'to', x: PLOT.innerRight - 22, y: PLOT.innerBottom + 16, text: formatMonth(model.toMs) },
+                {
+                  key: 'from',
+                  x:
+                    PLOT.innerLeft +
+                    18,
+                  y:
+                    PLOT.innerBottom +
+                    16,
+                  text: formatMonth(
+                    model.fromMs,
+                  ),
+                },
+                {
+                  key: 'now',
+                  x: x(
+                    nowMs,
+                  ),
+                  y:
+                    PLOT.innerBottom +
+                    16,
+                  text: t(
+                    'stats.now',
+                    {
+                      defaultValue:
+                        'now',
+                    },
+                  ),
+                },
+                {
+                  key: 'to',
+                  x:
+                    PLOT.innerRight -
+                    22,
+                  y:
+                    PLOT.innerBottom +
+                    16,
+                  text: formatMonth(
+                    model.toMs,
+                  ),
+                },
               ]}
             />
 
             {/* The "now" divider: the boundary between a record and a claim. */}
             <line
               className="kd-chart__crosshair"
-              x1={x(nowMs)}
-              x2={x(nowMs)}
-              y1={PLOT.innerTop}
-              y2={PLOT.innerBottom}
+              x1={x(
+                nowMs,
+              )}
+              x2={x(
+                nowMs,
+              )}
+              y1={
+                PLOT.innerTop
+              }
+              y2={
+                PLOT.innerBottom
+              }
               aria-hidden
             />
 
             {/* One series, so no legend box — the title names it (the ≥2-series
                 rule). Colour comes from the series class, not from a literal. */}
             <g className="kd-series-0">
-              <path className="kd-chart__area" d={paths.area} />
-              <path className="kd-chart__line" d={paths.past} />
-              <path className="kd-chart__line kd-chart__line--projected" d={paths.future} />
+              <path
+                className="kd-chart__area"
+                d={
+                  paths.area
+                }
+              />
+              <path
+                className="kd-chart__line"
+                d={
+                  paths.past
+                }
+              />
+              <path
+                className="kd-chart__line kd-chart__line--projected"
+                d={
+                  paths.future
+                }
+              />
               {active && (
                 <>
                   <line
                     className="kd-chart__crosshair"
-                    x1={x(active.atMs)}
-                    x2={x(active.atMs)}
-                    y1={PLOT.innerTop}
-                    y2={PLOT.innerBottom}
+                    x1={x(
+                      active.atMs,
+                    )}
+                    x2={x(
+                      active.atMs,
+                    )}
+                    y1={
+                      PLOT.innerTop
+                    }
+                    y2={
+                      PLOT.innerBottom
+                    }
                   />
-                  <circle className="kd-chart__marker" cx={x(active.atMs)} cy={y(active.cents)} r={5} />
+                  <circle
+                    className="kd-chart__marker"
+                    cx={x(
+                      active.atMs,
+                    )}
+                    cy={y(
+                      active.cents,
+                    )}
+                    r={
+                      5
+                    }
+                  />
                 </>
               )}
             </g>
           </ChartFrame>
 
           {active && (
-            <Readout x={x(active.atMs) / PLOT.width} y={y(active.cents) / PLOT.height}>
-              <p className="mb-1 font-medium text-site-text">{formatMonth(active.atMs)}</p>
+            <Readout
+              x={
+                x(
+                  active.atMs,
+                ) /
+                PLOT.width
+              }
+              y={
+                y(
+                  active.cents,
+                ) /
+                PLOT.height
+              }
+            >
+              <p className="mb-1 font-medium text-site-text">
+                {formatMonth(
+                  active.atMs,
+                )}
+              </p>
               <ReadoutRow
                 label={
                   active.projected
-                    ? t('stats.accrual.projected', { defaultValue: 'Projected balance' })
-                    : t('stats.accrual.balance', { defaultValue: 'Balance' })
+                    ? t(
+                        'stats.accrual.projected',
+                        {
+                          defaultValue:
+                            'Projected balance',
+                        },
+                      )
+                    : t(
+                        'stats.accrual.balance',
+                        {
+                          defaultValue:
+                            'Balance',
+                        },
+                      )
                 }
-                value={formatDebt(active.cents)}
+                value={formatDebt(
+                  active.cents,
+                )}
               />
               {!active.projected && (
                 <>
                   <ReadoutRow
-                    label={t('stats.accrual.principal', { defaultValue: 'Face value logged' })}
-                    value={formatDebt(active.principalCents)}
+                    label={t(
+                      'stats.accrual.principal',
+                      {
+                        defaultValue:
+                          'Face value logged',
+                      },
+                    )}
+                    value={formatDebt(
+                      active.principalCents,
+                    )}
                   />
                   <ReadoutRow
-                    label={t('stats.accrual.added', { defaultValue: 'Lines that month' })}
-                    value={String(active.count)}
+                    label={t(
+                      'stats.accrual.added',
+                      {
+                        defaultValue:
+                          'Lines that month',
+                      },
+                    )}
+                    value={String(
+                      active.count,
+                    )}
                   />
                 </>
               )}

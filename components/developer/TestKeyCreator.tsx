@@ -10,52 +10,158 @@ import { serverError } from '@/lib/http';
 import { createDeveloperKeyApi } from '@/lib/devplatform/keys.contract';
 
 /** D1: creates an `rmh_test_` sandbox key — fixtures for reads, no-op writes. */
-export function TestKeyCreator({ onCreated }: { onCreated: (plaintext: string) => void }) {
-  const { t } = useTranslation('f-devplatform');
-  const [name, setName] = useState('');
-  const [busy, setBusy] = useState(false);
+export function TestKeyCreator({
+  onCreated,
+}: {
+  onCreated: (
+    plaintext: string,
+  ) => void;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-devplatform',
+    );
+  const [
+    name,
+    setName,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
 
   async function create() {
-    setBusy(true);
+    setBusy(
+      true,
+    );
     try {
-      const data = await api(createDeveloperKeyApi, {
-        body: { name: name.trim(), scopes: SCOPES.map((s) => s.id), testMode: true },
-      });
-      setName('');
-      onCreated(data.key);
+      const data =
+        await api(
+          createDeveloperKeyApi,
+          {
+            body: {
+              name: name.trim(),
+              scopes:
+                SCOPES.map(
+                  (
+                    s,
+                  ) =>
+                    s.id,
+                ),
+              testMode: true,
+            },
+          },
+        );
+      setName(
+        '',
+      );
+      onCreated(
+        data.key,
+      );
     } catch (e) {
       toast.error(
-        serverError(e) || t('testKeys-error', { defaultValue: 'Could not create the test key' }),
+        serverError(
+          e,
+        ) ||
+          t(
+            'testKeys-error',
+            {
+              defaultValue:
+                'Could not create the test key',
+            },
+          ),
       );
     } finally {
-      setBusy(false);
+      setBusy(
+        false,
+      );
     }
   }
 
   return (
     <div className="space-y-2 rounded-site px-4 py-3">
       <div className="flex items-center gap-2">
-        <FlaskConical className="size-4 text-site-accent" aria-hidden />
+        <FlaskConical
+          className="size-4 text-site-accent"
+          aria-hidden
+        />
         <h3 className="text-sm font-semibold text-site-text">
-          {t('testKeys-title', { defaultValue: 'Test-mode key' })}
+          {t(
+            'testKeys-title',
+            {
+              defaultValue:
+                'Test-mode key',
+            },
+          )}
         </h3>
       </div>
       <p className="text-xs text-site-text-muted">
-        {t('testKeys-blurb', {
-          defaultValue:
-            'An rmh_test_ key works against every endpoint but only returns sample data, and writes are acknowledged without changing anything. Build against it safely.',
-        })}
+        {t(
+          'testKeys-blurb',
+          {
+            defaultValue:
+              'An rmh_test_ key works against every endpoint but only returns sample data, and writes are acknowledged without changing anything. Build against it safely.',
+          },
+        )}
       </p>
       <div className="flex gap-2">
         <Input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={100}
-          aria-label={t('testKeys-name', { defaultValue: 'Test key name' })}
-          placeholder={t('testKeys-name', { defaultValue: 'Test key name' })}
+          value={
+            name
+          }
+          onChange={(
+            e,
+          ) =>
+            setName(
+              e
+                .target
+                .value,
+            )
+          }
+          maxLength={
+            100
+          }
+          aria-label={t(
+            'testKeys-name',
+            {
+              defaultValue:
+                'Test key name',
+            },
+          )}
+          placeholder={t(
+            'testKeys-name',
+            {
+              defaultValue:
+                'Test key name',
+            },
+          )}
         />
-        <Button variant="default" size="sm" disabled={busy || !name.trim()} onClick={create}>
-          {t('testKeys-create', { defaultValue: 'Create test key' })}
+        <Button
+          variant="default"
+          size="sm"
+          disabled={
+            busy ||
+            !name.trim()
+          }
+          onClick={
+            create
+          }
+        >
+          {t(
+            'testKeys-create',
+            {
+              defaultValue:
+                'Create test key',
+            },
+          )}
         </Button>
       </div>
     </div>

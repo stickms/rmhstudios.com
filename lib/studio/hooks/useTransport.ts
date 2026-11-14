@@ -1,4 +1,7 @@
-import { useEffect, useRef } from 'react';
+import {
+  useEffect,
+  useRef,
+} from 'react';
 import { useStudioStore } from '../store';
 import { StudioEngine } from '../engine/StudioEngine';
 import { TransportController } from '../engine/TransportController';
@@ -10,41 +13,103 @@ import { TransportController } from '../engine/TransportController';
  * actual audio engine, and pipes position updates back to the store.
  */
 export function useTransport() {
-  const controllerRef = useRef<TransportController | null>(null);
+  const controllerRef =
+    useRef<TransportController | null>(
+      null,
+    );
 
-  const isPlaying = useStudioStore((s) => s.isPlaying);
-  const bpm = useStudioStore((s) => s.bpm);
-  const loopEnabled = useStudioStore((s) => s.loopEnabled);
-  const loopStart = useStudioStore((s) => s.loopStart);
-  const loopEnd = useStudioStore((s) => s.loopEnd);
-  const metronomeEnabled = useStudioStore((s) => s.metronomeEnabled);
+  const isPlaying =
+    useStudioStore(
+      (
+        s,
+      ) =>
+        s.isPlaying,
+    );
+  const bpm =
+    useStudioStore(
+      (
+        s,
+      ) =>
+        s.bpm,
+    );
+  const loopEnabled =
+    useStudioStore(
+      (
+        s,
+      ) =>
+        s.loopEnabled,
+    );
+  const loopStart =
+    useStudioStore(
+      (
+        s,
+      ) =>
+        s.loopStart,
+    );
+  const loopEnd =
+    useStudioStore(
+      (
+        s,
+      ) =>
+        s.loopEnd,
+    );
+  const metronomeEnabled =
+    useStudioStore(
+      (
+        s,
+      ) =>
+        s.metronomeEnabled,
+    );
 
   // Initialize controller when engine is ready
   useEffect(() => {
-    const engine = StudioEngine.getInstance();
-    if (!engine.initialized) return;
+    const engine =
+      StudioEngine.getInstance();
+    if (
+      !engine.initialized
+    )
+      return;
 
-    const ctrl = new TransportController(engine);
-    controllerRef.current = ctrl;
+    const ctrl =
+      new TransportController(
+        engine,
+      );
+    controllerRef.current =
+      ctrl;
 
     // Pipe position updates to store (throttled by 16n scheduling)
-    ctrl.setOnPositionUpdate((beat) => {
-      useStudioStore.getState().setCurrentBeat(beat);
-    });
+    ctrl.setOnPositionUpdate(
+      (
+        beat,
+      ) => {
+        useStudioStore
+          .getState()
+          .setCurrentBeat(
+            beat,
+          );
+      },
+    );
 
     return () => {
       ctrl.dispose();
-      controllerRef.current = null;
+      controllerRef.current =
+        null;
     };
   }, []);
 
   // Sync play/pause state
   useEffect(() => {
-    const ctrl = controllerRef.current;
-    if (!ctrl) return;
+    const ctrl =
+      controllerRef.current;
+    if (
+      !ctrl
+    )
+      return;
 
     try {
-      if (isPlaying) {
+      if (
+        isPlaying
+      ) {
         ctrl.play();
       } else {
         ctrl.pause();
@@ -52,38 +117,68 @@ export function useTransport() {
     } catch {
       // Engine may not be initialized yet
     }
-  }, [isPlaying]);
+  }, [
+    isPlaying,
+  ]);
 
   // Sync BPM
   useEffect(() => {
-    const ctrl = controllerRef.current;
-    if (!ctrl) return;
+    const ctrl =
+      controllerRef.current;
+    if (
+      !ctrl
+    )
+      return;
     try {
-      ctrl.setBpm(bpm);
+      ctrl.setBpm(
+        bpm,
+      );
     } catch {}
-  }, [bpm]);
+  }, [
+    bpm,
+  ]);
 
   // Sync loop
   useEffect(() => {
-    const ctrl = controllerRef.current;
-    if (!ctrl) return;
+    const ctrl =
+      controllerRef.current;
+    if (
+      !ctrl
+    )
+      return;
     try {
-      ctrl.setLoop(loopEnabled, loopStart, loopEnd);
+      ctrl.setLoop(
+        loopEnabled,
+        loopStart,
+        loopEnd,
+      );
     } catch {}
-  }, [loopEnabled, loopStart, loopEnd]);
+  }, [
+    loopEnabled,
+    loopStart,
+    loopEnd,
+  ]);
 
   // Sync metronome
   useEffect(() => {
-    const ctrl = controllerRef.current;
-    if (!ctrl) return;
+    const ctrl =
+      controllerRef.current;
+    if (
+      !ctrl
+    )
+      return;
     try {
-      if (metronomeEnabled) {
+      if (
+        metronomeEnabled
+      ) {
         ctrl.enableMetronome();
       } else {
         ctrl.disableMetronome();
       }
     } catch {}
-  }, [metronomeEnabled]);
+  }, [
+    metronomeEnabled,
+  ]);
 
   return controllerRef;
 }

@@ -214,7 +214,10 @@ export interface DebtStats {
   moments: DebtMoments;
   sources: SourceStat[];
   /** The ledger's extent in time. Equal when there is at most one row. */
-  span: { oldestMs: number; newestMs: number };
+  span: {
+    oldestMs: number;
+    newestMs: number;
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -236,23 +239,62 @@ export interface DebtStats {
  * are drawn from exactly these edges. Two ladders that drift apart is a chart
  * whose bars mean something other than what they say.
  */
-export const DISTRIBUTION_EDGES: readonly number[] = [
-  1, 100, 250, 500, 1_000, 2_500, 5_000, 10_000, 25_000, 50_000, 100_000, 500_000, 1_000_000,
-  10_000_000,
-];
+export const DISTRIBUTION_EDGES: readonly number[] =
+  [
+    1,
+    100,
+    250,
+    500,
+    1_000,
+    2_500,
+    5_000,
+    10_000,
+    25_000,
+    50_000,
+    100_000,
+    500_000,
+    1_000_000,
+    10_000_000,
+  ];
 
 /** Human label for bucket `i` — `"$25–$50"`, `"$100k+"`. */
-export function distributionLabel(index: number): string {
-  const lo = DISTRIBUTION_EDGES[index] ?? 0;
-  const hi = DISTRIBUTION_EDGES[index + 1];
-  if (hi === undefined) return `${formatCompactDebt(lo)}+`;
+export function distributionLabel(
+  index: number,
+): string {
+  const lo =
+    DISTRIBUTION_EDGES[
+      index
+    ] ??
+    0;
+  const hi =
+    DISTRIBUTION_EDGES[
+      index +
+        1
+    ];
+  if (
+    hi ===
+    undefined
+  )
+    return `${formatCompactDebt(lo)}+`;
   return `${formatCompactDebt(lo)}–${formatCompactDebt(hi)}`;
 }
 
 /** Which histogram bucket an amount falls in. Total over the whole integer range. */
-export function distributionIndex(amountCents: number): number {
+export function distributionIndex(
+  amountCents: number,
+): number {
   let i = 0;
-  while (i + 1 < DISTRIBUTION_EDGES.length && amountCents >= DISTRIBUTION_EDGES[i + 1]!) i++;
+  while (
+    i +
+      1 <
+      DISTRIBUTION_EDGES.length &&
+    amountCents >=
+      DISTRIBUTION_EDGES[
+        i +
+          1
+      ]!
+  )
+    i++;
   return i;
 }
 
@@ -268,21 +310,38 @@ export function distributionIndex(amountCents: number): number {
  * whose bars summed to something other than the odometer above them would be
  * worse than no bar chart.
  */
-export function valueNow(stat: AggregateStat, atMs: number): number {
-  return stat.basisCents * accrualFactor(atMs);
+export function valueNow(
+  stat: AggregateStat,
+  atMs: number,
+): number {
+  return (
+    stat.basisCents *
+    accrualFactor(
+      atMs,
+    )
+  );
 }
 
 /** Sum a set of groups into one. Used by the cross-filter, which sums a selection. */
-export function sumStats(stats: readonly AggregateStat[]): AggregateStat {
+export function sumStats(
+  stats: readonly AggregateStat[],
+): AggregateStat {
   let count = 0;
   let principalCents = 0;
   let basisCents = 0;
   for (const s of stats) {
-    count += s.count;
-    principalCents += s.principalCents;
-    basisCents += s.basisCents;
+    count +=
+      s.count;
+    principalCents +=
+      s.principalCents;
+    basisCents +=
+      s.basisCents;
   }
-  return { count, principalCents, basisCents };
+  return {
+    count,
+    principalCents,
+    basisCents,
+  };
 }
 
 /**
@@ -299,29 +358,59 @@ export function sumStats(stats: readonly AggregateStat[]): AggregateStat {
  * stretch of the archive is flat by construction. That is correct — nobody was
  * counting yet — and it is visible in the chart, which is the point.
  */
-export function withCumulative(timeline: readonly TimelineBucket[]): CumulativeBucket[] {
+export function withCumulative(
+  timeline: readonly TimelineBucket[],
+): CumulativeBucket[] {
   let principal = 0;
   let basis = 0;
-  return timeline.map((bucket) => {
-    principal += bucket.principalCents;
-    basis += bucket.basisCents;
-    // The month's END, not its start: a bucket's own entries have to be inside
-    // the value it reports, or every point on the line lags a month behind the
-    // rows that produced it.
-    const endMs = endOfMonthMs(bucket.startMs);
-    return {
-      ...bucket,
-      cumulativePrincipalCents: principal,
-      cumulativeBasisCents: basis,
-      valueAtCents: basis * accrualFactor(endMs),
-    };
-  });
+  return timeline.map(
+    (
+      bucket,
+    ) => {
+      principal +=
+        bucket.principalCents;
+      basis +=
+        bucket.basisCents;
+      // The month's END, not its start: a bucket's own entries have to be inside
+      // the value it reports, or every point on the line lags a month behind the
+      // rows that produced it.
+      const endMs =
+        endOfMonthMs(
+          bucket.startMs,
+        );
+      return {
+        ...bucket,
+        cumulativePrincipalCents:
+          principal,
+        cumulativeBasisCents:
+          basis,
+        valueAtCents:
+          basis *
+          accrualFactor(
+            endMs,
+          ),
+      };
+    },
+  );
 }
 
 /** Epoch millis of the last instant of the UTC month `startMs` belongs to. */
-export function endOfMonthMs(startMs: number): number {
-  const d = new Date(startMs);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) - 1;
+export function endOfMonthMs(
+  startMs: number,
+): number {
+  const d =
+    new Date(
+      startMs,
+    );
+  return (
+    Date.UTC(
+      d.getUTCFullYear(),
+      d.getUTCMonth() +
+        1,
+      1,
+    ) -
+    1
+  );
 }
 
 /** One sample of the forward projection. */
@@ -344,11 +433,37 @@ export function projectSeries(
   toMs: number,
   steps = 48,
 ): ProjectedPoint[] {
-  const n = Math.max(1, Math.floor(steps));
-  const out: ProjectedPoint[] = [];
-  for (let i = 0; i <= n; i++) {
-    const atMs = fromMs + ((toMs - fromMs) * i) / n;
-    out.push({ atMs, cents: basisCents * accrualFactor(atMs) });
+  const n =
+    Math.max(
+      1,
+      Math.floor(
+        steps,
+      ),
+    );
+  const out: ProjectedPoint[] =
+    [];
+  for (
+    let i = 0;
+    i <=
+    n;
+    i++
+  ) {
+    const atMs =
+      fromMs +
+      ((toMs -
+        fromMs) *
+        i) /
+        n;
+    out.push(
+      {
+        atMs,
+        cents:
+          basisCents *
+          accrualFactor(
+            atMs,
+          ),
+      },
+    );
   }
   return out;
 }
@@ -362,13 +477,43 @@ export function projectSeries(
  * `null` when the target is already behind us or when there is no debt at all
  * (a basis of zero never reaches anything, which is the honest answer).
  */
-export function timeToReachMs(basisCents: number, targetCents: number): number | null {
-  if (!(basisCents > 0) || !(targetCents > 0)) return null;
-  const SECONDS_PER_YEAR = 365.2425 * 24 * 60 * 60;
-  const seconds = (Math.log(targetCents / basisCents) / ANNUAL_INTEREST_RATE) * SECONDS_PER_YEAR;
+export function timeToReachMs(
+  basisCents: number,
+  targetCents: number,
+):
+  | number
+  | null {
+  if (
+    !(
+      basisCents >
+      0
+    ) ||
+    !(
+      targetCents >
+      0
+    )
+  )
+    return null;
+  const SECONDS_PER_YEAR =
+    365.2425 *
+    24 *
+    60 *
+    60;
+  const seconds =
+    (Math.log(
+      targetCents /
+        basisCents,
+    ) /
+      ANNUAL_INTEREST_RATE) *
+    SECONDS_PER_YEAR;
   // `secondsSinceEpoch` floors at the epoch, so a target below the basis is
   // "already there" rather than a time before the meter started.
-  return seconds <= 0 ? null : DEBT_EPOCH_MS + seconds * 1000;
+  return seconds <=
+    0
+    ? null
+    : DEBT_EPOCH_MS +
+        seconds *
+          1000;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -394,10 +539,29 @@ export function linearScale(
   d1: number,
   r0: number,
   r1: number,
-): (value: number) => number {
-  const span = d1 - d0;
-  if (span === 0) return () => (r0 + r1) / 2;
-  return (value) => r0 + ((value - d0) / span) * (r1 - r0);
+): (
+  value: number,
+) => number {
+  const span =
+    d1 -
+    d0;
+  if (
+    span ===
+    0
+  )
+    return () =>
+      (r0 +
+        r1) /
+      2;
+  return (
+    value,
+  ) =>
+    r0 +
+    ((value -
+      d0) /
+      span) *
+      (r1 -
+        r0);
 }
 
 /**
@@ -415,12 +579,49 @@ export function logScale(
   r0: number,
   r1: number,
   floor = 1,
-): (value: number) => number {
-  const lo = Math.log10(Math.max(floor, d0));
-  const hi = Math.log10(Math.max(floor * 10, d1));
-  const span = hi - lo;
-  if (span === 0) return () => (r0 + r1) / 2;
-  return (value) => r0 + ((Math.log10(Math.max(floor, value)) - lo) / span) * (r1 - r0);
+): (
+  value: number,
+) => number {
+  const lo =
+    Math.log10(
+      Math.max(
+        floor,
+        d0,
+      ),
+    );
+  const hi =
+    Math.log10(
+      Math.max(
+        floor *
+          10,
+        d1,
+      ),
+    );
+  const span =
+    hi -
+    lo;
+  if (
+    span ===
+    0
+  )
+    return () =>
+      (r0 +
+        r1) /
+      2;
+  return (
+    value,
+  ) =>
+    r0 +
+    ((Math.log10(
+      Math.max(
+        floor,
+        value,
+      ),
+    ) -
+      lo) /
+      span) *
+      (r1 -
+        r0);
 }
 
 /**
@@ -430,43 +631,159 @@ export function logScale(
  * legible; ones that read $2,387 and $4,774 are a chart apologising for its own
  * data range.
  */
-export function niceTicks(min: number, max: number, count = 5): number[] {
-  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return [min];
-  const raw = (max - min) / Math.max(1, count);
-  const magnitude = 10 ** Math.floor(Math.log10(raw));
-  const normalized = raw / magnitude;
-  const step = (normalized >= 5 ? 10 : normalized >= 2 ? 5 : normalized >= 1 ? 2 : 1) * magnitude;
-  const out: number[] = [];
-  for (let v = Math.ceil(min / step) * step; v <= max + step * 0.001; v += step) {
-    out.push(Number(v.toFixed(10)));
+export function niceTicks(
+  min: number,
+  max: number,
+  count = 5,
+): number[] {
+  if (
+    !Number.isFinite(
+      min,
+    ) ||
+    !Number.isFinite(
+      max,
+    ) ||
+    max <=
+      min
+  )
+    return [
+      min,
+    ];
+  const raw =
+    (max -
+      min) /
+    Math.max(
+      1,
+      count,
+    );
+  const magnitude =
+    10 **
+    Math.floor(
+      Math.log10(
+        raw,
+      ),
+    );
+  const normalized =
+    raw /
+    magnitude;
+  const step =
+    (normalized >=
+    5
+      ? 10
+      : normalized >=
+          2
+        ? 5
+        : normalized >=
+            1
+          ? 2
+          : 1) *
+    magnitude;
+  const out: number[] =
+    [];
+  for (
+    let v =
+      Math.ceil(
+        min /
+          step,
+      ) *
+      step;
+    v <=
+    max +
+      step *
+        0.001;
+    v +=
+      step
+  ) {
+    out.push(
+      Number(
+        v.toFixed(
+          10,
+        ),
+      ),
+    );
   }
   return out;
 }
 
 /** Powers of ten spanning `[min, max]` — the log axis's own ladder. */
-export function logTicks(min: number, max: number, floor = 1): number[] {
-  const lo = Math.floor(Math.log10(Math.max(floor, min)));
-  const hi = Math.ceil(Math.log10(Math.max(floor * 10, max)));
-  const out: number[] = [];
-  for (let e = lo; e <= hi; e++) out.push(10 ** e);
+export function logTicks(
+  min: number,
+  max: number,
+  floor = 1,
+): number[] {
+  const lo =
+    Math.floor(
+      Math.log10(
+        Math.max(
+          floor,
+          min,
+        ),
+      ),
+    );
+  const hi =
+    Math.ceil(
+      Math.log10(
+        Math.max(
+          floor *
+            10,
+          max,
+        ),
+      ),
+    );
+  const out: number[] =
+    [];
+  for (
+    let e =
+      lo;
+    e <=
+    hi;
+    e++
+  )
+    out.push(
+      10 **
+        e,
+    );
   return out;
 }
 
 /** `M x y L x y …` for a polyline. Empty string for an empty series. */
-export function linePath(points: readonly Pt[]): string {
-  if (points.length === 0) return '';
+export function linePath(
+  points: readonly Pt[],
+): string {
+  if (
+    points.length ===
+    0
+  )
+    return '';
   let d = `M${points[0]!.x.toFixed(2)} ${points[0]!.y.toFixed(2)}`;
-  for (let i = 1; i < points.length; i++) {
+  for (
+    let i = 1;
+    i <
+    points.length;
+    i++
+  ) {
     d += `L${points[i]!.x.toFixed(2)} ${points[i]!.y.toFixed(2)}`;
   }
   return d;
 }
 
 /** The same polyline, closed down to `baselineY` — the fill under a line. */
-export function areaPath(points: readonly Pt[], baselineY: number): string {
-  if (points.length === 0) return '';
-  const first = points[0]!;
-  const last = points[points.length - 1]!;
+export function areaPath(
+  points: readonly Pt[],
+  baselineY: number,
+): string {
+  if (
+    points.length ===
+    0
+  )
+    return '';
+  const first =
+    points[0]!;
+  const last =
+    points[
+      points.length -
+        1
+    ]!;
   return `${linePath(points)}L${last.x.toFixed(2)} ${baselineY.toFixed(2)}L${first.x.toFixed(
     2,
   )} ${baselineY.toFixed(2)}Z`;
@@ -479,16 +796,54 @@ export function areaPath(points: readonly Pt[], baselineY: number): string {
  * hundreds of points long; a linear scan would be fine and this is two lines
  * longer.
  */
-export function nearestIndex(xs: readonly number[], x: number): number {
-  if (xs.length === 0) return -1;
+export function nearestIndex(
+  xs: readonly number[],
+  x: number,
+): number {
+  if (
+    xs.length ===
+    0
+  )
+    return -1;
   let lo = 0;
-  let hi = xs.length - 1;
-  while (hi - lo > 1) {
-    const mid = (lo + hi) >> 1;
-    if (xs[mid]! < x) lo = mid;
-    else hi = mid;
+  let hi =
+    xs.length -
+    1;
+  while (
+    hi -
+      lo >
+    1
+  ) {
+    const mid =
+      (lo +
+        hi) >>
+      1;
+    if (
+      xs[
+        mid
+      ]! <
+      x
+    )
+      lo =
+        mid;
+    else
+      hi =
+        mid;
   }
-  return Math.abs(xs[lo]! - x) <= Math.abs(xs[hi]! - x) ? lo : hi;
+  return Math.abs(
+    xs[
+      lo
+    ]! -
+      x,
+  ) <=
+    Math.abs(
+      xs[
+        hi
+      ]! -
+        x,
+    )
+    ? lo
+    : hi;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -521,76 +876,248 @@ export interface Tile {
  * degenerate rectangle is a hit target that swallows pointer events over its
  * neighbours.
  */
-export function squarify(values: readonly number[], width: number, height: number): Tile[] {
-  const items = values
-    .map((value, index) => ({ value, index }))
-    .filter((item) => item.value > 0)
-    .sort((a, b) => b.value - a.value);
+export function squarify(
+  values: readonly number[],
+  width: number,
+  height: number,
+): Tile[] {
+  const items =
+    values
+      .map(
+        (
+          value,
+          index,
+        ) => ({
+          value,
+          index,
+        }),
+      )
+      .filter(
+        (
+          item,
+        ) =>
+          item.value >
+          0,
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          b.value -
+          a.value,
+      );
 
-  const total = items.reduce((sum, item) => sum + item.value, 0);
-  if (total <= 0 || width <= 0 || height <= 0) return [];
+  const total =
+    items.reduce(
+      (
+        sum,
+        item,
+      ) =>
+        sum +
+        item.value,
+      0,
+    );
+  if (
+    total <=
+      0 ||
+    width <=
+      0 ||
+    height <=
+      0
+  )
+    return [];
 
   // Work in area units so a row's aspect ratio is comparable to the box's.
-  const scale = (width * height) / total;
-  const out: Tile[] = [];
+  const scale =
+    (width *
+      height) /
+    total;
+  const out: Tile[] =
+    [];
 
   let x = 0;
   let y = 0;
-  let w = width;
-  let h = height;
-  let row: { value: number; index: number }[] = [];
+  let w =
+    width;
+  let h =
+    height;
+  let row: {
+    value: number;
+    index: number;
+  }[] =
+    [];
 
   /** Worst aspect ratio in `candidate`, laid along the shorter side of the box. */
-  const worst = (candidate: readonly { value: number }[], side: number): number => {
-    if (candidate.length === 0 || side <= 0) return Infinity;
-    let sum = 0;
-    let min = Infinity;
-    let max = 0;
-    for (const item of candidate) {
-      const area = item.value * scale;
-      sum += area;
-      if (area < min) min = area;
-      if (area > max) max = area;
-    }
-    const s2 = side * side;
-    const sum2 = sum * sum;
-    return Math.max((s2 * max) / sum2, sum2 / (s2 * min));
-  };
+  const worst =
+    (
+      candidate: readonly {
+        value: number;
+      }[],
+      side: number,
+    ): number => {
+      if (
+        candidate.length ===
+          0 ||
+        side <=
+          0
+      )
+        return Infinity;
+      let sum = 0;
+      let min =
+        Infinity;
+      let max = 0;
+      for (const item of candidate) {
+        const area =
+          item.value *
+          scale;
+        sum +=
+          area;
+        if (
+          area <
+          min
+        )
+          min =
+            area;
+        if (
+          area >
+          max
+        )
+          max =
+            area;
+      }
+      const s2 =
+        side *
+        side;
+      const sum2 =
+        sum *
+        sum;
+      return Math.max(
+        (s2 *
+          max) /
+          sum2,
+        sum2 /
+          (s2 *
+            min),
+      );
+    };
 
   /** Commit the current row along the box's shorter side and shrink the box. */
-  const flush = () => {
-    if (row.length === 0) return;
-    const side = Math.min(w, h);
-    const area = row.reduce((sum, item) => sum + item.value * scale, 0);
-    const depth = area / side;
+  const flush =
+    () => {
+      if (
+        row.length ===
+        0
+      )
+        return;
+      const side =
+        Math.min(
+          w,
+          h,
+        );
+      const area =
+        row.reduce(
+          (
+            sum,
+            item,
+          ) =>
+            sum +
+            item.value *
+              scale,
+          0,
+        );
+      const depth =
+        area /
+        side;
 
-    let offset = 0;
-    for (const item of row) {
-      const length = (item.value * scale) / depth;
-      if (w >= h) {
-        out.push({ index: item.index, x, y: y + offset, width: depth, height: length });
-      } else {
-        out.push({ index: item.index, x: x + offset, y, width: length, height: depth });
+      let offset = 0;
+      for (const item of row) {
+        const length =
+          (item.value *
+            scale) /
+          depth;
+        if (
+          w >=
+          h
+        ) {
+          out.push(
+            {
+              index:
+                item.index,
+              x,
+              y:
+                y +
+                offset,
+              width:
+                depth,
+              height:
+                length,
+            },
+          );
+        } else {
+          out.push(
+            {
+              index:
+                item.index,
+              x:
+                x +
+                offset,
+              y,
+              width:
+                length,
+              height:
+                depth,
+            },
+          );
+        }
+        offset +=
+          length;
       }
-      offset += length;
-    }
 
-    if (w >= h) {
-      x += depth;
-      w -= depth;
-    } else {
-      y += depth;
-      h -= depth;
-    }
-    row = [];
-  };
+      if (
+        w >=
+        h
+      ) {
+        x +=
+          depth;
+        w -=
+          depth;
+      } else {
+        y +=
+          depth;
+        h -=
+          depth;
+      }
+      row =
+        [];
+    };
 
   for (const item of items) {
-    const side = Math.min(w, h);
-    if (row.length > 0 && worst([...row, item], side) > worst(row, side)) {
+    const side =
+      Math.min(
+        w,
+        h,
+      );
+    if (
+      row.length >
+        0 &&
+      worst(
+        [
+          ...row,
+          item,
+        ],
+        side,
+      ) >
+        worst(
+          row,
+          side,
+        )
+    ) {
       flush();
     }
-    row.push(item);
+    row.push(
+      item,
+    );
   }
   flush();
 
@@ -601,10 +1128,15 @@ export function squarify(values: readonly number[], width: number, height: numbe
 /* Formatting                                                                 */
 /* -------------------------------------------------------------------------- */
 
-const COMPACT = new Intl.NumberFormat('en-US', {
-  notation: 'compact',
-  maximumFractionDigits: 1,
-});
+const COMPACT =
+  new Intl.NumberFormat(
+    'en-US',
+    {
+      notation:
+        'compact',
+      maximumFractionDigits: 1,
+    },
+  );
 
 /**
  * `123456789` cents → `"$1.2M"`.
@@ -615,27 +1147,63 @@ const COMPACT = new Intl.NumberFormat('en-US', {
  * enough to overlap its neighbour. The *prose* around the charts is translated;
  * the tick marks are not.
  */
-export function formatCompactDebt(cents: number): string {
-  const dollars = cents / 100;
-  if (!Number.isFinite(dollars)) return '—';
-  if (Math.abs(dollars) < 1000) return formatDebt(cents);
+export function formatCompactDebt(
+  cents: number,
+): string {
+  const dollars =
+    cents /
+    100;
+  if (
+    !Number.isFinite(
+      dollars,
+    )
+  )
+    return '—';
+  if (
+    Math.abs(
+      dollars,
+    ) <
+    1000
+  )
+    return formatDebt(
+      cents,
+    );
   return `$${COMPACT.format(dollars)}`;
 }
 
 /** `0.4213` → `"42.1%"`. Shares, never money. */
-export function formatShare(fraction: number): string {
-  if (!Number.isFinite(fraction)) return '—';
+export function formatShare(
+  fraction: number,
+): string {
+  if (
+    !Number.isFinite(
+      fraction,
+    )
+  )
+    return '—';
   return `${(fraction * 100).toFixed(1)}%`;
 }
 
 /** `1717200000000` → `"Jun 2024"`. Month labels on the accrual axis. */
-const MONTH_LABEL = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
-export function formatMonth(atMs: number): string {
-  return MONTH_LABEL.format(new Date(atMs));
+const MONTH_LABEL =
+  new Intl.DateTimeFormat(
+    'en-US',
+    {
+      month:
+        'short',
+      year: 'numeric',
+      timeZone:
+        'UTC',
+    },
+  );
+export function formatMonth(
+  atMs: number,
+): string {
+  return MONTH_LABEL.format(
+    new Date(
+      atMs,
+    ),
+  );
 }
 
 /**
@@ -646,59 +1214,91 @@ export function formatMonth(atMs: number): string {
  * colour formula: fixed hue assignment, never cycled), so slot `i` is category
  * `i` in every chart on the page, whatever subset is on screen.
  */
-export const CATEGORY_ORDER: readonly DebtCategory[] = DEBT_CATEGORIES;
+export const CATEGORY_ORDER: readonly DebtCategory[] =
+  DEBT_CATEGORIES;
 
 /** Zero-filled stats — what the charts render while the request is in flight. */
-export function emptyStats(asOfMs: number): DebtStats {
+export function emptyStats(
+  asOfMs: number,
+): DebtStats {
   return {
     asOfMs,
-    totals: {
-      count: 0,
-      principalCents: 0,
-      basisCents: 0,
-      memberPrincipalCents: 0,
-      memberEntryCount: 0,
-      contributorCount: 0,
-      creditorCount: 0,
-    },
-    categories: CATEGORY_ORDER.map((category) => ({
-      category,
-      count: 0,
-      principalCents: 0,
-      basisCents: 0,
-      minCents: 0,
-      maxCents: 0,
-      memberCount: 0,
-      memberPrincipalCents: 0,
-    })),
-    timeline: [],
+    totals:
+      {
+        count: 0,
+        principalCents: 0,
+        basisCents: 0,
+        memberPrincipalCents: 0,
+        memberEntryCount: 0,
+        contributorCount: 0,
+        creditorCount: 0,
+      },
+    categories:
+      CATEGORY_ORDER.map(
+        (
+          category,
+        ) => ({
+          category,
+          count: 0,
+          principalCents: 0,
+          basisCents: 0,
+          minCents: 0,
+          maxCents: 0,
+          memberCount: 0,
+          memberPrincipalCents: 0,
+        }),
+      ),
+    timeline:
+      [],
     grid: [],
-    distribution: DISTRIBUTION_EDGES.map((loCents, index) => ({
-      index,
-      loCents,
-      hiCents: DISTRIBUTION_EDGES[index + 1] ?? Number.POSITIVE_INFINITY,
-      count: 0,
-      principalCents: 0,
-      basisCents: 0,
-    })),
-    rhythm: [],
-    creditors: [],
-    contributors: [],
-    largest: [],
-    moments: {
-      p10Cents: 0,
-      p25Cents: 0,
-      p50Cents: 0,
-      p75Cents: 0,
-      p90Cents: 0,
-      p99Cents: 0,
-      meanCents: 0,
-      stdevCents: 0,
-      gini: 0,
-      hhi: 0,
+    distribution:
+      DISTRIBUTION_EDGES.map(
+        (
+          loCents,
+          index,
+        ) => ({
+          index,
+          loCents,
+          hiCents:
+            DISTRIBUTION_EDGES[
+              index +
+                1
+            ] ??
+            Number.POSITIVE_INFINITY,
+          count: 0,
+          principalCents: 0,
+          basisCents: 0,
+        }),
+      ),
+    rhythm:
+      [],
+    creditors:
+      [],
+    contributors:
+      [],
+    largest:
+      [],
+    moments:
+      {
+        p10Cents: 0,
+        p25Cents: 0,
+        p50Cents: 0,
+        p75Cents: 0,
+        p90Cents: 0,
+        p99Cents: 0,
+        meanCents: 0,
+        stdevCents: 0,
+        gini: 0,
+        hhi: 0,
+      },
+    sources:
+      [],
+    span: {
+      oldestMs:
+        asOfMs,
+      newestMs:
+        asOfMs,
     },
-    sources: [],
-    span: { oldestMs: asOfMs, newestMs: asOfMs },
   };
 }
 
@@ -723,34 +1323,87 @@ export interface GridFrame {
   maxBasisCents: number;
 }
 
-export function buildGrid(grid: readonly GridCell[]): GridFrame {
-  const monthSet = new Set<number>();
-  for (const cell of grid) monthSet.add(cell.startMs);
-  const months = [...monthSet].sort((a, b) => a - b);
-  const byKey = new Map<string, GridCell>();
-  for (const cell of grid) byKey.set(`${cell.startMs}:${cell.category}`, cell);
+export function buildGrid(
+  grid: readonly GridCell[],
+): GridFrame {
+  const monthSet =
+    new Set<number>();
+  for (const cell of grid)
+    monthSet.add(
+      cell.startMs,
+    );
+  const months =
+    [
+      ...monthSet,
+    ].sort(
+      (
+        a,
+        b,
+      ) =>
+        a -
+        b,
+    );
+  const byKey =
+    new Map<
+      string,
+      GridCell
+    >();
+  for (const cell of grid)
+    byKey.set(
+      `${cell.startMs}:${cell.category}`,
+      cell,
+    );
 
-  const cells: GridCell[] = [];
+  const cells: GridCell[] =
+    [];
   let maxCount = 0;
   let maxPrincipalCents = 0;
   let maxBasisCents = 0;
   for (const startMs of months) {
     for (const category of CATEGORY_ORDER) {
-      const cell = byKey.get(`${startMs}:${category}`) ?? {
-        startMs,
-        category,
-        count: 0,
-        principalCents: 0,
-        basisCents: 0,
-      };
-      cells.push(cell);
-      if (cell.count > maxCount) maxCount = cell.count;
-      if (cell.principalCents > maxPrincipalCents) maxPrincipalCents = cell.principalCents;
-      if (cell.basisCents > maxBasisCents) maxBasisCents = cell.basisCents;
+      const cell =
+        byKey.get(
+          `${startMs}:${category}`,
+        ) ?? {
+          startMs,
+          category,
+          count: 0,
+          principalCents: 0,
+          basisCents: 0,
+        };
+      cells.push(
+        cell,
+      );
+      if (
+        cell.count >
+        maxCount
+      )
+        maxCount =
+          cell.count;
+      if (
+        cell.principalCents >
+        maxPrincipalCents
+      )
+        maxPrincipalCents =
+          cell.principalCents;
+      if (
+        cell.basisCents >
+        maxBasisCents
+      )
+        maxBasisCents =
+          cell.basisCents;
     }
   }
 
-  return { months, categories: CATEGORY_ORDER, cells, maxCount, maxPrincipalCents, maxBasisCents };
+  return {
+    months,
+    categories:
+      CATEGORY_ORDER,
+    cells,
+    maxCount,
+    maxPrincipalCents,
+    maxBasisCents,
+  };
 }
 
 /**
@@ -760,14 +1413,41 @@ export function buildGrid(grid: readonly GridCell[]): GridFrame {
  * it is a heatmap that lies: an empty cell and a missing cell look identical
  * once they are drawn, but only one of them means "nothing happened then".
  */
-export function densifyRhythm(cells: readonly RhythmCell[]): RhythmCell[] {
-  const byKey = new Map<number, RhythmCell>();
-  for (const cell of cells) byKey.set(cell.weekday * 24 + cell.hour, cell);
-  const out: RhythmCell[] = [];
-  for (let weekday = 0; weekday < 7; weekday++) {
-    for (let hour = 0; hour < 24; hour++) {
+export function densifyRhythm(
+  cells: readonly RhythmCell[],
+): RhythmCell[] {
+  const byKey =
+    new Map<
+      number,
+      RhythmCell
+    >();
+  for (const cell of cells)
+    byKey.set(
+      cell.weekday *
+        24 +
+        cell.hour,
+      cell,
+    );
+  const out: RhythmCell[] =
+    [];
+  for (
+    let weekday = 0;
+    weekday <
+    7;
+    weekday++
+  ) {
+    for (
+      let hour = 0;
+      hour <
+      24;
+      hour++
+    ) {
       out.push(
-        byKey.get(weekday * 24 + hour) ?? {
+        byKey.get(
+          weekday *
+            24 +
+            hour,
+        ) ?? {
           weekday,
           hour,
           count: 0,

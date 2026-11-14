@@ -17,15 +17,24 @@ export interface WWMatchup {
   promptText: string;
   playerA: string;
   playerB: string;
-  answerA: string | null;
-  answerB: string | null;
+  answerA:
+    | string
+    | null;
+  answerB:
+    | string
+    | null;
   /** userId → votedForUserId */
-  votes: Record<string, string>;
+  votes: Record<
+    string,
+    string
+  >;
   /** Computed after voting: percentage of votes for player A (0-100). */
   votePercentA: number;
   /** Computed after voting: percentage of votes for player B (0-100). */
   votePercentB: number;
-  winnerId: string | null;
+  winnerId:
+    | string
+    | null;
   isWitWham: boolean;
 }
 
@@ -42,7 +51,10 @@ export interface ActionLogEntry {
   seq: number;
   type: string;
   timestamp: number;
-  payload: Record<string, unknown>;
+  payload: Record<
+    string,
+    unknown
+  >;
 }
 
 /** Full internal state of the Wit-War minigame. */
@@ -53,13 +65,19 @@ export interface WitWarState {
   /** All matchups for the current round. */
   matchups: WWMatchup[];
   /** Per-player prompt assignments for the current round. */
-  assignments: Record<string, WWPromptAssignment[]>;
+  assignments: Record<
+    string,
+    WWPromptAssignment[]
+  >;
   /** Players who have submitted all their answers this round. */
   submitted: Set<string>;
   /** The index of the matchup currently being voted on. */
   currentMatchupIndex: number;
   /** Cumulative scores keyed by userId. */
-  scores: Record<string, number>;
+  scores: Record<
+    string,
+    number
+  >;
   /** Prompt indices already used across rounds. */
   usedPromptIndices: Set<number>;
   /** Per-round matchup results history. */

@@ -13,8 +13,23 @@
  * Pure (no `.server` imports) so both `defineHandler` and
  * `lib/auth-session.server.ts` share one definition, and tests need no mocks.
  */
-export function hasSessionCookie(headers: Headers): boolean {
-  const cookie = headers.get('cookie');
-  if (!cookie) return false;
-  return cookie.includes('session_token') || cookie.includes('session_data');
+export function hasSessionCookie(
+  headers: Headers,
+): boolean {
+  const cookie =
+    headers.get(
+      'cookie',
+    );
+  if (
+    !cookie
+  )
+    return false;
+  return (
+    cookie.includes(
+      'session_token',
+    ) ||
+    cookie.includes(
+      'session_data',
+    )
+  );
 }

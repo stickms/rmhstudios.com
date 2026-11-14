@@ -24,16 +24,73 @@ export interface RankTier {
 }
 
 /** Tiers ordered high → low so `tierForRating` can pick the first match. */
-export const RANK_TIERS: readonly RankTier[] = [
-  { key: 'master', label: 'Master', min: 1500, color: '#a855f7' },
-  { key: 'diamond', label: 'Diamond', min: 1350, color: '#60a5fa' },
-  { key: 'platinum', label: 'Platinum', min: 1200, color: '#22d3ee' },
-  { key: 'gold', label: 'Gold', min: 1050, color: '#eab308' },
-  { key: 'silver', label: 'Silver', min: 900, color: '#9ca3af' },
-  { key: 'bronze', label: 'Bronze', min: 0, color: '#cd7f32' },
-] as const;
+export const RANK_TIERS: readonly RankTier[] =
+  [
+    {
+      key: 'master',
+      label:
+        'Master',
+      min: 1500,
+      color:
+        '#a855f7',
+    },
+    {
+      key: 'diamond',
+      label:
+        'Diamond',
+      min: 1350,
+      color:
+        '#60a5fa',
+    },
+    {
+      key: 'platinum',
+      label:
+        'Platinum',
+      min: 1200,
+      color:
+        '#22d3ee',
+    },
+    {
+      key: 'gold',
+      label:
+        'Gold',
+      min: 1050,
+      color:
+        '#eab308',
+    },
+    {
+      key: 'silver',
+      label:
+        'Silver',
+      min: 900,
+      color:
+        '#9ca3af',
+    },
+    {
+      key: 'bronze',
+      label:
+        'Bronze',
+      min: 0,
+      color:
+        '#cd7f32',
+    },
+  ] as const;
 
 /** The tier a given rating falls into. Always returns a tier (Bronze is the floor). */
-export function tierForRating(rating: number): RankTier {
-  return RANK_TIERS.find((t) => rating >= t.min) ?? RANK_TIERS[RANK_TIERS.length - 1];
+export function tierForRating(
+  rating: number,
+): RankTier {
+  return (
+    RANK_TIERS.find(
+      (
+        t,
+      ) =>
+        rating >=
+        t.min,
+    ) ??
+    RANK_TIERS[
+      RANK_TIERS.length -
+        1
+    ]
+  );
 }

@@ -5,46 +5,218 @@ date: 2026-07-18
 baseline_commit: efb6269
 repo: stickms/rmhstudios.com
 status: in-progress # R0 landed 2026-07-18 (see §13); R1–R5 pending
-audience: [llm-agents, humans]
+audience:
+  [
+    llm-agents,
+    humans,
+  ]
 machine_readable: true
-supersedes: []
+supersedes:
+  [
+    ,
+  ]
 builds_on:
   - docs/performance-audit-2026-07-17.md # per-request fixes; largely implemented
   - docs/scalability-audit-2026-07-17.md # scale roadmap; Phase-1 items largely implemented
   - docs/feed/plan.md # feed phases 0/1/3 shipped; 2/4 gated
 external_inputs:
   - id: TEAM-PERF-2026-07-18 # team web-performance analysis (build @ ce41a39b); reconciled in §7.6
-    summary: '39.3MB client JS, 380KB blocking CSS, 0 code-split routes claim, i18n payload, root-loader TTFB, eager modals, 12 fonts, oversized assets'
+    summary:
+      '39.3MB
+      client
+      JS,
+      380KB
+      blocking
+      CSS,
+      0
+      code-split
+      routes
+      claim,
+      i18n
+      payload,
+      root-loader
+      TTFB,
+      eager
+      modals,
+      12
+      fonts,
+      oversized
+      assets'
 owner_decisions:
   - id: OD-1
     date: 2026-07-18
-    decision: 'docs/ and public/ contents stay in the repo; no media relocation, no history rewrite'
+    decision:
+      'docs/
+      and
+      public/
+      contents
+      stay
+      in
+      the
+      repo;
+      no
+      media
+      relocation,
+      no
+      history
+      rewrite'
 conventions:
-  task_id: '<phase>-T<n> (stable; never renumber)'
+  task_id:
+    '<phase>-T<n>
+    (stable;
+    never
+    renumber)'
   file_paths: 'repo-relative'
-  sql: 'PostgreSQL 16+ unless noted; templates marked TEMPLATE need per-env values'
-  verify: 'shell commands run from repo root unless noted'
+  sql:
+    'PostgreSQL
+    16+
+    unless
+    noted;
+    templates
+    marked
+    TEMPLATE
+    need
+    per-env
+    values'
+  verify:
+    'shell
+    commands
+    run
+    from
+    repo
+    root
+    unless
+    noted'
 ---
 
 # Full Rewrite Design & Implementation Spec — rmhstudios.com
 
-This document is both the **design rationale** (§1–§7) and the **executable
-implementation spec** (§8–§10) for a ground-up rewrite of the platform's
-architecture: serving topology, database, async backbone, frontend/build, and
-the deletion of every verified-unused subsystem.
+This
+document
+is
+both
+the
+**design
+rationale**
+(§1–§7)
+and
+the
+**executable
+implementation
+spec**
+(§8–§10)
+for
+a
+ground-up
+rewrite
+of
+the
+platform's
+architecture:
+serving
+topology,
+database,
+async
+backbone,
+frontend/build,
+and
+the
+deletion
+of
+every
+verified-unused
+subsystem.
 
 ## How to use this document (agents)
 
-1. Work phase-by-phase (§8). Never start a task whose `depends_on` is not
-   `done`. Never start a phase before the previous phase's `exit_gate` passes.
-2. Each task block is self-contained: `files`, `steps`, `verify`,
-   `acceptance`, `rollback`. Run every `verify` command; a task is `done` only
-   when all `acceptance` items hold.
-3. Inventories in §9 are **exact and verified** against `main@efb6269`
-   (2026-07-18). Re-verify any inventory item with the given `reverify`
-   command before acting on it — the tree moves fast (111 migrations in 18
+1. Work
+   phase-by-phase
+   (§8).
+   Never
+   start
+   a
+   task
+   whose
+   `depends_on`
+   is
+   not
+   `done`.
+   Never
+   start
+   a
+   phase
+   before
+   the
+   previous
+   phase's
+   `exit_gate`
+   passes.
+2. Each
+   task
+   block
+   is
+   self-contained:
+   `files`,
+   `steps`,
+   `verify`,
+   `acceptance`,
+   `rollback`.
+   Run
+   every
+   `verify`
+   command;
+   a
+   task
+   is
+   `done`
+   only
+   when
+   all
+   `acceptance`
+   items
+   hold.
+3. Inventories
+   in
+   §9
+   are
+   **exact
+   and
+   verified**
+   against
+   `main@efb6269`
+   (2026-07-18).
+   Re-verify
+   any
+   inventory
+   item
+   with
+   the
+   given
+   `reverify`
+   command
+   before
+   acting
+   on
+   it
+   —
+   the
+   tree
+   moves
+   fast
+   (111
+   migrations
+   in
+   18
    weeks).
-4. Baseline commands that must stay green after every task:
+4. Baseline
+   commands
+   that
+   must
+   stay
+   green
+   after
+   every
+   task:
    ```bash
    pnpm exec tsc --noEmit          # needs NODE_OPTIONS=--max-old-space-size=8192 until R3-T1
    pnpm lint
@@ -52,21 +224,110 @@ the deletion of every verified-unused subsystem.
    pnpm build
    (cd go-services && make gazelle && make test)   # only when go-services/ touched
    ```
-5. Repo conventions that bind every task: no new type/lint warnings vs base
-   branch; `routeTree.gen.ts` is generated, never edited; CSP/security headers
-   change in BOTH `deploy/apache/rmhstudios.conf` and the Helm Traefik
-   middleware; `.server.ts` modules never imported from client code;
-   user-facing strings via `t()` + `pnpm i18n:extract`.
+5. Repo
+   conventions
+   that
+   bind
+   every
+   task:
+   no
+   new
+   type/lint
+   warnings
+   vs
+   base
+   branch;
+   `routeTree.gen.ts`
+   is
+   generated,
+   never
+   edited;
+   CSP/security
+   headers
+   change
+   in
+   BOTH
+   `deploy/apache/rmhstudios.conf`
+   and
+   the
+   Helm
+   Traefik
+   middleware;
+   `.server.ts`
+   modules
+   never
+   imported
+   from
+   client
+   code;
+   user-facing
+   strings
+   via
+   `t()` +
+   `pnpm i18n:extract`.
 
 ---
 
 ## 1. Verdict and scope
 
-The stack of record — TanStack Start + Vite 8 + React 19 + Nitro, PostgreSQL +
-Prisma 7, Better Auth, Socket.IO Node hubs, Go worker fleet — **survives**.
-The July 2026 audits already fixed the per-request layer (indexes, caches,
-bounded queries, keyed SSE, SSR i18n trim, multi-core SSR, edge cache). What
-this rewrite changes is the **structure** that patches cannot reach:
+The
+stack
+of
+record
+—
+TanStack
+Start +
+Vite
+8 +
+React
+19 +
+Nitro,
+PostgreSQL +
+Prisma
+7,
+Better
+Auth,
+Socket.IO
+Node
+hubs,
+Go
+worker
+fleet
+—
+**survives**.
+The
+July
+2026
+audits
+already
+fixed
+the
+per-request
+layer
+(indexes,
+caches,
+bounded
+queries,
+keyed
+SSE,
+SSR
+i18n
+trim,
+multi-core
+SSR,
+edge
+cache).
+What
+this
+rewrite
+changes
+is
+the
+**structure**
+that
+patches
+cannot
+reach:
 
 | id  | Today (verified)                                                                                         | Target                                                                                                           |
 | --- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -77,19 +338,72 @@ this rewrite changes is the **structure** that patches cannot reach:
 | S-5 | 164 npm deps (~27 dead/misclassified), 5 dead Node worker dirs, ~10 dead DB models, dead `cmd/ledger`    | all deleted; dependency budget enforced in CI                                                                    |
 | S-6 | **Zero DB backups**; single Redis 320MB `allkeys-lru` also holding dirty counters                        | backups+WAL precondition; Redis split cache/state                                                                |
 
-Out of scope by owner decision **OD-1**: any change to `docs/` (245 MB) or
-`public/` (276 MB) contents, media relocation, git-history rewriting.
+Out
+of
+scope
+by
+owner
+decision
+**OD-1**:
+any
+change
+to
+`docs/`
+(245
+MB)
+or
+`public/`
+(276
+MB)
+contents,
+media
+relocation,
+git-history
+rewriting.
 
-Rejected alternatives (§11): framework/language migration, microservices,
-finishing the Go hub port, Kafka/NATS, renaming `rmheet*` tables, migrating
-existing cuid PKs.
+Rejected
+alternatives
+(§11):
+framework/language
+migration,
+microservices,
+finishing
+the
+Go
+hub
+port,
+Kafka/NATS,
+renaming
+`rmheet*`
+tables,
+migrating
+existing
+cuid
+PKs.
 
 ---
 
 ## 2. Performance contract
 
-Budgets are CI gates from R0-T3 (warn) and R3-T1 (block). "Done" = green in
-production RUM, not merged code.
+Budgets
+are
+CI
+gates
+from
+R0-T3
+(warn)
+and
+R3-T1
+(block).
+"Done"
+=
+green
+in
+production
+RUM,
+not
+merged
+code.
 
 ```json
 {
@@ -122,9 +436,40 @@ production RUM, not merged code.
 }
 ```
 
-Current measured baselines: platform shell eager JS ≈ 334 KB brotli;
-`globals.css` = 2,129 lines eager on every route; all other metrics collected
-(`lib/rum.ts` → `/api/rum`) but not aggregated anywhere — fixed by R0-T3.
+Current
+measured
+baselines:
+platform
+shell
+eager
+JS
+≈
+334
+KB
+brotli;
+`globals.css`
+=
+2,129
+lines
+eager
+on
+every
+route;
+all
+other
+metrics
+collected
+(`lib/rum.ts`
+→
+`/api/rum`)
+but
+not
+aggregated
+anywhere
+—
+fixed
+by
+R0-T3.
 
 ---
 
@@ -151,13 +496,65 @@ Current measured baselines: platform shell eager JS ≈ 334 KB brotli;
  R2/S3 (media)             │ pg-boss queue (in `ops` schema)
 ```
 
-Delta vs `docs/architecture.md` today: PgBouncer added; 6 DB schemas; Go
-gateway/hub topology + Helm `rmhstudios-go` + k8s scripts deleted; `jobs`
-container added; `ladder-worker` + `homes-worker` containers retired into
-`jobs`; media CPU work moved off the SSR event loop; Redis split into two
-roles. Everything else (front door, hotswap, Dockerfile two-image build,
-Better Auth, `.server.ts` stubbing, `--site-*` tokens, 32-locale i18n) is
-deliberately unchanged.
+Delta
+vs
+`docs/architecture.md`
+today:
+PgBouncer
+added;
+6
+DB
+schemas;
+Go
+gateway/hub
+topology +
+Helm
+`rmhstudios-go` +
+k8s
+scripts
+deleted;
+`jobs`
+container
+added;
+`ladder-worker` +
+`homes-worker`
+containers
+retired
+into
+`jobs`;
+media
+CPU
+work
+moved
+off
+the
+SSR
+event
+loop;
+Redis
+split
+into
+two
+roles.
+Everything
+else
+(front
+door,
+hotswap,
+Dockerfile
+two-image
+build,
+Better
+Auth,
+`.server.ts`
+stubbing,
+`--site-*`
+tokens,
+32-locale
+i18n)
+is
+deliberately
+unchanged.
 
 ---
 
@@ -165,8 +562,22 @@ deliberately unchanged.
 
 ### 4.1 Domain schemas
 
-One Postgres cluster, six schemas, Prisma `multiSchema`. `ALTER TABLE … SET
-SCHEMA` is metadata-only (brief ACCESS EXCLUSIVE lock, no rewrite).
+One
+Postgres
+cluster,
+six
+schemas,
+Prisma
+`multiSchema`.
+`ALTER TABLE … SET SCHEMA`
+is
+metadata-only
+(brief
+ACCESS
+EXCLUSIVE
+lock,
+no
+rewrite).
 
 ```yaml
 schemas:
@@ -174,105 +585,473 @@ schemas:
     {
       role: rmh_core,
       models: ~13,
-      contents: 'User, Session, Account, Verification, Passkey, PushSubscription, NotificationPreference, AppearancePreference, Referral, DeveloperApiKey, RmhCodeToken',
+      contents:
+        'User,
+        Session,
+        Account,
+        Verification,
+        Passkey,
+        PushSubscription,
+        NotificationPreference,
+        AppearancePreference,
+        Referral,
+        DeveloperApiKey,
+        RmhCodeToken',
     }
   social:
     {
       role: rmh_social,
       models: ~55,
-      contents: 'RMHark family (rmheet_*), Follow, Hashtag, PostHashtag, UserProfile, Notification, Conversation, DirectMessage(+Reaction), GroupChat family, Community family, ContentReport, UserBlock, UserMute, UserStrike, AdminAuditLog, FeedAnnouncement family, ScheduledPost, PostUnlock, Prediction(+Position), NewsArticle, BlogPost, CreatorMembership, RMHarkBookmark, RMHarkEdit',
+      contents:
+        'RMHark
+        family
+        (rmheet_*),
+        Follow,
+        Hashtag,
+        PostHashtag,
+        UserProfile,
+        Notification,
+        Conversation,
+        DirectMessage(+Reaction),
+        GroupChat
+        family,
+        Community
+        family,
+        ContentReport,
+        UserBlock,
+        UserMute,
+        UserStrike,
+        AdminAuditLog,
+        FeedAnnouncement
+        family,
+        ScheduledPost,
+        PostUnlock,
+        Prediction(+Position),
+        NewsArticle,
+        BlogPost,
+        CreatorMembership,
+        RMHarkBookmark,
+        RMHarkEdit',
     }
   econ:
     {
       role: rmh_econ,
       models: ~24,
-      contents: 'CoinTransaction, UserInventory, UserAchievement, DailyStreak, UserQuest, UserSeasonProgress, DailyWheelSpin, CoinStake, Storefront*, GiftMembership, Subscription, PromoClaim, RedemptionRequest, ImageGenBudget, EloRating, RankedChallenge, WagerMatch, Tournament*',
+      contents:
+        'CoinTransaction,
+        UserInventory,
+        UserAchievement,
+        DailyStreak,
+        UserQuest,
+        UserSeasonProgress,
+        DailyWheelSpin,
+        CoinStake,
+        Storefront*,
+        GiftMembership,
+        Subscription,
+        PromoClaim,
+        RedemptionRequest,
+        ImageGenBudget,
+        EloRating,
+        RankedChallenge,
+        WagerMatch,
+        Tournament*',
     }
   games:
     {
       role: rmh_games,
       models: ~60,
-      contents: 'all per-game saves/matches/players (Altair*, SynapseStorm*, RMHbox*, RmhType*, RmhStudy*, Versecraft*, DreamRift*, FarmingSimFarm, TempleOfJoySave, VoidBreakerPlayer, NeonDriftwayPlayer, SignalForgePlayer, VegaPlayer, LaundryPlayer, Player, DailyPuzzleScore, ForestExplorerSave, MusicGuess*), Doctrine family',
+      contents:
+        'all
+        per-game
+        saves/matches/players
+        (Altair*,
+        SynapseStorm*,
+        RMHbox*,
+        RmhType*,
+        RmhStudy*,
+        Versecraft*,
+        DreamRift*,
+        FarmingSimFarm,
+        TempleOfJoySave,
+        VoidBreakerPlayer,
+        NeonDriftwayPlayer,
+        SignalForgePlayer,
+        VegaPlayer,
+        LaundryPlayer,
+        Player,
+        DailyPuzzleScore,
+        ForestExplorerSave,
+        MusicGuess*),
+        Doctrine
+        family',
     }
   apps:
     {
       role: rmh_apps,
       models: ~60,
-      contents: 'Ladder* (~26), Home* (~5), Rideshare (4), Library* (4), Album* (2), RmhTube* (5 post-deletion), RmhMusic rooms (2 post-deletion), Song family, Flashcard*, Playlist*, UserBuild family, VibePage*, AiPersona*',
+      contents:
+        'Ladder*
+        (~26),
+        Home*
+        (~5),
+        Rideshare
+        (4),
+        Library*
+        (4),
+        Album*
+        (2),
+        RmhTube*
+        (5
+        post-deletion),
+        RmhMusic
+        rooms
+        (2
+        post-deletion),
+        Song
+        family,
+        Flashcard*,
+        Playlist*,
+        UserBuild
+        family,
+        VibePage*,
+        AiPersona*',
     }
   ops:
     {
       role: rmh_ops,
       models: ~18,
-      contents: 'WebhookEndpoint, WebhookDelivery, ApiIdempotencyKey, Ledger* (Go-owned), DiscordAlex*/DiscordChatSession/DiscordActivity*/DiscordDaily* (Go-owned), LadderWorkerLease, Media, Feedback, SecurityReport, pgboss.*',
+      contents:
+        'WebhookEndpoint,
+        WebhookDelivery,
+        ApiIdempotencyKey,
+        Ledger*
+        (Go-owned),
+        DiscordAlex*/DiscordChatSession/DiscordActivity*/DiscordDaily*
+        (Go-owned),
+        LadderWorkerLease,
+        Media,
+        Feedback,
+        SecurityReport,
+        pgboss.*',
     }
 notes:
-  - 'All cross-domain FKs point at core.user — they keep working across schemas.'
-  - 'Go raw-SQL tables (ledger_*, discord_alex_*, discord_chat_session, ladder_worker_lease) land in ops; Go queries become schema-qualified.'
-  - 'Table names (including rmheet*) are NOT renamed. Ever. (§11 NG-4)'
+  - 'All
+    cross-domain
+    FKs
+    point
+    at
+    core.user
+    —
+    they
+    keep
+    working
+    across
+    schemas.'
+  - 'Go
+    raw-SQL
+    tables
+    (ledger_*,
+    discord_alex_*,
+    discord_chat_session,
+    ladder_worker_lease)
+    land
+    in
+    ops;
+    Go
+    queries
+    become
+    schema-qualified.'
+  - 'Table
+    names
+    (including
+    rmheet*)
+    are
+    NOT
+    renamed.
+    Ever.
+    (§11
+    NG-4)'
 ```
 
-Why this buys speed, not just tidiness: per-role PgBouncer budgets make pool
-starvation cross-domain-impossible; migration blast radius is contained
-(`games` DDL cannot lock `social`); a future physical split is pre-paid;
-per-schema statement p99 becomes measurable.
+Why
+this
+buys
+speed,
+not
+just
+tidiness:
+per-role
+PgBouncer
+budgets
+make
+pool
+starvation
+cross-domain-impossible;
+migration
+blast
+radius
+is
+contained
+(`games`
+DDL
+cannot
+lock
+`social`);
+a
+future
+physical
+split
+is
+pre-paid;
+per-schema
+statement
+p99
+becomes
+measurable.
 
 ### 4.2 Dead models (drop; verified zero code references)
 
-See inventory §9.3 with reverify commands. Expand/contract: R0-T8 removes the
-writes/reads; R1-T3 drops the tables.
+See
+inventory
+§9.3
+with
+reverify
+commands.
+Expand/contract:
+R0-T8
+removes
+the
+writes/reads;
+R1-T3
+drops
+the
+tables.
 
 ### 4.3 Primary-key policy
 
-- Existing tables keep their PKs (203/225 are `cuid()` text; keyset
-  `(createdAt desc, id desc)` indexes exist and work). **No retro-migration.**
-- New append-only or high-volume tables MUST use time-sortable keys: UUIDv7
-  (`uuidv7()` if PG ≥ 18, else app-generated ULID) or `BigInt` identity for
-  internal-only tables. Rationale: insert locality + PK-order scans replace a
-  secondary index.
-- Enforced via schema-review checklist (R0-T9 adds it to `lib/CLAUDE.md`).
+- Existing
+  tables
+  keep
+  their
+  PKs
+  (203/225
+  are
+  `cuid()`
+  text;
+  keyset
+  `(createdAt desc, id desc)`
+  indexes
+  exist
+  and
+  work).
+  **No
+  retro-migration.**
+- New
+  append-only
+  or
+  high-volume
+  tables
+  MUST
+  use
+  time-sortable
+  keys:
+  UUIDv7
+  (`uuidv7()`
+  if
+  PG
+  ≥
+  18,
+  else
+  app-generated
+  ULID)
+  or
+  `BigInt`
+  identity
+  for
+  internal-only
+  tables.
+  Rationale:
+  insert
+  locality +
+  PK-order
+  scans
+  replace
+  a
+  secondary
+  index.
+- Enforced
+  via
+  schema-review
+  checklist
+  (R0-T9
+  adds
+  it
+  to
+  `lib/CLAUDE.md`).
 
 ### 4.4 Partitioning + retention
 
 ```yaml
-partition_by_month_range: # native RANGE partitions; old months DROP in O(1)
-  - {
+? partition_by_month_range # native RANGE partitions; old months DROP in O(1)
+: - {
       table: social.notification,
       retention_days: 90,
-      note: 'never drop unread rows; coalesce first',
+      note:
+        'never
+        drop
+        unread
+        rows;
+        coalesce
+        first',
     }
-  - { table: ops.webhook_delivery, retention_days: 30 }
-  - { table: games.doctrine_access_log, retention_days: 180 }
-  - { table: social.admin_audit_log, retention_days: 180 }
-  - { table: apps.ladder_product_event, retention_days: 90 }
-  - { table: apps.ladder_application_event, retention_days: 90 }
-  - { table: apps.ladder_alert_event, retention_days: 90 }
+  - {
+      table: ops.webhook_delivery,
+      retention_days: 30,
+    }
+  - {
+      table: games.doctrine_access_log,
+      retention_days: 180,
+    }
+  - {
+      table: social.admin_audit_log,
+      retention_days: 180,
+    }
+  - {
+      table: apps.ladder_product_event,
+      retention_days: 90,
+    }
+  - {
+      table: apps.ladder_application_event,
+      retention_days: 90,
+    }
+  - {
+      table: apps.ladder_alert_event,
+      retention_days: 90,
+    }
 never_partition:
   - {
       table: social.direct_message,
-      reason: 'full history is product surface; partial unread idx + pagination suffice',
+      reason:
+        'full
+        history
+        is
+        product
+        surface;
+        partial
+        unread
+        idx
+        +
+        pagination
+        suffice',
     }
-  - { table: social.group_message, reason: 'same' }
+  - {
+      table: social.group_message,
+      reason: 'same',
+    }
 retention_without_partitioning:
   - {
-      what: 'soft-deleted rmheet rows',
+      what:
+        'soft-deleted
+        rmheet
+        rows',
       grace_days: 30,
-      mechanism: 'pg-boss job hard-delete batches (extends lib/cleanup.server.ts)',
+      mechanism:
+        'pg-boss
+        job
+        hard-delete
+        batches
+        (extends
+        lib/cleanup.server.ts)',
     }
   - {
-      what: 'session/verification purge',
-      mechanism: 'existing cleanup worker → moves to jobs container (R2-T4)',
+      what:
+        'session/verification
+        purge',
+      mechanism:
+        'existing
+        cleanup
+        worker
+        →
+        moves
+        to
+        jobs
+        container
+        (R2-T4)',
     }
-constraint: 'partitioned-table PK must include the partition key → PK becomes (id, createdAt); the @@unique/@@id in Prisma changes accordingly; all FKs INTO these tables must be dropped (none exist on the listed tables — reverify: §9.3-RV)'
+constraint:
+  'partitioned-table
+  PK
+  must
+  include
+  the
+  partition
+  key
+  →
+  PK
+  becomes
+  (id,
+  createdAt);
+  the
+  @@unique/@@id
+  in
+  Prisma
+  changes
+  accordingly;
+  all
+  FKs
+  INTO
+  these
+  tables
+  must
+  be
+  dropped
+  (none
+  exist
+  on
+  the
+  listed
+  tables
+  —
+  reverify:
+  §9.3-RV)'
 ```
 
 ### 4.5 Counters + unread
 
-- Keep all denormalized counters and Redis view/presence buffering
+- Keep
+  all
+  denormalized
+  counters
+  and
+  Redis
+  view/presence
+  buffering
   (`lib/hot-counters.server.ts`).
-- Reconciliation becomes scheduled jobs with emitted drift metrics (R2-T5) —
-  never hand-run scripts.
-- Real unread columns, maintained at write time, pushed as SSE deltas:
+- Reconciliation
+  becomes
+  scheduled
+  jobs
+  with
+  emitted
+  drift
+  metrics
+  (R2-T5)
+  —
+  never
+  hand-run
+  scripts.
+- Real
+  unread
+  columns,
+  maintained
+  at
+  write
+  time,
+  pushed
+  as
+  SSE
+  deltas:
 
 ```sql
 -- R1-T6 (expand)
@@ -284,108 +1063,441 @@ ALTER TABLE social.conversation ADD COLUMN "unreadOneCount" integer NOT NULL DEF
 
 ### 4.6 Platform floor
 
-- **PgBouncer** transaction pooling; per-role budgets
+- **PgBouncer**
+  transaction
+  pooling;
+  per-role
+  budgets
   (`web ≤ 40, jobs ≤ 10, socket ≤ 8, rmhbox ≤ 5, rmhtube ≤ 5, supervisor ≤ 5, status ≤ 2, assets ≤ 2`;
-  headroom for hotswap +web budget).
-- **Backups** (R0-T1) precede every schema-touching task. Verified absent
-  2026-07-18 (`grep -ril 'pg_dump|wal-g|pgbackrest' deploy/ scripts/ .github/` → nothing relevant).
-- **Redis split** (R0-T2): `redis-cache` keeps `allkeys-lru`; `redis-state`
-  gets `noeviction` + `appendonly yes` and holds `viewbuf:*`, `ratelimit:*`,
-  presence sets, unread mirrors. Today's single instance
-  (`docker-compose.yml:395`) can evict dirty view buffers — data loss with a
-  config-sized fix.
-- Migration discipline (already landed, now mechanical): `lock_timeout` +
-  `statement_timeout` wrappers; expand/contract; `CREATE INDEX CONCURRENTLY`
-  out-of-band for `rmheet`/`notification`/`follow`/`direct_message`/`session`.
+  headroom
+  for
+  hotswap
+  +web
+  budget).
+- **Backups**
+  (R0-T1)
+  precede
+  every
+  schema-touching
+  task.
+  Verified
+  absent
+  2026-07-18
+  (`grep -ril 'pg_dump|wal-g|pgbackrest' deploy/ scripts/ .github/`
+  →
+  nothing
+  relevant).
+- **Redis
+  split**
+  (R0-T2):
+  `redis-cache`
+  keeps
+  `allkeys-lru`;
+  `redis-state`
+  gets
+  `noeviction` +
+  `appendonly yes`
+  and
+  holds
+  `viewbuf:*`,
+  `ratelimit:*`,
+  presence
+  sets,
+  unread
+  mirrors.
+  Today's
+  single
+  instance
+  (`docker-compose.yml:395`)
+  can
+  evict
+  dirty
+  view
+  buffers
+  —
+  data
+  loss
+  with
+  a
+  config-sized
+  fix.
+- Migration
+  discipline
+  (already
+  landed,
+  now
+  mechanical):
+  `lock_timeout` +
+  `statement_timeout`
+  wrappers;
+  expand/contract;
+  `CREATE INDEX CONCURRENTLY`
+  out-of-band
+  for
+  `rmheet`/`notification`/`follow`/`direct_message`/`session`.
 
 ---
 
 ## 5. Realtime design
 
-- **Keep** the keyed SSE bus (`lib/feed-sse.ts`: `feed:created`,
-  `feed:post:<id>`, `feed:user:<id>`; Redis transport in
-  `lib/realtime-bus.server.ts`) — this shipped 2026-07-17 and is the target
+- **Keep**
+  the
+  keyed
+  SSE
+  bus
+  (`lib/feed-sse.ts`:
+  `feed:created`,
+  `feed:post:<id>`,
+  `feed:user:<id>`;
+  Redis
+  transport
+  in
+  `lib/realtime-bus.server.ts`)
+  —
+  this
+  shipped
+  2026-07-17
+  and
+  is
+  the
+  target
   shape.
-- **Keep** Node Socket.IO hubs as the production realtime tier. Add: Redis
-  adapter behind env flag + sticky sessions (dormant until >1 instance);
-  graceful drain + state snapshot on SIGTERM; client reconnect jitter; lazy
-  per-game handler registration (today: 202 `socket.on` per connection).
-- **Delete** the Go realtime duplicate (gateway, gamehub, rmhbox, rmhmusic,
-  rmhtube, `pkg/realtime`, Helm `rmhstudios-go`, k8s deploy scripts). Honest
-  status: gamehub 1/18 games ported, Go-rmhbox 1/9 minigames; zero production
-  requests ever. Note: the `pkg/events` cross-replica origin bug is **already
-  fixed** (wire-envelope framing in `go-services/pkg/events/events.go`;
-  `go-services/CLAUDE.md` is stale). We delete a _working_ duplicate — tagged
-  `pre-rewrite-go-realtime` for resurrection.
-- **Fold pollers into SSE** once unread columns exist: notification badge
-  (45 s poll), presence widgets (60 s), online-count (60 s) become server-push
-  deltas on the existing per-user channel; one heartbeat POST remains.
+- **Keep**
+  Node
+  Socket.IO
+  hubs
+  as
+  the
+  production
+  realtime
+  tier.
+  Add:
+  Redis
+  adapter
+  behind
+  env
+  flag +
+  sticky
+  sessions
+  (dormant
+  until >1
+  instance);
+  graceful
+  drain +
+  state
+  snapshot
+  on
+  SIGTERM;
+  client
+  reconnect
+  jitter;
+  lazy
+  per-game
+  handler
+  registration
+  (today:
+  202
+  `socket.on`
+  per
+  connection).
+- **Delete**
+  the
+  Go
+  realtime
+  duplicate
+  (gateway,
+  gamehub,
+  rmhbox,
+  rmhmusic,
+  rmhtube,
+  `pkg/realtime`,
+  Helm
+  `rmhstudios-go`,
+  k8s
+  deploy
+  scripts).
+  Honest
+  status:
+  gamehub
+  1/18
+  games
+  ported,
+  Go-rmhbox
+  1/9
+  minigames;
+  zero
+  production
+  requests
+  ever.
+  Note:
+  the
+  `pkg/events`
+  cross-replica
+  origin
+  bug
+  is
+  **already
+  fixed**
+  (wire-envelope
+  framing
+  in
+  `go-services/pkg/events/events.go`;
+  `go-services/CLAUDE.md`
+  is
+  stale).
+  We
+  delete
+  a
+  _working_
+  duplicate
+  —
+  tagged
+  `pre-rewrite-go-realtime`
+  for
+  resurrection.
+- **Fold
+  pollers
+  into
+  SSE**
+  once
+  unread
+  columns
+  exist:
+  notification
+  badge
+  (45
+  s
+  poll),
+  presence
+  widgets
+  (60
+  s),
+  online-count
+  (60
+  s)
+  become
+  server-push
+  deltas
+  on
+  the
+  existing
+  per-user
+  channel;
+  one
+  heartbeat
+  POST
+  remains.
 
 ## 6. Async backbone design
 
-**pg-boss** (Postgres-backed queue, `ops` schema; Node library). Chosen over
-Redis Streams (Redis here is a lossy LRU cache), BullMQ (same Redis problem),
-and Kafka/NATS (wrong scale class; new infra). Rides existing Postgres +
-PgBouncer + backups.
+**pg-boss**
+(Postgres-backed
+queue,
+`ops`
+schema;
+Node
+library).
+Chosen
+over
+Redis
+Streams
+(Redis
+here
+is
+a
+lossy
+LRU
+cache),
+BullMQ
+(same
+Redis
+problem),
+and
+Kafka/NATS
+(wrong
+scale
+class;
+new
+infra).
+Rides
+existing
+Postgres +
+PgBouncer +
+backups.
 
 ```yaml
 queues:
   engagement-side-effects:
     {
-      producer: 'web (like/comment/follow/post routes)',
+      producer:
+        'web
+        (like/comment/follow/post
+        routes)',
       consumer: jobs,
-      replaces: '~10 awaited serial queries on the like path (lib/social/engagement.server.ts)',
+      replaces:
+        '~10
+        awaited
+        serial
+        queries
+        on
+        the
+        like
+        path
+        (lib/social/engagement.server.ts)',
     }
   media-transcode:
     {
-      producer: 'web (image-proxy miss, audio upload)',
+      producer:
+        'web
+        (image-proxy
+        miss,
+        audio
+        upload)',
       consumer: jobs,
-      replaces: 'sharp/ffmpeg on the SSR event loop',
+      replaces:
+        'sharp/ffmpeg
+        on
+        the
+        SSR
+        event
+        loop',
     }
   webhook-delivery:
     {
       producer: web,
       consumer: jobs,
-      replaces: 'inline delivery attempts',
-      features: [retry-backoff, dead-letter],
+      replaces:
+        'inline
+        delivery
+        attempts',
+      features:
+        [
+          retry-backoff,
+          dead-letter,
+        ],
     }
   ai-moderation:
     {
       producer: web,
       consumer: jobs,
-      replaces: 'fire-and-forget DeepSeek calls',
-      features: [daily-budget, sampling],
+      replaces:
+        'fire-and-forget
+        DeepSeek
+        calls',
+      features:
+        [
+          daily-budget,
+          sampling,
+        ],
     }
   scheduled-posts:
     {
-      producer: 'cron (pg-boss schedule)',
+      producer:
+        'cron
+        (pg-boss
+        schedule)',
       consumer: jobs,
-      replaces: 'lazy materialization on timeline reads (scheduled/publish.server.ts)',
+      replaces:
+        'lazy
+        materialization
+        on
+        timeline
+        reads
+        (scheduled/publish.server.ts)',
     }
-  retention: { producer: 'cron', consumer: jobs, replaces: 'ladder-worker daily cleanup cron' }
+  retention:
+    {
+      producer: 'cron',
+      consumer: jobs,
+      replaces:
+        'ladder-worker
+        daily
+        cleanup
+        cron',
+    }
   reconcile-counters:
     {
-      producer: 'cron weekly',
+      producer:
+        'cron
+        weekly',
       consumer: jobs,
-      replaces: 'hand-run scripts/reconcile-*.ts',
-      emits: 'drift metrics',
+      replaces:
+        'hand-run
+        scripts/reconcile-*.ts',
+      emits:
+        'drift
+        metrics',
     }
   ladder-pipeline:
     {
-      producer: 'cron 0 */12 * * *',
+      producer:
+        'cron
+        0
+        */12
+        *
+        *
+        *',
       consumer: jobs,
-      replaces: 'ladder-worker container',
-      mutual_exclusion: 'pg-boss singleton job (replaces ladder_worker_lease)',
+      replaces:
+        'ladder-worker
+        container',
+      mutual_exclusion:
+        'pg-boss
+        singleton
+        job
+        (replaces
+        ladder_worker_lease)',
     }
   homes-pipeline:
-    { producer: 'cron 0 */6 * * *', consumer: jobs, replaces: 'homes-worker container' }
+    {
+      producer:
+        'cron
+        0
+        */6
+        *
+        *
+        *',
+      consumer: jobs,
+      replaces:
+        'homes-worker
+        container',
+    }
   feed-fanout:
     {
       status: GATED,
-      gate: 'docs/feed/plan.md §4 trigger conditions',
-      note: 'FeedEntry hybrid fan-out finally has a durable home',
+      gate:
+        'docs/feed/plan.md
+        §4
+        trigger
+        conditions',
+      note:
+        'FeedEntry
+        hybrid
+        fan-out
+        finally
+        has
+        a
+        durable
+        home',
     }
-consumers_host: 'new `jobs` container (slim image, esbuild bundle server/jobs/index.ts) — Go supervisor keeps its 6 pure-Go workers unchanged'
+consumers_host:
+  'new
+  `jobs`
+  container
+  (slim
+  image,
+  esbuild
+  bundle
+  server/jobs/index.ts)
+  —
+  Go
+  supervisor
+  keeps
+  its
+  6
+  pure-Go
+  workers
+  unchanged'
 ```
 
 ## 7. Frontend design
@@ -408,61 +1520,366 @@ server/            unchanged hubs + shared/ + NEW jobs/
 go-services/       supervisor, status, assets, pkg/* only (post R4-T1)
 ```
 
-Measured wins per extraction: `apps/web` route-file count and
-`routeTree.gen.ts` line count drop every PR; `holdUntilCrawlEnd: false`
-workaround (`vite.config.ts:299` — "130 eager routes" break the dep crawl) and
-the 8 GB tsc heap become unnecessary; a game dep upgrade cannot regress the
-feed; game deploys stop invalidating shell caches.
+Measured
+wins
+per
+extraction:
+`apps/web`
+route-file
+count
+and
+`routeTree.gen.ts`
+line
+count
+drop
+every
+PR;
+`holdUntilCrawlEnd: false`
+workaround
+(`vite.config.ts:299`
+—
+"130
+eager
+routes"
+break
+the
+dep
+crawl)
+and
+the
+8
+GB
+tsc
+heap
+become
+unnecessary;
+a
+game
+dep
+upgrade
+cannot
+regress
+the
+feed;
+game
+deploys
+stop
+invalidating
+shell
+caches.
 
-Serving mechanics: each game builds `index.html` + hashed assets; `apps/web`
-serves them via Nitro route rules (same origin — auth cookies just work; games
-call `/api` via `packages/api-client`). Games are client-rendered (no SSR/SEO
-need; the marketing/landing pages for games stay in `apps/web`).
+Serving
+mechanics:
+each
+game
+builds
+`index.html` +
+hashed
+assets;
+`apps/web`
+serves
+them
+via
+Nitro
+route
+rules
+(same
+origin
+—
+auth
+cookies
+just
+work;
+games
+call
+`/api`
+via
+`packages/api-client`).
+Games
+are
+client-rendered
+(no
+SSR/SEO
+need;
+the
+marketing/landing
+pages
+for
+games
+stay
+in
+`apps/web`).
 
 ### 7.2 Data/state layers
 
-- **Remove `@tanstack/react-query` from the shell.** Provided globally, used
-  by exactly 7 files, all in `app/routes/strategies/` (verified). Port those
-  to router loaders; if strategies wants query caching it carries the dep in
-  its own package after extraction.
-- Router loaders + `createServerFn` remain the data path; the 6 Zustand
-  stores remain the client-state path.
+- **Remove
+  `@tanstack/react-query`
+  from
+  the
+  shell.**
+  Provided
+  globally,
+  used
+  by
+  exactly
+  7
+  files,
+  all
+  in
+  `app/routes/strategies/`
+  (verified).
+  Port
+  those
+  to
+  router
+  loaders;
+  if
+  strategies
+  wants
+  query
+  caching
+  it
+  carries
+  the
+  dep
+  in
+  its
+  own
+  package
+  after
+  extraction.
+- Router
+  loaders +
+  `createServerFn`
+  remain
+  the
+  data
+  path;
+  the
+  6
+  Zustand
+  stores
+  remain
+  the
+  client-state
+  path.
 
 ### 7.3 CSS + i18n
 
-- `globals.css` (2,129 lines) → `packages/ui/tokens.css` (tokens, 6 `.style-*`
-  theme blocks, a11y/reduced-motion; the only eager CSS; ≤40 KB brotli) +
-  per-package styles loaded with their package.
-- i18n: per-package namespace manifests generate the `loadNamespaces` wiring
-  (today imperative across 83 route files). SSR still serializes only the 12
-  core namespaces of the active locale (shipped 2026-07-17); unchanged.
-- `locales/` stays committed (OD-1-adjacent; it is regenerable but that's a
-  separate decision, not taken here). Game/app namespace JSON moves next to
-  its package; `i18next-parser` config gains per-package inputs.
+- `globals.css`
+  (2,129
+  lines)
+  →
+  `packages/ui/tokens.css`
+  (tokens,
+  6
+  `.style-*`
+  theme
+  blocks,
+  a11y/reduced-motion;
+  the
+  only
+  eager
+  CSS;
+  ≤40
+  KB
+  brotli) +
+  per-package
+  styles
+  loaded
+  with
+  their
+  package.
+- i18n:
+  per-package
+  namespace
+  manifests
+  generate
+  the
+  `loadNamespaces`
+  wiring
+  (today
+  imperative
+  across
+  83
+  route
+  files).
+  SSR
+  still
+  serializes
+  only
+  the
+  12
+  core
+  namespaces
+  of
+  the
+  active
+  locale
+  (shipped
+  2026-07-17);
+  unchanged.
+- `locales/`
+  stays
+  committed
+  (OD-1-adjacent;
+  it
+  is
+  regenerable
+  but
+  that's
+  a
+  separate
+  decision,
+  not
+  taken
+  here).
+  Game/app
+  namespace
+  JSON
+  moves
+  next
+  to
+  its
+  package;
+  `i18next-parser`
+  config
+  gains
+  per-package
+  inputs.
 
 ### 7.4 API routes
 
-All ~395 API files stay in `apps/web` (shared auth/rate-limit/Prisma
-plumbing). New: a generated ownership manifest `docs/api-ownership.json`
-(route glob → domain schema → owning package) produced by R1-T2, consumed by
-lint to prevent cross-domain Prisma access from the wrong route family.
+All
+~395
+API
+files
+stay
+in
+`apps/web`
+(shared
+auth/rate-limit/Prisma
+plumbing).
+New:
+a
+generated
+ownership
+manifest
+`docs/api-ownership.json`
+(route
+glob
+→
+domain
+schema
+→
+owning
+package)
+produced
+by
+R1-T2,
+consumed
+by
+lint
+to
+prevent
+cross-domain
+Prisma
+access
+from
+the
+wrong
+route
+family.
 
 ### 7.5 Build pipeline
 
-- The three hand-synced external lists (`heavyExternals`, `ssrOnlyExternals`,
-  Nitro `traceDeps` — `vite.config.ts:107-151`) shrink as heavy libs move into
-  game packages; remainder generated from package manifests.
-- `stubServerFiles` plugin survives; add per-package eslint rule
-  `no-restricted-imports` for `*.server` from client code.
-- Keep the esbuild step for `server/*` bundles (add `server/jobs`).
-- CI: per-package bundle-size delta gate + Lighthouse budget on the shell
-  (warn R0-T3 → block R3-T1).
+- The
+  three
+  hand-synced
+  external
+  lists
+  (`heavyExternals`,
+  `ssrOnlyExternals`,
+  Nitro
+  `traceDeps`
+  —
+  `vite.config.ts:107-151`)
+  shrink
+  as
+  heavy
+  libs
+  move
+  into
+  game
+  packages;
+  remainder
+  generated
+  from
+  package
+  manifests.
+- `stubServerFiles`
+  plugin
+  survives;
+  add
+  per-package
+  eslint
+  rule
+  `no-restricted-imports`
+  for
+  `*.server`
+  from
+  client
+  code.
+- Keep
+  the
+  esbuild
+  step
+  for
+  `server/*`
+  bundles
+  (add
+  `server/jobs`).
+- CI:
+  per-package
+  bundle-size
+  delta
+  gate +
+  Lighthouse
+  budget
+  on
+  the
+  shell
+  (warn
+  R0-T3
+  →
+  block
+  R3-T1).
 
 ### 7.6 Reconciliation with the team web-performance analysis (TEAM-PERF-2026-07-18)
 
-The team's measured analysis (production build @ `ce41a39b`) **confirms and
-sharpens** this section rather than redirecting it. Mapping its findings to
-this plan:
+The
+team's
+measured
+analysis
+(production
+build
+@
+`ce41a39b`)
+**confirms
+and
+sharpens**
+this
+section
+rather
+than
+redirecting
+it.
+Mapping
+its
+findings
+to
+this
+plan:
 
 | Finding                                                                                                             | Measured | This plan                                                                                                                   | Status                                                    |
 | ------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
@@ -472,53 +1889,386 @@ this plan:
 | **F5** root loader blocks TTFB on a DB session lookup                                                               | MED      | §4.5/§5.3 session cache + defer; the shipped `staleTime` stops per-nav refetch                                              | Partly shipped; deferred-shell is R1/R3                   |
 | **F8** oversized static assets (sprites 133/music 95/models 20 MB)                                                  | MED      | OD-1 keeps them in-repo; the Dockerfile already excludes them from the slim image; edge-cache + `assets` service serve them | Bounded by OD-1                                           |
 
-New, concrete items F1/F4/F6/F7 add — folded in as R3 tasks:
+New,
+concrete
+items
+F1/F4/F6/F7
+add
+—
+folded
+in
+as
+R3
+tasks:
 
-- **F1 empirical (autoCodeSplitting) — RESOLVED 2026-07-18: verified no-op.**
-  The option **is** in the installed start-plugin-core schema
-  (`router.autoCodeSplitting`), so it's a real, accepted config key (the
-  audit's "omitted from the schema" was stale). But enabling it and rebuilding
-  produced a **byte-identical build** — same chunk hashes (`index-BsYx4LKv`,
-  `src-DFKXgIWm`), same 582 chunks, same 216 KB brotli entry. Routes are
-  already split by rolldown's per-route async chunking; the 216 KB entry is
-  framework+shell, not "all route shells". Reverted; `vite.config.ts` carries a
-  note so it isn't re-attempted. **The real shared-entry reduction is the
-  workspace decomposition (§7.1), not this flag.**
-- **F4 Monaco (~13 MB across editor + language workers, 1 import site
-  `components/admin/DynamicMonacoEditor.tsx`).** **R3-T6 (new):** when `rmhcode`
-  is extracted (§9.5), register only the languages actually offered and drop
-  unused Monaco workers — several MB off the editor route. It is admin/editor-
-  only and already lazy, so this is route-local, not shell.
-- **F6 eager overlays — LANDED 2026-07-18 (commit `perf(_site)`).** The
-  `_site` layout statically mounted 7 client-only overlays that render nothing
-  until a condition fires (Welcome/LanguageFirstRun/WhatsNew/FreeMonth modals,
-  cookie notice, keyboard shortcuts, music mini-player). Converted to
-  `React.lazy` + `Suspense(fallback null)` — their code moved to async chunks
-  off the eager entry. **Verified against a locally-run production build
-  (native Postgres + headless Chromium):** 0 hydration errors, 0 console
-  errors, all 7 chunks load+mount post-hydration, none in the eager
-  modulepreload set. **~28 KB brotli** off the feed entry (~13% of the 216 KB
-  app-shell). Further gain available (gate MiniPlayer's lazy mount on an active
-  track so its chunk never loads for feed users) — deferred as a refinement.
-  `Providers`-level widgets (Sonner, CommandPalette) not yet touched.
-- **F7 12 decorative Google-Font families** loaded via `requestIdleCallback`.
-  **R3-T8 (new):** load decorative families per-route/per-theme on demand and
-  subset to used weights/glyphs (pairs with §7.3 tokens split).
+- **F1
+  empirical
+  (autoCodeSplitting)
+  —
+  RESOLVED
+  2026-07-18:
+  verified
+  no-op.**
+  The
+  option
+  **is**
+  in
+  the
+  installed
+  start-plugin-core
+  schema
+  (`router.autoCodeSplitting`),
+  so
+  it's
+  a
+  real,
+  accepted
+  config
+  key
+  (the
+  audit's
+  "omitted
+  from
+  the
+  schema"
+  was
+  stale).
+  But
+  enabling
+  it
+  and
+  rebuilding
+  produced
+  a
+  **byte-identical
+  build**
+  —
+  same
+  chunk
+  hashes
+  (`index-BsYx4LKv`,
+  `src-DFKXgIWm`),
+  same
+  582
+  chunks,
+  same
+  216
+  KB
+  brotli
+  entry.
+  Routes
+  are
+  already
+  split
+  by
+  rolldown's
+  per-route
+  async
+  chunking;
+  the
+  216
+  KB
+  entry
+  is
+  framework+shell,
+  not
+  "all
+  route
+  shells".
+  Reverted;
+  `vite.config.ts`
+  carries
+  a
+  note
+  so
+  it
+  isn't
+  re-attempted.
+  **The
+  real
+  shared-entry
+  reduction
+  is
+  the
+  workspace
+  decomposition
+  (§7.1),
+  not
+  this
+  flag.**
+- **F4
+  Monaco
+  (~13
+  MB
+  across
+  editor +
+  language
+  workers,
+  1
+  import
+  site
+  `components/admin/DynamicMonacoEditor.tsx`).**
+  **R3-T6
+  (new):**
+  when
+  `rmhcode`
+  is
+  extracted
+  (§9.5),
+  register
+  only
+  the
+  languages
+  actually
+  offered
+  and
+  drop
+  unused
+  Monaco
+  workers
+  —
+  several
+  MB
+  off
+  the
+  editor
+  route.
+  It
+  is
+  admin/editor-
+  only
+  and
+  already
+  lazy,
+  so
+  this
+  is
+  route-local,
+  not
+  shell.
+- **F6
+  eager
+  overlays
+  —
+  LANDED
+  2026-07-18
+  (commit
+  `perf(_site)`).**
+  The
+  `_site`
+  layout
+  statically
+  mounted
+  7
+  client-only
+  overlays
+  that
+  render
+  nothing
+  until
+  a
+  condition
+  fires
+  (Welcome/LanguageFirstRun/WhatsNew/FreeMonth
+  modals,
+  cookie
+  notice,
+  keyboard
+  shortcuts,
+  music
+  mini-player).
+  Converted
+  to
+  `React.lazy` +
+  `Suspense(fallback null)`
+  —
+  their
+  code
+  moved
+  to
+  async
+  chunks
+  off
+  the
+  eager
+  entry.
+  **Verified
+  against
+  a
+  locally-run
+  production
+  build
+  (native
+  Postgres +
+  headless
+  Chromium):**
+  0
+  hydration
+  errors,
+  0
+  console
+  errors,
+  all
+  7
+  chunks
+  load+mount
+  post-hydration,
+  none
+  in
+  the
+  eager
+  modulepreload
+  set.
+  **~28
+  KB
+  brotli**
+  off
+  the
+  feed
+  entry
+  (~13%
+  of
+  the
+  216
+  KB
+  app-shell).
+  Further
+  gain
+  available
+  (gate
+  MiniPlayer's
+  lazy
+  mount
+  on
+  an
+  active
+  track
+  so
+  its
+  chunk
+  never
+  loads
+  for
+  feed
+  users)
+  —
+  deferred
+  as
+  a
+  refinement.
+  `Providers`-level
+  widgets
+  (Sonner,
+  CommandPalette)
+  not
+  yet
+  touched.
+- **F7
+  12
+  decorative
+  Google-Font
+  families**
+  loaded
+  via
+  `requestIdleCallback`.
+  **R3-T8
+  (new):**
+  load
+  decorative
+  families
+  per-route/per-theme
+  on
+  demand
+  and
+  subset
+  to
+  used
+  weights/glyphs
+  (pairs
+  with
+  §7.3
+  tokens
+  split).
 
-These four are frontend-runtime changes whose correctness needs the app driven
-in a browser; they are intentionally scheduled in R3 (after the workspace
-boundary exists) rather than attempted as blind edits.
+These
+four
+are
+frontend-runtime
+changes
+whose
+correctness
+needs
+the
+app
+driven
+in
+a
+browser;
+they
+are
+intentionally
+scheduled
+in
+R3
+(after
+the
+workspace
+boundary
+exists)
+rather
+than
+attempted
+as
+blind
+edits.
 
 ---
 
 ## 8. TASK GRAPH (implementation spec)
 
-Phase ordering: `R0 rails+reap → R1 database → R2 async → R3 frontend → R4
-realtime cleanup → R5 evidence-gated`. R1/R2 may overlap after R1-T2; R3 may
-start once R0 is done (it touches disjoint files from R1/R2).
+Phase
+ordering:
+`R0 rails+reap → R1 database → R2 async → R3 frontend → R4 realtime cleanup → R5 evidence-gated`.
+R1/R2
+may
+overlap
+after
+R1-T2;
+R3
+may
+start
+once
+R0
+is
+done
+(it
+touches
+disjoint
+files
+from
+R1/R2).
 
-Legend: `risk: low|med|high` = production blast radius. Every task implicitly
-ends with the baseline commands from "How to use this document" §4.
+Legend:
+`risk: low|med|high`
+=
+production
+blast
+radius.
+Every
+task
+implicitly
+ends
+with
+the
+baseline
+commands
+from
+"How
+to
+use
+this
+document"
+§4.
 
 ### PHASE R0 — Rails + reap (no architecture changes)
 
@@ -1068,24 +2818,88 @@ exit_gate_R4:
 ```yaml
 - {
     id: R5-G1,
-    item: 'managed Postgres (PITR) + read replica',
-    gate: 'DB CPU/IO p95 sustained > 60% or ops burden',
+    item:
+      'managed
+      Postgres
+      (PITR)
+      +
+      read
+      replica',
+    gate:
+      'DB
+      CPU/IO
+      p95
+      sustained
+      >
+      60%
+      or
+      ops
+      burden',
   }
 - {
     id: R5-G2,
-    item: 'feed fan-out-on-write (FeedEntry) via feed-fanout queue',
-    gate: 'docs/feed/plan.md §4 triggers',
+    item:
+      'feed
+      fan-out-on-write
+      (FeedEntry)
+      via
+      feed-fanout
+      queue',
+    gate:
+      'docs/feed/plan.md
+      §4
+      triggers',
   }
-- { id: R5-G3, item: 'external search engine', gate: 'FTS p95 > 200 ms sustained' }
+- {
+    id: R5-G3,
+    item:
+      'external
+      search
+      engine',
+    gate:
+      'FTS
+      p95
+      >
+      200
+      ms
+      sustained',
+  }
 - {
     id: R5-G4,
-    item: 'web replicas beyond node-cluster (Apache balancer)',
-    gate: 'event-loop lag p99 > 100 ms with WEB_WORKERS maxed',
+    item:
+      'web
+      replicas
+      beyond
+      node-cluster
+      (Apache
+      balancer)',
+    gate:
+      'event-loop
+      lag
+      p99
+      >
+      100
+      ms
+      with
+      WEB_WORKERS
+      maxed',
   }
 - {
     id: R5-G5,
-    item: 'Turnstile + email verification + T&S pipeline',
-    gate: 'abuse metrics (accounts/IP/day) or pre-open-registration',
+    item:
+      'Turnstile
+      +
+      email
+      verification
+      +
+      T&S
+      pipeline',
+    gate:
+      'abuse
+      metrics
+      (accounts/IP/day)
+      or
+      pre-open-registration',
   }
 ```
 
@@ -1096,8 +2910,8 @@ exit_gate_R4:
 ### 9.1 Dead npm dependencies
 
 ```yaml
-delete_dependencies: # zero import sites across app/ components/ lib/ server/ hooks/ stores/ scripts/ cli/ testing/
-  - '@tiptap/extension-character-count'
+? delete_dependencies # zero import sites across app/ components/ lib/ server/ hooks/ stores/ scripts/ cli/ testing/
+: - '@tiptap/extension-character-count'
   - '@tiptap/extension-code-block-lowlight'
   - '@tiptap/extension-color'
   - '@tiptap/extension-highlight'
@@ -1125,17 +2939,27 @@ delete_dependencies: # zero import sites across app/ components/ lib/ server/ ho
   - marked
   - turndown
   - discord.js # Node Discord bot fully removed; go-services/internal/discordbot owns it
-delete_dev_dependencies: ['@types/katex', '@types/turndown']
-reclassify_to_devDependencies: # vibe-package build inputs only, never imported by the app
-  - pixi.js
+delete_dev_dependencies:
+  [
+    '@types/katex',
+    '@types/turndown',
+  ]
+? reclassify_to_devDependencies # vibe-package build inputs only, never imported by the app
+: - pixi.js
   - lodash-es
   - immer
   - uuid
   - playwright # after R0-T5 deletes the Node vibe-screenshot fallback; scripts/epic/* keeps it as devDep
 prune_config_references:
-  - 'vite.config.ts heavyExternals: recharts, katex'
-  - 'vite.config.ts ssrOnlyExternals: @tiptap/*'
-reverify: |
+  - 'vite.config.ts
+    heavyExternals:
+    recharts,
+    katex'
+  - 'vite.config.ts
+    ssrOnlyExternals:
+    @tiptap/*'
+reverify:
+  |
   for d in <dep>; do grep -rE "from ['\"]${d}(/|['\"])|require\\(['\"]${d}" app components lib server hooks stores scripts cli testing; done
 keep_despite_suspicion:
   [
@@ -1163,8 +2987,8 @@ keep_despite_suspicion:
 ### 9.2 Dead code trees
 
 ```yaml
-node_workers_superseded_by_go: # not built by pnpm build, absent from docker-compose; Go supervisor owns these in prod
-  - server/bot-worker/
+? node_workers_superseded_by_go # not built by pnpm build, absent from docker-compose; Go supervisor owns these in prod
+: - server/bot-worker/
   - server/doctrine-worker/
   - server/recap/
   - server/vibe-worker/
@@ -1173,8 +2997,8 @@ node_files:
   - lib/rmhvibe/vibe-screenshot.server.ts # Node thumbnail fallback; Go vibe-worker (chromedp) is authoritative
 go_never_integrated:
   - go-services/cmd/ledger/ # no BUILD.bazel, no image, not deployed
-go_realtime_duplicate: # R4-T1; tag pre-rewrite-go-realtime first
-  - go-services/cmd/{gateway,gamehub,rmhbox,rmhmusic,rmhtube}/
+? go_realtime_duplicate # R4-T1; tag pre-rewrite-go-realtime first
+: - go-services/cmd/{gateway,gamehub,rmhbox,rmhmusic,rmhtube}/
   - go-services/internal/{gateway,gamehub,rmhbox,rmhmusic,rmhtube}/
   - go-services/pkg/realtime/
   - deploy/helm/rmhstudios-go/
@@ -1185,28 +3009,62 @@ go_realtime_duplicate: # R4-T1; tag pre-rewrite-go-realtime first
   - go-services/docker-compose.go.yml
 repo_root:
   - specs/ # 5 legacy AI-agent specs, zero runtime references
-reverify: "grep -rn '<path-or-symbol>' package.json Dockerfile docker-compose.yml deploy.sh .github/workflows/ app lib server"
+reverify:
+  "grep
+  -rn
+  '<path-or-symbol>'
+  package.json
+  Dockerfile
+  docker-compose.yml
+  deploy.sh
+  .github/workflows/
+  app
+  lib
+  server"
 ```
 
 ### 9.3 Dead database models (schema.prisma line @ efb6269)
 
 ```yaml
-drop: # accessor = prisma client property; reverify = must return empty
-  - {
+? drop # accessor = prisma client property; reverify = must return empty
+: - {
       model: RMHarkView,
       table: rmheet_view,
       line: 1603,
       accessor: rMHarkView,
-      note: 'no writers; only reader scripts/reconcile-feed-counts.ts:38 (delete branch); views = denormalized viewCount via lib/hot-counters.server.ts',
+      note:
+        'no
+        writers;
+        only
+        reader
+        scripts/reconcile-feed-counts.ts:38
+        (delete
+        branch);
+        views
+        =
+        denormalized
+        viewCount
+        via
+        lib/hot-counters.server.ts',
     }
-  - { model: RmhTubePlaylist, table: rmhtube_playlist, line: 979, accessor: rmhTubePlaylist }
+  - {
+      model: RmhTubePlaylist,
+      table: rmhtube_playlist,
+      line: 979,
+      accessor: rmhTubePlaylist,
+    }
   - {
       model: RmhTubePlaylistItem,
       table: rmhtube_playlist_item,
       line: 993,
       accessor: rmhTubePlaylistItem,
     }
-  - { model: RmhTubeUserStats, table: rmhtube_user_stats, line: 1024, accessor: rmhTubeUserStats }
+  - {
+      model: RmhTubeUserStats,
+      table: rmhtube_user_stats,
+      line: 1024,
+      accessor: rmhTubeUserStats,
+    }
   - {
       model: RmhMusicQueueItem,
       table: rmh_music_queue_item,
@@ -1219,7 +3077,12 @@ drop: # accessor = prisma client property; reverify = must return empty
       line: 1960,
       accessor: rmhMusicChatMessage,
     }
-  - { model: BuildVersion, table: build_version, line: 2515, accessor: buildVersion }
+  - {
+      model: BuildVersion,
+      table: build_version,
+      line: 2515,
+      accessor: buildVersion,
+    }
   - {
       model: DoctrineSahurParticipation,
       table: doctrine_sahur_participation,
@@ -1231,26 +3094,77 @@ drop: # accessor = prisma client property; reverify = must return empty
       table: feed_announcement_poll,
       line: 4222,
       accessor: feedAnnouncementPoll,
-      note: 'orphaned parent; option/vote children have 1 ref each — collapse or drop family together',
+      note:
+        'orphaned
+        parent;
+        option/vote
+        children
+        have
+        1
+        ref
+        each
+        —
+        collapse
+        or
+        drop
+        family
+        together',
     }
-  - { model: SongRating, table: song_rating, line: 685, accessor: songRating }
+  - {
+      model: SongRating,
+      table: song_rating,
+      line: 685,
+      accessor: songRating,
+    }
 review_before_drop:
   - {
       model: RMHarkCommentView,
       table: rmheet_comment_view,
-      note: 'written per (comment,viewer) forever; confirm no product surface, then same procedure',
+      note:
+        'written
+        per
+        (comment,viewer)
+        forever;
+        confirm
+        no
+        product
+        surface,
+        then
+        same
+        procedure',
     }
-not_dead_despite_zero_prisma_refs: # written by Go raw SQL or lib raw SQL — keep tables
-  - {
-      tables: 'ledger_artifact, ledger_plan_run, ledger_plan_step, ledger_step_input',
+? not_dead_despite_zero_prisma_refs # written by Go raw SQL or lib raw SQL — keep tables
+: - {
+      tables:
+        'ledger_artifact,
+        ledger_plan_run,
+        ledger_plan_step,
+        ledger_step_input',
       writer: 'go-services/internal/ledger/repo.go',
     }
-  - { tables: 'discord_alex_*, discord_chat_session', writer: 'go-services/internal/discordbot/*' }
+  - {
+      tables:
+        'discord_alex_*,
+        discord_chat_session',
+      writer: 'go-services/internal/discordbot/*',
+    }
   - {
       tables: 'ladder_worker_lease',
-      writer: 'lib/rmhladder/worker-lease.ts raw SQL (retired by R2-T4, table kept until R5 review)',
+      writer:
+        'lib/rmhladder/worker-lease.ts
+        raw
+        SQL
+        (retired
+        by
+        R2-T4,
+        table
+        kept
+        until
+        R5
+        review)',
     }
-reverify_RV: |
+reverify_RV:
+  |
   # per model: both must return nothing
   grep -rn "\.<accessor>\b" app lib server scripts components stores hooks go-services
   grep -rn "<table>" go-services lib/**/*.server.ts --include=*.go --include=*.ts | grep -v schema.prisma | grep -v migrations
@@ -1259,8 +3173,8 @@ reverify_RV: |
 ### 9.4 Stale scripts
 
 ```yaml
-delete: # unreferenced by package.json, Makefile, Dockerfile, deploy.sh, .github/, docker-compose
-  - scripts/assign-handles.ts
+? delete # unreferenced by package.json, Makefile, Dockerfile, deploy.sh, .github/, docker-compose
+: - scripts/assign-handles.ts
   - scripts/generate-blog-data.ts # + committed scripts/blog-data.json
   - scripts/seed-official-builds.ts
   - scripts/seed-news-from-git.ts
@@ -1275,82 +3189,300 @@ confirm_with_owner_first:
   - scripts/migrate-avatars-to-r2.ts # weak references found — verify
   - scripts/migrate-blogs.ts # weak references found — verify
   - scripts/news-pipeline/ # 6 files, self-referenced only; possibly run manually
-keep: 'everything wired to package.json scripts (ladder:*, i18n:*, epic:*, reconcile-*, albums:migrate, library:metadata, backfill-vibe-thumbs, emoji:shortcodes, build-vibe-packages, gen-* asset generators)'
+keep:
+  'everything
+  wired
+  to
+  package.json
+  scripts
+  (ladder:*,
+  i18n:*,
+  epic:*,
+  reconcile-*,
+  albums:migrate,
+  library:metadata,
+  backfill-vibe-thumbs,
+  emoji:shortcodes,
+  build-vibe-packages,
+  gen-*
+  asset
+  generators)'
 ```
 
 ### 9.5 Frontend extraction order (R3-T2 iterations, biggest graph first)
 
 ```yaml
-games: # entry route → moved trees → heavy deps that leave the root
-  - {
+? games # entry route → moved trees → heavy deps that leave the root
+: - {
       name: velum2099,
       routes: 'velum2099.tsx',
-      components: components/velum2099 (608KB),
-      deps: [three, '@react-three/*', rapier],
+      components:
+        components/velum2099
+        (608KB),
+      deps:
+        [
+          three,
+          '@react-three/*',
+          rapier,
+        ],
     }
   - {
       name: forest-explorer,
-      routes: 'forest-explorer.tsx +3',
-      components: components/forest-explorer (64 files),
-      deps: [three],
+      routes:
+        'forest-explorer.tsx
+        +3',
+      components:
+        components/forest-explorer
+        (64
+        files),
+      deps:
+        [
+          three,
+        ],
     }
   - {
       name: rmhbox-client,
-      routes: 'rmhbox.tsx + rmhbox/ (4)',
-      components: components/rmhbox (95 files),
-      deps: [socket.io-client stays shared],
+      routes:
+        'rmhbox.tsx
+        +
+        rmhbox/
+        (4)',
+      components:
+        components/rmhbox
+        (95
+        files),
+      deps:
+        [
+          socket.io-client
+          stays
+          shared,
+        ],
     }
   - {
       name: altair,
-      routes: 'altair.tsx + altair/ (4)',
+      routes:
+        'altair.tsx
+        +
+        altair/
+        (4)',
       components: components/altair,
-      lib: lib/altair (48 files),
-      deps: [howler],
+      lib:
+        lib/altair
+        (48
+        files),
+      deps:
+        [
+          howler,
+        ],
     }
-  - { name: cookgame, routes: 'cookgame.tsx', components: components/cookgame (34 files) }
+  - {
+      name: cookgame,
+      routes: 'cookgame.tsx',
+      components:
+        components/cookgame
+        (34
+        files),
+    }
   - {
       name: kowloon-knockout,
-      routes: 'kowloon-knockout.tsx +1',
-      components: components/kowloon-knockout (28),
-      lib: lib/kowloon-knockout (46),
+      routes:
+        'kowloon-knockout.tsx
+        +1',
+      components:
+        components/kowloon-knockout
+        (28),
+      lib:
+        lib/kowloon-knockout
+        (46),
     }
-  - { name: temple-of-joy, routes: 'temple-of-joy.tsx +1', lib: 'lib/temple-of-joy (89KB data)' }
+  - {
+      name: temple-of-joy,
+      routes:
+        'temple-of-joy.tsx
+        +1',
+      lib:
+        'lib/temple-of-joy
+        (89KB
+        data)',
+    }
   - {
       name: void-breaker,
       routes: 'void-breaker.tsx',
-      lib: 'lib/void-breaker (game.ts 88KB + renderer 60KB)',
+      lib:
+        'lib/void-breaker
+        (game.ts
+        88KB
+        +
+        renderer
+        60KB)',
     }
-  - { name: dream-rift, routes: 'dream-rift.tsx', lib: lib/dream-rift (33 files) }
-  - { name: rmh-capital, routes: 'rmh-capital.tsx + (6)' }
-  - { name: rmh-pmc, routes: 'rmh-pmc.tsx + (6)' }
+  - {
+      name: dream-rift,
+      routes: 'dream-rift.tsx',
+      lib:
+        lib/dream-rift
+        (33
+        files),
+    }
+  - {
+      name: rmh-capital,
+      routes:
+        'rmh-capital.tsx
+        +
+        (6)',
+    }
+  - {
+      name: rmh-pmc,
+      routes:
+        'rmh-pmc.tsx
+        +
+        (6)',
+    }
   - {
       name: remaining-small,
-      routes: 'slice-it, synapse-storm, neon-driftway, laundry-sort, lights-out, house-always-wins, rochester-offensive, adaptive-intelligence, versecraft (+1), rmh-farming-sim (+1)',
-      note: "may share one 'arcade' package",
+      routes:
+        'slice-it,
+        synapse-storm,
+        neon-driftway,
+        laundry-sort,
+        lights-out,
+        house-always-wins,
+        rochester-offensive,
+        adaptive-intelligence,
+        versecraft
+        (+1),
+        rmh-farming-sim
+        (+1)',
+      note:
+        "may
+        share
+        one
+        'arcade'
+        package",
     }
 apps:
-  - { name: rmhtube, routes: 'rmhtube.tsx + rmhtube/ (2)' }
-  - { name: rmhmusic, routes: 'rmhmusic.tsx + rmhmusic/ (3)', deps: [tone] }
-  - { name: rmhtype, routes: 'rmhtype.tsx + rmhtype/ (4)' }
-  - { name: rmhstudy, routes: 'rmhstudy.tsx + rmhstudy/ (2)' }
-  - { name: rmhcode, routes: 'rmhcode.tsx + rmhcode/ (2)' }
-  - { name: studio, routes: 'studio.tsx + studio/ (1)' }
+  - {
+      name: rmhtube,
+      routes:
+        'rmhtube.tsx
+        +
+        rmhtube/
+        (2)',
+    }
+  - {
+      name: rmhmusic,
+      routes:
+        'rmhmusic.tsx
+        +
+        rmhmusic/
+        (3)',
+      deps:
+        [
+          tone,
+        ],
+    }
+  - {
+      name: rmhtype,
+      routes:
+        'rmhtype.tsx
+        +
+        rmhtype/
+        (4)',
+    }
+  - {
+      name: rmhstudy,
+      routes:
+        'rmhstudy.tsx
+        +
+        rmhstudy/
+        (2)',
+    }
+  - {
+      name: rmhcode,
+      routes:
+        'rmhcode.tsx
+        +
+        rmhcode/
+        (2)',
+    }
+  - {
+      name: studio,
+      routes:
+        'studio.tsx
+        +
+        studio/
+        (1)',
+    }
   - {
       name: strategies,
-      routes: 'strategies.tsx + strategies/ (13)',
-      note: 'carries @tanstack/react-query if R3-T3 chose extraction',
+      routes:
+        'strategies.tsx
+        +
+        strategies/
+        (13)',
+      note:
+        'carries
+        @tanstack/react-query
+        if
+        R3-T3
+        chose
+        extraction',
     }
-stays_in_shell: 'feed, profiles, messages, groups, communities, explore, search, news/blog/library, wallet/store, admin, developer docs, rmhladder (_site, SEO), login/legal, secret/*, liquid-glass + marketing pages, ALL /api routes'
+stays_in_shell:
+  'feed,
+  profiles,
+  messages,
+  groups,
+  communities,
+  explore,
+  search,
+  news/blog/library,
+  wallet/store,
+  admin,
+  developer
+  docs,
+  rmhladder
+  (_site,
+  SEO),
+  login/legal,
+  secret/*,
+  liquid-glass
+  +
+  marketing
+  pages,
+  ALL
+  /api
+  routes'
 single_import_isolations:
   - {
       dep: monaco-editor,
       only_site: components/admin/DynamicMonacoEditor.tsx,
-      action: 'admin-only lazy island; candidate to replace with a lighter editor',
+      action:
+        'admin-only
+        lazy
+        island;
+        candidate
+        to
+        replace
+        with
+        a
+        lighter
+        editor',
     }
   - {
       dep: maplibre-gl,
-      sites: 'components/homes/ListingsMap.tsx, components/rideshare/RideMap.tsx',
-      action: 'already lazy; stays in shell packages for homes/rideshare',
+      sites:
+        'components/homes/ListingsMap.tsx,
+        components/rideshare/RideMap.tsx',
+      action:
+        'already
+        lazy;
+        stays
+        in
+        shell
+        packages
+        for
+        homes/rideshare',
     }
 ```
 
@@ -1361,17 +3493,56 @@ single_import_isolations:
 ```yaml
 build:
   [
-    'pnpm install',
-    'pnpm exec tsc --noEmit (per-package after R3-T1)',
-    'pnpm lint',
-    'pnpm exec vitest run',
-    'pnpm build',
-    'docker compose config -q',
-    'cd go-services && make gazelle && make test',
+    'pnpm
+    install',
+    'pnpm
+    exec
+    tsc
+    --noEmit
+    (per-package
+    after
+    R3-T1)',
+    'pnpm
+    lint',
+    'pnpm
+    exec
+    vitest
+    run',
+    'pnpm
+    build',
+    'docker
+    compose
+    config
+    -q',
+    'cd
+    go-services
+    &&
+    make
+    gazelle
+    &&
+    make
+    test',
   ]
-perf_ci: ['node scripts/ci/bundle-budget.ts --check', 'Lighthouse budget on / (shell)']
+perf_ci:
+  [
+    'node
+    scripts/ci/bundle-budget.ts
+    --check',
+    'Lighthouse
+    budget
+    on
+    /
+    (shell)',
+  ]
 prod_kpis:
-  web: [ttfb_p75_cached, ttfb_p75_authed, lcp_p75, inp_p75, cf_anon_html_hit_ratio_gt_80pct]
+  web:
+    [
+      ttfb_p75_cached,
+      ttfb_p75_authed,
+      lcp_p75,
+      inp_p75,
+      cf_anon_html_hit_ratio_gt_80pct,
+    ]
   db:
     [
       pool_wait_p99,
@@ -1380,7 +3551,13 @@ prod_kpis:
       counter_drift_pct,
       backup_success_and_drill_age,
     ]
-  async: [queue_depth_p95, job_age_p95, job_failure_rate, like_path_server_p95]
+  async:
+    [
+      queue_depth_p95,
+      job_age_p95,
+      job_failure_rate,
+      like_path_server_p95,
+    ]
   realtime:
     [
       connections_per_hub,
@@ -1404,43 +3581,194 @@ prod_kpis:
 ```yaml
 - {
     id: NG-1,
-    rejected: 'new framework/language (Next.js, Remix, SolidStart, full-Go SSR)',
-    reason: 'shell is already ~334KB eager post-audit; framework was never the measured problem; a migration is a year of risk to move a number that needs 34KB',
+    rejected:
+      'new
+      framework/language
+      (Next.js,
+      Remix,
+      SolidStart,
+      full-Go
+      SSR)',
+    reason:
+      'shell
+      is
+      already
+      ~334KB
+      eager
+      post-audit;
+      framework
+      was
+      never
+      the
+      measured
+      problem;
+      a
+      migration
+      is
+      a
+      year
+      of
+      risk
+      to
+      move
+      a
+      number
+      that
+      needs
+      34KB',
   }
 - {
     id: NG-2,
-    rejected: 'microservices per product',
-    reason: 'schemas (§4.1) + packages (§7.1) give pool/build/deploy isolation without network hops or distributed transactions',
+    rejected:
+      'microservices
+      per
+      product',
+    reason:
+      'schemas
+      (§4.1)
+      +
+      packages
+      (§7.1)
+      give
+      pool/build/deploy
+      isolation
+      without
+      network
+      hops
+      or
+      distributed
+      transactions',
   }
 - {
     id: NG-3,
-    rejected: 'finishing the Go hub port',
-    reason: '17 games + 8 minigames of parity work duplicating a working tier; deleted instead, resurrectable from tag pre-rewrite-go-realtime',
+    rejected:
+      'finishing
+      the
+      Go
+      hub
+      port',
+    reason:
+      '17
+      games
+      +
+      8
+      minigames
+      of
+      parity
+      work
+      duplicating
+      a
+      working
+      tier;
+      deleted
+      instead,
+      resurrectable
+      from
+      tag
+      pre-rewrite-go-realtime',
   }
 - {
     id: NG-4,
-    rejected: 'renaming rmheet* tables to rmhark*',
-    reason: 'touches all raw SQL, Go code, hand-written indexes; zero performance value',
+    rejected:
+      'renaming
+      rmheet*
+      tables
+      to
+      rmhark*',
+    reason:
+      'touches
+      all
+      raw
+      SQL,
+      Go
+      code,
+      hand-written
+      indexes;
+      zero
+      performance
+      value',
   }
 - {
     id: NG-5,
     rejected: 'Kafka/NATS/Redis-Streams/BullMQ',
-    reason: 'pg-boss on existing Postgres covers thousands-of-jobs/min with backups included; Redis here is a lossy LRU',
+    reason:
+      'pg-boss
+      on
+      existing
+      Postgres
+      covers
+      thousands-of-jobs/min
+      with
+      backups
+      included;
+      Redis
+      here
+      is
+      a
+      lossy
+      LRU',
   }
 - {
     id: NG-6,
-    rejected: 'cuid→UUIDv7 migration of existing tables; partitioning DM/group history',
-    reason: 'cost exceeds benefit at current scale; PK policy applies to new tables only',
+    rejected:
+      'cuid→UUIDv7
+      migration
+      of
+      existing
+      tables;
+      partitioning
+      DM/group
+      history',
+    reason:
+      'cost
+      exceeds
+      benefit
+      at
+      current
+      scale;
+      PK
+      policy
+      applies
+      to
+      new
+      tables
+      only',
   }
 - {
     id: NG-7,
-    rejected: 'media relocation out of repo / git history rewrite',
-    reason: 'owner decision OD-1',
+    rejected:
+      'media
+      relocation
+      out
+      of
+      repo
+      /
+      git
+      history
+      rewrite',
+    reason:
+      'owner
+      decision
+      OD-1',
   }
 - {
     id: NG-8,
-    rejected: 'SSR for games',
-    reason: 'games are client apps; SEO surfaces (landing pages) stay in apps/web',
+    rejected:
+      'SSR
+      for
+      games',
+    reason:
+      'games
+      are
+      client
+      apps;
+      SEO
+      surfaces
+      (landing
+      pages)
+      stay
+      in
+      apps/web',
   }
 ```
 
@@ -1448,13 +3776,76 @@ prod_kpis:
 
 ## 12. Implementation status (updated 2026-07-18)
 
-Phase **R0 landed** on `claude/website-performance-rewrite-j06tqj`. Everything
-below was verified with the real toolchain in this order: `pnpm install` →
-`tsc --noEmit` (clean) → `vitest run` (**4532 tests pass, 212 files**) →
-`pnpm build` (green, all 5 esbuild worker bundles) → `docker compose config`
-(valid) → `prisma validate` (valid) → `go build ./...` (clean). The full-repo
-`pnpm lint` was not run locally; it is the one CI `check`-job step left to
-confirm (the edits are deletion-heavy with no new unused symbols).
+Phase
+**R0
+landed**
+on
+`claude/website-performance-rewrite-j06tqj`.
+Everything
+below
+was
+verified
+with
+the
+real
+toolchain
+in
+this
+order:
+`pnpm install`
+→
+`tsc --noEmit`
+(clean)
+→
+`vitest run`
+(**4532
+tests
+pass,
+212
+files**)
+→
+`pnpm build`
+(green,
+all
+5
+esbuild
+worker
+bundles)
+→
+`docker compose config`
+(valid)
+→
+`prisma validate`
+(valid)
+→
+`go build ./...`
+(clean).
+The
+full-repo
+`pnpm lint`
+was
+not
+run
+locally;
+it
+is
+the
+one
+CI
+`check`-job
+step
+left
+to
+confirm
+(the
+edits
+are
+deletion-heavy
+with
+no
+new
+unused
+symbols).
 
 ### Landed
 
@@ -1471,34 +3862,264 @@ confirm (the edits are deletion-heavy with no new unused symbols).
 
 ### Evidence-backed deviations from the original plan
 
-1. **immer / uuid / lodash-es kept in `dependencies`** (plan said reclassify to
-   devDeps). `lib/rmhvibe/vibe-packages.ts:51-53` is explicit: `inline`-tier
-   packages are resolved by esbuild at page-generation **(runtime)**, so
-   devDependencies would break prod vibe generation (they're pruned in the
-   `prod-deps` image stage). Only `pixi.js` (hosted-tier, build-time prebundle)
-   moved. The inventory's blanket reclassification was wrong for the inline tier.
-2. **`lib/rmhvibe/vibe-screenshot.server.ts` kept** (plan said delete it with
-   playwright). It is still imported by the **live** `scripts/backfill-vibe-thumbs.ts`
-   (package.json-wired). Playwright still moved to devDeps — no runtime path
-   imports it now, only scripts.
-3. **Go realtime/gateway deletion (R4-T1) not executed here.** It is entangled
-   with CI gates that can't run in a sandbox (Bazel, `helm lint`, `kube-linter`,
-   `kubeconform`, the Postgres-backed e2e harness) across six workflows plus
-   `images/BUILD.bazel` and the e2e scripts. Executing it blind risks reddening
-   CI. Deferred to a CI-connected run; the `pkg/events` fix that unblocked it is
-   already in `main` (recorded in §5.2 / R0-T8).
-4. **Redis split shipped as an inert seam, not a live cutover.** The dual-Redis
-   routing can't be runtime-verified without a running two-instance staging, so
-   R0-T2 landed behavior-preserving (fallback to the single connection) and the
-   `redis-state` service is dormant (profile-gated). Activation (set
-   `REDIS_STATE_URL` + start the profile) is the operator opt-in the design
-   always intended.
+1. **immer
+   /
+   uuid
+   /
+   lodash-es
+   kept
+   in
+   `dependencies`**
+   (plan
+   said
+   reclassify
+   to
+   devDeps).
+   `lib/rmhvibe/vibe-packages.ts:51-53`
+   is
+   explicit:
+   `inline`-tier
+   packages
+   are
+   resolved
+   by
+   esbuild
+   at
+   page-generation
+   **(runtime)**,
+   so
+   devDependencies
+   would
+   break
+   prod
+   vibe
+   generation
+   (they're
+   pruned
+   in
+   the
+   `prod-deps`
+   image
+   stage).
+   Only
+   `pixi.js`
+   (hosted-tier,
+   build-time
+   prebundle)
+   moved.
+   The
+   inventory's
+   blanket
+   reclassification
+   was
+   wrong
+   for
+   the
+   inline
+   tier.
+2. **`lib/rmhvibe/vibe-screenshot.server.ts`
+   kept**
+   (plan
+   said
+   delete
+   it
+   with
+   playwright).
+   It
+   is
+   still
+   imported
+   by
+   the
+   **live**
+   `scripts/backfill-vibe-thumbs.ts`
+   (package.json-wired).
+   Playwright
+   still
+   moved
+   to
+   devDeps
+   —
+   no
+   runtime
+   path
+   imports
+   it
+   now,
+   only
+   scripts.
+3. **Go
+   realtime/gateway
+   deletion
+   (R4-T1)
+   not
+   executed
+   here.**
+   It
+   is
+   entangled
+   with
+   CI
+   gates
+   that
+   can't
+   run
+   in
+   a
+   sandbox
+   (Bazel,
+   `helm lint`,
+   `kube-linter`,
+   `kubeconform`,
+   the
+   Postgres-backed
+   e2e
+   harness)
+   across
+   six
+   workflows
+   plus
+   `images/BUILD.bazel`
+   and
+   the
+   e2e
+   scripts.
+   Executing
+   it
+   blind
+   risks
+   reddening
+   CI.
+   Deferred
+   to
+   a
+   CI-connected
+   run;
+   the
+   `pkg/events`
+   fix
+   that
+   unblocked
+   it
+   is
+   already
+   in
+   `main`
+   (recorded
+   in
+   §5.2
+   /
+   R0-T8).
+4. **Redis
+   split
+   shipped
+   as
+   an
+   inert
+   seam,
+   not
+   a
+   live
+   cutover.**
+   The
+   dual-Redis
+   routing
+   can't
+   be
+   runtime-verified
+   without
+   a
+   running
+   two-instance
+   staging,
+   so
+   R0-T2
+   landed
+   behavior-preserving
+   (fallback
+   to
+   the
+   single
+   connection)
+   and
+   the
+   `redis-state`
+   service
+   is
+   dormant
+   (profile-gated).
+   Activation
+   (set
+   `REDIS_STATE_URL` +
+   start
+   the
+   profile)
+   is
+   the
+   operator
+   opt-in
+   the
+   design
+   always
+   intended.
 
 ### Not started (need infra / CI / app-runtime this sandbox lacks)
 
-R1 (PgBouncer + schema moves + partitioning — need a live Postgres and multi-
-week production gates), R2 (pg-boss — needs Postgres), R3 (workspace
-decomposition + the F1/F4/F6/F7 frontend-runtime items — need the app driven in
-a browser to verify), R4-T1..T4 (Bazel/helm/e2e + hub runtime), R5 (evidence-
-gated). Each remains fully specified in §8; the phase-ordering and exit-gate
-rules there still bind.
+R1
+(PgBouncer +
+schema
+moves +
+partitioning
+—
+need
+a
+live
+Postgres
+and
+multi-
+week
+production
+gates),
+R2
+(pg-boss
+—
+needs
+Postgres),
+R3
+(workspace
+decomposition +
+the
+F1/F4/F6/F7
+frontend-runtime
+items
+—
+need
+the
+app
+driven
+in
+a
+browser
+to
+verify),
+R4-T1..T4
+(Bazel/helm/e2e +
+hub
+runtime),
+R5
+(evidence-
+gated).
+Each
+remains
+fully
+specified
+in
+§8;
+the
+phase-ordering
+and
+exit-gate
+rules
+there
+still
+bind.

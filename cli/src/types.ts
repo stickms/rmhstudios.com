@@ -21,7 +21,9 @@ export interface BuildItem {
   likeCount: number;
   viewCount: number;
   createdAt: string;
-  publishedAt: string | null;
+  publishedAt:
+    | string
+    | null;
 }
 
 export interface ApiError {

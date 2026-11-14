@@ -15,16 +15,38 @@ import type { Slice } from './types';
 
 /* ─── G2 — lane count ────────────────────────────────────────────────────── */
 
-export const KEY_COUNTS = [2, 4, 6] as const;
-export type KeyCount = (typeof KEY_COUNTS)[number];
+export const KEY_COUNTS =
+  [
+    2,
+    4,
+    6,
+  ] as const;
+export type KeyCount =
+  (typeof KEY_COUNTS)[number];
 
-export function isKeyCount(value: unknown): value is KeyCount {
-  return typeof value === 'number' && (KEY_COUNTS as readonly number[]).includes(value);
+export function isKeyCount(
+  value: unknown,
+): value is KeyCount {
+  return (
+    typeof value ===
+      'number' &&
+    (
+      KEY_COUNTS as readonly number[]
+    ).includes(
+      value,
+    )
+  );
 }
 
 /** 2 for anything that does not say — which is every chart that exists. */
-export function keyCountOf(value: unknown): KeyCount {
-  return isKeyCount(value) ? value : 2;
+export function keyCountOf(
+  value: unknown,
+): KeyCount {
+  return isKeyCount(
+    value,
+  )
+    ? value
+    : 2;
 }
 
 /** Analysis band edges, in Hz. */
@@ -42,11 +64,46 @@ const LANE_MAX_HZ = 11_000;
  * divides the spectrum evenly by ear; a linear split at 2750/5500/8250 Hz puts
  * every drum and every bass note in lane 0 and leaves lanes 2 and 3 for cymbals.
  */
-export function assignLane(centroidHz: number, keys: number): number {
-  const lanes = Math.max(1, Math.floor(keys));
-  const clamped = Math.max(LANE_MIN_HZ, Math.min(LANE_MAX_HZ, centroidHz || LANE_MIN_HZ));
-  const t = Math.log2(clamped / LANE_MIN_HZ) / Math.log2(LANE_MAX_HZ / LANE_MIN_HZ);
-  return Math.min(lanes - 1, Math.max(0, Math.floor(t * lanes)));
+export function assignLane(
+  centroidHz: number,
+  keys: number,
+): number {
+  const lanes =
+    Math.max(
+      1,
+      Math.floor(
+        keys,
+      ),
+    );
+  const clamped =
+    Math.max(
+      LANE_MIN_HZ,
+      Math.min(
+        LANE_MAX_HZ,
+        centroidHz ||
+          LANE_MIN_HZ,
+      ),
+    );
+  const t =
+    Math.log2(
+      clamped /
+        LANE_MIN_HZ,
+    ) /
+    Math.log2(
+      LANE_MAX_HZ /
+        LANE_MIN_HZ,
+    );
+  return Math.min(
+    lanes -
+      1,
+    Math.max(
+      0,
+      Math.floor(
+        t *
+          lanes,
+      ),
+    ),
+  );
 }
 
 /**
@@ -56,20 +113,63 @@ export function assignLane(centroidHz: number, keys: number): number {
  * the same reason `C9`'s importer does: round-robin turns an alternating stream
  * into a jack, which is unplayable.
  */
-export function foldToKeys(notes: readonly Slice[], from: number, to: number): Slice[] {
-  if (to >= from) return notes.map((note) => ({ ...note }));
-  const half = Math.ceil(from / 2);
-  return notes.map((note) => ({
-    ...note,
-    lane:
-      to === 2 ? (note.lane < half ? 0 : 1) : Math.min(to - 1, Math.floor((note.lane * to) / from)),
-  }));
+export function foldToKeys(
+  notes: readonly Slice[],
+  from: number,
+  to: number,
+): Slice[] {
+  if (
+    to >=
+    from
+  )
+    return notes.map(
+      (
+        note,
+      ) => ({
+        ...note,
+      }),
+    );
+  const half =
+    Math.ceil(
+      from /
+        2,
+    );
+  return notes.map(
+    (
+      note,
+    ) => ({
+      ...note,
+      lane:
+        to ===
+        2
+          ? note.lane <
+            half
+            ? 0
+            : 1
+          : Math.min(
+              to -
+                1,
+              Math.floor(
+                (note.lane *
+                  to) /
+                  from,
+              ),
+            ),
+    }),
+  );
 }
 
 /* ─── G4 — directional slices ────────────────────────────────────────────── */
 
-export const SLICE_DIRECTIONS = ['up', 'down', 'left', 'right'] as const;
-export type SliceDirection = (typeof SLICE_DIRECTIONS)[number];
+export const SLICE_DIRECTIONS =
+  [
+    'up',
+    'down',
+    'left',
+    'right',
+  ] as const;
+export type SliceDirection =
+  (typeof SLICE_DIRECTIONS)[number];
 
 /**
  * The gesture dead zone, in pixels.
@@ -80,10 +180,36 @@ export type SliceDirection = (typeof SLICE_DIRECTIONS)[number];
  */
 export const SWIPE_DEAD_ZONE_PX = 24;
 
-export function directionOf(dx: number, dy: number): SliceDirection | undefined {
-  if (Math.hypot(dx, dy) < SWIPE_DEAD_ZONE_PX) return undefined;
-  if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 'right' : 'left';
-  return dy > 0 ? 'down' : 'up';
+export function directionOf(
+  dx: number,
+  dy: number,
+):
+  | SliceDirection
+  | undefined {
+  if (
+    Math.hypot(
+      dx,
+      dy,
+    ) <
+    SWIPE_DEAD_ZONE_PX
+  )
+    return undefined;
+  if (
+    Math.abs(
+      dx,
+    ) >
+    Math.abs(
+      dy,
+    )
+  )
+    return dx >
+      0
+      ? 'right'
+      : 'left';
+  return dy >
+    0
+    ? 'down'
+    : 'up';
 }
 
 /**
@@ -101,12 +227,25 @@ export function directionOf(dx: number, dy: number): SliceDirection | undefined 
  *  3. A wrong direction from a device that CAN express one is wrong.
  */
 export function satisfiesDirection(
-  required: SliceDirection | undefined,
-  given: SliceDirection | undefined,
+  required:
+    | SliceDirection
+    | undefined,
+  given:
+    | SliceDirection
+    | undefined,
 ): boolean {
-  if (!required) return true;
-  if (!given) return true;
-  return required === given;
+  if (
+    !required
+  )
+    return true;
+  if (
+    !given
+  )
+    return true;
+  return (
+    required ===
+    given
+  );
 }
 
 /* ─── G6 — rolls ─────────────────────────────────────────────────────────── */
@@ -144,12 +283,41 @@ export interface RollResult {
  * individual hits are not judged, so scoring them individually would make it a
  * fast stream with a different colour.
  */
-export function scoreRoll(hits: number, windowSeconds: number): RollResult {
-  const window = Math.max(0.05, windowSeconds);
-  const target = ROLL_TARGET_HPS * window;
-  const counted = Math.max(0, Math.min(hits, target));
-  const fill = target > 0 ? counted / target : 0;
-  return { hits, fill, points: Math.round(counted * ROLL_HIT_POINTS) };
+export function scoreRoll(
+  hits: number,
+  windowSeconds: number,
+): RollResult {
+  const window =
+    Math.max(
+      0.05,
+      windowSeconds,
+    );
+  const target =
+    ROLL_TARGET_HPS *
+    window;
+  const counted =
+    Math.max(
+      0,
+      Math.min(
+        hits,
+        target,
+      ),
+    );
+  const fill =
+    target >
+    0
+      ? counted /
+        target
+      : 0;
+  return {
+    hits,
+    fill,
+    points:
+      Math.round(
+        counted *
+          ROLL_HIT_POINTS,
+      ),
+  };
 }
 
 /**
@@ -160,11 +328,31 @@ export function scoreRoll(hits: number, windowSeconds: number): RollResult {
  * currently throws it away, charting a drum fill as a handful of taps or as
  * nothing.
  */
-export function isRollRegion(onsetTimes: readonly number[], beatSeconds: number): boolean {
-  if (onsetTimes.length < 5) return false;
-  const span = onsetTimes[onsetTimes.length - 1] - onsetTimes[0];
-  if (span < beatSeconds) return false;
-  return onsetTimes.length / span >= 8;
+export function isRollRegion(
+  onsetTimes: readonly number[],
+  beatSeconds: number,
+): boolean {
+  if (
+    onsetTimes.length <
+    5
+  )
+    return false;
+  const span =
+    onsetTimes[
+      onsetTimes.length -
+        1
+    ] -
+    onsetTimes[0];
+  if (
+    span <
+    beatSeconds
+  )
+    return false;
+  return (
+    onsetTimes.length /
+      span >=
+    8
+  );
 }
 
 /* ─── M4 — chart-level double time ───────────────────────────────────────── */
@@ -178,11 +366,28 @@ export function isRollRegion(onsetTimes: readonly number[], beatSeconds: number)
  * which means the notes were placed against the sped-up audio and the chart is
  * simply what it is at that rate.
  */
-export const CHART_RATES = [1, 1.25, 1.5, 2] as const;
-export type ChartRate = (typeof CHART_RATES)[number];
+export const CHART_RATES =
+  [
+    1,
+    1.25,
+    1.5,
+    2,
+  ] as const;
+export type ChartRate =
+  (typeof CHART_RATES)[number];
 
-export function isChartRate(value: unknown): value is ChartRate {
-  return typeof value === 'number' && (CHART_RATES as readonly number[]).includes(value);
+export function isChartRate(
+  value: unknown,
+): value is ChartRate {
+  return (
+    typeof value ===
+      'number' &&
+    (
+      CHART_RATES as readonly number[]
+    ).includes(
+      value,
+    )
+  );
 }
 
 /**
@@ -195,13 +400,34 @@ export function isChartRate(value: unknown): value is ChartRate {
  * computed over identities — the hash is over times too, so it changes, but the
  * notes are recognisably the same notes.
  */
-export function retime(notes: readonly Slice[], rate: number): Slice[] {
-  const factor = rate > 0 ? 1 / rate : 1;
-  return notes.map((note) => ({
-    ...note,
-    time: note.time * factor,
-    ...(note.duration !== undefined ? { duration: note.duration * factor } : {}),
-  }));
+export function retime(
+  notes: readonly Slice[],
+  rate: number,
+): Slice[] {
+  const factor =
+    rate >
+    0
+      ? 1 /
+        rate
+      : 1;
+  return notes.map(
+    (
+      note,
+    ) => ({
+      ...note,
+      time:
+        note.time *
+        factor,
+      ...(note.duration !==
+      undefined
+        ? {
+            duration:
+              note.duration *
+              factor,
+          }
+        : {}),
+    }),
+  );
 }
 
 /**

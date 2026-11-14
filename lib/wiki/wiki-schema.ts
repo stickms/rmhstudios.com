@@ -4,7 +4,15 @@
  */
 import { z } from 'zod';
 
-export const wikiSsoQuery = z.object({
-  /** 32 hex characters the wiki put in the visitor's session (Special:RMHStudiosLogin). */
-  state: z.string().regex(/^[0-9a-f]{32}$/),
-});
+export const wikiSsoQuery =
+  z.object(
+    {
+      /** 32 hex characters the wiki put in the visitor's session (Special:RMHStudiosLogin). */
+      state:
+        z
+          .string()
+          .regex(
+            /^[0-9a-f]{32}$/,
+          ),
+    },
+  );

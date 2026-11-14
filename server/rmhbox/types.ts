@@ -16,20 +16,29 @@ import type {
 } from '../../lib/rmhbox/types';
 
 // Re-export shared types for server convenience
-export type { LobbyState, LobbySettings, ChatMessage, GameSettingValues };
+export type {
+  LobbyState,
+  LobbySettings,
+  ChatMessage,
+  GameSettingValues,
+};
 
 // ─── Player ──────────────────────────────────────────────────────
 
 export interface RMHboxPlayer {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
-  socketId: string | null;     // null when disconnected
+  avatarUrl:
+    | string
+    | null;
+  socketId:
+    | string
+    | null; // null when disconnected
   isConnected: boolean;
   isReady: boolean;
-  isAway: boolean;             // true when in PiP/minimized in Discord Activity
-  score: number;               // cumulative session score across rounds
-  roundScore: number;          // score for current round only
+  isAway: boolean; // true when in PiP/minimized in Discord Activity
+  score: number; // cumulative session score across rounds
+  roundScore: number; // score for current round only
   joinedAt: number;
   lastSeenAt: number;
   role: 'player';
@@ -40,8 +49,12 @@ export interface RMHboxPlayer {
 export interface RMHboxSpectator {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
-  socketId: string | null;
+  avatarUrl:
+    | string
+    | null;
+  socketId:
+    | string
+    | null;
   isConnected: boolean;
   joinedAt: number;
   role: 'spectator';
@@ -51,7 +64,7 @@ export interface RMHboxSpectator {
 
 export interface ActiveGame {
   minigameId: string;
-  handler: BaseMinigame;       // active minigame instance
+  handler: BaseMinigame; // active minigame instance
   startedAt: number;
 }
 
@@ -76,15 +89,24 @@ export interface RMHboxLobby {
   id: string;
   hostUserId: string;
   settings: LobbySettings;
-  players: Map<string, RMHboxPlayer>;
-  spectators: Map<string, RMHboxSpectator>;
+  players: Map<
+    string,
+    RMHboxPlayer
+  >;
+  spectators: Map<
+    string,
+    RMHboxSpectator
+  >;
   state: LobbyState;
   chat: ChatMessage[];
   createdAt: number;
   lastActivityAt: number;
   currentGame: ActiveGame | null;
   /** Game the host has picked but not yet started. '__vote__' = vote mode. */
-  selectedGame: { minigameId: string; displayName: string } | null;
+  selectedGame: {
+    minigameId: string;
+    displayName: string;
+  } | null;
   matchHistory: ServerMatchSummary[];
   roundNumber: number;
   /** Host-edited game settings during GAME_SETTINGS phase (§12A). */
@@ -96,10 +118,15 @@ export interface RMHboxLobby {
    * for an Activity voice channel. Used to auto-connect everyone in the same
    * voice chat to the same lobby. `null` for code-based lobbies.
    */
-  discordChannelKey: string | null;
+  discordChannelKey:
+    | string
+    | null;
 }
 
 // ─── Minigame Context ────────────────────────────────────────────
 // (Re-exported from base-minigame.ts for convenience)
 
-export type { MinigameContext, MinigameResults } from './minigames/base-minigame';
+export type {
+  MinigameContext,
+  MinigameResults,
+} from './minigames/base-minigame';

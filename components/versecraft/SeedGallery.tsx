@@ -4,10 +4,17 @@
  * name and cast, their world.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { BookOpen, Share2 } from 'lucide-react';
+import {
+  BookOpen,
+  Share2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs } from '@/components/ui/tabs';
@@ -27,153 +34,492 @@ import type { SeedListingView } from '@/lib/versecraft/seed-gallery';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
-type Sort = 'top' | 'new';
+type Sort =
+  | 'top'
+  | 'new';
 
 export function SeedGalleryButton() {
-  const { t } = useTranslation('f-async-games');
-  const [open, setOpen] = useState(false);
-  const [sort, setSort] = useState<Sort>('top');
-  const [rows, setRows] = useState<SeedListingView[] | null>(null);
-  const [failed, setFailed] = useState(false);
-  const arrival = useArrival(rows !== null || failed);
-  const isLoggedIn = useGameStore((s) => s.isLoggedIn);
-  const startGeneratedGame = useGameStore((s) => s.startGeneratedGame);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-async-games',
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    sort,
+    setSort,
+  ] =
+    useState<Sort>(
+      'top',
+    );
+  const [
+    rows,
+    setRows,
+  ] =
+    useState<
+      | SeedListingView[]
+      | null
+    >(
+      null,
+    );
+  const [
+    failed,
+    setFailed,
+  ] =
+    useState(
+      false,
+    );
+  const arrival =
+    useArrival(
+      rows !==
+        null ||
+        failed,
+    );
+  const isLoggedIn =
+    useGameStore(
+      (
+        s,
+      ) =>
+        s.isLoggedIn,
+    );
+  const startGeneratedGame =
+    useGameStore(
+      (
+        s,
+      ) =>
+        s.startGeneratedGame,
+    );
 
-  const load = useCallback(async (which: Sort) => {
-    setFailed(false);
-    try {
-      const res = await fetchWithTimeout(`/api/versecraft/seeds?sort=${which}`, {}, 15000);
-      if (!res.ok) throw new Error(String(res.status));
-      setRows(((await res.json()) as { listings: SeedListingView[] }).listings);
-    } catch {
-      setFailed(true);
-    }
-  }, []);
+  const load =
+    useCallback(
+      async (
+        which: Sort,
+      ) => {
+        setFailed(
+          false,
+        );
+        try {
+          const res =
+            await fetchWithTimeout(
+              `/api/versecraft/seeds?sort=${which}`,
+              {},
+              15000,
+            );
+          if (
+            !res.ok
+          )
+            throw new Error(
+              String(
+                res.status,
+              ),
+            );
+          setRows(
+            (
+              (await res.json()) as {
+                listings: SeedListingView[];
+              }
+            )
+              .listings,
+          );
+        } catch {
+          setFailed(
+            true,
+          );
+        }
+      },
+      [],
+    );
 
   useEffect(() => {
-    if (open) void load(sort);
-  }, [open, sort, load]);
+    if (
+      open
+    )
+      void load(
+        sort,
+      );
+  }, [
+    open,
+    sort,
+    load,
+  ]);
 
-  const rate = async (row: SeedListingView, stars: number) => {
-    let res: Response | null = null;
-    try {
-      res = await fetchWithTimeout('/api/versecraft/seeds/rate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingId: row.id, stars }),
-      }, 15000);
-    } catch {
-      res = null;
-    }
-    if (!res || !res.ok) {
-      toast.error(t('gallery-rate-error', { defaultValue: 'Could not save your rating.' }));
-      return;
-    }
-    const body = (await res.json()) as { average: number; ratingCount: number };
-    setRows(
-      (cur) =>
-        cur?.map((r) =>
-          r.id === row.id
-            ? { ...r, myStars: stars, average: body.average, ratingCount: body.ratingCount }
-            : r,
-        ) ?? cur,
-    );
-  };
+  const rate =
+    async (
+      row: SeedListingView,
+      stars: number,
+    ) => {
+      let res: Response | null =
+        null;
+      try {
+        res =
+          await fetchWithTimeout(
+            '/api/versecraft/seeds/rate',
+            {
+              method:
+                'POST',
+              headers:
+                {
+                  'Content-Type':
+                    'application/json',
+                },
+              body: JSON.stringify(
+                {
+                  listingId:
+                    row.id,
+                  stars,
+                },
+              ),
+            },
+            15000,
+          );
+      } catch {
+        res =
+          null;
+      }
+      if (
+        !res ||
+        !res.ok
+      ) {
+        toast.error(
+          t(
+            'gallery-rate-error',
+            {
+              defaultValue:
+                'Could not save your rating.',
+            },
+          ),
+        );
+        return;
+      }
+      const body =
+        (await res.json()) as {
+          average: number;
+          ratingCount: number;
+        };
+      setRows(
+        (
+          cur,
+        ) =>
+          cur?.map(
+            (
+              r,
+            ) =>
+              r.id ===
+              row.id
+                ? {
+                    ...r,
+                    myStars:
+                      stars,
+                    average:
+                      body.average,
+                    ratingCount:
+                      body.ratingCount,
+                  }
+                : r,
+          ) ??
+          cur,
+      );
+    };
 
-  const fork = (row: SeedListingView) => {
-    // Counted fire-and-forget: continuing the story must never wait on the tally.
-    void api(forkVersecraftSeedApi, { body: { listingId: row.id } }).catch(() => undefined);
-    setOpen(false);
-    void startGeneratedGame({ seed: row.seed });
-  };
+  const fork =
+    (
+      row: SeedListingView,
+    ) => {
+      // Counted fire-and-forget: continuing the story must never wait on the tally.
+      void api(
+        forkVersecraftSeedApi,
+        {
+          body: {
+            listingId:
+              row.id,
+          },
+        },
+      ).catch(
+        () =>
+          undefined,
+      );
+      setOpen(
+        false,
+      );
+      void startGeneratedGame(
+        {
+          seed: row.seed,
+        },
+      );
+    };
 
   return (
     <>
       <button
         className="w-full rounded px-4 py-2 text-sm transition hover:brightness-125"
         style={{
-          backgroundColor: 'rgba(42, 34, 53, 0.6)',
-          border: '1px solid rgba(196, 163, 90, 0.2)',
-          color: '#e8e0d0',
+          backgroundColor:
+            'rgba(42, 34, 53, 0.6)',
+          border:
+            '1px solid rgba(196, 163, 90, 0.2)',
+          color:
+            '#e8e0d0',
         }}
-        onClick={() => setOpen(true)}
+        onClick={() =>
+          setOpen(
+            true,
+          )
+        }
       >
-        <BookOpen className="me-2 inline size-4 align-text-bottom" aria-hidden />
-        {t('gallery-open', { defaultValue: 'Browse the seed gallery' })}
+        <BookOpen
+          className="me-2 inline size-4 align-text-bottom"
+          aria-hidden
+        />
+        {t(
+          'gallery-open',
+          {
+            defaultValue:
+              'Browse the seed gallery',
+          },
+        )}
       </button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={
+          open
+        }
+        onOpenChange={
+          setOpen
+        }
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('gallery-title', { defaultValue: 'Seed gallery' })}</DialogTitle>
+            <DialogTitle>
+              {t(
+                'gallery-title',
+                {
+                  defaultValue:
+                    'Seed gallery',
+                },
+              )}
+            </DialogTitle>
             <DialogDescription>
-              {t('gallery-help', {
-                defaultValue:
-                  'Stories other players published. Continue one with your own name and cast.',
-              })}
+              {t(
+                'gallery-help',
+                {
+                  defaultValue:
+                    'Stories other players published. Continue one with your own name and cast.',
+                },
+              )}
             </DialogDescription>
           </DialogHeader>
           <Tabs
-            aria-label={t('gallery-sort', { defaultValue: 'Sort seeds' })}
-            value={sort}
-            onChange={(id) => setSort(id as Sort)}
+            aria-label={t(
+              'gallery-sort',
+              {
+                defaultValue:
+                  'Sort seeds',
+              },
+            )}
+            value={
+              sort
+            }
+            onChange={(
+              id,
+            ) =>
+              setSort(
+                id as Sort,
+              )
+            }
             tabs={[
-              { id: 'top', label: t('gallery-sort-top', { defaultValue: 'Top rated' }) },
-              { id: 'new', label: t('gallery-sort-new', { defaultValue: 'Newest' }) },
+              {
+                id: 'top',
+                label:
+                  t(
+                    'gallery-sort-top',
+                    {
+                      defaultValue:
+                        'Top rated',
+                    },
+                  ),
+              },
+              {
+                id: 'new',
+                label:
+                  t(
+                    'gallery-sort-new',
+                    {
+                      defaultValue:
+                        'Newest',
+                    },
+                  ),
+              },
             ]}
           />
           {failed ? (
-            <p className={cn('text-sm text-site-danger', arrival)}>
-              {t('gallery-error', { defaultValue: 'The gallery did not load.' })}
+            <p
+              className={cn(
+                'text-sm text-site-danger',
+                arrival,
+              )}
+            >
+              {t(
+                'gallery-error',
+                {
+                  defaultValue:
+                    'The gallery did not load.',
+                },
+              )}
             </p>
-          ) : rows === null ? (
+          ) : rows ===
+            null ? (
             <p className="text-sm text-site-text-muted">
-              {t('gallery-loading', { defaultValue: 'Loading…' })}
+              {t(
+                'gallery-loading',
+                {
+                  defaultValue:
+                    'Loading…',
+                },
+              )}
             </p>
-          ) : rows.length === 0 ? (
-            <p className={cn('text-sm text-site-text-muted', arrival)}>
-              {t('gallery-empty', {
-                defaultValue: 'Nothing published yet. Finish a chapter and share yours.',
-              })}
+          ) : rows.length ===
+            0 ? (
+            <p
+              className={cn(
+                'text-sm text-site-text-muted',
+                arrival,
+              )}
+            >
+              {t(
+                'gallery-empty',
+                {
+                  defaultValue:
+                    'Nothing published yet. Finish a chapter and share yours.',
+                },
+              )}
             </p>
           ) : (
-            <ul className={cn('max-h-[55dvh] space-y-2 overflow-y-auto', arrival)}>
-              {rows.map((row) => (
-                <li key={row.id} className="surface-card space-y-2 rounded-site p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-site-text">{row.title}</p>
-                      <p className="truncate text-xs text-site-text-muted">
-                        {t('gallery-by', {
-                          defaultValue: 'by {{name}}',
-                          name: row.author ?? t('gallery-anon', { defaultValue: 'a reader' }),
-                        })}
-                        {' · '}
-                        {t('gallery-forks', {
-                          defaultValue_one: '{{count}} continuation',
-                          defaultValue: '{{count}} continuations',
-                          count: row.forks,
-                        })}
-                      </p>
+            <ul
+              className={cn(
+                'max-h-[55dvh] space-y-2 overflow-y-auto',
+                arrival,
+              )}
+            >
+              {rows.map(
+                (
+                  row,
+                ) => (
+                  <li
+                    key={
+                      row.id
+                    }
+                    className="surface-card space-y-2 rounded-site p-4"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-site-text">
+                          {
+                            row.title
+                          }
+                        </p>
+                        <p className="truncate text-xs text-site-text-muted">
+                          {t(
+                            'gallery-by',
+                            {
+                              defaultValue:
+                                'by {{name}}',
+                              name:
+                                row.author ??
+                                t(
+                                  'gallery-anon',
+                                  {
+                                    defaultValue:
+                                      'a reader',
+                                  },
+                                ),
+                            },
+                          )}
+                          {
+                            ' · '
+                          }
+                          {t(
+                            'gallery-forks',
+                            {
+                              defaultValue_one:
+                                '{{count}} continuation',
+                              defaultValue:
+                                '{{count}} continuations',
+                              count:
+                                row.forks,
+                            },
+                          )}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() =>
+                          fork(
+                            row,
+                          )
+                        }
+                      >
+                        {t(
+                          'gallery-continue',
+                          {
+                            defaultValue:
+                              'Continue this story',
+                          },
+                        )}
+                      </Button>
                     </div>
-                    <Button size="sm" variant="default" onClick={() => fork(row)}>
-                      {t('gallery-continue', { defaultValue: 'Continue this story' })}
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-site-text-muted">
-                    <StarRating
-                      value={row.myStars || Math.round(row.average)}
-                      size={16}
-                      label={t('gallery-rating', { defaultValue: 'Rating' })}
-                      onRate={isLoggedIn && !row.mine ? (n) => void rate(row, n) : undefined}
-                    />
-                    <span>
-                      {row.ratingCount
-                        ? `${row.average} · ${row.ratingCount}`
-                        : t('gallery-unrated', { defaultValue: 'No ratings yet' })}
-                    </span>
-                  </div>
-                </li>
-              ))}
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-site-text-muted">
+                      <StarRating
+                        value={
+                          row.myStars ||
+                          Math.round(
+                            row.average,
+                          )
+                        }
+                        size={
+                          16
+                        }
+                        label={t(
+                          'gallery-rating',
+                          {
+                            defaultValue:
+                              'Rating',
+                          },
+                        )}
+                        onRate={
+                          isLoggedIn &&
+                          !row.mine
+                            ? (
+                                n,
+                              ) =>
+                                void rate(
+                                  row,
+                                  n,
+                                )
+                            : undefined
+                        }
+                      />
+                      <span>
+                        {row.ratingCount
+                          ? `${row.average} · ${row.ratingCount}`
+                          : t(
+                              'gallery-unrated',
+                              {
+                                defaultValue:
+                                  'No ratings yet',
+                              },
+                            )}
+                      </span>
+                    </div>
+                  </li>
+                ),
+              )}
             </ul>
           )}
         </DialogContent>
@@ -183,91 +529,272 @@ export function SeedGalleryButton() {
 }
 
 /** "Publish this seed" — a title, then it joins the gallery. Signed-in members only. */
-export function PublishSeedButton({ seed }: { seed: string }) {
-  const { t } = useTranslation('f-async-games');
-  const isLoggedIn = useGameStore((s) => s.isLoggedIn);
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [busy, setBusy] = useState(false);
-  if (!isLoggedIn) return null;
+export function PublishSeedButton({
+  seed,
+}: {
+  seed: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-async-games',
+    );
+  const isLoggedIn =
+    useGameStore(
+      (
+        s,
+      ) =>
+        s.isLoggedIn,
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    title,
+    setTitle,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
+  if (
+    !isLoggedIn
+  )
+    return null;
 
-  const publish = async () => {
-    setBusy(true);
-    try {
-      const res = await fetchWithTimeout('/api/versecraft/seeds', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed, title: title.trim() }),
-      }, 15000);
-      if (res.ok) {
-        toast.success(t('publish-done', { defaultValue: 'Published to the seed gallery.' }));
-        setOpen(false);
-      } else if (res.status === 409) {
-        const { error } = (await res.json().catch(() => ({}))) as { error?: string };
+  const publish =
+    async () => {
+      setBusy(
+        true,
+      );
+      try {
+        const res =
+          await fetchWithTimeout(
+            '/api/versecraft/seeds',
+            {
+              method:
+                'POST',
+              headers:
+                {
+                  'Content-Type':
+                    'application/json',
+                },
+              body: JSON.stringify(
+                {
+                  seed,
+                  title:
+                    title.trim(),
+                },
+              ),
+            },
+            15000,
+          );
+        if (
+          res.ok
+        ) {
+          toast.success(
+            t(
+              'publish-done',
+              {
+                defaultValue:
+                  'Published to the seed gallery.',
+              },
+            ),
+          );
+          setOpen(
+            false,
+          );
+        } else if (
+          res.status ===
+          409
+        ) {
+          const {
+            error,
+          } =
+            (await res
+              .json()
+              .catch(
+                () => ({}),
+              )) as {
+              error?: string;
+            };
+          toast.error(
+            error ===
+              'limit'
+              ? t(
+                  'publish-limit',
+                  {
+                    defaultValue:
+                      'You have published the maximum number of seeds.',
+                  },
+                )
+              : t(
+                  'publish-dupe',
+                  {
+                    defaultValue:
+                      'This seed is already in the gallery.',
+                  },
+                ),
+          );
+        } else if (
+          res.status ===
+          404
+        ) {
+          toast.error(
+            t(
+              'publish-unsaved',
+              {
+                defaultValue:
+                  'This world is not saved yet. Play a little further, then try again.',
+              },
+            ),
+          );
+        } else {
+          throw new Error(
+            String(
+              res.status,
+            ),
+          );
+        }
+      } catch {
         toast.error(
-          error === 'limit'
-            ? t('publish-limit', {
-                defaultValue: 'You have published the maximum number of seeds.',
-              })
-            : t('publish-dupe', { defaultValue: 'This seed is already in the gallery.' }),
+          t(
+            'publish-error',
+            {
+              defaultValue:
+                'Could not publish this seed.',
+            },
+          ),
         );
-      } else if (res.status === 404) {
-        toast.error(
-          t('publish-unsaved', {
-            defaultValue: 'This world is not saved yet. Play a little further, then try again.',
-          }),
+      } finally {
+        setBusy(
+          false,
         );
-      } else {
-        throw new Error(String(res.status));
       }
-    } catch {
-      toast.error(t('publish-error', { defaultValue: 'Could not publish this seed.' }));
-    } finally {
-      setBusy(false);
-    }
-  };
+    };
 
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() =>
+          setOpen(
+            true,
+          )
+        }
         className="inline-flex items-center gap-1.5 rounded px-2 py-1 pointer-coarse:min-h-11 text-xs transition hover:brightness-125"
         style={{
-          backgroundColor: 'rgba(196,163,90,0.12)',
-          border: '1px solid rgba(196,163,90,0.3)',
-          color: '#e8e0d0',
+          backgroundColor:
+            'rgba(196,163,90,0.12)',
+          border:
+            '1px solid rgba(196,163,90,0.3)',
+          color:
+            '#e8e0d0',
         }}
       >
-        <Share2 className="size-3" aria-hidden />
-        {t('publish-open', { defaultValue: 'Publish to gallery' })}
+        <Share2
+          className="size-3"
+          aria-hidden
+        />
+        {t(
+          'publish-open',
+          {
+            defaultValue:
+              'Publish to gallery',
+          },
+        )}
       </button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={
+          open
+        }
+        onOpenChange={
+          setOpen
+        }
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {t('publish-title', { defaultValue: 'Publish this story seed' })}
+              {t(
+                'publish-title',
+                {
+                  defaultValue:
+                    'Publish this story seed',
+                },
+              )}
             </DialogTitle>
             <DialogDescription>
-              {t('publish-help', {
-                defaultValue:
-                  'Give it a title. Anyone can then continue this world with their own cast.',
-              })}
+              {t(
+                'publish-help',
+                {
+                  defaultValue:
+                    'Give it a title. Anyone can then continue this world with their own cast.',
+                },
+              )}
             </DialogDescription>
           </DialogHeader>
           <Input
-            value={title}
-            maxLength={80}
-            onChange={(e) => setTitle(e.target.value)}
-            aria-label={t('publish-field', { defaultValue: 'Title' })}
-            placeholder={t('publish-placeholder', { defaultValue: 'A title for your story' })}
+            value={
+              title
+            }
+            maxLength={
+              80
+            }
+            onChange={(
+              e,
+            ) =>
+              setTitle(
+                e
+                  .target
+                  .value,
+              )
+            }
+            aria-label={t(
+              'publish-field',
+              {
+                defaultValue:
+                  'Title',
+              },
+            )}
+            placeholder={t(
+              'publish-placeholder',
+              {
+                defaultValue:
+                  'A title for your story',
+              },
+            )}
           />
           <Button
             variant="default"
-            loading={busy}
-            disabled={title.trim().length < 3}
-            onClick={() => void publish()}
+            loading={
+              busy
+            }
+            disabled={
+              title.trim()
+                .length <
+              3
+            }
+            onClick={() =>
+              void publish()
+            }
           >
-            {t('publish-submit', { defaultValue: 'Publish' })}
+            {t(
+              'publish-submit',
+              {
+                defaultValue:
+                  'Publish',
+              },
+            )}
           </Button>
         </DialogContent>
       </Dialog>

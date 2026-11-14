@@ -14,19 +14,35 @@
  * day instead of on the one selected the first time.
  */
 
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sheet } from './Sheet';
-import { SessionForm, emptyForm, type SessionFormValue } from './SessionForm';
+import {
+  SessionForm,
+  emptyForm,
+  type SessionFormValue,
+} from './SessionForm';
 
 interface CreateSheetProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (
+    open: boolean,
+  ) => void;
   /** The day selected in the month grid, if any — the draft starts there. */
-  selectedKey: string | null;
+  selectedKey:
+    | string
+    | null;
   timeZone: string;
   submitting: boolean;
-  onSubmit: (payload: Record<string, unknown>) => void;
+  onSubmit: (
+    payload: Record<
+      string,
+      unknown
+    >,
+  ) => void;
 }
 
 export function CreateSheet({
@@ -37,35 +53,96 @@ export function CreateSheet({
   submitting,
   onSubmit,
 }: CreateSheetProps) {
-  const { t } = useTranslation('r-pf2ecal');
-  const [value, setValue] = useState<SessionFormValue | null>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-pf2ecal',
+    );
+  const [
+    value,
+    setValue,
+  ] =
+    useState<SessionFormValue | null>(
+      null,
+    );
 
   useEffect(() => {
-    if (open) setValue(emptyForm(selectedKey, timeZone));
+    if (
+      open
+    )
+      setValue(
+        emptyForm(
+          selectedKey,
+          timeZone,
+        ),
+      );
     // Deliberately NOT cleared on close: the sheet animates out over ~240ms and
     // emptying the form first would play that exit against a blank panel.
-  }, [open, selectedKey, timeZone]);
+  }, [
+    open,
+    selectedKey,
+    timeZone,
+  ]);
 
   return (
     <Sheet
-      open={open}
-      onOpenChange={onOpenChange}
-      title={t('add-a-session', { defaultValue: 'Add a session' })}
-      subtitle={t('add-a-session-sub', {
-        defaultValue: 'One-off — the standing schedule keeps running alongside it',
-      })}
+      open={
+        open
+      }
+      onOpenChange={
+        onOpenChange
+      }
+      title={t(
+        'add-a-session',
+        {
+          defaultValue:
+            'Add a session',
+        },
+      )}
+      subtitle={t(
+        'add-a-session-sub',
+        {
+          defaultValue:
+            'One-off — the standing schedule keeps running alongside it',
+        },
+      )}
     >
       {value && (
         <SessionForm
-          value={value}
-          onChange={setValue}
-          timeZone={timeZone}
-          submitting={submitting}
-          submitLabel={t('add-session', { defaultValue: 'Add session' })}
-          onCancel={() => onOpenChange(false)}
-          onSubmit={(payload) => {
-            onSubmit(payload);
-            onOpenChange(false);
+          value={
+            value
+          }
+          onChange={
+            setValue
+          }
+          timeZone={
+            timeZone
+          }
+          submitting={
+            submitting
+          }
+          submitLabel={t(
+            'add-session',
+            {
+              defaultValue:
+                'Add session',
+            },
+          )}
+          onCancel={() =>
+            onOpenChange(
+              false,
+            )
+          }
+          onSubmit={(
+            payload,
+          ) => {
+            onSubmit(
+              payload,
+            );
+            onOpenChange(
+              false,
+            );
           }}
         />
       )}

@@ -16,8 +16,15 @@ export * from './combat';
 export * from './economy';
 export * from './events';
 export * from './net-schema';
-export { CsWorld, type CsWorldInit } from './world';
-export { CsPlayer, readCsPlayerNet, restoreCsPlayerFromRecords } from './player';
+export {
+  CsWorld,
+  type CsWorldInit,
+} from './world';
+export {
+  CsPlayer,
+  readCsPlayerNet,
+  restoreCsPlayerFromRecords,
+} from './player';
 export {
   CsGameRules,
   CsDefuseMode,
@@ -34,5 +41,8 @@ export {
   csScore,
   csModeOf,
 } from './server/cs-match-host';
-export { CsBotBrain, csBotBrainFactory } from './bots/cs-bot-brain';
+export {
+  CsBotBrain,
+  csBotBrainFactory,
+} from './bots/cs-bot-brain';
 export { CsServerConsole } from './console';

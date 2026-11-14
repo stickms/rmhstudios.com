@@ -20,7 +20,11 @@
  * that reserve layout space must reserve it unconditionally.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import {
   DATA_SAVER_EVENT,
   DATA_SAVER_KEY,
@@ -30,35 +34,75 @@ import {
 
 // The key and event are owned by lib/network-quality, which the speculative
 // prefetchers read too — so this setting reaches them.
-export { DATA_SAVER_EVENT, DATA_SAVER_KEY };
+export {
+  DATA_SAVER_EVENT,
+  DATA_SAVER_KEY,
+};
 
-export const DATA_SAVER_PREFERENCES = ['auto', 'on', 'off'] as const;
-export type DataSaverPreference = (typeof DATA_SAVER_PREFERENCES)[number];
-export const DEFAULT_DATA_SAVER_PREFERENCE: DataSaverPreference = 'auto';
+export const DATA_SAVER_PREFERENCES =
+  [
+    'auto',
+    'on',
+    'off',
+  ] as const;
+export type DataSaverPreference =
+  (typeof DATA_SAVER_PREFERENCES)[number];
+export const DEFAULT_DATA_SAVER_PREFERENCE: DataSaverPreference =
+  'auto';
 
-function isPreference(value: unknown): value is DataSaverPreference {
-  return typeof value === 'string' && (DATA_SAVER_PREFERENCES as readonly string[]).includes(value);
+function isPreference(
+  value: unknown,
+): value is DataSaverPreference {
+  return (
+    typeof value ===
+      'string' &&
+    (
+      DATA_SAVER_PREFERENCES as readonly string[]
+    ).includes(
+      value,
+    )
+  );
 }
 
 /** Read the stored preference. Client-only; defaults to `auto`. */
 export function readDataSaverPreference(): DataSaverPreference {
   try {
-    const raw = localStorage.getItem(DATA_SAVER_KEY);
-    return isPreference(raw) ? raw : DEFAULT_DATA_SAVER_PREFERENCE;
+    const raw =
+      localStorage.getItem(
+        DATA_SAVER_KEY,
+      );
+    return isPreference(
+      raw,
+    )
+      ? raw
+      : DEFAULT_DATA_SAVER_PREFERENCE;
   } catch {
     return DEFAULT_DATA_SAVER_PREFERENCE;
   }
 }
 
 /** Store the preference and tell every listener in this tab about it. */
-export function setDataSaverPreference(preference: DataSaverPreference): void {
+export function setDataSaverPreference(
+  preference: DataSaverPreference,
+): void {
   try {
-    localStorage.setItem(DATA_SAVER_KEY, preference);
+    localStorage.setItem(
+      DATA_SAVER_KEY,
+      preference,
+    );
   } catch {
     // ignore (private mode / storage disabled) — the event still fires, so the
     // choice applies for this session even when it cannot be remembered.
   }
-  if (typeof window !== 'undefined') window.dispatchEvent(new Event(DATA_SAVER_EVENT));
+  if (
+    typeof window !==
+    'undefined'
+  )
+    window.dispatchEvent(
+      new Event(
+        DATA_SAVER_EVENT,
+      ),
+    );
 }
 
 /**
@@ -66,28 +110,75 @@ export function setDataSaverPreference(preference: DataSaverPreference): void {
  * call sites (a loader deciding whether to request a poster frame) that cannot
  * use the hook.
  */
-export function resolveDataSaver(preference: DataSaverPreference): boolean {
-  if (preference === 'on') return true;
-  if (preference === 'off') return false;
-  return readConnection()?.saveData === true || connectionClass() === 'slow';
+export function resolveDataSaver(
+  preference: DataSaverPreference,
+): boolean {
+  if (
+    preference ===
+    'on'
+  )
+    return true;
+  if (
+    preference ===
+    'off'
+  )
+    return false;
+  return (
+    readConnection()
+      ?.saveData ===
+      true ||
+    connectionClass() ===
+      'slow'
+  );
 }
 
 export function useDataSaver(): boolean {
-  const [saving, setSaving] = useState(false);
+  const [
+    saving,
+    setSaving,
+  ] =
+    useState(
+      false,
+    );
 
   useEffect(() => {
-    const sync = () => setSaving(resolveDataSaver(readDataSaverPreference()));
+    const sync =
+      () =>
+        setSaving(
+          resolveDataSaver(
+            readDataSaverPreference(),
+          ),
+        );
     sync();
 
-    const conn = readConnection();
-    conn?.addEventListener?.('change', sync);
-    window.addEventListener(DATA_SAVER_EVENT, sync);
+    const conn =
+      readConnection();
+    conn?.addEventListener?.(
+      'change',
+      sync,
+    );
+    window.addEventListener(
+      DATA_SAVER_EVENT,
+      sync,
+    );
     // Cross-tab: changing the setting in one tab should quiet the others too.
-    window.addEventListener('storage', sync);
+    window.addEventListener(
+      'storage',
+      sync,
+    );
     return () => {
-      conn?.removeEventListener?.('change', sync);
-      window.removeEventListener(DATA_SAVER_EVENT, sync);
-      window.removeEventListener('storage', sync);
+      conn?.removeEventListener?.(
+        'change',
+        sync,
+      );
+      window.removeEventListener(
+        DATA_SAVER_EVENT,
+        sync,
+      );
+      window.removeEventListener(
+        'storage',
+        sync,
+      );
     };
   }, []);
 
@@ -102,25 +193,62 @@ export function useDataSaver(): boolean {
  */
 export function useDataSaverPreference(): [
   DataSaverPreference,
-  (next: DataSaverPreference) => void,
+  (
+    next: DataSaverPreference,
+  ) => void,
 ] {
-  const [preference, setPreference] = useState<DataSaverPreference>(DEFAULT_DATA_SAVER_PREFERENCE);
+  const [
+    preference,
+    setPreference,
+  ] =
+    useState<DataSaverPreference>(
+      DEFAULT_DATA_SAVER_PREFERENCE,
+    );
 
   useEffect(() => {
-    const sync = () => setPreference(readDataSaverPreference());
+    const sync =
+      () =>
+        setPreference(
+          readDataSaverPreference(),
+        );
     sync();
-    window.addEventListener(DATA_SAVER_EVENT, sync);
-    window.addEventListener('storage', sync);
+    window.addEventListener(
+      DATA_SAVER_EVENT,
+      sync,
+    );
+    window.addEventListener(
+      'storage',
+      sync,
+    );
     return () => {
-      window.removeEventListener(DATA_SAVER_EVENT, sync);
-      window.removeEventListener('storage', sync);
+      window.removeEventListener(
+        DATA_SAVER_EVENT,
+        sync,
+      );
+      window.removeEventListener(
+        'storage',
+        sync,
+      );
     };
   }, []);
 
-  const update = useCallback((next: DataSaverPreference) => {
-    setPreference(next);
-    setDataSaverPreference(next);
-  }, []);
+  const update =
+    useCallback(
+      (
+        next: DataSaverPreference,
+      ) => {
+        setPreference(
+          next,
+        );
+        setDataSaverPreference(
+          next,
+        );
+      },
+      [],
+    );
 
-  return [preference, update];
+  return [
+    preference,
+    update,
+  ];
 }

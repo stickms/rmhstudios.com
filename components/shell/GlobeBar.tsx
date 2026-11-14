@@ -1,7 +1,15 @@
 import { Link } from '@tanstack/react-router';
-import { LogIn, LogOut, Search, Settings } from 'lucide-react';
+import {
+  LogIn,
+  LogOut,
+  Search,
+  Settings,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useResolvedUser, useSession } from '@/components/Providers';
+import {
+  useResolvedUser,
+  useSession,
+} from '@/components/Providers';
 import { openCommandPalette } from '@/components/site/command-palette-bus';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { viewerPathFor } from './sections';
@@ -26,88 +34,265 @@ interface GlobeBarProps {
  * inset rule, and on a window too short to hold it under the globe it is a column of icons at the inline end instead
  * (globe-nav.css). It comes after the pins in the tab order; Escape closes the menu from it as from anywhere.
  */
-export function GlobeBar({ open, onClose }: GlobeBarProps) {
-  const { t } = useTranslation('feed');
-  const { data: session, isPending: sessionUnknown } = useSession();
-  const { resolved } = useResolvedUser();
-  const user = session?.user as
-    { id: string; handle?: string | null; name?: string | null; image?: string | null } | undefined;
-  const viewerPath = viewerPathFor(user);
-
-  const signOut = () => {
-    onClose();
-    // Loaded on the press: the auth client stays off every page that only reads who is signed in (audit RT1).
-    void import('@/lib/auth-client').then(({ authClient }) =>
-      authClient.signOut({ fetchOptions: { onSuccess: () => window.location.assign('/') } }),
+export function GlobeBar({
+  open,
+  onClose,
+}: GlobeBarProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
     );
-  };
+  const {
+    data: session,
+    isPending:
+      sessionUnknown,
+  } =
+    useSession();
+  const {
+    resolved,
+  } =
+    useResolvedUser();
+  const user =
+    session?.user as
+      | {
+          id: string;
+          handle?:
+            | string
+            | null;
+          name?:
+            | string
+            | null;
+          image?:
+            | string
+            | null;
+        }
+      | undefined;
+  const viewerPath =
+    viewerPathFor(
+      user,
+    );
 
-  const name = resolved?.name || user?.name || t('shell-you-fallback', { defaultValue: 'You' });
-  const item = { className: 'globe-nav__bar-item', 'data-globe-stop': '' } as const;
+  const signOut =
+    () => {
+      onClose();
+      // Loaded on the press: the auth client stays off every page that only reads who is signed in (audit RT1).
+      void import('@/lib/auth-client').then(
+        ({
+          authClient,
+        }) =>
+          authClient.signOut(
+            {
+              fetchOptions:
+                {
+                  onSuccess:
+                    () =>
+                      window.location.assign(
+                        '/',
+                      ),
+                },
+            },
+          ),
+      );
+    };
+
+  const name =
+    resolved?.name ||
+    user?.name ||
+    t(
+      'shell-you-fallback',
+      {
+        defaultValue:
+          'You',
+      },
+    );
+  const item =
+    {
+      className:
+        'globe-nav__bar-item',
+      'data-globe-stop':
+        '',
+    } as const;
 
   return (
     <div
       className="globe-nav__bar"
       role="group"
-      aria-label={t('shell-account-menu-label', { defaultValue: 'Account' })}
-      inert={!open}
+      aria-label={t(
+        'shell-account-menu-label',
+        {
+          defaultValue:
+            'Account',
+        },
+      )}
+      inert={
+        !open
+      }
     >
-      {user && viewerPath ? (
+      {user &&
+      viewerPath ? (
         <Link
-          to={viewerPath}
+          to={
+            viewerPath
+          }
           {...item}
-          aria-label={t('shell-your-profile', { defaultValue: 'Your profile, {{name}}', name })}
-          title={t('profile', { defaultValue: 'Profile' })}
-          onClick={onClose}
+          aria-label={t(
+            'shell-your-profile',
+            {
+              defaultValue:
+                'Your profile, {{name}}',
+              name,
+            },
+          )}
+          title={t(
+            'profile',
+            {
+              defaultValue:
+                'Profile',
+            },
+          )}
+          onClick={
+            onClose
+          }
         >
-          <UserAvatar src={resolved?.image || user.image} alt="" size={22} fallbackName={name} />
-          <span className="globe-nav__bar-label">{t('profile', { defaultValue: 'Profile' })}</span>
+          <UserAvatar
+            src={
+              resolved?.image ||
+              user.image
+            }
+            alt=""
+            size={
+              22
+            }
+            fallbackName={
+              name
+            }
+          />
+          <span className="globe-nav__bar-label">
+            {t(
+              'profile',
+              {
+                defaultValue:
+                  'Profile',
+              },
+            )}
+          </span>
         </Link>
       ) : sessionUnknown ? null : (
         <Link
           to="/login"
-          search={{ callbackURL: undefined }}
+          search={{
+            callbackURL:
+              undefined,
+          }}
           {...item}
-          title={t('shell-sign-in', { defaultValue: 'Sign in' })}
-          onClick={onClose}
+          title={t(
+            'shell-sign-in',
+            {
+              defaultValue:
+                'Sign in',
+            },
+          )}
+          onClick={
+            onClose
+          }
         >
-          <LogIn aria-hidden />
+          <LogIn
+            aria-hidden
+          />
           <span className="globe-nav__bar-label">
-            {t('shell-sign-in', { defaultValue: 'Sign in' })}
+            {t(
+              'shell-sign-in',
+              {
+                defaultValue:
+                  'Sign in',
+              },
+            )}
           </span>
         </Link>
       )}
       <button
         type="button"
         {...item}
-        title={t('search', { defaultValue: 'Search' })}
+        title={t(
+          'search',
+          {
+            defaultValue:
+              'Search',
+          },
+        )}
         onClick={() => {
           onClose();
           openCommandPalette();
         }}
       >
-        <Search aria-hidden />
-        <span className="globe-nav__bar-label">{t('search', { defaultValue: 'Search' })}</span>
+        <Search
+          aria-hidden
+        />
+        <span className="globe-nav__bar-label">
+          {t(
+            'search',
+            {
+              defaultValue:
+                'Search',
+            },
+          )}
+        </span>
       </button>
       <Link
         to="/settings"
         {...item}
-        title={t('settings', { defaultValue: 'Settings' })}
-        onClick={onClose}
+        title={t(
+          'settings',
+          {
+            defaultValue:
+              'Settings',
+          },
+        )}
+        onClick={
+          onClose
+        }
       >
-        <Settings aria-hidden />
-        <span className="globe-nav__bar-label">{t('settings', { defaultValue: 'Settings' })}</span>
+        <Settings
+          aria-hidden
+        />
+        <span className="globe-nav__bar-label">
+          {t(
+            'settings',
+            {
+              defaultValue:
+                'Settings',
+            },
+          )}
+        </span>
       </Link>
       {user ? (
         <button
           type="button"
           {...item}
-          title={t('sign-out', { defaultValue: 'Sign out' })}
-          onClick={signOut}
+          title={t(
+            'sign-out',
+            {
+              defaultValue:
+                'Sign out',
+            },
+          )}
+          onClick={
+            signOut
+          }
         >
-          <LogOut aria-hidden />
+          <LogOut
+            aria-hidden
+          />
           <span className="globe-nav__bar-label">
-            {t('sign-out', { defaultValue: 'Sign out' })}
+            {t(
+              'sign-out',
+              {
+                defaultValue:
+                  'Sign out',
+              },
+            )}
           </span>
         </button>
       ) : null}

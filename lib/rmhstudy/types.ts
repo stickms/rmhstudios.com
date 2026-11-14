@@ -13,18 +13,32 @@ export interface TimerSettings {
   autoStartWork: boolean;
 }
 
-export const DEFAULT_TIMER_SETTINGS: TimerSettings = {
-  workDurationMs: 25 * 60 * 1000,
-  shortBreakMs: 5 * 60 * 1000,
-  longBreakMs: 15 * 60 * 1000,
-  sessionsBeforeLongBreak: 4,
-  autoStartBreaks: true,
-  autoStartWork: false,
-};
+export const DEFAULT_TIMER_SETTINGS: TimerSettings =
+  {
+    workDurationMs:
+      25 *
+      60 *
+      1000,
+    shortBreakMs:
+      5 *
+      60 *
+      1000,
+    longBreakMs:
+      15 *
+      60 *
+      1000,
+    sessionsBeforeLongBreak: 4,
+    autoStartBreaks: true,
+    autoStartWork: false,
+  };
 
 // ─── Timer State ────────────────────────────────────────────────
 
-export type TimerPhase = 'idle' | 'working' | 'short_break' | 'long_break';
+export type TimerPhase =
+  | 'idle'
+  | 'working'
+  | 'short_break'
+  | 'long_break';
 
 export interface TimerState {
   phase: TimerPhase;
@@ -37,12 +51,18 @@ export interface TimerState {
 
 // ─── Room State ─────────────────────────────────────────────────
 
-export type MemberStatus = 'studying' | 'break' | 'idle' | 'away';
+export type MemberStatus =
+  | 'studying'
+  | 'break'
+  | 'idle'
+  | 'away';
 
 export interface RoomMember {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   isHost: boolean;
   isConnected: boolean;
   status: MemberStatus;
@@ -56,7 +76,10 @@ export interface ChatMessage {
   userName: string;
   message: string;
   timestamp: number;
-  reactions: Record<string, string[]>;
+  reactions: Record<
+    string,
+    string[]
+  >;
 }
 
 export interface Task {
@@ -71,7 +94,9 @@ export interface BannedUser {
   userName: string;
   bannedAt: number;
   bannedBy: string;
-  reason: string | null;
+  reason:
+    | string
+    | null;
 }
 
 export interface PublicStudyRoomInfo {

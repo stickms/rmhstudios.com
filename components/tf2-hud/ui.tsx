@@ -8,7 +8,14 @@
  */
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { ArrowLeft, Check, ChevronDown, Search, X, type LucideIcon } from 'lucide-react';
+import {
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  Search,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useSentinel } from '@/hooks/useSentinel';
 import {
@@ -36,29 +43,44 @@ import { portalRoot } from '@/lib/tf2-hud/portal-root';
 
 /* ─────────────────────────────── buttons ─────────────────────────────── */
 
-type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-type BtnSize = 'xs' | 'sm' | 'md';
+type BtnVariant =
+  | 'primary'
+  | 'secondary'
+  | 'ghost'
+  | 'danger';
+type BtnSize =
+  | 'xs'
+  | 'sm'
+  | 'md';
 
 const BTN_BASE =
   'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-app-sm border font-semibold transition-[color,background-color,border-color,opacity] duration-(--app-duration-fast) disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-4 [&_svg]:shrink-0';
 
-const BTN_VARIANT: Record<BtnVariant, string> = {
-  primary:
-    'border-transparent bg-app-accent text-app-accent-fg hover:bg-app-accent-hover',
-  secondary:
-    'border-app-border-bright bg-(--tf2-panel) text-app-text hover:bg-app-surface-hover',
-  ghost:
-    'border-transparent text-app-text-muted hover:bg-app-surface-hover hover:text-app-text',
-  danger:
-    'border-transparent bg-app-danger-dim text-app-danger hover:bg-app-danger hover:text-app-bg',
-};
+const BTN_VARIANT: Record<
+  BtnVariant,
+  string
+> =
+  {
+    primary:
+      'border-transparent bg-app-accent text-app-accent-fg hover:bg-app-accent-hover',
+    secondary:
+      'border-app-border-bright bg-(--tf2-panel) text-app-text hover:bg-app-surface-hover',
+    ghost:
+      'border-transparent text-app-text-muted hover:bg-app-surface-hover hover:text-app-text',
+    danger:
+      'border-transparent bg-app-danger-dim text-app-danger hover:bg-app-danger hover:text-app-bg',
+  };
 
 // On a touch-first device (`pointer: coarse`) every size is a 44px target.
-const BTN_SIZE: Record<BtnSize, string> = {
-  xs: 'h-7 px-2 text-xs pointer-coarse:h-11 pointer-coarse:min-w-11',
-  sm: 'h-8 px-3 text-xs pointer-coarse:h-11 pointer-coarse:min-w-11',
-  md: 'h-10 px-4 text-sm pointer-coarse:h-11',
-};
+const BTN_SIZE: Record<
+  BtnSize,
+  string
+> =
+  {
+    xs: 'h-7 px-2 text-xs pointer-coarse:h-11 pointer-coarse:min-w-11',
+    sm: 'h-8 px-3 text-xs pointer-coarse:h-11 pointer-coarse:min-w-11',
+    md: 'h-10 px-4 text-sm pointer-coarse:h-11',
+  };
 
 export interface BtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: BtnVariant;
@@ -66,55 +88,120 @@ export interface BtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: LucideIcon;
 }
 
-export const Btn = forwardRef<HTMLButtonElement, BtnProps>(function Btn(
-  { variant = 'secondary', size = 'sm', icon: Icon, className, children, type = 'button', ...rest },
-  ref,
-) {
-  return (
-    <button
-      ref={ref}
-      type={type}
-      className={cn(BTN_BASE, BTN_VARIANT[variant], BTN_SIZE[size], className)}
-      {...rest}
-    >
-      {Icon ? <Icon aria-hidden /> : null}
-      {children}
-    </button>
+export const Btn =
+  forwardRef<
+    HTMLButtonElement,
+    BtnProps
+  >(
+    function Btn(
+      {
+        variant = 'secondary',
+        size = 'sm',
+        icon: Icon,
+        className,
+        children,
+        type = 'button',
+        ...rest
+      },
+      ref,
+    ) {
+      return (
+        <button
+          ref={
+            ref
+          }
+          type={
+            type
+          }
+          className={cn(
+            BTN_BASE,
+            BTN_VARIANT[
+              variant
+            ],
+            BTN_SIZE[
+              size
+            ],
+            className,
+          )}
+          {...rest}
+        >
+          {Icon ? (
+            <Icon
+              aria-hidden
+            />
+          ) : null}
+          {
+            children
+          }
+        </button>
+      );
+    },
   );
-});
 
 export interface IconBtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: LucideIcon;
   /** Accessible name; also the tooltip. */
   label: string;
   active?: boolean;
-  size?: 'xs' | 'sm';
+  size?:
+    | 'xs'
+    | 'sm';
 }
 
-export const IconBtn = forwardRef<HTMLButtonElement, IconBtnProps>(function IconBtn(
-  { icon: Icon, label, active, size = 'sm', className, type = 'button', ...rest },
-  ref,
-) {
-  return (
-    <button
-      ref={ref}
-      type={type}
-      aria-label={label}
-      title={label}
-      aria-pressed={active}
-      className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-app-sm border border-transparent text-app-text-muted transition-[color,background-color] duration-(--app-duration-fast) hover:bg-app-surface-hover hover:text-app-text disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4',
-        size === 'xs' ? 'size-7' : 'size-8',
-        'pointer-coarse:size-11',
-        active && 'bg-app-accent-dim text-app-accent-text',
+export const IconBtn =
+  forwardRef<
+    HTMLButtonElement,
+    IconBtnProps
+  >(
+    function IconBtn(
+      {
+        icon: Icon,
+        label,
+        active,
+        size = 'sm',
         className,
-      )}
-      {...rest}
-    >
-      <Icon aria-hidden />
-    </button>
+        type = 'button',
+        ...rest
+      },
+      ref,
+    ) {
+      return (
+        <button
+          ref={
+            ref
+          }
+          type={
+            type
+          }
+          aria-label={
+            label
+          }
+          title={
+            label
+          }
+          aria-pressed={
+            active
+          }
+          className={cn(
+            'inline-flex shrink-0 items-center justify-center rounded-app-sm border border-transparent text-app-text-muted transition-[color,background-color] duration-(--app-duration-fast) hover:bg-app-surface-hover hover:text-app-text disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4',
+            size ===
+              'xs'
+              ? 'size-7'
+              : 'size-8',
+            'pointer-coarse:size-11',
+            active &&
+              'bg-app-accent-dim text-app-accent-text',
+            className,
+          )}
+          {...rest}
+        >
+          <Icon
+            aria-hidden
+          />
+        </button>
+      );
+    },
   );
-});
 
 /* ─────────────────────────────── fields ─────────────────────────────── */
 
@@ -122,11 +209,32 @@ export const IconBtn = forwardRef<HTMLButtonElement, IconBtnProps>(function Icon
 const FIELD =
   'h-8 w-full min-w-0 rounded-app-sm border border-app-border-bright bg-app-bg px-2 text-xs text-app-text placeholder:text-app-text-dim focus-visible:border-app-accent disabled:opacity-50 pointer-coarse:h-11 pointer-coarse:text-base';
 
-export const TextField = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
-  function TextField({ className, ...rest }, ref) {
-    return <input ref={ref} className={cn(FIELD, className)} {...rest} />;
-  },
-);
+export const TextField =
+  forwardRef<
+    HTMLInputElement,
+    InputHTMLAttributes<HTMLInputElement>
+  >(
+    function TextField(
+      {
+        className,
+        ...rest
+      },
+      ref,
+    ) {
+      return (
+        <input
+          ref={
+            ref
+          }
+          className={cn(
+            FIELD,
+            className,
+          )}
+          {...rest}
+        />
+      );
+    },
+  );
 
 interface SelectEntry {
   value: string;
@@ -135,32 +243,97 @@ interface SelectEntry {
   group?: string;
 }
 
-const textOf = (node: ReactNode): string =>
-  Children.toArray(node)
-    .map((c) => (typeof c === 'string' || typeof c === 'number' ? String(c) : ''))
-    .join('');
+const textOf =
+  (
+    node: ReactNode,
+  ): string =>
+    Children.toArray(
+      node,
+    )
+      .map(
+        (
+          c,
+        ) =>
+          typeof c ===
+            'string' ||
+          typeof c ===
+            'number'
+            ? String(
+                c,
+              )
+            : '',
+      )
+      .join(
+        '',
+      );
 
 /** The `<option>`s (and `<optgroup>` labels) a select was given as children, flattened in order. */
-function selectEntries(children: ReactNode, group?: string, out: SelectEntry[] = []): SelectEntry[] {
-  Children.forEach(children, (child) => {
-    if (!isValidElement(child)) return;
-    const props = child.props as {
-      value?: string | number;
-      label?: string;
-      disabled?: boolean;
-      children?: ReactNode;
-    };
-    if (child.type === 'optgroup') selectEntries(props.children, props.label, out);
-    else if (child.type === 'option') {
-      const label = textOf(props.children);
-      out.push({
-        value: String(props.value ?? label),
-        label,
-        disabled: props.disabled,
-        group,
-      });
-    } else if (child.type === Fragment) selectEntries(props.children, group, out);
-  });
+function selectEntries(
+  children: ReactNode,
+  group?: string,
+  out: SelectEntry[] = [],
+): SelectEntry[] {
+  Children.forEach(
+    children,
+    (
+      child,
+    ) => {
+      if (
+        !isValidElement(
+          child,
+        )
+      )
+        return;
+      const props =
+        child.props as {
+          value?:
+            | string
+            | number;
+          label?: string;
+          disabled?: boolean;
+          children?: ReactNode;
+        };
+      if (
+        child.type ===
+        'optgroup'
+      )
+        selectEntries(
+          props.children,
+          props.label,
+          out,
+        );
+      else if (
+        child.type ===
+        'option'
+      ) {
+        const label =
+          textOf(
+            props.children,
+          );
+        out.push(
+          {
+            value:
+              String(
+                props.value ??
+                  label,
+              ),
+            label,
+            disabled:
+              props.disabled,
+            group,
+          },
+        );
+      } else if (
+        child.type ===
+        Fragment
+      )
+        selectEntries(
+          props.children,
+          group,
+          out,
+        );
+    },
+  );
   return out;
 }
 
@@ -169,165 +342,535 @@ function selectEntries(children: ReactNode, group?: string, out: SelectEntry[] =
  * place of the browser's own control. It takes the same props and `<option>` / `<optgroup>` children as
  * a native `<select>`, and calls `onChange` with an event carrying `target.value`.
  */
-export const SelectField = forwardRef<HTMLButtonElement, SelectHTMLAttributes<HTMLSelectElement>>(
-  function SelectField(
-    { className, children, value, defaultValue, onChange, disabled, id, name, ...rest },
-    ref,
-  ) {
-    const entries = useMemo(() => selectEntries(children), [children]);
-    const [inner, setInner] = useState(String(defaultValue ?? entries[0]?.value ?? ''));
-    const current = String(value ?? inner);
-    const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
-    const [open, setOpen] = useState(false);
-    const [active, setActive] = useState(0);
-    const listId = useId();
-    const selected = entries.find((e) => e.value === current);
-
-    const setRefs = (node: HTMLButtonElement | null) => {
-      setAnchor(node);
-      if (typeof ref === 'function') ref(node);
-      else if (ref) ref.current = node;
-    };
-
-    const openList = () => {
-      setActive(Math.max(0, entries.findIndex((e) => e.value === current)));
-      setOpen(true);
-    };
-    const pick = (entry: SelectEntry | undefined) => {
-      setOpen(false);
-      anchor?.focus();
-      if (!entry || entry.disabled) return;
-      if (value === undefined) setInner(entry.value);
-      if (entry.value !== current) {
-        const target = { value: entry.value, name: name ?? '', id: id ?? '' };
-        onChange?.({ target, currentTarget: target } as unknown as ChangeEvent<HTMLSelectElement>);
-      }
-    };
-    const step = (from: number, dir: 1 | -1) => {
-      for (let n = from + dir; n >= 0 && n < entries.length; n += dir) {
-        if (!entries[n].disabled) return n;
-      }
-      return from;
-    };
-
-    useEffect(() => {
-      if (open) document.getElementById(`${listId}-${active}`)?.scrollIntoView({ block: 'nearest' });
-    }, [open, active, listId]);
-
-    const onKey = (e: ReactKeyboardEvent<HTMLButtonElement>) => {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (!open) return openList();
-        setActive((a) => step(a, e.key === 'ArrowDown' ? 1 : -1));
-      } else if (e.key === 'Home' || e.key === 'End') {
-        if (!open) return;
-        e.preventDefault();
-        setActive(e.key === 'Home' ? step(-1, 1) : step(entries.length, -1));
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        if (open) pick(entries[active]);
-        else openList();
-      } else if (e.key === 'Tab') {
-        setOpen(false);
-      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        // Type a letter to jump to the next entry that starts with it.
-        const at = entries.findIndex(
-          (x, n) => n > active && !x.disabled && x.label.toLowerCase().startsWith(e.key.toLowerCase()),
+export const SelectField =
+  forwardRef<
+    HTMLButtonElement,
+    SelectHTMLAttributes<HTMLSelectElement>
+  >(
+    function SelectField(
+      {
+        className,
+        children,
+        value,
+        defaultValue,
+        onChange,
+        disabled,
+        id,
+        name,
+        ...rest
+      },
+      ref,
+    ) {
+      const entries =
+        useMemo(
+          () =>
+            selectEntries(
+              children,
+            ),
+          [
+            children,
+          ],
         );
-        const first = entries.findIndex(
-          (x) => !x.disabled && x.label.toLowerCase().startsWith(e.key.toLowerCase()),
+      const [
+        inner,
+        setInner,
+      ] =
+        useState(
+          String(
+            defaultValue ??
+              entries[0]
+                ?.value ??
+              '',
+          ),
         );
-        const next = at >= 0 ? at : first;
-        if (next >= 0) {
-          if (!open) openList();
-          setActive(next);
-        }
-      }
-    };
+      const current =
+        String(
+          value ??
+            inner,
+        );
+      const [
+        anchor,
+        setAnchor,
+      ] =
+        useState<HTMLButtonElement | null>(
+          null,
+        );
+      const [
+        open,
+        setOpen,
+      ] =
+        useState(
+          false,
+        );
+      const [
+        active,
+        setActive,
+      ] =
+        useState(
+          0,
+        );
+      const listId =
+        useId();
+      const selected =
+        entries.find(
+          (
+            e,
+          ) =>
+            e.value ===
+            current,
+        );
 
-    const width = Math.max(anchor?.getBoundingClientRect().width ?? 0, 140);
-    let lastGroup: string | undefined;
-    return (
-      <>
-        <button
-          {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
-          ref={setRefs}
-          id={id}
-          type="button"
-          role="combobox"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          aria-controls={open ? listId : undefined}
-          aria-activedescendant={open ? `${listId}-${active}` : undefined}
-          disabled={disabled}
-          onClick={() => (open ? setOpen(false) : openList())}
-          onKeyDown={onKey}
-          className={cn(
-            FIELD,
-            'flex items-center justify-between gap-1 text-start',
-            className,
-          )}
-        >
-          <span className="min-w-0 flex-1 truncate">{selected?.label ?? ''}</span>
-          <ChevronDown className="size-3.5 shrink-0 text-app-text-dim" aria-hidden />
-        </button>
-        <Popover
-          anchor={anchor}
-          open={open}
-          onClose={() => setOpen(false)}
-          label={rest['aria-label'] ?? ''}
-          width={width}
-          className="p-1"
-        >
-          <ul
-            id={listId}
-            role="listbox"
-            aria-label={rest['aria-label']}
-            className="max-h-64 overflow-y-auto overscroll-contain"
-          >
-            {entries.map((o, i) => {
-              const header = o.group !== lastGroup ? o.group : undefined;
-              lastGroup = o.group;
-              return (
-                <Fragment key={`${o.group ?? ''}:${o.value}`}>
-                  {header ? (
-                    <li
-                      role="presentation"
-                      className="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold text-app-text-dim"
-                    >
-                      {header}
-                    </li>
-                  ) : null}
-                  {/* Keyboard picking happens on the combobox button (aria-activedescendant). */}
-                  {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
-                  <li
-                    id={`${listId}-${i}`}
-                    role="option"
-                    aria-selected={o.value === current}
-                    aria-disabled={o.disabled || undefined}
-                    onPointerDown={(e) => e.preventDefault()}
-                    onClick={() => pick(o)}
-                    onPointerMove={() => !o.disabled && setActive(i)}
-                    className={cn(
-                      'flex cursor-pointer items-center gap-2 rounded-app-sm px-2 py-1.5 text-xs pointer-coarse:min-h-11 pointer-coarse:text-sm',
-                      i === active && 'bg-app-surface-hover',
-                      o.disabled && 'cursor-default opacity-45',
-                    )}
-                  >
-                    <span className="min-w-0 flex-1 truncate">{o.label}</span>
-                    {o.value === current ? (
-                      <Check className="size-3.5 shrink-0 text-app-accent-text" aria-hidden />
-                    ) : null}
-                  </li>
-                </Fragment>
+      const setRefs =
+        (
+          node: HTMLButtonElement | null,
+        ) => {
+          setAnchor(
+            node,
+          );
+          if (
+            typeof ref ===
+            'function'
+          )
+            ref(
+              node,
+            );
+          else if (
+            ref
+          )
+            ref.current =
+              node;
+        };
+
+      const openList =
+        () => {
+          setActive(
+            Math.max(
+              0,
+              entries.findIndex(
+                (
+                  e,
+                ) =>
+                  e.value ===
+                  current,
+              ),
+            ),
+          );
+          setOpen(
+            true,
+          );
+        };
+      const pick =
+        (
+          entry:
+            | SelectEntry
+            | undefined,
+        ) => {
+          setOpen(
+            false,
+          );
+          anchor?.focus();
+          if (
+            !entry ||
+            entry.disabled
+          )
+            return;
+          if (
+            value ===
+            undefined
+          )
+            setInner(
+              entry.value,
+            );
+          if (
+            entry.value !==
+            current
+          ) {
+            const target =
+              {
+                value:
+                  entry.value,
+                name:
+                  name ??
+                  '',
+                id:
+                  id ??
+                  '',
+              };
+            onChange?.(
+              {
+                target,
+                currentTarget:
+                  target,
+              } as unknown as ChangeEvent<HTMLSelectElement>,
+            );
+          }
+        };
+      const step =
+        (
+          from: number,
+          dir:
+            | 1
+            | -1,
+        ) => {
+          for (
+            let n =
+              from +
+              dir;
+            n >=
+              0 &&
+            n <
+              entries.length;
+            n +=
+              dir
+          ) {
+            if (
+              !entries[
+                n
+              ]
+                .disabled
+            )
+              return n;
+          }
+          return from;
+        };
+
+      useEffect(() => {
+        if (
+          open
+        )
+          document
+            .getElementById(
+              `${listId}-${active}`,
+            )
+            ?.scrollIntoView(
+              {
+                block:
+                  'nearest',
+              },
+            );
+      }, [
+        open,
+        active,
+        listId,
+      ]);
+
+      const onKey =
+        (
+          e: ReactKeyboardEvent<HTMLButtonElement>,
+        ) => {
+          if (
+            e.key ===
+              'ArrowDown' ||
+            e.key ===
+              'ArrowUp'
+          ) {
+            e.preventDefault();
+            if (
+              !open
+            )
+              return openList();
+            setActive(
+              (
+                a,
+              ) =>
+                step(
+                  a,
+                  e.key ===
+                    'ArrowDown'
+                    ? 1
+                    : -1,
+                ),
+            );
+          } else if (
+            e.key ===
+              'Home' ||
+            e.key ===
+              'End'
+          ) {
+            if (
+              !open
+            )
+              return;
+            e.preventDefault();
+            setActive(
+              e.key ===
+                'Home'
+                ? step(
+                    -1,
+                    1,
+                  )
+                : step(
+                    entries.length,
+                    -1,
+                  ),
+            );
+          } else if (
+            e.key ===
+              'Enter' ||
+            e.key ===
+              ' '
+          ) {
+            e.preventDefault();
+            if (
+              open
+            )
+              pick(
+                entries[
+                  active
+                ],
               );
-            })}
-          </ul>
-        </Popover>
-      </>
-    );
-  },
-);
+            else
+              openList();
+          } else if (
+            e.key ===
+            'Tab'
+          ) {
+            setOpen(
+              false,
+            );
+          } else if (
+            e
+              .key
+              .length ===
+              1 &&
+            !e.ctrlKey &&
+            !e.metaKey &&
+            !e.altKey
+          ) {
+            // Type a letter to jump to the next entry that starts with it.
+            const at =
+              entries.findIndex(
+                (
+                  x,
+                  n,
+                ) =>
+                  n >
+                    active &&
+                  !x.disabled &&
+                  x.label
+                    .toLowerCase()
+                    .startsWith(
+                      e.key.toLowerCase(),
+                    ),
+              );
+            const first =
+              entries.findIndex(
+                (
+                  x,
+                ) =>
+                  !x.disabled &&
+                  x.label
+                    .toLowerCase()
+                    .startsWith(
+                      e.key.toLowerCase(),
+                    ),
+              );
+            const next =
+              at >=
+              0
+                ? at
+                : first;
+            if (
+              next >=
+              0
+            ) {
+              if (
+                !open
+              )
+                openList();
+              setActive(
+                next,
+              );
+            }
+          }
+        };
+
+      const width =
+        Math.max(
+          anchor?.getBoundingClientRect()
+            .width ??
+            0,
+          140,
+        );
+      let lastGroup:
+        | string
+        | undefined;
+      return (
+        <>
+          <button
+            {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
+            ref={
+              setRefs
+            }
+            id={
+              id
+            }
+            type="button"
+            role="combobox"
+            aria-haspopup="listbox"
+            aria-expanded={
+              open
+            }
+            aria-controls={
+              open
+                ? listId
+                : undefined
+            }
+            aria-activedescendant={
+              open
+                ? `${listId}-${active}`
+                : undefined
+            }
+            disabled={
+              disabled
+            }
+            onClick={() =>
+              open
+                ? setOpen(
+                    false,
+                  )
+                : openList()
+            }
+            onKeyDown={
+              onKey
+            }
+            className={cn(
+              FIELD,
+              'flex items-center justify-between gap-1 text-start',
+              className,
+            )}
+          >
+            <span className="min-w-0 flex-1 truncate">
+              {selected?.label ??
+                ''}
+            </span>
+            <ChevronDown
+              className="size-3.5 shrink-0 text-app-text-dim"
+              aria-hidden
+            />
+          </button>
+          <Popover
+            anchor={
+              anchor
+            }
+            open={
+              open
+            }
+            onClose={() =>
+              setOpen(
+                false,
+              )
+            }
+            label={
+              rest[
+                'aria-label'
+              ] ??
+              ''
+            }
+            width={
+              width
+            }
+            className="p-1"
+          >
+            <ul
+              id={
+                listId
+              }
+              role="listbox"
+              aria-label={
+                rest[
+                  'aria-label'
+                ]
+              }
+              className="max-h-64 overflow-y-auto overscroll-contain"
+            >
+              {entries.map(
+                (
+                  o,
+                  i,
+                ) => {
+                  const header =
+                    o.group !==
+                    lastGroup
+                      ? o.group
+                      : undefined;
+                  lastGroup =
+                    o.group;
+                  return (
+                    <Fragment
+                      key={`${o.group ?? ''}:${o.value}`}
+                    >
+                      {header ? (
+                        <li
+                          role="presentation"
+                          className="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold text-app-text-dim"
+                        >
+                          {
+                            header
+                          }
+                        </li>
+                      ) : null}
+                      {/* Keyboard picking happens on the combobox button (aria-activedescendant). */}
+                      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
+                      <li
+                        id={`${listId}-${i}`}
+                        role="option"
+                        aria-selected={
+                          o.value ===
+                          current
+                        }
+                        aria-disabled={
+                          o.disabled ||
+                          undefined
+                        }
+                        onPointerDown={(
+                          e,
+                        ) =>
+                          e.preventDefault()
+                        }
+                        onClick={() =>
+                          pick(
+                            o,
+                          )
+                        }
+                        onPointerMove={() =>
+                          !o.disabled &&
+                          setActive(
+                            i,
+                          )
+                        }
+                        className={cn(
+                          'flex cursor-pointer items-center gap-2 rounded-app-sm px-2 py-1.5 text-xs pointer-coarse:min-h-11 pointer-coarse:text-sm',
+                          i ===
+                            active &&
+                            'bg-app-surface-hover',
+                          o.disabled &&
+                            'cursor-default opacity-45',
+                        )}
+                      >
+                        <span className="min-w-0 flex-1 truncate">
+                          {
+                            o.label
+                          }
+                        </span>
+                        {o.value ===
+                        current ? (
+                          <Check
+                            className="size-3.5 shrink-0 text-app-accent-text"
+                            aria-hidden
+                          />
+                        ) : null}
+                      </li>
+                    </Fragment>
+                  );
+                },
+              )}
+            </ul>
+          </Popover>
+        </>
+      );
+    },
+  );
 
 export function Field({
   label,
@@ -340,17 +883,41 @@ export function Field({
   hint?: string;
   className?: string;
 }) {
-  const id = useId();
+  const id =
+    useId();
   return (
-    <div className={cn('flex flex-col gap-1', className)}>
+    <div
+      className={cn(
+        'flex flex-col gap-1',
+        className,
+      )}
+    >
       <label
-        htmlFor={id}
+        htmlFor={
+          id
+        }
         className="text-[11px] font-semibold uppercase tracking-wider text-app-text-dim pointer-coarse:text-xs"
       >
-        {label}
+        {
+          label
+        }
       </label>
-      <div id={id}>{children}</div>
-      {hint ? <p className="text-[11px] text-app-text-dim pointer-coarse:text-xs">{hint}</p> : null}
+      <div
+        id={
+          id
+        }
+      >
+        {
+          children
+        }
+      </div>
+      {hint ? (
+        <p className="text-[11px] text-app-text-dim pointer-coarse:text-xs">
+          {
+            hint
+          }
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -366,27 +933,75 @@ export function NumberField({
   className,
 }: {
   value: number;
-  onChange: (v: number) => void;
+  onChange: (
+    v: number,
+  ) => void;
   min?: number;
   max?: number;
   step?: number;
   label: string;
   className?: string;
 }) {
-  const clamp = (v: number) => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, v));
+  const clamp =
+    (
+      v: number,
+    ) =>
+      Math.min(
+        max ??
+          Infinity,
+        Math.max(
+          min ??
+            -Infinity,
+          v,
+        ),
+      );
   return (
     <input
       type="number"
-      aria-label={label}
-      value={Number.isFinite(value) ? value : 0}
-      min={min}
-      max={max}
-      step={step}
-      onChange={(e) => {
-        const v = Number.parseFloat(e.target.value);
-        if (Number.isFinite(v)) onChange(clamp(v));
+      aria-label={
+        label
+      }
+      value={
+        Number.isFinite(
+          value,
+        )
+          ? value
+          : 0
+      }
+      min={
+        min
+      }
+      max={
+        max
+      }
+      step={
+        step
+      }
+      onChange={(
+        e,
+      ) => {
+        const v =
+          Number.parseFloat(
+            e
+              .target
+              .value,
+          );
+        if (
+          Number.isFinite(
+            v,
+          )
+        )
+          onChange(
+            clamp(
+              v,
+            ),
+          );
       }}
-      className={cn(FIELD, 'tabular-nums', className)}
+      className={cn(
+        FIELD,
+        'tabular-nums',
+        className,
+      )}
     />
   );
 }
@@ -398,7 +1013,9 @@ export function Toggle({
   disabled,
 }: {
   checked: boolean;
-  onChange: (v: boolean) => void;
+  onChange: (
+    v: boolean,
+  ) => void;
   label: string;
   disabled?: boolean;
 }) {
@@ -407,10 +1024,24 @@ export function Toggle({
     <input
       type="checkbox"
       className="tf2hud-check"
-      checked={checked}
-      onChange={(e) => onChange(e.target.checked)}
-      aria-label={label}
-      disabled={disabled}
+      checked={
+        checked
+      }
+      onChange={(
+        e,
+      ) =>
+        onChange(
+          e
+            .target
+            .checked,
+        )
+      }
+      aria-label={
+        label
+      }
+      disabled={
+        disabled
+      }
     />
   );
 }
@@ -424,7 +1055,9 @@ export function RangeField({
   label,
 }: {
   value: number;
-  onChange: (v: number) => void;
+  onChange: (
+    v: number,
+  ) => void;
   min: number;
   max: number;
   step?: number;
@@ -433,22 +1066,56 @@ export function RangeField({
   return (
     <input
       type="range"
-      aria-label={label}
-      min={min}
-      max={max}
-      step={step}
-      value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
+      aria-label={
+        label
+      }
+      min={
+        min
+      }
+      max={
+        max
+      }
+      step={
+        step
+      }
+      value={
+        value
+      }
+      onChange={(
+        e,
+      ) =>
+        onChange(
+          Number(
+            e
+              .target
+              .value,
+          ),
+        )
+      }
       className="h-5 w-full min-w-0 cursor-pointer accent-app-accent pointer-coarse:h-11"
     />
   );
 }
 
-export function Row({ label, children }: { label: string; children: ReactNode }) {
+export function Row({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
   return (
     <div className="flex min-h-8 items-center justify-between gap-3">
-      <span className="min-w-0 truncate text-xs text-app-text-muted">{label}</span>
-      <div className="flex min-w-0 shrink-0 items-center gap-2">{children}</div>
+      <span className="min-w-0 truncate text-xs text-app-text-muted">
+        {
+          label
+        }
+      </span>
+      <div className="flex min-w-0 shrink-0 items-center gap-2">
+        {
+          children
+        }
+      </div>
     </div>
   );
 }
@@ -471,8 +1138,16 @@ export function PanelHead({
         className,
       )}
     >
-      <h2 className="tf2hud-panel-head truncate">{title}</h2>
-      <div className="flex items-center gap-1">{actions}</div>
+      <h2 className="tf2hud-panel-head truncate">
+        {
+          title
+        }
+      </h2>
+      <div className="flex items-center gap-1">
+        {
+          actions
+        }
+      </div>
     </div>
   );
 }
@@ -483,32 +1158,65 @@ export function Pill({
   className,
 }: {
   children: ReactNode;
-  tone?: 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info';
+  tone?:
+    | 'neutral'
+    | 'accent'
+    | 'success'
+    | 'warning'
+    | 'danger'
+    | 'info';
   className?: string;
 }) {
-  const tones = {
-    neutral: 'bg-app-surface-hover text-app-text-muted',
-    accent: 'bg-app-accent-dim text-app-accent-text',
-    success: 'bg-app-success-dim text-app-success',
-    warning: 'bg-app-warning-dim text-app-warning',
-    danger: 'bg-app-danger-dim text-app-danger',
-    info: 'bg-app-info-dim text-app-info',
-  } as const;
+  const tones =
+    {
+      neutral:
+        'bg-app-surface-hover text-app-text-muted',
+      accent:
+        'bg-app-accent-dim text-app-accent-text',
+      success:
+        'bg-app-success-dim text-app-success',
+      warning:
+        'bg-app-warning-dim text-app-warning',
+      danger:
+        'bg-app-danger-dim text-app-danger',
+      info: 'bg-app-info-dim text-app-info',
+    } as const;
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1 rounded-app-sm px-1.5 py-0.5 text-[11px] font-semibold pointer-coarse:text-xs',
-        tones[tone],
+        tones[
+          tone
+        ],
         className,
       )}
     >
-      {children}
+      {
+        children
+      }
     </span>
   );
 }
 
-export function EmptyNote({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn('px-3 py-6 text-center text-xs text-app-text-dim', className)}>{children}</p>;
+export function EmptyNote({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <p
+      className={cn(
+        'px-3 py-6 text-center text-xs text-app-text-dim',
+        className,
+      )}
+    >
+      {
+        children
+      }
+    </p>
+  );
 }
 
 /* ─────────────────────────────── modal ─────────────────────────────── */
@@ -531,10 +1239,15 @@ export function Modal({
   skin,
 }: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (
+    open: boolean,
+  ) => void;
   title: string;
   /** A game's own look for the dialog (a class re-pointing the --app-* tokens, and its custom properties). */
-  skin?: { className?: string; style?: CSSProperties };
+  skin?: {
+    className?: string;
+    style?: CSSProperties;
+  };
   description?: string;
   children: ReactNode;
   footer?: ReactNode;
@@ -545,15 +1258,42 @@ export function Modal({
   /** A full-height bottom sheet (phones) instead of a centred dialog. */
   sheet?: boolean;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
-  const [container, setContainer] = useState<HTMLElement | null>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
+  const [
+    container,
+    setContainer,
+  ] =
+    useState<HTMLElement | null>(
+      null,
+    );
   useLayoutEffect(() => {
     // The themed root — inside the full-screen element when the editor is open over a full-screen game.
-    setContainer(portalRoot());
-  }, [open]);
+    setContainer(
+      portalRoot(),
+    );
+  }, [
+    open,
+  ]);
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
-      <DialogPrimitive.Portal container={container ?? undefined}>
+    <DialogPrimitive.Root
+      open={
+        open
+      }
+      onOpenChange={
+        onOpenChange
+      }
+    >
+      <DialogPrimitive.Portal
+        container={
+          container ??
+          undefined
+        }
+      >
         <DialogPrimitive.Overlay className="app-overlay fixed inset-0 z-50 bg-app-scrim" />
         <DialogPrimitive.Content
           className={cn(
@@ -561,42 +1301,85 @@ export function Modal({
             sheet
               ? 'app-sheet inset-x-0 bottom-0 h-[calc(100dvh-2.5rem)] rounded-t-app pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left)'
               : 'app-modal tf2hud-dialog -translate-x-1/2 -translate-y-1/2 rounded-app',
-            !sheet && (wide ? 'max-w-3xl' : 'max-w-md'),
+            !sheet &&
+              (wide
+                ? 'max-w-3xl'
+                : 'max-w-md'),
             skin?.className,
           )}
-          style={skin?.style}
+          style={
+            skin?.style
+          }
         >
           <div className="flex items-start justify-between gap-3 border-b border-app-border px-4 py-3">
             {onBack ? (
               <IconBtn
-                icon={ArrowLeft}
-                label={backLabel ?? t('back', { defaultValue: 'Back' })}
-                onClick={onBack}
+                icon={
+                  ArrowLeft
+                }
+                label={
+                  backLabel ??
+                  t(
+                    'back',
+                    {
+                      defaultValue:
+                        'Back',
+                    },
+                  )
+                }
+                onClick={
+                  onBack
+                }
                 className="-ms-1.5 rtl-flip"
               />
             ) : null}
             <div className="min-w-0 flex-1">
               <DialogPrimitive.Title className="tf2hud-title truncate text-xl">
-                {title}
+                {
+                  title
+                }
               </DialogPrimitive.Title>
               {description ? (
                 <DialogPrimitive.Description className="mt-0.5 text-xs text-app-text-muted">
-                  {description}
+                  {
+                    description
+                  }
                 </DialogPrimitive.Description>
               ) : (
                 <DialogPrimitive.Description className="sr-only">
-                  {title}
+                  {
+                    title
+                  }
                 </DialogPrimitive.Description>
               )}
             </div>
-            <DialogPrimitive.Close asChild>
-              <IconBtn icon={X} label={t('close', { defaultValue: 'Close' })} />
+            <DialogPrimitive.Close
+              asChild
+            >
+              <IconBtn
+                icon={
+                  X
+                }
+                label={t(
+                  'close',
+                  {
+                    defaultValue:
+                      'Close',
+                  },
+                )}
+              />
             </DialogPrimitive.Close>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+            {
+              children
+            }
+          </div>
           {footer ? (
             <div className="flex flex-wrap items-center justify-end gap-2 border-t border-app-border px-4 py-3">
-              {footer}
+              {
+                footer
+              }
             </div>
           ) : null}
         </DialogPrimitive.Content>
@@ -621,79 +1404,189 @@ export function ContextMenu({
   items,
   onClose,
 }: {
-  at: { x: number; y: number };
+  at: {
+    x: number;
+    y: number;
+  };
   items: MenuItem[];
   onClose: () => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState(at);
+  const ref =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const [
+    pos,
+    setPos,
+  ] =
+    useState(
+      at,
+    );
 
   useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    setPos({
-      x: Math.min(at.x, window.innerWidth - r.width - 8),
-      y: Math.min(at.y, window.innerHeight - r.height - 8),
-    });
-    el.querySelector<HTMLElement>('button:not(:disabled)')?.focus();
-  }, [at]);
+    const el =
+      ref.current;
+    if (
+      !el
+    )
+      return;
+    const r =
+      el.getBoundingClientRect();
+    setPos(
+      {
+        x: Math.min(
+          at.x,
+          window.innerWidth -
+            r.width -
+            8,
+        ),
+        y: Math.min(
+          at.y,
+          window.innerHeight -
+            r.height -
+            8,
+        ),
+      },
+    );
+    el.querySelector<HTMLElement>(
+      'button:not(:disabled)',
+    )?.focus();
+  }, [
+    at,
+  ]);
 
   useEffect(() => {
-    const away = (e: Event) => {
-      if (!ref.current?.contains(e.target as Node)) onClose();
-    };
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        const btns = [
-          ...(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled)') ?? []),
-        ];
-        const i = btns.indexOf(document.activeElement as HTMLElement);
-        btns[(i + (e.key === 'ArrowDown' ? 1 : -1) + btns.length) % btns.length]?.focus();
-      }
-    };
-    document.addEventListener('pointerdown', away, true);
-    document.addEventListener('keydown', key);
-    window.addEventListener('blur', onClose);
+    const away =
+      (
+        e: Event,
+      ) => {
+        if (
+          !ref.current?.contains(
+            e.target as Node,
+          )
+        )
+          onClose();
+      };
+    const key =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          e.key ===
+          'Escape'
+        )
+          onClose();
+        if (
+          e.key ===
+            'ArrowDown' ||
+          e.key ===
+            'ArrowUp'
+        ) {
+          e.preventDefault();
+          const btns =
+            [
+              ...(ref.current?.querySelectorAll<HTMLElement>(
+                'button:not(:disabled)',
+              ) ??
+                []),
+            ];
+          const i =
+            btns.indexOf(
+              document.activeElement as HTMLElement,
+            );
+          btns[
+            (i +
+              (e.key ===
+              'ArrowDown'
+                ? 1
+                : -1) +
+              btns.length) %
+              btns.length
+          ]?.focus();
+        }
+      };
+    document.addEventListener(
+      'pointerdown',
+      away,
+      true,
+    );
+    document.addEventListener(
+      'keydown',
+      key,
+    );
+    window.addEventListener(
+      'blur',
+      onClose,
+    );
     return () => {
-      document.removeEventListener('pointerdown', away, true);
-      document.removeEventListener('keydown', key);
-      window.removeEventListener('blur', onClose);
+      document.removeEventListener(
+        'pointerdown',
+        away,
+        true,
+      );
+      document.removeEventListener(
+        'keydown',
+        key,
+      );
+      window.removeEventListener(
+        'blur',
+        onClose,
+      );
     };
-  }, [onClose]);
+  }, [
+    onClose,
+  ]);
 
   return (
     <div
-      ref={ref}
+      ref={
+        ref
+      }
       role="menu"
-      style={{ left: pos.x, top: pos.y }}
+      style={{
+        left: pos.x,
+        top: pos.y,
+      }}
       className="fixed z-60 min-w-44 rounded-app-sm border border-app-border-bright bg-app-bg-subtle p-1 shadow-app"
     >
-      {items.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          role="menuitem"
-          disabled={item.disabled}
-          onClick={() => {
-            onClose();
-            item.onSelect();
-          }}
-          className={cn(
-            'flex w-full items-center gap-2 rounded-app-sm px-2 py-1.5 text-left text-xs hover:bg-app-surface-hover disabled:opacity-40',
-            item.danger ? 'text-app-danger' : 'text-app-text',
-          )}
-        >
-          {item.icon ? (
-            <item.icon className="size-3.5" aria-hidden />
-          ) : (
-            <span className="size-3.5" />
-          )}
-          {item.label}
-        </button>
-      ))}
+      {items.map(
+        (
+          item,
+        ) => (
+          <button
+            key={
+              item.id
+            }
+            type="button"
+            role="menuitem"
+            disabled={
+              item.disabled
+            }
+            onClick={() => {
+              onClose();
+              item.onSelect();
+            }}
+            className={cn(
+              'flex w-full items-center gap-2 rounded-app-sm px-2 py-1.5 text-left text-xs hover:bg-app-surface-hover disabled:opacity-40',
+              item.danger
+                ? 'text-app-danger'
+                : 'text-app-text',
+            )}
+          >
+            {item.icon ? (
+              <item.icon
+                className="size-3.5"
+                aria-hidden
+              />
+            ) : (
+              <span className="size-3.5" />
+            )}
+            {
+              item.label
+            }
+          </button>
+        ),
+      )}
     </div>
   );
 }
@@ -722,84 +1615,262 @@ export function Popover({
   className?: string;
   children: ReactNode;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
-  const [root, setRoot] = useState<HTMLElement | null>(null);
+  const ref =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const [
+    pos,
+    setPos,
+  ] =
+    useState<{
+      left: number;
+      top: number;
+    } | null>(
+      null,
+    );
+  const [
+    root,
+    setRoot,
+  ] =
+    useState<HTMLElement | null>(
+      null,
+    );
   // Where the panel should be in viewport coordinates; `pos` is that corrected for its containing block.
-  const desired = useRef<{ left: number; top: number } | null>(null);
+  const desired =
+    useRef<{
+      left: number;
+      top: number;
+    } | null>(
+      null,
+    );
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (
+      !open
+    )
+      return;
     // Inside a dialog, portal into it: a modal dialog makes everything outside it inert.
     setRoot(
-      anchor?.closest<HTMLElement>('[role=dialog]') ?? portalRoot(),
+      anchor?.closest<HTMLElement>(
+        '[role=dialog]',
+      ) ??
+        portalRoot(),
     );
-  }, [open, anchor]);
+  }, [
+    open,
+    anchor,
+  ]);
 
   useLayoutEffect(() => {
-    if (!open || !anchor || !ref.current) return;
-    const a = anchor.getBoundingClientRect();
-    const h = ref.current.offsetHeight;
-    const w = Math.min(width, window.innerWidth - 16);
-    const below = a.bottom + 6;
-    const top = below + h > window.innerHeight - 8 ? Math.max(8, a.top - h - 6) : below;
-    const left = Math.max(8, Math.min(a.left, window.innerWidth - w - 8));
-    desired.current = { left, top };
-    setPos({ left, top });
-  }, [open, anchor, width, children, root]);
+    if (
+      !open ||
+      !anchor ||
+      !ref.current
+    )
+      return;
+    const a =
+      anchor.getBoundingClientRect();
+    const h =
+      ref
+        .current
+        .offsetHeight;
+    const w =
+      Math.min(
+        width,
+        window.innerWidth -
+          16,
+      );
+    const below =
+      a.bottom +
+      6;
+    const top =
+      below +
+        h >
+      window.innerHeight -
+        8
+        ? Math.max(
+            8,
+            a.top -
+              h -
+              6,
+          )
+        : below;
+    const left =
+      Math.max(
+        8,
+        Math.min(
+          a.left,
+          window.innerWidth -
+            w -
+            8,
+        ),
+      );
+    desired.current =
+      {
+        left,
+        top,
+      };
+    setPos(
+      {
+        left,
+        top,
+      },
+    );
+  }, [
+    open,
+    anchor,
+    width,
+    children,
+    root,
+  ]);
 
   // Portaled into a dialog that is itself positioned with a transform, a `position: fixed` panel is
   // placed relative to that dialog, not the viewport, so the coordinates above land somewhere else
   // (the list showed up below the modal). Measure where it actually landed and shift by the difference;
   // it settles in one step, since the correction is exactly the offset.
   useLayoutEffect(() => {
-    const want = desired.current;
-    if (!open || !pos || !want || !ref.current) return;
-    const got = ref.current.getBoundingClientRect();
-    const dx = want.left - got.left;
-    const dy = want.top - got.top;
-    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) setPos({ left: pos.left + dx, top: pos.top + dy });
-  }, [open, pos]);
+    const want =
+      desired.current;
+    if (
+      !open ||
+      !pos ||
+      !want ||
+      !ref.current
+    )
+      return;
+    const got =
+      ref.current.getBoundingClientRect();
+    const dx =
+      want.left -
+      got.left;
+    const dy =
+      want.top -
+      got.top;
+    if (
+      Math.abs(
+        dx,
+      ) >
+        1 ||
+      Math.abs(
+        dy,
+      ) >
+        1
+    )
+      setPos(
+        {
+          left:
+            pos.left +
+            dx,
+          top:
+            pos.top +
+            dy,
+        },
+      );
+  }, [
+    open,
+    pos,
+  ]);
 
   useEffect(() => {
-    if (!open) return;
-    const away = (e: PointerEvent) => {
-      const t = e.target as Node;
-      if (!ref.current?.contains(t) && !anchor?.contains(t)) onClose();
-    };
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onClose();
-        anchor?.focus();
-      }
-    };
-    document.addEventListener('pointerdown', away, true);
-    document.addEventListener('keydown', key, true);
+    if (
+      !open
+    )
+      return;
+    const away =
+      (
+        e: PointerEvent,
+      ) => {
+        const t =
+          e.target as Node;
+        if (
+          !ref.current?.contains(
+            t,
+          ) &&
+          !anchor?.contains(
+            t,
+          )
+        )
+          onClose();
+      };
+    const key =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          e.key ===
+          'Escape'
+        ) {
+          e.stopPropagation();
+          onClose();
+          anchor?.focus();
+        }
+      };
+    document.addEventListener(
+      'pointerdown',
+      away,
+      true,
+    );
+    document.addEventListener(
+      'keydown',
+      key,
+      true,
+    );
     return () => {
-      document.removeEventListener('pointerdown', away, true);
-      document.removeEventListener('keydown', key, true);
+      document.removeEventListener(
+        'pointerdown',
+        away,
+        true,
+      );
+      document.removeEventListener(
+        'keydown',
+        key,
+        true,
+      );
     };
-  }, [open, anchor, onClose]);
+  }, [
+    open,
+    anchor,
+    onClose,
+  ]);
 
-  if (!open || !root) return null;
+  if (
+    !open ||
+    !root
+  )
+    return null;
   return createPortal(
     <div
-      ref={ref}
+      ref={
+        ref
+      }
       // A non-modal panel: a labelled group, not a dialog (no focus trap, page stays live).
       role="group"
-      aria-label={label}
+      aria-label={
+        label
+      }
       style={{
-        left: pos?.left ?? -9999,
-        top: pos?.top ?? -9999,
-        width: Math.min(width, window.innerWidth - 16),
+        left:
+          pos?.left ??
+          -9999,
+        top:
+          pos?.top ??
+          -9999,
+        width:
+          Math.min(
+            width,
+            window.innerWidth -
+              16,
+          ),
       }}
       className={cn(
         'fixed z-60 rounded-app border border-app-border-bright bg-app-bg-subtle p-3 text-app-text shadow-app',
         className,
       )}
     >
-      {children}
+      {
+        children
+      }
     </div>,
     root,
   );
@@ -831,9 +1902,15 @@ export function SearchSelect({
   label,
   className,
 }: {
-  value: number | undefined;
+  value:
+    | number
+    | undefined;
   options: SearchOption[];
-  onChange: (id: number | undefined) => void;
+  onChange: (
+    id:
+      | number
+      | undefined,
+  ) => void;
   /** The entry that clears the choice ("No paint"). */
   noneLabel: string;
   placeholder: string;
@@ -841,73 +1918,258 @@ export function SearchSelect({
   label: string;
   className?: string;
 }) {
-  const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [shown, setShown] = useState(OPTION_BATCH);
-  const [active, setActive] = useState(0);
-  const listId = useId();
+  const [
+    anchor,
+    setAnchor,
+  ] =
+    useState<HTMLButtonElement | null>(
+      null,
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    query,
+    setQuery,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    shown,
+    setShown,
+  ] =
+    useState(
+      OPTION_BATCH,
+    );
+  const [
+    active,
+    setActive,
+  ] =
+    useState(
+      0,
+    );
+  const listId =
+    useId();
 
-  const current = value === undefined ? undefined : options.find((o) => o.id === value);
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options;
-  }, [options, query]);
+  const current =
+    value ===
+    undefined
+      ? undefined
+      : options.find(
+          (
+            o,
+          ) =>
+            o.id ===
+            value,
+        );
+  const matches =
+    useMemo(() => {
+      const q =
+        query
+          .trim()
+          .toLowerCase();
+      return q
+        ? options.filter(
+            (
+              o,
+            ) =>
+              o.label
+                .toLowerCase()
+                .includes(
+                  q,
+                ),
+          )
+        : options;
+    }, [
+      options,
+      query,
+    ]);
   // Row 0 is always the "none" entry, unless a search is narrowing the list.
-  const rows = useMemo<(SearchOption | null)[]>(
-    () => (query.trim() ? matches : [null, ...matches]),
-    [matches, query],
-  );
+  const rows =
+    useMemo<
+      (SearchOption | null)[]
+    >(
+      () =>
+        query.trim()
+          ? matches
+          : [
+              null,
+              ...matches,
+            ],
+      [
+        matches,
+        query,
+      ],
+    );
 
   useEffect(() => {
-    setShown(OPTION_BATCH);
-    setActive(0);
-  }, [query, open]);
+    setShown(
+      OPTION_BATCH,
+    );
+    setActive(
+      0,
+    );
+  }, [
+    query,
+    open,
+  ]);
 
-  const more = useSentinel(() => setShown((n) => n + OPTION_BATCH), {
-    enabled: open && shown < rows.length,
-    watch: shown,
-    rootMargin: '120px 0px',
-  });
+  const more =
+    useSentinel(
+      () =>
+        setShown(
+          (
+            n,
+          ) =>
+            n +
+            OPTION_BATCH,
+        ),
+      {
+        enabled:
+          open &&
+          shown <
+            rows.length,
+        watch:
+          shown,
+        rootMargin:
+          '120px 0px',
+      },
+    );
 
-  const close = () => {
-    setOpen(false);
-    setQuery('');
-  };
-  const pick = (o: SearchOption | null) => {
-    onChange(o?.id);
-    close();
-    anchor?.focus();
-  };
+  const close =
+    () => {
+      setOpen(
+        false,
+      );
+      setQuery(
+        '',
+      );
+    };
+  const pick =
+    (
+      o: SearchOption | null,
+    ) => {
+      onChange(
+        o?.id,
+      );
+      close();
+      anchor?.focus();
+    };
 
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActive((i) => Math.min(rows.length - 1, i + 1));
-      setShown((n) => Math.max(n, active + 2 + OPTION_BATCH / 2));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActive((i) => Math.max(0, i - 1));
-    } else if (e.key === 'Enter' && rows.length) {
-      e.preventDefault();
-      pick(rows[Math.min(active, rows.length - 1)] ?? null);
-    }
-  };
+  const onKey =
+    (
+      e: React.KeyboardEvent,
+    ) => {
+      if (
+        e.key ===
+        'ArrowDown'
+      ) {
+        e.preventDefault();
+        setActive(
+          (
+            i,
+          ) =>
+            Math.min(
+              rows.length -
+                1,
+              i +
+                1,
+            ),
+        );
+        setShown(
+          (
+            n,
+          ) =>
+            Math.max(
+              n,
+              active +
+                2 +
+                OPTION_BATCH /
+                  2,
+            ),
+        );
+      } else if (
+        e.key ===
+        'ArrowUp'
+      ) {
+        e.preventDefault();
+        setActive(
+          (
+            i,
+          ) =>
+            Math.max(
+              0,
+              i -
+                1,
+            ),
+        );
+      } else if (
+        e.key ===
+          'Enter' &&
+        rows.length
+      ) {
+        e.preventDefault();
+        pick(
+          rows[
+            Math.min(
+              active,
+              rows.length -
+                1,
+            )
+          ] ??
+            null,
+        );
+      }
+    };
 
   useEffect(() => {
-    if (!open) return;
-    document.getElementById(`${listId}-${active}`)?.scrollIntoView({ block: 'nearest' });
-  }, [active, open, listId]);
+    if (
+      !open
+    )
+      return;
+    document
+      .getElementById(
+        `${listId}-${active}`,
+      )
+      ?.scrollIntoView(
+        {
+          block:
+            'nearest',
+        },
+      );
+  }, [
+    active,
+    open,
+    listId,
+  ]);
 
   return (
     <>
       <button
-        ref={setAnchor}
+        ref={
+          setAnchor
+        }
         type="button"
         aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={label}
-        onClick={() => setOpen((o) => !o)}
+        aria-expanded={
+          open
+        }
+        aria-label={
+          label
+        }
+        onClick={() =>
+          setOpen(
+            (
+              o,
+            ) =>
+              !o,
+          )
+        }
         className={cn(
           'flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-app-sm border border-app-border-bright bg-app-bg px-2 text-start text-xs text-app-text focus-visible:border-app-accent',
           className,
@@ -918,16 +2180,45 @@ export function SearchSelect({
             <span
               aria-hidden
               className="size-3 shrink-0 rounded-full border border-app-border-bright"
-              style={{ background: current.swatch }}
+              style={{
+                background:
+                  current.swatch,
+              }}
             />
           ) : null}
-          <span className={cn('truncate', !current && 'text-app-text-dim')}>
-            {current?.label ?? noneLabel}
+          <span
+            className={cn(
+              'truncate',
+              !current &&
+                'text-app-text-dim',
+            )}
+          >
+            {current?.label ??
+              noneLabel}
           </span>
         </span>
-        <ChevronDown className="size-3.5 shrink-0 text-app-text-dim" aria-hidden />
+        <ChevronDown
+          className="size-3.5 shrink-0 text-app-text-dim"
+          aria-hidden
+        />
       </button>
-      <Popover anchor={anchor} open={open} onClose={close} label={label} width={300}>
+      <Popover
+        anchor={
+          anchor
+        }
+        open={
+          open
+        }
+        onClose={
+          close
+        }
+        label={
+          label
+        }
+        width={
+          300
+        }
+      >
         <div className="relative mb-2">
           <Search
             className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-app-text-dim"
@@ -938,55 +2229,142 @@ export function SearchSelect({
             type="search"
             role="combobox"
             aria-expanded
-            aria-controls={listId}
+            aria-controls={
+              listId
+            }
             aria-activedescendant={`${listId}-${active}`}
-            aria-label={placeholder}
-            placeholder={placeholder}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={onKey}
-            className={cn(FIELD, 'ps-7')}
+            aria-label={
+              placeholder
+            }
+            placeholder={
+              placeholder
+            }
+            value={
+              query
+            }
+            onChange={(
+              e,
+            ) =>
+              setQuery(
+                e
+                  .target
+                  .value,
+              )
+            }
+            onKeyDown={
+              onKey
+            }
+            className={cn(
+              FIELD,
+              'ps-7',
+            )}
           />
         </div>
         <ul
-          id={listId}
+          id={
+            listId
+          }
           role="listbox"
-          aria-label={label}
+          aria-label={
+            label
+          }
           className="max-h-64 overflow-y-auto overscroll-contain"
         >
-          {rows.slice(0, shown).map((o, i) => (
-            // Keyboard picking happens on the combobox input above (aria-activedescendant).
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+          {rows
+            .slice(
+              0,
+              shown,
+            )
+            .map(
+              (
+                o,
+                i,
+              ) => (
+                // Keyboard picking happens on the combobox input above (aria-activedescendant).
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+                <li
+                  key={
+                    o?.id ??
+                    'none'
+                  }
+                  id={`${listId}-${i}`}
+                  role="option"
+                  aria-selected={
+                    o
+                      ? o.id ===
+                        value
+                      : value ===
+                        undefined
+                  }
+                  onPointerDown={(
+                    e,
+                  ) =>
+                    e.preventDefault()
+                  }
+                  onClick={() =>
+                    pick(
+                      o,
+                    )
+                  }
+                  onPointerMove={() =>
+                    setActive(
+                      i,
+                    )
+                  }
+                  className={cn(
+                    'flex cursor-pointer items-center gap-2 rounded-app-sm px-2 py-1.5 text-xs',
+                    i ===
+                      active
+                      ? 'bg-app-surface-hover'
+                      : '',
+                    !o &&
+                      'text-app-text-dim',
+                  )}
+                >
+                  {o?.swatch ? (
+                    <span
+                      aria-hidden
+                      className="size-3 shrink-0 rounded-full border border-app-border-bright"
+                      style={{
+                        background:
+                          o.swatch,
+                      }}
+                    />
+                  ) : null}
+                  <span className="min-w-0 flex-1 truncate">
+                    {o?.label ??
+                      noneLabel}
+                  </span>
+                  {(
+                    o
+                      ? o.id ===
+                        value
+                      : value ===
+                        undefined
+                  ) ? (
+                    <Check
+                      className="size-3.5 shrink-0 text-app-accent-text"
+                      aria-hidden
+                    />
+                  ) : null}
+                </li>
+              ),
+            )}
+          {shown <
+          rows.length ? (
             <li
-              key={o?.id ?? 'none'}
-              id={`${listId}-${i}`}
-              role="option"
-              aria-selected={o ? o.id === value : value === undefined}
-              onPointerDown={(e) => e.preventDefault()}
-              onClick={() => pick(o)}
-              onPointerMove={() => setActive(i)}
-              className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-app-sm px-2 py-1.5 text-xs',
-                i === active ? 'bg-app-surface-hover' : '',
-                !o && 'text-app-text-dim',
-              )}
-            >
-              {o?.swatch ? (
-                <span
-                  aria-hidden
-                  className="size-3 shrink-0 rounded-full border border-app-border-bright"
-                  style={{ background: o.swatch }}
-                />
-              ) : null}
-              <span className="min-w-0 flex-1 truncate">{o?.label ?? noneLabel}</span>
-              {(o ? o.id === value : value === undefined) ? (
-                <Check className="size-3.5 shrink-0 text-app-accent-text" aria-hidden />
-              ) : null}
+              ref={
+                more
+              }
+              aria-hidden
+              className="h-px"
+            />
+          ) : null}
+          {rows.length ===
+          0 ? (
+            <li className="px-2 py-3 text-center text-xs text-app-text-dim">
+              —
             </li>
-          ))}
-          {shown < rows.length ? <li ref={more} aria-hidden className="h-px" /> : null}
-          {rows.length === 0 ? (
-            <li className="px-2 py-3 text-center text-xs text-app-text-dim">—</li>
           ) : null}
         </ul>
       </Popover>

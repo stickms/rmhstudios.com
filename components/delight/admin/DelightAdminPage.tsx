@@ -1,68 +1,178 @@
-import { lazy, useState } from 'react';
+import {
+  lazy,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Cookie, Compass, Landmark, Languages, PartyPopper } from 'lucide-react';
+import {
+  Cookie,
+  Compass,
+  Landmark,
+  Languages,
+  PartyPopper,
+} from 'lucide-react';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
-const panels = {
-  hunt: lazy(() => import('./HuntPanel')),
-  museum: lazy(() => import('./MuseumPanel')),
-  fortunes: lazy(() => import('./FortunesPanel')),
-  fools: lazy(() => import('./FoolsPanel')),
-  translations: lazy(() => import('./TranslationsPanel')),
-};
-type Tab = keyof typeof panels;
+const panels =
+  {
+    hunt: lazy(
+      () =>
+        import('./HuntPanel'),
+    ),
+    museum:
+      lazy(
+        () =>
+          import('./MuseumPanel'),
+      ),
+    fortunes:
+      lazy(
+        () =>
+          import('./FortunesPanel'),
+      ),
+    fools:
+      lazy(
+        () =>
+          import('./FoolsPanel'),
+      ),
+    translations:
+      lazy(
+        () =>
+          import('./TranslationsPanel'),
+      ),
+  };
+type Tab =
+  keyof typeof panels;
 
 /** /admin/delight — the admin side of the hunt, museum, fortunes, April Fools flag and translations. */
 export function DelightAdminPage() {
-  const { t } = useTranslation('f-delight');
-  const [tab, setTab] = useState<Tab>('hunt');
-  const Panel = panels[tab];
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-delight',
+    );
+  const [
+    tab,
+    setTab,
+  ] =
+    useState<Tab>(
+      'hunt',
+    );
+  const Panel =
+    panels[
+      tab
+    ];
   return (
     <PageLayout
-      title={t('admin-title', { defaultValue: 'Delight tools' })}
-      description={t('admin-desc', {
-        defaultValue:
-          'Run the site hunt, curate the museum, moderate fortunes, flip April Fools, review translations.',
-      })}
+      title={t(
+        'admin-title',
+        {
+          defaultValue:
+            'Delight tools',
+        },
+      )}
+      description={t(
+        'admin-desc',
+        {
+          defaultValue:
+            'Run the site hunt, curate the museum, moderate fortunes, flip April Fools, review translations.',
+        },
+      )}
       wide
       backTo="/admin"
     >
       <AdminBody>
         <Tabs
-          aria-label={t('admin-tabs', { defaultValue: 'Delight tools sections' })}
-          value={tab}
-          onChange={(id) => setTab(id as Tab)}
+          aria-label={t(
+            'admin-tabs',
+            {
+              defaultValue:
+                'Delight tools sections',
+            },
+          )}
+          value={
+            tab
+          }
+          onChange={(
+            id,
+          ) =>
+            setTab(
+              id as Tab,
+            )
+          }
           tabs={[
-            { id: 'hunt', label: t('admin-tab-hunt', { defaultValue: 'Hunt' }), icon: Compass },
+            {
+              id: 'hunt',
+              label:
+                t(
+                  'admin-tab-hunt',
+                  {
+                    defaultValue:
+                      'Hunt',
+                  },
+                ),
+              icon: Compass,
+            },
             {
               id: 'museum',
-              label: t('admin-tab-museum', { defaultValue: 'Museum' }),
+              label:
+                t(
+                  'admin-tab-museum',
+                  {
+                    defaultValue:
+                      'Museum',
+                  },
+                ),
               icon: Landmark,
             },
             {
               id: 'fortunes',
-              label: t('admin-tab-fortunes', { defaultValue: 'Fortunes' }),
+              label:
+                t(
+                  'admin-tab-fortunes',
+                  {
+                    defaultValue:
+                      'Fortunes',
+                  },
+                ),
               icon: Cookie,
             },
             {
               id: 'fools',
-              label: t('admin-tab-fools', { defaultValue: 'April Fools' }),
+              label:
+                t(
+                  'admin-tab-fools',
+                  {
+                    defaultValue:
+                      'April Fools',
+                  },
+                ),
               icon: PartyPopper,
             },
             {
               id: 'translations',
-              label: t('admin-tab-translations', { defaultValue: 'Translations' }),
+              label:
+                t(
+                  'admin-tab-translations',
+                  {
+                    defaultValue:
+                      'Translations',
+                  },
+                ),
               icon: Languages,
             },
           ]}
         />
         {/* A box of its own: AdminBody spaces its children, and the fade's wrapper has no box. */}
         <div>
-          <ArrivalSuspense fallback={<Skeleton className="h-40 w-full" />}>
+          <ArrivalSuspense
+            fallback={
+              <Skeleton className="h-40 w-full" />
+            }
+          >
             <Panel />
           </ArrivalSuspense>
         </div>

@@ -30,7 +30,11 @@
 import { useTranslation } from 'react-i18next';
 import { ArrowUpRight } from 'lucide-react';
 import { policyText } from './copy';
-import { Reveal, DrawnRule, stagger } from './Reveal';
+import {
+  Reveal,
+  DrawnRule,
+  stagger,
+} from './Reveal';
 import { BookingForm } from './BookingForm';
 import {
   JUICE_PAIRING_SEK,
@@ -39,32 +43,123 @@ import {
 } from '@/lib/rebar-rutabaga/menu';
 
 /** House rules, in the order they are worth reading. Words are in `copy.ts`. */
-const POLICY_IDS = ['allergies', 'lateness', 'children', 'photographs', 'floor'] as const;
+const POLICY_IDS =
+  [
+    'allergies',
+    'lateness',
+    'children',
+    'photographs',
+    'floor',
+  ] as const;
 
 export function Reservations() {
-  const { t, i18n } = useTranslation('c-rebar-rutabaga');
+  const {
+    t,
+    i18n,
+  } =
+    useTranslation(
+      'c-rebar-rutabaga',
+    );
 
-  const money = (amount: number) =>
-    new Intl.NumberFormat(i18n.language, {
-      style: 'currency',
-      currency: 'SEK',
-      maximumFractionDigits: 0,
-    }).format(amount);
+  const money =
+    (
+      amount: number,
+    ) =>
+      new Intl.NumberFormat(
+        i18n.language,
+        {
+          style:
+            'currency',
+          currency:
+            'SEK',
+          maximumFractionDigits: 0,
+        },
+      ).format(
+        amount,
+      );
 
-  const facts: [string, string][] = [
+  const facts: [
+    string,
+    string,
+  ][] =
     [
-      t('book.nights', { defaultValue: 'Nights' }),
-      t('book.nightsValue', { defaultValue: 'Wednesday – Saturday' }),
-    ],
-    [t('book.seatings', { defaultValue: 'Seatings' }), '17:30 · 20:45'],
-    [
-      t('book.atTable', { defaultValue: 'At table' }),
-      t('book.atTableValue', { defaultValue: '2 h 50 min' }),
-    ],
-    [t('book.wine', { defaultValue: 'Wine pairing' }), money(WINE_PAIRING_SEK)],
-    [t('book.juice', { defaultValue: 'Juice pairing' }), money(JUICE_PAIRING_SEK)],
-    [t('book.telephone', { defaultValue: 'Telephone' }), '+46 31 18 14 63'],
-  ];
+      [
+        t(
+          'book.nights',
+          {
+            defaultValue:
+              'Nights',
+          },
+        ),
+        t(
+          'book.nightsValue',
+          {
+            defaultValue:
+              'Wednesday – Saturday',
+          },
+        ),
+      ],
+      [
+        t(
+          'book.seatings',
+          {
+            defaultValue:
+              'Seatings',
+          },
+        ),
+        '17:30 · 20:45',
+      ],
+      [
+        t(
+          'book.atTable',
+          {
+            defaultValue:
+              'At table',
+          },
+        ),
+        t(
+          'book.atTableValue',
+          {
+            defaultValue:
+              '2 h 50 min',
+          },
+        ),
+      ],
+      [
+        t(
+          'book.wine',
+          {
+            defaultValue:
+              'Wine pairing',
+          },
+        ),
+        money(
+          WINE_PAIRING_SEK,
+        ),
+      ],
+      [
+        t(
+          'book.juice',
+          {
+            defaultValue:
+              'Juice pairing',
+          },
+        ),
+        money(
+          JUICE_PAIRING_SEK,
+        ),
+      ],
+      [
+        t(
+          'book.telephone',
+          {
+            defaultValue:
+              'Telephone',
+          },
+        ),
+        '+46 31 18 14 63',
+      ],
+    ];
 
   return (
     <section
@@ -74,41 +169,78 @@ export function Reservations() {
       <div className="mx-auto max-w-[86rem] px-6 py-24 sm:px-10 sm:py-32">
         <Reveal>
           <p className="font-mono text-rem-70 uppercase tracking-[0.26em] text-rebar-ink-faint">
-            {t('book.eyebrow', { defaultValue: 'Reservations' })}
+            {t(
+              'book.eyebrow',
+              {
+                defaultValue:
+                  'Reservations',
+              },
+            )}
           </p>
         </Reveal>
 
         <div className="mt-6 grid gap-14 lg:grid-cols-2 lg:items-start lg:gap-20">
           <div>
-            <Reveal delay={0.05}>
+            <Reveal
+              delay={
+                0.05
+              }
+            >
               <h2
                 id="rr-book"
                 className="font-display text-[clamp(3rem,9vw,6.5rem)] font-light leading-[0.9] tracking-[-0.045em] tabular-nums text-rebar-ink"
               >
-                {money(MENU_PRICE_SEK)}
+                {money(
+                  MENU_PRICE_SEK,
+                )}
               </h2>
             </Reveal>
-            <Reveal delay={0.1}>
+            <Reveal
+              delay={
+                0.1
+              }
+            >
               <p className="mt-4 font-mono text-rem-70 uppercase tracking-[0.2em] text-rebar-ink-faint">
-                {t('book.perGuest', { defaultValue: 'Per guest · nine courses' })}
+                {t(
+                  'book.perGuest',
+                  {
+                    defaultValue:
+                      'Per guest · nine courses',
+                  },
+                )}
               </p>
             </Reveal>
 
             <BookingForm />
 
-            <Reveal delay={0.2}>
+            <Reveal
+              delay={
+                0.2
+              }
+            >
               <p className="mt-5 max-w-[30rem] text-sm leading-relaxed text-rebar-ink-soft">
-                {t('book.opens', {
-                  defaultValue:
-                    'Bookings open on the first of each month at 09:00 CET, for the month after next.',
-                })}
+                {t(
+                  'book.opens',
+                  {
+                    defaultValue:
+                      'Bookings open on the first of each month at 09:00 CET, for the month after next.',
+                  },
+                )}
               </p>
             </Reveal>
-            <Reveal delay={0.24}>
+            <Reveal
+              delay={
+                0.24
+              }
+            >
               <p className="mt-3 max-w-[30rem] text-sm leading-relaxed text-rebar-ink-soft">
-                {t('book.large', {
-                  defaultValue: 'For more than six, or to take the whole room, write to us:',
-                })}{' '}
+                {t(
+                  'book.large',
+                  {
+                    defaultValue:
+                      'For more than six, or to take the whole room, write to us:',
+                  },
+                )}{' '}
                 <a
                   href="mailto:bord@rebarochrutabaga.se"
                   className="group inline-flex items-baseline gap-1 border-b border-rebar-line-strong text-rebar-ink transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink-soft"
@@ -124,44 +256,91 @@ export function Reservations() {
 
             <DrawnRule className="mt-14" />
             <dl className="mt-1">
-              {facts.map(([label, value], i) => (
-                <Reveal key={label} delay={stagger(i, 0.045)}>
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-6 border-b border-rebar-line py-3.5">
-                    <dt className="font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
-                      {label}
-                    </dt>
-                    <dd className="text-right font-mono text-sm tabular-nums text-rebar-ink">
-                      {value}
-                    </dd>
-                  </div>
-                </Reveal>
-              ))}
+              {facts.map(
+                (
+                  [
+                    label,
+                    value,
+                  ],
+                  i,
+                ) => (
+                  <Reveal
+                    key={
+                      label
+                    }
+                    delay={stagger(
+                      i,
+                      0.045,
+                    )}
+                  >
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-6 border-b border-rebar-line py-3.5">
+                      <dt className="font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
+                        {
+                          label
+                        }
+                      </dt>
+                      <dd className="text-right font-mono text-sm tabular-nums text-rebar-ink">
+                        {
+                          value
+                        }
+                      </dd>
+                    </div>
+                  </Reveal>
+                ),
+              )}
             </dl>
           </div>
 
           <div className="lg:pt-6">
             <Reveal>
               <h3 className="font-mono text-rem-70 uppercase tracking-[0.26em] text-rebar-ink-faint">
-                {t('book.house', { defaultValue: 'The house' })}
+                {t(
+                  'book.house',
+                  {
+                    defaultValue:
+                      'The house',
+                  },
+                )}
               </h3>
             </Reveal>
             <DrawnRule className="mt-5" />
             <div className="mt-1">
-              {POLICY_IDS.map((id, i) => {
-                const p = policyText(id, t);
-                return (
-                  <Reveal key={id} delay={stagger(i, 0.05)}>
-                    <div className="border-b border-rebar-line py-6">
-                      <h4 className="font-display text-base font-normal tracking-[-0.01em] text-rebar-ink">
-                        {p.title}
-                      </h4>
-                      <p className="mt-2 max-w-prose text-sm leading-relaxed text-rebar-ink-soft">
-                        {p.body}
-                      </p>
-                    </div>
-                  </Reveal>
-                );
-              })}
+              {POLICY_IDS.map(
+                (
+                  id,
+                  i,
+                ) => {
+                  const p =
+                    policyText(
+                      id,
+                      t,
+                    );
+                  return (
+                    <Reveal
+                      key={
+                        id
+                      }
+                      delay={stagger(
+                        i,
+                        0.05,
+                      )}
+                    >
+                      <div className="border-b border-rebar-line py-6">
+                        <h4 className="font-display text-base font-normal tracking-[-0.01em] text-rebar-ink">
+                          {
+                            p.title
+                          }
+                        </h4>
+                        <p className="mt-2 max-w-prose text-sm leading-relaxed text-rebar-ink-soft">
+                          {
+                            p.body
+                          }
+                        </p>
+                      </div>
+                    </Reveal>
+                  );
+                },
+              )}
             </div>
           </div>
         </div>

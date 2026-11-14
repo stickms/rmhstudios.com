@@ -13,9 +13,21 @@
  * the catalog gives its page a correct head for free.
  */
 
-import { games, apps } from '@/lib/catalog';
-import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
-import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
+import {
+  games,
+  apps,
+} from '@/lib/catalog';
+import {
+  buildCanonical,
+  buildMeta,
+  ogCardPath,
+  SITE_URL,
+} from '@/lib/seo';
+import {
+  breadcrumbSchema,
+  jsonLdScript,
+  videoGameSchema,
+} from '@/lib/schema';
 import { preloadFont } from '@/lib/fonts/self-hosted';
 
 /**
@@ -29,12 +41,18 @@ import { preloadFont } from '@/lib/fonts/self-hosted';
  * real routes now (`_site/games/index.tsx`, `_site/apps/index.tsx`) and the
  * Create tabs remain for the creator surfaces stacked above them.
  */
-export const GAMES_INDEX_PATH = '/games';
+export const GAMES_INDEX_PATH =
+  '/games';
 /** Apps are listed in the games library (`/apps` redirects there). */
-export const APPS_INDEX_PATH = '/games';
+export const APPS_INDEX_PATH =
+  '/games';
 
 /** A `<link>` descriptor, as TanStack's `head().links` accepts it. */
-type LinkTag = Record<string, string>;
+type LinkTag =
+  Record<
+    string,
+    string
+  >;
 
 interface HeadOptions {
   /**
@@ -61,80 +79,198 @@ interface HeadOptions {
  * the `/games/{id}` hub — one is the game, the other is its reviews and
  * guides), and the hub is what the JSON-LD breadcrumb walks back through.
  */
-export function gameRouteHead(id: string, options: HeadOptions = {}) {
-  const game = games.find((g) => g.id === id);
-  if (!game) {
+export function gameRouteHead(
+  id: string,
+  options: HeadOptions = {},
+) {
+  const game =
+    games.find(
+      (
+        g,
+      ) =>
+        g.id ===
+        id,
+    );
+  if (
+    !game
+  ) {
     // A route whose id isn't in the catalog is a bug, but a missing head is a
     // worse outcome than a generic one — so degrade rather than throw.
     return {
-      meta: buildMeta({ title: 'RMH Studios', description: '', path: `/${id}` }),
-      links: options.links ?? [],
+      meta: buildMeta(
+        {
+          title:
+            'RMH Studios',
+          description:
+            '',
+          path: `/${id}`,
+        },
+      ),
+      links:
+        options.links ??
+        [],
     };
   }
 
-  const path = game.href;
-  const fontLinks = (options.fontPreloads ?? []).map(preloadFont);
+  const path =
+    game.href;
+  const fontLinks =
+    (
+      options.fontPreloads ??
+      []
+    ).map(
+      preloadFont,
+    );
   return {
-    meta: buildMeta({
-      title: `${game.title} | RMH Studios`,
-      description: game.description,
-      path,
-      image: ogCardPath('game', game.id),
-      imageAlt: `${game.title} on RMH Studios.`,
-    }),
-    links: [buildCanonical(path), ...(options.links ?? []), ...fontLinks],
-    scripts: [
-      jsonLdScript([
-        videoGameSchema({
-          name: game.title,
-          description: game.longDescription || game.description,
+    meta: buildMeta(
+      {
+        title: `${game.title} | RMH Studios`,
+        description:
+          game.description,
+        path,
+        image:
+          ogCardPath(
+            'game',
+            game.id,
+          ),
+        imageAlt: `${game.title} on RMH Studios.`,
+      },
+    ),
+    links:
+      [
+        buildCanonical(
           path,
-          image: game.imagePath,
-          genres: game.tags,
-        }),
-        breadcrumbSchema([
-          { name: 'Games', path: GAMES_INDEX_PATH },
-          { name: game.title, path },
-        ]),
-      ]),
-    ],
+        ),
+        ...(options.links ??
+          []),
+        ...fontLinks,
+      ],
+    scripts:
+      [
+        jsonLdScript(
+          [
+            videoGameSchema(
+              {
+                name: game.title,
+                description:
+                  game.longDescription ||
+                  game.description,
+                path,
+                image:
+                  game.imagePath,
+                genres:
+                  game.tags,
+              },
+            ),
+            breadcrumbSchema(
+              [
+                {
+                  name: 'Games',
+                  path: GAMES_INDEX_PATH,
+                },
+                {
+                  name: game.title,
+                  path,
+                },
+              ],
+            ),
+          ],
+        ),
+      ],
   };
 }
 
 /** Head for an app's route. Apps are software, not games — no VideoGame node. */
-export function appRouteHead(id: string, options: HeadOptions = {}) {
-  const app = apps.find((a) => a.id === id);
-  if (!app) {
+export function appRouteHead(
+  id: string,
+  options: HeadOptions = {},
+) {
+  const app =
+    apps.find(
+      (
+        a,
+      ) =>
+        a.id ===
+        id,
+    );
+  if (
+    !app
+  ) {
     return {
-      meta: buildMeta({ title: 'RMH Studios', description: '', path: `/${id}` }),
-      links: options.links ?? [],
+      meta: buildMeta(
+        {
+          title:
+            'RMH Studios',
+          description:
+            '',
+          path: `/${id}`,
+        },
+      ),
+      links:
+        options.links ??
+        [],
     };
   }
 
-  const path = app.href;
-  const fontLinks = (options.fontPreloads ?? []).map(preloadFont);
+  const path =
+    app.href;
+  const fontLinks =
+    (
+      options.fontPreloads ??
+      []
+    ).map(
+      preloadFont,
+    );
   return {
-    meta: buildMeta({
-      title: `${app.title} | RMH Studios`,
-      description: app.description,
-      path,
-      // The rendered card, not the raw screenshot this used to point at: a
-      // 1200×630 with the app's art *in* it declares its dimensions, says which
-      // site it is from, and — unlike `imagePath` — exists for every app. An app
-      // with a link-preview image drawn for it (`ogImagePath`, also 1200×630, so
-      // buildMeta's default dimensions and large card hold) uses that instead.
-      image: app.ogImagePath ?? ogCardPath('app', app.id),
-      imageAlt: (app.ogImagePath && app.ogImageAlt) || `${app.title} on RMH Studios.`,
-    }),
-    links: [buildCanonical(path), ...(options.links ?? []), ...fontLinks],
-    scripts: [
-      jsonLdScript(
-        breadcrumbSchema([
-          { name: 'Apps', path: APPS_INDEX_PATH },
-          { name: app.title, path },
-        ]),
-      ),
-    ],
+    meta: buildMeta(
+      {
+        title: `${app.title} | RMH Studios`,
+        description:
+          app.description,
+        path,
+        // The rendered card, not the raw screenshot this used to point at: a
+        // 1200×630 with the app's art *in* it declares its dimensions, says which
+        // site it is from, and — unlike `imagePath` — exists for every app. An app
+        // with a link-preview image drawn for it (`ogImagePath`, also 1200×630, so
+        // buildMeta's default dimensions and large card hold) uses that instead.
+        image:
+          app.ogImagePath ??
+          ogCardPath(
+            'app',
+            app.id,
+          ),
+        imageAlt:
+          (app.ogImagePath &&
+            app.ogImageAlt) ||
+          `${app.title} on RMH Studios.`,
+      },
+    ),
+    links:
+      [
+        buildCanonical(
+          path,
+        ),
+        ...(options.links ??
+          []),
+        ...fontLinks,
+      ],
+    scripts:
+      [
+        jsonLdScript(
+          breadcrumbSchema(
+            [
+              {
+                name: 'Apps',
+                path: APPS_INDEX_PATH,
+              },
+              {
+                name: app.title,
+                path,
+              },
+            ],
+          ),
+        ),
+      ],
   };
 }
 
@@ -145,9 +281,26 @@ export function appRouteHead(id: string, options: HeadOptions = {}) {
  * description, image, canonical) while staying out of search results (`noindex, follow`): the
  * canonical and `og:url` point at the app itself, so a click on the unfurl goes there.
  */
-export function appHubHead(id: string, options: HeadOptions = {}) {
-  const head = appRouteHead(id, options);
-  return { ...head, meta: [...head.meta, { name: 'robots', content: 'noindex, follow' }] };
+export function appHubHead(
+  id: string,
+  options: HeadOptions = {},
+) {
+  const head =
+    appRouteHead(
+      id,
+      options,
+    );
+  return {
+    ...head,
+    meta: [
+      ...head.meta,
+      {
+        name: 'robots',
+        content:
+          'noindex, follow',
+      },
+    ],
+  };
 }
 
 /**
@@ -159,22 +312,73 @@ export function appHubHead(id: string, options: HeadOptions = {}) {
  * `SoftwareApplication` description lives on each item's own page, and
  * repeating it here would be two sources for one fact.
  */
-export function catalogItemListSchema(kind: 'game' | 'app') {
+export function catalogItemListSchema(
+  kind:
+    | 'game'
+    | 'app',
+) {
   const entries =
-    kind === 'game'
-      ? games.filter((g) => !g.unlisted && g.href.startsWith('/')).map((g) => `/games/${g.id}`)
-      : apps.filter((a) => a.href.startsWith('/')).map((a) => a.href);
+    kind ===
+    'game'
+      ? games
+          .filter(
+            (
+              g,
+            ) =>
+              !g.unlisted &&
+              g.href.startsWith(
+                '/',
+              ),
+          )
+          .map(
+            (
+              g,
+            ) =>
+              `/games/${g.id}`,
+          )
+      : apps
+          .filter(
+            (
+              a,
+            ) =>
+              a.href.startsWith(
+                '/',
+              ),
+          )
+          .map(
+            (
+              a,
+            ) =>
+              a.href,
+          );
 
   return {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: kind === 'game' ? 'RMH Studios games' : 'RMH Studios apps',
-    numberOfItems: entries.length,
-    itemListOrder: 'https://schema.org/ItemListOrderAscending',
-    itemListElement: entries.map((path, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      url: `${SITE_URL}${path}`,
-    })),
+    '@context':
+      'https://schema.org',
+    '@type':
+      'ItemList',
+    name:
+      kind ===
+      'game'
+        ? 'RMH Studios games'
+        : 'RMH Studios apps',
+    numberOfItems:
+      entries.length,
+    itemListOrder:
+      'https://schema.org/ItemListOrderAscending',
+    itemListElement:
+      entries.map(
+        (
+          path,
+          i,
+        ) => ({
+          '@type':
+            'ListItem',
+          position:
+            i +
+            1,
+          url: `${SITE_URL}${path}`,
+        }),
+      ),
   };
 }

@@ -1,5 +1,9 @@
 import { AdminBody } from '@/components/admin/AdminBody';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Trash2 } from 'lucide-react';
@@ -10,23 +14,38 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
-import { MAX_QOTD_LENGTH, utcDayKey } from '@/lib/posts-plus/constants';
+import {
+  MAX_QOTD_LENGTH,
+  utcDayKey,
+} from '@/lib/posts-plus/constants';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { addAdminQotdApi, getAdminQotdApi, removeAdminQotdApi } from '@/lib/admin/admin-ops.contract';
+import {
+  addAdminQotdApi,
+  getAdminQotdApi,
+  removeAdminQotdApi,
+} from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 interface Row {
   id: string;
   text: string;
-  dayKey: string | null;
+  dayKey:
+    | string
+    | null;
   createdAt: string;
 }
 interface Data {
   queue: Row[];
   recent: Row[];
-  today: { dayKey: string; text: string; source: 'curated' | 'builtin' };
+  today: {
+    dayKey: string;
+    text: string;
+    source:
+      | 'curated'
+      | 'builtin';
+  };
 }
 
 /**
@@ -35,116 +54,328 @@ interface Data {
  * When the queue is empty the built-in rotation covers the day.
  */
 export function AdminQotdPanel() {
-  const { t } = useTranslation('f-posts-plus');
-  const [data, setData] = useState<Data | null>(null);
-  const [text, setText] = useState('');
-  const [dayKey, setDayKey] = useState('');
-  const [busy, setBusy] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-posts-plus',
+    );
+  const [
+    data,
+    setData,
+  ] =
+    useState<Data | null>(
+      null,
+    );
+  const [
+    text,
+    setText,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    dayKey,
+    setDayKey,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
   // Steel M9: the queue replaces the spinner.
-  const arrival = useArrival(!!data);
+  const arrival =
+    useArrival(
+      !!data,
+    );
 
-  const load = useCallback(async () => {
-    try {
-      setData(await api(getAdminQotdApi, { retries: 0 }));
-    } catch {
-      toast.error(t('admin-load-failed', { defaultValue: 'Could not load the prompt queue' }));
-    }
-  }, [t]);
+  const load =
+    useCallback(async () => {
+      try {
+        setData(
+          await api(
+            getAdminQotdApi,
+            {
+              retries: 0,
+            },
+          ),
+        );
+      } catch {
+        toast.error(
+          t(
+            'admin-load-failed',
+            {
+              defaultValue:
+                'Could not load the prompt queue',
+            },
+          ),
+        );
+      }
+    }, [
+      t,
+    ]);
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [
+    load,
+  ]);
 
-  const add = async () => {
-    setBusy(true);
-    try {
+  const add =
+    async () => {
+      setBusy(
+        true,
+      );
       try {
-        await api(addAdminQotdApi, { body: { text: text.trim(), ...(dayKey ? { dayKey } : {}) } });
+        try {
+          await api(
+            addAdminQotdApi,
+            {
+              body: {
+                text: text.trim(),
+                ...(dayKey
+                  ? {
+                      dayKey,
+                    }
+                  : {}),
+              },
+            },
+          );
+        } catch (e) {
+          toast.error(
+            serverError(
+              e,
+            ) ??
+              t(
+                'admin-add-failed',
+                {
+                  defaultValue:
+                    'Could not add the prompt',
+                },
+              ),
+          );
+          return;
+        }
+        setText(
+          '',
+        );
+        setDayKey(
+          '',
+        );
+        toast.success(
+          t(
+            'admin-added',
+            {
+              defaultValue:
+                'Prompt added',
+            },
+          ),
+        );
+        await load();
+      } finally {
+        setBusy(
+          false,
+        );
+      }
+    };
+
+  const remove =
+    async (
+      row: Row,
+    ) => {
+      try {
+        await api(
+          removeAdminQotdApi,
+          {
+            params:
+              {
+                id: row.id,
+              },
+          },
+        );
       } catch (e) {
-        toast.error(serverError(e) ?? t('admin-add-failed', { defaultValue: 'Could not add the prompt' }));
+        toast.error(
+          serverError(
+            e,
+          ) ??
+            t(
+              'admin-remove-failed',
+              {
+                defaultValue:
+                  'Could not remove the prompt',
+              },
+            ),
+        );
         return;
       }
-      setText('');
-      setDayKey('');
-      toast.success(t('admin-added', { defaultValue: 'Prompt added' }));
       await load();
-    } finally {
-      setBusy(false);
-    }
-  };
+    };
 
-  const remove = async (row: Row) => {
-    try {
-      await api(removeAdminQotdApi, { params: { id: row.id } });
-    } catch (e) {
-      toast.error(
-        serverError(e) ?? t('admin-remove-failed', { defaultValue: 'Could not remove the prompt' }),
-      );
-      return;
-    }
-    await load();
-  };
-
-  const today = utcDayKey();
+  const today =
+    utcDayKey();
 
   return (
     <PageLayout
-      title={t('admin-title', { defaultValue: 'Question of the day' })}
-      description={t('admin-desc', {
-        defaultValue:
-          'Prompts run oldest first, one per UTC day. With an empty queue the built-in list covers the day.',
-      })}
+      title={t(
+        'admin-title',
+        {
+          defaultValue:
+            'Question of the day',
+        },
+      )}
+      description={t(
+        'admin-desc',
+        {
+          defaultValue:
+            'Prompts run oldest first, one per UTC day. With an empty queue the built-in list covers the day.',
+        },
+      )}
       wide
       backTo="/admin"
-      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+      backLabel={t(
+        'back-to-admin',
+        {
+          defaultValue:
+            'Back to admin',
+        },
+      )}
     >
       <AdminBody width="narrow">
         {data && (
           <section className="min-w-0">
             <p className="t-label">
-              {t('admin-today', { defaultValue: 'Running today' })}
-              {data.today.source === 'builtin' && (
+              {t(
+                'admin-today',
+                {
+                  defaultValue:
+                    'Running today',
+                },
+              )}
+              {data
+                .today
+                .source ===
+                'builtin' && (
                 <span className="ms-2 text-site-warning">
-                  {t('admin-builtin', { defaultValue: '(built-in list - the queue is empty)' })}
+                  {t(
+                    'admin-builtin',
+                    {
+                      defaultValue:
+                        '(built-in list - the queue is empty)',
+                    },
+                  )}
                 </span>
               )}
             </p>
-            <p className="mt-2 text-site-text">{data.today.text}</p>
+            <p className="mt-2 text-site-text">
+              {
+                data
+                  .today
+                  .text
+              }
+            </p>
           </section>
         )}
 
         <form
           className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
-          onSubmit={(e) => {
+          onSubmit={(
+            e,
+          ) => {
             e.preventDefault();
             void add();
           }}
         >
           <label className="block t-body text-site-text-muted">
-            <span className="mb-2 block">{t('admin-new', { defaultValue: 'New prompt' })}</span>
+            <span className="mb-2 block">
+              {t(
+                'admin-new',
+                {
+                  defaultValue:
+                    'New prompt',
+                },
+              )}
+            </span>
             <Textarea
-              value={text}
-              rows={2}
-              maxLength={MAX_QOTD_LENGTH}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={t('admin-placeholder', {
-                defaultValue: 'What is the best game you played this year?',
-              })}
+              value={
+                text
+              }
+              rows={
+                2
+              }
+              maxLength={
+                MAX_QOTD_LENGTH
+              }
+              onChange={(
+                e,
+              ) =>
+                setText(
+                  e
+                    .target
+                    .value,
+                )
+              }
+              placeholder={t(
+                'admin-placeholder',
+                {
+                  defaultValue:
+                    'What is the best game you played this year?',
+                },
+              )}
             />
           </label>
           <label className="block t-body text-site-text-muted">
             <span className="mb-2 block">
-              {t('admin-day', { defaultValue: 'Pin to a day (optional)' })}
+              {t(
+                'admin-day',
+                {
+                  defaultValue:
+                    'Pin to a day (optional)',
+                },
+              )}
             </span>
             <Input
               type="date"
-              min={today}
-              value={dayKey}
-              onChange={(e) => setDayKey(e.target.value)}
+              min={
+                today
+              }
+              value={
+                dayKey
+              }
+              onChange={(
+                e,
+              ) =>
+                setDayKey(
+                  e
+                    .target
+                    .value,
+                )
+              }
             />
           </label>
-          <Button type="submit" variant="default" loading={busy} disabled={text.trim().length < 8}>
-            {t('admin-add', { defaultValue: 'Add prompt' })}
+          <Button
+            type="submit"
+            variant="default"
+            loading={
+              busy
+            }
+            disabled={
+              text.trim()
+                .length <
+              8
+            }
+          >
+            {t(
+              'admin-add',
+              {
+                defaultValue:
+                  'Add prompt',
+              },
+            )}
           </Button>
         </form>
 
@@ -154,58 +385,145 @@ export function AdminQotdPanel() {
           </div>
         ) : (
           <>
-            <section aria-labelledby="qotd-queue" className={cn('space-y-3', arrival)}>
-              <h2 id="qotd-queue" className="t-heading text-site-text">
-                {t('admin-queue', { defaultValue: 'Queue and scheduled' })}
+            <section
+              aria-labelledby="qotd-queue"
+              className={cn(
+                'space-y-3',
+                arrival,
+              )}
+            >
+              <h2
+                id="qotd-queue"
+                className="t-heading text-site-text"
+              >
+                {t(
+                  'admin-queue',
+                  {
+                    defaultValue:
+                      'Queue and scheduled',
+                  },
+                )}
               </h2>
-              {data.queue.length === 0 ? (
+              {data
+                .queue
+                .length ===
+              0 ? (
                 <EmptyState
-                  title={t('admin-queue-empty', { defaultValue: 'Nothing queued' })}
-                  description={t('admin-queue-empty-hint', {
-                    defaultValue: 'The built-in rotation will run until you add a prompt.',
-                  })}
+                  title={t(
+                    'admin-queue-empty',
+                    {
+                      defaultValue:
+                        'Nothing queued',
+                    },
+                  )}
+                  description={t(
+                    'admin-queue-empty-hint',
+                    {
+                      defaultValue:
+                        'The built-in rotation will run until you add a prompt.',
+                    },
+                  )}
                 />
               ) : (
                 <ul className="divide-y divide-site-border border-t border-site-border">
-                  {data.queue.map((row) => (
-                    <li
-                      key={row.id}
-                      className="flex items-center gap-3 py-3"
-                    >
-                      <span className="w-24 shrink-0 t-meta">
-                        {row.dayKey ?? t('admin-next-free', { defaultValue: 'Next free day' })}
-                      </span>
-                      <span className="min-w-0 flex-1 t-body text-site-text">{row.text}</span>
-                      <IconButton
-                        icon={Trash2}
-                        variant="ghost"
-                        size="icon-sm"
-                        label={t('admin-remove', { defaultValue: 'Remove prompt' })}
-                        onClick={() => void remove(row)}
-                      />
-                    </li>
-                  ))}
+                  {data.queue.map(
+                    (
+                      row,
+                    ) => (
+                      <li
+                        key={
+                          row.id
+                        }
+                        className="flex items-center gap-3 py-3"
+                      >
+                        <span className="w-24 shrink-0 t-meta">
+                          {row.dayKey ??
+                            t(
+                              'admin-next-free',
+                              {
+                                defaultValue:
+                                  'Next free day',
+                              },
+                            )}
+                        </span>
+                        <span className="min-w-0 flex-1 t-body text-site-text">
+                          {
+                            row.text
+                          }
+                        </span>
+                        <IconButton
+                          icon={
+                            Trash2
+                          }
+                          variant="ghost"
+                          size="icon-sm"
+                          label={t(
+                            'admin-remove',
+                            {
+                              defaultValue:
+                                'Remove prompt',
+                            },
+                          )}
+                          onClick={() =>
+                            void remove(
+                              row,
+                            )
+                          }
+                        />
+                      </li>
+                    ),
+                  )}
                 </ul>
               )}
             </section>
 
-            {data.recent.length > 0 && (
-              <section aria-labelledby="qotd-recent" className={cn('space-y-3', arrival)}>
-                <h2 id="qotd-recent" className="t-heading text-site-text">
-                  {t('admin-recent', { defaultValue: 'Recently run' })}
+            {data
+              .recent
+              .length >
+              0 && (
+              <section
+                aria-labelledby="qotd-recent"
+                className={cn(
+                  'space-y-3',
+                  arrival,
+                )}
+              >
+                <h2
+                  id="qotd-recent"
+                  className="t-heading text-site-text"
+                >
+                  {t(
+                    'admin-recent',
+                    {
+                      defaultValue:
+                        'Recently run',
+                    },
+                  )}
                 </h2>
                 <ul className="divide-y divide-site-border border-t border-site-border">
-                  {data.recent.map((row) => (
-                    <li
-                      key={row.id}
-                      className="flex items-center gap-3 py-3"
-                    >
-                      <span className="w-24 shrink-0 t-meta">{row.dayKey}</span>
-                      <span className="min-w-0 flex-1 t-body text-site-text-muted">
-                        {row.text}
-                      </span>
-                    </li>
-                  ))}
+                  {data.recent.map(
+                    (
+                      row,
+                    ) => (
+                      <li
+                        key={
+                          row.id
+                        }
+                        className="flex items-center gap-3 py-3"
+                      >
+                        <span className="w-24 shrink-0 t-meta">
+                          {
+                            row.dayKey
+                          }
+                        </span>
+                        <span className="min-w-0 flex-1 t-body text-site-text-muted">
+                          {
+                            row.text
+                          }
+                        </span>
+                      </li>
+                    ),
+                  )}
                 </ul>
               </section>
             )}

@@ -41,14 +41,27 @@ import {
  * expression on a module-scope constant is the shape the rule accepts, and it is
  * what the callers used before (`icons[pascalName]`).
  */
-export const MINIGAME_ICONS: Record<string, LucideIcon> = {
-  brush: Brush,
-  clapperboard: Clapperboard,
-  flame: Flame,
-  globe: Globe,
-  'list-collapse': ListCollapse,
-  'mic-vocal': MicVocal,
-  pencil: Pencil,
-  'shield-check': ShieldCheck,
-  swords: Swords,
-};
+export const MINIGAME_ICONS: Record<
+  string,
+  LucideIcon
+> =
+  {
+    brush:
+      Brush,
+    clapperboard:
+      Clapperboard,
+    flame:
+      Flame,
+    globe:
+      Globe,
+    'list-collapse':
+      ListCollapse,
+    'mic-vocal':
+      MicVocal,
+    pencil:
+      Pencil,
+    'shield-check':
+      ShieldCheck,
+    swords:
+      Swords,
+  };

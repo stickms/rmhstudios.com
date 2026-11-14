@@ -35,16 +35,41 @@ import type { ParseCallback } from '@twemoji/api';
  * tells twemoji to skip the replacement, so no HTML is built and no string is
  * thrown away.
  */
-export function getEmojiUrl(emoji: string): string | null {
-  let url: string | null = null;
+export function getEmojiUrl(
+  emoji: string,
+):
+  | string
+  | null {
+  let url:
+    | string
+    | null =
+    null;
 
-  const capture: ParseCallback = (icon, options) => {
-    const o = options as { base: string; size: string; ext: string };
-    url ??= `${o.base}${o.size}/${icon}${o.ext}`;
-    return false;
-  };
+  const capture: ParseCallback =
+    (
+      icon,
+      options,
+    ) => {
+      const o =
+        options as {
+          base: string;
+          size: string;
+          ext: string;
+        };
+      url ??= `${o.base}${o.size}/${icon}${o.ext}`;
+      return false;
+    };
 
-  twemoji.parse(emoji, { folder: '72x72', ext: '.png', callback: capture });
+  twemoji.parse(
+    emoji,
+    {
+      folder:
+        '72x72',
+      ext: '.png',
+      callback:
+        capture,
+    },
+  );
 
   return url;
 }

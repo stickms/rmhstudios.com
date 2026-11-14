@@ -6,8 +6,14 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": ["一璽離天樞夜墮", "九爐沸四海朝驚"],
-    "en": ["One seal quits the Pole-Star shrine and falls through the night", "Nine furnaces boil; at dawn the four seas start awake"]
+    "zh": [
+      "一璽離天樞夜墮",
+      "九爐沸四海朝驚"
+    ],
+    "en": [
+      "One seal quits the Pole-Star shrine and falls through the night",
+      "Nine furnaces boil; at dawn the four seas start awake"
+    ]
   },
   "passages": [
     {

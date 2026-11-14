@@ -8,7 +8,13 @@
 import { authClient } from '@/lib/auth-client';
 import { registerSessionTokenSource } from '@/lib/tf2-game/net/session-token';
 
-registerSessionTokenSource(async () => {
-  const current = await authClient.getSession();
-  return current?.data?.session?.token;
-});
+registerSessionTokenSource(
+  async () => {
+    const current =
+      await authClient.getSession();
+    return current
+      ?.data
+      ?.session
+      ?.token;
+  },
+);

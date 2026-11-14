@@ -18,9 +18,13 @@
  */
 import { createPatternRule } from './class-strings.js';
 
-export default createPatternRule({
-  description: 'Use a named type step / z layer instead of an arbitrary `text-[Npx]` / `z-[N]` (E2)',
-  message:
-    '`{{match}}` is an arbitrary value. Use a named step: text-pico/nano/tiny/micro/caption/body (px), text-rem-NN (rem), or a z layer (z-content/topbar/hub-overlay/palette/popover/call/call-dialog) from app/globals.css "E2 type scale"; or add one there and prove it with scripts/probe-type-scale.mjs.',
-  pattern: /(?<![\w-])(?:text-\[\d*\.?\d+(?:px|rem|em)\]|z-\[\d+\])(?![\w-])/g,
-});
+export default createPatternRule(
+  {
+    description:
+      'Use a named type step / z layer instead of an arbitrary `text-[Npx]` / `z-[N]` (E2)',
+    message:
+      '`{{match}}` is an arbitrary value. Use a named step: text-pico/nano/tiny/micro/caption/body (px), text-rem-NN (rem), or a z layer (z-content/topbar/hub-overlay/palette/popover/call/call-dialog) from app/globals.css "E2 type scale"; or add one there and prove it with scripts/probe-type-scale.mjs.',
+    pattern:
+      /(?<![\w-])(?:text-\[\d*\.?\d+(?:px|rem|em)\]|z-\[\d+\])(?![\w-])/g,
+  },
+);

@@ -10,7 +10,8 @@
 // ─── Lobby ───────────────────────────────────────────────────────
 
 export const ROOM_CODE_LENGTH = 6;
-export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const ROOM_CODE_ALPHABET =
+  'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const DEFAULT_MAX_PLAYERS = 8;
 export const MIN_PLAYERS = 2;
 export const ABSOLUTE_MAX_PLAYERS = 16;
@@ -22,17 +23,26 @@ export const CHAT_HISTORY_LENGTH = 100;
 // ─── Timers ──────────────────────────────────────────────────────
 
 export const HEARTBEAT_INTERVAL_MS = 10_000;
-export const LOBBY_IDLE_TIMEOUT_MS = 15 * 60 * 1000;       // 15 min
-export const LOBBY_ABSOLUTE_TIMEOUT_MS = 30 * 60 * 1000;   // 30 min
-export const LOBBY_EMPTY_TIMEOUT_MS = 2 * 60 * 1000;       // 2 min
-export const DISCONNECT_GRACE_PERIOD_MS = 120_000;          // 2 min
-export const GAME_DISCONNECT_GRACE_MS = 15_000;             // 15 sec (in-game)
+export const LOBBY_IDLE_TIMEOUT_MS =
+  15 *
+  60 *
+  1000; // 15 min
+export const LOBBY_ABSOLUTE_TIMEOUT_MS =
+  30 *
+  60 *
+  1000; // 30 min
+export const LOBBY_EMPTY_TIMEOUT_MS =
+  2 *
+  60 *
+  1000; // 2 min
+export const DISCONNECT_GRACE_PERIOD_MS = 120_000; // 2 min
+export const GAME_DISCONNECT_GRACE_MS = 15_000; // 15 sec (in-game)
 export const VOTE_DURATION_SECONDS = 30;
 export const DEFAULT_INSTRUCTION_DURATION_SECONDS = 15;
-export const PRELOAD_TIMEOUT_MS = 30_000;                   // 30 sec
+export const PRELOAD_TIMEOUT_MS = 30_000; // 30 sec
 export const COUNTDOWN_SECONDS = 3;
 export const RESULTS_DISPLAY_SECONDS = 10;
-export const LOBBY_GC_INTERVAL_MS = 60_000;                 // 1 min
+export const LOBBY_GC_INTERVAL_MS = 60_000; // 1 min
 
 // ─── Voting ──────────────────────────────────────────────────────
 
@@ -45,14 +55,45 @@ export const MAX_GAME_SETTINGS_PER_MINIGAME = 20;
 
 // ─── Rate Limits ─────────────────────────────────────────────────
 
-export const SOCKET_RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
-  'rmhbox:lobby:create':       { max: 5,   windowMs: 60_000 },
-  'rmhbox:lobby:join':         { max: 10,  windowMs: 60_000 },
-  'rmhbox:lobby:chat':         { max: 20,  windowMs: 60_000 },
-  'rmhbox:game:input':         { max: 100, windowMs: 10_000 },
-  'rmhbox:game:cast_vote':     { max: 10,  windowMs: 60_000 },
-  'rmhbox:leaderboard:fetch':  { max: 5,   windowMs: 60_000 },
-};
+export const SOCKET_RATE_LIMITS: Record<
+  string,
+  {
+    max: number;
+    windowMs: number;
+  }
+> =
+  {
+    'rmhbox:lobby:create':
+      {
+        max: 5,
+        windowMs: 60_000,
+      },
+    'rmhbox:lobby:join':
+      {
+        max: 10,
+        windowMs: 60_000,
+      },
+    'rmhbox:lobby:chat':
+      {
+        max: 20,
+        windowMs: 60_000,
+      },
+    'rmhbox:game:input':
+      {
+        max: 100,
+        windowMs: 10_000,
+      },
+    'rmhbox:game:cast_vote':
+      {
+        max: 10,
+        windowMs: 60_000,
+      },
+    'rmhbox:leaderboard:fetch':
+      {
+        max: 5,
+        windowMs: 60_000,
+      },
+  };
 
 // ─── Rhyme Time (RT) ─────────────────────────────────────────────
 
@@ -67,7 +108,8 @@ export const RT_UNCOMMON_POINTS = 50;
 export const RT_RARE_POINTS = 90;
 export const RT_MULTI_SYLLABLE_BONUS = 20;
 export const RT_SPEED_BONUS = 10;
-export const RT_INVALID_PENALTY = -10;
+export const RT_INVALID_PENALTY =
+  -10;
 export const RT_MIN_RHYMES = 15;
 export const RT_MAX_FREQ_RANK = 5000;
 export const RT_MIN_WORD_LEN = 2;
@@ -92,7 +134,8 @@ export const UA_WIN_OPERATIVE = 500;
 export const UA_LOSE = 100;
 export const UA_CLUE_EFFICIENCY = 20;
 export const UA_CORRECT_GUESS = 50;
-export const UA_ASSASSIN_PENALTY = -100;
+export const UA_ASSASSIN_PENALTY =
+  -100;
 
 // ─── Category Crash (CC) ────────────────────────────────────────
 
@@ -109,15 +152,48 @@ export const CC_CRASH_THRESHOLD_PERCENT = 50;
 export const CC_UNIQUE_POINTS = 10;
 export const CC_SHARED_POINTS = 5;
 export const CC_CRASH_BONUS = 2;
-export const CC_CRASH_PENALTY = -1;
+export const CC_CRASH_PENALTY =
+  -1;
 export const CC_FUZZY_THRESHOLD = 0.85;
 export const CC_SAVE_DEBOUNCE = 500;
-export const CC_CATEGORY_DISTRIBUTION = { easy: 2, medium: 2, hard: 1 };
-export const CC_LETTER_WEIGHTS: Record<string, number> = {
-  A: 10, B: 5, C: 5, D: 5, E: 8, F: 4, G: 4, H: 4, I: 5, J: 2,
-  K: 2, L: 5, M: 5, N: 5, O: 5, P: 5, Q: 1, R: 5, S: 8, T: 8,
-  U: 3, V: 2, W: 3, X: 1, Y: 2, Z: 1,
-};
+export const CC_CATEGORY_DISTRIBUTION =
+  {
+    easy: 2,
+    medium: 2,
+    hard: 1,
+  };
+export const CC_LETTER_WEIGHTS: Record<
+  string,
+  number
+> =
+  {
+    A: 10,
+    B: 5,
+    C: 5,
+    D: 5,
+    E: 8,
+    F: 4,
+    G: 4,
+    H: 4,
+    I: 5,
+    J: 2,
+    K: 2,
+    L: 5,
+    M: 5,
+    N: 5,
+    O: 5,
+    P: 5,
+    Q: 1,
+    R: 5,
+    S: 8,
+    T: 8,
+    U: 3,
+    V: 2,
+    W: 3,
+    X: 1,
+    Y: 2,
+    Z: 1,
+  };
 
 // ─── Wiki-Race (WR) ─────────────────────────────────────────────
 
@@ -152,16 +228,17 @@ export const MM_STROKE_WIDTH = 4;
 export const MM_MIN_POINTS_PER_STROKE = 2;
 export const MM_MAX_POINTS_PER_STROKE = 2;
 export const MM_MIN_STROKE_DURATION_MS = 100;
-export const MM_COLOR_PALETTE = [
-  '#1a1a2e',
-  '#e0e0f0',
-  '#f87171',
-  '#4ade80',
-  '#60a5fa',
-  '#fbbf24',
-  '#fb923c',
-  '#c084fc',
-];
+export const MM_COLOR_PALETTE =
+  [
+    '#1a1a2e',
+    '#e0e0f0',
+    '#f87171',
+    '#4ade80',
+    '#60a5fa',
+    '#fbbf24',
+    '#fb923c',
+    '#c084fc',
+  ];
 export const MM_STARTING_CURRENCY = 1000;
 export const MM_BID_INCREMENT = 50;
 export const MM_RANK_1_POINTS = 500;
@@ -182,8 +259,8 @@ export const EC_TRANSITION_SECONDS = 1;
 export const EC_MAX_EMOJIS = 6;
 export const EC_MAX_GUESSES_PER_PLAYER = 15;
 export const EC_MAX_GUESS_LENGTH = 200;
-export const EC_FUZZY_MATCH_THRESHOLD = 0.80;
-export const EC_CLOSE_THRESHOLD = 0.60;
+export const EC_FUZZY_MATCH_THRESHOLD = 0.8;
+export const EC_CLOSE_THRESHOLD = 0.6;
 export const EC_MIN_POPULARITY = 40;
 export const EC_PRODUCER_BASE_POINTS = 100;
 export const EC_PRODUCER_SPEED_BONUS = 10;
@@ -205,7 +282,8 @@ export const WW_PROMPT_REVEAL_DURATION = 3;
 export const WW_MAX_ANSWER_LENGTH = 200;
 export const WW_MAX_MATCHUP_POINTS = 1000;
 export const WW_WITWHAM_BONUS = 500;
-export const WW_SAFETY_QUIP = '(no answer submitted)';
+export const WW_SAFETY_QUIP =
+  '(no answer submitted)';
 
 // ─── Fact or Friction (FF) ──────────────────────────────────────
 
@@ -221,9 +299,15 @@ export const FF_POT_MIN_VALUE = 100;
 export const FF_EASY_MULTIPLIER = 0.8;
 export const FF_MEDIUM_MULTIPLIER = 1.0;
 export const FF_HARD_MULTIPLIER = 1.5;
-export const FF_SCORE_FLOOR = -500;
+export const FF_SCORE_FLOOR =
+  -500;
 export const FF_SPEED_BONUS = 100;
-export const FF_QUESTION_DISTRIBUTION = { easy: 3, medium: 3, hard: 2 };
+export const FF_QUESTION_DISTRIBUTION =
+  {
+    easy: 3,
+    medium: 3,
+    hard: 2,
+  };
 
 // ─── Undercover Editor (UE) ─────────────────────────────────────
 

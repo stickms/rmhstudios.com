@@ -1,9 +1,16 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { WidgetFrame } from '@/components/ui/widget-frame';
 import { api } from '@/lib/contract/client';
 import { getSliceItShowcaseApi } from '@features/slice-it/engine/slice-it.contract';
-import { DIFFICULTIES, type Difficulty } from '@features/slice-it/engine/constants';
+import {
+  DIFFICULTIES,
+  type Difficulty,
+} from '@features/slice-it/engine/constants';
 
 /**
  * The Slice It! profile showcase module (X6).
@@ -24,83 +31,229 @@ interface SliceItLampCounts {
 interface SliceItShowcaseStats {
   skillRating: number;
   chartsCleared: number;
-  bestAccuracy: number | null;
+  bestAccuracy:
+    | number
+    | null;
   lampsByDifficulty: SliceItLampCounts[];
 }
 
-const DIFFICULTY_LABELS: Record<Difficulty, string> = {
-  easy: 'Easy',
-  normal: 'Normal',
-  hard: 'Hard',
-  expert: 'Expert',
-};
+const DIFFICULTY_LABELS: Record<
+  Difficulty,
+  string
+> =
+  {
+    easy: 'Easy',
+    normal:
+      'Normal',
+    hard: 'Hard',
+    expert:
+      'Expert',
+  };
 
-export function SliceItModule({ title, userId }: { title: string; userId: string }) {
-  const { t } = useTranslation('c-profile-modules');
+export function SliceItModule({
+  title,
+  userId,
+}: {
+  title: string;
+  userId: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-profile-modules',
+    );
   // `undefined` = still loading, `null` = loaded and there is nothing to show.
-  const [stats, setStats] = useState<SliceItShowcaseStats | null | undefined>(undefined);
+  const [
+    stats,
+    setStats,
+  ] =
+    useState<
+      | SliceItShowcaseStats
+      | null
+      | undefined
+    >(
+      undefined,
+    );
 
   useEffect(() => {
     let cancelled = false;
-    api(getSliceItShowcaseApi, { query: { userId } })
-      .then((data) => {
-        if (!cancelled) setStats(data.stats ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setStats(null);
-      });
+    api(
+      getSliceItShowcaseApi,
+      {
+        query:
+          {
+            userId,
+          },
+      },
+    )
+      .then(
+        (
+          data,
+        ) => {
+          if (
+            !cancelled
+          )
+            setStats(
+              data.stats ??
+                null,
+            );
+        },
+      )
+      .catch(
+        () => {
+          if (
+            !cancelled
+          )
+            setStats(
+              null,
+            );
+        },
+      );
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [
+    userId,
+  ]);
 
-  const playedTiers = stats?.lampsByDifficulty.filter((l) => l.cleared > 0) ?? [];
+  const playedTiers =
+    stats?.lampsByDifficulty.filter(
+      (
+        l,
+      ) =>
+        l.cleared >
+        0,
+    ) ??
+    [];
 
   return (
     <WidgetFrame
-      title={title}
-      loading={stats === undefined}
-      empty={stats === null}
-      emptyTitle={t('no-slice-it', { defaultValue: 'No Slice It! runs yet' })}
+      title={
+        title
+      }
+      loading={
+        stats ===
+        undefined
+      }
+      empty={
+        stats ===
+        null
+      }
+      emptyTitle={t(
+        'no-slice-it',
+        {
+          defaultValue:
+            'No Slice It! runs yet',
+        },
+      )}
     >
       {stats ? (
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2 text-center">
             <Stat
-              label={t('skill-rating', { defaultValue: 'Skill rating' })}
-              value={Math.round(stats.skillRating)}
+              label={t(
+                'skill-rating',
+                {
+                  defaultValue:
+                    'Skill rating',
+                },
+              )}
+              value={Math.round(
+                stats.skillRating,
+              )}
             />
             <Stat
-              label={t('best-accuracy', { defaultValue: 'Best accuracy' })}
-              value={stats.bestAccuracy != null ? `${(stats.bestAccuracy * 100).toFixed(2)}%` : '—'}
+              label={t(
+                'best-accuracy',
+                {
+                  defaultValue:
+                    'Best accuracy',
+                },
+              )}
+              value={
+                stats.bestAccuracy !=
+                null
+                  ? `${(stats.bestAccuracy * 100).toFixed(2)}%`
+                  : '—'
+              }
             />
             <Stat
-              label={t('charts-cleared', { defaultValue: 'Charts cleared' })}
-              value={stats.chartsCleared}
+              label={t(
+                'charts-cleared',
+                {
+                  defaultValue:
+                    'Charts cleared',
+                },
+              )}
+              value={
+                stats.chartsCleared
+              }
             />
           </div>
-          {playedTiers.length > 0 ? (
+          {playedTiers.length >
+          0 ? (
             <ul className="space-y-1">
-              {DIFFICULTIES.filter((d) => playedTiers.some((l) => l.difficulty === d)).map((difficulty) => {
-                const lamp = playedTiers.find((l) => l.difficulty === difficulty)!;
-                return (
-                  <li
-                    key={difficulty}
-                    className="flex items-center justify-between text-sm text-site-text"
-                  >
-                    <span className="text-site-text-muted">{DIFFICULTY_LABELS[difficulty]}</span>
-                    <span>
-                      {t('lamp-cleared', { defaultValue: '{{count}} cleared', count: lamp.cleared })}
-                      {lamp.fullCombo > 0
-                        ? ` · ${t('lamp-fc', { defaultValue: '{{count}} FC', count: lamp.fullCombo })}`
-                        : ''}
-                      {lamp.perfect > 0
-                        ? ` · ${t('lamp-perfect', { defaultValue: '{{count}} perfect', count: lamp.perfect })}`
-                        : ''}
-                    </span>
-                  </li>
-                );
-              })}
+              {DIFFICULTIES.filter(
+                (
+                  d,
+                ) =>
+                  playedTiers.some(
+                    (
+                      l,
+                    ) =>
+                      l.difficulty ===
+                      d,
+                  ),
+              ).map(
+                (
+                  difficulty,
+                ) => {
+                  const lamp =
+                    playedTiers.find(
+                      (
+                        l,
+                      ) =>
+                        l.difficulty ===
+                        difficulty,
+                    )!;
+                  return (
+                    <li
+                      key={
+                        difficulty
+                      }
+                      className="flex items-center justify-between text-sm text-site-text"
+                    >
+                      <span className="text-site-text-muted">
+                        {
+                          DIFFICULTY_LABELS[
+                            difficulty
+                          ]
+                        }
+                      </span>
+                      <span>
+                        {t(
+                          'lamp-cleared',
+                          {
+                            defaultValue:
+                              '{{count}} cleared',
+                            count:
+                              lamp.cleared,
+                          },
+                        )}
+                        {lamp.fullCombo >
+                        0
+                          ? ` · ${t('lamp-fc', { defaultValue: '{{count}} FC', count: lamp.fullCombo })}`
+                          : ''}
+                        {lamp.perfect >
+                        0
+                          ? ` · ${t('lamp-perfect', { defaultValue: '{{count}} perfect', count: lamp.perfect })}`
+                          : ''}
+                      </span>
+                    </li>
+                  );
+                },
+              )}
             </ul>
           ) : null}
         </div>
@@ -109,11 +262,25 @@ export function SliceItModule({ title, userId }: { title: string; userId: string
   );
 }
 
-function Stat({ label, value }: { label: string; value: ReactNode }) {
+function Stat({
+  label,
+  value,
+}: {
+  label: string;
+  value: ReactNode;
+}) {
   return (
     <div>
-      <div className="text-lg font-semibold text-site-text">{value}</div>
-      <div className="text-xs text-site-text-muted">{label}</div>
+      <div className="text-lg font-semibold text-site-text">
+        {
+          value
+        }
+      </div>
+      <div className="text-xs text-site-text-muted">
+        {
+          label
+        }
+      </div>
     </div>
   );
 }

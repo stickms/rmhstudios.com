@@ -6,8 +6,14 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": ["功高震主讒言起", "劍冷帳空天意孤"],
-    "en": ["When merit towers above the throne, slander finds its opening", "The sword grows cold, the tent grows empty, and Heaven's will stands alone"]
+    "zh": [
+      "功高震主讒言起",
+      "劍冷帳空天意孤"
+    ],
+    "en": [
+      "When merit towers above the throne, slander finds its opening",
+      "The sword grows cold, the tent grows empty, and Heaven's will stands alone"
+    ]
   },
   "passages": [
     {

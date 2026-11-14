@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Info } from 'lucide-react';
@@ -18,101 +21,280 @@ import { whyTrendingApi } from '@/lib/discovery/discovery.contract';
 import { cn } from '@/lib/utils';
 
 /** A2 · "Why is this trending?" on a tag chip; the data loads only when opened. */
-export function WhyTrending({ tag }: { tag: string }) {
-  const { t } = useTranslation('f-discovery');
-  const [open, setOpen] = useState(false);
-  const [why, setWhy] = useState<TrendingWhy | null>(null);
-  const [failed, setFailed] = useState(false);
+export function WhyTrending({
+  tag,
+}: {
+  tag: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-discovery',
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    why,
+    setWhy,
+  ] =
+    useState<TrendingWhy | null>(
+      null,
+    );
+  const [
+    failed,
+    setFailed,
+  ] =
+    useState(
+      false,
+    );
   // Steel M9: the explanation replaces the skeleton inside the open sheet.
-  const arrival = useArrival(!!why || failed);
+  const arrival =
+    useArrival(
+      !!why ||
+        failed,
+    );
 
   useEffect(() => {
-    if (!open || why) return;
+    if (
+      !open ||
+      why
+    )
+      return;
     let live = true;
-    api(whyTrendingApi, { params: { tag } })
-      .then((d) => live && setWhy(d))
-      .catch(() => live && setFailed(true));
+    api(
+      whyTrendingApi,
+      {
+        params:
+          {
+            tag,
+          },
+      },
+    )
+      .then(
+        (
+          d,
+        ) =>
+          live &&
+          setWhy(
+            d,
+          ),
+      )
+      .catch(
+        () =>
+          live &&
+          setFailed(
+            true,
+          ),
+      );
     return () => {
       live = false;
     };
-  }, [open, why, tag]);
+  }, [
+    open,
+    why,
+    tag,
+  ]);
 
   return (
     <>
       <IconButton
-        icon={Info}
+        icon={
+          Info
+        }
         variant="ghost"
-        label={t('why-open', { tag, defaultValue: 'Why is #{{tag}} trending?' })}
-        onClick={() => setOpen(true)}
+        label={t(
+          'why-open',
+          {
+            tag,
+            defaultValue:
+              'Why is #{{tag}} trending?',
+          },
+        )}
+        onClick={() =>
+          setOpen(
+            true,
+          )
+        }
       />
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet
+        open={
+          open
+        }
+        onOpenChange={
+          setOpen
+        }
+      >
         <SheetContent>
           <SheetHeader>
             <SheetTitle>
-              {t('why-title', { tag, defaultValue: 'Why #{{tag}} is trending' })}
+              {t(
+                'why-title',
+                {
+                  tag,
+                  defaultValue:
+                    'Why #{{tag}} is trending',
+                },
+              )}
             </SheetTitle>
             <SheetDescription>
-              {t('why-desc', {
-                defaultValue: 'When it started, what kicked it off, and how fast it is growing.',
-              })}
+              {t(
+                'why-desc',
+                {
+                  defaultValue:
+                    'When it started, what kicked it off, and how fast it is growing.',
+                },
+              )}
             </SheetDescription>
           </SheetHeader>
           {failed && (
-            <p className={cn('pt-3 text-sm text-site-text-muted', arrival)}>
-              {t('why-failed', { defaultValue: 'Could not load this right now.' })}
+            <p
+              className={cn(
+                'pt-3 text-sm text-site-text-muted',
+                arrival,
+              )}
+            >
+              {t(
+                'why-failed',
+                {
+                  defaultValue:
+                    'Could not load this right now.',
+                },
+              )}
             </p>
           )}
-          {!why && !failed && <Skeleton className="mt-3 h-32 w-full" />}
+          {!why &&
+            !failed && (
+              <Skeleton className="mt-3 h-32 w-full" />
+            )}
           {why && (
-            <div className={cn('space-y-4 pt-3', arrival)}>
+            <div
+              className={cn(
+                'space-y-4 pt-3',
+                arrival,
+              )}
+            >
               <dl className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-site p-2">
                   <dt className="text-xs text-site-text-muted">
-                    {t('why-first-seen', { defaultValue: 'First seen' })}
+                    {t(
+                      'why-first-seen',
+                      {
+                        defaultValue:
+                          'First seen',
+                      },
+                    )}
                   </dt>
                   <dd className="text-sm font-semibold text-site-text">
-                    {new Date(why.firstSeen).toLocaleDateString()}
+                    {new Date(
+                      why.firstSeen,
+                    ).toLocaleDateString()}
                   </dd>
                 </div>
                 <div className="rounded-site p-2">
                   <dt className="text-xs text-site-text-muted">
-                    {t('why-last-day', { defaultValue: 'Last 24h' })}
+                    {t(
+                      'why-last-day',
+                      {
+                        defaultValue:
+                          'Last 24h',
+                      },
+                    )}
                   </dt>
-                  <dd className="text-sm font-semibold text-site-text">{why.last24h}</dd>
+                  <dd className="text-sm font-semibold text-site-text">
+                    {
+                      why.last24h
+                    }
+                  </dd>
                 </div>
                 <div className="rounded-site p-2">
                   <dt className="text-xs text-site-text-muted">
-                    {t('why-growth', { defaultValue: 'Vs usual' })}
+                    {t(
+                      'why-growth',
+                      {
+                        defaultValue:
+                          'Vs usual',
+                      },
+                    )}
                   </dt>
                   <dd className="text-sm font-semibold text-site-text">
-                    {why.growthPct === null
-                      ? t('why-new', { defaultValue: 'New' })
+                    {why.growthPct ===
+                    null
+                      ? t(
+                          'why-new',
+                          {
+                            defaultValue:
+                              'New',
+                          },
+                        )
                       : `${why.growthPct > 0 ? '+' : ''}${why.growthPct}%`}
                   </dd>
                 </div>
               </dl>
               <section>
                 <h3 className="site-section-label mb-2">
-                  {t('why-started', { defaultValue: 'Where it started' })}
+                  {t(
+                    'why-started',
+                    {
+                      defaultValue:
+                        'Where it started',
+                    },
+                  )}
                 </h3>
-                {why.starters.length === 0 ? (
+                {why
+                  .starters
+                  .length ===
+                0 ? (
                   <p className="text-sm text-site-text-muted">
-                    {t('why-none', { defaultValue: 'No public posts to show yet.' })}
+                    {t(
+                      'why-none',
+                      {
+                        defaultValue:
+                          'No public posts to show yet.',
+                      },
+                    )}
                   </p>
                 ) : (
                   <ul className="space-y-2">
-                    {why.starters.map((p) => (
-                      <li key={p.id}>
-                        <Link
-                          to={p.href}
-                          onClick={() => setOpen(false)}
-                          className="block rounded-site p-4 hover:bg-site-surface-hover"
+                    {why.starters.map(
+                      (
+                        p,
+                      ) => (
+                        <li
+                          key={
+                            p.id
+                          }
                         >
-                          <p className="text-sm text-site-text">{p.snippet}</p>
-                          <p className="mt-1 text-xs text-site-text-muted">{p.author}</p>
-                        </Link>
-                      </li>
-                    ))}
+                          <Link
+                            to={
+                              p.href
+                            }
+                            onClick={() =>
+                              setOpen(
+                                false,
+                              )
+                            }
+                            className="block rounded-site p-4 hover:bg-site-surface-hover"
+                          >
+                            <p className="text-sm text-site-text">
+                              {
+                                p.snippet
+                              }
+                            </p>
+                            <p className="mt-1 text-xs text-site-text-muted">
+                              {
+                                p.author
+                              }
+                            </p>
+                          </Link>
+                        </li>
+                      ),
+                    )}
                   </ul>
                 )}
               </section>

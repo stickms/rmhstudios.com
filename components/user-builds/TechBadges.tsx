@@ -1,6 +1,8 @@
 interface TechBadgesProps {
   technologies: string[];
-  size?: 'sm' | 'md';
+  size?:
+    | 'sm'
+    | 'md';
   limit?: number;
 }
 
@@ -11,42 +13,101 @@ interface TechBadgesProps {
 // per-tech tint can't be made legible in both polarities — so every chip now uses
 // one design-system token pair (accent tint + accent ink) that is guaranteed to
 // contrast in every theme.
-const TECH_CHIP = 'bg-site-bg-subtle text-site-accent border-site-border';
+const TECH_CHIP =
+  'bg-site-bg-subtle text-site-accent border-site-border';
 
-export function TechBadges({ technologies, size = 'md', limit }: TechBadgesProps) {
-  let parsedTechs: string[] = [];
-  if (Array.isArray(technologies)) {
-    parsedTechs = technologies;
-  } else if (typeof technologies === 'string') {
+export function TechBadges({
+  technologies,
+  size = 'md',
+  limit,
+}: TechBadgesProps) {
+  let parsedTechs: string[] =
+    [];
+  if (
+    Array.isArray(
+      technologies,
+    )
+  ) {
+    parsedTechs =
+      technologies;
+  } else if (
+    typeof technologies ===
+    'string'
+  ) {
     try {
-      const parsed = JSON.parse(technologies);
-      if (Array.isArray(parsed)) {
-        parsedTechs = parsed;
+      const parsed =
+        JSON.parse(
+          technologies,
+        );
+      if (
+        Array.isArray(
+          parsed,
+        )
+      ) {
+        parsedTechs =
+          parsed;
       } else {
-        parsedTechs = [technologies];
+        parsedTechs =
+          [
+            technologies,
+          ];
       }
     } catch {
-      parsedTechs = [technologies];
+      parsedTechs =
+        [
+          technologies,
+        ];
     }
   }
 
-  const displayTechs = limit ? parsedTechs.slice(0, limit) : parsedTechs;
-  const remaining = limit && parsedTechs.length > limit ? parsedTechs.length - limit : 0;
+  const displayTechs =
+    limit
+      ? parsedTechs.slice(
+          0,
+          limit,
+        )
+      : parsedTechs;
+  const remaining =
+    limit &&
+    parsedTechs.length >
+      limit
+      ? parsedTechs.length -
+        limit
+      : 0;
 
-  const sizeClasses = size === 'sm' ? 'px-1.5 py-0.5 text-micro' : 'px-2 py-0.5 text-xs';
+  const sizeClasses =
+    size ===
+    'sm'
+      ? 'px-1.5 py-0.5 text-micro'
+      : 'px-2 py-0.5 text-xs';
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {displayTechs.map((tech, i) => (
+      {displayTechs.map(
+        (
+          tech,
+          i,
+        ) => (
+          <span
+            key={`${tech}-${i}`}
+            className={`${sizeClasses} rounded-[var(--site-control-radius)] border font-medium ${TECH_CHIP}`}
+          >
+            {
+              tech
+            }
+          </span>
+        ),
+      )}
+      {remaining >
+        0 && (
         <span
-          key={`${tech}-${i}`}
-          className={`${sizeClasses} rounded-[var(--site-control-radius)] border font-medium ${TECH_CHIP}`}
+          className={`${sizeClasses} surface-field text-site-text-muted`}
         >
-          {tech}
+          +
+          {
+            remaining
+          }
         </span>
-      ))}
-      {remaining > 0 && (
-        <span className={`${sizeClasses} surface-field text-site-text-muted`}>+{remaining}</span>
       )}
     </div>
   );

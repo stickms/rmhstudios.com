@@ -10,114 +10,418 @@
 // and the socket hub's validation.
 // ============================================================
 
-export type SourceGame = 'tf2' | 'hl2' | 'portal' | 'csgo';
+export type SourceGame =
+  | 'tf2'
+  | 'hl2'
+  | 'portal'
+  | 'csgo';
 /** The games whose models come from an `mdl/index.json` (TF2's come from the loadout's class bodies). */
-export type MdlGame = Exclude<SourceGame, 'tf2'>;
+export type MdlGame =
+  Exclude<
+    SourceGame,
+    'tf2'
+  >;
 
 /** Skeleton naming scheme, see boneMaps.ts. */
-export type BoneFamily = 'bip' | 'valvebiped' | 'csgo';
+export type BoneFamily =
+  | 'bip'
+  | 'valvebiped'
+  | 'csgo';
 
 export interface FighterModelDef {
-    id: string;
-    label: string;
-    /** Group heading in the picker. */
-    group: 'Kowloon' | 'Team Fortress 2' | 'Counter-Strike' | 'Half-Life 2' | 'Portal';
-    /** `ybot` is bundled; the rest come from R2. */
-    game: 'ybot' | SourceGame;
-    family: BoneFamily | null;
-    /** TF2: the class body (`class_<cls>`). */
-    tf2Class?: string;
-    /** Others: the MDL path in `mdl/index.json` — or several, tried in order (Chell's file name varies by build). */
-    mdl?: string | readonly string[];
-    /**
-     * Which game channels may hold it, in priority order (default: just `game`). Portal's install ships
-     * Half-Life 2's shared content, so an HL2 character the demo depot lacks can come from there.
-     */
-    games?: readonly MdlGame[];
+  id: string;
+  label: string;
+  /** Group heading in the picker. */
+  group:
+    | 'Kowloon'
+    | 'Team Fortress 2'
+    | 'Counter-Strike'
+    | 'Half-Life 2'
+    | 'Portal';
+  /** `ybot` is bundled; the rest come from R2. */
+  game:
+    | 'ybot'
+    | SourceGame;
+  family: BoneFamily | null;
+  /** TF2: the class body (`class_<cls>`). */
+  tf2Class?: string;
+  /** Others: the MDL path in `mdl/index.json` — or several, tried in order (Chell's file name varies by build). */
+  mdl?:
+    | string
+    | readonly string[];
+  /**
+   * Which game channels may hold it, in priority order (default: just `game`). Portal's install ships
+   * Half-Life 2's shared content, so an HL2 character the demo depot lacks can come from there.
+   */
+  games?: readonly MdlGame[];
 }
 
 /** Every (game, MDL path) that would satisfy this model, best first. Empty for the Y-Bot and TF2 bodies. */
-export function modelSources(def: FighterModelDef): { game: MdlGame; mdl: string }[] {
-    if (def.game === 'ybot' || def.game === 'tf2' || !def.mdl) return [];
-    const paths = (Array.isArray(def.mdl) ? def.mdl : [def.mdl]) as string[];
-    const games = def.games ?? [def.game];
-    return games.flatMap((game) => paths.map((mdl) => ({ game, mdl: mdl.toLowerCase() })));
+export function modelSources(
+  def: FighterModelDef,
+): {
+  game: MdlGame;
+  mdl: string;
+}[] {
+  if (
+    def.game ===
+      'ybot' ||
+    def.game ===
+      'tf2' ||
+    !def.mdl
+  )
+    return [];
+  const paths =
+    (
+      Array.isArray(
+        def.mdl,
+      )
+        ? def.mdl
+        : [
+            def.mdl,
+          ]
+    ) as string[];
+  const games =
+    def.games ?? [
+      def.game,
+    ];
+  return games.flatMap(
+    (
+      game,
+    ) =>
+      paths.map(
+        (
+          mdl,
+        ) => ({
+          game,
+          mdl: mdl.toLowerCase(),
+        }),
+      ),
+  );
 }
 
-export const DEFAULT_FIGHTER_MODEL = 'ybot';
+export const DEFAULT_FIGHTER_MODEL =
+  'ybot';
 
-const tf2 = (cls: string, label: string): FighterModelDef => ({
-    id: `tf2_${cls}`, label, group: 'Team Fortress 2', game: 'tf2', family: 'bip', tf2Class: cls,
-});
-const csgo = (name: string, label: string): FighterModelDef => ({
-    id: `csgo_${name}`, label, group: 'Counter-Strike', game: 'csgo', family: 'csgo',
+const tf2 =
+  (
+    cls: string,
+    label: string,
+  ): FighterModelDef => ({
+    id: `tf2_${cls}`,
+    label,
+    group:
+      'Team Fortress 2',
+    game: 'tf2',
+    family:
+      'bip',
+    tf2Class:
+      cls,
+  });
+const csgo =
+  (
+    name: string,
+    label: string,
+  ): FighterModelDef => ({
+    id: `csgo_${name}`,
+    label,
+    group:
+      'Counter-Strike',
+    game: 'csgo',
+    family:
+      'csgo',
     mdl: `models/player/custom_player/legacy/${name}.mdl`,
-});
-const hl2 = (id: string, label: string, mdl: string, games?: readonly MdlGame[]): FighterModelDef => ({
-    id: `hl2_${id}`, label, group: 'Half-Life 2', game: 'hl2', family: 'valvebiped', mdl, games,
-});
-const portal = (id: string, label: string, mdl: string | readonly string[]): FighterModelDef => ({
-    id: `portal_${id}`, label, group: 'Portal', game: 'portal', family: 'valvebiped', mdl,
-});
+  });
+const hl2 =
+  (
+    id: string,
+    label: string,
+    mdl: string,
+    games?: readonly MdlGame[],
+  ): FighterModelDef => ({
+    id: `hl2_${id}`,
+    label,
+    group:
+      'Half-Life 2',
+    game: 'hl2',
+    family:
+      'valvebiped',
+    mdl,
+    games,
+  });
+const portal =
+  (
+    id: string,
+    label: string,
+    mdl:
+      | string
+      | readonly string[],
+  ): FighterModelDef => ({
+    id: `portal_${id}`,
+    label,
+    group:
+      'Portal',
+    game: 'portal',
+    family:
+      'valvebiped',
+    mdl,
+  });
 
-export const FIGHTER_MODELS: readonly FighterModelDef[] = [
-    { id: DEFAULT_FIGHTER_MODEL, label: 'Y-Bot', group: 'Kowloon', game: 'ybot', family: null },
-    tf2('scout', 'Scout'), tf2('soldier', 'Soldier'), tf2('pyro', 'Pyro'),
-    tf2('demoman', 'Demoman'), tf2('heavy', 'Heavy'), tf2('engineer', 'Engineer'),
-    tf2('medic', 'Medic'), tf2('sniper', 'Sniper'), tf2('spy', 'Spy'),
+export const FIGHTER_MODELS: readonly FighterModelDef[] =
+  [
+    {
+      id: DEFAULT_FIGHTER_MODEL,
+      label:
+        'Y-Bot',
+      group:
+        'Kowloon',
+      game: 'ybot',
+      family:
+        null,
+    },
+    tf2(
+      'scout',
+      'Scout',
+    ),
+    tf2(
+      'soldier',
+      'Soldier',
+    ),
+    tf2(
+      'pyro',
+      'Pyro',
+    ),
+    tf2(
+      'demoman',
+      'Demoman',
+    ),
+    tf2(
+      'heavy',
+      'Heavy',
+    ),
+    tf2(
+      'engineer',
+      'Engineer',
+    ),
+    tf2(
+      'medic',
+      'Medic',
+    ),
+    tf2(
+      'sniper',
+      'Sniper',
+    ),
+    tf2(
+      'spy',
+      'Spy',
+    ),
     // Verified against the published model indexes (2026-11-07): CS:GO ships exactly these two
     // player models; HL2 ships the humans below (no Combine soldier or Alyx in the demo data);
     // Portal publishes no humanoid yet, so its entry stays hidden until one is uploaded.
-    csgo('tm_phoenix', 'Phoenix'), csgo('ctm_sas', 'SAS'),
+    csgo(
+      'tm_phoenix',
+      'Phoenix',
+    ),
+    csgo(
+      'ctm_sas',
+      'SAS',
+    ),
     // Alyx and the Combine soldier are requested of the asset sync (GAME_ALWAYS_MODELS in
     // scripts/tf2-game/build-maps.ts); they appear here once an install that has them has published them,
     // from the HL2 channel or, failing that, Portal's (which carries Half-Life 2's shared content).
-    hl2('alyx', 'Alyx', 'models/alyx.mdl', ['hl2', 'portal']),
-    hl2('combine', 'Combine Soldier', 'models/combine_soldier.mdl', ['hl2', 'portal']),
-    hl2('police', 'Metrocop', 'models/police.mdl'),
-    hl2('barney', 'Barney', 'models/barney.mdl'),
-    hl2('gman', 'G-Man', 'models/gman_high.mdl'),
-    hl2('kleiner', 'Kleiner', 'models/kleiner.mdl'),
-    hl2('citizen_m1', 'Citizen (Male 1)', 'models/humans/group01/male_01.mdl'),
-    hl2('citizen_m2', 'Citizen (Male 2)', 'models/humans/group01/male_02.mdl'),
-    hl2('citizen_m3', 'Citizen (Male 3)', 'models/humans/group01/male_03.mdl'),
-    hl2('citizen_m7', 'Citizen (Male 7)', 'models/humans/group01/male_07.mdl'),
-    hl2('citizen_m8', 'Citizen (Male 8)', 'models/humans/group01/male_08.mdl'),
-    hl2('citizen_m9', 'Citizen (Male 9)', 'models/humans/group01/male_09.mdl'),
-    hl2('citizen_f6', 'Citizen (Female 6)', 'models/humans/group01/female_06.mdl'),
-    hl2('citizen_f7', 'Citizen (Female 7)', 'models/humans/group01/female_07.mdl'),
-    portal('chell', 'Chell', ['models/player/chell/player.mdl', 'models/player/chell.mdl', 'models/player.mdl']),
-];
+    hl2(
+      'alyx',
+      'Alyx',
+      'models/alyx.mdl',
+      [
+        'hl2',
+        'portal',
+      ],
+    ),
+    hl2(
+      'combine',
+      'Combine Soldier',
+      'models/combine_soldier.mdl',
+      [
+        'hl2',
+        'portal',
+      ],
+    ),
+    hl2(
+      'police',
+      'Metrocop',
+      'models/police.mdl',
+    ),
+    hl2(
+      'barney',
+      'Barney',
+      'models/barney.mdl',
+    ),
+    hl2(
+      'gman',
+      'G-Man',
+      'models/gman_high.mdl',
+    ),
+    hl2(
+      'kleiner',
+      'Kleiner',
+      'models/kleiner.mdl',
+    ),
+    hl2(
+      'citizen_m1',
+      'Citizen (Male 1)',
+      'models/humans/group01/male_01.mdl',
+    ),
+    hl2(
+      'citizen_m2',
+      'Citizen (Male 2)',
+      'models/humans/group01/male_02.mdl',
+    ),
+    hl2(
+      'citizen_m3',
+      'Citizen (Male 3)',
+      'models/humans/group01/male_03.mdl',
+    ),
+    hl2(
+      'citizen_m7',
+      'Citizen (Male 7)',
+      'models/humans/group01/male_07.mdl',
+    ),
+    hl2(
+      'citizen_m8',
+      'Citizen (Male 8)',
+      'models/humans/group01/male_08.mdl',
+    ),
+    hl2(
+      'citizen_m9',
+      'Citizen (Male 9)',
+      'models/humans/group01/male_09.mdl',
+    ),
+    hl2(
+      'citizen_f6',
+      'Citizen (Female 6)',
+      'models/humans/group01/female_06.mdl',
+    ),
+    hl2(
+      'citizen_f7',
+      'Citizen (Female 7)',
+      'models/humans/group01/female_07.mdl',
+    ),
+    portal(
+      'chell',
+      'Chell',
+      [
+        'models/player/chell/player.mdl',
+        'models/player/chell.mdl',
+        'models/player.mdl',
+      ],
+    ),
+  ];
 
-const BY_ID = new Map(FIGHTER_MODELS.map((m) => [m.id, m]));
+const BY_ID =
+  new Map(
+    FIGHTER_MODELS.map(
+      (
+        m,
+      ) => [
+        m.id,
+        m,
+      ],
+    ),
+  );
 
-export function getFighterModel(id: string): FighterModelDef {
-    return BY_ID.get(id) ?? BY_ID.get(DEFAULT_FIGHTER_MODEL)!;
+export function getFighterModel(
+  id: string,
+): FighterModelDef {
+  return (
+    BY_ID.get(
+      id,
+    ) ??
+    BY_ID.get(
+      DEFAULT_FIGHTER_MODEL,
+    )!
+  );
 }
 
-export function isFighterModelId(id: unknown): id is string {
-    return typeof id === 'string' && BY_ID.has(id);
+export function isFighterModelId(
+  id: unknown,
+): id is string {
+  return (
+    typeof id ===
+      'string' &&
+    BY_ID.has(
+      id,
+    )
+  );
 }
 
 /** Untrusted id (storage, peer, socket payload) → a roster id, else the default. */
-export function sanitizeFighterModelId(raw: unknown): string {
-    return isFighterModelId(raw) ? raw : DEFAULT_FIGHTER_MODEL;
+export function sanitizeFighterModelId(
+  raw: unknown,
+): string {
+  return isFighterModelId(
+    raw,
+  )
+    ? raw
+    : DEFAULT_FIGHTER_MODEL;
 }
 
 /** What R2 holds. `null` = not known (yet): that source contributes nothing. */
 export interface ModelAvailability {
-    /** Names from `/api/tf2-loadout/models` (`class_soldier`, …). */
-    tf2: ReadonlySet<string> | null;
-    /** Lower-case MDL paths per game, from each channel's `mdl/index.json`. */
-    mdl: Partial<Record<'hl2' | 'portal' | 'csgo', ReadonlySet<string> | null>>;
+  /** Names from `/api/tf2-loadout/models` (`class_soldier`, …). */
+  tf2: ReadonlySet<string> | null;
+  /** Lower-case MDL paths per game, from each channel's `mdl/index.json`. */
+  mdl: Partial<
+    Record<
+      | 'hl2'
+      | 'portal'
+      | 'csgo',
+      ReadonlySet<string> | null
+    >
+  >;
 }
 
-export function isModelAvailable(def: FighterModelDef, avail: ModelAvailability): boolean {
-    if (def.game === 'ybot') return true;
-    if (def.game === 'tf2') return !!avail.tf2?.has(`class_${def.tf2Class}`);
-    return modelSources(def).some((src) => !!avail.mdl[src.game]?.has(src.mdl));
+export function isModelAvailable(
+  def: FighterModelDef,
+  avail: ModelAvailability,
+): boolean {
+  if (
+    def.game ===
+    'ybot'
+  )
+    return true;
+  if (
+    def.game ===
+    'tf2'
+  )
+    return !!avail.tf2?.has(
+      `class_${def.tf2Class}`,
+    );
+  return modelSources(
+    def,
+  ).some(
+    (
+      src,
+    ) =>
+      !!avail.mdl[
+        src
+          .game
+      ]?.has(
+        src.mdl,
+      ),
+  );
 }
 
-export function availableFighterModels(avail: ModelAvailability): FighterModelDef[] {
-    return FIGHTER_MODELS.filter((m) => isModelAvailable(m, avail));
+export function availableFighterModels(
+  avail: ModelAvailability,
+): FighterModelDef[] {
+  return FIGHTER_MODELS.filter(
+    (
+      m,
+    ) =>
+      isModelAvailable(
+        m,
+        avail,
+      ),
+  );
 }

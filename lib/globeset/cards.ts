@@ -27,7 +27,10 @@
 export const COLOR_COUNT = 6;
 
 /** Cards in a full deck: every non-empty subset of the six dots. */
-export const DECK_SIZE = (1 << COLOR_COUNT) - 1; // 63
+export const DECK_SIZE =
+  (1 <<
+    COLOR_COUNT) -
+  1; // 63
 
 /** Cards face-up at once. Seven is the smallest board that always holds a GlobeSet. */
 export const BOARD_SIZE = 7;
@@ -36,7 +39,8 @@ export const BOARD_SIZE = 7;
  * A card: a bitmask in `1..63`, bit `i` set when dot colour `i` is present.
  * Zero is not a card — a blank would be a one-card GlobeSet and end every game.
  */
-export type Card = number;
+export type Card =
+  number;
 
 /**
  * The six dots, in bit order. `token` names the CSS custom property the dot is
@@ -49,88 +53,178 @@ export interface DotColor {
   /** Bit index, 0–5. */
   bit: number;
   /** Stable id used in class names, share strings and test fixtures. */
-  id: 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple';
+  id:
+    | 'red'
+    | 'orange'
+    | 'yellow'
+    | 'green'
+    | 'blue'
+    | 'purple';
   /** The `--globeset-dot-*` custom property this dot reads its fill from. */
   token: string;
   /** Shape drawn inside the dot in "distinct shapes" mode (colour-blind aid). */
-  shape: 'circle' | 'triangle' | 'square' | 'diamond' | 'hexagon' | 'star';
+  shape:
+    | 'circle'
+    | 'triangle'
+    | 'square'
+    | 'diamond'
+    | 'hexagon'
+    | 'star';
   /** Translation key suffix for the colour's accessible name. */
   nameKey: string;
   emoji: string;
 }
 
-export const DOT_COLORS: readonly DotColor[] = [
-  { bit: 0, id: 'red', token: '--globeset-dot-red', shape: 'circle', nameKey: 'red', emoji: '🔴' },
-  {
-    bit: 1,
-    id: 'orange',
-    token: '--globeset-dot-orange',
-    shape: 'triangle',
-    nameKey: 'orange',
-    emoji: '🟠',
-  },
-  {
-    bit: 2,
-    id: 'yellow',
-    token: '--globeset-dot-yellow',
-    shape: 'square',
-    nameKey: 'yellow',
-    emoji: '🟡',
-  },
-  {
-    bit: 3,
-    id: 'green',
-    token: '--globeset-dot-green',
-    shape: 'diamond',
-    nameKey: 'green',
-    emoji: '🟢',
-  },
-  {
-    bit: 4,
-    id: 'blue',
-    token: '--globeset-dot-blue',
-    shape: 'hexagon',
-    nameKey: 'blue',
-    emoji: '🔵',
-  },
-  {
-    bit: 5,
-    id: 'purple',
-    token: '--globeset-dot-purple',
-    shape: 'star',
-    nameKey: 'purple',
-    emoji: '🟣',
-  },
-] as const;
+export const DOT_COLORS: readonly DotColor[] =
+  [
+    {
+      bit: 0,
+      id: 'red',
+      token:
+        '--globeset-dot-red',
+      shape:
+        'circle',
+      nameKey:
+        'red',
+      emoji:
+        '🔴',
+    },
+    {
+      bit: 1,
+      id: 'orange',
+      token:
+        '--globeset-dot-orange',
+      shape:
+        'triangle',
+      nameKey:
+        'orange',
+      emoji:
+        '🟠',
+    },
+    {
+      bit: 2,
+      id: 'yellow',
+      token:
+        '--globeset-dot-yellow',
+      shape:
+        'square',
+      nameKey:
+        'yellow',
+      emoji:
+        '🟡',
+    },
+    {
+      bit: 3,
+      id: 'green',
+      token:
+        '--globeset-dot-green',
+      shape:
+        'diamond',
+      nameKey:
+        'green',
+      emoji:
+        '🟢',
+    },
+    {
+      bit: 4,
+      id: 'blue',
+      token:
+        '--globeset-dot-blue',
+      shape:
+        'hexagon',
+      nameKey:
+        'blue',
+      emoji:
+        '🔵',
+    },
+    {
+      bit: 5,
+      id: 'purple',
+      token:
+        '--globeset-dot-purple',
+      shape:
+        'star',
+      nameKey:
+        'purple',
+      emoji:
+        '🟣',
+    },
+  ] as const;
 
 /** Every card in the deck, ascending. Order is a starting point, never the deal. */
 export function fullDeck(): Card[] {
-  const deck: Card[] = [];
-  for (let mask = 1; mask <= DECK_SIZE; mask++) deck.push(mask);
+  const deck: Card[] =
+    [];
+  for (
+    let mask = 1;
+    mask <=
+    DECK_SIZE;
+    mask++
+  )
+    deck.push(
+      mask,
+    );
   return deck;
 }
 
 /** True when `value` is a legal card. Used to validate anything off the wire. */
-export function isCard(value: unknown): value is Card {
-  return Number.isInteger(value) && (value as number) >= 1 && (value as number) <= DECK_SIZE;
+export function isCard(
+  value: unknown,
+): value is Card {
+  return (
+    Number.isInteger(
+      value,
+    ) &&
+    (value as number) >=
+      1 &&
+    (value as number) <=
+      DECK_SIZE
+  );
 }
 
 /** The dots on a card, in bit order. */
-export function dotsOf(card: Card): DotColor[] {
-  return DOT_COLORS.filter((c) => (card & (1 << c.bit)) !== 0);
+export function dotsOf(
+  card: Card,
+): DotColor[] {
+  return DOT_COLORS.filter(
+    (
+      c,
+    ) =>
+      (card &
+        (1 <<
+          c.bit)) !==
+      0,
+  );
 }
 
 /** How many dots a card carries (its Hamming weight). */
-export function dotCount(card: Card): number {
+export function dotCount(
+  card: Card,
+): number {
   let n = 0;
-  for (let bit = 0; bit < COLOR_COUNT; bit++) if (card & (1 << bit)) n++;
+  for (
+    let bit = 0;
+    bit <
+    COLOR_COUNT;
+    bit++
+  )
+    if (
+      card &
+      (1 <<
+        bit)
+    )
+      n++;
   return n;
 }
 
 /** XOR-fold a set of cards. Zero means "every colour appears an even number of times". */
-export function xorAll(cards: readonly Card[]): number {
+export function xorAll(
+  cards: readonly Card[],
+): number {
   let acc = 0;
-  for (const card of cards) acc ^= card;
+  for (const card of cards)
+    acc ^=
+      card;
   return acc;
 }
 
@@ -141,14 +235,36 @@ export function xorAll(cards: readonly Card[]): number {
  * client could otherwise submit the same card twice and satisfy the XOR test
  * with a pair — the server checks this on every submission.
  */
-export function isGlobeSet(cards: readonly Card[]): boolean {
-  if (cards.length === 0) return false;
-  const seen = new Set<Card>();
+export function isGlobeSet(
+  cards: readonly Card[],
+): boolean {
+  if (
+    cards.length ===
+    0
+  )
+    return false;
+  const seen =
+    new Set<Card>();
   for (const card of cards) {
-    if (!isCard(card) || seen.has(card)) return false;
-    seen.add(card);
+    if (
+      !isCard(
+        card,
+      ) ||
+      seen.has(
+        card,
+      )
+    )
+      return false;
+    seen.add(
+      card,
+    );
   }
-  return xorAll(cards) === 0;
+  return (
+    xorAll(
+      cards,
+    ) ===
+    0
+  );
 }
 
 /**
@@ -156,7 +272,20 @@ export function isGlobeSet(cards: readonly Card[]): boolean {
  * `true` = that colour currently appears an odd number of times, i.e. the
  * selection is not a GlobeSet yet and this is one of the reasons why.
  */
-export function colorParity(cards: readonly Card[]): boolean[] {
-  const acc = xorAll(cards);
-  return DOT_COLORS.map((c) => (acc & (1 << c.bit)) !== 0);
+export function colorParity(
+  cards: readonly Card[],
+): boolean[] {
+  const acc =
+    xorAll(
+      cards,
+    );
+  return DOT_COLORS.map(
+    (
+      c,
+    ) =>
+      (acc &
+        (1 <<
+          c.bit)) !==
+      0,
+  );
 }

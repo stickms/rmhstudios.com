@@ -15,9 +15,21 @@ export function islandBeforeLoad({
   location,
   preload,
 }: {
-  location: { href: string };
+  location: {
+    href: string;
+  };
   preload: boolean;
 }): void {
-  if (preload || typeof document === 'undefined') return;
-  throw redirect({ href: location.href, reloadDocument: true });
+  if (
+    preload ||
+    typeof document ===
+      'undefined'
+  )
+    return;
+  throw redirect(
+    {
+      href: location.href,
+      reloadDocument: true,
+    },
+  );
 }

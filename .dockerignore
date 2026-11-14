@@ -9,6 +9,7 @@ node_modules
 .vinxi
 .tanstack
 dist-server
+ballast
 # Built inside the image (Dockerfile vite-builder), never copied from a local checkout.
 dist-islands
 .pnpm-store

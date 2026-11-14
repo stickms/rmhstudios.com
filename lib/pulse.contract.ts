@@ -6,18 +6,43 @@
  * hand-written shape of what it returns. Client-safe.
  */
 import { endpoint } from '@/lib/contract/endpoint';
-import type { getActiveFriends, getOnlineFriends } from '@/lib/presence.server';
+import type {
+  getActiveFriends,
+  getOnlineFriends,
+} from '@/lib/presence.server';
 
-export type PulseSection = 'notifications' | 'friends' | 'activeFriends';
+export type PulseSection =
+  | 'notifications'
+  | 'friends'
+  | 'activeFriends';
 
 export interface PulseResponse {
   ok: boolean;
   notifications?: number;
-  friends?: Awaited<ReturnType<typeof getOnlineFriends>>;
-  activeFriends?: Awaited<ReturnType<typeof getActiveFriends>>;
+  friends?: Awaited<
+    ReturnType<
+      typeof getOnlineFriends
+    >
+  >;
+  activeFriends?: Awaited<
+    ReturnType<
+      typeof getActiveFriends
+    >
+  >;
 }
 
-export const pulseApi = endpoint<{
-  body: { want?: PulseSection[] | undefined };
-  res: PulseResponse;
-}>()({ method: 'POST', path: '/api/pulse' });
+export const pulseApi =
+  endpoint<{
+    body: {
+      want?:
+        | PulseSection[]
+        | undefined;
+    };
+    res: PulseResponse;
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/pulse',
+    },
+  );

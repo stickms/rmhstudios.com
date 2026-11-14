@@ -4,8 +4,14 @@
 
 // ─── Room Settings ───────────────────────────────────────────────
 
-export type Difficulty = 'easy' | 'medium' | 'hard';
-export type PassageLength = 'short' | 'medium' | 'long';
+export type Difficulty =
+  | 'easy'
+  | 'medium'
+  | 'hard';
+export type PassageLength =
+  | 'short'
+  | 'medium'
+  | 'long';
 
 export interface RoomSettings {
   difficulty: Difficulty;
@@ -15,12 +21,19 @@ export interface RoomSettings {
 
 // ─── Room State ─────────────────────────────────────────────────
 
-export type RoomStatus = 'WAITING' | 'COUNTDOWN' | 'TYPING' | 'ROUND_RESULTS' | 'FINAL_RESULTS';
+export type RoomStatus =
+  | 'WAITING'
+  | 'COUNTDOWN'
+  | 'TYPING'
+  | 'ROUND_RESULTS'
+  | 'FINAL_RESULTS';
 
 export interface RoomPlayer {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   isHost: boolean;
   isReady: boolean;
   isConnected: boolean;
@@ -52,7 +65,9 @@ export interface RoundResults {
 }
 
 export interface FinalResults {
-  rankings: (PlayerResult & { totalScore: number })[];
+  rankings: (PlayerResult & {
+    totalScore: number;
+  })[];
 }
 
 export interface BannedUser {
@@ -60,7 +75,9 @@ export interface BannedUser {
   userName: string;
   bannedAt: number;
   bannedBy: string;
-  reason: string | null;
+  reason:
+    | string
+    | null;
 }
 
 export interface PublicRoomInfo {
@@ -79,7 +96,10 @@ export interface ChatMessage {
   userName: string;
   message: string;
   timestamp: number;
-  reactions: Record<string, string[]>;
+  reactions: Record<
+    string,
+    string[]
+  >;
 }
 
 export interface ClientRoomState {
@@ -95,12 +115,18 @@ export interface ClientRoomState {
   // Game state
   currentRound: number;
   totalRounds: number;
-  passage: string | null;
-  passageId: string | null;
+  passage:
+    | string
+    | null;
+  passageId:
+    | string
+    | null;
   progress: PlayerProgress[];
   roundResults: RoundResults | null;
   finalResults: FinalResults | null;
-  countdownSeconds: number | null;
+  countdownSeconds:
+    | number
+    | null;
 }
 
 // ─── Solo Mode ──────────────────────────────────────────────────

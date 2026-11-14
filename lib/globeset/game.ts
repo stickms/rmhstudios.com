@@ -17,7 +17,13 @@
  * the tests.
  */
 
-import { BOARD_SIZE, DECK_SIZE, fullDeck, isGlobeSet, type Card } from './cards';
+import {
+  BOARD_SIZE,
+  DECK_SIZE,
+  fullDeck,
+  isGlobeSet,
+  type Card,
+} from './cards';
 import { createSeededRng } from '../daily-puzzles/seed';
 import { formatClockSeconds } from '@/lib/core/format';
 
@@ -28,9 +34,36 @@ import { formatClockSeconds } from '@/lib/core/format';
 const SEED_SALT = 0x50525354;
 
 /** `YYYY-MM-DD` → the 32-bit seed that deals that day's deck. */
-export function seedFromDateKey(dateKey: string): number {
-  const [y, m, d] = dateKey.split('-').map((part) => Number(part) || 0);
-  return ((y * 10000 + m * 100 + d) ^ SEED_SALT) >>> 0;
+export function seedFromDateKey(
+  dateKey: string,
+): number {
+  const [
+    y,
+    m,
+    d,
+  ] =
+    dateKey
+      .split(
+        '-',
+      )
+      .map(
+        (
+          part,
+        ) =>
+          Number(
+            part,
+          ) ||
+          0,
+      );
+  return (
+    ((y *
+      10000 +
+      m *
+        100 +
+      d) ^
+      SEED_SALT) >>>
+    0
+  );
 }
 
 /**
@@ -41,19 +74,58 @@ export function seedFromDateKey(dateKey: string): number {
  * two browsers could deal the same seed differently, which is the one thing a
  * daily puzzle may never do.
  */
-export function dealFromSeed(seed: number): Card[] {
-  const rng = createSeededRng(seed);
-  const deck = fullDeck();
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
+export function dealFromSeed(
+  seed: number,
+): Card[] {
+  const rng =
+    createSeededRng(
+      seed,
+    );
+  const deck =
+    fullDeck();
+  for (
+    let i =
+      deck.length -
+      1;
+    i >
+    0;
+    i--
+  ) {
+    const j =
+      Math.floor(
+        rng() *
+          (i +
+            1),
+      );
+    [
+      deck[
+        i
+      ],
+      deck[
+        j
+      ],
+    ] =
+      [
+        deck[
+          j
+        ],
+        deck[
+          i
+        ],
+      ];
   }
   return deck;
 }
 
 /** The deck for a given day. */
-export function dealForDate(dateKey: string): Card[] {
-  return dealFromSeed(seedFromDateKey(dateKey));
+export function dealForDate(
+  dateKey: string,
+): Card[] {
+  return dealFromSeed(
+    seedFromDateKey(
+      dateKey,
+    ),
+  );
 }
 
 /** One GlobeSet the player took, kept for the share card and the replay strip. */
@@ -66,7 +138,9 @@ export interface FoundGlobeSet {
   bySolver: boolean;
 }
 
-export type RunStatus = 'playing' | 'complete';
+export type RunStatus =
+  | 'playing'
+  | 'complete';
 
 export interface RunState {
   /** The shuffled deck. Never mutated — `drawIndex` walks it. */
@@ -87,45 +161,109 @@ export interface RunState {
 }
 
 /** A fresh run over `deck`. The board is dealt immediately. */
-export function createRun(deck: readonly Card[], boardSize: number = BOARD_SIZE): RunState {
-  const state: RunState = {
-    deck,
-    board: [],
-    drawIndex: 0,
-    boardSize,
-    found: [],
-    misses: 0,
-    hints: 0,
-    solverUsed: false,
-    status: 'playing',
-  };
-  refill(state);
+export function createRun(
+  deck: readonly Card[],
+  boardSize: number = BOARD_SIZE,
+): RunState {
+  const state: RunState =
+    {
+      deck,
+      board:
+        [],
+      drawIndex: 0,
+      boardSize,
+      found:
+        [],
+      misses: 0,
+      hints: 0,
+      solverUsed: false,
+      status:
+        'playing',
+    };
+  refill(
+    state,
+  );
   return state;
 }
 
 /** Top the board up from the deck, in place. */
-function refill(state: RunState): void {
-  while (state.board.length < state.boardSize && state.drawIndex < state.deck.length) {
-    state.board.push(state.deck[state.drawIndex++]);
+function refill(
+  state: RunState,
+): void {
+  while (
+    state
+      .board
+      .length <
+      state.boardSize &&
+    state.drawIndex <
+      state
+        .deck
+        .length
+  ) {
+    state.board.push(
+      state
+        .deck[
+        state.drawIndex++
+      ],
+    );
   }
-  if (state.board.length === 0 && state.drawIndex >= state.deck.length) {
-    state.status = 'complete';
+  if (
+    state
+      .board
+      .length ===
+      0 &&
+    state.drawIndex >=
+      state
+        .deck
+        .length
+  ) {
+    state.status =
+      'complete';
   }
 }
 
 /** Cards neither taken nor face-up — what is left to deal. */
-export function cardsRemaining(state: RunState): number {
-  return state.deck.length - state.drawIndex + state.board.length;
+export function cardsRemaining(
+  state: RunState,
+): number {
+  return (
+    state
+      .deck
+      .length -
+    state.drawIndex +
+    state
+      .board
+      .length
+  );
 }
 
 /** How far through the deck the run is, 0–1. Drives the progress rail. */
-export function runProgress(state: RunState): number {
-  const total = state.deck.length;
-  if (total === 0) return 1;
-  return (total - cardsRemaining(state)) / total;
+export function runProgress(
+  state: RunState,
+): number {
+  const total =
+    state
+      .deck
+      .length;
+  if (
+    total ===
+    0
+  )
+    return 1;
+  return (
+    (total -
+      cardsRemaining(
+        state,
+      )) /
+    total
+  );
 }
 
-export type SubmitOutcome = 'accepted' | 'not-a-globeset' | 'empty' | 'finished';
+export type SubmitOutcome =
+  | 'accepted'
+  | 'not-a-globeset'
+  | 'empty'
+  | 'finished';
 
 export interface SubmitResult {
   state: RunState;
@@ -150,33 +288,157 @@ export function submitSelection(
   indices: readonly number[],
   atMs: number,
 ): SubmitResult {
-  if (state.status === 'complete') return { state, outcome: 'finished', taken: [] };
-  if (indices.length === 0) return { state, outcome: 'empty', taken: [] };
+  if (
+    state.status ===
+    'complete'
+  )
+    return {
+      state,
+      outcome:
+        'finished',
+      taken:
+        [],
+    };
+  if (
+    indices.length ===
+    0
+  )
+    return {
+      state,
+      outcome:
+        'empty',
+      taken:
+        [],
+    };
 
-  const unique = [...new Set(indices)].sort((a, b) => a - b);
-  const inRange = unique.every((i) => Number.isInteger(i) && i >= 0 && i < state.board.length);
-  if (!inRange || unique.length !== indices.length) {
-    return { state: { ...state, misses: state.misses + 1 }, outcome: 'not-a-globeset', taken: [] };
+  const unique =
+    [
+      ...new Set(
+        indices,
+      ),
+    ].sort(
+      (
+        a,
+        b,
+      ) =>
+        a -
+        b,
+    );
+  const inRange =
+    unique.every(
+      (
+        i,
+      ) =>
+        Number.isInteger(
+          i,
+        ) &&
+        i >=
+          0 &&
+        i <
+          state
+            .board
+            .length,
+    );
+  if (
+    !inRange ||
+    unique.length !==
+      indices.length
+  ) {
+    return {
+      state:
+        {
+          ...state,
+          misses:
+            state.misses +
+            1,
+        },
+      outcome:
+        'not-a-globeset',
+      taken:
+        [],
+    };
   }
 
-  const cards = unique.map((i) => state.board[i]);
-  if (!isGlobeSet(cards)) {
-    return { state: { ...state, misses: state.misses + 1 }, outcome: 'not-a-globeset', taken: [] };
+  const cards =
+    unique.map(
+      (
+        i,
+      ) =>
+        state
+          .board[
+          i
+        ],
+    );
+  if (
+    !isGlobeSet(
+      cards,
+    )
+  ) {
+    return {
+      state:
+        {
+          ...state,
+          misses:
+            state.misses +
+            1,
+        },
+      outcome:
+        'not-a-globeset',
+      taken:
+        [],
+    };
   }
 
-  const taken = new Set(unique);
-  const next: RunState = {
-    ...state,
-    board: state.board.filter((_, i) => !taken.has(i)),
-    found: [...state.found, { cards, atMs, bySolver: false }],
+  const taken =
+    new Set(
+      unique,
+    );
+  const next: RunState =
+    {
+      ...state,
+      board:
+        state.board.filter(
+          (
+            _,
+            i,
+          ) =>
+            !taken.has(
+              i,
+            ),
+        ),
+      found:
+        [
+          ...state.found,
+          {
+            cards,
+            atMs,
+            bySolver: false,
+          },
+        ],
+    };
+  refill(
+    next,
+  );
+  return {
+    state:
+      next,
+    outcome:
+      'accepted',
+    taken:
+      cards,
   };
-  refill(next);
-  return { state: next, outcome: 'accepted', taken: cards };
 }
 
 /** Charge a hint. Kept here so the penalty and the share card agree on the count. */
-export function takeHint(state: RunState): RunState {
-  return { ...state, hints: state.hints + 1 };
+export function takeHint(
+  state: RunState,
+): RunState {
+  return {
+    ...state,
+    hints:
+      state.hints +
+      1,
+  };
 }
 
 /**
@@ -193,8 +455,15 @@ export function takeHint(state: RunState): RunState {
  *
  * Charged once per entry into a dead end, not once per click inside one.
  */
-export function recordDeadEnd(state: RunState): RunState {
-  return { ...state, misses: state.misses + 1 };
+export function recordDeadEnd(
+  state: RunState,
+): RunState {
+  return {
+    ...state,
+    misses:
+      state.misses +
+      1,
+  };
 }
 
 /** Record that a step was played by the auto-solver rather than the player. */
@@ -203,11 +472,39 @@ export function applySolverStep(
   indices: readonly number[],
   atMs: number,
 ): RunState {
-  const result = submitSelection(state, indices, atMs);
-  if (result.outcome !== 'accepted') return state;
-  const found = [...result.state.found];
-  found[found.length - 1] = { ...found[found.length - 1], bySolver: true };
-  return { ...result.state, found, solverUsed: true };
+  const result =
+    submitSelection(
+      state,
+      indices,
+      atMs,
+    );
+  if (
+    result.outcome !==
+    'accepted'
+  )
+    return state;
+  const found =
+    [
+      ...result
+        .state
+        .found,
+    ];
+  found[
+    found.length -
+      1
+  ] =
+    {
+      ...found[
+        found.length -
+          1
+      ],
+      bySolver: true,
+    };
+  return {
+    ...result.state,
+    found,
+    solverUsed: true,
+  };
 }
 
 /* ─── Scoring ────────────────────────────────────────────────────────────── */
@@ -246,11 +543,28 @@ export function summarise(
   return {
     dateKey,
     puzzleNumber,
-    timeSeconds: Math.max(0, Math.round(timeSeconds)),
-    sizes: state.found.map((f) => f.cards.length),
-    misses: state.misses,
-    hints: state.hints,
-    solverUsed: state.solverUsed,
+    timeSeconds:
+      Math.max(
+        0,
+        Math.round(
+          timeSeconds,
+        ),
+      ),
+    sizes:
+      state.found.map(
+        (
+          f,
+        ) =>
+          f
+            .cards
+            .length,
+      ),
+    misses:
+      state.misses,
+    hints:
+      state.hints,
+    solverUsed:
+      state.solverUsed,
   };
 }
 
@@ -262,18 +576,61 @@ export function summarise(
  * run the solver finished scores zero: it is recorded, it keeps the streak, and
  * it does not pretend to be a result.
  */
-export function scoreRun(summary: RunSummary): number {
-  if (summary.solverUsed) return 0;
-  const ratio = Math.min(1, summary.timeSeconds / (PAR_SECONDS * 2));
-  const speed = Math.round(MAX_SPEED_BONUS * (1 - ratio));
-  const penalty = summary.misses * MISS_PENALTY + summary.hints * HINT_PENALTY;
-  return Math.max(FLOOR_POINTS, Math.min(999, BASE_POINTS + speed - penalty));
+export function scoreRun(
+  summary: RunSummary,
+): number {
+  if (
+    summary.solverUsed
+  )
+    return 0;
+  const ratio =
+    Math.min(
+      1,
+      summary.timeSeconds /
+        (PAR_SECONDS *
+          2),
+    );
+  const speed =
+    Math.round(
+      MAX_SPEED_BONUS *
+        (1 -
+          ratio),
+    );
+  const penalty =
+    summary.misses *
+      MISS_PENALTY +
+    summary.hints *
+      HINT_PENALTY;
+  return Math.max(
+    FLOOR_POINTS,
+    Math.min(
+      999,
+      BASE_POINTS +
+        speed -
+        penalty,
+    ),
+  );
 }
 
 /** `m:ss`, or `h:mm:ss` past an hour. Used by the HUD, the share card and the board. */
-export const formatDuration = (totalSeconds: number): string => formatClockSeconds(totalSeconds, { hours: true });
+export const formatDuration =
+  (
+    totalSeconds: number,
+  ): string =>
+    formatClockSeconds(
+      totalSeconds,
+      {
+        hours: true,
+      },
+    );
 
 /** Sanity bound shared by the client and the race server. */
-export const MAX_RUN_SECONDS = 3 * 60 * 60;
+export const MAX_RUN_SECONDS =
+  3 *
+  60 *
+  60;
 
-export { BOARD_SIZE, DECK_SIZE };
+export {
+  BOARD_SIZE,
+  DECK_SIZE,
+};

@@ -21,21 +21,36 @@ import { syllableCount as countSyllables } from 'syllable-count-english';
 /** Raw shape stored in root-words.json (minimal — no precomputed phonetic data). */
 interface RootWordRaw {
   word: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty:
+    | 'easy'
+    | 'medium'
+    | 'hard';
 }
 
 /** Hydrated root word with runtime-computed syllable count. */
 export interface RootWord {
   word: string;
   syllableCount: number;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty:
+    | 'easy'
+    | 'medium'
+    | 'hard';
 }
 
 // ─── Singleton Cache ─────────────────────────────────────────────
 
-let cachedRootWords: RootWord[] | null = null;
+let cachedRootWords:
+  | RootWord[]
+  | null =
+  null;
 
-const DATA_DIR = path.join(process.cwd(), 'data', 'rmhbox', 'rhyme-time');
+const DATA_DIR =
+  path.join(
+    process.cwd(),
+    'data',
+    'rmhbox',
+    'rhyme-time',
+  );
 
 /**
  * Loads and returns the root words from root-words.json.
@@ -43,14 +58,36 @@ const DATA_DIR = path.join(process.cwd(), 'data', 'rmhbox', 'rhyme-time');
  * Cached as a singleton — subsequent calls return the same array reference.
  */
 export function loadRootWords(): RootWord[] {
-  if (cachedRootWords) return cachedRootWords;
-  const raw = fs.readFileSync(path.join(DATA_DIR, 'root-words.json'), 'utf-8');
-  const rawWords = JSON.parse(raw) as RootWordRaw[];
-  cachedRootWords = rawWords.map((rw) => ({
-    word: rw.word,
-    syllableCount: countSyllables(rw.word),
-    difficulty: rw.difficulty,
-  }));
+  if (
+    cachedRootWords
+  )
+    return cachedRootWords;
+  const raw =
+    fs.readFileSync(
+      path.join(
+        DATA_DIR,
+        'root-words.json',
+      ),
+      'utf-8',
+    );
+  const rawWords =
+    JSON.parse(
+      raw,
+    ) as RootWordRaw[];
+  cachedRootWords =
+    rawWords.map(
+      (
+        rw,
+      ) => ({
+        word: rw.word,
+        syllableCount:
+          countSyllables(
+            rw.word,
+          ),
+        difficulty:
+          rw.difficulty,
+      }),
+    );
   return cachedRootWords;
 }
 
@@ -65,34 +102,102 @@ export function loadRootWords(): RootWord[] {
  *    (handles words with multiple pronunciations in the CMU dictionary)
  *  - It is not the root word itself
  */
-export function isValidRhyme(word: string, rootWord: string): boolean {
-  if (word === rootWord) return false;
-  const wordParts = rhymingPart(word, { multiple: true }) as string[];
-  if (!wordParts || wordParts.length === 0) return false; // word not in dictionary
-  const rootParts = rhymingPart(rootWord, { multiple: true }) as string[];
-  if (!rootParts || rootParts.length === 0) return false;
+export function isValidRhyme(
+  word: string,
+  rootWord: string,
+): boolean {
+  if (
+    word ===
+    rootWord
+  )
+    return false;
+  const wordParts =
+    rhymingPart(
+      word,
+      {
+        multiple: true,
+      },
+    ) as string[];
+  if (
+    !wordParts ||
+    wordParts.length ===
+      0
+  )
+    return false; // word not in dictionary
+  const rootParts =
+    rhymingPart(
+      rootWord,
+      {
+        multiple: true,
+      },
+    ) as string[];
+  if (
+    !rootParts ||
+    rootParts.length ===
+      0
+  )
+    return false;
   // Strip lexical stress markers (0, 1, 2) before comparing rhyming parts
-  const strip = (s: string) => s.replace(/[012]/g, '');
-  return wordParts.some((wp) => rootParts.some((rp) => strip(wp) === strip(rp)));
+  const strip =
+    (
+      s: string,
+    ) =>
+      s.replace(
+        /[012]/g,
+        '',
+      );
+  return wordParts.some(
+    (
+      wp,
+    ) =>
+      rootParts.some(
+        (
+          rp,
+        ) =>
+          strip(
+            wp,
+          ) ===
+          strip(
+            rp,
+          ),
+      ),
+  );
 }
 
 /**
  * Checks whether a word qualifies for the multi-syllable rhyme bonus.
  * A multi-syllable rhyme has syllableCount >= rootWord.syllableCount + 1.
  */
-export function isMultiSyllableRhyme(word: string, rootSyllableCount: number): boolean {
-  return countSyllables(word) >= rootSyllableCount + 1;
+export function isMultiSyllableRhyme(
+  word: string,
+  rootSyllableCount: number,
+): boolean {
+  return (
+    countSyllables(
+      word,
+    ) >=
+    rootSyllableCount +
+      1
+  );
 }
 
 /**
  * Returns whether a word exists in the CMU Pronouncing Dictionary
  * (i.e., is a known English word for rhyme purposes).
  */
-export function isKnownWord(word: string): boolean {
-  return rhymingPart(word) !== '';
+export function isKnownWord(
+  word: string,
+): boolean {
+  return (
+    rhymingPart(
+      word,
+    ) !==
+    ''
+  );
 }
 
 /** Resets the root words cache (for testing purposes only). */
 export function _resetCache(): void {
-  cachedRootWords = null;
+  cachedRootWords =
+    null;
 }

@@ -39,7 +39,11 @@
 import type { HitResult } from './constants';
 import { chartSeed } from './chart';
 import type { Modifiers } from './types';
-import { SLICE_IT_MAX_INPUTS, type SliceItJudgment, type SliceItReplay } from '@/lib/game/replay';
+import {
+  SLICE_IT_MAX_INPUTS,
+  type SliceItJudgment,
+  type SliceItReplay,
+} from '@/lib/game/replay';
 
 /**
  * The shared schema's four judgements, in code order.
@@ -47,15 +51,17 @@ import { SLICE_IT_MAX_INPUTS, type SliceItJudgment, type SliceItReplay } from '@
  * The index into this array is what the engine stores. Order is part of the
  * recording format: changing it re-labels every in-flight run, so append only.
  */
-export const REPLAY_JUDGMENTS = [
-  'perfect',
-  'great',
-  'good',
-  'miss',
-] as const satisfies readonly SliceItJudgment[];
+export const REPLAY_JUDGMENTS =
+  [
+    'perfect',
+    'great',
+    'good',
+    'miss',
+  ] as const satisfies readonly SliceItJudgment[];
 
 /** `-1` means "not recordable" — see {@link JUDGMENT_CODE}. */
-export const NOT_RECORDED = -1;
+export const NOT_RECORDED =
+  -1;
 
 /**
  * Engine judgement → the code stored in the replay log.
@@ -65,15 +71,19 @@ export const NOT_RECORDED = -1;
  * else maps, and the two collapses (`MARVELOUS`→`perfect`, `BAD`→`good`) are the
  * deliberate narrowing described in the module header.
  */
-export const JUDGMENT_CODE: Record<HitResult, number> = {
-  MARVELOUS: 0,
-  PERFECT: 0,
-  GREAT: 1,
-  GOOD: 2,
-  BAD: 2,
-  MISS: 3,
-  NONE: NOT_RECORDED,
-};
+export const JUDGMENT_CODE: Record<
+  HitResult,
+  number
+> =
+  {
+    MARVELOUS: 0,
+    PERFECT: 0,
+    GREAT: 1,
+    GOOD: 2,
+    BAD: 2,
+    MISS: 3,
+    NONE: NOT_RECORDED,
+  };
 
 /**
  * The inverse, for playback (`R4`).
@@ -85,20 +95,34 @@ export const JUDGMENT_CODE: Record<HitResult, number> = {
  * it is paid in the *viewer*, never in the score: the authoritative number for a
  * run is the one the leaderboard stored when it was played.
  */
-export const REPLAY_TO_HIT_RESULT: Record<SliceItJudgment, HitResult> = {
-  perfect: 'PERFECT',
-  great: 'GREAT',
-  good: 'GOOD',
-  miss: 'MISS',
-};
+export const REPLAY_TO_HIT_RESULT: Record<
+  SliceItJudgment,
+  HitResult
+> =
+  {
+    perfect:
+      'PERFECT',
+    great:
+      'GREAT',
+    good: 'GOOD',
+    miss: 'MISS',
+  };
 
 /** Decode a stored code back to the schema's judgement string. */
-export function judgmentOfCode(code: number): SliceItJudgment {
-  return REPLAY_JUDGMENTS[code] ?? 'miss';
+export function judgmentOfCode(
+  code: number,
+): SliceItJudgment {
+  return (
+    REPLAY_JUDGMENTS[
+      code
+    ] ??
+    'miss'
+  );
 }
 
 /** Re-exported so the engine sizes its buffers from the schema's own limit. */
-export const REPLAY_MAX_INPUTS = SLICE_IT_MAX_INPUTS;
+export const REPLAY_MAX_INPUTS =
+  SLICE_IT_MAX_INPUTS;
 
 /**
  * One resolution, as the shared schema stores it.
@@ -127,10 +151,41 @@ export function buildReplayInputs(
   judgments: Uint8Array,
   count: number,
 ): ReplayInput[] {
-  const capped = Math.max(0, Math.min(count, times.length));
-  const out: ReplayInput[] = new Array(capped);
-  for (let i = 0; i < capped; i++) {
-    out[i] = { t: times[i], lane: lanes[i], judgment: judgmentOfCode(judgments[i]) };
+  const capped =
+    Math.max(
+      0,
+      Math.min(
+        count,
+        times.length,
+      ),
+    );
+  const out: ReplayInput[] =
+    new Array(
+      capped,
+    );
+  for (
+    let i = 0;
+    i <
+    capped;
+    i++
+  ) {
+    out[
+      i
+    ] =
+      {
+        t: times[
+          i
+        ],
+        lane: lanes[
+          i
+        ],
+        judgment:
+          judgmentOfCode(
+            judgments[
+              i
+            ],
+          ),
+      };
   }
   return out;
 }
@@ -150,14 +205,37 @@ export function buildReplayInputs(
  *
  * FNV-1a, truncated to the schema's `0 … 99_999_999`.
  */
-export function replaySeed(songId: string, modifiers: Modifiers): number {
-  const seed = chartSeed(songId, modifiers);
+export function replaySeed(
+  songId: string,
+  modifiers: Modifiers,
+): number {
+  const seed =
+    chartSeed(
+      songId,
+      modifiers,
+    );
   let hash = 0x811c9dc5;
-  for (let i = 0; i < seed.length; i++) {
-    hash ^= seed.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193) >>> 0;
+  for (
+    let i = 0;
+    i <
+    seed.length;
+    i++
+  ) {
+    hash ^=
+      seed.charCodeAt(
+        i,
+      );
+    hash =
+      Math.imul(
+        hash,
+        0x01000193,
+      ) >>>
+      0;
   }
-  return hash % 100_000_000;
+  return (
+    hash %
+    100_000_000
+  );
 }
 
 /**
@@ -171,14 +249,22 @@ export function replaySeed(songId: string, modifiers: Modifiers): number {
  * `timingScale`, which `R8` re-judges with. Everything the viewer and the
  * verifier need, and nothing they do not.
  */
-export function replayMods(modifiers: Modifiers): SliceItReplay['mods'] {
+export function replayMods(
+  modifiers: Modifiers,
+): SliceItReplay['mods'] {
   return {
-    difficulty: modifiers.difficulty,
-    speed: modifiers.speed,
-    bombs: modifiers.bombs,
-    switching: modifiers.switching,
-    oneTrack: modifiers.oneTrack,
-    strictTiming: modifiers.strictTiming,
+    difficulty:
+      modifiers.difficulty,
+    speed:
+      modifiers.speed,
+    bombs:
+      modifiers.bombs,
+    switching:
+      modifiers.switching,
+    oneTrack:
+      modifiers.oneTrack,
+    strictTiming:
+      modifiers.strictTiming,
   };
 }
 
@@ -190,14 +276,28 @@ export function replayMods(modifiers: Modifiers): SliceItReplay['mods'] {
  * viewer must not claim to know them. `healthGauge` is likewise off — a replay
  * of a failed run stops where the log stops, it does not re-fail.
  */
-export function modsFromReplay(mods: SliceItReplay['mods']): Modifiers {
+export function modsFromReplay(
+  mods: SliceItReplay['mods'],
+): Modifiers {
   return {
-    difficulty: mods?.difficulty ?? 'normal',
-    speed: mods?.speed ?? 1,
-    bombs: mods?.bombs ?? false,
-    switching: mods?.switching ?? false,
-    oneTrack: mods?.oneTrack ?? false,
-    strictTiming: mods?.strictTiming ?? false,
+    difficulty:
+      mods?.difficulty ??
+      'normal',
+    speed:
+      mods?.speed ??
+      1,
+    bombs:
+      mods?.bombs ??
+      false,
+    switching:
+      mods?.switching ??
+      false,
+    oneTrack:
+      mods?.oneTrack ??
+      false,
+    strictTiming:
+      mods?.strictTiming ??
+      false,
     invisible: false,
     spin: false,
     suddenDeath: false,

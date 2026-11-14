@@ -15,12 +15,21 @@
  * client ages from it, and each tick re-bases the arithmetic.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { WatchStateDTO, WatchTickDTO } from '@/lib/sohumtracker/types';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import type {
+  WatchStateDTO,
+  WatchTickDTO,
+} from '@/lib/sohumtracker/types';
 import { api } from '@/lib/contract/client';
 import { getWatchActivityApi } from '@/lib/sohumtracker/activity.contract';
 
-const STREAM_URL = '/api/sohumtracker/stream';
+const STREAM_URL =
+  '/api/sohumtracker/stream';
 
 /**
  * Reconnect backoff after the browser gives up on the stream.
@@ -43,13 +52,40 @@ const RECONNECT_MAX_MS = 60_000;
  * the client and hydrates with a mismatch. Callers render a placeholder until
  * this is non-null.
  */
-export function useTicker(intervalMs = 1000): number | null {
-  const [now, setNow] = useState<number | null>(null);
+export function useTicker(
+  intervalMs = 1000,
+):
+  | number
+  | null {
+  const [
+    now,
+    setNow,
+  ] =
+    useState<
+      | number
+      | null
+    >(
+      null,
+    );
   useEffect(() => {
-    setNow(Date.now());
-    const id = window.setInterval(() => setNow(Date.now()), intervalMs);
-    return () => window.clearInterval(id);
-  }, [intervalMs]);
+    setNow(
+      Date.now(),
+    );
+    const id =
+      window.setInterval(
+        () =>
+          setNow(
+            Date.now(),
+          ),
+        intervalMs,
+      );
+    return () =>
+      window.clearInterval(
+        id,
+      );
+  }, [
+    intervalMs,
+  ]);
   return now;
 }
 
@@ -59,16 +95,40 @@ export function useTicker(intervalMs = 1000): number | null {
  * Returns the server's number verbatim until the ticker has started, so the
  * first paint matches the server's HTML exactly.
  */
-export function agedSeconds(measuredSec: number, generatedAt: string, now: number | null): number {
-  if (now === null) return measuredSec;
-  const elapsed = (now - Date.parse(generatedAt)) / 1000;
+export function agedSeconds(
+  measuredSec: number,
+  generatedAt: string,
+  now:
+    | number
+    | null,
+): number {
+  if (
+    now ===
+    null
+  )
+    return measuredSec;
+  const elapsed =
+    (now -
+      Date.parse(
+        generatedAt,
+      )) /
+    1000;
   // A clock skewed backwards (the viewer's, not ours) must never wind a counter
   // down — a number that goes backwards reads as a bug, not as a slow clock.
-  return measuredSec + Math.max(0, elapsed);
+  return (
+    measuredSec +
+    Math.max(
+      0,
+      elapsed,
+    )
+  );
 }
 
 /** Connection state, so the header can say what is going on without lying. */
-export type StreamStatus = 'connecting' | 'live' | 'offline';
+export type StreamStatus =
+  | 'connecting'
+  | 'live'
+  | 'offline';
 
 export interface WatchStateHook {
   state: WatchStateDTO;
@@ -80,32 +140,81 @@ export interface WatchStateHook {
 }
 
 /** Splice a pushed tick into the last full state. */
-function applyTick(state: WatchStateDTO, tick: WatchTickDTO): WatchStateDTO {
-  const days = tick.today
-    ? (() => {
-        const index = state.days.findIndex((day) => day.dateKey === tick.today!.dateKey);
-        if (index === -1) return [...state.days, tick.today!];
-        const next = state.days.slice();
-        // The tick carries the measured figures but not the day's written
-        // summary, which only the full state fetch knows about — keep whichever
-        // one we already had rather than blanking it on every push.
-        next[index] = { ...tick.today!, summary: tick.today!.summary ?? next[index].summary };
-        return next;
-      })()
-    : state.days;
+function applyTick(
+  state: WatchStateDTO,
+  tick: WatchTickDTO,
+): WatchStateDTO {
+  const days =
+    tick.today
+      ? (() => {
+          const index =
+            state.days.findIndex(
+              (
+                day,
+              ) =>
+                day.dateKey ===
+                tick
+                  .today!
+                  .dateKey,
+            );
+          if (
+            index ===
+            -1
+          )
+            return [
+              ...state.days,
+              tick.today!,
+            ];
+          const next =
+            state.days.slice();
+          // The tick carries the measured figures but not the day's written
+          // summary, which only the full state fetch knows about — keep whichever
+          // one we already had rather than blanking it on every push.
+          next[
+            index
+          ] =
+            {
+              ...tick.today!,
+              summary:
+                tick
+                  .today!
+                  .summary ??
+                next[
+                  index
+                ]
+                  .summary,
+            };
+          return next;
+        })()
+      : state.days;
 
   return {
     ...state,
-    generatedAt: tick.generatedAt,
-    todayKey: tick.todayKey,
+    generatedAt:
+      tick.generatedAt,
+    todayKey:
+      tick.todayKey,
     live: tick.live,
-    totals: tick.totals,
-    weeks: tick.weeks,
-    months: tick.months,
+    totals:
+      tick.totals,
+    weeks:
+      tick.weeks,
+    months:
+      tick.months,
     days,
     // A tick proves the tracker has written something, so a page that opened
     // empty stops claiming so.
-    empty: state.empty && days.every((day) => day.voiceSec === 0 && day.messages === 0),
+    empty:
+      state.empty &&
+      days.every(
+        (
+          day,
+        ) =>
+          day.voiceSec ===
+            0 &&
+          day.messages ===
+            0,
+      ),
   };
 }
 
@@ -122,41 +231,99 @@ function applyTick(state: WatchStateDTO, tick: WatchTickDTO): WatchStateDTO {
  * open against the server's shared watcher indefinitely. Coming back out of
  * bfcache (`pageshow`) reconnects.
  */
-export function useWatchState(initial: WatchStateDTO, days: number): WatchStateHook {
-  const [state, setState] = useState(initial);
-  const [status, setStatus] = useState<StreamStatus>('connecting');
-  const [refreshing, setRefreshing] = useState(false);
-  const sourceRef = useRef<EventSource | null>(null);
+export function useWatchState(
+  initial: WatchStateDTO,
+  days: number,
+): WatchStateHook {
+  const [
+    state,
+    setState,
+  ] =
+    useState(
+      initial,
+    );
+  const [
+    status,
+    setStatus,
+  ] =
+    useState<StreamStatus>(
+      'connecting',
+    );
+  const [
+    refreshing,
+    setRefreshing,
+  ] =
+    useState(
+      false,
+    );
+  const sourceRef =
+    useRef<EventSource | null>(
+      null,
+    );
 
-  const refresh = useCallback(() => {
-    setRefreshing(true);
-    api(getWatchActivityApi, { query: { days } })
-      .then(setState)
-      .catch(() => {
-        // The last good dossier is still on screen and still broadly true, so a
-        // failed manual refresh needs no error state — the stream will correct
-        // it on the next push.
-      })
-      .finally(() => setRefreshing(false));
-  }, [days]);
+  const refresh =
+    useCallback(() => {
+      setRefreshing(
+        true,
+      );
+      api(
+        getWatchActivityApi,
+        {
+          query:
+            {
+              days,
+            },
+        },
+      )
+        .then(
+          setState,
+        )
+        .catch(
+          () => {
+            // The last good dossier is still on screen and still broadly true, so a
+            // failed manual refresh needs no error state — the stream will correct
+            // it on the next push.
+          },
+        )
+        .finally(
+          () =>
+            setRefreshing(
+              false,
+            ),
+        );
+    }, [
+      days,
+    ]);
 
   useEffect(() => {
     let closed = false;
     let attempt = 0;
-    let reconnectTimer: number | null = null;
+    let reconnectTimer:
+      | number
+      | null =
+      null;
 
-    const clearTimer = () => {
-      if (reconnectTimer !== null) {
-        window.clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-      }
-    };
+    const clearTimer =
+      () => {
+        if (
+          reconnectTimer !==
+          null
+        ) {
+          window.clearTimeout(
+            reconnectTimer,
+          );
+          reconnectTimer =
+            null;
+        }
+      };
 
-    const disconnect = () => {
-      clearTimer();
-      sourceRef.current?.close();
-      sourceRef.current = null;
-    };
+    const disconnect =
+      () => {
+        clearTimer();
+        sourceRef.current?.close();
+        sourceRef.current =
+          null;
+      };
 
     /**
      * Reconnect after a fatal close, with exponential backoff and full jitter.
@@ -165,60 +332,123 @@ export function useWatchState(initial: WatchStateDTO, days: number): WatchStateH
      * an un-jittered schedule brings all of them back in lockstep — a thundering
      * herd against a tier that has just finished restarting.
      */
-    const scheduleReconnect = () => {
-      if (closed || reconnectTimer !== null) return;
-      const ceiling = Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * 2 ** attempt);
-      attempt += 1;
-      reconnectTimer = window.setTimeout(
-        () => {
-          reconnectTimer = null;
-          connect();
-        },
-        ceiling / 2 + Math.random() * (ceiling / 2),
-      );
-    };
-
-    const connect = () => {
-      if (closed || sourceRef.current) return;
-      clearTimer();
-      const source = new EventSource(STREAM_URL);
-      sourceRef.current = source;
-
-      source.addEventListener('tick', (event) => {
-        try {
-          const tick = JSON.parse((event as MessageEvent<string>).data) as WatchTickDTO;
-          setState((current) => applyTick(current, tick));
-          setStatus('live');
-        } catch {
-          // A malformed frame is not worth tearing the connection down for.
-        }
-      });
-      source.onopen = () => {
-        // A successful open resets the schedule, so an hour-long outage
-        // followed by a blip does not start the next one at a minute.
-        attempt = 0;
-        setStatus('live');
-      };
-      source.onerror = () => {
-        if (source.readyState === EventSource.CLOSED) {
-          // Terminal for EventSource — nothing will reconnect it but us.
-          setStatus('offline');
-          sourceRef.current = null;
-          source.close();
-          scheduleReconnect();
+    const scheduleReconnect =
+      () => {
+        if (
+          closed ||
+          reconnectTimer !==
+            null
+        )
           return;
-        }
-        // Merely reconnecting: EventSource has its own retry for this and
-        // racing it would open a second connection.
-        setStatus('connecting');
+        const ceiling =
+          Math.min(
+            RECONNECT_MAX_MS,
+            RECONNECT_BASE_MS *
+              2 **
+                attempt,
+          );
+        attempt += 1;
+        reconnectTimer =
+          window.setTimeout(
+            () => {
+              reconnectTimer =
+                null;
+              connect();
+            },
+            ceiling /
+              2 +
+              Math.random() *
+                (ceiling /
+                  2),
+          );
       };
-    };
 
-    const onPageHide = () => disconnect();
-    const onPageShow = () => {
-      attempt = 0;
-      connect();
-    };
+    const connect =
+      () => {
+        if (
+          closed ||
+          sourceRef.current
+        )
+          return;
+        clearTimer();
+        const source =
+          new EventSource(
+            STREAM_URL,
+          );
+        sourceRef.current =
+          source;
+
+        source.addEventListener(
+          'tick',
+          (
+            event,
+          ) => {
+            try {
+              const tick =
+                JSON.parse(
+                  (
+                    event as MessageEvent<string>
+                  )
+                    .data,
+                ) as WatchTickDTO;
+              setState(
+                (
+                  current,
+                ) =>
+                  applyTick(
+                    current,
+                    tick,
+                  ),
+              );
+              setStatus(
+                'live',
+              );
+            } catch {
+              // A malformed frame is not worth tearing the connection down for.
+            }
+          },
+        );
+        source.onopen =
+          () => {
+            // A successful open resets the schedule, so an hour-long outage
+            // followed by a blip does not start the next one at a minute.
+            attempt = 0;
+            setStatus(
+              'live',
+            );
+          };
+        source.onerror =
+          () => {
+            if (
+              source.readyState ===
+              EventSource.CLOSED
+            ) {
+              // Terminal for EventSource — nothing will reconnect it but us.
+              setStatus(
+                'offline',
+              );
+              sourceRef.current =
+                null;
+              source.close();
+              scheduleReconnect();
+              return;
+            }
+            // Merely reconnecting: EventSource has its own retry for this and
+            // racing it would open a second connection.
+            setStatus(
+              'connecting',
+            );
+          };
+      };
+
+    const onPageHide =
+      () =>
+        disconnect();
+    const onPageShow =
+      () => {
+        attempt = 0;
+        connect();
+      };
 
     /**
      * A tab that was hidden for a while comes back with a stale dossier even if
@@ -226,28 +456,60 @@ export function useWatchState(initial: WatchStateDTO, days: number): WatchStateH
      * that slept missed every push. So a return to visible refetches the whole
      * state rather than trusting the connection to have kept up.
      */
-    const onVisibility = () => {
-      if (document.visibilityState !== 'visible') return;
-      if (!sourceRef.current) {
-        attempt = 0;
-        connect();
-      }
-      refresh();
-    };
+    const onVisibility =
+      () => {
+        if (
+          document.visibilityState !==
+          'visible'
+        )
+          return;
+        if (
+          !sourceRef.current
+        ) {
+          attempt = 0;
+          connect();
+        }
+        refresh();
+      };
 
     connect();
-    window.addEventListener('pagehide', onPageHide);
-    window.addEventListener('pageshow', onPageShow);
-    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener(
+      'pagehide',
+      onPageHide,
+    );
+    window.addEventListener(
+      'pageshow',
+      onPageShow,
+    );
+    document.addEventListener(
+      'visibilitychange',
+      onVisibility,
+    );
 
     return () => {
       closed = true;
-      window.removeEventListener('pagehide', onPageHide);
-      window.removeEventListener('pageshow', onPageShow);
-      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener(
+        'pagehide',
+        onPageHide,
+      );
+      window.removeEventListener(
+        'pageshow',
+        onPageShow,
+      );
+      document.removeEventListener(
+        'visibilitychange',
+        onVisibility,
+      );
       disconnect();
     };
-  }, [refresh]);
+  }, [
+    refresh,
+  ]);
 
-  return { state, status, refreshing, refresh };
+  return {
+    state,
+    status,
+    refreshing,
+    refresh,
+  };
 }

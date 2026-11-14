@@ -88,9 +88,21 @@ export function SliceItLoading() {
           clips, so an extra one costs nothing and a missing one leaves a gap
           that reads as "this is all there is". */}
       <ul className="min-h-0 flex-1 divide-y divide-slice-shadow-dark/40 overflow-hidden">
-        {Array.from({ length: 9 }, (_, i) => (
-          <SkeletonRow key={i} />
-        ))}
+        {Array.from(
+          {
+            length: 9,
+          },
+          (
+            _,
+            i,
+          ) => (
+            <SkeletonRow
+              key={
+                i
+              }
+            />
+          ),
+        )}
       </ul>
     </div>
   );

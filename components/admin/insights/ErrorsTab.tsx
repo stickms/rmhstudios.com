@@ -6,7 +6,10 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { send, useInsight } from './api';
+import {
+  send,
+  useInsight,
+} from './api';
 
 interface Group {
   id: string;
@@ -24,65 +27,195 @@ interface Group {
 }
 
 export function ErrorsTab() {
-  const { t } = useTranslation('f-ops');
-  const { data, loading, reload } = useInsight<{ groups: Group[] }>('/api/admin/insights/errors');
-  const arrival = useArrival(!loading);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-ops',
+    );
+  const {
+    data,
+    loading,
+    reload,
+  } =
+    useInsight<{
+      groups: Group[];
+    }>(
+      '/api/admin/insights/errors',
+    );
+  const arrival =
+    useArrival(
+      !loading,
+    );
 
-  const toggle = async (g: Group) => {
-    const r = await send('/api/admin/insights/errors', 'PATCH', {
-      id: g.id,
-      resolved: !g.resolved,
-    });
-    if (!r.ok)
-      return void toast.error(t('errors-update-failed', { defaultValue: 'Could not update.' }));
-    await reload();
-  };
+  const toggle =
+    async (
+      g: Group,
+    ) => {
+      const r =
+        await send(
+          '/api/admin/insights/errors',
+          'PATCH',
+          {
+            id: g.id,
+            resolved:
+              !g.resolved,
+          },
+        );
+      if (
+        !r.ok
+      )
+        return void toast.error(
+          t(
+            'errors-update-failed',
+            {
+              defaultValue:
+                'Could not update.',
+            },
+          ),
+        );
+      await reload();
+    };
 
-  if (loading) return <Spinner />;
-  const groups = data?.groups ?? [];
-  if (groups.length === 0)
+  if (
+    loading
+  )
+    return (
+      <Spinner />
+    );
+  const groups =
+    data?.groups ??
+    [];
+  if (
+    groups.length ===
+    0
+  )
     return (
       <EmptyState
-        className={arrival}
-        description={t('errors-empty', { defaultValue: 'No client errors recorded yet.' })}
+        className={
+          arrival
+        }
+        description={t(
+          'errors-empty',
+          {
+            defaultValue:
+              'No client errors recorded yet.',
+          },
+        )}
       />
     );
   return (
-    <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
-      {groups.map((g) => (
-        <li key={g.id} className="space-y-2 py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {g.regressed && (
-              <Badge variant="danger">{t('errors-regressed', { defaultValue: 'Regressed' })}</Badge>
+    <ul
+      className={cn(
+        'divide-y divide-site-border border-t border-site-border',
+        arrival,
+      )}
+    >
+      {groups.map(
+        (
+          g,
+        ) => (
+          <li
+            key={
+              g.id
+            }
+            className="space-y-2 py-3"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              {g.regressed && (
+                <Badge variant="danger">
+                  {t(
+                    'errors-regressed',
+                    {
+                      defaultValue:
+                        'Regressed',
+                    },
+                  )}
+                </Badge>
+              )}
+              {g.resolved && (
+                <Badge variant="success">
+                  {t(
+                    'errors-resolved',
+                    {
+                      defaultValue:
+                        'Resolved',
+                    },
+                  )}
+                </Badge>
+              )}
+              <span className="font-mono t-meta">
+                {t(
+                  'errors-count',
+                  {
+                    defaultValue:
+                      '{{count}} events',
+                    count:
+                      g.count,
+                  },
+                )}
+              </span>
+            </div>
+            <p className="break-words t-body font-semibold text-site-text">
+              {
+                g.message
+              }
+            </p>
+            {g.topFrame && (
+              <p className="break-all font-mono t-meta">
+                {
+                  g.topFrame
+                }
+              </p>
             )}
-            {g.resolved && (
-              <Badge variant="success">{t('errors-resolved', { defaultValue: 'Resolved' })}</Badge>
-            )}
-            <span className="font-mono t-meta">
-              {t('errors-count', { defaultValue: '{{count}} events', count: g.count })}
-            </span>
-          </div>
-          <p className="break-words t-body font-semibold text-site-text">{g.message}</p>
-          {g.topFrame && (
-            <p className="break-all font-mono t-meta">{g.topFrame}</p>
-          )}
-          <p className="t-body text-site-text-muted">
-            {t('errors-seen', {
-              defaultValue:
-                'First seen {{first}} in {{firstRelease}} - last seen {{last}} in {{lastRelease}}',
-              first: new Date(g.firstSeenAt).toLocaleDateString(),
-              firstRelease: g.firstRelease,
-              last: new Date(g.lastSeenAt).toLocaleString(),
-              lastRelease: g.lastRelease,
-            })}
-          </p>
-          <Button size="xs" variant="default" onClick={() => toggle(g)}>
-            {g.resolved
-              ? t('errors-reopen', { defaultValue: 'Reopen' })
-              : t('errors-resolve', { defaultValue: 'Mark resolved' })}
-          </Button>
-        </li>
-      ))}
+            <p className="t-body text-site-text-muted">
+              {t(
+                'errors-seen',
+                {
+                  defaultValue:
+                    'First seen {{first}} in {{firstRelease}} - last seen {{last}} in {{lastRelease}}',
+                  first:
+                    new Date(
+                      g.firstSeenAt,
+                    ).toLocaleDateString(),
+                  firstRelease:
+                    g.firstRelease,
+                  last: new Date(
+                    g.lastSeenAt,
+                  ).toLocaleString(),
+                  lastRelease:
+                    g.lastRelease,
+                },
+              )}
+            </p>
+            <Button
+              size="xs"
+              variant="default"
+              onClick={() =>
+                toggle(
+                  g,
+                )
+              }
+            >
+              {g.resolved
+                ? t(
+                    'errors-reopen',
+                    {
+                      defaultValue:
+                        'Reopen',
+                    },
+                  )
+                : t(
+                    'errors-resolve',
+                    {
+                      defaultValue:
+                        'Mark resolved',
+                    },
+                  )}
+            </Button>
+          </li>
+        ),
+      )}
     </ul>
   );
 }

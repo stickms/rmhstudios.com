@@ -20,25 +20,55 @@ import type { FeedItem } from '../feed-types';
  * caller passes 0 (both feed surfaces use the default), so this only ever
  * changes behaviour for a value that never reaches it.
  */
-export function deduplicateReposts(items: FeedItem[], windowSize = 2): FeedItem[] {
-  const result: FeedItem[] = [];
+export function deduplicateReposts(
+  items: FeedItem[],
+  windowSize = 2,
+): FeedItem[] {
+  const result: FeedItem[] =
+    [];
   for (const item of items) {
-    if (item.repostedBy) {
-      const underlyingId = item.actualId ?? item.id;
+    if (
+      item.repostedBy
+    ) {
+      const underlyingId =
+        item.actualId ??
+        item.id;
       // Walk the trailing window in place. This used to `slice(-windowSize)`
       // and `map` it to ids on every repost — two throwaway arrays per item to
       // look at (by default) two entries.
       let seenRecently = false;
-      for (let i = Math.max(0, result.length - windowSize); i < result.length; i++) {
-        const prev = result[i];
-        if ((prev.actualId ?? prev.id) === underlyingId) {
+      for (
+        let i =
+          Math.max(
+            0,
+            result.length -
+              windowSize,
+          );
+        i <
+        result.length;
+        i++
+      ) {
+        const prev =
+          result[
+            i
+          ];
+        if (
+          (prev.actualId ??
+            prev.id) ===
+          underlyingId
+        ) {
           seenRecently = true;
           break;
         }
       }
-      if (seenRecently) continue;
+      if (
+        seenRecently
+      )
+        continue;
     }
-    result.push(item);
+    result.push(
+      item,
+    );
   }
   return result;
 }

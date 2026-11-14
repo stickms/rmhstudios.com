@@ -13,7 +13,11 @@
 
 import { create } from 'zustand';
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type ToastType =
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'info';
 
 export interface Toast {
   id: string;
@@ -25,8 +29,14 @@ export interface Toast {
 
 interface ToastStore {
   toasts: Toast[];
-  addToast: (type: ToastType, message: string, duration?: number) => void;
-  dismissToast: (id: string) => void;
+  addToast: (
+    type: ToastType,
+    message: string,
+    duration?: number,
+  ) => void;
+  dismissToast: (
+    id: string,
+  ) => void;
   clearToasts: () => void;
 }
 
@@ -46,67 +56,251 @@ let toastCounter = 0;
  * already left — and a route change left them running against an unmounted
  * tree.
  */
-const timers = new Map<string, ReturnType<typeof setTimeout>[]>();
+const timers =
+  new Map<
+    string,
+    ReturnType<
+      typeof setTimeout
+    >[]
+  >();
 
-function clearTimers(id: string) {
-  timers.get(id)?.forEach(clearTimeout);
-  timers.delete(id);
+function clearTimers(
+  id: string,
+) {
+  timers
+    .get(
+      id,
+    )
+    ?.forEach(
+      clearTimeout,
+    );
+  timers.delete(
+    id,
+  );
 }
 
-function track(id: string, handle: ReturnType<typeof setTimeout>) {
-  const existing = timers.get(id);
-  if (existing) existing.push(handle);
-  else timers.set(id, [handle]);
+function track(
+  id: string,
+  handle: ReturnType<
+    typeof setTimeout
+  >,
+) {
+  const existing =
+    timers.get(
+      id,
+    );
+  if (
+    existing
+  )
+    existing.push(
+      handle,
+    );
+  else
+    timers.set(
+      id,
+      [
+        handle,
+      ],
+    );
 }
 
-export const useToastStore = create<ToastStore>((set, get) => ({
-  toasts: [],
+export const useToastStore =
+  create<ToastStore>(
+    (
+      set,
+      get,
+    ) => ({
+      toasts:
+        [],
 
-  addToast: (type, message, duration = DEFAULT_MS) => {
-    const id = `toast-${++toastCounter}`;
-    set((state) => ({
-      toasts: [...state.toasts.slice(-(MAX_VISIBLE - 1)), { id, type, message, duration }],
-    }));
+      addToast:
+        (
+          type,
+          message,
+          duration = DEFAULT_MS,
+        ) => {
+          const id = `toast-${++toastCounter}`;
+          set(
+            (
+              state,
+            ) => ({
+              toasts:
+                [
+                  ...state.toasts.slice(
+                    -(
+                      MAX_VISIBLE -
+                      1
+                    ),
+                  ),
+                  {
+                    id,
+                    type,
+                    message,
+                    duration,
+                  },
+                ],
+            }),
+          );
 
-    track(
-      id,
-      setTimeout(() => get().dismissToast(id), duration),
-    );
-  },
+          track(
+            id,
+            setTimeout(
+              () =>
+                get().dismissToast(
+                  id,
+                ),
+              duration,
+            ),
+          );
+        },
 
-  dismissToast: (id) => {
-    // Ignore a second dismiss (auto-timer racing a click) so the exit
-    // animation isn't restarted halfway through.
-    const current = get().toasts.find((t) => t.id === id);
-    if (!current || current.exiting) return;
+      dismissToast:
+        (
+          id,
+        ) => {
+          // Ignore a second dismiss (auto-timer racing a click) so the exit
+          // animation isn't restarted halfway through.
+          const current =
+            get().toasts.find(
+              (
+                t,
+              ) =>
+                t.id ===
+                id,
+            );
+          if (
+            !current ||
+            current.exiting
+          )
+            return;
 
-    set((state) => ({
-      toasts: state.toasts.map((t) => (t.id === id ? { ...t, exiting: true } : t)),
-    }));
+          set(
+            (
+              state,
+            ) => ({
+              toasts:
+                state.toasts.map(
+                  (
+                    t,
+                  ) =>
+                    t.id ===
+                    id
+                      ? {
+                          ...t,
+                          exiting: true,
+                        }
+                      : t,
+                ),
+            }),
+          );
 
-    track(
-      id,
-      setTimeout(() => {
-        clearTimers(id);
-        set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
-      }, EXIT_MS),
-    );
-  },
+          track(
+            id,
+            setTimeout(
+              () => {
+                clearTimers(
+                  id,
+                );
+                set(
+                  (
+                    state,
+                  ) => ({
+                    toasts:
+                      state.toasts.filter(
+                        (
+                          t,
+                        ) =>
+                          t.id !==
+                          id,
+                      ),
+                  }),
+                );
+              },
+              EXIT_MS,
+            ),
+          );
+        },
 
-  clearToasts: () => {
-    for (const id of timers.keys()) clearTimers(id);
-    set({ toasts: [] });
-  },
-}));
+      clearToasts:
+        () => {
+          for (const id of timers.keys())
+            clearTimers(
+              id,
+            );
+          set(
+            {
+              toasts:
+                [],
+            },
+          );
+        },
+    }),
+  );
 
 // ─── Convenience helpers ──────────────────────────────────────────────────
 
-export const toast = {
-  success: (msg: string, dur?: number) => useToastStore.getState().addToast('success', msg, dur),
-  error: (msg: string, dur?: number) =>
-    useToastStore.getState().addToast('error', msg, dur ?? ERROR_MS),
-  warning: (msg: string, dur?: number) => useToastStore.getState().addToast('warning', msg, dur),
-  info: (msg: string, dur?: number) => useToastStore.getState().addToast('info', msg, dur),
-  dismiss: (id: string) => useToastStore.getState().dismissToast(id),
-  clear: () => useToastStore.getState().clearToasts(),
-};
+export const toast =
+  {
+    success:
+      (
+        msg: string,
+        dur?: number,
+      ) =>
+        useToastStore
+          .getState()
+          .addToast(
+            'success',
+            msg,
+            dur,
+          ),
+    error:
+      (
+        msg: string,
+        dur?: number,
+      ) =>
+        useToastStore
+          .getState()
+          .addToast(
+            'error',
+            msg,
+            dur ??
+              ERROR_MS,
+          ),
+    warning:
+      (
+        msg: string,
+        dur?: number,
+      ) =>
+        useToastStore
+          .getState()
+          .addToast(
+            'warning',
+            msg,
+            dur,
+          ),
+    info: (
+      msg: string,
+      dur?: number,
+    ) =>
+      useToastStore
+        .getState()
+        .addToast(
+          'info',
+          msg,
+          dur,
+        ),
+    dismiss:
+      (
+        id: string,
+      ) =>
+        useToastStore
+          .getState()
+          .dismissToast(
+            id,
+          ),
+    clear:
+      () =>
+        useToastStore
+          .getState()
+          .clearToasts(),
+  };

@@ -2,5 +2,16 @@
 import { listFeedsApi } from '@/lib/discovery/discovery.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const feedsQuery = () =>
-  contractQuery(['feeds', 'mine'], listFeedsApi, undefined, { staleTime: 5_000 });
+export const feedsQuery =
+  () =>
+    contractQuery(
+      [
+        'feeds',
+        'mine',
+      ],
+      listFeedsApi,
+      undefined,
+      {
+        staleTime: 5_000,
+      },
+    );

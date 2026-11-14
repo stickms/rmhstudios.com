@@ -1,4 +1,7 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import {
+  createHash,
+  timingSafeEqual,
+} from 'node:crypto';
 
 /**
  * Constant-time string comparison for secrets / bearer tokens.
@@ -10,10 +13,30 @@ import { createHash, timingSafeEqual } from "node:crypto";
  * (and the equal-length requirement / length leak of comparing the raw
  * strings). Server-only (uses node:crypto).
  */
-export function timingSafeStringEqual(a: string, b: string): boolean {
-  const ha = createHash("sha256").update(a).digest();
-  const hb = createHash("sha256").update(b).digest();
-  return timingSafeEqual(ha, hb);
+export function timingSafeStringEqual(
+  a: string,
+  b: string,
+): boolean {
+  const ha =
+    createHash(
+      'sha256',
+    )
+      .update(
+        a,
+      )
+      .digest();
+  const hb =
+    createHash(
+      'sha256',
+    )
+      .update(
+        b,
+      )
+      .digest();
+  return timingSafeEqual(
+    ha,
+    hb,
+  );
 }
 
 /**
@@ -23,10 +46,41 @@ export function timingSafeStringEqual(a: string, b: string): boolean {
  *  - otherwise -> ok
  */
 export function authorizeInternalRequest(
-  provided: string | null,
-  configured: string | undefined,
-): { ok: true } | { ok: false; status: 401 | 503 } {
-  if (!configured) return { ok: false, status: 503 };
-  if (!provided || !timingSafeStringEqual(provided, configured)) return { ok: false, status: 401 };
-  return { ok: true };
+  provided:
+    | string
+    | null,
+  configured:
+    | string
+    | undefined,
+):
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      status:
+        | 401
+        | 503;
+    } {
+  if (
+    !configured
+  )
+    return {
+      ok: false,
+      status: 503,
+    };
+  if (
+    !provided ||
+    !timingSafeStringEqual(
+      provided,
+      configured,
+    )
+  )
+    return {
+      ok: false,
+      status: 401,
+    };
+  return {
+    ok: true,
+  };
 }

@@ -24,14 +24,25 @@ export const ROAD_STEP_TIME = 0.65;
 
 /* ── Zones ────────────────────────────────────────────────────────────────────────────────────────────────── */
 
-export const ZONE_IDS = ['homes', 'market', 'workshop'] as const;
-export type ZoneId = (typeof ZONE_IDS)[number];
+export const ZONE_IDS =
+  [
+    'homes',
+    'market',
+    'workshop',
+  ] as const;
+export type ZoneId =
+  (typeof ZONE_IDS)[number];
 /** The most levels a lot grows to (1 = a plain lot, 3 = dense). */
 export const MAX_LOT_LEVEL = 3;
 /** The biggest area one `zone` / `unzone` brush stroke may cover. */
 export const ZONE_BRUSH_MAX = 256;
 
-type PerLevel = readonly [number, number, number];
+type PerLevel =
+  readonly [
+    number,
+    number,
+    number,
+  ];
 
 export interface ZoneDef {
   name: string;
@@ -49,56 +60,183 @@ export interface ZoneDef {
   power: PerLevel;
   water: PerLevel;
   /** Land value a lot needs to reach level 2 and level 3. */
-  landValueFor: readonly [number, number];
+  landValueFor: readonly [
+    number,
+    number,
+  ];
 }
 
-export const ZONES: Record<ZoneId, ZoneDef> = {
-  homes: {
-    name: 'Homes',
-    cost: 4,
-    housing: [3, 6, 10],
-    jobs: [0, 0, 0],
-    serves: [0, 0, 0],
-    trade: [0, 0, 0],
-    power: [1, 2, 3],
-    water: [1, 2, 3],
-    landValueFor: [46, 64],
-  },
-  market: {
-    name: 'Shops',
-    cost: 6,
-    housing: [0, 0, 0],
-    jobs: [2, 4, 7],
-    serves: [6, 14, 26],
-    trade: [3, 8, 16],
-    power: [1, 2, 4],
-    water: [1, 1, 2],
-    landValueFor: [44, 62],
-  },
-  workshop: {
-    name: 'Workshops',
-    cost: 8,
-    housing: [0, 0, 0],
-    jobs: [3, 6, 10],
-    serves: [0, 0, 0],
-    trade: [4, 9, 18],
-    power: [2, 4, 6],
-    water: [1, 2, 3],
-    landValueFor: [30, 48],
-  },
-};
+export const ZONES: Record<
+  ZoneId,
+  ZoneDef
+> =
+  {
+    homes:
+      {
+        name: 'Homes',
+        cost: 4,
+        housing:
+          [
+            3,
+            6,
+            10,
+          ],
+        jobs: [
+          0,
+          0,
+          0,
+        ],
+        serves:
+          [
+            0,
+            0,
+            0,
+          ],
+        trade:
+          [
+            0,
+            0,
+            0,
+          ],
+        power:
+          [
+            1,
+            2,
+            3,
+          ],
+        water:
+          [
+            1,
+            2,
+            3,
+          ],
+        landValueFor:
+          [
+            46,
+            64,
+          ],
+      },
+    market:
+      {
+        name: 'Shops',
+        cost: 6,
+        housing:
+          [
+            0,
+            0,
+            0,
+          ],
+        jobs: [
+          2,
+          4,
+          7,
+        ],
+        serves:
+          [
+            6,
+            14,
+            26,
+          ],
+        trade:
+          [
+            3,
+            8,
+            16,
+          ],
+        power:
+          [
+            1,
+            2,
+            4,
+          ],
+        water:
+          [
+            1,
+            1,
+            2,
+          ],
+        landValueFor:
+          [
+            44,
+            62,
+          ],
+      },
+    workshop:
+      {
+        name: 'Workshops',
+        cost: 8,
+        housing:
+          [
+            0,
+            0,
+            0,
+          ],
+        jobs: [
+          3,
+          6,
+          10,
+        ],
+        serves:
+          [
+            0,
+            0,
+            0,
+          ],
+        trade:
+          [
+            4,
+            9,
+            18,
+          ],
+        power:
+          [
+            2,
+            4,
+            6,
+          ],
+        water:
+          [
+            1,
+            2,
+            3,
+          ],
+        landValueFor:
+          [
+            30,
+            48,
+          ],
+      },
+  };
 
-export const isZoneId = (v: unknown): v is ZoneId =>
-  typeof v === 'string' && (ZONE_IDS as readonly string[]).includes(v);
+export const isZoneId =
+  (
+    v: unknown,
+  ): v is ZoneId =>
+    typeof v ===
+      'string' &&
+    (
+      ZONE_IDS as readonly string[]
+    ).includes(
+      v,
+    );
 
 /* ── Utilities ────────────────────────────────────────────────────────────────────────────────────────────── */
 
-export const UTILITY_IDS = ['well', 'windmill', 'pump', 'waterwheel'] as const;
-export type UtilityId = (typeof UTILITY_IDS)[number];
+export const UTILITY_IDS =
+  [
+    'well',
+    'windmill',
+    'pump',
+    'waterwheel',
+  ] as const;
+export type UtilityId =
+  (typeof UTILITY_IDS)[number];
 
 export interface UtilityDef {
   name: string;
-  supplies: 'power' | 'water';
+  supplies:
+    | 'power'
+    | 'water';
   /** Units supplied per day-tick (a lot draws `ZoneDef.power` / `.water` units). */
   supply: number;
   /** How many road steps along the network its supply reaches. */
@@ -109,47 +247,66 @@ export interface UtilityDef {
   needsShore: boolean;
 }
 
-export const UTILITIES: Record<UtilityId, UtilityDef> = {
-  well: {
-    name: 'Well',
-    supplies: 'water',
-    supply: 14,
-    reach: 8,
-    cost: 60,
-    upkeep: 0.5,
-    needsShore: false,
-  },
-  windmill: {
-    name: 'Windmill',
-    supplies: 'power',
-    supply: 12,
-    reach: 10,
-    cost: 110,
-    upkeep: 1,
-    needsShore: false,
-  },
-  pump: {
-    name: 'Pumping station',
-    supplies: 'water',
-    supply: 48,
-    reach: 14,
-    cost: 240,
-    upkeep: 2,
-    needsShore: true,
-  },
-  waterwheel: {
-    name: 'Water wheel',
-    supplies: 'power',
-    supply: 36,
-    reach: 14,
-    cost: 320,
-    upkeep: 2,
-    needsShore: true,
-  },
-};
+export const UTILITIES: Record<
+  UtilityId,
+  UtilityDef
+> =
+  {
+    well: {
+      name: 'Well',
+      supplies:
+        'water',
+      supply: 14,
+      reach: 8,
+      cost: 60,
+      upkeep: 0.5,
+      needsShore: false,
+    },
+    windmill:
+      {
+        name: 'Windmill',
+        supplies:
+          'power',
+        supply: 12,
+        reach: 10,
+        cost: 110,
+        upkeep: 1,
+        needsShore: false,
+      },
+    pump: {
+      name: 'Pumping station',
+      supplies:
+        'water',
+      supply: 48,
+      reach: 14,
+      cost: 240,
+      upkeep: 2,
+      needsShore: true,
+    },
+    waterwheel:
+      {
+        name: 'Water wheel',
+        supplies:
+          'power',
+        supply: 36,
+        reach: 14,
+        cost: 320,
+        upkeep: 2,
+        needsShore: true,
+      },
+  };
 
-export const isUtilityId = (v: unknown): v is UtilityId =>
-  typeof v === 'string' && (UTILITY_IDS as readonly string[]).includes(v);
+export const isUtilityId =
+  (
+    v: unknown,
+  ): v is UtilityId =>
+    typeof v ===
+      'string' &&
+    (
+      UTILITY_IDS as readonly string[]
+    ).includes(
+      v,
+    );
 
 /** A harvester (the machine) draws this much power; when it is supplied it works twice as often. */
 export const HARVESTER_POWER = 2;
@@ -199,16 +356,40 @@ export const TAX_HAPPINESS_PER_POINT = 0.8;
 /** Desirability (0..1, what residents weigh when deciding to move in) lost per point above the default, gained per point below. */
 export const TAX_DESIRABILITY_PER_POINT = 0.03;
 
-export const isTaxRate = (v: unknown): v is number =>
-  typeof v === 'number' && Number.isInteger(v) && v >= MIN_TAX_RATE && v <= MAX_TAX_RATE;
+export const isTaxRate =
+  (
+    v: unknown,
+  ): v is number =>
+    typeof v ===
+      'number' &&
+    Number.isInteger(
+      v,
+    ) &&
+    v >=
+      MIN_TAX_RATE &&
+    v <=
+      MAX_TAX_RATE;
 
 /** Daily taxes scale with the rate: 1 at the default. */
-export const taxIncomeFactor = (rate: number): number => rate / DEFAULT_TAX_RATE;
+export const taxIncomeFactor =
+  (
+    rate: number,
+  ): number =>
+    rate /
+    DEFAULT_TAX_RATE;
 
 /* ── Town events ──────────────────────────────────────────────────────────────────────────────────────────── */
 
-export const CITY_EVENT_IDS = ['festival', 'tradeFair', 'harvest', 'storm', 'drySpell'] as const;
-export type CityEventId = (typeof CITY_EVENT_IDS)[number];
+export const CITY_EVENT_IDS =
+  [
+    'festival',
+    'tradeFair',
+    'harvest',
+    'storm',
+    'drySpell',
+  ] as const;
+export type CityEventId =
+  (typeof CITY_EVENT_IDS)[number];
 
 export interface CityEventDef {
   name: string;
@@ -225,21 +406,87 @@ export interface CityEventDef {
   trade: number;
   tax: number;
   /** A cut only happens to a town that has something to cut. */
-  needs: 'power' | 'water' | null;
+  needs:
+    | 'power'
+    | 'water'
+    | null;
 }
 
-const NEUTRAL = { happiness: 0, power: 1, water: 1, trade: 1, tax: 1, needs: null } as const;
+const NEUTRAL =
+  {
+    happiness: 0,
+    power: 1,
+    water: 1,
+    trade: 1,
+    tax: 1,
+    needs:
+      null,
+  } as const;
 
-export const CITY_EVENTS: Record<CityEventId, CityEventDef> = {
-  festival: { ...NEUTRAL, name: 'Festival', days: 3, weight: 3, happiness: 8, trade: 1.15 },
-  tradeFair: { ...NEUTRAL, name: 'Market fair', days: 2, weight: 3, trade: 1.5 },
-  harvest: { ...NEUTRAL, name: 'Harvest windfall', days: 2, weight: 3, happiness: 2, tax: 1.35 },
-  storm: { ...NEUTRAL, name: 'Storm', days: 2, weight: 2, power: 0.6, needs: 'power' },
-  drySpell: { ...NEUTRAL, name: 'Dry spell', days: 3, weight: 2, water: 0.65, needs: 'water' },
-};
+export const CITY_EVENTS: Record<
+  CityEventId,
+  CityEventDef
+> =
+  {
+    festival:
+      {
+        ...NEUTRAL,
+        name: 'Festival',
+        days: 3,
+        weight: 3,
+        happiness: 8,
+        trade: 1.15,
+      },
+    tradeFair:
+      {
+        ...NEUTRAL,
+        name: 'Market fair',
+        days: 2,
+        weight: 3,
+        trade: 1.5,
+      },
+    harvest:
+      {
+        ...NEUTRAL,
+        name: 'Harvest windfall',
+        days: 2,
+        weight: 3,
+        happiness: 2,
+        tax: 1.35,
+      },
+    storm:
+      {
+        ...NEUTRAL,
+        name: 'Storm',
+        days: 2,
+        weight: 2,
+        power: 0.6,
+        needs:
+          'power',
+      },
+    drySpell:
+      {
+        ...NEUTRAL,
+        name: 'Dry spell',
+        days: 3,
+        weight: 2,
+        water: 0.65,
+        needs:
+          'water',
+      },
+  };
 
-export const isCityEventId = (v: unknown): v is CityEventId =>
-  typeof v === 'string' && (CITY_EVENT_IDS as readonly string[]).includes(v);
+export const isCityEventId =
+  (
+    v: unknown,
+  ): v is CityEventId =>
+    typeof v ===
+      'string' &&
+    (
+      CITY_EVENT_IDS as readonly string[]
+    ).includes(
+      v,
+    );
 
 /** The town is only big enough to be noticed (and to have anything to lose) from this many residents. */
 export const EVENT_MIN_POPULATION = 20;
@@ -248,8 +495,10 @@ export const EVENT_MIN_DAY = 3;
 /** Chance each town day (when nothing is happening and the town is big enough) that an event begins. With the events' own length that is roughly one every nine days. */
 export const EVENT_CHANCE = 0.15;
 /** Salts for the events' hash draws (negative, so they never match a tile index used by lot growth). */
-export const EVENT_SALT_START = -1;
-export const EVENT_SALT_PICK = -2;
+export const EVENT_SALT_START =
+  -1;
+export const EVENT_SALT_PICK =
+  -2;
 
 /* ── Time ─────────────────────────────────────────────────────────────────────────────────────────────────── */
 
@@ -269,24 +518,32 @@ export const SPROUT_DEMAND_FLOOR = 0.12;
 /* ── Milestones ───────────────────────────────────────────────────────────────────────────────────────────── */
 
 /** What a milestone can measure; `cityMetrics()` in world/city.ts produces each one. */
-export const METRIC_IDS = [
-  'population',
-  'powerCover',
-  'waterCover',
-  'happiness',
-  'markets',
-  'workshops',
-  'parks',
-  'jobs',
-  'level3',
-  'net',
-  'roads',
-] as const;
-export type MetricId = (typeof METRIC_IDS)[number];
+export const METRIC_IDS =
+  [
+    'population',
+    'powerCover',
+    'waterCover',
+    'happiness',
+    'markets',
+    'workshops',
+    'parks',
+    'jobs',
+    'level3',
+    'net',
+    'roads',
+  ] as const;
+export type MetricId =
+  (typeof METRIC_IDS)[number];
 
 /** Things a milestone opens up. Anything not listed here is available from the start. */
-export const UNLOCK_IDS = ['zone:workshop', 'utility:pump', 'utility:waterwheel'] as const;
-export type UnlockId = (typeof UNLOCK_IDS)[number];
+export const UNLOCK_IDS =
+  [
+    'zone:workshop',
+    'utility:pump',
+    'utility:waterwheel',
+  ] as const;
+export type UnlockId =
+  (typeof UNLOCK_IDS)[number];
 
 export interface MilestoneDef {
   id: string;
@@ -294,80 +551,186 @@ export interface MilestoneDef {
   /** Short literal goal text. */
   goal: string;
   /** Every requirement must hold at once (a milestone then stays reached for good). */
-  needs: readonly { metric: MetricId; min: number }[];
+  needs: readonly {
+    metric: MetricId;
+    min: number;
+  }[];
   reward: number;
   rewardSkin?: SkinId;
   unlocks: readonly UnlockId[];
 }
 
-export const MILESTONES: readonly MilestoneDef[] = [
-  {
-    id: 'hamlet',
-    name: 'Hamlet',
-    goal: '16 residents, light and water for most of them, and a shop.',
-    needs: [
-      { metric: 'population', min: 16 },
-      { metric: 'powerCover', min: 70 },
-      { metric: 'waterCover', min: 70 },
-      { metric: 'markets', min: 1 },
-    ],
-    reward: 250,
-    unlocks: ['zone:workshop', 'utility:pump'],
-  },
-  {
-    id: 'village',
-    name: 'Village',
-    goal: '30 residents, 12 jobs, and neighbours who are content.',
-    needs: [
-      { metric: 'population', min: 30 },
-      { metric: 'jobs', min: 12 },
-      { metric: 'happiness', min: 55 },
-    ],
-    reward: 600,
-    unlocks: ['utility:waterwheel'],
-  },
-  {
-    id: 'commons',
-    name: 'Green commons',
-    goal: '3 parks and a happy village of 40.',
-    needs: [
-      { metric: 'population', min: 40 },
-      { metric: 'parks', min: 3 },
-      { metric: 'happiness', min: 62 },
-    ],
-    reward: 500,
-    rewardSkin: 'worker',
-    unlocks: [],
-  },
-  {
-    id: 'town',
-    name: 'Town',
-    goal: '80 residents, 3 dense lots, and the books in the black.',
-    needs: [
-      { metric: 'population', min: 80 },
-      { metric: 'level3', min: 3 },
-      { metric: 'net', min: 20 },
-    ],
-    reward: 1500,
-    rewardSkin: 'barney',
-    unlocks: [],
-  },
-  {
-    id: 'city',
-    name: 'City',
-    goal: '200 residents, 3 workshops, and the lights on everywhere.',
-    needs: [
-      { metric: 'population', min: 200 },
-      { metric: 'workshops', min: 3 },
-      { metric: 'powerCover', min: 90 },
-      { metric: 'waterCover', min: 90 },
-      { metric: 'happiness', min: 65 },
-    ],
-    reward: 4000,
-    unlocks: [],
-  },
-];
+export const MILESTONES: readonly MilestoneDef[] =
+  [
+    {
+      id: 'hamlet',
+      name: 'Hamlet',
+      goal: '16 residents, light and water for most of them, and a shop.',
+      needs:
+        [
+          {
+            metric:
+              'population',
+            min: 16,
+          },
+          {
+            metric:
+              'powerCover',
+            min: 70,
+          },
+          {
+            metric:
+              'waterCover',
+            min: 70,
+          },
+          {
+            metric:
+              'markets',
+            min: 1,
+          },
+        ],
+      reward: 250,
+      unlocks:
+        [
+          'zone:workshop',
+          'utility:pump',
+        ],
+    },
+    {
+      id: 'village',
+      name: 'Village',
+      goal: '30 residents, 12 jobs, and neighbours who are content.',
+      needs:
+        [
+          {
+            metric:
+              'population',
+            min: 30,
+          },
+          {
+            metric:
+              'jobs',
+            min: 12,
+          },
+          {
+            metric:
+              'happiness',
+            min: 55,
+          },
+        ],
+      reward: 600,
+      unlocks:
+        [
+          'utility:waterwheel',
+        ],
+    },
+    {
+      id: 'commons',
+      name: 'Green commons',
+      goal: '3 parks and a happy village of 40.',
+      needs:
+        [
+          {
+            metric:
+              'population',
+            min: 40,
+          },
+          {
+            metric:
+              'parks',
+            min: 3,
+          },
+          {
+            metric:
+              'happiness',
+            min: 62,
+          },
+        ],
+      reward: 500,
+      rewardSkin:
+        'worker',
+      unlocks:
+        [],
+    },
+    {
+      id: 'town',
+      name: 'Town',
+      goal: '80 residents, 3 dense lots, and the books in the black.',
+      needs:
+        [
+          {
+            metric:
+              'population',
+            min: 80,
+          },
+          {
+            metric:
+              'level3',
+            min: 3,
+          },
+          {
+            metric:
+              'net',
+            min: 20,
+          },
+        ],
+      reward: 1500,
+      rewardSkin:
+        'barney',
+      unlocks:
+        [],
+    },
+    {
+      id: 'city',
+      name: 'City',
+      goal: '200 residents, 3 workshops, and the lights on everywhere.',
+      needs:
+        [
+          {
+            metric:
+              'population',
+            min: 200,
+          },
+          {
+            metric:
+              'workshops',
+            min: 3,
+          },
+          {
+            metric:
+              'powerCover',
+            min: 90,
+          },
+          {
+            metric:
+              'waterCover',
+            min: 90,
+          },
+          {
+            metric:
+              'happiness',
+            min: 65,
+          },
+        ],
+      reward: 4000,
+      unlocks:
+        [],
+    },
+  ];
 
-export const MILESTONE_IDS = MILESTONES.map((m) => m.id);
-export const isMilestoneId = (v: unknown): v is string =>
-  typeof v === 'string' && MILESTONE_IDS.includes(v);
+export const MILESTONE_IDS =
+  MILESTONES.map(
+    (
+      m,
+    ) =>
+      m.id,
+  );
+export const isMilestoneId =
+  (
+    v: unknown,
+  ): v is string =>
+    typeof v ===
+      'string' &&
+    MILESTONE_IDS.includes(
+      v,
+    );

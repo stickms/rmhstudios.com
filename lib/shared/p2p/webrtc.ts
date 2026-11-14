@@ -25,8 +25,14 @@
  * relayPair are environment-agnostic.
  */
 
-import type { ChannelLike, ChannelPair } from './channel';
-import { hasTurn, type IceServerConfig } from './ice-core';
+import type {
+  ChannelLike,
+  ChannelPair,
+} from './channel';
+import {
+  hasTurn,
+  type IceServerConfig,
+} from './ice-core';
 import { encodeRelay } from './relay';
 
 export type { ChannelPair } from './channel';
@@ -47,15 +53,23 @@ export interface P2pTestHooks {
 }
 
 export interface SessionDescriptionLike {
-  type: 'offer' | 'answer';
+  type:
+    | 'offer'
+    | 'answer';
   sdp: string;
 }
 
 export interface IceCandidateLike {
   candidate: string;
-  sdpMid?: string | null;
-  sdpMLineIndex?: number | null;
-  usernameFragment?: string | null;
+  sdpMid?:
+    | string
+    | null;
+  sdpMLineIndex?:
+    | number
+    | null;
+  usernameFragment?:
+    | string
+    | null;
 }
 
 /** One outgoing signal: exactly one of a description or a candidate (null = end of candidates). */
@@ -73,63 +87,158 @@ const EARLY_MESSAGES_MAX = 512;
  * still labelling the connection — are held and handed over when one is.
  */
 export class DataChannelAdapter implements ChannelLike {
-  onopen: (() => void) | null = null;
-  onclose: (() => void) | null = null;
-  onbufferedamountlow: (() => void) | null = null;
-  private listener: ((data: Uint8Array) => void) | null = null;
-  private early: Uint8Array[] = [];
+  onopen:
+    | (() => void)
+    | null =
+    null;
+  onclose:
+    | (() => void)
+    | null =
+    null;
+  onbufferedamountlow:
+    | (() => void)
+    | null =
+    null;
+  private listener:
+    | ((
+        data: Uint8Array,
+      ) => void)
+    | null =
+    null;
+  private early: Uint8Array[] =
+    [];
   private draining = false;
 
-  get onmessage(): ((data: Uint8Array) => void) | null {
-    return this.listener;
+  get onmessage():
+    | ((
+        data: Uint8Array,
+      ) => void)
+    | null {
+    return this
+      .listener;
   }
 
-  set onmessage(fn: ((data: Uint8Array) => void) | null) {
-    this.listener = fn;
-    if (!fn || this.early.length === 0 || this.draining) return;
+  set onmessage(
+    fn:
+      | ((
+          data: Uint8Array,
+        ) => void)
+      | null,
+  ) {
+    this.listener =
+      fn;
+    if (
+      !fn ||
+      this
+        .early
+        .length ===
+        0 ||
+      this
+        .draining
+    )
+      return;
     // Handed over once whoever set the listener has finished constructing (in order: anything that
     // arrives meanwhile queues behind the held messages).
     this.draining = true;
-    queueMicrotask(() => {
-      this.draining = false;
-      const held = this.early;
-      this.early = [];
-      for (const m of held) this.listener?.(m);
-    });
+    queueMicrotask(
+      () => {
+        this.draining = false;
+        const held =
+          this
+            .early;
+        this.early =
+          [];
+        for (const m of held)
+          this.listener?.(
+            m,
+          );
+      },
+    );
   }
 
-  constructor(private readonly dc: RTCDataChannel) {
-    dc.binaryType = 'arraybuffer';
-    dc.onmessage = (e) => {
-      const d = e.data;
-      if (!(d instanceof ArrayBuffer)) return;
-      const m = new Uint8Array(d);
-      if (this.listener && !this.draining) this.listener(m);
-      else if (this.early.length < EARLY_MESSAGES_MAX) this.early.push(m);
-    };
-    dc.onopen = () => this.onopen?.();
-    dc.onclose = () => this.onclose?.();
-    dc.onbufferedamountlow = () => this.onbufferedamountlow?.();
+  constructor(
+    private readonly dc: RTCDataChannel,
+  ) {
+    dc.binaryType =
+      'arraybuffer';
+    dc.onmessage =
+      (
+        e,
+      ) => {
+        const d =
+          e.data;
+        if (
+          !(
+            d instanceof
+            ArrayBuffer
+          )
+        )
+          return;
+        const m =
+          new Uint8Array(
+            d,
+          );
+        if (
+          this
+            .listener &&
+          !this
+            .draining
+        )
+          this.listener(
+            m,
+          );
+        else if (
+          this
+            .early
+            .length <
+          EARLY_MESSAGES_MAX
+        )
+          this.early.push(
+            m,
+          );
+      };
+    dc.onopen =
+      () =>
+        this.onopen?.();
+    dc.onclose =
+      () =>
+        this.onclose?.();
+    dc.onbufferedamountlow =
+      () =>
+        this.onbufferedamountlow?.();
   }
 
   get readyState(): ChannelLike['readyState'] {
-    return this.dc.readyState;
+    return this
+      .dc
+      .readyState;
   }
 
   get bufferedAmount(): number {
-    return this.dc.bufferedAmount;
+    return this
+      .dc
+      .bufferedAmount;
   }
 
   get bufferedAmountLowThreshold(): number {
-    return this.dc.bufferedAmountLowThreshold;
+    return this
+      .dc
+      .bufferedAmountLowThreshold;
   }
 
-  set bufferedAmountLowThreshold(v: number) {
-    this.dc.bufferedAmountLowThreshold = v;
+  set bufferedAmountLowThreshold(
+    v: number,
+  ) {
+    this.dc.bufferedAmountLowThreshold =
+      v;
   }
 
-  send(data: Uint8Array): void {
-    this.dc.send(data as Uint8Array<ArrayBuffer>);
+  send(
+    data: Uint8Array,
+  ): void {
+    this.dc.send(
+      data as Uint8Array<ArrayBuffer>,
+    );
   }
 
   close(): void {
@@ -144,38 +253,96 @@ export class DataChannelAdapter implements ChannelLike {
  * socket.io's ordered stream; unreliable ones may be dropped by the hub.
  */
 export class RelayChannel implements ChannelLike {
-  readyState: ChannelLike['readyState'] = 'connecting';
+  readyState: ChannelLike['readyState'] =
+    'connecting';
   readonly bufferedAmount = 0;
   bufferedAmountLowThreshold = 0;
-  onmessage: ((data: Uint8Array) => void) | null = null;
-  onopen: (() => void) | null = null;
-  onclose: (() => void) | null = null;
-  onbufferedamountlow: (() => void) | null = null;
+  onmessage:
+    | ((
+        data: Uint8Array,
+      ) => void)
+    | null =
+    null;
+  onopen:
+    | (() => void)
+    | null =
+    null;
+  onclose:
+    | (() => void)
+    | null =
+    null;
+  onbufferedamountlow:
+    | (() => void)
+    | null =
+    null;
 
   constructor(
     private readonly slot: number,
     private readonly reliable: boolean,
-    private readonly sendRelay: (packet: Uint8Array, reliable: boolean) => boolean,
+    private readonly sendRelay: (
+      packet: Uint8Array,
+      reliable: boolean,
+    ) => boolean,
   ) {}
 
   open(): void {
-    if (this.readyState !== 'connecting') return;
-    this.readyState = 'open';
+    if (
+      this
+        .readyState !==
+      'connecting'
+    )
+      return;
+    this.readyState =
+      'open';
     this.onopen?.();
   }
 
-  send(data: Uint8Array): void {
-    if (this.readyState !== 'open') throw new Error('relay channel is not open');
-    this.sendRelay(encodeRelay(this.slot, this.reliable, data), this.reliable);
+  send(
+    data: Uint8Array,
+  ): void {
+    if (
+      this
+        .readyState !==
+      'open'
+    )
+      throw new Error(
+        'relay channel is not open',
+      );
+    this.sendRelay(
+      encodeRelay(
+        this
+          .slot,
+        this
+          .reliable,
+        data,
+      ),
+      this
+        .reliable,
+    );
   }
 
-  deliver(data: Uint8Array): void {
-    if (this.readyState === 'open') this.onmessage?.(data);
+  deliver(
+    data: Uint8Array,
+  ): void {
+    if (
+      this
+        .readyState ===
+      'open'
+    )
+      this.onmessage?.(
+        data,
+      );
   }
 
   close(): void {
-    if (this.readyState === 'closed') return;
-    this.readyState = 'closed';
+    if (
+      this
+        .readyState ===
+      'closed'
+    )
+      return;
+    this.readyState =
+      'closed';
     this.onclose?.();
   }
 }
@@ -183,26 +350,58 @@ export class RelayChannel implements ChannelLike {
 export interface RelayPair extends ChannelPair {
   unreliable: RelayChannel;
   reliable: RelayChannel;
-  deliver(reliable: boolean, payload: Uint8Array): void;
+  deliver(
+    reliable: boolean,
+    payload: Uint8Array,
+  ): void;
   close(): void;
 }
 
-export function relayPair(slot: number, sendRelay: (packet: Uint8Array, reliable: boolean) => boolean): RelayPair {
-  const unreliable = new RelayChannel(slot, false, sendRelay);
-  const reliable = new RelayChannel(slot, true, sendRelay);
+export function relayPair(
+  slot: number,
+  sendRelay: (
+    packet: Uint8Array,
+    reliable: boolean,
+  ) => boolean,
+): RelayPair {
+  const unreliable =
+    new RelayChannel(
+      slot,
+      false,
+      sendRelay,
+    );
+  const reliable =
+    new RelayChannel(
+      slot,
+      true,
+      sendRelay,
+    );
   return {
     unreliable,
     reliable,
-    deliver: (isReliable, payload) => (isReliable ? reliable : unreliable).deliver(payload),
-    close: () => {
-      unreliable.close();
-      reliable.close();
-    },
+    deliver:
+      (
+        isReliable,
+        payload,
+      ) =>
+        (isReliable
+          ? reliable
+          : unreliable
+        ).deliver(
+          payload,
+        ),
+    close:
+      () => {
+        unreliable.close();
+        reliable.close();
+      },
   };
 }
 
 export interface DirectConnectionOptions {
-  role: 'host' | 'member';
+  role:
+    | 'host'
+    | 'member';
   /** The resolved ICE servers (hub list, env or defaults: `./ice.ts`). */
   iceServers: IceServerConfig[];
   /** This app's test hooks (blockCandidates, relayOnly, directTimeoutMs); default none. */
@@ -213,11 +412,22 @@ export interface DirectConnectionOptions {
    */
   endOfCandidates?: boolean;
   /** Sends one signal to the other side (through the hub). */
-  signal: (s: SignalOut) => void;
+  signal: (
+    s: SignalOut,
+  ) => void;
   /** Both channels open: hand them to a link. `turn` when a TURN server carries the pair. */
-  onChannels: (pair: ChannelPair, kind: 'direct' | 'turn') => void;
+  onChannels: (
+    pair: ChannelPair,
+    kind:
+      | 'direct'
+      | 'turn',
+  ) => void;
   /** No direct or TURN path in time (or the connection failed): ask for the hub relay. */
-  onFailed: (why: 'timeout' | 'failed') => void;
+  onFailed: (
+    why:
+      | 'timeout'
+      | 'failed',
+  ) => void;
 }
 
 /** The direct WebRTC path for one host ↔ member pair. */
@@ -225,134 +435,432 @@ export class DirectConnection {
   private readonly pc: RTCPeerConnection;
   private readonly u: DataChannelAdapter;
   private readonly r: DataChannelAdapter;
-  private readonly pending: IceCandidateLike[] = [];
+  private readonly pending: IceCandidateLike[] =
+    [];
   private remoteSet = false;
   private done = false;
-  private readonly timer: ReturnType<typeof setTimeout>;
+  private readonly timer: ReturnType<
+    typeof setTimeout
+  >;
   private readonly blockCandidates: boolean;
 
-  constructor(private readonly opts: DirectConnectionOptions) {
-    const hooks = opts.hooks ?? {};
-    this.blockCandidates = hooks.blockCandidates === true;
-    const servers = opts.iceServers;
-    const endOfCandidates = opts.endOfCandidates !== false;
-    this.pc = new RTCPeerConnection({
-      iceServers: servers as RTCIceServer[],
-      iceTransportPolicy: hooks.relayOnly ? 'relay' : 'all',
-    });
-    this.u = new DataChannelAdapter(this.pc.createDataChannel('unreliable', { ordered: false, maxRetransmits: 0, negotiated: true, id: 0 }));
-    this.r = new DataChannelAdapter(this.pc.createDataChannel('reliable', { ordered: true, negotiated: true, id: 1 }));
+  constructor(
+    private readonly opts: DirectConnectionOptions,
+  ) {
+    const hooks =
+      opts.hooks ??
+      {};
+    this.blockCandidates =
+      hooks.blockCandidates ===
+      true;
+    const servers =
+      opts.iceServers;
+    const endOfCandidates =
+      opts.endOfCandidates !==
+      false;
+    this.pc =
+      new RTCPeerConnection(
+        {
+          iceServers:
+            servers as RTCIceServer[],
+          iceTransportPolicy:
+            hooks.relayOnly
+              ? 'relay'
+              : 'all',
+        },
+      );
+    this.u =
+      new DataChannelAdapter(
+        this.pc.createDataChannel(
+          'unreliable',
+          {
+            ordered: false,
+            maxRetransmits: 0,
+            negotiated: true,
+            id: 0,
+          },
+        ),
+      );
+    this.r =
+      new DataChannelAdapter(
+        this.pc.createDataChannel(
+          'reliable',
+          {
+            ordered: true,
+            negotiated: true,
+            id: 1,
+          },
+        ),
+      );
     let open = 0;
-    const onOpen = () => {
-      open++;
-      if (open === 2 && !this.done) {
-        this.done = true;
-        clearTimeout(this.timer);
-        // The label (Direct / TURN) from the selected pair; the stats answer within a frame or two.
-        const pair = { unreliable: this.u, reliable: this.r };
-        void Promise.race([this.candidateType(), new Promise<null>((r) => setTimeout(() => r(null), 500))]).then((type) =>
-          opts.onChannels(pair, type === 'relay' ? 'turn' : 'direct'),
+    const onOpen =
+      () => {
+        open++;
+        if (
+          open ===
+            2 &&
+          !this
+            .done
+        ) {
+          this.done = true;
+          clearTimeout(
+            this
+              .timer,
+          );
+          // The label (Direct / TURN) from the selected pair; the stats answer within a frame or two.
+          const pair =
+            {
+              unreliable:
+                this
+                  .u,
+              reliable:
+                this
+                  .r,
+            };
+          void Promise.race(
+            [
+              this.candidateType(),
+              new Promise<null>(
+                (
+                  r,
+                ) =>
+                  setTimeout(
+                    () =>
+                      r(
+                        null,
+                      ),
+                    500,
+                  ),
+              ),
+            ],
+          ).then(
+            (
+              type,
+            ) =>
+              opts.onChannels(
+                pair,
+                type ===
+                  'relay'
+                  ? 'turn'
+                  : 'direct',
+              ),
+          );
+        }
+      };
+    this.u.onopen =
+      onOpen;
+    this.r.onopen =
+      onOpen;
+    this.pc.onicecandidate =
+      (
+        e,
+      ) => {
+        if (
+          this
+            .blockCandidates &&
+          e.candidate
+        )
+          return;
+        const c =
+          e.candidate;
+        if (
+          !c &&
+          !endOfCandidates
+        )
+          return;
+        opts.signal(
+          {
+            candidate:
+              c
+                ? {
+                    candidate:
+                      c.candidate,
+                    sdpMid:
+                      c.sdpMid,
+                    sdpMLineIndex:
+                      c.sdpMLineIndex,
+                    usernameFragment:
+                      c.usernameFragment,
+                  }
+                : null,
+          },
         );
-      }
-    };
-    this.u.onopen = onOpen;
-    this.r.onopen = onOpen;
-    this.pc.onicecandidate = (e) => {
-      if (this.blockCandidates && e.candidate) return;
-      const c = e.candidate;
-      if (!c && !endOfCandidates) return;
-      opts.signal({
-        candidate: c
-          ? { candidate: c.candidate, sdpMid: c.sdpMid, sdpMLineIndex: c.sdpMLineIndex, usernameFragment: c.usernameFragment }
-          : null,
-      });
-    };
-    this.pc.onconnectionstatechange = () => {
-      if (this.pc.connectionState === 'failed' && !this.done) this.fail('failed');
-    };
-    this.timer = setTimeout(() => this.fail('timeout'), hooks.directTimeoutMs ?? (hasTurn(servers) ? TURN_TIMEOUT_MS : DIRECT_TIMEOUT_MS));
-    if (opts.role === 'host') void this.offer();
+      };
+    this.pc.onconnectionstatechange =
+      () => {
+        if (
+          this
+            .pc
+            .connectionState ===
+            'failed' &&
+          !this
+            .done
+        )
+          this.fail(
+            'failed',
+          );
+      };
+    this.timer =
+      setTimeout(
+        () =>
+          this.fail(
+            'timeout',
+          ),
+        hooks.directTimeoutMs ??
+          (hasTurn(
+            servers,
+          )
+            ? TURN_TIMEOUT_MS
+            : DIRECT_TIMEOUT_MS),
+      );
+    if (
+      opts.role ===
+      'host'
+    )
+      void this.offer();
   }
 
   /**
    * The connection type of the selected pair: `relay` when a TURN server carries it on EITHER side (a
    * member behind TURN reaches a host's direct candidate through its relay: both ends say TURN).
    */
-  async candidateType(): Promise<string | null> {
+  async candidateType(): Promise<
+    | string
+    | null
+  > {
     try {
-      const stats = await this.pc.getStats();
-      let pairId: string | null = null;
-      stats.forEach((s) => {
-        if (s.type === 'transport' && s.selectedCandidatePairId) pairId = s.selectedCandidatePairId as string;
-      });
-      if (!pairId) return null;
-      const pair = stats.get(pairId) as { localCandidateId?: string; remoteCandidateId?: string } | undefined;
-      const type = (id?: string) => (id ? (stats.get(id) as { candidateType?: string } | undefined)?.candidateType : undefined);
-      const local = type(pair?.localCandidateId);
-      const remote = type(pair?.remoteCandidateId);
-      return local === 'relay' || remote === 'relay' ? 'relay' : (local ?? null);
+      const stats =
+        await this.pc.getStats();
+      let pairId:
+        | string
+        | null =
+        null;
+      stats.forEach(
+        (
+          s,
+        ) => {
+          if (
+            s.type ===
+              'transport' &&
+            s.selectedCandidatePairId
+          )
+            pairId =
+              s.selectedCandidatePairId as string;
+        },
+      );
+      if (
+        !pairId
+      )
+        return null;
+      const pair =
+        stats.get(
+          pairId,
+        ) as
+          | {
+              localCandidateId?: string;
+              remoteCandidateId?: string;
+            }
+          | undefined;
+      const type =
+        (
+          id?: string,
+        ) =>
+          id
+            ? (
+                stats.get(
+                  id,
+                ) as
+                  | {
+                      candidateType?: string;
+                    }
+                  | undefined
+              )
+                ?.candidateType
+            : undefined;
+      const local =
+        type(
+          pair?.localCandidateId,
+        );
+      const remote =
+        type(
+          pair?.remoteCandidateId,
+        );
+      return local ===
+        'relay' ||
+        remote ===
+          'relay'
+        ? 'relay'
+        : (local ??
+            null);
     } catch {
       return null;
     }
   }
 
-  private fail(why: 'timeout' | 'failed'): void {
-    if (this.done) return;
+  private fail(
+    why:
+      | 'timeout'
+      | 'failed',
+  ): void {
+    if (
+      this
+        .done
+    )
+      return;
     this.done = true;
-    clearTimeout(this.timer);
-    this.opts.onFailed(why);
+    clearTimeout(
+      this
+        .timer,
+    );
+    this.opts.onFailed(
+      why,
+    );
   }
 
   private async offer(): Promise<void> {
     try {
-      const offer = await this.pc.createOffer();
-      await this.pc.setLocalDescription(offer);
-      this.opts.signal({ description: { type: 'offer', sdp: offer.sdp ?? '' } });
+      const offer =
+        await this.pc.createOffer();
+      await this.pc.setLocalDescription(
+        offer,
+      );
+      this.opts.signal(
+        {
+          description:
+            {
+              type: 'offer',
+              sdp:
+                offer.sdp ??
+                '',
+            },
+        },
+      );
     } catch {
-      this.fail('failed');
+      this.fail(
+        'failed',
+      );
     }
   }
 
   /** A signal from the other side (already schema-checked). */
-  async handle(signal: { description?: SessionDescriptionLike; candidate?: IceCandidateLike | null }): Promise<void> {
+  async handle(signal: {
+    description?: SessionDescriptionLike;
+    candidate?: IceCandidateLike | null;
+  }): Promise<void> {
     try {
-      if (signal.description) await this.onDescription(signal.description);
-      else if (signal.candidate !== undefined) await this.onCandidate(signal.candidate);
+      if (
+        signal.description
+      )
+        await this.onDescription(
+          signal.description,
+        );
+      else if (
+        signal.candidate !==
+        undefined
+      )
+        await this.onCandidate(
+          signal.candidate,
+        );
     } catch {
       /* a bad signal: the timeout decides */
     }
   }
 
-  private async onDescription(d: SessionDescriptionLike): Promise<void> {
-    if (this.opts.role === 'host' && d.type !== 'answer') return;
-    if (this.opts.role === 'member' && d.type !== 'offer') return;
-    await this.pc.setRemoteDescription({ type: d.type, sdp: d.sdp });
+  private async onDescription(
+    d: SessionDescriptionLike,
+  ): Promise<void> {
+    if (
+      this
+        .opts
+        .role ===
+        'host' &&
+      d.type !==
+        'answer'
+    )
+      return;
+    if (
+      this
+        .opts
+        .role ===
+        'member' &&
+      d.type !==
+        'offer'
+    )
+      return;
+    await this.pc.setRemoteDescription(
+      {
+        type: d.type,
+        sdp: d.sdp,
+      },
+    );
     this.remoteSet = true;
     // One candidate the browser refuses (a stale one, a malformed one) must not stop the rest, or the answer:
     // the answer is what lets the other side's candidates pair up at all.
-    for (const c of this.pending.splice(0)) await this.pc.addIceCandidate(c).catch(() => {});
-    if (d.type === 'offer') {
-      const answer = await this.pc.createAnswer();
-      await this.pc.setLocalDescription(answer);
-      this.opts.signal({ description: { type: 'answer', sdp: answer.sdp ?? '' } });
+    for (const c of this.pending.splice(
+      0,
+    ))
+      await this.pc
+        .addIceCandidate(
+          c,
+        )
+        .catch(
+          () => {},
+        );
+    if (
+      d.type ===
+      'offer'
+    ) {
+      const answer =
+        await this.pc.createAnswer();
+      await this.pc.setLocalDescription(
+        answer,
+      );
+      this.opts.signal(
+        {
+          description:
+            {
+              type: 'answer',
+              sdp:
+                answer.sdp ??
+                '',
+            },
+        },
+      );
     }
   }
 
-  private async onCandidate(c: IceCandidateLike | null): Promise<void> {
-    if (!c) return;
-    if (!this.remoteSet) {
-      this.pending.push(c);
+  private async onCandidate(
+    c: IceCandidateLike | null,
+  ): Promise<void> {
+    if (
+      !c
+    )
+      return;
+    if (
+      !this
+        .remoteSet
+    ) {
+      this.pending.push(
+        c,
+      );
       return;
     }
-    await this.pc.addIceCandidate(c);
+    await this.pc.addIceCandidate(
+      c,
+    );
   }
 
   /** Close the peer connection (the relay took over, or the session ended). */
   close(): void {
     this.done = true;
-    clearTimeout(this.timer);
-    this.pc.onicecandidate = null;
-    this.pc.onconnectionstatechange = null;
+    clearTimeout(
+      this
+        .timer,
+    );
+    this.pc.onicecandidate =
+      null;
+    this.pc.onconnectionstatechange =
+      null;
     try {
       this.pc.close();
     } catch {

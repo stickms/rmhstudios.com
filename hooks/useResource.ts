@@ -24,29 +24,63 @@ import {
 /** Fresh enough that a page read does not flash old data; long enough to dedupe. */
 export const RESOURCE_STALE_TIME = 30_000;
 /** Back-navigation within a few minutes still hits the cache. */
-export const RESOURCE_GC_TIME = 5 * 60_000;
+export const RESOURCE_GC_TIME =
+  5 *
+  60_000;
 
 // The JSON fetcher and its typed error live in lib/http (with a timeout,
 // Retry-After-aware errors and the retry policy the QueryClient uses), so a
 // `queryFn` here and anywhere else fails the same way.
-export { HttpError, fetchJson } from '@/lib/http';
+export {
+  HttpError,
+  fetchJson,
+} from '@/lib/http';
 
-export type ResourceOptions<TData, TError> = Omit<
-  UseQueryOptions<TData, TError, TData, QueryKey>,
-  'queryKey' | 'queryFn'
->;
+export type ResourceOptions<
+  TData,
+  TError,
+> =
+  Omit<
+    UseQueryOptions<
+      TData,
+      TError,
+      TData,
+      QueryKey
+    >,
+    | 'queryKey'
+    | 'queryFn'
+  >;
 
-export function useResource<TData, TError = Error>(
+export function useResource<
+  TData,
+  TError =
+    Error,
+>(
   queryKey: QueryKey,
   queryFn: () => Promise<TData>,
-  options: ResourceOptions<TData, TError> = {},
-): UseQueryResult<TData, TError> {
-  return useQuery<TData, TError, TData, QueryKey>({
-    staleTime: RESOURCE_STALE_TIME,
-    gcTime: RESOURCE_GC_TIME,
-    // Spread before the key/fn so an override cannot accidentally replace them.
-    ...options,
-    queryKey,
-    queryFn,
-  });
+  options: ResourceOptions<
+    TData,
+    TError
+  > = {},
+): UseQueryResult<
+  TData,
+  TError
+> {
+  return useQuery<
+    TData,
+    TError,
+    TData,
+    QueryKey
+  >(
+    {
+      staleTime:
+        RESOURCE_STALE_TIME,
+      gcTime:
+        RESOURCE_GC_TIME,
+      // Spread before the key/fn so an override cannot accidentally replace them.
+      ...options,
+      queryKey,
+      queryFn,
+    },
+  );
 }

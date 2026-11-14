@@ -7,7 +7,14 @@
  */
 
 import { NO_ENTITY } from '../core/types';
-import { CONTENTS_BLUETEAM, CONTENTS_MONSTER, CONTENTS_REDTEAM, CONTENTS_SOLID, TF_TEAM_BLUE, TF_TEAM_RED } from '../core/constants';
+import {
+  CONTENTS_BLUETEAM,
+  CONTENTS_MONSTER,
+  CONTENTS_REDTEAM,
+  CONTENTS_SOLID,
+  TF_TEAM_BLUE,
+  TF_TEAM_RED,
+} from '../core/constants';
 import {
   COLLISION_GROUP_PLAYER_MOVEMENT,
   DAMAGE_NO,
@@ -18,8 +25,15 @@ import {
   TFCOLLISION_GROUP_OBJECT,
   TFCOLLISION_GROUP_OBJECT_SOLIDTOPLAYERMOVEMENT,
 } from './entity';
-import { NET_OBJECT, type NetRecord, type NetSchema } from './net-schema';
-import { DMG_BLAST, type DamageInfo } from './damage';
+import {
+  NET_OBJECT,
+  type NetRecord,
+  type NetSchema,
+} from './net-schema';
+import {
+  DMG_BLAST,
+  type DamageInfo,
+} from './damage';
 import type { Player } from './player';
 import { hookWeapon } from './items/attributes';
 import { damageWeapon } from './items/damage-query';
@@ -51,7 +65,8 @@ export abstract class BaseObject extends Entity {
   objectMode = 0;
   level = 1;
   /** Engineer (or Spy for sappers) that owns it — also `owner`. */
-  builder: number = NO_ENTITY;
+  builder: number =
+    NO_ENTITY;
   /** Under construction (m_bBuilding). */
   building = false;
   /** Still a blueprint being positioned (m_bPlacing). */
@@ -71,15 +86,29 @@ export abstract class BaseObject extends Entity {
   /** Fractional health accumulated while constructing. */
   protected constructionHealth = 0;
   /** Entities that have damaged it, for assists (id → curtime). */
-  readonly damagers = new Map<number, number>();
+  readonly damagers =
+    new Map<
+      number,
+      number
+    >();
 
-  constructor(classname: string) {
-    super(classname);
-    this.flags |= FL_OBJECT;
-    this.solid = SOLID_BBOX;
-    this.contents = CONTENTS_SOLID | CONTENTS_MONSTER;
-    this.collisionGroup = TFCOLLISION_GROUP_OBJECT;
-    this.takeDamage = DAMAGE_YES;
+  constructor(
+    classname: string,
+  ) {
+    super(
+      classname,
+    );
+    this.flags |=
+      FL_OBJECT;
+    this.solid =
+      SOLID_BBOX;
+    this.contents =
+      CONTENTS_SOLID |
+      CONTENTS_MONSTER;
+    this.collisionGroup =
+      TFCOLLISION_GROUP_OBJECT;
+    this.takeDamage =
+      DAMAGE_YES;
   }
 
   override isBaseObject(): boolean {
@@ -87,8 +116,15 @@ export abstract class BaseObject extends Entity {
   }
 
   builderPlayer(): Player | null {
-    const e = this.world.entity(this.builder);
-    return e && e.isPlayer() ? (e as Player) : null;
+    const e =
+      this.world.entity(
+        this
+          .builder,
+      );
+    return e &&
+      e.isPlayer()
+      ? (e as Player)
+      : null;
   }
 
   /**
@@ -96,28 +132,73 @@ export abstract class BaseObject extends Entity {
    * solid only to the enemy's movement; once finished it is solid to every
    * player (TFCOLLISION_GROUP_OBJECT_SOLIDTOPLAYERMOVEMENT).
    */
-  override shouldCollide(collisionGroup: number, contentsMask: number): boolean {
-    if (collisionGroup === COLLISION_GROUP_PLAYER_MOVEMENT) {
-      if (this.collisionGroup === TFCOLLISION_GROUP_OBJECT_SOLIDTOPLAYERMOVEMENT) return true;
-      if (this.team === TF_TEAM_RED && !(contentsMask & CONTENTS_REDTEAM)) return false;
-      if (this.team === TF_TEAM_BLUE && !(contentsMask & CONTENTS_BLUETEAM)) return false;
+  override shouldCollide(
+    collisionGroup: number,
+    contentsMask: number,
+  ): boolean {
+    if (
+      collisionGroup ===
+      COLLISION_GROUP_PLAYER_MOVEMENT
+    ) {
+      if (
+        this
+          .collisionGroup ===
+        TFCOLLISION_GROUP_OBJECT_SOLIDTOPLAYERMOVEMENT
+      )
+        return true;
+      if (
+        this
+          .team ===
+          TF_TEAM_RED &&
+        !(
+          contentsMask &
+          CONTENTS_REDTEAM
+        )
+      )
+        return false;
+      if (
+        this
+          .team ===
+          TF_TEAM_BLUE &&
+        !(
+          contentsMask &
+          CONTENTS_BLUETEAM
+        )
+      )
+        return false;
     }
     return true;
   }
 
   /** SDK: CBaseObject::StartBuilding. */
-  startBuilding(builder: Player | null): void {
+  startBuilding(
+    builder: Player | null,
+  ): void {
     this.building = true;
     this.placing = false;
     this.buildProgress = 0;
-    if (builder) {
-      this.builder = builder.id;
-      this.owner = builder.id;
-      this.team = builder.team;
+    if (
+      builder
+    ) {
+      this.builder =
+        builder.id;
+      this.owner =
+        builder.id;
+      this.team =
+        builder.team;
     }
-    this.health = OBJECT_CONSTRUCTION_STARTINGHEALTH;
-    this.constructionHealth = OBJECT_CONSTRUCTION_STARTINGHEALTH;
-    this.setThink(this.buildingThink, this.world.curtime + OBJECT_CONSTRUCTION_INTERVAL);
+    this.health =
+      OBJECT_CONSTRUCTION_STARTINGHEALTH;
+    this.constructionHealth =
+      OBJECT_CONSTRUCTION_STARTINGHEALTH;
+    this.setThink(
+      this
+        .buildingThink,
+      this
+        .world
+        .curtime +
+        OBJECT_CONSTRUCTION_INTERVAL,
+    );
   }
 
   /** Construction speed multiplier (wrench hits, redeploys). GetConstructionMultiplier. */
@@ -126,33 +207,81 @@ export abstract class BaseObject extends Entity {
   }
 
   /** SDK: CBaseObject::BuildingThink → Construct. */
-  readonly buildingThink = (): void => {
-    if (!this.building) return;
-    const rate = ((this.maxHealth - OBJECT_CONSTRUCTION_STARTINGHEALTH) / this.totalConstructionTime) * this.constructionMultiplier();
-    this.constructionHealth += rate * OBJECT_CONSTRUCTION_INTERVAL;
-    this.health = Math.min(this.maxHealth, this.constructionHealth);
-    this.buildProgress = Math.min(1, this.constructionHealth / this.maxHealth);
-    if (this.constructionHealth >= this.maxHealth) {
-      this.health = this.maxHealth;
-      this.finishedBuilding();
-      return;
-    }
-    this.nextThink = this.world.curtime + OBJECT_CONSTRUCTION_INTERVAL;
-  };
+  readonly buildingThink =
+    (): void => {
+      if (
+        !this
+          .building
+      )
+        return;
+      const rate =
+        ((this
+          .maxHealth -
+          OBJECT_CONSTRUCTION_STARTINGHEALTH) /
+          this
+            .totalConstructionTime) *
+        this.constructionMultiplier();
+      this.constructionHealth +=
+        rate *
+        OBJECT_CONSTRUCTION_INTERVAL;
+      this.health =
+        Math.min(
+          this
+            .maxHealth,
+          this
+            .constructionHealth,
+        );
+      this.buildProgress =
+        Math.min(
+          1,
+          this
+            .constructionHealth /
+            this
+              .maxHealth,
+        );
+      if (
+        this
+          .constructionHealth >=
+        this
+          .maxHealth
+      ) {
+        this.health =
+          this.maxHealth;
+        this.finishedBuilding();
+        return;
+      }
+      this.nextThink =
+        this
+          .world
+          .curtime +
+        OBJECT_CONSTRUCTION_INTERVAL;
+    };
 
   /** SDK: CBaseObject::FinishedBuilding. */
   finishedBuilding(): void {
     this.building = false;
     this.buildProgress = 1;
-    this.collisionGroup = TFCOLLISION_GROUP_OBJECT_SOLIDTOPLAYERMOVEMENT;
-    this.setThink(null, -1);
-    this.world.events.push({
-      type: 'object',
-      kind: 'built',
-      object: this.id,
-      objectType: this.objectType,
-      owner: this.builder,
-    });
+    this.collisionGroup =
+      TFCOLLISION_GROUP_OBJECT_SOLIDTOPLAYERMOVEMENT;
+    this.setThink(
+      null,
+      -1,
+    );
+    this.world.events.push(
+      {
+        type: 'object',
+        kind: 'built',
+        object:
+          this
+            .id,
+        objectType:
+          this
+            .objectType,
+        owner:
+          this
+            .builder,
+      },
+    );
     this.onFinishedBuilding();
   }
 
@@ -160,96 +289,294 @@ export abstract class BaseObject extends Entity {
   protected onFinishedBuilding(): void {}
 
   /** SDK: CBaseObject::OnTakeDamage (no damage from teammates or while placing). */
-  override onTakeDamage(info: DamageInfo): number {
-    if (this.removed || this.takeDamage === DAMAGE_NO || this.placing) return 0;
-    const attacker = this.world.entity(info.attacker);
-    if (attacker && attacker !== this && this.inSameTeam(attacker)) return 0;
-    if (attacker) this.damagers.set(attacker.id, this.world.curtime);
-    let dmg = this.modifyDamage(info);
+  override onTakeDamage(
+    info: DamageInfo,
+  ): number {
+    if (
+      this
+        .removed ||
+      this
+        .takeDamage ===
+        DAMAGE_NO ||
+      this
+        .placing
+    )
+      return 0;
+    const attacker =
+      this.world.entity(
+        info.attacker,
+      );
+    if (
+      attacker &&
+      attacker !==
+        this &&
+      this.inSameTeam(
+        attacker,
+      )
+    )
+      return 0;
+    if (
+      attacker
+    )
+      this.damagers.set(
+        attacker.id,
+        this
+          .world
+          .curtime,
+      );
+    let dmg =
+      this.modifyDamage(
+        info,
+      );
     // CBaseObject::OnTakeDamage: buildings resist plasma (×0.2); a charged shot also disables them.
-    if (info.customKill === TF_DMG_CUSTOM.TF_DMG_CUSTOM_PLASMA) dmg *= 0.2;
-    else if (info.customKill === TF_DMG_CUSTOM.TF_DMG_CUSTOM_PLASMA_CHARGED) {
+    if (
+      info.customKill ===
+      TF_DMG_CUSTOM.TF_DMG_CUSTOM_PLASMA
+    )
       dmg *= 0.2;
-      (this as BaseObject & { setPlasmaDisabled?: (t: number) => void }).setPlasmaDisabled?.(PLASMA_DISABLE_TIME);
+    else if (
+      info.customKill ===
+      TF_DMG_CUSTOM.TF_DMG_CUSTOM_PLASMA_CHARGED
+    ) {
+      dmg *= 0.2;
+      (
+        this as BaseObject & {
+          setPlasmaDisabled?: (
+            t: number,
+          ) => void;
+        }
+      ).setPlasmaDisabled?.(
+        PLASMA_DISABLE_TIME,
+      );
     }
     // CBaseObject::OnTakeDamage: the weapon's mult_dmg_vs_buildings (the Homewrecker, the Jag).
-    const weapon = damageWeapon(this.world, info);
-    if (weapon) dmg = hookWeapon(weapon, weapon.owner, 'mult_dmg_vs_buildings', dmg);
-    if (dmg <= 0) return 0;
-    this.health -= dmg;
-    this.world.events.push({
-      type: 'damage',
-      victim: this.id,
-      attacker: info.attacker,
-      amount: Math.round(dmg),
-      health: Math.max(0, Math.round(this.health)),
-      crit: info.critType,
-      customKill: info.customKill,
-      pos: { x: info.position.x, y: info.position.y, z: info.position.z },
-    });
-    if (this.health <= 0) this.onKilled(info);
+    const weapon =
+      damageWeapon(
+        this
+          .world,
+        info,
+      );
+    if (
+      weapon
+    )
+      dmg =
+        hookWeapon(
+          weapon,
+          weapon.owner,
+          'mult_dmg_vs_buildings',
+          dmg,
+        );
+    if (
+      dmg <=
+      0
+    )
+      return 0;
+    this.health -=
+      dmg;
+    this.world.events.push(
+      {
+        type: 'damage',
+        victim:
+          this
+            .id,
+        attacker:
+          info.attacker,
+        amount:
+          Math.round(
+            dmg,
+          ),
+        health:
+          Math.max(
+            0,
+            Math.round(
+              this
+                .health,
+            ),
+          ),
+        crit: info.critType,
+        customKill:
+          info.customKill,
+        pos: {
+          x: info
+            .position
+            .x,
+          y: info
+            .position
+            .y,
+          z: info
+            .position
+            .z,
+        },
+      },
+    );
+    if (
+      this
+        .health <=
+      0
+    )
+      this.onKilled(
+        info,
+      );
     return dmg;
   }
 
   /** Hook for per-building damage rules (sentry wrangler shield, etc.). */
-  protected modifyDamage(info: DamageInfo): number {
+  protected modifyDamage(
+    info: DamageInfo,
+  ): number {
     return info.damage;
   }
 
   /** SDK: CBaseObject::Killed — explode, credit the kill, remove. */
-  override onKilled(info: DamageInfo): void {
-    this.takeDamage = DAMAGE_NO;
-    let assister = NO_ENTITY;
-    let best = -Infinity;
-    for (const [id, t] of this.damagers) {
-      if (id !== info.attacker && t > best && this.world.curtime - t < 10) {
-        best = t;
-        assister = id;
+  override onKilled(
+    info: DamageInfo,
+  ): void {
+    this.takeDamage =
+      DAMAGE_NO;
+    let assister =
+      NO_ENTITY;
+    let best =
+      -Infinity;
+    for (const [
+      id,
+      t,
+    ] of this
+      .damagers) {
+      if (
+        id !==
+          info.attacker &&
+        t >
+          best &&
+        this
+          .world
+          .curtime -
+          t <
+          10
+      ) {
+        best =
+          t;
+        assister =
+          id;
       }
     }
-    this.world.events.push({
-      type: 'object',
-      kind: 'destroyed',
-      object: this.id,
-      objectType: this.objectType,
-      owner: this.builder,
-      attacker: info.attacker,
+    this.world.events.push(
+      {
+        type: 'object',
+        kind: 'destroyed',
+        object:
+          this
+            .id,
+        objectType:
+          this
+            .objectType,
+        owner:
+          this
+            .builder,
+        attacker:
+          info.attacker,
+        assister,
+        weapon:
+          info.killIcon,
+      },
+    );
+    this.world.emitEffect(
+      {
+        kind: 'explosion',
+        pos: {
+          ...this
+            .origin,
+        },
+        value:
+          info.damageType &
+          DMG_BLAST
+            ? 1
+            : 0,
+      },
+    );
+    this.world.rules.onObjectDestroyed(
+      this,
+      info,
       assister,
-      weapon: info.killIcon,
-    });
-    this.world.emitEffect({ kind: 'explosion', pos: { ...this.origin }, value: info.damageType & DMG_BLAST ? 1 : 0 });
-    this.world.rules.onObjectDestroyed(this, info, assister);
-    this.world.remove(this);
+    );
+    this.world.remove(
+      this,
+    );
   }
 
   /** The builder removed it (destroy PDA, changing class, disconnect). DetonateObject. */
   detonate(): void {
-    this.world.events.push({ type: 'object', kind: 'detonated', object: this.id, objectType: this.objectType, owner: this.builder });
-    this.world.remove(this);
+    this.world.events.push(
+      {
+        type: 'object',
+        kind: 'detonated',
+        object:
+          this
+            .id,
+        objectType:
+          this
+            .objectType,
+        owner:
+          this
+            .builder,
+      },
+    );
+    this.world.remove(
+      this,
+    );
   }
 
   /** A blueprint being placed is seen only by its builder (CBaseObject::ShouldTransmit). */
-  override shouldTransmitTo(playerId: number): boolean {
-    return !this.placing || playerId === this.builder;
+  override shouldTransmitTo(
+    playerId: number,
+  ): boolean {
+    return (
+      !this
+        .placing ||
+      playerId ===
+        this
+          .builder
+    );
   }
 
   override netSchema(): NetSchema | null {
     return NET_OBJECT;
   }
 
-  override writeNet(out: NetRecord): void {
-    super.writeNet(out);
-    out.objectType = this.objectType;
-    out.objectMode = this.objectMode;
-    out.level = this.level;
-    out.health = Math.max(0, Math.ceil(this.health));
-    out.maxHealth = this.maxHealth;
-    out.buildProgress = this.buildProgress;
-    out.building = this.building;
-    out.placing = this.placing;
-    out.carried = this.carried;
-    out.sapped = this.sapped;
-    out.disabled = this.disabled;
-    out.upgradeMetal = this.upgradeMetal;
+  override writeNet(
+    out: NetRecord,
+  ): void {
+    super.writeNet(
+      out,
+    );
+    out.objectType =
+      this.objectType;
+    out.objectMode =
+      this.objectMode;
+    out.level =
+      this.level;
+    out.health =
+      Math.max(
+        0,
+        Math.ceil(
+          this
+            .health,
+        ),
+      );
+    out.maxHealth =
+      this.maxHealth;
+    out.buildProgress =
+      this.buildProgress;
+    out.building =
+      this.building;
+    out.placing =
+      this.placing;
+    out.carried =
+      this.carried;
+    out.sapped =
+      this.sapped;
+    out.disabled =
+      this.disabled;
+    out.upgradeMetal =
+      this.upgradeMetal;
   }
 }

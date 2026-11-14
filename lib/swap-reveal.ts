@@ -35,56 +35,165 @@
 
 import { SMOOTH_EASE_CSS } from '@/lib/motion';
 
-const PLACEHOLDER = '[data-slot="skeleton"],.rad-loader,[data-skeleton],[aria-busy="true"]';
+const PLACEHOLDER =
+  '[data-slot="skeleton"],.rad-loader,[data-skeleton],[aria-busy="true"]';
 const DURATION_MS = 260;
-const EASING = SMOOTH_EASE_CSS;
+const EASING =
+  SMOOTH_EASE_CSS;
 const MAX_PER_BATCH = 24;
 
 /** Was this removed node (or anything inside it) a loading placeholder? */
-function heldPlaceholder(node: Node): boolean {
-  if (!(node instanceof Element)) return false;
-  if (node.hasAttribute('data-route-pending')) return false;
-  return node.matches(PLACEHOLDER) || node.querySelector(PLACEHOLDER) !== null;
+function heldPlaceholder(
+  node: Node,
+): boolean {
+  if (
+    !(
+      node instanceof
+      Element
+    )
+  )
+    return false;
+  if (
+    node.hasAttribute(
+      'data-route-pending',
+    )
+  )
+    return false;
+  return (
+    node.matches(
+      PLACEHOLDER,
+    ) ||
+    node.querySelector(
+      PLACEHOLDER,
+    ) !==
+      null
+  );
 }
 
 /** Is this added node real content worth revealing? */
-function revealable(node: Node): node is HTMLElement | SVGElement {
-  if (!(node instanceof HTMLElement || node instanceof SVGElement)) return false;
-  if (node.closest('[data-no-reveal]')) return false;
+function revealable(
+  node: Node,
+): node is
+  | HTMLElement
+  | SVGElement {
+  if (!(
+    node instanceof
+      HTMLElement ||
+    node instanceof
+      SVGElement
+  ))
+    return false;
+  if (
+    node.closest(
+      '[data-no-reveal]',
+    )
+  )
+    return false;
   // A placeholder replacing a placeholder (skeleton → spinner) is not content.
-  return !node.matches(PLACEHOLDER) && node.querySelector(PLACEHOLDER) === null;
+  return (
+    !node.matches(
+      PLACEHOLDER,
+    ) &&
+    node.querySelector(
+      PLACEHOLDER,
+    ) ===
+      null
+  );
 }
 
 export function installSwapReveal(): () => void {
-  if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') {
+  if (
+    typeof document ===
+      'undefined' ||
+    typeof MutationObserver ===
+      'undefined'
+  ) {
     return () => {};
   }
-  if (typeof Element.prototype.animate !== 'function') return () => {};
+  if (
+    typeof Element
+      .prototype
+      .animate !==
+    'function'
+  )
+    return () => {};
 
-  const observer = new MutationObserver((records) => {
-    let parents: Set<Node> | null = null;
-    for (const record of records) {
-      for (const removed of record.removedNodes) {
-        if (heldPlaceholder(removed)) (parents ??= new Set()).add(record.target);
-      }
-    }
-    if (!parents) return;
+  const observer =
+    new MutationObserver(
+      (
+        records,
+      ) => {
+        let parents: Set<Node> | null =
+          null;
+        for (const record of records) {
+          for (const removed of record.removedNodes) {
+            if (
+              heldPlaceholder(
+                removed,
+              )
+            )
+              (parents ??=
+                new Set()).add(
+                record.target,
+              );
+          }
+        }
+        if (
+          !parents
+        )
+          return;
 
-    let budget = MAX_PER_BATCH;
-    for (const record of records) {
-      if (!parents.has(record.target)) continue;
-      for (const added of record.addedNodes) {
-        if (budget === 0) return;
-        if (!revealable(added) || !added.isConnected) continue;
-        budget -= 1;
-        added.animate([{ opacity: 0 }, { opacity: 1 }], {
-          duration: DURATION_MS,
-          easing: EASING,
-        });
-      }
-    }
-  });
+        let budget =
+          MAX_PER_BATCH;
+        for (const record of records) {
+          if (
+            !parents.has(
+              record.target,
+            )
+          )
+            continue;
+          for (const added of record.addedNodes) {
+            if (
+              budget ===
+              0
+            )
+              return;
+            if (
+              !revealable(
+                added,
+              ) ||
+              !added.isConnected
+            )
+              continue;
+            budget -= 1;
+            added.animate(
+              [
+                {
+                  opacity: 0,
+                },
+                {
+                  opacity: 1,
+                },
+              ],
+              {
+                duration:
+                  DURATION_MS,
+                easing:
+                  EASING,
+              },
+            );
+          }
+        }
+      },
+    );
 
-  observer.observe(document.body, { childList: true, subtree: true });
-  return () => observer.disconnect();
+  observer.observe(
+    document.body,
+    {
+      childList: true,
+      subtree: true,
+    },
+  );
+  return () =>
+    observer.disconnect();
 }

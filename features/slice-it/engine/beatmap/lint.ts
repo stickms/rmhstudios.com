@@ -28,7 +28,11 @@
  * is the kind of cost that only shows up on the machines we do not test on.
  */
 
-import { HIT_WINDOWS, INPUT_COOLDOWN_MS, type Difficulty } from '@features/slice-it/engine/constants';
+import {
+  HIT_WINDOWS,
+  INPUT_COOLDOWN_MS,
+  type Difficulty,
+} from '@features/slice-it/engine/constants';
 
 /** The rule codes. Kept as a union so a panel can group by code exhaustively. */
 export type LintCode =
@@ -40,7 +44,9 @@ export type LintCode =
   | 'off-grid'
   | 'nesting-violation';
 
-export type LintSeverity = 'error' | 'warning';
+export type LintSeverity =
+  | 'error'
+  | 'warning';
 
 /**
  * The minimum shape a rule needs. Deliberately not `Slice` and deliberately not
@@ -57,7 +63,9 @@ export interface LintNote {
 
 export interface LintFinding {
   /** The note at fault, or `null` for a finding about a stretch of the song. */
-  noteId: string | null;
+  noteId:
+    | string
+    | null;
   /** Where the playhead should go when this finding is clicked. */
   time: number;
   code: LintCode;
@@ -86,12 +94,16 @@ export interface LintInput {
  * fires at 1.6× because a one-second burst is how a chart accents a fill and
  * flagging every one of those would train authors to ignore the panel.
  */
-export const NPS_CEILING: Record<Difficulty, number> = {
-  easy: 2.5,
-  normal: 4,
-  hard: 6.5,
-  expert: 10,
-};
+export const NPS_CEILING: Record<
+  Difficulty,
+  number
+> =
+  {
+    easy: 2.5,
+    normal: 4,
+    hard: 6.5,
+    expert: 10,
+  };
 
 /** How far over the ceiling a one-second window has to be to count as a spike. */
 const SPIKE_FACTOR = 1.6;
@@ -122,10 +134,20 @@ const LEAD_IN_SECONDS = 2;
  * tempos no position in a beat is more than 42 ms from some subdivision of it.
  * A rule that cannot fire is worse than no rule, because it reads as passing.
  */
-const GRID_DIVISIONS = [1, 2, 3, 4, 6, 8];
+const GRID_DIVISIONS =
+  [
+    1,
+    2,
+    3,
+    4,
+    6,
+    8,
+  ];
 const OFF_GRID_BEAT_TOLERANCE = 0.02;
 
-const guardSeconds = INPUT_COOLDOWN_MS / 1000;
+const guardSeconds =
+  INPUT_COOLDOWN_MS /
+  1000;
 
 /**
  * The release window a hold has to be longer than.
@@ -135,82 +157,178 @@ const guardSeconds = INPUT_COOLDOWN_MS / 1000;
  * closed, so one press-and-release lands inside both and the engine has to pick
  * one. The player cannot make the chart mean what it says.
  */
-export const MIN_HOLD_SECONDS = HIT_WINDOWS.GOOD * 2;
+export const MIN_HOLD_SECONDS =
+  HIT_WINDOWS.GOOD *
+  2;
 
 /**
  * Run every rule. Findings come back in time order, which is the order the
  * panel lists them in and the order a "next issue" key steps through.
  */
-export function lintNotes(input: LintInput): LintFinding[] {
-  const findings: LintFinding[] = [];
-  const notes = [...input.notes].sort((a, b) => a.time - b.time);
+export function lintNotes(
+  input: LintInput,
+): LintFinding[] {
+  const findings: LintFinding[] =
+    [];
+  const notes =
+    [
+      ...input.notes,
+    ].sort(
+      (
+        a,
+        b,
+      ) =>
+        a.time -
+        b.time,
+    );
 
-  const ceiling = NPS_CEILING[input.difficulty] ?? NPS_CEILING.normal;
-  const lastByLane = new Map<number, LintNote>();
+  const ceiling =
+    NPS_CEILING[
+      input
+        .difficulty
+    ] ??
+    NPS_CEILING.normal;
+  const lastByLane =
+    new Map<
+      number,
+      LintNote
+    >();
 
   for (const note of notes) {
     /* Unhittable jack. The engine debounces per lane, so the second press
      * inside the cooldown never reaches the resolver — this note is not merely
      * hard, it is unreachable. Error. */
-    const previous = lastByLane.get(note.lane);
-    if (previous) {
-      const gap = note.time - previous.time;
-      if (gap < guardSeconds) {
-        findings.push({
-          noteId: note.id,
-          time: note.time,
-          code: 'unhittable-jack',
-          severity: 'error',
-          message: `${Math.round(gap * 1000)} ms after the previous note in this lane; the input cooldown is ${INPUT_COOLDOWN_MS} ms, so the second press is swallowed.`,
-        });
+    const previous =
+      lastByLane.get(
+        note.lane,
+      );
+    if (
+      previous
+    ) {
+      const gap =
+        note.time -
+        previous.time;
+      if (
+        gap <
+        guardSeconds
+      ) {
+        findings.push(
+          {
+            noteId:
+              note.id,
+            time: note.time,
+            code: 'unhittable-jack',
+            severity:
+              'error',
+            message: `${Math.round(gap * 1000)} ms after the previous note in this lane; the input cooldown is ${INPUT_COOLDOWN_MS} ms, so the second press is swallowed.`,
+          },
+        );
       }
     }
-    lastByLane.set(note.lane, note);
+    lastByLane.set(
+      note.lane,
+      note,
+    );
 
     /* Inside the lead-in. */
-    if (note.time < LEAD_IN_SECONDS) {
-      findings.push({
-        noteId: note.id,
-        time: note.time,
-        code: 'too-early',
-        severity: 'warning',
-        message: `At ${note.time.toFixed(2)}s, before the player can react to the playfield.`,
-      });
+    if (
+      note.time <
+      LEAD_IN_SECONDS
+    ) {
+      findings.push(
+        {
+          noteId:
+            note.id,
+          time: note.time,
+          code: 'too-early',
+          severity:
+            'warning',
+          message: `At ${note.time.toFixed(2)}s, before the player can react to the playfield.`,
+        },
+      );
     }
 
     /* A hold shorter than its own release window. */
-    if (note.type === 'LONG') {
-      const duration = note.duration ?? 0;
-      if (duration < MIN_HOLD_SECONDS) {
-        findings.push({
-          noteId: note.id,
-          time: note.time,
-          code: 'hold-too-short',
-          severity: 'error',
-          message: `${Math.round(duration * 1000)} ms long; shorter than its own ${Math.round(MIN_HOLD_SECONDS * 1000)} ms release window, so head and tail judgements overlap.`,
-        });
+    if (
+      note.type ===
+      'LONG'
+    ) {
+      const duration =
+        note.duration ??
+        0;
+      if (
+        duration <
+        MIN_HOLD_SECONDS
+      ) {
+        findings.push(
+          {
+            noteId:
+              note.id,
+            time: note.time,
+            code: 'hold-too-short',
+            severity:
+              'error',
+            message: `${Math.round(duration * 1000)} ms long; shorter than its own ${Math.round(MIN_HOLD_SECONDS * 1000)} ms release window, so head and tail judgements overlap.`,
+          },
+        );
       }
     }
 
     /* Off the grid. */
-    if (input.beats && input.beats.length >= 2) {
-      const error = gridError(note.time, input.beats);
-      if (error && error.seconds > error.beatLength * OFF_GRID_BEAT_TOLERANCE) {
-        findings.push({
-          noteId: note.id,
-          time: note.time,
-          code: 'off-grid',
-          severity: 'warning',
-          message: `${Math.round(error.seconds * 1000)} ms from the nearest subdivision of the beat.`,
-        });
+    if (
+      input.beats &&
+      input
+        .beats
+        .length >=
+        2
+    ) {
+      const error =
+        gridError(
+          note.time,
+          input.beats,
+        );
+      if (
+        error &&
+        error.seconds >
+          error.beatLength *
+            OFF_GRID_BEAT_TOLERANCE
+      ) {
+        findings.push(
+          {
+            noteId:
+              note.id,
+            time: note.time,
+            code: 'off-grid',
+            severity:
+              'warning',
+            message: `${Math.round(error.seconds * 1000)} ms from the nearest subdivision of the beat.`,
+          },
+        );
       }
     }
   }
 
-  findings.push(...densitySpikes(notes, ceiling));
-  findings.push(...emptyStretches(notes, input.duration));
+  findings.push(
+    ...densitySpikes(
+      notes,
+      ceiling,
+    ),
+  );
+  findings.push(
+    ...emptyStretches(
+      notes,
+      input.duration,
+    ),
+  );
 
-  findings.sort((a, b) => a.time - b.time);
+  findings.sort(
+    (
+      a,
+      b,
+    ) =>
+      a.time -
+      b.time,
+  );
   return findings;
 }
 
@@ -223,26 +341,78 @@ export function lintNotes(input: LintInput): LintFinding[] {
  * produces one finding at its start rather than one per note — a panel listing
  * forty identical spike rows is a panel authors close.
  */
-function densitySpikes(notes: readonly LintNote[], ceiling: number): LintFinding[] {
-  const threshold = ceiling * SPIKE_FACTOR;
-  const out: LintFinding[] = [];
+function densitySpikes(
+  notes: readonly LintNote[],
+  ceiling: number,
+): LintFinding[] {
+  const threshold =
+    ceiling *
+    SPIKE_FACTOR;
+  const out: LintFinding[] =
+    [];
   let start = 0;
   /** Time before which a new finding is folded into the previous one. */
-  let coveredUntil = -Infinity;
+  let coveredUntil =
+    -Infinity;
 
-  for (let end = 0; end < notes.length; end++) {
-    while (notes[end].time - notes[start].time > 1) start++;
-    const nps = end - start + 1;
-    if (nps <= threshold) continue;
-    if (notes[start].time < coveredUntil) continue;
-    coveredUntil = notes[end].time + 1;
-    out.push({
-      noteId: notes[start].id,
-      time: notes[start].time,
-      code: 'density-spike',
-      severity: 'warning',
-      message: `${nps} notes in one second here; the readable ceiling for this tier is ${ceiling}.`,
-    });
+  for (
+    let end = 0;
+    end <
+    notes.length;
+    end++
+  ) {
+    while (
+      notes[
+        end
+      ]
+        .time -
+        notes[
+          start
+        ]
+          .time >
+      1
+    )
+      start++;
+    const nps =
+      end -
+      start +
+      1;
+    if (
+      nps <=
+      threshold
+    )
+      continue;
+    if (
+      notes[
+        start
+      ]
+        .time <
+      coveredUntil
+    )
+      continue;
+    coveredUntil =
+      notes[
+        end
+      ]
+        .time +
+      1;
+    out.push(
+      {
+        noteId:
+          notes[
+            start
+          ]
+            .id,
+        time: notes[
+          start
+        ]
+          .time,
+        code: 'density-spike',
+        severity:
+          'warning',
+        message: `${nps} notes in one second here; the readable ceiling for this tier is ${ceiling}.`,
+      },
+    );
   }
   return out;
 }
@@ -255,30 +425,97 @@ function densitySpikes(notes: readonly LintNote[], ceiling: number): LintFinding
  * the analyser ran out of audio, or the upload was truncated — and it is
  * invisible in the editor until you scroll there.
  */
-function emptyStretches(notes: readonly LintNote[], duration: number): LintFinding[] {
-  const out: LintFinding[] = [];
-  if (!(duration > 0)) return out;
+function emptyStretches(
+  notes: readonly LintNote[],
+  duration: number,
+): LintFinding[] {
+  const out: LintFinding[] =
+    [];
+  if (
+    !(
+      duration >
+      0
+    )
+  )
+    return out;
 
-  const push = (from: number, to: number, noteId: string | null) => {
-    const gap = to - from;
-    if (gap <= EMPTY_STRETCH_SECONDS) return;
-    out.push({
-      noteId,
-      time: from,
-      code: 'empty-stretch',
-      severity: 'warning',
-      message: `${Math.round(gap)}s with no notes.`,
-    });
-  };
+  const push =
+    (
+      from: number,
+      to: number,
+      noteId:
+        | string
+        | null,
+    ) => {
+      const gap =
+        to -
+        from;
+      if (
+        gap <=
+        EMPTY_STRETCH_SECONDS
+      )
+        return;
+      out.push(
+        {
+          noteId,
+          time: from,
+          code: 'empty-stretch',
+          severity:
+            'warning',
+          message: `${Math.round(gap)}s with no notes.`,
+        },
+      );
+    };
 
-  if (notes.length === 0) {
-    push(0, duration, null);
+  if (
+    notes.length ===
+    0
+  ) {
+    push(
+      0,
+      duration,
+      null,
+    );
     return out;
   }
 
-  push(0, notes[0].time, notes[0].id);
-  for (let i = 1; i < notes.length; i++) push(notes[i - 1].time, notes[i].time, notes[i].id);
-  push(notes[notes.length - 1].time, duration, null);
+  push(
+    0,
+    notes[0]
+      .time,
+    notes[0]
+      .id,
+  );
+  for (
+    let i = 1;
+    i <
+    notes.length;
+    i++
+  )
+    push(
+      notes[
+        i -
+          1
+      ]
+        .time,
+      notes[
+        i
+      ]
+        .time,
+      notes[
+        i
+      ]
+        .id,
+    );
+  push(
+    notes[
+      notes.length -
+        1
+    ]
+      .time,
+    duration,
+    null,
+  );
   return out;
 }
 
@@ -292,33 +529,128 @@ function emptyStretches(notes: readonly LintNote[], duration: number): LintFindi
 function gridError(
   time: number,
   beats: readonly number[],
-): { seconds: number; beatLength: number } | null {
+): {
+  seconds: number;
+  beatLength: number;
+} | null {
   let lo = 0;
-  let hi = beats.length - 1;
-  if (time <= beats[0]) {
-    const beatLength = beats[1] - beats[0];
-    return beatLength > 0 ? { seconds: Math.abs(time - beats[0]), beatLength } : null;
+  let hi =
+    beats.length -
+    1;
+  if (
+    time <=
+    beats[0]
+  ) {
+    const beatLength =
+      beats[1] -
+      beats[0];
+    return beatLength >
+      0
+      ? {
+          seconds:
+            Math.abs(
+              time -
+                beats[0],
+            ),
+          beatLength,
+        }
+      : null;
   }
-  if (time >= beats[hi]) {
-    const beatLength = beats[hi] - beats[hi - 1];
-    return beatLength > 0 ? { seconds: Math.abs(time - beats[hi]), beatLength } : null;
+  if (
+    time >=
+    beats[
+      hi
+    ]
+  ) {
+    const beatLength =
+      beats[
+        hi
+      ] -
+      beats[
+        hi -
+          1
+      ];
+    return beatLength >
+      0
+      ? {
+          seconds:
+            Math.abs(
+              time -
+                beats[
+                  hi
+                ],
+            ),
+          beatLength,
+        }
+      : null;
   }
-  while (hi - lo > 1) {
-    const mid = (lo + hi) >> 1;
-    if (beats[mid] <= time) lo = mid;
-    else hi = mid;
+  while (
+    hi -
+      lo >
+    1
+  ) {
+    const mid =
+      (lo +
+        hi) >>
+      1;
+    if (
+      beats[
+        mid
+      ] <=
+      time
+    )
+      lo =
+        mid;
+    else
+      hi =
+        mid;
   }
-  const start = beats[lo];
-  const beatLength = beats[lo + 1] - start;
-  if (!(beatLength > 0)) return null;
+  const start =
+    beats[
+      lo
+    ];
+  const beatLength =
+    beats[
+      lo +
+        1
+    ] -
+    start;
+  if (
+    !(
+      beatLength >
+      0
+    )
+  )
+    return null;
 
-  const fraction = (time - start) / beatLength;
-  let best = Infinity;
+  const fraction =
+    (time -
+      start) /
+    beatLength;
+  let best =
+    Infinity;
   for (const division of GRID_DIVISIONS) {
-    const scaled = fraction * division;
-    best = Math.min(best, Math.abs(scaled - Math.round(scaled)) / division);
+    const scaled =
+      fraction *
+      division;
+    best =
+      Math.min(
+        best,
+        Math.abs(
+          scaled -
+            Math.round(
+              scaled,
+            ),
+        ) /
+          division,
+      );
   }
-  return { seconds: best * beatLength, beatLength };
+  return {
+    seconds:
+      best *
+      beatLength,
+    beatLength,
+  };
 }
 
 /**
@@ -330,7 +662,13 @@ function gridError(
  * same note" means, a chart could pass one and fail the other with nothing
  * visibly different about it.
  */
-export function nestingKey(note: Pick<LintNote, 'time' | 'lane'>): string {
+export function nestingKey(
+  note: Pick<
+    LintNote,
+    | 'time'
+    | 'lane'
+  >,
+): string {
   return `${Math.round(note.time * 1000)}:${note.lane}`;
 }
 
@@ -345,39 +683,80 @@ export function nestingKey(note: Pick<LintNote, 'time' | 'lane'>): string {
  * cascade off has a reason.
  */
 export function lintNesting(
-  lower: { difficulty: Difficulty; notes: readonly LintNote[] },
-  higher: { difficulty: Difficulty; notes: readonly LintNote[] },
+  lower: {
+    difficulty: Difficulty;
+    notes: readonly LintNote[];
+  },
+  higher: {
+    difficulty: Difficulty;
+    notes: readonly LintNote[];
+  },
 ): LintFinding[] {
-  const present = new Set(higher.notes.map(nestingKey));
-  const out: LintFinding[] = [];
+  const present =
+    new Set(
+      higher.notes.map(
+        nestingKey,
+      ),
+    );
+  const out: LintFinding[] =
+    [];
 
   for (const note of lower.notes) {
-    if (present.has(nestingKey(note))) continue;
-    out.push({
-      noteId: note.id,
-      time: note.time,
-      code: 'nesting-violation',
-      severity: 'warning',
-      message: `Present on ${lower.difficulty} but missing from ${higher.difficulty}.`,
-    });
+    if (
+      present.has(
+        nestingKey(
+          note,
+        ),
+      )
+    )
+      continue;
+    out.push(
+      {
+        noteId:
+          note.id,
+        time: note.time,
+        code: 'nesting-violation',
+        severity:
+          'warning',
+        message: `Present on ${lower.difficulty} but missing from ${higher.difficulty}.`,
+      },
+    );
   }
   return out;
 }
 
 /** Publish gating: errors block, warnings do not. */
-export function hasBlockingErrors(findings: readonly LintFinding[]): boolean {
-  return findings.some((finding) => finding.severity === 'error');
+export function hasBlockingErrors(
+  findings: readonly LintFinding[],
+): boolean {
+  return findings.some(
+    (
+      finding,
+    ) =>
+      finding.severity ===
+      'error',
+  );
 }
 
-export function countBySeverity(findings: readonly LintFinding[]): {
+export function countBySeverity(
+  findings: readonly LintFinding[],
+): {
   errors: number;
   warnings: number;
 } {
   let errors = 0;
   let warnings = 0;
   for (const finding of findings) {
-    if (finding.severity === 'error') errors++;
-    else warnings++;
+    if (
+      finding.severity ===
+      'error'
+    )
+      errors++;
+    else
+      warnings++;
   }
-  return { errors, warnings };
+  return {
+    errors,
+    warnings,
+  };
 }

@@ -2,110 +2,333 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { createChatFolderApi, setChatFolderMemberApi } from '@/lib/chat-plus/folders.contract';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  createChatFolderApi,
+  setChatFolderMemberApi,
+} from '@/lib/chat-plus/folders.contract';
+import {
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { FolderPlus } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { FOLDER_NAME_MAX, MAX_FOLDERS, scopeKeyOf, type ChatRef } from '@/lib/chat-plus/types';
-import { CHAT_FOLDERS_KEY, useChatFolders } from './folders-hooks';
+import {
+  FOLDER_NAME_MAX,
+  MAX_FOLDERS,
+  scopeKeyOf,
+  type ChatRef,
+} from '@/lib/chat-plus/types';
+import {
+  CHAT_FOLDERS_KEY,
+  useChatFolders,
+} from './folders-hooks';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 /** M1 — put this chat in (or out of) the viewer's folders; create a folder inline. */
-export function ChatFoldersSection({ chat }: { chat: ChatRef }) {
-  const { t } = useTranslation('f-messaging');
-  const qc = useQueryClient();
-  const { data: folders } = useChatFolders();
-  const arrival = useArrival(!!folders);
-  const [name, setName] = useState('');
-  const scopeKey = scopeKeyOf(chat.kind, chat.id);
+export function ChatFoldersSection({
+  chat,
+}: {
+  chat: ChatRef;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-messaging',
+    );
+  const qc =
+    useQueryClient();
+  const {
+    data: folders,
+  } =
+    useChatFolders();
+  const arrival =
+    useArrival(
+      !!folders,
+    );
+  const [
+    name,
+    setName,
+  ] =
+    useState(
+      '',
+    );
+  const scopeKey =
+    scopeKeyOf(
+      chat.kind,
+      chat.id,
+    );
 
-  const setMember = useMutation({
-    mutationFn: async ({ folderId, member }: { folderId: string; member: boolean }) => {
-      await api(setChatFolderMemberApi, { params: { id: folderId }, body: { chat, member } });
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: CHAT_FOLDERS_KEY }),
-    onError: (e: Error) =>
-      toast.error(
-        serverError(e) || t('folder-failed', { defaultValue: 'Could not update the folder' }),
-      ),
-  });
+  const setMember =
+    useMutation(
+      {
+        mutationFn:
+          async ({
+            folderId,
+            member,
+          }: {
+            folderId: string;
+            member: boolean;
+          }) => {
+            await api(
+              setChatFolderMemberApi,
+              {
+                params:
+                  {
+                    id: folderId,
+                  },
+                body: {
+                  chat,
+                  member,
+                },
+              },
+            );
+          },
+        onSuccess:
+          () =>
+            qc.invalidateQueries(
+              {
+                queryKey:
+                  CHAT_FOLDERS_KEY,
+              },
+            ),
+        onError:
+          (
+            e: Error,
+          ) =>
+            toast.error(
+              serverError(
+                e,
+              ) ||
+                t(
+                  'folder-failed',
+                  {
+                    defaultValue:
+                      'Could not update the folder',
+                  },
+                ),
+            ),
+      },
+    );
 
-  const create = useMutation({
-    mutationFn: async (folderName: string) => {
-      return (await api(createChatFolderApi, { body: { name: folderName } })).folder;
-    },
-    onSuccess: async (folder) => {
-      setName('');
-      // New folders from this chat start out containing it.
-      await setMember.mutateAsync({ folderId: folder.id, member: true });
-    },
-    onError: (e: Error) =>
-      toast.error(
-        serverError(e) || t('folder-failed', { defaultValue: 'Could not update the folder' }),
-      ),
-  });
+  const create =
+    useMutation(
+      {
+        mutationFn:
+          async (
+            folderName: string,
+          ) => {
+            return (
+              await api(
+                createChatFolderApi,
+                {
+                  body: {
+                    name: folderName,
+                  },
+                },
+              )
+            )
+              .folder;
+          },
+        onSuccess:
+          async (
+            folder,
+          ) => {
+            setName(
+              '',
+            );
+            // New folders from this chat start out containing it.
+            await setMember.mutateAsync(
+              {
+                folderId:
+                  folder.id,
+                member: true,
+              },
+            );
+          },
+        onError:
+          (
+            e: Error,
+          ) =>
+            toast.error(
+              serverError(
+                e,
+              ) ||
+                t(
+                  'folder-failed',
+                  {
+                    defaultValue:
+                      'Could not update the folder',
+                  },
+                ),
+            ),
+      },
+    );
 
   return (
     <section aria-labelledby="opt-folders">
-      <h3 id="opt-folders" className="text-sm font-semibold text-site-text">
-        {t('folders-title', { defaultValue: 'Folders' })}
+      <h3
+        id="opt-folders"
+        className="text-sm font-semibold text-site-text"
+      >
+        {t(
+          'folders-title',
+          {
+            defaultValue:
+              'Folders',
+          },
+        )}
       </h3>
       <p className="mb-2 text-xs text-site-text-muted">
-        {t('folders-help', {
-          defaultValue: 'Only you see your folders. They appear as tabs above your chats.',
-        })}
+        {t(
+          'folders-help',
+          {
+            defaultValue:
+              'Only you see your folders. They appear as tabs above your chats.',
+          },
+        )}
       </p>
-      {(folders ?? []).length > 0 && (
-        <div className={cn('flex flex-col divide-y divide-site-border', arrival)}>
-          {(folders ?? []).map((f) => (
-            <label
-              key={f.id}
-              className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-site-text"
-            >
-              <span className="min-w-0 truncate">{f.name}</span>
-              <Switch
-                checked={f.scopeKeys.includes(scopeKey)}
-                onCheckedChange={(member) => setMember.mutate({ folderId: f.id, member })}
-                aria-label={t('folder-toggle', {
-                  name: f.name,
-                  defaultValue: 'Include this chat in {{name}}',
-                })}
-              />
-            </label>
-          ))}
+      {(
+        folders ??
+        []
+      )
+        .length >
+        0 && (
+        <div
+          className={cn(
+            'flex flex-col divide-y divide-site-border',
+            arrival,
+          )}
+        >
+          {(
+            folders ??
+            []
+          ).map(
+            (
+              f,
+            ) => (
+              <label
+                key={
+                  f.id
+                }
+                className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-site-text"
+              >
+                <span className="min-w-0 truncate">
+                  {
+                    f.name
+                  }
+                </span>
+                <Switch
+                  checked={f.scopeKeys.includes(
+                    scopeKey,
+                  )}
+                  onCheckedChange={(
+                    member,
+                  ) =>
+                    setMember.mutate(
+                      {
+                        folderId:
+                          f.id,
+                        member,
+                      },
+                    )
+                  }
+                  aria-label={t(
+                    'folder-toggle',
+                    {
+                      name: f.name,
+                      defaultValue:
+                        'Include this chat in {{name}}',
+                    },
+                  )}
+                />
+              </label>
+            ),
+          )}
         </div>
       )}
-      {(folders ?? []).length < MAX_FOLDERS && (
+      {(
+        folders ??
+        []
+      )
+        .length <
+        MAX_FOLDERS && (
         <form
           className="mt-2 flex items-center gap-2"
-          onSubmit={(e) => {
+          onSubmit={(
+            e,
+          ) => {
             e.preventDefault();
-            if (name.trim()) create.mutate(name.trim());
+            if (
+              name.trim()
+            )
+              create.mutate(
+                name.trim(),
+              );
           }}
         >
-          <label className="sr-only" htmlFor="new-folder-name">
-            {t('folder-new-label', { defaultValue: 'New folder name' })}
+          <label
+            className="sr-only"
+            htmlFor="new-folder-name"
+          >
+            {t(
+              'folder-new-label',
+              {
+                defaultValue:
+                  'New folder name',
+              },
+            )}
           </label>
           <input
             id="new-folder-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={FOLDER_NAME_MAX}
-            placeholder={t('folder-new-placeholder', { defaultValue: 'New folder, e.g. Friends' })}
+            value={
+              name
+            }
+            onChange={(
+              e,
+            ) =>
+              setName(
+                e
+                  .target
+                  .value,
+              )
+            }
+            maxLength={
+              FOLDER_NAME_MAX
+            }
+            placeholder={t(
+              'folder-new-placeholder',
+              {
+                defaultValue:
+                  'New folder, e.g. Friends',
+              },
+            )}
             className="surface-field min-h-11 min-w-0 flex-1 rounded-site px-3 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
           />
           <Button
             type="submit"
             variant="default"
             size="sm"
-            disabled={!name.trim()}
-            loading={create.isPending}
+            disabled={
+              !name.trim()
+            }
+            loading={
+              create.isPending
+            }
           >
-            <FolderPlus aria-hidden />
-            {t('folder-create', { defaultValue: 'Create' })}
+            <FolderPlus
+              aria-hidden
+            />
+            {t(
+              'folder-create',
+              {
+                defaultValue:
+                  'Create',
+              },
+            )}
           </Button>
         </form>
       )}

@@ -20,19 +20,69 @@ export { FLAG_KEY_PATTERN } from './key';
  * every flag's first 10%, and stable across processes and deploys so a user does
  * not flicker in and out of a rollout.
  */
-export function bucketFor(key: string, userId: string): number {
-  const digest = createHash('sha256').update(`${key}:${userId}`).digest();
-  return digest.readUInt32BE(0) % 100;
+export function bucketFor(
+  key: string,
+  userId: string,
+): number {
+  const digest =
+    createHash(
+      'sha256',
+    )
+      .update(
+        `${key}:${userId}`,
+      )
+      .digest();
+  return (
+    digest.readUInt32BE(
+      0,
+    ) %
+    100
+  );
 }
 
 /**
  * Whether the flag is on for this caller. An anonymous caller has no stable
  * identity to bucket, so they only see a flag that is fully rolled out.
  */
-export function evaluateFlag(flag: FlagRecord | undefined, userId?: string | null): boolean {
-  if (!flag || !flag.enabled) return false;
-  const percent = Math.min(100, Math.max(0, Math.trunc(flag.rolloutPercent)));
-  if (percent >= 100) return true;
-  if (percent <= 0 || !userId) return false;
-  return bucketFor(flag.key, userId) < percent;
+export function evaluateFlag(
+  flag:
+    | FlagRecord
+    | undefined,
+  userId?:
+    | string
+    | null,
+): boolean {
+  if (
+    !flag ||
+    !flag.enabled
+  )
+    return false;
+  const percent =
+    Math.min(
+      100,
+      Math.max(
+        0,
+        Math.trunc(
+          flag.rolloutPercent,
+        ),
+      ),
+    );
+  if (
+    percent >=
+    100
+  )
+    return true;
+  if (
+    percent <=
+      0 ||
+    !userId
+  )
+    return false;
+  return (
+    bucketFor(
+      flag.key,
+      userId,
+    ) <
+    percent
+  );
 }

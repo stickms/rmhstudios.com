@@ -13,40 +13,110 @@
  * asked for.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, AlertTriangle } from 'lucide-react';
+import {
+  Activity,
+  AlertTriangle,
+} from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
-import { getDeveloperKeyUsageApi, type DeveloperKeyUsage } from '@/lib/devplatform/keys.contract';
+import {
+  getDeveloperKeyUsageApi,
+  type DeveloperKeyUsage,
+} from '@/lib/devplatform/keys.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
-const nf = new Intl.NumberFormat('en-US');
+const nf =
+  new Intl.NumberFormat(
+    'en-US',
+  );
 
-export function KeyUsage({ keyId }: { keyId: string }) {
-  const { t } = useTranslation('f-devplatform');
-  const [data, setData] = useState<DeveloperKeyUsage | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-  const arrival = useArrival(!loading);
+export function KeyUsage({
+  keyId,
+}: {
+  keyId: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-devplatform',
+    );
+  const [
+    data,
+    setData,
+  ] =
+    useState<DeveloperKeyUsage | null>(
+      null,
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      true,
+    );
+  const [
+    failed,
+    setFailed,
+  ] =
+    useState(
+      false,
+    );
+  const arrival =
+    useArrival(
+      !loading,
+    );
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      setData(await api(getDeveloperKeyUsageApi, { params: { id: keyId }, query: { days: 30 } }));
-    } catch {
-      setFailed(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [keyId]);
+  const load =
+    useCallback(async () => {
+      setLoading(
+        true,
+      );
+      try {
+        setData(
+          await api(
+            getDeveloperKeyUsageApi,
+            {
+              params:
+                {
+                  id: keyId,
+                },
+              query:
+                {
+                  days: 30,
+                },
+            },
+          ),
+        );
+      } catch {
+        setFailed(
+          true,
+        );
+      } finally {
+        setLoading(
+          false,
+        );
+      }
+    }, [
+      keyId,
+    ]);
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [
+    load,
+  ]);
 
-  if (loading) {
+  if (
+    loading
+  ) {
     return (
       <div className="flex justify-center py-6">
         <Spinner />
@@ -54,46 +124,123 @@ export function KeyUsage({ keyId }: { keyId: string }) {
     );
   }
 
-  if (failed || !data) {
+  if (
+    failed ||
+    !data
+  ) {
     return (
-      <p className={cn('py-3 text-xs text-site-text-muted', arrival)}>
-        {t('usage-failed', { defaultValue: 'Could not load usage for this key.' })}
+      <p
+        className={cn(
+          'py-3 text-xs text-site-text-muted',
+          arrival,
+        )}
+      >
+        {t(
+          'usage-failed',
+          {
+            defaultValue:
+              'Could not load usage for this key.',
+          },
+        )}
       </p>
     );
   }
 
-  if (data.totals.requests === 0) {
+  if (
+    data
+      .totals
+      .requests ===
+    0
+  ) {
     return (
-      <p className={cn('py-3 text-xs text-site-text-muted', arrival)}>
-        {t('usage-none', {
-          defaultValue: 'No requests in the last {{count}} days.',
-          count: data.days,
-        })}
+      <p
+        className={cn(
+          'py-3 text-xs text-site-text-muted',
+          arrival,
+        )}
+      >
+        {t(
+          'usage-none',
+          {
+            defaultValue:
+              'No requests in the last {{count}} days.',
+            count:
+              data.days,
+          },
+        )}
       </p>
     );
   }
 
   // Scale bars against the busiest day so a quiet key still shows shape.
-  const peak = Math.max(...data.usage.map((d) => d.requests), 1);
+  const peak =
+    Math.max(
+      ...data.usage.map(
+        (
+          d,
+        ) =>
+          d.requests,
+      ),
+      1,
+    );
   const errorRate =
-    data.totals.requests > 0
-      ? (data.totals.clientErrors + data.totals.serverErrors) / data.totals.requests
+    data
+      .totals
+      .requests >
+    0
+      ? (data
+          .totals
+          .clientErrors +
+          data
+            .totals
+            .serverErrors) /
+        data
+          .totals
+          .requests
       : 0;
 
   return (
-    <div className={cn('surface-field mt-3 rounded-site px-3 py-3', arrival)}>
+    <div
+      className={cn(
+        'surface-field mt-3 rounded-site px-3 py-3',
+        arrival,
+      )}
+    >
       <div className="mb-2 flex items-center gap-2">
-        <Activity className="size-3.5 text-site-accent" aria-hidden />
+        <Activity
+          className="size-3.5 text-site-accent"
+          aria-hidden
+        />
         <span className="text-xs font-semibold text-site-text">
-          {t('usage-last-days', { defaultValue: 'Last {{count}} days', count: data.days })}
+          {t(
+            'usage-last-days',
+            {
+              defaultValue:
+                'Last {{count}} days',
+              count:
+                data.days,
+            },
+          )}
         </span>
-        {errorRate > 0.05 && (
+        {errorRate >
+          0.05 && (
           <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-site-warning">
-            <AlertTriangle className="size-3" aria-hidden />
-            {t('usage-errors', {
-              defaultValue: '{{percent}}% errors',
-              percent: Math.round(errorRate * 100),
-            })}
+            <AlertTriangle
+              className="size-3"
+              aria-hidden
+            />
+            {t(
+              'usage-errors',
+              {
+                defaultValue:
+                  '{{percent}}% errors',
+                percent:
+                  Math.round(
+                    errorRate *
+                      100,
+                  ),
+              },
+            )}
           </span>
         )}
       </div>
@@ -101,55 +248,110 @@ export function KeyUsage({ keyId }: { keyId: string }) {
       {/* Daily request volume. Decorative — the figures below carry the same
           information as text, so a screen reader gets numbers, not a wall of
           meaningless bars. */}
-      <div className="flex h-12 items-end gap-px" aria-hidden>
-        {data.usage.map((d) => (
-          <div
-            key={d.date}
-            className="flex-1 bg-site-accent/70"
-            style={{ height: `${Math.max(2, (d.requests / peak) * 100)}%` }}
-            title={t('usage-day-title', {
-              defaultValue: '{{date}}: {{count}} requests',
-              date: d.date,
-              count: nf.format(d.requests),
-            })}
-          />
-        ))}
+      <div
+        className="flex h-12 items-end gap-px"
+        aria-hidden
+      >
+        {data.usage.map(
+          (
+            d,
+          ) => (
+            <div
+              key={
+                d.date
+              }
+              className="flex-1 bg-site-accent/70"
+              style={{
+                height: `${Math.max(2, (d.requests / peak) * 100)}%`,
+              }}
+              title={t(
+                'usage-day-title',
+                {
+                  defaultValue:
+                    '{{date}}: {{count}} requests',
+                  date: d.date,
+                  count:
+                    nf.format(
+                      d.requests,
+                    ),
+                },
+              )}
+            />
+          ),
+        )}
       </div>
 
       <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
         <div>
           <dt className="text-site-text-muted">
-            {t('usage-requests', { defaultValue: 'Requests' })}
+            {t(
+              'usage-requests',
+              {
+                defaultValue:
+                  'Requests',
+              },
+            )}
           </dt>
           <dd className="font-semibold tabular-nums text-site-text">
-            {nf.format(data.totals.requests)}
+            {nf.format(
+              data
+                .totals
+                .requests,
+            )}
           </dd>
         </div>
         <div>
-          <dt className="text-site-text-muted">{t('usage-units', { defaultValue: 'Units' })}</dt>
+          <dt className="text-site-text-muted">
+            {t(
+              'usage-units',
+              {
+                defaultValue:
+                  'Units',
+              },
+            )}
+          </dt>
           <dd className="font-semibold tabular-nums text-site-text">
-            {nf.format(data.totals.units)}
+            {nf.format(
+              data
+                .totals
+                .units,
+            )}
           </dd>
         </div>
         <div>
-          <dt className="text-site-text-muted">4xx</dt>
+          <dt className="text-site-text-muted">
+            4xx
+          </dt>
           <dd className="font-semibold tabular-nums text-site-text">
-            {nf.format(data.totals.clientErrors)}
+            {nf.format(
+              data
+                .totals
+                .clientErrors,
+            )}
           </dd>
         </div>
         <div>
-          <dt className="text-site-text-muted">5xx</dt>
+          <dt className="text-site-text-muted">
+            5xx
+          </dt>
           <dd className="font-semibold tabular-nums text-site-text">
-            {nf.format(data.totals.serverErrors)}
+            {nf.format(
+              data
+                .totals
+                .serverErrors,
+            )}
           </dd>
         </div>
       </dl>
 
       <p className="mt-2 text-xs leading-relaxed text-site-text-muted">
-        {t('usage-note', {
-          defaultValue:
-            'Units are cost-weighted: heavier endpoints draw down your daily quota faster than a simple read. Counts settle within a few seconds of a request.',
-        })}
+        {t(
+          'usage-note',
+          {
+            defaultValue:
+              'Units are cost-weighted: heavier endpoints draw down your daily quota faster than a simple read. Counts settle within a few seconds of a request.',
+          },
+        )}
       </p>
     </div>
   );

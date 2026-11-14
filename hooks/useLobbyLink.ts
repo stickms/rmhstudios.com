@@ -1,5 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  useNavigate,
+  useSearch,
+} from '@tanstack/react-router';
 import { useClipboard } from '@/hooks/useClipboard';
 import {
   LOBBY_LINK_PARAM,
@@ -28,29 +37,79 @@ import {
  * `copied` self-resets, so the caller can swap a Copy icon for a Check without
  * owning a timer.
  */
-export function useLobbyLink({ code, path }: { code?: string | null; path?: string }): {
+export function useLobbyLink({
+  code,
+  path,
+}: {
+  code?:
+    | string
+    | null;
+  path?: string;
+}): {
   /** The absolute link. Empty during SSR, and empty when there is no lobby yet. */
   link: string;
   copied: boolean;
   /** Resolves false when the clipboard refused — worth a toast at the call site. */
   copyLink: () => Promise<boolean>;
 } {
-  const { copied, copy } = useClipboard();
+  const {
+    copied,
+    copy,
+  } =
+    useClipboard();
 
   // Built at click time as well as here: `window` is absent during SSR, so the
   // memo is empty on the server and correct from the first client render on.
-  const link = useMemo(() => {
-    if (code) return lobbyLink(code, path);
-    return path ? lobbyPathLink(path) : '';
-  }, [code, path]);
+  const link =
+    useMemo(() => {
+      if (
+        code
+      )
+        return lobbyLink(
+          code,
+          path,
+        );
+      return path
+        ? lobbyPathLink(
+            path,
+          )
+        : '';
+    }, [
+      code,
+      path,
+    ]);
 
-  const copyLink = useCallback(async () => {
-    const href = code ? lobbyLink(code, path) : path ? lobbyPathLink(path) : '';
-    if (!href) return false;
-    return copy(href);
-  }, [code, path, copy]);
+  const copyLink =
+    useCallback(async () => {
+      const href =
+        code
+          ? lobbyLink(
+              code,
+              path,
+            )
+          : path
+            ? lobbyPathLink(
+                path,
+              )
+            : '';
+      if (
+        !href
+      )
+        return false;
+      return copy(
+        href,
+      );
+    }, [
+      code,
+      path,
+      copy,
+    ]);
 
-  return { link, copied, copyLink };
+  return {
+    link,
+    copied,
+    copyLink,
+  };
 }
 
 /**
@@ -60,29 +119,72 @@ export function useLobbyLink({ code, path }: { code?: string | null; path?: stri
  * off the URL: a component that uses the code to decide which screen to show
  * would otherwise be yanked back the moment the code is consumed.
  */
-export function useLobbyInvite(): string | null {
-  const search = useSearch({ strict: false }) as Record<string, unknown>;
-  const fromUrl = sanitizeLobbyCode(search[LOBBY_LINK_PARAM]);
-  const [code, setCode] = useState<string | null>(fromUrl);
-  const seen = useRef(fromUrl);
+export function useLobbyInvite():
+  | string
+  | null {
+  const search =
+    useSearch(
+      {
+        strict: false,
+      },
+    ) as Record<
+      string,
+      unknown
+    >;
+  const fromUrl =
+    sanitizeLobbyCode(
+      search[
+        LOBBY_LINK_PARAM
+      ],
+    );
+  const [
+    code,
+    setCode,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      fromUrl,
+    );
+  const seen =
+    useRef(
+      fromUrl,
+    );
 
   // A link pasted into the address bar of a page already open is a client-side
   // navigation, not a mount, so the captured value has to notice a NEW code.
   useEffect(() => {
-    if (fromUrl && fromUrl !== seen.current) {
-      seen.current = fromUrl;
-      setCode(fromUrl);
+    if (
+      fromUrl &&
+      fromUrl !==
+        seen.current
+    ) {
+      seen.current =
+        fromUrl;
+      setCode(
+        fromUrl,
+      );
     }
-  }, [fromUrl]);
+  }, [
+    fromUrl,
+  ]);
 
   return code;
 }
 
 /** Everything except the invite param, which has served its purpose. */
-const dropInviteParam = (prev: Record<string, unknown>) => ({
-  ...prev,
-  [LOBBY_LINK_PARAM]: undefined,
-});
+const dropInviteParam =
+  (
+    prev: Record<
+      string,
+      unknown
+    >,
+  ) => ({
+    ...prev,
+    [LOBBY_LINK_PARAM]:
+      undefined,
+  });
 
 /**
  * Join once from an invite link.
@@ -98,19 +200,50 @@ const dropInviteParam = (prev: Record<string, unknown>) => ({
  * A caller that has to open its multiplayer screen first reads the code from
  * {@link useLobbyInvite}, which keeps returning it after this has consumed it.
  */
-export function useLobbyInviteJoin(ready: boolean, join: (code: string) => void): void {
-  const code = useLobbyInvite();
-  const navigate = useNavigate();
-  const joinRef = useRef(join);
-  joinRef.current = join;
-  const done = useRef(false);
+export function useLobbyInviteJoin(
+  ready: boolean,
+  join: (
+    code: string,
+  ) => void,
+): void {
+  const code =
+    useLobbyInvite();
+  const navigate =
+    useNavigate();
+  const joinRef =
+    useRef(
+      join,
+    );
+  joinRef.current =
+    join;
+  const done =
+    useRef(
+      false,
+    );
 
   useEffect(() => {
-    if (!code || !ready || done.current) return;
+    if (
+      !code ||
+      !ready ||
+      done.current
+    )
+      return;
     done.current = true;
-    joinRef.current(code);
+    joinRef.current(
+      code,
+    );
     // `navigate` is typed against the route tree, and a hook shared by ten game
     // routes cannot name one — hence the cast on an otherwise ordinary reducer.
-    void navigate({ search: dropInviteParam as never, replace: true });
-  }, [code, ready, navigate]);
+    void navigate(
+      {
+        search:
+          dropInviteParam as never,
+        replace: true,
+      },
+    );
+  }, [
+    code,
+    ready,
+    navigate,
+  ]);
 }

@@ -30,13 +30,19 @@ import {
 
 export type { IceServerConfig };
 
-export const DEFAULT_TF2_ICE_SERVERS: readonly IceServerConfig[] = DEFAULT_ICE_SERVERS;
+export const DEFAULT_TF2_ICE_SERVERS: readonly IceServerConfig[] =
+  DEFAULT_ICE_SERVERS;
 
 /**
  * The configured ICE servers: `raw` is the env value. Unset, empty or invalid
  * → the defaults (an invalid value is a deploy mistake; playing with public
  * STUN beats not connecting at all). `[]` is honoured: host candidates only.
  */
-export function parseIceServers(raw: unknown): IceServerConfig[] {
-  return parseSharedIceServers(raw, DEFAULT_TF2_ICE_SERVERS);
+export function parseIceServers(
+  raw: unknown,
+): IceServerConfig[] {
+  return parseSharedIceServers(
+    raw,
+    DEFAULT_TF2_ICE_SERVERS,
+  );
 }

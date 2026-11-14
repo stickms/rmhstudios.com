@@ -13,22 +13,68 @@ export interface SeasonWindow {
   label: string;
 }
 
-export const SEASONS: readonly SeasonWindow[] = [
-  { name: 'valentines', from: 210, to: 214, label: "Valentine's Day" },
-  { name: 'earthday', from: 420, to: 422, label: 'Earth Day' },
-  { name: 'halloween', from: 1024, to: 1031, label: 'Halloween' },
-  { name: 'winter', from: 1218, to: 102, label: 'the winter holidays' },
-];
+export const SEASONS: readonly SeasonWindow[] =
+  [
+    {
+      name: 'valentines',
+      from: 210,
+      to: 214,
+      label:
+        "Valentine's Day",
+    },
+    {
+      name: 'earthday',
+      from: 420,
+      to: 422,
+      label:
+        'Earth Day',
+    },
+    {
+      name: 'halloween',
+      from: 1024,
+      to: 1031,
+      label:
+        'Halloween',
+    },
+    {
+      name: 'winter',
+      from: 1218,
+      to: 102,
+      label:
+        'the winter holidays',
+    },
+  ];
 
-export function seasonForDate(d: Date = new Date()): SeasonWindow | null {
-  const k = (d.getMonth() + 1) * 100 + d.getDate();
+export function seasonForDate(
+  d: Date = new Date(),
+): SeasonWindow | null {
+  const k =
+    (d.getMonth() +
+      1) *
+      100 +
+    d.getDate();
   for (const s of SEASONS) {
-    const hit = s.from <= s.to ? k >= s.from && k <= s.to : k >= s.from || k <= s.to;
-    if (hit) return s;
+    const hit =
+      s.from <=
+      s.to
+        ? k >=
+            s.from &&
+          k <=
+            s.to
+        : k >=
+            s.from ||
+          k <=
+            s.to;
+    if (
+      hit
+    )
+      return s;
   }
   return null;
 }
 
 /** `rmh-fools` caches the admin flag ("1"); `rmh-fools-off` is the member's own off switch. */
-export const FOOLS_FLAG_KEY = 'rmh-fools';
-export const FOOLS_OFF_KEY = 'rmh-fools-off';
+export const FOOLS_FLAG_KEY =
+  'rmh-fools';
+export const FOOLS_OFF_KEY =
+  'rmh-fools-off';

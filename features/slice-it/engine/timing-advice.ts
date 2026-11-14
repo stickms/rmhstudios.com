@@ -18,27 +18,64 @@
 
 import type { TimingSummary } from './integrity';
 
-export function offsetAdvice(timing: TimingSummary | null | undefined): {
+export function offsetAdvice(
+  timing:
+    | TimingSummary
+    | null
+    | undefined,
+): {
   /** Milliseconds to ADD to the current audio offset. */
   suggestedDeltaMs: number;
   /** True when the bias is large relative to the spread — i.e. real. */
   confident: boolean;
   spreadMs: number;
 } | null {
-  if (!timing || timing.samples < 30) return null;
-  if (!Number.isFinite(timing.meanMs) || !Number.isFinite(timing.stdDevMs)) return null;
+  if (
+    !timing ||
+    timing.samples <
+      30
+  )
+    return null;
+  if (
+    !Number.isFinite(
+      timing.meanMs,
+    ) ||
+    !Number.isFinite(
+      timing.stdDevMs,
+    )
+  )
+    return null;
 
   // The standard error of the mean. A bias only means something when it is
   // large compared to the uncertainty in measuring it — with a wide spread and
   // few samples, a 10ms mean is noise.
-  const standardError = timing.stdDevMs / Math.sqrt(timing.samples);
-  const confident = Math.abs(timing.meanMs) > 2 * standardError && Math.abs(timing.meanMs) >= 8;
+  const standardError =
+    timing.stdDevMs /
+    Math.sqrt(
+      timing.samples,
+    );
+  const confident =
+    Math.abs(
+      timing.meanMs,
+    ) >
+      2 *
+        standardError &&
+    Math.abs(
+      timing.meanMs,
+    ) >=
+      8;
 
   return {
     // A player hitting consistently LATE (positive mean) is hearing the audio
     // early relative to the visuals, so the offset moves the other way.
-    suggestedDeltaMs: -Math.round(timing.meanMs),
+    suggestedDeltaMs:
+      -Math.round(
+        timing.meanMs,
+      ),
     confident,
-    spreadMs: Math.round(timing.stdDevMs),
+    spreadMs:
+      Math.round(
+        timing.stdDevMs,
+      ),
   };
 }

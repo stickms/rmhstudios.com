@@ -1,131 +1,850 @@
 # lib/ — shared logic, server helpers, schemas
 
-> Scope: guidance for working inside `lib/` (~920 files, 80+ subdirectories).
-> Repo-wide context: [`/CLAUDE.md`](../CLAUDE.md).
+> Scope:
+> guidance
+> for
+> working
+> inside
+> `lib/`
+> (~920
+> files,
+> 80+
+> subdirectories).
+> Repo-wide
+> context:
+> [`/CLAUDE.md`](../CLAUDE.md).
 
-`lib/` is the shared brain of the app: auth, database, feed, economy, i18n,
-per-game logic, and every server-side helper. It lives at the **repo root**
-(not `app/lib/`) and is imported as `@/lib/...`.
+`lib/`
+is
+the
+shared
+brain
+of
+the
+app:
+auth,
+database,
+feed,
+economy,
+i18n,
+per-game
+logic,
+and
+every
+server-side
+helper.
+It
+lives
+at
+the
+**repo
+root**
+(not
+`app/lib/`)
+and
+is
+imported
+as
+`@/lib/...`.
 
 ## The `.server.ts` rule (most important convention here)
 
-A Vite plugin (`stubServerFiles()` in `vite.config.ts`) replaces any module
-matching `*.server.{ts,tsx,js,jsx}` with `undefined` stubs **in the client
-bundle only**. SSR/server builds get the real module.
+A
+Vite
+plugin
+(`stubServerFiles()`
+in
+`vite.config.ts`)
+replaces
+any
+module
+matching
+`*.server.{ts,tsx,js,jsx}`
+with
+`undefined`
+stubs
+**in
+the
+client
+bundle
+only**.
+SSR/server
+builds
+get
+the
+real
+module.
 
-- Anything touching Prisma, `node:*`, `pg`, `ioredis`, S3, web-push, secrets,
-  or heavy Node deps **must** be named `*.server.ts`.
-- The import specifier must literally contain `.server` for stripping to work
-  — no `index.server` barrel re-exports.
-- Client-safe pure logic, types, and zod schemas go in a plain file. The
-  standard split is a pair: `coins.server.ts` (mutations) + `coins-schema.ts`
-  (zod), `reactions.server.ts` + `reactions.ts`, etc.
-- Importing a `.server` module from client code fails at runtime with
-  `undefined` exports — not at build time. Be careful.
+- Anything
+  touching
+  Prisma,
+  `node:*`,
+  `pg`,
+  `ioredis`,
+  S3,
+  web-push,
+  secrets,
+  or
+  heavy
+  Node
+  deps
+  **must**
+  be
+  named
+  `*.server.ts`.
+- The
+  import
+  specifier
+  must
+  literally
+  contain
+  `.server`
+  for
+  stripping
+  to
+  work
+  —
+  no
+  `index.server`
+  barrel
+  re-exports.
+- Client-safe
+  pure
+  logic,
+  types,
+  and
+  zod
+  schemas
+  go
+  in
+  a
+  plain
+  file.
+  The
+  standard
+  split
+  is
+  a
+  pair:
+  `coins.server.ts`
+  (mutations) +
+  `coins-schema.ts`
+  (zod),
+  `reactions.server.ts` +
+  `reactions.ts`,
+  etc.
+- Importing
+  a
+  `.server`
+  module
+  from
+  client
+  code
+  fails
+  at
+  runtime
+  with
+  `undefined`
+  exports
+  —
+  not
+  at
+  build
+  time.
+  Be
+  careful.
 
 ## Load-bearing modules (know these ~20)
 
-| Module                                     | What it is                                                                                                                                                                                                               |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `prisma.server.ts`                         | `prisma` singleton (`@prisma/adapter-pg`, pool via `DATABASE_POOL_SIZE`, default 10)                                                                                                                                     |
-| `auth.ts`                                  | Better Auth server config: Discord/GitHub + email/password (Google is disabled, accounts kept), passkey + Stripe + customSession plugins, custom user fields `username/handle/isAdmin/isVerified`, auto-handle on signup |
-| `auth-client.ts`                           | `authClient` for the browser. Not in the entry (`check-entry-composition` fails on it): import it from a page that signs in or manages an account, or with `await import()` at the action. The shell's session is `session/live-session.ts` |
-| `entitlements.ts`                          | `getUserTier(userId)`, tier ranks, `hasApiAccess/...` — resolves Stripe subscription + gift membership                                                                                                                   |
-| `rate-limit.ts`                            | `rateLimit(ip, opts)`, `getClientIp` — in-memory, per-process, × `RATE_LIMIT_MULTIPLIER` (default 4)                                                                                                                     |
-| `cached.server.ts`                         | THE cache helper: `cached()` (L1 + Redis L2, single-flight, tags, cross-process invalidation) and `lruL1()` (explicitly in-process). `lib/cache.ts`/`apiCache` is gone.                                                |
-| `redis.server.ts`                          | optional ioredis backplane — `redisPublish/Subscribe/RateLimit/GetJSON/SetJSON`; **no-ops when `REDIS_URL` unset**                                                                                                       |
-| `realtime-bus.server.ts`                   | `createBus<T>(namespace)` — EventEmitter + Redis fan-out; the seam under all SSE                                                                                                                                         |
-| `feed-sse.ts` / `feed-types.ts`            | feed event bus + the `FeedItem` client contract                                                                                                                                                                          |
-| `notifications.server.ts`                  | `createNotification/...` — respects preferences, mirrors to web push (`push/send.server.ts`)                                                                                                                             |
-| `coins.server.ts`                          | `awardCoins()` — the **only** correct way to grant coins (ledger + profile update)                                                                                                                                       |
-| `user-display.ts`                          | `userDisplaySelect` + `resolveUser` — shared user shape incl. cosmetics                                                                                                                                                  |
-| `storage/s3.server.ts` + `storage/keys.ts` | R2/S3 object store with local-FS fallback; key builders + filename safety                                                                                                                                                |
-| `seo.ts` / `schema.ts`                     | `buildMeta`, `buildCanonical`, `SITE_URL`; JSON-LD builders + `jsonLdScript`                                                                                                                                             |
-| `rum.ts` / `client-errors.ts`              | Web Vitals + client error beacons (installed in `__root.tsx`)                                                                                                                                                            |
+| Module                                     | What it is                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prisma.server.ts`                         | `prisma` singleton (`@prisma/adapter-pg`, pool via `DATABASE_POOL_SIZE`, default 10)                                                                                                                                                                                                                                                                 |
+| `auth.ts`                                  | Better Auth server config: Discord/GitHub + email/password (Google is disabled, accounts kept), passkey + Stripe + customSession plugins, custom user fields `username/handle/isAdmin/isVerified`, auto-handle on signup                                                                                                                             |
+| `auth-client.ts`                           | `authClient` for the browser. Not in the entry (`check-entry-composition` fails on it): import it from a page that signs in or manages an account, or with `await import()` at the action. The shell's session is `session/live-session.ts`                                                                                                          |
+| `entitlements.ts`                          | `getUserTier(userId)`, tier ranks, `hasApiAccess/...` — resolves Stripe subscription + gift membership                                                                                                                                                                                                                                               |
+| `rate-limit.ts`                            | `rateLimit(ip, opts)`, `getClientIp` — in-memory, per-process, × `RATE_LIMIT_MULTIPLIER` (default 4)                                                                                                                                                                                                                                                 |
+| `cached.server.ts`                         | THE cache helper: `cached()` (L1 + Redis L2, single-flight, tags, cross-process invalidation) and `lruL1()` (explicitly in-process). `lib/cache.ts`/`apiCache` is gone.                                                                                                                                                                              |
+| `redis.server.ts`                          | optional ioredis backplane — `redisPublish/Subscribe/RateLimit/GetJSON/SetJSON`; **no-ops when `REDIS_URL` unset**                                                                                                                                                                                                                                   |
+| `realtime-bus.server.ts`                   | `createBus<T>(namespace)` — EventEmitter + Redis fan-out; the seam under all SSE                                                                                                                                                                                                                                                                     |
+| `feed-sse.ts` / `feed-types.ts`            | feed event bus + the `FeedItem` client contract                                                                                                                                                                                                                                                                                                      |
+| `notifications.server.ts`                  | `createNotification/...` — respects preferences, mirrors to web push (`push/send.server.ts`)                                                                                                                                                                                                                                                         |
+| `coins.server.ts`                          | `awardCoins()` — the **only** correct way to grant coins (ledger + profile update)                                                                                                                                                                                                                                                                   |
+| `user-display.ts`                          | `userDisplaySelect` + `resolveUser` — shared user shape incl. cosmetics                                                                                                                                                                                                                                                                              |
+| `storage/s3.server.ts` + `storage/keys.ts` | R2/S3 object store with local-FS fallback; key builders + filename safety                                                                                                                                                                                                                                                                            |
+| `seo.ts` / `schema.ts`                     | `buildMeta`, `buildCanonical`, `SITE_URL`; JSON-LD builders + `jsonLdScript`                                                                                                                                                                                                                                                                         |
+| `rum.ts` / `client-errors.ts`              | Web Vitals + client error beacons (installed in `__root.tsx`)                                                                                                                                                                                                                                                                                        |
 | `catalog/`                                 | the catalog (`games`, `apps`, `GameInfo`/`AppInfo`): single source of truth for game/app cards and score rules. Entries of games/apps with a `features/<id>/` folder live in `features/<id>/catalog.ts`; the rest are one file each under `catalog/{games,apps}/`. Scoring rules are the entry's `scoring` field; `game/registry.ts` derives from it |
-| `internal-auth.ts`                         | shared-secret server-to-server auth (`authorizeInternalRequest`)                                                                                                                                                         |
-| `ssrf-guard.server.ts`                     | `safeFetch` — required for any user-supplied URL fetch                                                                                                                                                                   |
-| `utils.ts`                                 | `cn()` (twMerge+clsx), `formatCount`, `relativeTimeShort`, `formatRelativeTime`                                                                                                                                          |
+| `internal-auth.ts`                         | shared-secret server-to-server auth (`authorizeInternalRequest`)                                                                                                                                                                                                                                                                                     |
+| `ssrf-guard.server.ts`                     | `safeFetch` — required for any user-supplied URL fetch                                                                                                                                                                                                                                                                                               |
+| `utils.ts`                                 | `cn()` (twMerge+clsx), `formatCount`, `relativeTimeShort`, `formatRelativeTime`                                                                                                                                                                                                                                                                      |
 
 ## Domain map
 
-- **AI:** `ai/text.server.ts` — DeepSeek via the `openai` SDK
-  (`DEEPSEEK_API_KEY`, `api.deepseek.com/v1`); exports `transformText`,
-  `translateText`, `askFeed`, etc. Prompts treat user content as data
-  (prompt-injection defenses) — preserve that when editing. `ai/recap.server.ts`,
-  `ai/summarize.server.ts`, `rmhark-ai/` (AI bot posting, pairs with the bot
+- **AI:**
+  `ai/text.server.ts`
+  —
+  DeepSeek
+  via
+  the
+  `openai`
+  SDK
+  (`DEEPSEEK_API_KEY`,
+  `api.deepseek.com/v1`);
+  exports
+  `transformText`,
+  `translateText`,
+  `askFeed`,
+  etc.
+  Prompts
+  treat
+  user
+  content
+  as
+  data
+  (prompt-injection
+  defenses)
+  —
+  preserve
+  that
+  when
+  editing.
+  `ai/recap.server.ts`,
+  `ai/summarize.server.ts`,
+  `rmhark-ai/`
+  (AI
+  bot
+  posting,
+  pairs
+  with
+  the
+  bot
   worker).
-- **Feed/social:** `feed/` (timeline assembly, ranking, personalization,
-  cursors, mentions), `social/` (engagement, reactions), `messages.server.ts`,
-  `group-chat/`, `bookmarks.server.ts`, `explore.server.ts`, `tags.server.ts`.
-- **Economy/progression:** `coins.server.ts`, `xp/`, `quests/`,
-  `achievements/`, `battlepass/`, `streak.server.ts`, `staking/`, `gifting/`,
-  `shop/`, `store/`, `storefront/`, `wheel/`, `wrapped/`, `ranked/` (elo).
-- **Media:** `storage/`, `media/` (upload/attach/quota/sweep/policy),
-  `image-optimize.ts`, `video-optimize.server.ts`, `og/post-image.server.tsx`
-  (satori/resvg OG cards), `library/`, `albums*.ts`.
-- **RMHLadder:** `rmhladder/` — job-discovery pipeline (`adapters/` for
-  Ashby/Greenhouse/Lever/SmartRecruiters/generic, `classifiers/`,
-  `pipeline/`, `scoring.ts`, `verification.ts`, `seed/`, `server/`). Driven by
-  `server/ladder-worker` on a cron; **heavily unit-tested** — keep colocated
-  `.test.ts` files passing.
-- **Per-game/app logic:** (games moved by redesign A1 live in `features/<id>/engine/` — `balatro`, `void-breaker`, `nightrail`, `altair`, `slice-it`, `hearthworks`, `casino`, `doctrine`, `vega`, `signal-forge`, `dream-rift`, `gabriels-horn`, `synapse-storm`, `laundry-sort`; see `features/CLAUDE.md`) one subdir per game (`altair/`, `rmhbox/`,
-  `slice-it/`, casino games, `doctrine/`, `versecraft/`, …) and per app
-  (`rmhtube/`, `rmhmusic/`, `rmhtype/`, `rmhstudy/`, `rmhvibe/`, `studio/`,
-  `personas/`, `rideshare/`, `homes/`, `predictions/`). Realtime client
-  sockets live at `lib/<app>/socket.ts` with event names in
-  `lib/<app>/events.ts` (see `server/CLAUDE.md`). **`rmhmusic/` is the
-  exception: it has no socket.** It is the piano & guitar learning app, and
-  everything lives in `lib/rmhmusic/learn/` — pure client-safe engines (`pitch/`
-  note maths + YIN detector, `input/` mic/MIDI/keyboard/on-screen adapters fanned
-  into one hub, `content/` lesson path, `audio/`), the client Zustand `store.ts`,
-  and server-only progress (`progress.server.ts`) behind the
-  `app/routes/api/rmhmusic/learn/` routes. **Status, unfinished work, future
-  features and known gaps for it live in [`docs/rmhmusic/roadmap.md`](../docs/rmhmusic/roadmap.md)
-  at the repo root — read it first.**
-- **`core/` (redesign A4):** the primitives every feature used to copy. `math.ts` (`clamp`,
-  `clamp01`, `lerp`, `invLerp`, `remap`), `rng.ts` (`mulberry32`, `shuffle`), `format.ts`, and
-  `persist.ts`: the ONE typed, SSR-safe Web Storage wrapper (`readJson(key, fallback, { validate })`,
-  `writeJson`, `readString`/`writeString`, `removeKey`, `persisted({ key, version, migrate })`;
-  never throws, `{ storage: 'session' }` for sessionStorage). Never write `localStorage.getItem` +
-  `JSON.parse` in a try/catch again: `lib/__tests__/persist-ratchet.test.ts` fails a new file that does.
-  Math/RNG are guarded by the `no-restricted-syntax` block in `eslint.config.mjs`. The
-  AudioContext has one owner too (`getAudioContext()` in `shared/platform.ts`);
-  `lib/__tests__/audio-context-ratchet.test.ts` fails a new `new AudioContext()` / `window.AudioContext`.
-- **TypeScript projects (third-pass audit AR1, AR4):** `core/`, `contract/`, `shared/`, `http.ts`,
-  `url.ts`, `network-quality.ts` and `display-scale.ts` are the **core project**
-  (`tsconfig.core.json`): they import each other and packages, never the rest of `lib/`. The
-  Source-engine port (`tf2-game/`, `sp-game/`, `csgo-game/`, `tf2-hud/`, `tf2-loadout/`, without
-  their `*.server.ts` files) is the **engine project** (`tsconfig.engine.json`): it imports itself
-  and core. Everything else is the site project. `pnpm typecheck` builds the three in order and
-  skips a project whose inputs did not change; an import that crosses the wrong way fails `tsc`
-  (TS6307) and `lib/__tests__/tsconfig-projects.test.ts`. A new module that belongs in core joins
-  both `tsconfig.core.json`'s `include` and `tsconfig.site.json`'s `exclude`; a new `*.server.ts`
-  inside an engine directory goes in `tsconfig.site.json`'s `files` (the test's failure message
-  names it), and so does a test that imports one: name it `*.server.test.ts`, or add it to
-  `tsconfig.engine.json`'s `exclude` too. Tests under the core directories are site files too.
-- **`shared/`:** the cross-app tier. `realtime/client.ts` is the socket.io
-  factory every app's `socket.ts` builds on (fast reconnect, wake signals,
-  per-attempt auth, an opt-in outbox); `realtime/types.ts` holds the
-  `RealtimeStatus` contract and the 15s `PEER_GRACE_MS` that the server's
-  `PresenceGrace` reads too. `platform.ts` wraps the browser APIs that aren't
-  everywhere (Web Audio — **always** go through `getAudioContext()`, never
-  `new AudioContext()` — plus haptics, idle callbacks, wake lock, fullscreen,
-  WebGL detection). `app-toast.ts` is the toast store for the full-screen apps.
-- **The chrome globe's physics (Steel G5a):** `dough.ts` (the soft-body field a poke dents; plain JS,
-  unit-tested), `fluid.ts` (springs, rubber band, the ripple) and `trackball.ts` (free rotation) are the
-  shared primitives `lib/globe/engine.ts` runs on; `lib/chrome/` is the one WebGL renderer. The old
-  material's runtime (`jelly/`, `liquid/`, `eversion/`, `wasm/`) was deleted in Steel phase 6.
-  `lib/low-end.ts` is the separate capability read (`isLowEndCapability()`, `softRenderDetected()`) for
-  games and RUM; it is never a class on `<html>` (`lib/__tests__/no-perf-lite.test.ts`).
-  `lib/hover-css.ts` is the PostCSS plugin that strips hand-written hover lifts and shadows.
-  The Globe motion setting (`lib/appearance/prefs.ts`: `motionStill()`, `html[data-jelly-motion='still']`)
-  stops the globe's idle drift and the games' ambient canvases.
-- **Moderation/admin:** `moderation.server.ts`, `admin-audit.server.ts`,
-  `admin-review.server.ts`, `security-reports.ts`.
-- **Webhooks (outbound developer API):** `webhooks/` (emit, events,
+- **Feed/social:**
+  `feed/`
+  (timeline
+  assembly,
+  ranking,
+  personalization,
+  cursors,
+  mentions),
+  `social/`
+  (engagement,
+  reactions),
+  `messages.server.ts`,
+  `group-chat/`,
+  `bookmarks.server.ts`,
+  `explore.server.ts`,
+  `tags.server.ts`.
+- **Economy/progression:**
+  `coins.server.ts`,
+  `xp/`,
+  `quests/`,
+  `achievements/`,
+  `battlepass/`,
+  `streak.server.ts`,
+  `staking/`,
+  `gifting/`,
+  `shop/`,
+  `store/`,
+  `storefront/`,
+  `wheel/`,
+  `wrapped/`,
+  `ranked/`
+  (elo).
+- **Media:**
+  `storage/`,
+  `media/`
+  (upload/attach/quota/sweep/policy),
+  `image-optimize.ts`,
+  `video-optimize.server.ts`,
+  `og/post-image.server.tsx`
+  (satori/resvg
+  OG
+  cards),
+  `library/`,
+  `albums*.ts`.
+- **RMHLadder:**
+  `rmhladder/`
+  —
+  job-discovery
+  pipeline
+  (`adapters/`
+  for
+  Ashby/Greenhouse/Lever/SmartRecruiters/generic,
+  `classifiers/`,
+  `pipeline/`,
+  `scoring.ts`,
+  `verification.ts`,
+  `seed/`,
+  `server/`).
+  Driven
+  by
+  `server/ladder-worker`
+  on
+  a
+  cron;
+  **heavily
+  unit-tested**
+  —
+  keep
+  colocated
+  `.test.ts`
+  files
+  passing.
+- **Per-game/app
+  logic:**
+  (games
+  moved
+  by
+  redesign
+  A1
+  live
+  in
+  `features/<id>/engine/`
+  —
+  `balatro`,
+  `void-breaker`,
+  `nightrail`,
+  `altair`,
+  `slice-it`,
+  `hearthworks`,
+  `casino`,
+  `doctrine`,
+  `vega`,
+  `signal-forge`,
+  `dream-rift`,
+  `gabriels-horn`,
+  `synapse-storm`,
+  `laundry-sort`;
+  see
+  `features/CLAUDE.md`)
+  one
+  subdir
+  per
+  game
+  (`altair/`,
+  `rmhbox/`,
+  `slice-it/`,
+  casino
+  games,
+  `doctrine/`,
+  `versecraft/`,
+  …)
+  and
+  per
+  app
+  (`rmhtube/`,
+  `rmhmusic/`,
+  `rmhtype/`,
+  `rmhstudy/`,
+  `rmhvibe/`,
+  `studio/`,
+  `personas/`,
+  `rideshare/`,
+  `homes/`,
+  `predictions/`).
+  Realtime
+  client
+  sockets
+  live
+  at
+  `lib/<app>/socket.ts`
+  with
+  event
+  names
+  in
+  `lib/<app>/events.ts`
+  (see
+  `server/CLAUDE.md`).
+  **`rmhmusic/`
+  is
+  the
+  exception:
+  it
+  has
+  no
+  socket.**
+  It
+  is
+  the
+  piano
+  &
+  guitar
+  learning
+  app,
+  and
+  everything
+  lives
+  in
+  `lib/rmhmusic/learn/`
+  —
+  pure
+  client-safe
+  engines
+  (`pitch/`
+  note
+  maths +
+  YIN
+  detector,
+  `input/`
+  mic/MIDI/keyboard/on-screen
+  adapters
+  fanned
+  into
+  one
+  hub,
+  `content/`
+  lesson
+  path,
+  `audio/`),
+  the
+  client
+  Zustand
+  `store.ts`,
+  and
+  server-only
+  progress
+  (`progress.server.ts`)
+  behind
+  the
+  `app/routes/api/rmhmusic/learn/`
+  routes.
+  **Status,
+  unfinished
+  work,
+  future
+  features
+  and
+  known
+  gaps
+  for
+  it
+  live
+  in
+  [`docs/rmhmusic/roadmap.md`](../docs/rmhmusic/roadmap.md)
+  at
+  the
+  repo
+  root
+  —
+  read
+  it
+  first.**
+- **`core/`
+  (redesign
+  A4):**
+  the
+  primitives
+  every
+  feature
+  used
+  to
+  copy.
+  `math.ts`
+  (`clamp`,
+  `clamp01`,
+  `lerp`,
+  `invLerp`,
+  `remap`),
+  `rng.ts`
+  (`mulberry32`,
+  `shuffle`),
+  `format.ts`,
+  and
+  `persist.ts`:
+  the
+  ONE
+  typed,
+  SSR-safe
+  Web
+  Storage
+  wrapper
+  (`readJson(key, fallback, { validate })`,
+  `writeJson`,
+  `readString`/`writeString`,
+  `removeKey`,
+  `persisted({ key, version, migrate })`;
+  never
+  throws,
+  `{ storage: 'session' }`
+  for
+  sessionStorage).
+  Never
+  write
+  `localStorage.getItem` +
+  `JSON.parse`
+  in
+  a
+  try/catch
+  again:
+  `lib/__tests__/persist-ratchet.test.ts`
+  fails
+  a
+  new
+  file
+  that
+  does.
+  Math/RNG
+  are
+  guarded
+  by
+  the
+  `no-restricted-syntax`
+  block
+  in
+  `eslint.config.mjs`.
+  The
+  AudioContext
+  has
+  one
+  owner
+  too
+  (`getAudioContext()`
+  in
+  `shared/platform.ts`);
+  `lib/__tests__/audio-context-ratchet.test.ts`
+  fails
+  a
+  new
+  `new AudioContext()`
+  /
+  `window.AudioContext`.
+- **TypeScript
+  projects
+  (third-pass
+  audit
+  AR1,
+  AR4):**
+  `core/`,
+  `contract/`,
+  `shared/`,
+  `http.ts`,
+  `url.ts`,
+  `network-quality.ts`
+  and
+  `display-scale.ts`
+  are
+  the
+  **core
+  project**
+  (`tsconfig.core.json`):
+  they
+  import
+  each
+  other
+  and
+  packages,
+  never
+  the
+  rest
+  of
+  `lib/`.
+  The
+  Source-engine
+  port
+  (`tf2-game/`,
+  `sp-game/`,
+  `csgo-game/`,
+  `tf2-hud/`,
+  `tf2-loadout/`,
+  without
+  their
+  `*.server.ts`
+  files)
+  is
+  the
+  **engine
+  project**
+  (`tsconfig.engine.json`):
+  it
+  imports
+  itself
+  and
+  core.
+  Everything
+  else
+  is
+  the
+  site
+  project.
+  `pnpm typecheck`
+  builds
+  the
+  three
+  in
+  order
+  and
+  skips
+  a
+  project
+  whose
+  inputs
+  did
+  not
+  change;
+  an
+  import
+  that
+  crosses
+  the
+  wrong
+  way
+  fails
+  `tsc`
+  (TS6307)
+  and
+  `lib/__tests__/tsconfig-projects.test.ts`.
+  A
+  new
+  module
+  that
+  belongs
+  in
+  core
+  joins
+  both
+  `tsconfig.core.json`'s
+  `include`
+  and
+  `tsconfig.site.json`'s
+  `exclude`;
+  a
+  new
+  `*.server.ts`
+  inside
+  an
+  engine
+  directory
+  goes
+  in
+  `tsconfig.site.json`'s
+  `files`
+  (the
+  test's
+  failure
+  message
+  names
+  it),
+  and
+  so
+  does
+  a
+  test
+  that
+  imports
+  one:
+  name
+  it
+  `*.server.test.ts`,
+  or
+  add
+  it
+  to
+  `tsconfig.engine.json`'s
+  `exclude`
+  too.
+  Tests
+  under
+  the
+  core
+  directories
+  are
+  site
+  files
+  too.
+- **`shared/`:**
+  the
+  cross-app
+  tier.
+  `realtime/client.ts`
+  is
+  the
+  socket.io
+  factory
+  every
+  app's
+  `socket.ts`
+  builds
+  on
+  (fast
+  reconnect,
+  wake
+  signals,
+  per-attempt
+  auth,
+  an
+  opt-in
+  outbox);
+  `realtime/types.ts`
+  holds
+  the
+  `RealtimeStatus`
+  contract
+  and
+  the
+  15s
+  `PEER_GRACE_MS`
+  that
+  the
+  server's
+  `PresenceGrace`
+  reads
+  too.
+  `platform.ts`
+  wraps
+  the
+  browser
+  APIs
+  that
+  aren't
+  everywhere
+  (Web
+  Audio
+  —
+  **always**
+  go
+  through
+  `getAudioContext()`,
+  never
+  `new AudioContext()`
+  —
+  plus
+  haptics,
+  idle
+  callbacks,
+  wake
+  lock,
+  fullscreen,
+  WebGL
+  detection).
+  `app-toast.ts`
+  is
+  the
+  toast
+  store
+  for
+  the
+  full-screen
+  apps.
+- **The
+  chrome
+  globe's
+  physics
+  (Steel
+  G5a):**
+  `dough.ts`
+  (the
+  soft-body
+  field
+  a
+  poke
+  dents;
+  plain
+  JS,
+  unit-tested),
+  `fluid.ts`
+  (springs,
+  rubber
+  band,
+  the
+  ripple)
+  and
+  `trackball.ts`
+  (free
+  rotation)
+  are
+  the
+  shared
+  primitives
+  `lib/globe/engine.ts`
+  runs
+  on;
+  `lib/chrome/`
+  is
+  the
+  one
+  WebGL
+  renderer.
+  The
+  old
+  material's
+  runtime
+  (`jelly/`,
+  `liquid/`,
+  `eversion/`,
+  `wasm/`)
+  was
+  deleted
+  in
+  Steel
+  phase 6.
+  `lib/low-end.ts`
+  is
+  the
+  separate
+  capability
+  read
+  (`isLowEndCapability()`,
+  `softRenderDetected()`)
+  for
+  games
+  and
+  RUM;
+  it
+  is
+  never
+  a
+  class
+  on
+  `<html>`
+  (`lib/__tests__/no-perf-lite.test.ts`).
+  `lib/hover-css.ts`
+  is
+  the
+  PostCSS
+  plugin
+  that
+  strips
+  hand-written
+  hover
+  lifts
+  and
+  shadows.
+  The
+  Globe
+  motion
+  setting
+  (`lib/appearance/prefs.ts`:
+  `motionStill()`,
+  `html[data-jelly-motion='still']`)
+  stops
+  the
+  globe's
+  idle
+  drift
+  and
+  the
+  games'
+  ambient
+  canvases.
+- **Moderation/admin:**
+  `moderation.server.ts`,
+  `admin-audit.server.ts`,
+  `admin-review.server.ts`,
+  `security-reports.ts`.
+- **Webhooks
+  (outbound
+  developer
+  API):**
+  `webhooks/`
+  (emit,
+  events,
   signature).
-- **i18n:** `i18n/` — see below.
+- **i18n:**
+  `i18n/`
+  —
+  see
+  below.
 
 ## Auth patterns (canonical)
 
@@ -138,198 +857,1635 @@ POST: defineHandler({ auth: 'admin' }, async ({ userId }) => …);  // 401 / 403
 POST: defineHandler({ auth: 'optional' }, async ({ userId }) => …); // userId: string | null
 ```
 
-Reach for the raw call below only outside an API route (server functions,
-workers) — inside an API handler (a route file under `app/routes/api/**`, or a
-registered endpoint, below) use `defineHandler` / `implement`:
+Reach
+for
+the
+raw
+call
+below
+only
+outside
+an
+API
+route
+(server
+functions,
+workers)
+—
+inside
+an
+API
+handler
+(a
+route
+file
+under
+`app/routes/api/**`,
+or
+a
+registered
+endpoint,
+below)
+use
+`defineHandler`
+/
+`implement`:
 
 ```ts
-const session = await auth.api.getSession({ headers: request.headers });
+const session =
+  await auth.api.getSession(
+    {
+      headers:
+        request.headers,
+    },
+  );
 ```
 
-**Registered endpoints live here (third-pass audit AR3).** An endpoint whose handlers
-all go through the wrapper (`implement()` for a contract, a bare `defineHandler()`
-where there is none yet) is `lib/<domain>/api/<path.with.dots>.server.ts`
-(`lib/api/routes/…` when no domain owns it), exporting
-`route = apiRoute('/api/…', { GET: implement(…) })` from `@/lib/api/route.server`.
-`lib/api/route-table.server.ts` is the GENERATED list of them (`pnpm api:routes`;
-never hand-edit), `lib/api/route-match.ts` is the path matcher (the router's rules,
-tested against the router), `lib/api/route-dispatch.server.ts` is what
-`app/routes/api/$.ts` and the in-process loader read (`internal-dispatch.server.ts`)
-ask, and `lib/api/route-sources.ts` is the node-only list of every API handler source
-for tests and scripts. When to register and when to keep a route file:
-`app/CLAUDE.md` §"Adding an API route".
+**Registered
+endpoints
+live
+here
+(third-pass
+audit
+AR3).**
+An
+endpoint
+whose
+handlers
+all
+go
+through
+the
+wrapper
+(`implement()`
+for
+a
+contract,
+a
+bare
+`defineHandler()`
+where
+there
+is
+none
+yet)
+is
+`lib/<domain>/api/<path.with.dots>.server.ts`
+(`lib/api/routes/…`
+when
+no
+domain
+owns
+it),
+exporting
+`route = apiRoute('/api/…', { GET: implement(…) })`
+from
+`@/lib/api/route.server`.
+`lib/api/route-table.server.ts`
+is
+the
+GENERATED
+list
+of
+them
+(`pnpm api:routes`;
+never
+hand-edit),
+`lib/api/route-match.ts`
+is
+the
+path
+matcher
+(the
+router's
+rules,
+tested
+against
+the
+router),
+`lib/api/route-dispatch.server.ts`
+is
+what
+`app/routes/api/$.ts`
+and
+the
+in-process
+loader
+read
+(`internal-dispatch.server.ts`)
+ask,
+and
+`lib/api/route-sources.ts`
+is
+the
+node-only
+list
+of
+every
+API
+handler
+source
+for
+tests
+and
+scripts.
+When
+to
+register
+and
+when
+to
+keep
+a
+route
+file:
+`app/CLAUDE.md`
+§"Adding
+an
+API
+route".
 
-Session `tier` is injected by the `customSession` plugin from
-`entitlements.ts`. Note `lib/auth.ts` requires `reflect-metadata` — it is
-installed at startup by the Nitro plugin `server/nitro/reflect-metadata.ts`;
-don't remove that plugin.
+Session
+`tier`
+is
+injected
+by
+the
+`customSession`
+plugin
+from
+`entitlements.ts`.
+Note
+`lib/auth.ts`
+requires
+`reflect-metadata`
+—
+it
+is
+installed
+at
+startup
+by
+the
+Nitro
+plugin
+`server/nitro/reflect-metadata.ts`;
+don't
+remove
+that
+plugin.
 
 ## Database (Prisma)
 
-- `prisma/schema/`: 323 models, ~8900 lines. IDs are
-  `String @id @default(cuid())`; models `@@map` to snake_case tables; 71
-  enums. Model families: auth/user, social feed (RMHark*), per-game
-  player/match tables, economy (CoinTransaction, inventory, quests),
-  media/library, Stripe subscriptions, moderation, Ladder*, Doctrine\*,
-  rideshare/homes, messaging.
-- **New-table PK policy (rewrite R0-T7):** existing tables keep their `cuid()`
-  PKs (the keyset `(createdAt desc, id desc)` indexes make them scannable). For
-  any NEW append-only / high-volume table, prefer a time-sortable key —
-  UUIDv7/ULID or `BigInt` identity — for insert locality, so a second
-  `(fk, createdAt)` index isn't needed just to scan it.
-- Workflow: `pnpm db:push` for local dev; real migrations via
-  `pnpm db:migrate` (dev) / `pnpm db:migrate:prod` (deploy runs this).
-  `postinstall` runs `prisma generate`.
+- `prisma/schema/`:
+  323
+  models,
+  ~8900
+  lines.
+  IDs
+  are
+  `String @id @default(cuid())`;
+  models
+  `@@map`
+  to
+  snake_case
+  tables;
+  71
+  enums.
+  Model
+  families:
+  auth/user,
+  social
+  feed
+  (RMHark*),
+  per-game
+  player/match
+  tables,
+  economy
+  (CoinTransaction,
+  inventory,
+  quests),
+  media/library,
+  Stripe
+  subscriptions,
+  moderation,
+  Ladder*,
+  Doctrine\*,
+  rideshare/homes,
+  messaging.
+- **New-table
+  PK
+  policy
+  (rewrite
+  R0-T7):**
+  existing
+  tables
+  keep
+  their
+  `cuid()`
+  PKs
+  (the
+  keyset
+  `(createdAt desc, id desc)`
+  indexes
+  make
+  them
+  scannable).
+  For
+  any
+  NEW
+  append-only
+  /
+  high-volume
+  table,
+  prefer
+  a
+  time-sortable
+  key
+  —
+  UUIDv7/ULID
+  or
+  `BigInt`
+  identity
+  —
+  for
+  insert
+  locality,
+  so
+  a
+  second
+  `(fk, createdAt)`
+  index
+  isn't
+  needed
+  just
+  to
+  scan
+  it.
+- Workflow:
+  `pnpm db:push`
+  for
+  local
+  dev;
+  real
+  migrations
+  via
+  `pnpm db:migrate`
+  (dev)
+  /
+  `pnpm db:migrate:prod`
+  (deploy
+  runs
+  this).
+  `postinstall`
+  runs
+  `prisma generate`.
 
 ## i18n pipeline
 
-- 16 locales, 67 namespaces (`lib/i18n/config.ts`); RTL: `ar`, `ur`.
-  `LOCALES` and `NAMESPACES` there are the registry: `locales/` on disk carries
-  more directories and more `en/*.json` files than are registered, and anything
-  unregistered is **never loaded** (the UI silently serves `defaultValue`s).
-  Adding a namespace file means adding it to `NAMESPACES` in the same commit.
-- **No catalog is statically bundled — not even English — and nothing loads a
-  whole locale on the client.** English renders from each `t()` call's
-  `defaultValue` (server and client alike), so every call needs a **literal**
-  default equal to the catalog — interpolate (`'Page {{page}}'`), never `${}` —
-  and `lib/__tests__/i18n-default-drift.test.ts` enforces both.
-- **Namespaces load one at a time, on demand** (perf audit B6).
-  `lib/i18n/resources.<locale>.ts` (auto-generated by
-  `scripts/gen-i18n-resources.ts`, every locale including `en`) is only a map
-  `namespace -> () => import('@/locales/<lng>/<ns>.json')`, so Vite emits one
-  small chunk per JSON. `resources.ts` wraps it: `loadNamespace(locale, ns)`,
-  `loadNamespaces(locale, [...])` (and `LOCALE_LOADERS`, a whole locale, for
-  server tools only). The client instance (`instances.ts`) registers
-  `clientI18nBackend` (an i18next `{ type: 'backend', read }`) with
-  `partialBundledLanguages: true`, `ns: []` and `react.useSuspense: false`:
-  - `useTranslation(ns)` on a namespace that is not loaded calls
-    `loadNamespaces`; the component renders meanwhile (`t()` returns each call's
-    `defaultValue`, matching SSR) and re-renders when the chunk lands. i18next
-    reads that namespace for the active language and for the `en` fallback.
-  - A non-en locale's **core** namespaces (`CORE_NAMESPACES`) arrive
-    synchronously from the root loader as bundled resources and are never
-    fetched. SSR (`resources.server.ts`) likewise imports only the core
-    namespaces of the active locale (`preloadLocale()` in the `__root.tsx`
-    loader); everything else renders from defaults server-side.
-  - English namespaces are fetched through the same backend, but only for
-    namespaces actually used, and deferred to load + idle while English is the
-    active language (nothing on screen depends on them). Never reintroduce an
-    eager "backfill the whole catalog".
-  - A locale switch fetches the core set plus the namespaces already in use for
-    the new locale, then flips the language. Because `t()` needs a literal
-    `defaultValue` anyway, a namespace a locale lacks (or a failed chunk) just
-    shows English. A `t('key', { ns: 'other' })` on a namespace the component
-    did not declare to `useTranslation` is caught by `missingKeyHandler` and
-    loads it too (`saveMissing` is on only for that; nothing is saved) — but
-    declaring it, `useTranslation(['a', 'other'])`, avoids the extra render.
-- Flow when strings change: `pnpm i18n:extract` (scan `t()` calls into
-  `locales/*/…json`) → `pnpm i18n:translate` (machine-translate) →
-  `pnpm i18n:resources` (regenerate the resource modules) →
-  `pnpm i18n:coverage` (verify; `--strict` gate available).
-- Locale resolution: `rmh-lang` cookie → Accept-Language → `en`
-  (`lib/i18n/resolve.ts`); `<html lang/dir>` is set pre-paint by the
-  `locale` step of the generated pre-paint script (`lib/prepaint/`, `docs/fouc.md`).
+- 16
+  locales,
+  67
+  namespaces
+  (`lib/i18n/config.ts`);
+  RTL:
+  `ar`,
+  `ur`.
+  `LOCALES`
+  and
+  `NAMESPACES`
+  there
+  are
+  the
+  registry:
+  `locales/`
+  on
+  disk
+  carries
+  more
+  directories
+  and
+  more
+  `en/*.json`
+  files
+  than
+  are
+  registered,
+  and
+  anything
+  unregistered
+  is
+  **never
+  loaded**
+  (the
+  UI
+  silently
+  serves
+  `defaultValue`s).
+  Adding
+  a
+  namespace
+  file
+  means
+  adding
+  it
+  to
+  `NAMESPACES`
+  in
+  the
+  same
+  commit.
+- **No
+  catalog
+  is
+  statically
+  bundled
+  —
+  not
+  even
+  English
+  —
+  and
+  nothing
+  loads
+  a
+  whole
+  locale
+  on
+  the
+  client.**
+  English
+  renders
+  from
+  each
+  `t()`
+  call's
+  `defaultValue`
+  (server
+  and
+  client
+  alike),
+  so
+  every
+  call
+  needs
+  a
+  **literal**
+  default
+  equal
+  to
+  the
+  catalog
+  —
+  interpolate
+  (`'Page {{page}}'`),
+  never
+  `${}`
+  —
+  and
+  `lib/__tests__/i18n-default-drift.test.ts`
+  enforces
+  both.
+- **Namespaces
+  load
+  one
+  at
+  a
+  time,
+  on
+  demand**
+  (perf
+  audit
+  B6).
+  `lib/i18n/resources.<locale>.ts`
+  (auto-generated
+  by
+  `scripts/gen-i18n-resources.ts`,
+  every
+  locale
+  including
+  `en`)
+  is
+  only
+  a
+  map
+  `namespace -> () => import('@/locales/<lng>/<ns>.json')`,
+  so
+  Vite
+  emits
+  one
+  small
+  chunk
+  per
+  JSON.
+  `resources.ts`
+  wraps
+  it:
+  `loadNamespace(locale, ns)`,
+  `loadNamespaces(locale, [...])`
+  (and
+  `LOCALE_LOADERS`,
+  a
+  whole
+  locale,
+  for
+  server
+  tools
+  only).
+  The
+  client
+  instance
+  (`instances.ts`)
+  registers
+  `clientI18nBackend`
+  (an
+  i18next
+  `{ type: 'backend', read }`)
+  with
+  `partialBundledLanguages: true`,
+  `ns: []`
+  and
+  `react.useSuspense: false`:
+  - `useTranslation(ns)`
+    on
+    a
+    namespace
+    that
+    is
+    not
+    loaded
+    calls
+    `loadNamespaces`;
+    the
+    component
+    renders
+    meanwhile
+    (`t()`
+    returns
+    each
+    call's
+    `defaultValue`,
+    matching
+    SSR)
+    and
+    re-renders
+    when
+    the
+    chunk
+    lands.
+    i18next
+    reads
+    that
+    namespace
+    for
+    the
+    active
+    language
+    and
+    for
+    the
+    `en`
+    fallback.
+  - A
+    non-en
+    locale's
+    **core**
+    namespaces
+    (`CORE_NAMESPACES`)
+    arrive
+    synchronously
+    from
+    the
+    root
+    loader
+    as
+    bundled
+    resources
+    and
+    are
+    never
+    fetched.
+    SSR
+    (`resources.server.ts`)
+    likewise
+    imports
+    only
+    the
+    core
+    namespaces
+    of
+    the
+    active
+    locale
+    (`preloadLocale()`
+    in
+    the
+    `__root.tsx`
+    loader);
+    everything
+    else
+    renders
+    from
+    defaults
+    server-side.
+  - English
+    namespaces
+    are
+    fetched
+    through
+    the
+    same
+    backend,
+    but
+    only
+    for
+    namespaces
+    actually
+    used,
+    and
+    deferred
+    to
+    load +
+    idle
+    while
+    English
+    is
+    the
+    active
+    language
+    (nothing
+    on
+    screen
+    depends
+    on
+    them).
+    Never
+    reintroduce
+    an
+    eager
+    "backfill
+    the
+    whole
+    catalog".
+  - A
+    locale
+    switch
+    fetches
+    the
+    core
+    set
+    plus
+    the
+    namespaces
+    already
+    in
+    use
+    for
+    the
+    new
+    locale,
+    then
+    flips
+    the
+    language.
+    Because
+    `t()`
+    needs
+    a
+    literal
+    `defaultValue`
+    anyway,
+    a
+    namespace
+    a
+    locale
+    lacks
+    (or
+    a
+    failed
+    chunk)
+    just
+    shows
+    English.
+    A
+    `t('key', { ns: 'other' })`
+    on
+    a
+    namespace
+    the
+    component
+    did
+    not
+    declare
+    to
+    `useTranslation`
+    is
+    caught
+    by
+    `missingKeyHandler`
+    and
+    loads
+    it
+    too
+    (`saveMissing`
+    is
+    on
+    only
+    for
+    that;
+    nothing
+    is
+    saved)
+    —
+    but
+    declaring
+    it,
+    `useTranslation(['a', 'other'])`,
+    avoids
+    the
+    extra
+    render.
+- Flow
+  when
+  strings
+  change:
+  `pnpm i18n:extract`
+  (scan
+  `t()`
+  calls
+  into
+  `locales/*/…json`)
+  →
+  `pnpm i18n:translate`
+  (machine-translate)
+  →
+  `pnpm i18n:resources`
+  (regenerate
+  the
+  resource
+  modules)
+  →
+  `pnpm i18n:coverage`
+  (verify;
+  `--strict`
+  gate
+  available).
+- Locale
+  resolution:
+  `rmh-lang`
+  cookie
+  →
+  Accept-Language
+  →
+  `en`
+  (`lib/i18n/resolve.ts`);
+  `<html lang/dir>`
+  is
+  set
+  pre-paint
+  by
+  the
+  `locale`
+  step
+  of
+  the
+  generated
+  pre-paint
+  script
+  (`lib/prepaint/`,
+  `docs/fouc.md`).
 
 ## Caching / realtime / jobs
 
-- **One cache helper: `cached.server.ts`.** (`lib/cache.ts` / `apiCache` was deleted; do not recreate it.)
-  - `cached(key, ttlMs, loader, { tags, l2, shouldCache, ttlFor })`: L1 (in-process, bounded LRU) -> L2 (Redis) ->
-    loader, with single-flight on misses. `cachedNullable` / `cachedMiss` / `cachedMany` / `cachedSWR` are the
-    absent-row, batch and stale-while-revalidate variants.
-  - Invalidate with `invalidateCached(key)`, `invalidateTag(tag)` or `invalidateCachedPrefix(prefix)`: each drops the
-    local copy synchronously (a sync caller may `void` it) and broadcasts on the `cache:invalidate` Redis channel so
-    every process drops its L1. Writers should call one after the write.
-  - **Prefer tags** (`cached(..., { tags: ['x'] })` + `invalidateTag('x')`) over prefix matching for new key families.
-    Tagged entries are L1-only (Redis has no cheap delete-by-tag), so the invalidation is exact everywhere.
-  - **L2 rules:** values that go to Redis are JSON round-tripped, so a value holding a Date / Map / class instance
-    must pass `l2: false`. A prefix-invalidated family must also be `l2: false` (prefix invalidation does not clear
-    Redis; the next read would re-seed L1 from the stale copy). `cached()` caches a loader's `null`; pass
-    `shouldCache: (v) => v != null` where a miss must not be remembered.
-  - `peekL1(key)` / `putL1(key, v, ttl)`: sync access to the shared L1 only, for a caller that owns its own second
-    layer or has a value-dependent TTL. Everything else should call `cached()`.
-  - `lruL1(name, opts)`: an explicitly in-process, sync, bounded TTL cache that never touches Redis and is never
-    broadcast-invalidated. Use only for per-process throttles/probe flags, hot paths where a Redis round trip would
-    cost more than the work saved, or values that cannot cross a process. Say why in a comment at the call site.
-  - Do not add a hand-rolled `new Map()` + `TTL_MS` cache: `lib/__tests__/adhoc-cache-ratchet.test.ts` counts the
-    existing ones (a one-directional backlog) and fails if the number grows.
-  - The `defineHandler` response micro-cache (`lib/api/response-cache.server.ts`, <= 30 s, keyed by URL) is separate
-    and is NOT reached by these invalidators: a public route whose data has a write path must pass `microCache: false`.
-- Everything degrades gracefully without Redis (`redis.server.ts`): L1 + single-flight only, local invalidation.
-- All SSE rides `createBus` (`realtime-bus.server.ts`): local EventEmitter +
-  optional Redis pub/sub.
-- **No cron in the web tier, and one scheduler (D4).** Periodic background work is a pg-boss cron in the `jobs`
-  worker (`server/jobs/index.ts` REGISTRATIONS; pattern: `streak-reminders.server.ts`, `cleanup-job.server.ts`), or a
-  pg-boss queue consumed by its own worker via `lib/jobs/scheduled-consumer.server.ts` (ladder, homes). `node-cron` is
-  gone. A server-side `setInterval` is only for per-process housekeeping and needs an allowlist row with a reason in
-  `lib/__tests__/scheduler-ratchet.test.ts`. One notable
-  lazy pattern: scheduled posts have no worker;
-  `scheduled/publish.server.ts#publishDueForUser` materializes due posts when
-  the author's timeline is touched.
+- **One
+  cache
+  helper:
+  `cached.server.ts`.**
+  (`lib/cache.ts`
+  /
+  `apiCache`
+  was
+  deleted;
+  do
+  not
+  recreate
+  it.)
+  - `cached(key, ttlMs, loader, { tags, l2, shouldCache, ttlFor })`:
+    L1
+    (in-process,
+    bounded
+    LRU)
+    ->
+    L2
+    (Redis)
+    ->
+    loader,
+    with
+    single-flight
+    on
+    misses.
+    `cachedNullable`
+    /
+    `cachedMiss`
+    /
+    `cachedMany`
+    /
+    `cachedSWR`
+    are
+    the
+    absent-row,
+    batch
+    and
+    stale-while-revalidate
+    variants.
+  - Invalidate
+    with
+    `invalidateCached(key)`,
+    `invalidateTag(tag)`
+    or
+    `invalidateCachedPrefix(prefix)`:
+    each
+    drops
+    the
+    local
+    copy
+    synchronously
+    (a
+    sync
+    caller
+    may
+    `void`
+    it)
+    and
+    broadcasts
+    on
+    the
+    `cache:invalidate`
+    Redis
+    channel
+    so
+    every
+    process
+    drops
+    its
+    L1.
+    Writers
+    should
+    call
+    one
+    after
+    the
+    write.
+  - **Prefer
+    tags**
+    (`cached(..., { tags: ['x'] })` +
+    `invalidateTag('x')`)
+    over
+    prefix
+    matching
+    for
+    new
+    key
+    families.
+    Tagged
+    entries
+    are
+    L1-only
+    (Redis
+    has
+    no
+    cheap
+    delete-by-tag),
+    so
+    the
+    invalidation
+    is
+    exact
+    everywhere.
+  - **L2
+    rules:**
+    values
+    that
+    go
+    to
+    Redis
+    are
+    JSON
+    round-tripped,
+    so
+    a
+    value
+    holding
+    a
+    Date
+    /
+    Map
+    /
+    class
+    instance
+    must
+    pass
+    `l2: false`.
+    A
+    prefix-invalidated
+    family
+    must
+    also
+    be
+    `l2: false`
+    (prefix
+    invalidation
+    does
+    not
+    clear
+    Redis;
+    the
+    next
+    read
+    would
+    re-seed
+    L1
+    from
+    the
+    stale
+    copy).
+    `cached()`
+    caches
+    a
+    loader's
+    `null`;
+    pass
+    `shouldCache: (v) => v != null`
+    where
+    a
+    miss
+    must
+    not
+    be
+    remembered.
+  - `peekL1(key)`
+    /
+    `putL1(key, v, ttl)`:
+    sync
+    access
+    to
+    the
+    shared
+    L1
+    only,
+    for
+    a
+    caller
+    that
+    owns
+    its
+    own
+    second
+    layer
+    or
+    has
+    a
+    value-dependent
+    TTL.
+    Everything
+    else
+    should
+    call
+    `cached()`.
+  - `lruL1(name, opts)`:
+    an
+    explicitly
+    in-process,
+    sync,
+    bounded
+    TTL
+    cache
+    that
+    never
+    touches
+    Redis
+    and
+    is
+    never
+    broadcast-invalidated.
+    Use
+    only
+    for
+    per-process
+    throttles/probe
+    flags,
+    hot
+    paths
+    where
+    a
+    Redis
+    round
+    trip
+    would
+    cost
+    more
+    than
+    the
+    work
+    saved,
+    or
+    values
+    that
+    cannot
+    cross
+    a
+    process.
+    Say
+    why
+    in
+    a
+    comment
+    at
+    the
+    call
+    site.
+  - Do
+    not
+    add
+    a
+    hand-rolled
+    `new Map()` +
+    `TTL_MS`
+    cache:
+    `lib/__tests__/adhoc-cache-ratchet.test.ts`
+    counts
+    the
+    existing
+    ones
+    (a
+    one-directional
+    backlog)
+    and
+    fails
+    if
+    the
+    number
+    grows.
+  - The
+    `defineHandler`
+    response
+    micro-cache
+    (`lib/api/response-cache.server.ts`,
+    <=
+    30
+    s,
+    keyed
+    by
+    URL)
+    is
+    separate
+    and
+    is
+    NOT
+    reached
+    by
+    these
+    invalidators:
+    a
+    public
+    route
+    whose
+    data
+    has
+    a
+    write
+    path
+    must
+    pass
+    `microCache: false`.
+- Everything
+  degrades
+  gracefully
+  without
+  Redis
+  (`redis.server.ts`):
+  L1 +
+  single-flight
+  only,
+  local
+  invalidation.
+- All
+  SSE
+  rides
+  `createBus`
+  (`realtime-bus.server.ts`):
+  local
+  EventEmitter +
+  optional
+  Redis
+  pub/sub.
+- **No
+  cron
+  in
+  the
+  web
+  tier,
+  and
+  one
+  scheduler
+  (D4).**
+  Periodic
+  background
+  work
+  is
+  a
+  pg-boss
+  cron
+  in
+  the
+  `jobs`
+  worker
+  (`server/jobs/index.ts`
+  REGISTRATIONS;
+  pattern:
+  `streak-reminders.server.ts`,
+  `cleanup-job.server.ts`),
+  or
+  a
+  pg-boss
+  queue
+  consumed
+  by
+  its
+  own
+  worker
+  via
+  `lib/jobs/scheduled-consumer.server.ts`
+  (ladder,
+  homes).
+  `node-cron`
+  is
+  gone.
+  A
+  server-side
+  `setInterval`
+  is
+  only
+  for
+  per-process
+  housekeeping
+  and
+  needs
+  an
+  allowlist
+  row
+  with
+  a
+  reason
+  in
+  `lib/__tests__/scheduler-ratchet.test.ts`.
+  One
+  notable
+  lazy
+  pattern:
+  scheduled
+  posts
+  have
+  no
+  worker;
+  `scheduled/publish.server.ts#publishDueForUser`
+  materializes
+  due
+  posts
+  when
+  the
+  author's
+  timeline
+  is
+  touched.
 
 ## Placement quirks (historical inconsistency — follow existing neighbors)
 
-- Some hooks live in `hooks/`, others as `lib/use*.ts` (`useStreak`,
-  `useUnreadCount`, `usePushSubscription`, …).
-- Zustand stores live in `stores/` (site-level) but also `lib/store/` and
-  `lib/studio/store.ts` (feature-level).
-- When adding new code, prefer `hooks/` for hooks and `stores/` for
-  site-level stores; keep feature-internal state next to its feature.
+- Some
+  hooks
+  live
+  in
+  `hooks/`,
+  others
+  as
+  `lib/use*.ts`
+  (`useStreak`,
+  `useUnreadCount`,
+  `usePushSubscription`,
+  …).
+- Zustand
+  stores
+  live
+  in
+  `stores/`
+  (site-level)
+  but
+  also
+  `lib/store/`
+  and
+  `lib/studio/store.ts`
+  (feature-level).
+- When
+  adding
+  new
+  code,
+  prefer
+  `hooks/`
+  for
+  hooks
+  and
+  `stores/`
+  for
+  site-level
+  stores;
+  keep
+  feature-internal
+  state
+  next
+  to
+  its
+  feature.
 
 ## Testing
 
-- Main suite: `pnpm test` (config `vitest.config.ts`, ~20s). Discovery is a
-  **glob** — every `*.test.ts(x)` in the repo runs, and there is nothing to
-  register. (It used to be a curated `include` list, and two test files sat in
-  the repo for months without ever running because of it;
-  `lib/__tests__/test-discovery.test.ts` is the gate that keeps that from
-  recurring.) `pnpm test <path>` takes any file or directory.
-- **Scope: mission critical only.** On 2026-08-08 the suite was narrowed to what
-  breaks money, user data, privacy, auth or a deploy; 180 files covering _how
-  the games play_ were deleted to get the run from ~37s to ~20s. Before adding a
-  test, check it meets one of the five criteria in
-  [`docs/testing.md`](../docs/testing.md) §What is not tested — a correct,
-  passing gameplay test is still the wrong thing to add here.
-- Separate: `pnpm test:epic` (`vitest.epic.config.ts`, 60s timeout, launches
-  Chromium) for `scripts/epic/`, gated by `.github/workflows/epic-tests.yml`.
-- Separate: `pnpm test:tf2` (`vitest.tf2.config.ts`) for the Source-engine port, gated by
-  `.github/workflows/tf2-game-tests.yml`. It runs every test of the engine TypeScript project,
-  which since audit AR4 includes the engine-side tests of `tf2-hud/` and `tf2-loadout/`
-  (`vitest.engine-tests.mjs` reads the list from `tsconfig.engine.json`). Their server-side tests
-  stay in the main suite.
-- Coverage: `pnpm test:coverage` — informational, never a gate.
-- **Isolation is on and stays on.** `--no-isolate` is ~40% faster and produces
-  order-dependent failures (`lib/rmhladder/pipeline/*` fail on a different set
-  of seeds each shuffle). Details and the rest of the speed work:
-  [`docs/testing.md`](../docs/testing.md) §Speed.
-- **`lib/__tests__/` is where the repo's consistency is executable.** The
-  design/tab-strip gate, the game-viewport contract, the filter-cost budget,
-  the theme-token and colour-vision contracts, the API-handler adoption
-  backlog, the i18n catalog/namespace integrity, the rAF-loop allowlist and the
-  server-bundle copy check all live there, and `pnpm check:consistency` runs
-  that subset on every commit. When you fix one of their backlog entries,
-  **delete the entry in the same commit** — those lists are one-directional and
-  each has a test that fails when an entry no longer violates its rule, so a
-  stale allowlist cannot quietly become permanent.
+- Main
+  suite:
+  `pnpm test`
+  (config
+  `vitest.config.ts`,
+  ~20s).
+  Discovery
+  is
+  a
+  **glob**
+  —
+  every
+  `*.test.ts(x)`
+  in
+  the
+  repo
+  runs,
+  and
+  there
+  is
+  nothing
+  to
+  register.
+  (It
+  used
+  to
+  be
+  a
+  curated
+  `include`
+  list,
+  and
+  two
+  test
+  files
+  sat
+  in
+  the
+  repo
+  for
+  months
+  without
+  ever
+  running
+  because
+  of
+  it;
+  `lib/__tests__/test-discovery.test.ts`
+  is
+  the
+  gate
+  that
+  keeps
+  that
+  from
+  recurring.)
+  `pnpm test <path>`
+  takes
+  any
+  file
+  or
+  directory.
+- **Scope:
+  mission
+  critical
+  only.**
+  On
+  2026-08-08
+  the
+  suite
+  was
+  narrowed
+  to
+  what
+  breaks
+  money,
+  user
+  data,
+  privacy,
+  auth
+  or
+  a
+  deploy;
+  180
+  files
+  covering
+  _how
+  the
+  games
+  play_
+  were
+  deleted
+  to
+  get
+  the
+  run
+  from
+  ~37s
+  to
+  ~20s.
+  Before
+  adding
+  a
+  test,
+  check
+  it
+  meets
+  one
+  of
+  the
+  five
+  criteria
+  in
+  [`docs/testing.md`](../docs/testing.md)
+  §What
+  is
+  not
+  tested
+  —
+  a
+  correct,
+  passing
+  gameplay
+  test
+  is
+  still
+  the
+  wrong
+  thing
+  to
+  add
+  here.
+- Separate:
+  `pnpm test:epic`
+  (`vitest.epic.config.ts`,
+  60s
+  timeout,
+  launches
+  Chromium)
+  for
+  `scripts/epic/`,
+  gated
+  by
+  `.github/workflows/epic-tests.yml`.
+- Separate:
+  `pnpm test:tf2`
+  (`vitest.tf2.config.ts`)
+  for
+  the
+  Source-engine
+  port,
+  gated
+  by
+  `.github/workflows/tf2-game-tests.yml`.
+  It
+  runs
+  every
+  test
+  of
+  the
+  engine
+  TypeScript
+  project,
+  which
+  since
+  audit
+  AR4
+  includes
+  the
+  engine-side
+  tests
+  of
+  `tf2-hud/`
+  and
+  `tf2-loadout/`
+  (`vitest.engine-tests.mjs`
+  reads
+  the
+  list
+  from
+  `tsconfig.engine.json`).
+  Their
+  server-side
+  tests
+  stay
+  in
+  the
+  main
+  suite.
+- Coverage:
+  `pnpm test:coverage`
+  —
+  informational,
+  never
+  a
+  gate.
+- **Isolation
+  is
+  on
+  and
+  stays
+  on.**
+  `--no-isolate`
+  is
+  ~40%
+  faster
+  and
+  produces
+  order-dependent
+  failures
+  (`lib/rmhladder/pipeline/*`
+  fail
+  on
+  a
+  different
+  set
+  of
+  seeds
+  each
+  shuffle).
+  Details
+  and
+  the
+  rest
+  of
+  the
+  speed
+  work:
+  [`docs/testing.md`](../docs/testing.md)
+  §Speed.
+- **`lib/__tests__/`
+  is
+  where
+  the
+  repo's
+  consistency
+  is
+  executable.**
+  The
+  design/tab-strip
+  gate,
+  the
+  game-viewport
+  contract,
+  the
+  filter-cost
+  budget,
+  the
+  theme-token
+  and
+  colour-vision
+  contracts,
+  the
+  API-handler
+  adoption
+  backlog,
+  the
+  i18n
+  catalog/namespace
+  integrity,
+  the
+  rAF-loop
+  allowlist
+  and
+  the
+  server-bundle
+  copy
+  check
+  all
+  live
+  there,
+  and
+  `pnpm check:consistency`
+  runs
+  that
+  subset
+  on
+  every
+  commit.
+  When
+  you
+  fix
+  one
+  of
+  their
+  backlog
+  entries,
+  **delete
+  the
+  entry
+  in
+  the
+  same
+  commit**
+  —
+  those
+  lists
+  are
+  one-directional
+  and
+  each
+  has
+  a
+  test
+  that
+  fails
+  when
+  an
+  entry
+  no
+  longer
+  violates
+  its
+  rule,
+  so
+  a
+  stale
+  allowlist
+  cannot
+  quietly
+  become
+  permanent.
 
 ## Before you commit to `lib/`
 
-`pnpm check:consistency` (repo `CLAUDE.md` → "The commit gate") runs before
-every commit. On top of what it checks:
+`pnpm check:consistency`
+(repo
+`CLAUDE.md`
+→
+"The
+commit
+gate")
+runs
+before
+every
+commit.
+On
+top
+of
+what
+it
+checks:
 
-- [ ] **`.server` discipline:** anything touching Prisma, `node:*`, secrets or
-      heavy Node deps is named `*.server.ts`, the specifier literally contains
-      `.server`, and no client component imports it (it fails at _runtime_ with
-      `undefined` exports, not at build time).
-- [ ] **One way to do each thing:** coins only through `awardCoins()`, user
-      shapes through `userDisplaySelect`/`resolveUser`, user-supplied URLs
-      through `safeFetch`, SSE through `createBus`, audio through
-      `getAudioContext()`. A second path is the drift this directory exists to
+- [ ] **`.server`
+      discipline:**
+      anything
+      touching
+      Prisma,
+      `node:*`,
+      secrets
+      or
+      heavy
+      Node
+      deps
+      is
+      named
+      `*.server.ts`,
+      the
+      specifier
+      literally
+      contains
+      `.server`,
+      and
+      no
+      client
+      component
+      imports
+      it
+      (it
+      fails
+      at
+      _runtime_
+      with
+      `undefined`
+      exports,
+      not
+      at
+      build
+      time).
+- [ ] **One
+      way
+      to
+      do
+      each
+      thing:**
+      coins
+      only
+      through
+      `awardCoins()`,
+      user
+      shapes
+      through
+      `userDisplaySelect`/`resolveUser`,
+      user-supplied
+      URLs
+      through
+      `safeFetch`,
+      SSE
+      through
+      `createBus`,
+      audio
+      through
+      `getAudioContext()`.
+      A
+      second
+      path
+      is
+      the
+      drift
+      this
+      directory
+      exists
+      to
       prevent.
-- [ ] **Schema changes carry a migration** (`pnpm db:migrate`) — `db:push` is
-      dev-only, and deploys run `prisma migrate deploy`. New high-volume tables
-      take a time-sortable key (rewrite R0-T7).
-- [ ] **i18n edits keep the registry honest:** a new `locales/en/<ns>.json`
-      needs its `NAMESPACES` entry in `lib/i18n/config.ts` in the same commit,
-      or nothing ever loads it.
-- [ ] **Colocated tests still pass** — `lib/rmhladder/` in particular is
-      heavily unit-tested, and its suite is the contract for the pipeline.
+- [ ] **Schema
+      changes
+      carry
+      a
+      migration**
+      (`pnpm db:migrate`)
+      —
+      `db:push`
+      is
+      dev-only,
+      and
+      deploys
+      run
+      `prisma migrate deploy`.
+      New
+      high-volume
+      tables
+      take
+      a
+      time-sortable
+      key
+      (rewrite
+      R0-T7).
+- [ ] **i18n
+      edits
+      keep
+      the
+      registry
+      honest:**
+      a
+      new
+      `locales/en/<ns>.json`
+      needs
+      its
+      `NAMESPACES`
+      entry
+      in
+      `lib/i18n/config.ts`
+      in
+      the
+      same
+      commit,
+      or
+      nothing
+      ever
+      loads
+      it.
+- [ ] **Colocated
+      tests
+      still
+      pass**
+      —
+      `lib/rmhladder/`
+      in
+      particular
+      is
+      heavily
+      unit-tested,
+      and
+      its
+      suite
+      is
+      the
+      contract
+      for
+      the
+      pipeline.

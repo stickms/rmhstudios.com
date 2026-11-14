@@ -15,31 +15,47 @@ export type AltairLobbyState =
   | 'DISBANDED';
 
 export interface AltairLobbySettings {
-  maxPlayers: 2 | 3 | 4;
-  visibility: 'public' | 'friends_only' | 'private';
+  maxPlayers:
+    | 2
+    | 3
+    | 4;
+  visibility:
+    | 'public'
+    | 'friends_only'
+    | 'private';
   doubleTime: boolean;
   dropInAllowed: boolean;
-  dropInWindow: 'first_5min' | 'first_10min' | 'anytime';
+  dropInWindow:
+    | 'first_5min'
+    | 'first_10min'
+    | 'anytime';
 }
 
-export const DEFAULT_LOBBY_SETTINGS: AltairLobbySettings = {
-  maxPlayers: 4,
-  visibility: 'private',
-  doubleTime: false,
-  dropInAllowed: true,
-  dropInWindow: 'first_10min',
-};
+export const DEFAULT_LOBBY_SETTINGS: AltairLobbySettings =
+  {
+    maxPlayers: 4,
+    visibility:
+      'private',
+    doubleTime: false,
+    dropInAllowed: true,
+    dropInWindow:
+      'first_10min',
+  };
 
 // ---- Client State (received from server) ------------------------------------
 
 export interface AltairClientPlayer {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   isConnected: boolean;
   isHost: boolean;
   slot: number;
-  classId: string | null; // null = not selected yet
+  classId:
+    | string
+    | null; // null = not selected yet
   isReady: boolean;
   color: string;
 }
@@ -54,7 +70,9 @@ export interface AltairClientLobbyState {
   myUserId: string;
   seq: number;
   /** The run's random seed, chosen by the hub; sent to the host only, while PLAYING. */
-  runSeed?: number | null;
+  runSeed?:
+    | number
+    | null;
 }
 
 export interface ChatMessage {
@@ -116,7 +134,10 @@ export interface PlayerStateSnapshot {
   maxHp: number;
   fx: number; // facing, -100..100
   fy: number;
-  state: 0 | 1 | 2; // PLAYER_ALIVE | PLAYER_DOWNED | PLAYER_DEAD
+  state:
+    | 0
+    | 1
+    | 2; // PLAYER_ALIVE | PLAYER_DOWNED | PLAYER_DEAD
   downTimer: number; // whole seconds left while downed
   revive: number; // 0..100 revive progress
   invuln: boolean;
@@ -135,7 +156,10 @@ export interface GameStateSnapshot {
   time: number;
   sharedKills: number;
   bossActive: boolean;
-  bossWarning: { bossId: string; timer: number } | null;
+  bossWarning: {
+    bossId: string;
+    timer: number;
+  } | null;
   players: PlayerStateSnapshot[];
   /** Flat, stride ENEMY_STRIDE. */
   enemies: number[];
@@ -163,13 +187,22 @@ export type GameEventType =
 export interface GameEvent {
   type: GameEventType;
   playerId?: string;
-  data?: Record<string, unknown>;
+  data?: Record<
+    string,
+    unknown
+  >;
   timestamp: number;
 }
 
 // ---- Ping System ------------------------------------------------------------
 
-export type PingType = 'general' | 'target' | 'boss' | 'help' | 'item' | 'danger';
+export type PingType =
+  | 'general'
+  | 'target'
+  | 'boss'
+  | 'help'
+  | 'item'
+  | 'danger';
 
 export interface PingData {
   playerId: string;
@@ -182,18 +215,20 @@ export interface PingData {
 
 // ---- Quick Chat -------------------------------------------------------------
 
-export const QUICK_CHAT_MESSAGES = [
-  'Nice!',
-  'Help!',
-  'Spread out!',
-  'Group up!',
-  'Focus boss!',
-  "I'll revive you!",
-  'Watch out!',
-  'GG!',
-] as const;
+export const QUICK_CHAT_MESSAGES =
+  [
+    'Nice!',
+    'Help!',
+    'Spread out!',
+    'Group up!',
+    'Focus boss!',
+    "I'll revive you!",
+    'Watch out!',
+    'GG!',
+  ] as const;
 
-export type QuickChatMessage = (typeof QUICK_CHAT_MESSAGES)[number];
+export type QuickChatMessage =
+  (typeof QUICK_CHAT_MESSAGES)[number];
 
 export interface QuickChatData {
   playerId: string;
@@ -263,5 +298,8 @@ export type AltairErrorCode =
 export interface AltairError {
   code: AltairErrorCode;
   message: string;
-  details?: Record<string, unknown>;
+  details?: Record<
+    string,
+    unknown
+  >;
 }

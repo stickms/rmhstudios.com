@@ -19,7 +19,13 @@
  *    reintroduces exactly the race in (1).
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useIsMutating,
@@ -40,7 +46,11 @@ import type {
 } from '@/lib/pf2ecal/types';
 import { resolveLocalTimeZone } from '@/lib/pf2ecal/zoned-time';
 
-export const CALENDAR_KEY = ['pf2ecal', 'board'] as const;
+export const CALENDAR_KEY =
+  [
+    'pf2ecal',
+    'board',
+  ] as const;
 
 /**
  * A failure carrying a machine-readable CODE, not a finished sentence.
@@ -50,15 +60,23 @@ export const CALENDAR_KEY = ['pf2ecal', 'board'] as const;
  * exception: when the API sends specific prose ("The end time must come after
  * the start time.") that is more useful than any generic code, so it wins.
  */
-export type CalendarErrorCode = 'server' | 'signed-out' | 'rate-limited' | 'generic';
+export type CalendarErrorCode =
+  | 'server'
+  | 'signed-out'
+  | 'rate-limited'
+  | 'generic';
 
 export class CalendarRequestError extends Error {
   constructor(
     readonly code: CalendarErrorCode,
     readonly serverMessage?: string,
   ) {
-    super(serverMessage ?? code);
-    this.name = 'CalendarRequestError';
+    super(
+      serverMessage ??
+        code,
+    );
+    this.name =
+      'CalendarRequestError';
   }
 }
 
@@ -70,29 +88,70 @@ export class CalendarRequestError extends Error {
  * nothing, the keys never land in `locales/`, and the UI serves the English
  * `defaultValue` in all 16 languages with nothing failing to say so.
  */
-export function useErrorMessage(): (error: unknown) => string {
-  const { t } = useTranslation('r-pf2ecal');
-  return (error: unknown) => {
-    if (error instanceof CalendarRequestError) {
-      if (error.serverMessage) return error.serverMessage;
-      switch (error.code) {
+export function useErrorMessage(): (
+  error: unknown,
+) => string {
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-pf2ecal',
+    );
+  return (
+    error: unknown,
+  ) => {
+    if (
+      error instanceof
+      CalendarRequestError
+    ) {
+      if (
+        error.serverMessage
+      )
+        return error.serverMessage;
+      switch (
+        error.code
+      ) {
         case 'server':
-          return t('err-server', {
-            defaultValue: 'The server had a problem. Your change was not saved.',
-          });
+          return t(
+            'err-server',
+            {
+              defaultValue:
+                'The server had a problem. Your change was not saved.',
+            },
+          );
         case 'signed-out':
-          return t('err-signed-out', { defaultValue: 'Sign in to make changes.' });
+          return t(
+            'err-signed-out',
+            {
+              defaultValue:
+                'Sign in to make changes.',
+            },
+          );
         case 'rate-limited':
-          return t('err-rate-limited', {
-            defaultValue: 'Too many changes at once — give it a moment.',
-          });
+          return t(
+            'err-rate-limited',
+            {
+              defaultValue:
+                'Too many changes at once — give it a moment.',
+            },
+          );
         default:
-          return t('err-generic', { defaultValue: 'That did not save. Try again.' });
+          return t(
+            'err-generic',
+            {
+              defaultValue:
+                'That did not save. Try again.',
+            },
+          );
       }
     }
-    return t('err-network', {
-      defaultValue: 'Could not reach the server. Your change was not saved.',
-    });
+    return t(
+      'err-network',
+      {
+        defaultValue:
+          'Could not reach the server. Your change was not saved.',
+      },
+    );
   };
 }
 
@@ -104,26 +163,79 @@ export function useErrorMessage(): (error: unknown) => string {
  * message never reaches a client. That 500 text is useless to show, which is why
  * the status is checked before the body is read.
  */
-async function readError(response: Response): Promise<CalendarRequestError> {
-  if (response.status >= 500) return new CalendarRequestError('server');
-  if (response.status === 401) return new CalendarRequestError('signed-out');
-  if (response.status === 429) return new CalendarRequestError('rate-limited');
-  let serverMessage: string | undefined;
+async function readError(
+  response: Response,
+): Promise<CalendarRequestError> {
+  if (
+    response.status >=
+    500
+  )
+    return new CalendarRequestError(
+      'server',
+    );
+  if (
+    response.status ===
+    401
+  )
+    return new CalendarRequestError(
+      'signed-out',
+    );
+  if (
+    response.status ===
+    429
+  )
+    return new CalendarRequestError(
+      'rate-limited',
+    );
+  let serverMessage:
+    | string
+    | undefined;
   try {
-    const data = (await response.json()) as { error?: unknown };
-    if (typeof data.error === 'string' && data.error) serverMessage = data.error;
+    const data =
+      (await response.json()) as {
+        error?: unknown;
+      };
+    if (
+      typeof data.error ===
+        'string' &&
+      data.error
+    )
+      serverMessage =
+        data.error;
   } catch {
     // Body was not JSON; the generic message is the best available.
   }
-  return new CalendarRequestError('generic', serverMessage);
+  return new CalendarRequestError(
+    'generic',
+    serverMessage,
+  );
 }
 
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  });
-  if (!response.ok) throw await readError(response);
+async function request<
+  T,
+>(
+  url: string,
+  init?: RequestInit,
+): Promise<T> {
+  const response =
+    await fetch(
+      url,
+      {
+        ...init,
+        headers:
+          {
+            'Content-Type':
+              'application/json',
+            ...init?.headers,
+          },
+      },
+    );
+  if (
+    !response.ok
+  )
+    throw await readError(
+      response,
+    );
   return (await response.json()) as T;
 }
 
@@ -132,69 +244,177 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 /* -------------------------------------------------------------------------- */
 
 export function useCalendarBoard() {
-  return useQuery({
-    queryKey: CALENDAR_KEY,
-    queryFn: ({ signal }) => request<CalendarStateDTO>('/api/pf2ecal', { signal }),
-    // The board is small and shared, and someone else moving a session is
-    // exactly the update you came to the page for — so it revalidates on focus
-    // (overriding the app-wide default) but stays fresh for half a minute so
-    // switching tabs repeatedly does not hammer it.
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
-    // A calendar left open on a second monitor should not be lying by dinner.
-    refetchInterval: 5 * 60_000,
-    refetchIntervalInBackground: false,
-  });
+  return useQuery(
+    {
+      queryKey:
+        CALENDAR_KEY,
+      queryFn:
+        ({
+          signal,
+        }) =>
+          request<CalendarStateDTO>(
+            '/api/pf2ecal',
+            {
+              signal,
+            },
+          ),
+      // The board is small and shared, and someone else moving a session is
+      // exactly the update you came to the page for — so it revalidates on focus
+      // (overriding the app-wide default) but stays fresh for half a minute so
+      // switching tabs repeatedly does not hammer it.
+      staleTime: 30_000,
+      refetchOnWindowFocus: true,
+      // A calendar left open on a second monitor should not be lying by dinner.
+      refetchInterval:
+        5 *
+        60_000,
+      refetchIntervalInBackground: false,
+    },
+  );
 }
 
 /** True while any write is in flight — used to defer refetches and show chrome. */
 export function useCalendarBusy(): boolean {
-  return useIsMutating({ mutationKey: CALENDAR_KEY }) > 0;
+  return (
+    useIsMutating(
+      {
+        mutationKey:
+          CALENDAR_KEY,
+      },
+    ) >
+    0
+  );
 }
 
 /* -------------------------------------------------------------------------- */
 /* Cache helpers                                                              */
 /* -------------------------------------------------------------------------- */
 
-type Patch = (state: CalendarStateDTO) => CalendarStateDTO;
+type Patch =
+  (
+    state: CalendarStateDTO,
+  ) => CalendarStateDTO;
 
 /** Replace one session in the board, keeping chronological order. */
-export function replaceSession(session: SessionDTO): Patch {
-  return (state) => {
-    const without = state.sessions.filter((s) => s.id !== session.id);
+export function replaceSession(
+  session: SessionDTO,
+): Patch {
+  return (
+    state,
+  ) => {
+    const without =
+      state.sessions.filter(
+        (
+          s,
+        ) =>
+          s.id !==
+          session.id,
+      );
     return {
       ...state,
-      sessions: [...without, session].sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+      sessions:
+        [
+          ...without,
+          session,
+        ].sort(
+          (
+            a,
+            b,
+          ) =>
+            a.startsAt.localeCompare(
+              b.startsAt,
+            ),
+        ),
     };
   };
 }
 
-export function removeSession(id: string): Patch {
-  return (state) => ({ ...state, sessions: state.sessions.filter((s) => s.id !== id) });
+export function removeSession(
+  id: string,
+): Patch {
+  return (
+    state,
+  ) => ({
+    ...state,
+    sessions:
+      state.sessions.filter(
+        (
+          s,
+        ) =>
+          s.id !==
+          id,
+      ),
+  });
 }
 
-export function replaceAnnouncement(announcement: AnnouncementDTO): Patch {
-  return (state) => {
-    const without = state.announcements.filter((a) => a.id !== announcement.id);
+export function replaceAnnouncement(
+  announcement: AnnouncementDTO,
+): Patch {
+  return (
+    state,
+  ) => {
+    const without =
+      state.announcements.filter(
+        (
+          a,
+        ) =>
+          a.id !==
+          announcement.id,
+      );
     return {
       ...state,
-      announcements: [announcement, ...without].sort((a, b) => {
-        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-        return b.createdAt.localeCompare(a.createdAt);
-      }),
+      announcements:
+        [
+          announcement,
+          ...without,
+        ].sort(
+          (
+            a,
+            b,
+          ) => {
+            if (
+              a.pinned !==
+              b.pinned
+            )
+              return a.pinned
+                ? -1
+                : 1;
+            return b.createdAt.localeCompare(
+              a.createdAt,
+            );
+          },
+        ),
     };
   };
 }
 
 /** Replace the board's settings block after a save. */
-export function replaceSettings(settings: SettingsDTO): Patch {
-  return (state) => ({ ...state, settings });
+export function replaceSettings(
+  settings: SettingsDTO,
+): Patch {
+  return (
+    state,
+  ) => ({
+    ...state,
+    settings,
+  });
 }
 
-export function removeAnnouncement(id: string): Patch {
-  return (state) => ({
+export function removeAnnouncement(
+  id: string,
+): Patch {
+  return (
+    state,
+  ) => ({
     ...state,
-    announcements: state.announcements.filter((a) => a.id !== id),
+    announcements:
+      state.announcements.filter(
+        (
+          a,
+        ) =>
+          a.id !==
+          id,
+      ),
   });
 }
 
@@ -210,30 +430,72 @@ export function applyOwnResponse(
   viewerId: string,
   viewerName: string,
   status: Availability | null,
-  note: string | null,
+  note:
+    | string
+    | null,
 ): Patch {
-  return (state) => ({
+  return (
+    state,
+  ) => ({
     ...state,
-    sessions: state.sessions.map((session) => {
-      if (session.id !== sessionId) return session;
-      const others = session.responses.filter((r) => r.userId !== viewerId);
-      if (status === null) return { ...session, responses: others };
-      const previous = session.responses.find((r) => r.userId === viewerId);
-      return {
-        ...session,
-        responses: [
-          {
-            userId: viewerId,
-            status,
-            note,
-            name: previous?.name ?? viewerName,
-            image: previous?.image ?? null,
-            updatedAt: new Date().toISOString(),
-          },
-          ...others,
-        ],
-      };
-    }),
+    sessions:
+      state.sessions.map(
+        (
+          session,
+        ) => {
+          if (
+            session.id !==
+            sessionId
+          )
+            return session;
+          const others =
+            session.responses.filter(
+              (
+                r,
+              ) =>
+                r.userId !==
+                viewerId,
+            );
+          if (
+            status ===
+            null
+          )
+            return {
+              ...session,
+              responses:
+                others,
+            };
+          const previous =
+            session.responses.find(
+              (
+                r,
+              ) =>
+                r.userId ===
+                viewerId,
+            );
+          return {
+            ...session,
+            responses:
+              [
+                {
+                  userId:
+                    viewerId,
+                  status,
+                  note,
+                  name:
+                    previous?.name ??
+                    viewerName,
+                  image:
+                    previous?.image ??
+                    null,
+                  updatedAt:
+                    new Date().toISOString(),
+                },
+                ...others,
+              ],
+          };
+        },
+      ),
   });
 }
 
@@ -241,13 +503,23 @@ export function applyOwnResponse(
 /* Write                                                                      */
 /* -------------------------------------------------------------------------- */
 
-interface MutationConfig<TVars, TData> {
+interface MutationConfig<
+  TVars,
+  TData,
+> {
   /** Performs the request. */
-  send: (vars: TVars) => Promise<TData>;
+  send: (
+    vars: TVars,
+  ) => Promise<TData>;
   /** Cache patch applied before the request goes out. */
-  optimistic?: (vars: TVars) => Patch;
+  optimistic?: (
+    vars: TVars,
+  ) => Patch;
   /** Cache patch applied to the server's authoritative answer. */
-  settle?: (data: TData, vars: TVars) => Patch;
+  settle?: (
+    data: TData,
+    vars: TVars,
+  ) => Patch;
   /** Shown as a toast on success. Omit for controls that speak for themselves. */
   successMessage?: string;
 }
@@ -258,124 +530,375 @@ interface MutationConfig<TVars, TData> {
  * Every mutation shares `CALENDAR_KEY` as its mutation key so `useCalendarBusy`
  * and the deferred-invalidation check in `onSettled` can see all of them.
  */
-export function useCalendarMutation<TVars, TData>({
+export function useCalendarMutation<
+  TVars,
+  TData,
+>({
   send,
   optimistic,
   settle,
   successMessage,
-}: MutationConfig<TVars, TData>) {
-  const queryClient = useQueryClient();
-  const describeError = useErrorMessage();
+}: MutationConfig<
+  TVars,
+  TData
+>) {
+  const queryClient =
+    useQueryClient();
+  const describeError =
+    useErrorMessage();
 
-  return useMutation({
-    mutationKey: CALENDAR_KEY,
-    mutationFn: send,
+  return useMutation(
+    {
+      mutationKey:
+        CALENDAR_KEY,
+      mutationFn:
+        send,
 
-    async onMutate(vars: TVars) {
-      // (1) Stop any GET already on the wire from landing on top of the patch.
-      await queryClient.cancelQueries({ queryKey: CALENDAR_KEY });
-      // (2) Snapshot for rollback.
-      const previous = queryClient.getQueryData<CalendarStateDTO>(CALENDAR_KEY);
-      if (optimistic && previous) {
-        queryClient.setQueryData<CalendarStateDTO>(CALENDAR_KEY, optimistic(vars)(previous));
-      }
-      return { previous };
-    },
-
-    onError(error: Error, _vars, context) {
-      if (context?.previous) {
-        queryClient.setQueryData<CalendarStateDTO>(CALENDAR_KEY, context.previous);
-      }
-      toast.error(describeError(error));
-    },
-
-    onSuccess(data: TData, vars: TVars) {
-      if (settle) {
-        const current = queryClient.getQueryData<CalendarStateDTO>(CALENDAR_KEY);
-        if (current) {
-          queryClient.setQueryData<CalendarStateDTO>(CALENDAR_KEY, settle(data, vars)(current));
+      async onMutate(
+        vars: TVars,
+      ) {
+        // (1) Stop any GET already on the wire from landing on top of the patch.
+        await queryClient.cancelQueries(
+          {
+            queryKey:
+              CALENDAR_KEY,
+          },
+        );
+        // (2) Snapshot for rollback.
+        const previous =
+          queryClient.getQueryData<CalendarStateDTO>(
+            CALENDAR_KEY,
+          );
+        if (
+          optimistic &&
+          previous
+        ) {
+          queryClient.setQueryData<CalendarStateDTO>(
+            CALENDAR_KEY,
+            optimistic(
+              vars,
+            )(
+              previous,
+            ),
+          );
         }
-      }
-      if (successMessage) toast.success(successMessage);
-    },
+        return {
+          previous,
+        };
+      },
 
-    onSettled() {
-      // (3) Only the last write standing gets to trigger the refetch.
-      if (queryClient.isMutating({ mutationKey: CALENDAR_KEY }) <= 1) {
-        void queryClient.invalidateQueries({ queryKey: CALENDAR_KEY });
-      }
+      onError(
+        error: Error,
+        _vars,
+        context,
+      ) {
+        if (
+          context?.previous
+        ) {
+          queryClient.setQueryData<CalendarStateDTO>(
+            CALENDAR_KEY,
+            context.previous,
+          );
+        }
+        toast.error(
+          describeError(
+            error,
+          ),
+        );
+      },
+
+      onSuccess(
+        data: TData,
+        vars: TVars,
+      ) {
+        if (
+          settle
+        ) {
+          const current =
+            queryClient.getQueryData<CalendarStateDTO>(
+              CALENDAR_KEY,
+            );
+          if (
+            current
+          ) {
+            queryClient.setQueryData<CalendarStateDTO>(
+              CALENDAR_KEY,
+              settle(
+                data,
+                vars,
+              )(
+                current,
+              ),
+            );
+          }
+        }
+        if (
+          successMessage
+        )
+          toast.success(
+            successMessage,
+          );
+      },
+
+      onSettled() {
+        // (3) Only the last write standing gets to trigger the refetch.
+        if (
+          queryClient.isMutating(
+            {
+              mutationKey:
+                CALENDAR_KEY,
+            },
+          ) <=
+          1
+        ) {
+          void queryClient.invalidateQueries(
+            {
+              queryKey:
+                CALENDAR_KEY,
+            },
+          );
+        }
+      },
     },
-  });
+  );
 }
 
 /* -------------------------------------------------------------------------- */
 /* Request helpers used by the components                                     */
 /* -------------------------------------------------------------------------- */
 
-export const api = {
-  createSession: (body: unknown) =>
-    request<{ session: SessionDTO }>('/api/pf2ecal/sessions', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }),
-  updateSession: (id: string, body: unknown) =>
-    request<{ session: SessionDTO }>(`/api/pf2ecal/sessions/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(body),
-    }),
-  deleteSession: (id: string) =>
-    request<{ deleted: boolean }>(`/api/pf2ecal/sessions/${id}`, { method: 'DELETE' }),
-  respond: (id: string, body: unknown) =>
-    request<{ session: SessionDTO }>(`/api/pf2ecal/sessions/${id}/response`, {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    }),
-  clearResponse: (id: string) =>
-    request<{ session: SessionDTO }>(`/api/pf2ecal/sessions/${id}/response`, {
-      method: 'DELETE',
-    }),
-  createAnnouncement: (body: unknown) =>
-    request<{ announcement: AnnouncementDTO }>('/api/pf2ecal/announcements', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }),
-  updateAnnouncement: (id: string, body: unknown) =>
-    request<{ ok: true }>(`/api/pf2ecal/announcements/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(body),
-    }),
-  deleteAnnouncement: (id: string) =>
-    request<{ deleted: boolean }>(`/api/pf2ecal/announcements/${id}`, { method: 'DELETE' }),
-  saveSettings: (body: unknown) =>
-    request<{ settings: SettingsDTO }>('/api/pf2ecal/settings', {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    }),
-  testWebhook: (webhookUrl: string) =>
-    request<{ ok: true }>('/api/pf2ecal/settings/test-webhook', {
-      method: 'POST',
-      body: JSON.stringify({ webhookUrl }),
-    }),
-  blurbs: (ids: string[], signal?: AbortSignal) =>
-    request<{ blurbs: Record<string, SessionBlurbDTO>; configured: boolean }>(
-      '/api/pf2ecal/sessions/blurbs',
-      { method: 'POST', body: JSON.stringify({ ids }), signal },
-    ),
-  recap: (id: string, signal?: AbortSignal) =>
-    request<{ entries: RecapDTO[]; summary: string | null }>(`/api/pf2ecal/sessions/${id}/recap`, {
-      signal,
-    }),
-  addRecap: (id: string, body: string) =>
-    request<{ entry: RecapDTO }>(`/api/pf2ecal/sessions/${id}/recap`, {
-      method: 'POST',
-      body: JSON.stringify({ body }),
-    }),
-  archive: (before: string, signal?: AbortSignal) =>
-    request<{ sessions: SessionDTO[]; hasMore: boolean }>(
-      `/api/pf2ecal/sessions/archive?before=${encodeURIComponent(before)}`,
-      { signal },
-    ),
-};
+export const api =
+  {
+    createSession:
+      (
+        body: unknown,
+      ) =>
+        request<{
+          session: SessionDTO;
+        }>(
+          '/api/pf2ecal/sessions',
+          {
+            method:
+              'POST',
+            body: JSON.stringify(
+              body,
+            ),
+          },
+        ),
+    updateSession:
+      (
+        id: string,
+        body: unknown,
+      ) =>
+        request<{
+          session: SessionDTO;
+        }>(
+          `/api/pf2ecal/sessions/${id}`,
+          {
+            method:
+              'PATCH',
+            body: JSON.stringify(
+              body,
+            ),
+          },
+        ),
+    deleteSession:
+      (
+        id: string,
+      ) =>
+        request<{
+          deleted: boolean;
+        }>(
+          `/api/pf2ecal/sessions/${id}`,
+          {
+            method:
+              'DELETE',
+          },
+        ),
+    respond:
+      (
+        id: string,
+        body: unknown,
+      ) =>
+        request<{
+          session: SessionDTO;
+        }>(
+          `/api/pf2ecal/sessions/${id}/response`,
+          {
+            method:
+              'PUT',
+            body: JSON.stringify(
+              body,
+            ),
+          },
+        ),
+    clearResponse:
+      (
+        id: string,
+      ) =>
+        request<{
+          session: SessionDTO;
+        }>(
+          `/api/pf2ecal/sessions/${id}/response`,
+          {
+            method:
+              'DELETE',
+          },
+        ),
+    createAnnouncement:
+      (
+        body: unknown,
+      ) =>
+        request<{
+          announcement: AnnouncementDTO;
+        }>(
+          '/api/pf2ecal/announcements',
+          {
+            method:
+              'POST',
+            body: JSON.stringify(
+              body,
+            ),
+          },
+        ),
+    updateAnnouncement:
+      (
+        id: string,
+        body: unknown,
+      ) =>
+        request<{
+          ok: true;
+        }>(
+          `/api/pf2ecal/announcements/${id}`,
+          {
+            method:
+              'PATCH',
+            body: JSON.stringify(
+              body,
+            ),
+          },
+        ),
+    deleteAnnouncement:
+      (
+        id: string,
+      ) =>
+        request<{
+          deleted: boolean;
+        }>(
+          `/api/pf2ecal/announcements/${id}`,
+          {
+            method:
+              'DELETE',
+          },
+        ),
+    saveSettings:
+      (
+        body: unknown,
+      ) =>
+        request<{
+          settings: SettingsDTO;
+        }>(
+          '/api/pf2ecal/settings',
+          {
+            method:
+              'PUT',
+            body: JSON.stringify(
+              body,
+            ),
+          },
+        ),
+    testWebhook:
+      (
+        webhookUrl: string,
+      ) =>
+        request<{
+          ok: true;
+        }>(
+          '/api/pf2ecal/settings/test-webhook',
+          {
+            method:
+              'POST',
+            body: JSON.stringify(
+              {
+                webhookUrl,
+              },
+            ),
+          },
+        ),
+    blurbs:
+      (
+        ids: string[],
+        signal?: AbortSignal,
+      ) =>
+        request<{
+          blurbs: Record<
+            string,
+            SessionBlurbDTO
+          >;
+          configured: boolean;
+        }>(
+          '/api/pf2ecal/sessions/blurbs',
+          {
+            method:
+              'POST',
+            body: JSON.stringify(
+              {
+                ids,
+              },
+            ),
+            signal,
+          },
+        ),
+    recap:
+      (
+        id: string,
+        signal?: AbortSignal,
+      ) =>
+        request<{
+          entries: RecapDTO[];
+          summary:
+            | string
+            | null;
+        }>(
+          `/api/pf2ecal/sessions/${id}/recap`,
+          {
+            signal,
+          },
+        ),
+    addRecap:
+      (
+        id: string,
+        body: string,
+      ) =>
+        request<{
+          entry: RecapDTO;
+        }>(
+          `/api/pf2ecal/sessions/${id}/recap`,
+          {
+            method:
+              'POST',
+            body: JSON.stringify(
+              {
+                body,
+              },
+            ),
+          },
+        ),
+    archive:
+      (
+        before: string,
+        signal?: AbortSignal,
+      ) =>
+        request<{
+          sessions: SessionDTO[];
+          hasMore: boolean;
+        }>(
+          `/api/pf2ecal/sessions/archive?before=${encodeURIComponent(before)}`,
+          {
+            signal,
+          },
+        ),
+  };
 
 /**
  * Merge older sessions into the cached board.
@@ -384,30 +907,93 @@ export const api = {
  * is read backwards from the oldest session on screen, and a session moved into
  * the loaded window between two pages would otherwise appear twice.
  */
-export function mergeSessions(incoming: SessionDTO[]): Patch {
-  return (state) => {
-    const byId = new Map(state.sessions.map((session) => [session.id, session]));
-    for (const session of incoming) if (!byId.has(session.id)) byId.set(session.id, session);
+export function mergeSessions(
+  incoming: SessionDTO[],
+): Patch {
+  return (
+    state,
+  ) => {
+    const byId =
+      new Map(
+        state.sessions.map(
+          (
+            session,
+          ) => [
+            session.id,
+            session,
+          ],
+        ),
+      );
+    for (const session of incoming)
+      if (
+        !byId.has(
+          session.id,
+        )
+      )
+        byId.set(
+          session.id,
+          session,
+        );
     return {
       ...state,
-      sessions: [...byId.values()].sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+      sessions:
+        [
+          ...byId.values(),
+        ].sort(
+          (
+            a,
+            b,
+          ) =>
+            a.startsAt.localeCompare(
+              b.startsAt,
+            ),
+        ),
     };
   };
 }
 
 /** Merge generated descriptions into the cached board. */
-export function applyBlurbs(blurbs: Record<string, SessionBlurbDTO>): Patch {
-  return (state) => ({
+export function applyBlurbs(
+  blurbs: Record<
+    string,
+    SessionBlurbDTO
+  >,
+): Patch {
+  return (
+    state,
+  ) => ({
     ...state,
-    sessions: state.sessions.map((session) =>
-      blurbs[session.id] ? { ...session, blurb: blurbs[session.id] } : session,
-    ),
+    sessions:
+      state.sessions.map(
+        (
+          session,
+        ) =>
+          blurbs[
+            session
+              .id
+          ]
+            ? {
+                ...session,
+                blurb:
+                  blurbs[
+                    session
+                      .id
+                  ],
+              }
+            : session,
+      ),
   });
 }
 
 /** Seed the cache from the route loader so the first paint has real data. */
-export function seedBoard(queryClient: QueryClient, state: CalendarStateDTO): void {
-  queryClient.setQueryData<CalendarStateDTO>(CALENDAR_KEY, state);
+export function seedBoard(
+  queryClient: QueryClient,
+  state: CalendarStateDTO,
+): void {
+  queryClient.setQueryData<CalendarStateDTO>(
+    CALENDAR_KEY,
+    state,
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -424,9 +1010,17 @@ export function seedBoard(queryClient: QueryClient, state: CalendarStateDTO): vo
  * the first paint is consistent and the correct times arrive a frame later.
  */
 export function useLocalTimeZone(): string {
-  const [timeZone, setTimeZone] = useState<string>('America/New_York');
+  const [
+    timeZone,
+    setTimeZone,
+  ] =
+    useState<string>(
+      'America/New_York',
+    );
   useEffect(() => {
-    setTimeZone(resolveLocalTimeZone());
+    setTimeZone(
+      resolveLocalTimeZone(),
+    );
   }, []);
   return timeZone;
 }
@@ -439,15 +1033,37 @@ export function useLocalTimeZone(): string {
  * "That did not save" alone does not explain why.
  */
 export function useOnline(): boolean {
-  const [online, setOnline] = useState(true);
+  const [
+    online,
+    setOnline,
+  ] =
+    useState(
+      true,
+    );
   useEffect(() => {
-    const update = () => setOnline(navigator.onLine);
+    const update =
+      () =>
+        setOnline(
+          navigator.onLine,
+        );
     update();
-    window.addEventListener('online', update);
-    window.addEventListener('offline', update);
+    window.addEventListener(
+      'online',
+      update,
+    );
+    window.addEventListener(
+      'offline',
+      update,
+    );
     return () => {
-      window.removeEventListener('online', update);
-      window.removeEventListener('offline', update);
+      window.removeEventListener(
+        'online',
+        update,
+      );
+      window.removeEventListener(
+        'offline',
+        update,
+      );
     };
   }, []);
   return online;
@@ -455,10 +1071,27 @@ export function useOnline(): boolean {
 
 /** A stable "now", ticking once a minute — for relative labels and the today marker. */
 export function useNow(): Date {
-  const [now, setNow] = useState(() => new Date());
+  const [
+    now,
+    setNow,
+  ] =
+    useState(
+      () =>
+        new Date(),
+    );
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 60_000);
-    return () => window.clearInterval(id);
+    const id =
+      window.setInterval(
+        () =>
+          setNow(
+            new Date(),
+          ),
+        60_000,
+      );
+    return () =>
+      window.clearInterval(
+        id,
+      );
   }, []);
   return now;
 }
@@ -490,40 +1123,133 @@ export const AGENDA_PAGE = 8;
  * that have scrolled away from costing layout. The two are complementary — this
  * bounds the DOM, that bounds the rendering.
  */
-export function useProgressiveList<T>(
+export function useProgressiveList<
+  T,
+>(
   items: T[],
   pageSize: number = AGENDA_PAGE,
-): { visible: T[]; hidden: number; sentinelRef: (node: HTMLElement | null) => void } {
-  const [limit, setLimit] = useState(pageSize);
-  const [node, setNode] = useState<HTMLElement | null>(null);
+): {
+  visible: T[];
+  hidden: number;
+  sentinelRef: (
+    node: HTMLElement | null,
+  ) => void;
+} {
+  const [
+    limit,
+    setLimit,
+  ] =
+    useState(
+      pageSize,
+    );
+  const [
+    node,
+    setNode,
+  ] =
+    useState<HTMLElement | null>(
+      null,
+    );
 
   // A shorter list (someone deleted a session, or the filter changed) must pull
   // the limit back down, or "show 8 more" would already be exhausted.
-  const total = items.length;
+  const total =
+    items.length;
   useEffect(() => {
-    setLimit((current) => Math.min(Math.max(pageSize, current), Math.max(pageSize, total)));
-  }, [pageSize, total]);
+    setLimit(
+      (
+        current,
+      ) =>
+        Math.min(
+          Math.max(
+            pageSize,
+            current,
+          ),
+          Math.max(
+            pageSize,
+            total,
+          ),
+        ),
+    );
+  }, [
+    pageSize,
+    total,
+  ]);
 
   useEffect(() => {
-    if (!node) return;
-    if (typeof IntersectionObserver !== 'function') {
-      setLimit(total);
+    if (
+      !node
+    )
+      return;
+    if (
+      typeof IntersectionObserver !==
+      'function'
+    ) {
+      setLimit(
+        total,
+      );
       return;
     }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setLimit((current) => current + pageSize);
-        }
-      },
-      { rootMargin: '600px 0px' },
+    const observer =
+      new IntersectionObserver(
+        (
+          entries,
+        ) => {
+          if (
+            entries.some(
+              (
+                entry,
+              ) =>
+                entry.isIntersecting,
+            )
+          ) {
+            setLimit(
+              (
+                current,
+              ) =>
+                current +
+                pageSize,
+            );
+          }
+        },
+        {
+          rootMargin:
+            '600px 0px',
+        },
+      );
+    observer.observe(
+      node,
     );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [node, pageSize, total]);
+    return () =>
+      observer.disconnect();
+  }, [
+    node,
+    pageSize,
+    total,
+  ]);
 
-  const visible = useMemo(() => items.slice(0, limit), [items, limit]);
-  return { visible, hidden: Math.max(0, total - visible.length), sentinelRef: setNode };
+  const visible =
+    useMemo(
+      () =>
+        items.slice(
+          0,
+          limit,
+        ),
+      [
+        items,
+        limit,
+      ],
+    );
+  return {
+    visible,
+    hidden:
+      Math.max(
+        0,
+        total -
+          visible.length,
+      ),
+    sentinelRef:
+      setNode,
+  };
 }
 
 /**
@@ -551,75 +1277,175 @@ export function useProgressiveList<T>(
  *   attempted so the next reveal does not ask for them again in a loop. They
  *   will be picked up on a later page load, by which point DeepSeek may be back.
  */
-export function useSessionBlurbs(visibleSessions: SessionDTO[], enabled: boolean): void {
-  const queryClient = useQueryClient();
+export function useSessionBlurbs(
+  visibleSessions: SessionDTO[],
+  enabled: boolean,
+): void {
+  const queryClient =
+    useQueryClient();
   // Refs, not state: none of this is rendered, and putting it in state would
   // re-run the effect that writes it.
-  const attempted = useRef(new Set<string>());
-  const failures = useRef(0);
-  const stopped = useRef(false);
-  const busy = useRef(false);
+  const attempted =
+    useRef(
+      new Set<string>(),
+    );
+  const failures =
+    useRef(
+      0,
+    );
+  const stopped =
+    useRef(
+      false,
+    );
+  const busy =
+    useRef(
+      false,
+    );
 
-  const wanted = visibleSessions
-    .filter((session) => !session.blurb && !attempted.current.has(session.id))
-    .map((session) => session.id)
-    .slice(0, 6)
-    .join(',');
+  const wanted =
+    visibleSessions
+      .filter(
+        (
+          session,
+        ) =>
+          !session.blurb &&
+          !attempted.current.has(
+            session.id,
+          ),
+      )
+      .map(
+        (
+          session,
+        ) =>
+          session.id,
+      )
+      .slice(
+        0,
+        6,
+      )
+      .join(
+        ',',
+      );
 
   useEffect(() => {
-    if (!enabled || !wanted || stopped.current || busy.current) return;
-    const ids = wanted.split(',');
+    if (
+      !enabled ||
+      !wanted ||
+      stopped.current ||
+      busy.current
+    )
+      return;
+    const ids =
+      wanted.split(
+        ',',
+      );
     busy.current = true;
-    const controller = new AbortController();
-    let timer: number | undefined;
+    const controller =
+      new AbortController();
+    let timer:
+      | number
+      | undefined;
 
-    const run = () => {
-      api
-        .blurbs(ids, controller.signal)
-        .then((data) => {
-          for (const id of ids) attempted.current.add(id);
-          if (!data.configured) {
-            stopped.current = true;
-            return;
-          }
-          failures.current = 0;
-          if (Object.keys(data.blurbs).length === 0) return;
-          const current = queryClient.getQueryData<CalendarStateDTO>(CALENDAR_KEY);
-          if (current) {
-            queryClient.setQueryData<CalendarStateDTO>(
-              CALENDAR_KEY,
-              applyBlurbs(data.blurbs)(current),
-            );
-          }
-        })
-        .catch(() => {
-          failures.current += 1;
-          if (failures.current >= 3) {
-            stopped.current = true;
-            return;
-          }
-          // Back off and let the next render re-enter, rather than looping here
-          // — by then the visible set may have changed and the retry should be
-          // for whatever is on screen now.
-          timer = window.setTimeout(
-            () => {
-              busy.current = false;
+    const run =
+      () => {
+        api
+          .blurbs(
+            ids,
+            controller.signal,
+          )
+          .then(
+            (
+              data,
+            ) => {
+              for (const id of ids)
+                attempted.current.add(
+                  id,
+                );
+              if (
+                !data.configured
+              ) {
+                stopped.current = true;
+                return;
+              }
+              failures.current = 0;
+              if (
+                Object.keys(
+                  data.blurbs,
+                )
+                  .length ===
+                0
+              )
+                return;
+              const current =
+                queryClient.getQueryData<CalendarStateDTO>(
+                  CALENDAR_KEY,
+                );
+              if (
+                current
+              ) {
+                queryClient.setQueryData<CalendarStateDTO>(
+                  CALENDAR_KEY,
+                  applyBlurbs(
+                    data.blurbs,
+                  )(
+                    current,
+                  ),
+                );
+              }
             },
-            1000 * 2 ** failures.current,
+          )
+          .catch(
+            () => {
+              failures.current += 1;
+              if (
+                failures.current >=
+                3
+              ) {
+                stopped.current = true;
+                return;
+              }
+              // Back off and let the next render re-enter, rather than looping here
+              // — by then the visible set may have changed and the retry should be
+              // for whatever is on screen now.
+              timer =
+                window.setTimeout(
+                  () => {
+                    busy.current = false;
+                  },
+                  1000 *
+                    2 **
+                      failures.current,
+                );
+            },
+          )
+          .finally(
+            () => {
+              if (
+                timer ===
+                undefined
+              )
+                busy.current = false;
+            },
           );
-        })
-        .finally(() => {
-          if (timer === undefined) busy.current = false;
-        });
-    };
+      };
 
     run();
     return () => {
       controller.abort();
-      if (timer !== undefined) window.clearTimeout(timer);
+      if (
+        timer !==
+        undefined
+      )
+        window.clearTimeout(
+          timer,
+        );
       busy.current = false;
     };
-  }, [enabled, wanted, queryClient]);
+  }, [
+    enabled,
+    wanted,
+    queryClient,
+  ]);
 }
 
 /**
@@ -635,60 +1461,171 @@ export function useSessionBlurbs(visibleSessions: SessionDTO[], enabled: boolean
  * triggered it, because a silent no-op on "show older" reads as an empty
  * archive — which is a lie about the table's own history.
  */
-export function useSessionArchive(oldestLoaded: string | undefined): {
+export function useSessionArchive(
+  oldestLoaded:
+    | string
+    | undefined,
+): {
   load: () => void;
   loading: boolean;
   exhausted: boolean;
   error: boolean;
 } {
-  const queryClient = useQueryClient();
-  const [loading, setLoading] = useState(false);
-  const [exhausted, setExhausted] = useState(false);
-  const [error, setError] = useState(false);
+  const queryClient =
+    useQueryClient();
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    exhausted,
+    setExhausted,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    error,
+    setError,
+  ] =
+    useState(
+      false,
+    );
 
-  const load = useCallback(() => {
-    if (loading || exhausted || !oldestLoaded) return;
-    setLoading(true);
-    setError(false);
-    api
-      .archive(oldestLoaded)
-      .then((data) => {
-        if (!data.hasMore) setExhausted(true);
-        if (!data.sessions.length) {
-          setExhausted(true);
-          return;
-        }
-        const current = queryClient.getQueryData<CalendarStateDTO>(CALENDAR_KEY);
-        if (current) {
-          queryClient.setQueryData<CalendarStateDTO>(
-            CALENDAR_KEY,
-            mergeSessions(data.sessions)(current),
-          );
-        }
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [exhausted, loading, oldestLoaded, queryClient]);
+  const load =
+    useCallback(() => {
+      if (
+        loading ||
+        exhausted ||
+        !oldestLoaded
+      )
+        return;
+      setLoading(
+        true,
+      );
+      setError(
+        false,
+      );
+      api
+        .archive(
+          oldestLoaded,
+        )
+        .then(
+          (
+            data,
+          ) => {
+            if (
+              !data.hasMore
+            )
+              setExhausted(
+                true,
+              );
+            if (
+              !data
+                .sessions
+                .length
+            ) {
+              setExhausted(
+                true,
+              );
+              return;
+            }
+            const current =
+              queryClient.getQueryData<CalendarStateDTO>(
+                CALENDAR_KEY,
+              );
+            if (
+              current
+            ) {
+              queryClient.setQueryData<CalendarStateDTO>(
+                CALENDAR_KEY,
+                mergeSessions(
+                  data.sessions,
+                )(
+                  current,
+                ),
+              );
+            }
+          },
+        )
+        .catch(
+          () =>
+            setError(
+              true,
+            ),
+        )
+        .finally(
+          () =>
+            setLoading(
+              false,
+            ),
+        );
+    }, [
+      exhausted,
+      loading,
+      oldestLoaded,
+      queryClient,
+    ]);
 
-  return { load, loading, exhausted, error };
+  return {
+    load,
+    loading,
+    exhausted,
+    error,
+  };
 }
 
 /** Copy to clipboard with a toast, shared by the two subscribe controls. */
-export function useCopy(): (value: string, label: string) => void {
-  const { t } = useTranslation('r-pf2ecal');
+export function useCopy(): (
+  value: string,
+  label: string,
+) => void {
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-pf2ecal',
+    );
   return useCallback(
-    (value: string, label: string) => {
+    (
+      value: string,
+      label: string,
+    ) => {
       void navigator.clipboard
-        .writeText(value)
-        .then(() => toast.success(t('copied', { defaultValue: '{{label}} copied', label })))
-        .catch(() =>
-          toast.error(
-            t('copy-failed', {
-              defaultValue: 'Could not copy — select the link and copy it manually.',
-            }),
-          ),
+        .writeText(
+          value,
+        )
+        .then(
+          () =>
+            toast.success(
+              t(
+                'copied',
+                {
+                  defaultValue:
+                    '{{label}} copied',
+                  label,
+                },
+              ),
+            ),
+        )
+        .catch(
+          () =>
+            toast.error(
+              t(
+                'copy-failed',
+                {
+                  defaultValue:
+                    'Could not copy — select the link and copy it manually.',
+                },
+              ),
+            ),
         );
     },
-    [t],
+    [
+      t,
+    ],
   );
 }
