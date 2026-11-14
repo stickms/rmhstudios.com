@@ -1,10 +1,46 @@
 # Runtime Architecture & Deploy Pipeline
 
-> What actually runs where, and how code gets to production. Companion to
-> [`codebase-overview.md`](./codebase-overview.md) (code layout) and the
-> per-directory `CLAUDE.md` guides. Sources of truth: `docker-compose.yml`,
-> `deploy.sh`, `deploy/`, `.github/workflows/` — when any doc (including this
-> one) disagrees with those files, the files win.
+> What
+> actually
+> runs
+> where,
+> and
+> how
+> code
+> gets
+> to
+> production.
+> Companion
+> to
+> [`codebase-overview.md`](./codebase-overview.md)
+> (code
+> layout)
+> and
+> the
+> per-directory
+> `CLAUDE.md`
+> guides.
+> Sources
+> of
+> truth:
+> `docker-compose.yml`,
+> `deploy.sh`,
+> `deploy/`,
+> `.github/workflows/`
+> —
+> when
+> any
+> doc
+> (including
+> this
+> one)
+> disagrees
+> with
+> those
+> files,
+> the
+> files
+> win.
 
 ## 1. The big picture
 
@@ -29,58 +65,531 @@
  PostgreSQL                                     R2/S3 (media)
 ```
 
-**Production is a hybrid runtime.** Node is authoritative for the web SSR and
-every user-facing realtime hub and every background worker (the jobs worker
-holds the Discord bot too); Go runs only the status dashboard and asset
-streaming. All container ports bind to
-`127.0.0.1`; Apache is the only front door. RMHMusic (the piano & guitar
-learning app) has no hub or socket handler: it is web tier only, over HTTP routes.
+**Production
+is
+a
+hybrid
+runtime.**
+Node
+is
+authoritative
+for
+the
+web
+SSR
+and
+every
+user-facing
+realtime
+hub
+and
+every
+background
+worker
+(the
+jobs
+worker
+holds
+the
+Discord
+bot
+too);
+Go
+runs
+only
+the
+status
+dashboard
+and
+asset
+streaming.
+All
+container
+ports
+bind
+to
+`127.0.0.1`;
+Apache
+is
+the
+only
+front
+door.
+RMHMusic
+(the
+piano
+&
+guitar
+learning
+app)
+has
+no
+hub
+or
+socket
+handler:
+it
+is
+web
+tier
+only,
+over
+HTTP
+routes.
 
-The former **full-Go topology** — a `gateway` fronting Go hubs
-(gamehub/rmhbox/rmhtube and the old listening-party rmhmusic hub) with a Redis backplane, plus its Helm chart
-and k8s manifests — was **removed in the rewrite** (design §5.2): it never
-served a production request and duplicated the Node hubs. Go now runs only what
-production uses — `status` and `assets` (the `supervisor` and its last
-worker, the Discord bot, went to the Node `jobs` worker, D3). The Node hubs are the realtime tier. Recover the deleted topology from
-git history (tag `pre-rewrite-go-realtime`) if it is ever revived.
+The
+former
+**full-Go
+topology**
+—
+a
+`gateway`
+fronting
+Go
+hubs
+(gamehub/rmhbox/rmhtube
+and
+the
+old
+listening-party
+rmhmusic
+hub)
+with
+a
+Redis
+backplane,
+plus
+its
+Helm
+chart
+and
+k8s
+manifests
+—
+was
+**removed
+in
+the
+rewrite**
+(design
+§5.2):
+it
+never
+served
+a
+production
+request
+and
+duplicated
+the
+Node
+hubs.
+Go
+now
+runs
+only
+what
+production
+uses
+—
+`status`
+and
+`assets`
+(the
+`supervisor`
+and
+its
+last
+worker,
+the
+Discord
+bot,
+went
+to
+the
+Node
+`jobs`
+worker,
+D3).
+The
+Node
+hubs
+are
+the
+realtime
+tier.
+Recover
+the
+deleted
+topology
+from
+git
+history
+(tag
+`pre-rewrite-go-realtime`)
+if
+it
+is
+ever
+revived.
 
 ### The Discord bot (D3)
 
-The Discord bot (Alex `/chat`, the tamagotchi and `/sohumtracker`) runs in the Node `jobs` worker
-(`server/discord-bot/`) whenever `DISCORD_BOT_TOKEN` (or `DISCORD_ACTIVITY_BOT_TOKEN`) is set, and logs
-`discord_bot.disabled` otherwise. It is the only copy: the Go original (`go-services/internal/discordbot/`),
-its standalone `cmd/discord-bot`, the `supervisor` process that ran it, `pkg/worker`, `pkg/db` and the git
-base image were deleted once the port shipped. Its periodic work is pg-boss crons in `jobs`
-(`discord-bot.care-tick`, `.watch-flush`, `.watch-identity`, `.watch-summary`), plus
-`discord-bot.gateway-heartbeat`, a per-minute job that completes only while the gateway is READY; the
-Go `status` service reads that queue from pg-boss and raises B07 when the last completed heartbeat is
-over 5 minutes old (`go-services/internal/status/workers.go`). Outside `NODE_ENV=production` the bot
-also needs `DISCORD_BOT_GUILD_ALLOWLIST` (`server/discord-bot/guard.ts`), so a dev `.env` carrying the
-shared token never opens a second production session.
+The
+Discord
+bot
+(Alex
+`/chat`,
+the
+tamagotchi
+and
+`/sohumtracker`)
+runs
+in
+the
+Node
+`jobs`
+worker
+(`server/discord-bot/`)
+whenever
+`DISCORD_BOT_TOKEN`
+(or
+`DISCORD_ACTIVITY_BOT_TOKEN`)
+is
+set,
+and
+logs
+`discord_bot.disabled`
+otherwise.
+It
+is
+the
+only
+copy:
+the
+Go
+original
+(`go-services/internal/discordbot/`),
+its
+standalone
+`cmd/discord-bot`,
+the
+`supervisor`
+process
+that
+ran
+it,
+`pkg/worker`,
+`pkg/db`
+and
+the
+git
+base
+image
+were
+deleted
+once
+the
+port
+shipped.
+Its
+periodic
+work
+is
+pg-boss
+crons
+in
+`jobs`
+(`discord-bot.care-tick`,
+`.watch-flush`,
+`.watch-identity`,
+`.watch-summary`),
+plus
+`discord-bot.gateway-heartbeat`,
+a
+per-minute
+job
+that
+completes
+only
+while
+the
+gateway
+is
+READY;
+the
+Go
+`status`
+service
+reads
+that
+queue
+from
+pg-boss
+and
+raises
+B07
+when
+the
+last
+completed
+heartbeat
+is
+over
+5
+minutes
+old
+(`go-services/internal/status/workers.go`).
+Outside
+`NODE_ENV=production`
+the
+bot
+also
+needs
+`DISCORD_BOT_GUILD_ALLOWLIST`
+(`server/discord-bot/guard.ts`),
+so
+a
+dev
+`.env`
+carrying
+the
+shared
+token
+never
+opens
+a
+second
+production
+session.
 
-**No double bot on deploy.** Deleting the `supervisor` service from `docker-compose.yml` does not stop a
-supervisor container an earlier release left running, and that container would hold a second gateway
-session on the same token as the new `jobs`. `deploy.sh` therefore runs `retire_supervisor` right before
-`docker compose up -d --no-build --remove-orphans --scale web=0`: it finds the container by its compose
-labels (`com.docker.compose.project=<project>`, `com.docker.compose.service=supervisor`) or its
-`<project>-supervisor` name, `docker stop -t 90` (the Go bot's old drain grace), `docker rm -f`, and fails
-the deploy before anything starts if it is still there. It is a no-op once the container is gone.
-`--remove-orphans` on that `up` (and on the non-web rollback's) would remove it as well. Nothing else ever
-started the supervisor (no systemd unit or cron), and the web hotswap never touched it.
+**No
+double
+bot
+on
+deploy.**
+Deleting
+the
+`supervisor`
+service
+from
+`docker-compose.yml`
+does
+not
+stop
+a
+supervisor
+container
+an
+earlier
+release
+left
+running,
+and
+that
+container
+would
+hold
+a
+second
+gateway
+session
+on
+the
+same
+token
+as
+the
+new
+`jobs`.
+`deploy.sh`
+therefore
+runs
+`retire_supervisor`
+right
+before
+`docker compose up -d --no-build --remove-orphans --scale web=0`:
+it
+finds
+the
+container
+by
+its
+compose
+labels
+(`com.docker.compose.project=<project>`,
+`com.docker.compose.service=supervisor`)
+or
+its
+`<project>-supervisor`
+name,
+`docker stop -t 90`
+(the
+Go
+bot's
+old
+drain
+grace),
+`docker rm -f`,
+and
+fails
+the
+deploy
+before
+anything
+starts
+if
+it
+is
+still
+there.
+It
+is
+a
+no-op
+once
+the
+container
+is
+gone.
+`--remove-orphans`
+on
+that
+`up`
+(and
+on
+the
+non-web
+rollback's)
+would
+remove
+it
+as
+well.
+Nothing
+else
+ever
+started
+the
+supervisor
+(no
+systemd
+unit
+or
+cron),
+and
+the
+web
+hotswap
+never
+touched
+it.
 
-A non-web rollback past this change restores the previous `jobs` image, which only ran the bot with
-`DISCORD_BOT_RUNTIME=node`; compose no longer passes that variable and there is no supervisor to bring
-back, so the bot stays offline until the roll-forward. If that rollback has to last, put
-`DISCORD_BOT_RUNTIME=node` in `.env.production` (`jobs` reads its `env_file`) and recreate `jobs`.
+A
+non-web
+rollback
+past
+this
+change
+restores
+the
+previous
+`jobs`
+image,
+which
+only
+ran
+the
+bot
+with
+`DISCORD_BOT_RUNTIME=node`;
+compose
+no
+longer
+passes
+that
+variable
+and
+there
+is
+no
+supervisor
+to
+bring
+back,
+so
+the
+bot
+stays
+offline
+until
+the
+roll-forward.
+If
+that
+rollback
+has
+to
+last,
+put
+`DISCORD_BOT_RUNTIME=node`
+in
+`.env.production`
+(`jobs`
+reads
+its
+`env_file`)
+and
+recreate
+`jobs`.
 
 ### Diagrams
 
-Rendered by GitHub and by the docs site (`sphinxcontrib-mermaid`). Dashed edges
-are optional or dormant paths (`redis-state`, `pgbouncer`, direct-to-R2 media,
-path-filtered workflows). Keep these in step with `docker-compose.yml`,
-`deploy.sh` and `.github/workflows/` — when they disagree, the files win.
+Rendered
+by
+GitHub
+and
+by
+the
+docs
+site
+(`sphinxcontrib-mermaid`).
+Dashed
+edges
+are
+optional
+or
+dormant
+paths
+(`redis-state`,
+`pgbouncer`,
+direct-to-R2
+media,
+path-filtered
+workflows).
+Keep
+these
+in
+step
+with
+`docker-compose.yml`,
+`deploy.sh`
+and
+`.github/workflows/`
+—
+when
+they
+disagree,
+the
+files
+win.
 
-**Runtime — what serves a request**
+**Runtime
+—
+what
+serves
+a
+request**
 
 ```mermaid
 flowchart LR
@@ -171,7 +680,11 @@ flowchart LR
   VPS -.->|"signed alerts + heartbeats"| WD
 ```
 
-**Delivery — push to production**
+**Delivery
+—
+push
+to
+production**
 
 ```mermaid
 flowchart LR
@@ -213,217 +726,1692 @@ flowchart LR
 
 ## 2. Images: two, from one Dockerfile
 
-The root `Dockerfile` builds both production images; `vite build` runs once:
+The
+root
+`Dockerfile`
+builds
+both
+production
+images;
+`vite build`
+runs
+once:
 
-| Image                   | Target        | Contents                                                                                                                              | Runs                                        |
-| ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `rmhstudios-app` (slim) | `runner`      | Node app: `.output/` (Nitro) + `dist-server/*.cjs` bundles                                                                            | web, socket, rmhbox, rmhtube, ladder-worker, homes-worker, jobs |
-| `rmhstudios-app-full`   | `runner-full` | shared runtime base + Go binaries in `/app/bin/` (built by the Dockerfile's `go-builder` stage — plain `go build`, not Bazel); no Node app layers | status, assets                              |
+| Image                   | Target        | Contents                                                                                                                                          | Runs                                                            |
+| ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `rmhstudios-app` (slim) | `runner`      | Node app: `.output/` (Nitro) + `dist-server/*.cjs` bundles                                                                                        | web, socket, rmhbox, rmhtube, ladder-worker, homes-worker, jobs |
+| `rmhstudios-app-full`   | `runner-full` | shared runtime base + Go binaries in `/app/bin/` (built by the Dockerfile's `go-builder` stage — plain `go build`, not Bazel); no Node app layers | status, assets                                                  |
 
 ## 3. Deploy pipeline (push → production)
 
-**Browser WebAssembly assets.** The Vite plugin runs
-`scripts/build-wasm.mjs` during dev/build, including Docker's direct Vite build.
-The pinned AssemblyScript npm compiler builds the dough and Peirce kernels on
-either the local platform or the ARM64 CI runner. Vite emits hashed `.wasm`
-assets into `.output/public/assets/`; Nitro serves them as `application/wasm`
-under the existing immutable cache policy. Docker and frontend CI run
-`scripts/check-wasm-output.mjs` to reject missing or invalid modules. Keep these
-assets with their matching JavaScript release when deploying or rolling back.
+**Browser
+WebAssembly
+assets.**
+The
+Vite
+plugin
+runs
+`scripts/build-wasm.mjs`
+during
+dev/build,
+including
+Docker's
+direct
+Vite
+build.
+The
+pinned
+AssemblyScript
+npm
+compiler
+builds
+the
+dough
+and
+Peirce
+kernels
+on
+either
+the
+local
+platform
+or
+the
+ARM64
+CI
+runner.
+Vite
+emits
+hashed
+`.wasm`
+assets
+into
+`.output/public/assets/`;
+Nitro
+serves
+them
+as
+`application/wasm`
+under
+the
+existing
+immutable
+cache
+policy.
+Docker
+and
+frontend
+CI
+run
+`scripts/check-wasm-output.mjs`
+to
+reject
+missing
+or
+invalid
+modules.
+Keep
+these
+assets
+with
+their
+matching
+JavaScript
+release
+when
+deploying
+or
+rolling
+back.
 
-The installed Apache policy must allow `'wasm-unsafe-eval'` in `script-src`.
-Updating the app image does not update the host vhost: an operator must sync
-the canonical config, validate it and reload Apache once. `deploy.sh` warns
-when the live origin policy lacks permission; JavaScript remains the fallback.
-See [frontend WebAssembly](./frontend-webassembly.md) for exact commands and
-runtime behavior.
+The
+installed
+Apache
+policy
+must
+allow
+`'wasm-unsafe-eval'`
+in
+`script-src`.
+Updating
+the
+app
+image
+does
+not
+update
+the
+host
+vhost:
+an
+operator
+must
+sync
+the
+canonical
+config,
+validate
+it
+and
+reload
+Apache
+once.
+`deploy.sh`
+warns
+when
+the
+live
+origin
+policy
+lacks
+permission;
+JavaScript
+remains
+the
+fallback.
+See
+[frontend WebAssembly](./frontend-webassembly.md)
+for
+exact
+commands
+and
+runtime
+behavior.
 
-1. **Trigger:** push to `main` → `.github/workflows/deploy.yml` builds the two
-   images on a native ARM64 runner, pushes them to GHCR tagged with the commit
-   SHA, then POSTs an HMAC-signed request to the VPS webhook receiver
-   (`webhook-server.cjs`), which runs `./deploy.sh production <sha>`. (A newer
-   commit to `main` **cancels** the in-progress _build_ and starts fresh
-   — `concurrency: cancel-in-progress`, keyed by ref so branch dispatches don't
-   interfere. The _deploy_ phase is never cancelled mid-flight: `deploy.sh`'s
-   flock+queue lets a running deploy finish and runs the newest queued one next.
-   The listener is driven by CI — not a raw push webhook — so the deploy runs
-   after the image exists.)
-2. **`deploy.sh production <sha>`** (flock-serialized; reports to Discord + GitHub
-   commit status):
-   - `git fetch` + `reset --hard <sha>` (self-restarts if deploy.sh itself changed)
-   - **pull** the two GHCR images for `<sha>` and retag them to the local names
-     compose expects (both also tagged with the git SHA for rollback)
-   - background: sync static assets + avatars to R2
-   - `prisma migrate deploy` in a throwaway container (skips when current)
-   - `docker compose up -d --scale web=0` — everything **except** web
-   - **blue/green web hotswap** (`deploy/hotswap-web.sh`): start the new web
-     container on the spare port (7005 ⇄ 7015), health-gate it, flip Apache's
-     active-port include with a graceful reload, stop (not delete) the old container
-   - **smoke gate + bake** (`deploy/smoke-test.sh`): probe the real user path
-     through Apache — `/` renders, `/api/ready` is 200, `/blog/rss.xml` and
-     `/sitemap.xml` carry their XML — once right after the flip, then every 20s
-     for `BAKE_SECONDS` (default 300) with the old container kept stopped as a
-     rollback target. 3 consecutive failed rounds, or the new container dying
-     or restarting, **automatically flips traffic back** to the old container
-     (only if the old one comes back healthy — a shared-dependency outage
-     leaves the new one live and fails the deploy loudly instead). The deploy
-     flock is held through the bake, so a newer push queues behind it.
-   - parallel health checks; prune stale + rollback images
-3. **Rollback:** *web* rolls back automatically during the bake (above) and the
-   deploy reports "auto-rolled back" to Discord + the commit status. The
-   rollback is web-only and runs after migrations, so a release must keep the
-   old web compatible with its schema (expand/contract). Beyond the bake,
-   previous SHA-tagged images are kept (one per env); replaced Node workers can
-   be revived by restoring their compose command blocks (see
+1. **Trigger:**
+   push
+   to
+   `main`
+   →
+   `.github/workflows/deploy.yml`
+   builds
+   the
+   two
+   images
+   on
+   a
+   native
+   ARM64
+   runner,
+   pushes
+   them
+   to
+   GHCR
+   tagged
+   with
+   the
+   commit
+   SHA,
+   then
+   POSTs
+   an
+   HMAC-signed
+   request
+   to
+   the
+   VPS
+   webhook
+   receiver
+   (`webhook-server.cjs`),
+   which
+   runs
+   `./deploy.sh production <sha>`.
+   (A
+   newer
+   commit
+   to
+   `main`
+   **cancels**
+   the
+   in-progress
+   _build_
+   and
+   starts
+   fresh
+   —
+   `concurrency: cancel-in-progress`,
+   keyed
+   by
+   ref
+   so
+   branch
+   dispatches
+   don't
+   interfere.
+   The
+   _deploy_
+   phase
+   is
+   never
+   cancelled
+   mid-flight:
+   `deploy.sh`'s
+   flock+queue
+   lets
+   a
+   running
+   deploy
+   finish
+   and
+   runs
+   the
+   newest
+   queued
+   one
+   next.
+   The
+   listener
+   is
+   driven
+   by
+   CI
+   —
+   not
+   a
+   raw
+   push
+   webhook
+   —
+   so
+   the
+   deploy
+   runs
+   after
+   the
+   image
+   exists.)
+2. **`deploy.sh production <sha>`**
+   (flock-serialized;
+   reports
+   to
+   Discord +
+   GitHub
+   commit
+   status):
+   - `git fetch` +
+     `reset --hard <sha>`
+     (self-restarts
+     if
+     deploy.sh
+     itself
+     changed)
+   - **pull**
+     the
+     two
+     GHCR
+     images
+     for
+     `<sha>`
+     and
+     retag
+     them
+     to
+     the
+     local
+     names
+     compose
+     expects
+     (both
+     also
+     tagged
+     with
+     the
+     git
+     SHA
+     for
+     rollback)
+   - background:
+     sync
+     static
+     assets +
+     avatars
+     to
+     R2
+   - `prisma migrate deploy`
+     in
+     a
+     throwaway
+     container
+     (skips
+     when
+     current)
+   - `docker compose up -d --scale web=0`
+     —
+     everything
+     **except**
+     web
+   - **blue/green
+     web
+     hotswap**
+     (`deploy/hotswap-web.sh`):
+     start
+     the
+     new
+     web
+     container
+     on
+     the
+     spare
+     port
+     (7005
+     ⇄
+     7015),
+     health-gate
+     it,
+     flip
+     Apache's
+     active-port
+     include
+     with
+     a
+     graceful
+     reload,
+     stop
+     (not
+     delete)
+     the
+     old
+     container
+   - **smoke
+     gate +
+     bake**
+     (`deploy/smoke-test.sh`):
+     probe
+     the
+     real
+     user
+     path
+     through
+     Apache
+     —
+     `/`
+     renders,
+     `/api/ready`
+     is
+     200,
+     `/blog/rss.xml`
+     and
+     `/sitemap.xml`
+     carry
+     their
+     XML
+     —
+     once
+     right
+     after
+     the
+     flip,
+     then
+     every
+     20s
+     for
+     `BAKE_SECONDS`
+     (default 300)
+     with
+     the
+     old
+     container
+     kept
+     stopped
+     as
+     a
+     rollback
+     target.
+     3
+     consecutive
+     failed
+     rounds,
+     or
+     the
+     new
+     container
+     dying
+     or
+     restarting,
+     **automatically
+     flips
+     traffic
+     back**
+     to
+     the
+     old
+     container
+     (only
+     if
+     the
+     old
+     one
+     comes
+     back
+     healthy
+     —
+     a
+     shared-dependency
+     outage
+     leaves
+     the
+     new
+     one
+     live
+     and
+     fails
+     the
+     deploy
+     loudly
+     instead).
+     The
+     deploy
+     flock
+     is
+     held
+     through
+     the
+     bake,
+     so
+     a
+     newer
+     push
+     queues
+     behind
+     it.
+   - parallel
+     health
+     checks;
+     prune
+     stale +
+     rollback
+     images
+3. **Rollback:**
+   _web_
+   rolls
+   back
+   automatically
+   during
+   the
+   bake
+   (above)
+   and
+   the
+   deploy
+   reports
+   "auto-rolled
+   back"
+   to
+   Discord +
+   the
+   commit
+   status.
+   The
+   rollback
+   is
+   web-only
+   and
+   runs
+   after
+   migrations,
+   so
+   a
+   release
+   must
+   keep
+   the
+   old
+   web
+   compatible
+   with
+   its
+   schema
+   (expand/contract).
+   Beyond
+   the
+   bake,
+   previous
+   SHA-tagged
+   images
+   are
+   kept
+   (one
+   per
+   env);
+   replaced
+   Node
+   workers
+   can
+   be
+   revived
+   by
+   restoring
+   their
+   compose
+   command
+   blocks
+   (see
    `docs/runbooks/2026-06-22-go-runtime-cutover.md`).
 
 ## 4. CI
 
-The workflows (count: `workflows` in [`_generated/facts.json`](./_generated/facts.json)) live in `.github/workflows/` — the fleet was consolidated in
-the rewrite, and this table used to describe the ~45-workflow one that preceded
-it (`typecheck-server.yml`, `vitest-coverage.yml`, `codeql.yml` and the granular
-linter/scanner set are all gone). `ls .github/workflows/` is the truth; this is
-what each one gates:
+The
+workflows
+(count:
+`workflows`
+in
+[`_generated/facts.json`](./_generated/facts.json))
+live
+in
+`.github/workflows/`
+—
+the
+fleet
+was
+consolidated
+in
+the
+rewrite,
+and
+this
+table
+used
+to
+describe
+the
+~45-workflow
+one
+that
+preceded
+it
+(`typecheck-server.yml`,
+`vitest-coverage.yml`,
+`codeql.yml`
+and
+the
+granular
+linter/scanner
+set
+are
+all
+gone).
+`ls .github/workflows/`
+is
+the
+truth;
+this
+is
+what
+each
+one
+gates:
 
-| Workflow                 | Gates                                                                                                                                                                                                          |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deploy.yml`             | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above). Its in-workflow `ci` job re-runs typecheck/lint/tests and its `integration` job the integration suite on the merge result — all block the deploy. The Discord embed shows a live CI checklist (`.github/scripts/ci-checklist.sh`) before the VPS stages take over.                        |
-| `web-ci.yml`             | Frontend gate on PRs: `tsc -b` (`pnpm typecheck`) + `eslint` + docs freshness + `pnpm test` (check job — **all blocking**), `build:frontend:sourcemap` + the two size gates (build job), `pnpm audit --prod` (audit job), `pnpm test:integration` against the booted app + Postgres (integration job, blocking) |
-| `epic-tests.yml`         | The epic content-build suite (`pnpm test:epic`) with a Chromium install; path-filtered to `scripts/epic/**`                                                                                                     |
-| `go-microservices.yml`   | Go fleet: `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.) |
-| `senior-review.yml`      | LLM review gate on PRs (Claude Opus over the diff; fails on a FAIL verdict; short-circuits green for non-owner authors)                                                                                        |
-| `synthetic-perf.yml`     | Lighthouse runs against the deployed site, scored by `scripts/ci/synthetic-perf-report.mjs`                                                                                                                     |
-| `build-vibe-packages.yml`, `compose-validate.yml`, `prisma.yml` | Build/deploy guards — the vibe package bundle, `docker compose config`, `prisma validate`, and migration drift                                              |
+| Workflow                                                        | Gates                                                                                                                                                                                                                                                                                                                                                |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deploy.yml`                                                    | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above). Its in-workflow `ci` job re-runs typecheck/lint/tests and its `integration` job the integration suite on the merge result — all block the deploy. The Discord embed shows a live CI checklist (`.github/scripts/ci-checklist.sh`) before the VPS stages take over. |
+| `web-ci.yml`                                                    | Frontend gate on PRs: `tsc -b` (`pnpm typecheck`) + `eslint` + docs freshness + `pnpm test` (check job — **all blocking**), `build:frontend:sourcemap` + the two size gates (build job), `pnpm audit --prod` (audit job), `pnpm test:integration` against the booted app + Postgres (integration job, blocking)                                      |
+| `epic-tests.yml`                                                | The epic content-build suite (`pnpm test:epic`) with a Chromium install; path-filtered to `scripts/epic/**`                                                                                                                                                                                                                                          |
+| `go-microservices.yml`                                          | Go fleet: `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.)                                                                                                                                       |
+| `senior-review.yml`                                             | LLM review gate on PRs (Claude Opus over the diff; fails on a FAIL verdict; short-circuits green for non-owner authors)                                                                                                                                                                                                                              |
+| `synthetic-perf.yml`                                            | Lighthouse runs against the deployed site, scored by `scripts/ci/synthetic-perf-report.mjs`                                                                                                                                                                                                                                                          |
+| `build-vibe-packages.yml`, `compose-validate.yml`, `prisma.yml` | Build/deploy guards — the vibe package bundle, `docker compose config`, `prisma validate`, and migration drift                                                                                                                                                                                                                                       |
 
-Dependabot (`.github/dependabot.yml`) covers npm (root), gomod (`go-services/`),
-and github-actions weekly. Run at least `pnpm typecheck`, `pnpm lint`,
-and `pnpm test` locally before pushing — or just `pnpm check:consistency`, which
-runs the changed-file subset of all three. Test suites and what gates them:
+Dependabot
+(`.github/dependabot.yml`)
+covers
+npm
+(root),
+gomod
+(`go-services/`),
+and
+github-actions
+weekly.
+Run
+at
+least
+`pnpm typecheck`,
+`pnpm lint`,
+and
+`pnpm test`
+locally
+before
+pushing
+—
+or
+just
+`pnpm check:consistency`,
+which
+runs
+the
+changed-file
+subset
+of
+all
+three.
+Test
+suites
+and
+what
+gates
+them:
 [`testing.md`](./testing.md).
 
 ## 5. Ports reference
 
-| Port      | Service                          | Runtime            | Exposure                    |
-| --------- | -------------------------------- | ------------------ | --------------------------- |
-| 7005      | web (Nitro SSR) — blue           | Node               | Apache `/`                  |
-| 7015      | web — green (hotswap spare)      | Node               | Apache flip target          |
-| 7001      | socket-server (games)            | Node               | Apache `/socket/`           |
-| 7676      | rmhbox                           | Node               | Apache `/rmhbox-ws/`        |
-| 7003      | rmhtube                          | Node               | Apache `/rmhtube-ws/`       |
-| 7007      | assets                           | Go                 | internal (Apache off-disk CDN path) |
-| 7008      | status                           | Go                 | dashboard                   |
-| 6379      | redis (LRU cache) · redis-state (durable, dormant) | infra | internal        |
-| 9000/9001 | MinIO                            | infra              | internal                    |
+| Port      | Service                                            | Runtime | Exposure                            |
+| --------- | -------------------------------------------------- | ------- | ----------------------------------- |
+| 7005      | web (Nitro SSR) — blue                             | Node    | Apache `/`                          |
+| 7015      | web — green (hotswap spare)                        | Node    | Apache flip target                  |
+| 7001      | socket-server (games)                              | Node    | Apache `/socket/`                   |
+| 7676      | rmhbox                                             | Node    | Apache `/rmhbox-ws/`                |
+| 7003      | rmhtube                                            | Node    | Apache `/rmhtube-ws/`               |
+| 7007      | assets                                             | Go      | internal (Apache off-disk CDN path) |
+| 7008      | status                                             | Go      | dashboard                           |
+| 6379      | redis (LRU cache) · redis-state (durable, dormant) | infra   | internal                            |
+| 9000/9001 | MinIO                                              | infra   | internal                            |
 
-(The `ladder-worker`, `homes-worker`, and `jobs` Node workers bind no port.
-The old Go `gateway`/`gamehub`/`rmhmusic`:7002 hubs were removed with the Go
-realtime topology.)
+(The
+`ladder-worker`,
+`homes-worker`,
+and
+`jobs`
+Node
+workers
+bind
+no
+port.
+The
+old
+Go
+`gateway`/`gamehub`/`rmhmusic`:7002
+hubs
+were
+removed
+with
+the
+Go
+realtime
+topology.)
 
 ## 6. Auth across tiers
 
-- **Issuance:** Better Auth in the web tier (`lib/auth.ts`) — cookies +
-  OAuth + passkeys + Stripe customer creation. `/api/auth/$` splat route.
-- **Node hubs:** validate the session token against the shared `session`
-  table (each hub has its own `auth.ts`; socket-server is soft-auth,
-  rmhbox/rmhtube hard-auth).
-- **Go services:** validate no sessions. `status` and `assets` are
-  internal-only and never terminate user-facing traffic; the old
-  identity-injecting `gateway` was removed with the Go realtime topology, and
-  `pkg/auth` (its Go copy of the session lookup) went after it.
-- **Server-to-server:** shared-secret via `lib/internal-auth.ts`
-  (`INTERNAL_API_SECRET`), used e.g. by workers bridging events to the web
-  tier's SSE.
+- **Issuance:**
+  Better
+  Auth
+  in
+  the
+  web
+  tier
+  (`lib/auth.ts`)
+  —
+  cookies +
+  OAuth +
+  passkeys +
+  Stripe
+  customer
+  creation.
+  `/api/auth/$`
+  splat
+  route.
+- **Node
+  hubs:**
+  validate
+  the
+  session
+  token
+  against
+  the
+  shared
+  `session`
+  table
+  (each
+  hub
+  has
+  its
+  own
+  `auth.ts`;
+  socket-server
+  is
+  soft-auth,
+  rmhbox/rmhtube
+  hard-auth).
+- **Go
+  services:**
+  validate
+  no
+  sessions.
+  `status`
+  and
+  `assets`
+  are
+  internal-only
+  and
+  never
+  terminate
+  user-facing
+  traffic;
+  the
+  old
+  identity-injecting
+  `gateway`
+  was
+  removed
+  with
+  the
+  Go
+  realtime
+  topology,
+  and
+  `pkg/auth`
+  (its
+  Go
+  copy
+  of
+  the
+  session
+  lookup)
+  went
+  after
+  it.
+- **Server-to-server:**
+  shared-secret
+  via
+  `lib/internal-auth.ts`
+  (`INTERNAL_API_SECRET`),
+  used
+  e.g.
+  by
+  workers
+  bridging
+  events
+  to
+  the
+  web
+  tier's
+  SSE.
 
 ## 7. Data & media
 
-- **PostgreSQL** via Prisma 7 (`@prisma/adapter-pg`) in Node and raw pgx in
-  Go — one shared schema (`prisma/schema/` (per-domain files), model count in [`_generated/facts.json`](./_generated/facts.json)). Go models
-  mirror Prisma column casing verbatim.
-- **Media:** R2/S3 via `lib/storage/` (local-FS fallback for dev); MinIO
-  provides the bucket locally; the Go `assets` service streams
-  `/library /music /models /sprites` range-aware (main user path still goes
-  through web/Apache under Compose).
-- **Async work:** the `jobs` service (pg-boss over Postgres) drains durable
-  queues — engagement progression, event reminders, the weekly digest email.
-  The web tier is send-only; `jobs` owns queue maintenance/scheduling. With no
-  `DATABASE_URL`, `jobs` exits and the web tier runs the work inline.
-- **Redis:** two planes in Compose. `redis` (7.4, `allkeys-lru`, ~320 MB) is a
-  best-effort **cache** the web tier uses (feed/view/presence). `redis-state`
-  is a durable state plane (`noeviction` + AOF) for rate-limit counters, dirty
-  view/counter buffers, and presence sets — **dormant by default** (profile
-  `redis-state`); the app routes state keys there only once `REDIS_STATE_URL`
-  is set, otherwise it falls back to the cache connection (`lib/redis.server.ts`).
-  If Redis is entirely absent the web tier degrades to in-process. Node realtime
-  hubs hold state process-locally (single-instance; the socket.io Redis adapter
-  is wired but off unless `REALTIME_REDIS_ADAPTER=1`).
-- **Durable rmhbox lobbies (D2 step 2, off by default):** with
-  `RMHBOX_DURABLE_LOBBIES=1` **and** `REDIS_STATE_URL` reachable at boot, the
-  rmhbox hub writes each lobby to the `redis-state` plane (never the cache
-  plane) as `rmhbox:lobby:<id>` (versioned JSON, 30 min TTL refreshed on every
-  save, indexed by the set `rmhbox:lobbies`), saves every lobby inside its
-  graceful shutdown, and restores them before it listens. A deploy then keeps
-  the lobby, its seats, cumulative scores, match history and chat; a round in
-  progress is cancelled (the lobby comes back in `WAITING` with a system chat
-  line). Restored members start disconnected under the normal 15 s grace, so a
-  lobby nobody returns to disbands as it always has. With the flag unset, or
-  the plane unreachable, nothing is constructed and lobbies are lost on restart
-  as before. Details: `server/CLAUDE.md` (rmhbox).
-- **Durable casino tables (third-pass audit OP3, off by default):** with
-  `CASINO_DURABLE_TABLES=1` **and** `REDIS_STATE_URL` reachable at boot, the
-  socket hub writes each blackjack, roulette and baccarat table to the
-  `redis-state` plane as `casino:table:<game>:<roomId>` (versioned JSON, no TTL,
-  indexed by the set `casino:tables:<game>`): after every change (coalesced,
-  500 ms), at once after a stake moves, and once more inside its graceful
-  shutdown, where the save replaces the refund. The next process restores the
-  tables before it listens. A deploy during a round then keeps the round: the
-  same seats and bets, and the blackjack hands and shoe, the number a roulette
-  wheel landed on, or the baccarat hands and shoe. Betting windows and turn
-  clocks restart in full; a round that was only waiting to be paid is paid 10 s
-  after the restore. A player who does not reconnect is paid by user id, as
-  after any disconnect. A stake is saved or refunded, never both: if the
-  shutdown save is not acknowledged the stakes are refunded under a per-stake
-  ledger key (`<game>-return:<stakeId>`), payouts are credited under
-  `<game>-payout:<stakeId>`, and restore reads both, so a returned stake comes
-  off its seat and a round that was already paid is not played again. With the
-  flag unset, or the plane unreachable at boot, nothing is constructed and
-  every casino table refunds at shutdown as before. Hold'em cashes out at
-  shutdown in both cases: its chips move between seats without ledger rows and
-  it has no rejoin path. Do not unset the flag while the store still holds
-  tables: the off path never reads them. Details: `server/CLAUDE.md`
+- **PostgreSQL**
+  via
+  Prisma
+  7
+  (`@prisma/adapter-pg`)
+  in
+  Node
+  and
+  raw
+  pgx
+  in
+  Go
+  —
+  one
+  shared
+  schema
+  (`prisma/schema/`
+  (per-domain
+  files),
+  model
+  count
+  in
+  [`_generated/facts.json`](./_generated/facts.json)).
+  Go
+  models
+  mirror
+  Prisma
+  column
+  casing
+  verbatim.
+- **Media:**
+  R2/S3
+  via
+  `lib/storage/`
+  (local-FS
+  fallback
+  for
+  dev);
+  MinIO
+  provides
+  the
+  bucket
+  locally;
+  the
+  Go
+  `assets`
+  service
+  streams
+  `/library /music /models /sprites`
+  range-aware
+  (main
+  user
+  path
+  still
+  goes
+  through
+  web/Apache
+  under
+  Compose).
+- **Async
+  work:**
+  the
+  `jobs`
+  service
+  (pg-boss
+  over
+  Postgres)
+  drains
+  durable
+  queues
+  —
+  engagement
+  progression,
+  event
+  reminders,
+  the
+  weekly
+  digest
+  email.
+  The
+  web
+  tier
+  is
+  send-only;
+  `jobs`
+  owns
+  queue
+  maintenance/scheduling.
+  With
+  no
+  `DATABASE_URL`,
+  `jobs`
+  exits
+  and
+  the
+  web
+  tier
+  runs
+  the
+  work
+  inline.
+- **Redis:**
+  two
+  planes
+  in
+  Compose.
+  `redis`
+  (7.4,
+  `allkeys-lru`,
+  ~320
+  MB)
+  is
+  a
+  best-effort
+  **cache**
+  the
+  web
+  tier
+  uses
+  (feed/view/presence).
+  `redis-state`
+  is
+  a
+  durable
+  state
+  plane
+  (`noeviction` +
+  AOF)
+  for
+  rate-limit
+  counters,
+  dirty
+  view/counter
+  buffers,
+  and
+  presence
+  sets
+  —
+  **dormant
+  by
+  default**
+  (profile
+  `redis-state`);
+  the
+  app
+  routes
+  state
+  keys
+  there
+  only
+  once
+  `REDIS_STATE_URL`
+  is
+  set,
+  otherwise
+  it
+  falls
+  back
+  to
+  the
+  cache
+  connection
+  (`lib/redis.server.ts`).
+  If
+  Redis
+  is
+  entirely
+  absent
+  the
+  web
+  tier
+  degrades
+  to
+  in-process.
+  Node
+  realtime
+  hubs
+  hold
+  state
+  process-locally
+  (single-instance;
+  the
+  socket.io
+  Redis
+  adapter
+  is
+  wired
+  but
+  off
+  unless
+  `REALTIME_REDIS_ADAPTER=1`).
+- **Durable
+  rmhbox
+  lobbies
+  (D2
+  step
+  2,
+  off
+  by
+  default):**
+  with
+  `RMHBOX_DURABLE_LOBBIES=1`
+  **and**
+  `REDIS_STATE_URL`
+  reachable
+  at
+  boot,
+  the
+  rmhbox
+  hub
+  writes
+  each
+  lobby
+  to
+  the
+  `redis-state`
+  plane
+  (never
+  the
+  cache
+  plane)
+  as
+  `rmhbox:lobby:<id>`
+  (versioned
+  JSON,
+  30
+  min
+  TTL
+  refreshed
+  on
+  every
+  save,
+  indexed
+  by
+  the
+  set
+  `rmhbox:lobbies`),
+  saves
+  every
+  lobby
+  inside
+  its
+  graceful
+  shutdown,
+  and
+  restores
+  them
+  before
+  it
+  listens.
+  A
+  deploy
+  then
+  keeps
+  the
+  lobby,
+  its
+  seats,
+  cumulative
+  scores,
+  match
+  history
+  and
+  chat;
+  a
+  round
+  in
+  progress
+  is
+  cancelled
+  (the
+  lobby
+  comes
+  back
+  in
+  `WAITING`
+  with
+  a
+  system
+  chat
+  line).
+  Restored
+  members
+  start
+  disconnected
+  under
+  the
+  normal
+  15
+  s
+  grace,
+  so
+  a
+  lobby
+  nobody
+  returns
+  to
+  disbands
+  as
+  it
+  always
+  has.
+  With
+  the
+  flag
+  unset,
+  or
+  the
+  plane
+  unreachable,
+  nothing
+  is
+  constructed
+  and
+  lobbies
+  are
+  lost
+  on
+  restart
+  as
+  before.
+  Details:
+  `server/CLAUDE.md`
+  (rmhbox).
+- **Durable
+  casino
+  tables
+  (third-pass
+  audit
+  OP3,
+  off
+  by
+  default):**
+  with
+  `CASINO_DURABLE_TABLES=1`
+  **and**
+  `REDIS_STATE_URL`
+  reachable
+  at
+  boot,
+  the
+  socket
+  hub
+  writes
+  each
+  blackjack,
+  roulette
+  and
+  baccarat
+  table
+  to
+  the
+  `redis-state`
+  plane
+  as
+  `casino:table:<game>:<roomId>`
+  (versioned
+  JSON,
+  no
+  TTL,
+  indexed
+  by
+  the
+  set
+  `casino:tables:<game>`):
+  after
+  every
+  change
+  (coalesced,
+  500
+  ms),
+  at
+  once
+  after
+  a
+  stake
+  moves,
+  and
+  once
+  more
+  inside
+  its
+  graceful
+  shutdown,
+  where
+  the
+  save
+  replaces
+  the
+  refund.
+  The
+  next
+  process
+  restores
+  the
+  tables
+  before
+  it
+  listens.
+  A
+  deploy
+  during
+  a
+  round
+  then
+  keeps
+  the
+  round:
+  the
+  same
+  seats
+  and
+  bets,
+  and
+  the
+  blackjack
+  hands
+  and
+  shoe,
+  the
+  number
+  a
+  roulette
+  wheel
+  landed
+  on,
+  or
+  the
+  baccarat
+  hands
+  and
+  shoe.
+  Betting
+  windows
+  and
+  turn
+  clocks
+  restart
+  in
+  full;
+  a
+  round
+  that
+  was
+  only
+  waiting
+  to
+  be
+  paid
+  is
+  paid
+  10
+  s
+  after
+  the
+  restore.
+  A
+  player
+  who
+  does
+  not
+  reconnect
+  is
+  paid
+  by
+  user
+  id,
+  as
+  after
+  any
+  disconnect.
+  A
+  stake
+  is
+  saved
+  or
+  refunded,
+  never
+  both:
+  if
+  the
+  shutdown
+  save
+  is
+  not
+  acknowledged
+  the
+  stakes
+  are
+  refunded
+  under
+  a
+  per-stake
+  ledger
+  key
+  (`<game>-return:<stakeId>`),
+  payouts
+  are
+  credited
+  under
+  `<game>-payout:<stakeId>`,
+  and
+  restore
+  reads
+  both,
+  so
+  a
+  returned
+  stake
+  comes
+  off
+  its
+  seat
+  and
+  a
+  round
+  that
+  was
+  already
+  paid
+  is
+  not
+  played
+  again.
+  With
+  the
+  flag
+  unset,
+  or
+  the
+  plane
+  unreachable
+  at
+  boot,
+  nothing
+  is
+  constructed
+  and
+  every
+  casino
+  table
+  refunds
+  at
+  shutdown
+  as
+  before.
+  Hold'em
+  cashes
+  out
+  at
+  shutdown
+  in
+  both
+  cases:
+  its
+  chips
+  move
+  between
+  seats
+  without
+  ledger
+  rows
+  and
+  it
+  has
+  no
+  rejoin
+  path.
+  Do
+  not
+  unset
+  the
+  flag
+  while
+  the
+  store
+  still
+  holds
+  tables:
+  the
+  off
+  path
+  never
+  reads
+  them.
+  Details:
+  `server/CLAUDE.md`
   (socket-server).
 
 ## 8. Observability
 
-- **Client:** Core Web Vitals → `/api/rum`; uncaught errors →
-  `/api/client-error` (installed in `app/routes/__root.tsx`).
-- **Server:** structured JSON logs everywhere (Node `server/shared/logger.ts`,
-  Go `pkg/log` with matching field names). Go services expose Prometheus
-  metrics (`pkg/telemetry`, `assets` /metrics).
-- **Status page:** the Go `status` service (7008) keeps uptime history on disk
-  and is designed to survive platform outages — its dashboard is one
-  self-contained document that fetches nothing, not even a font. Two kinds of
-  probe: the **web-facing** ones (`/`, `/api/ready`, `/blog/rss.xml`,
-  `/sitemap.xml`) go through the public origin, so they traverse the real user
-  path and assert on response CONTENT — a 200 serving an empty shell reads as
-  degraded, not operational; the **internal** ones (the three Node hubs) hit each
-  container's own `/health` over compose DNS. The jobs worker has no port: its
-  liveness is the A16 check-in, its jobs' freshness B06 and the Discord bot's
-  gateway B07, read from pg-boss. The hubs are
-  deliberately NOT probed at `<origin>/socket/health` etc: those paths exist only
-  as rewrites in the hand-installed Apache vhost, so probing them reported a
-  permanent 404 outage for hubs that were serving traffic normally.
-- **Deploy telemetry:** Discord webhooks + GitHub commit statuses from
+- **Client:**
+  Core
+  Web
+  Vitals
+  →
+  `/api/rum`;
+  uncaught
+  errors
+  →
+  `/api/client-error`
+  (installed
+  in
+  `app/routes/__root.tsx`).
+- **Server:**
+  structured
+  JSON
+  logs
+  everywhere
+  (Node
+  `server/shared/logger.ts`,
+  Go
+  `pkg/log`
+  with
+  matching
+  field
+  names).
+  Go
+  services
+  expose
+  Prometheus
+  metrics
+  (`pkg/telemetry`,
+  `assets`
+  /metrics).
+- **Status
+  page:**
+  the
+  Go
+  `status`
+  service
+  (7008)
+  keeps
+  uptime
+  history
+  on
+  disk
+  and
+  is
+  designed
+  to
+  survive
+  platform
+  outages
+  —
+  its
+  dashboard
+  is
+  one
+  self-contained
+  document
+  that
+  fetches
+  nothing,
+  not
+  even
+  a
+  font.
+  Two
+  kinds
+  of
+  probe:
+  the
+  **web-facing**
+  ones
+  (`/`,
+  `/api/ready`,
+  `/blog/rss.xml`,
+  `/sitemap.xml`)
+  go
+  through
+  the
+  public
+  origin,
+  so
+  they
+  traverse
+  the
+  real
+  user
+  path
+  and
+  assert
+  on
+  response
+  CONTENT
+  —
+  a
+  200
+  serving
+  an
+  empty
+  shell
+  reads
+  as
+  degraded,
+  not
+  operational;
+  the
+  **internal**
+  ones
+  (the
+  three
+  Node
+  hubs)
+  hit
+  each
+  container's
+  own
+  `/health`
+  over
+  compose
+  DNS.
+  The
+  jobs
+  worker
+  has
+  no
+  port:
+  its
+  liveness
+  is
+  the
+  A16
+  check-in,
+  its
+  jobs'
+  freshness
+  B06
+  and
+  the
+  Discord
+  bot's
+  gateway
+  B07,
+  read
+  from
+  pg-boss.
+  The
+  hubs
+  are
+  deliberately
+  NOT
+  probed
+  at
+  `<origin>/socket/health`
+  etc:
+  those
+  paths
+  exist
+  only
+  as
+  rewrites
+  in
+  the
+  hand-installed
+  Apache
+  vhost,
+  so
+  probing
+  them
+  reported
+  a
+  permanent
+  404
+  outage
+  for
+  hubs
+  that
+  were
+  serving
+  traffic
+  normally.
+- **Deploy
+  telemetry:**
+  Discord
+  webhooks +
+  GitHub
+  commit
+  statuses
+  from
   `deploy.sh`.
 
 ## Feature flags
 
-`feature_flag` (Prisma `FeatureFlag`) holds runtime flags so deploy and release are separate: code ships dark, an admin turns it on (optionally for a percentage of users), and turning it off is a row update, not a rollback or a migration question. Server code asks `isFeatureEnabled(key, userId)` (`lib/flags/flags.server.ts`, 15 s per-process cache, fails closed); clients read `GET /api/flags`. Admins manage flags with `GET/PUT/DELETE /api/admin/flags`. Percentage rollouts bucket per `(key, userId)` and are monotonic (raising 10% → 50% never switches anyone off); anonymous callers only see fully rolled-out flags.
+`feature_flag`
+(Prisma
+`FeatureFlag`)
+holds
+runtime
+flags
+so
+deploy
+and
+release
+are
+separate:
+code
+ships
+dark,
+an
+admin
+turns
+it
+on
+(optionally
+for
+a
+percentage
+of
+users),
+and
+turning
+it
+off
+is
+a
+row
+update,
+not
+a
+rollback
+or
+a
+migration
+question.
+Server
+code
+asks
+`isFeatureEnabled(key, userId)`
+(`lib/flags/flags.server.ts`,
+15
+s
+per-process
+cache,
+fails
+closed);
+clients
+read
+`GET /api/flags`.
+Admins
+manage
+flags
+with
+`GET/PUT/DELETE /api/admin/flags`.
+Percentage
+rollouts
+bucket
+per
+`(key, userId)`
+and
+are
+monotonic
+(raising
+10%
+→
+50%
+never
+switches
+anyone
+off);
+anonymous
+callers
+only
+see
+fully
+rolled-out
+flags.
 
 ## Feature-sliced code (`features/`)
 
-Redesign audit A1 moves each game/app into one folder, `features/<id>/{engine,ui,server}`
-plus a `feature.ts` manifest (`lib/core/feature.ts`), imported as `@features/<id>/...`.
-Routes stay thin in `app/routes/`. Socket handlers live in `features/<id>/server/` and the
-socket hub registers them from `server/socket-server/features.ts`; the esbuild server
-bundle follows those imports and the Dockerfile `server-builder` stage copies `features/`.
-Moved so far: `balatro`, `void-breaker`. Details: [`features/CLAUDE.md`](../features/CLAUDE.md).
+Redesign
+audit
+A1
+moves
+each
+game/app
+into
+one
+folder,
+`features/<id>/{engine,ui,server}`
+plus
+a
+`feature.ts`
+manifest
+(`lib/core/feature.ts`),
+imported
+as
+`@features/<id>/...`.
+Routes
+stay
+thin
+in
+`app/routes/`.
+Socket
+handlers
+live
+in
+`features/<id>/server/`
+and
+the
+socket
+hub
+registers
+them
+from
+`server/socket-server/features.ts`;
+the
+esbuild
+server
+bundle
+follows
+those
+imports
+and
+the
+Dockerfile
+`server-builder`
+stage
+copies
+`features/`.
+Moved
+so
+far:
+`balatro`,
+`void-breaker`.
+Details:
+[`features/CLAUDE.md`](../features/CLAUDE.md).

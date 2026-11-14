@@ -17,23 +17,51 @@
 // implementation, which lands in the SHARED ENTRY CHUNK when the module is
 // reachable from a route's top level. Nine modules did this, together putting
 // ~36 KB of framer-motion on the critical path of every page.
-import { AnimatePresence, m as motion } from 'framer-motion';
-import { ExternalLink, MapPin } from 'lucide-react';
+import {
+  AnimatePresence,
+  m as motion,
+} from 'framer-motion';
+import {
+  ExternalLink,
+  MapPin,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Availability, Session } from '@/lib/pf2ecal/types';
-import { AvailabilityPicker, useSummary } from './Availability';
-import { asExternalUrl, describeSessionTime, formatDayLabel, formatRelativeDay } from './format';
-import { SPRING_LIST, TRANSITION, TRANSITION_FAST } from './motion';
+import type {
+  Availability,
+  Session,
+} from '@/lib/pf2ecal/types';
+import {
+  AvailabilityPicker,
+  useSummary,
+} from './Availability';
+import {
+  asExternalUrl,
+  describeSessionTime,
+  formatDayLabel,
+  formatRelativeDay,
+} from './format';
+import {
+  SPRING_LIST,
+  TRANSITION,
+  TRANSITION_FAST,
+} from './motion';
 
 interface SessionCardProps {
   session: Session;
   timeZone: string;
   now: Date;
-  viewerId: string | null;
+  viewerId:
+    | string
+    | null;
   /** True while this card's own write is in flight. */
   pending?: boolean;
-  onOpen: (session: Session) => void;
-  onRespond: (session: Session, status: Availability | null) => void;
+  onOpen: (
+    session: Session,
+  ) => void;
+  onRespond: (
+    session: Session,
+    status: Availability | null,
+  ) => void;
 }
 
 export function SessionCard({
@@ -45,13 +73,41 @@ export function SessionCard({
   onOpen,
   onRespond,
 }: SessionCardProps) {
-  const { t } = useTranslation('r-pf2ecal');
-  const summarise = useSummary();
-  const time = describeSessionTime(session.startsAt, session.endsAt, timeZone);
-  const mine = viewerId ? session.responses.find((r) => r.userId === viewerId) : undefined;
-  const canceled = Boolean(session.canceledAt);
-  const locationUrl = asExternalUrl(session.location);
-  const isPast = session.endsAt.getTime() < now.getTime();
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-pf2ecal',
+    );
+  const summarise =
+    useSummary();
+  const time =
+    describeSessionTime(
+      session.startsAt,
+      session.endsAt,
+      timeZone,
+    );
+  const mine =
+    viewerId
+      ? session.responses.find(
+          (
+            r,
+          ) =>
+            r.userId ===
+            viewerId,
+        )
+      : undefined;
+  const canceled =
+    Boolean(
+      session.canceledAt,
+    );
+  const locationUrl =
+    asExternalUrl(
+      session.location,
+    );
+  const isPast =
+    session.endsAt.getTime() <
+    now.getTime();
 
   return (
     <motion.article
@@ -59,33 +115,83 @@ export function SessionCard({
       // `layout="position"` and not `layout`: only the card's OFFSET animates
       // when the list reorders. Full layout animation would also interpolate
       // width/height, which re-rasterises the text inside every frame.
-      transition={SPRING_LIST}
+      transition={
+        SPRING_LIST
+      }
       className={[
         'pf2e-card p-4 sm:p-5',
-        canceled ? 'pf2e-canceled' : '',
-        pending ? 'pf2e-pending' : '',
-        isPast && !canceled ? 'opacity-70' : '',
+        canceled
+          ? 'pf2e-canceled'
+          : '',
+        pending
+          ? 'pf2e-pending'
+          : '',
+        isPast &&
+        !canceled
+          ? 'opacity-70'
+          : '',
       ]
-        .filter(Boolean)
-        .join(' ')}
+        .filter(
+          Boolean,
+        )
+        .join(
+          ' ',
+        )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="pf2e-caption mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span>{formatDayLabel(session.startsAt, timeZone)}</span>
-            <span aria-hidden>·</span>
-            <span>{formatRelativeDay(session.startsAt, now, timeZone)}</span>
+            <span>
+              {formatDayLabel(
+                session.startsAt,
+                timeZone,
+              )}
+            </span>
+            <span
+              aria-hidden
+            >
+              ·
+            </span>
+            <span>
+              {formatRelativeDay(
+                session.startsAt,
+                now,
+                timeZone,
+              )}
+            </span>
             {canceled && (
               <>
-                <span aria-hidden>·</span>
-                <span>{t('cancelled', { defaultValue: 'Cancelled' })}</span>
+                <span
+                  aria-hidden
+                >
+                  ·
+                </span>
+                <span>
+                  {t(
+                    'cancelled',
+                    {
+                      defaultValue:
+                        'Cancelled',
+                    },
+                  )}
+                </span>
               </>
             )}
           </div>
 
           <h3 className="pf2e-headline">
-            <button type="button" className="pf2e-titlebtn" onClick={() => onOpen(session)}>
-              {session.title}
+            <button
+              type="button"
+              className="pf2e-titlebtn"
+              onClick={() =>
+                onOpen(
+                  session,
+                )
+              }
+            >
+              {
+                session.title
+              }
             </button>
           </h3>
 
@@ -93,25 +199,57 @@ export function SessionCard({
               it. `describeSessionTime` drops the parenthetical when the viewer
               is already on Central so it never reads "7:00 PM (7:00 PM CDT)". */}
           <p className="pf2e-body mt-1 flex flex-wrap items-baseline gap-x-2">
-            <span className="font-medium">{time.local}</span>
-            {time.reference && <span className="pf2e-muted">{time.reference}</span>}
+            <span className="font-medium">
+              {
+                time.local
+              }
+            </span>
+            {time.reference && (
+              <span className="pf2e-muted">
+                {
+                  time.reference
+                }
+              </span>
+            )}
           </p>
 
           {session.location && (
             <p className="pf2e-caption mt-1.5 flex items-center gap-1.5">
-              <MapPin size={13} aria-hidden className="shrink-0" />
+              <MapPin
+                size={
+                  13
+                }
+                aria-hidden
+                className="shrink-0"
+              />
               {locationUrl ? (
                 <a
-                  href={locationUrl}
+                  href={
+                    locationUrl
+                  }
                   target="_blank"
                   rel="noreferrer noopener"
                   className="inline-flex items-center gap-1 truncate hover:underline"
                 >
-                  <span className="truncate">{session.location}</span>
-                  <ExternalLink size={11} aria-hidden className="shrink-0" />
+                  <span className="truncate">
+                    {
+                      session.location
+                    }
+                  </span>
+                  <ExternalLink
+                    size={
+                      11
+                    }
+                    aria-hidden
+                    className="shrink-0"
+                  />
                 </a>
               ) : (
-                <span className="truncate">{session.location}</span>
+                <span className="truncate">
+                  {
+                    session.location
+                  }
+                </span>
               )}
             </p>
           )}
@@ -129,7 +267,12 @@ export function SessionCard({
           session was added thirty seconds ago and nothing has described it yet.
           There is never a placeholder or a spinner here — an empty card that
           fills in a second later reads as broken. */}
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence
+        mode="wait"
+        initial={
+          false
+        }
+      >
         {session.blurb ? (
           <motion.p
             key="blurb"
@@ -139,50 +282,103 @@ export function SessionCard({
             // notes have gone before it starts: animating height here would
             // shove every card below it down mid-scroll, which is the one thing
             // a list must not do while someone is reading it.
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={TRANSITION}
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            exit={{
+              opacity: 0,
+            }}
+            transition={
+              TRANSITION
+            }
           >
-            {session.blurb.short}
+            {
+              session
+                .blurb
+                .short
+            }
           </motion.p>
         ) : (
           session.notes && (
             <motion.p
               key="notes"
               className="pf2e-body pf2e-muted mt-3 line-clamp-3 whitespace-pre-wrap"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={TRANSITION_FAST}
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
+              transition={
+                TRANSITION_FAST
+              }
             >
-              {session.notes}
+              {
+                session.notes
+              }
             </motion.p>
           )
         )}
       </AnimatePresence>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        {viewerId && !canceled ? (
+        {viewerId &&
+        !canceled ? (
           <AvailabilityPicker
             dense
-            value={(mine?.status as Availability | undefined) ?? null}
-            onChange={(next) => onRespond(session, next)}
+            value={
+              (mine?.status as
+                | Availability
+                | undefined) ??
+              null
+            }
+            onChange={(
+              next,
+            ) =>
+              onRespond(
+                session,
+                next,
+              )
+            }
           />
         ) : (
           <span className="pf2e-caption">
             {canceled
-              ? t('session-is-off', { defaultValue: 'This session is off.' })
-              : t('sign-in-to-reply', { defaultValue: 'Sign in to reply.' })}
+              ? t(
+                  'session-is-off',
+                  {
+                    defaultValue:
+                      'This session is off.',
+                  },
+                )
+              : t(
+                  'sign-in-to-reply',
+                  {
+                    defaultValue:
+                      'Sign in to reply.',
+                  },
+                )}
           </span>
         )}
 
         <button
           type="button"
           className="pf2e-btn pf2e-btn-ghost pf2e-btn-sm"
-          onClick={() => onOpen(session)}
+          onClick={() =>
+            onOpen(
+              session,
+            )
+          }
         >
-          {summarise(session.responses)}
+          {summarise(
+            session.responses,
+          )}
         </button>
       </div>
     </motion.article>

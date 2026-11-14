@@ -31,16 +31,46 @@
 
 import { isSiteTier as isSiteTierPath } from './design-scope.js';
 
-const SPIN = /(^|[\s"'`])animate-spin($|[\s"'`])/;
+const SPIN =
+  /(^|[\s"'`])animate-spin($|[\s"'`])/;
 
 /** The one exemption list (design-scope.js), plus the primitive itself. */
-function isSiteTier(filename) {
-  const path = filename.replace(/\\/g, '/');
-  const at = path.search(/(?:^|\/)(?:components|app\/routes)\//);
-  if (at < 0) return false;
-  const rel = path.slice(path[at] === '/' ? at + 1 : at);
-  if (rel.startsWith('components/ui/')) return false;
-  return isSiteTierPath(rel);
+function isSiteTier(
+  filename,
+) {
+  const path =
+    filename.replace(
+      /\\/g,
+      '/',
+    );
+  const at =
+    path.search(
+      /(?:^|\/)(?:components|app\/routes)\//,
+    );
+  if (
+    at <
+    0
+  )
+    return false;
+  const rel =
+    path.slice(
+      path[
+        at
+      ] ===
+        '/'
+        ? at +
+            1
+        : at,
+    );
+  if (
+    rel.startsWith(
+      'components/ui/',
+    )
+  )
+    return false;
+  return isSiteTierPath(
+    rel,
+  );
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -51,23 +81,62 @@ export default {
       description:
         'Use components/ui/spinner instead of a hand-rolled animate-spin in site-tier code',
     },
-    schema: [],
-    messages: {
-      adhoc:
-        'Hand-rolled `animate-spin`. Use `<Spinner>` from "@/components/ui/spinner" for a standalone wait; ' +
-        'an in-button busy icon needs a file-level disable with a reason (see eslint-local-rules/no-adhoc-spinner.js).',
-    },
+    schema:
+      [],
+    messages:
+      {
+        adhoc:
+          'Hand-rolled `animate-spin`. Use `<Spinner>` from "@/components/ui/spinner" for a standalone wait; ' +
+          'an in-button busy icon needs a file-level disable with a reason (see eslint-local-rules/no-adhoc-spinner.js).',
+      },
   },
-  create(context) {
-    if (!isSiteTier(context.filename ?? context.getFilename())) return {};
+  create(
+    context,
+  ) {
+    if (
+      !isSiteTier(
+        context.filename ??
+          context.getFilename(),
+      )
+    )
+      return {};
     return {
-      Literal(node) {
-        if (typeof node.value === 'string' && SPIN.test(node.value)) {
-          context.report({ node, messageId: 'adhoc' });
+      Literal(
+        node,
+      ) {
+        if (
+          typeof node.value ===
+            'string' &&
+          SPIN.test(
+            node.value,
+          )
+        ) {
+          context.report(
+            {
+              node,
+              messageId:
+                'adhoc',
+            },
+          );
         }
       },
-      TemplateElement(node) {
-        if (SPIN.test(node.value.raw)) context.report({ node, messageId: 'adhoc' });
+      TemplateElement(
+        node,
+      ) {
+        if (
+          SPIN.test(
+            node
+              .value
+              .raw,
+          )
+        )
+          context.report(
+            {
+              node,
+              messageId:
+                'adhoc',
+            },
+          );
       },
     };
   },

@@ -17,12 +17,28 @@
  * itself** rather than re-implementing glob semantics, so the gate cannot pass
  * because its own matcher disagreed with the runner's.
  */
-import { describe, it, expect } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { readdirSync, existsSync } from 'node:fs';
-import { join, resolve, relative, sep } from 'node:path';
+import {
+  readdirSync,
+  existsSync,
+} from 'node:fs';
+import {
+  join,
+  resolve,
+  relative,
+  sep,
+} from 'node:path';
 
-const ROOT = resolve(__dirname, '../..');
+const ROOT =
+  resolve(
+    __dirname,
+    '../..',
+  );
 
 /**
  * Files that are deliberately in no suite. One-directional, like the other
@@ -34,110 +50,316 @@ const ROOT = resolve(__dirname, '../..');
  * suites. A file that should not run is a file that should not be named
  * `*.test.ts`; prefer deleting it or renaming it over adding it here.
  */
-const UNCOLLECTED_BY_DESIGN: Array<{ file: string; why: string }> = [];
+const UNCOLLECTED_BY_DESIGN: Array<{
+  file: string;
+  why: string;
+}> =
+  [];
 
 /** Directories a test file never lives in — mirrors `exclude` in the configs. */
-const SKIP_DIRS = new Set([
-  'node_modules',
-  '.git',
-  'dist',
-  'dist-server',
-  '.output',
-  '.tanstack',
-  '.cache',
-  'coverage',
-  '.vite',
-  // Agent worktrees (`.claude/worktrees/`, gitignored) are other checkouts —
-  // excluded from `vitest.config.ts` for the same reason.
-  '.claude',
-]);
+const SKIP_DIRS =
+  new Set(
+    [
+      'node_modules',
+      '.git',
+      'dist',
+      'dist-server',
+      '.output',
+      '.tanstack',
+      '.cache',
+      'coverage',
+      '.vite',
+      // Agent worktrees (`.claude/worktrees/`, gitignored) are other checkouts —
+      // excluded from `vitest.config.ts` for the same reason.
+      '.claude',
+    ],
+  );
 
 /** Every `*.test.ts(x)` on disk, repo-relative and POSIX-separated. */
-function walk(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
-      walk(join(dir, entry.name), out);
-    } else if (/\.test\.tsx?$/.test(entry.name)) {
-      out.push(relative(ROOT, join(dir, entry.name)).split(sep).join('/'));
+function walk(
+  dir: string,
+  out: string[] = [],
+): string[] {
+  for (const entry of readdirSync(
+    dir,
+    {
+      withFileTypes: true,
+    },
+  )) {
+    if (
+      entry.isDirectory()
+    ) {
+      if (
+        SKIP_DIRS.has(
+          entry.name,
+        )
+      )
+        continue;
+      walk(
+        join(
+          dir,
+          entry.name,
+        ),
+        out,
+      );
+    } else if (
+      /\.test\.tsx?$/.test(
+        entry.name,
+      )
+    ) {
+      out.push(
+        relative(
+          ROOT,
+          join(
+            dir,
+            entry.name,
+          ),
+        )
+          .split(
+            sep,
+          )
+          .join(
+            '/',
+          ),
+      );
     }
   }
   return out;
 }
 
 /** Ask vitest which files a config collects. Its answer, not our glob guess. */
-function collectedBy(config: string): string[] {
-  const json = execFileSync(
-    process.execPath,
-    [
-      join(ROOT, 'node_modules/vitest/vitest.mjs'),
-      'list',
-      '--filesOnly',
-      '--json',
-      '--config',
-      config,
-    ],
-    {
-      cwd: ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, CI: '1' },
-    },
-  );
-  return (JSON.parse(json) as Array<{ file: string }>).map((entry) =>
-    relative(ROOT, entry.file).split(sep).join('/'),
+function collectedBy(
+  config: string,
+): string[] {
+  const json =
+    execFileSync(
+      process.execPath,
+      [
+        join(
+          ROOT,
+          'node_modules/vitest/vitest.mjs',
+        ),
+        'list',
+        '--filesOnly',
+        '--json',
+        '--config',
+        config,
+      ],
+      {
+        cwd: ROOT,
+        encoding:
+          'utf8',
+        stdio:
+          [
+            'ignore',
+            'pipe',
+            'pipe',
+          ],
+        env: {
+          ...process.env,
+          CI: '1',
+        },
+      },
+    );
+  return (
+    JSON.parse(
+      json,
+    ) as Array<{
+      file: string;
+    }>
+  ).map(
+    (
+      entry,
+    ) =>
+      relative(
+        ROOT,
+        entry.file,
+      )
+        .split(
+          sep,
+        )
+        .join(
+          '/',
+        ),
   );
 }
 
 describe('test discovery', () => {
-  const onDisk = walk(ROOT).sort();
+  const onDisk =
+    walk(
+      ROOT,
+    ).sort();
   // Six subprocesses, once for the file — each `vitest list` costs ~400ms.
-  const main = collectedBy('vitest.config.ts');
-  const epic = collectedBy('vitest.epic.config.ts');
-  const integration = collectedBy('vitest.integration.config.ts');
-  const tf2 = collectedBy('vitest.tf2.config.ts');
-  const balatro = collectedBy('vitest.balatro.config.ts');
-  const balatroE2e = collectedBy('vitest.balatro-e2e.config.ts');
-  const collected = new Set([...main, ...epic, ...integration, ...tf2, ...balatro, ...balatroE2e]);
-  const excused = new Set(UNCOLLECTED_BY_DESIGN.map((entry) => entry.file));
+  const main =
+    collectedBy(
+      'vitest.config.ts',
+    );
+  const epic =
+    collectedBy(
+      'vitest.epic.config.ts',
+    );
+  const integration =
+    collectedBy(
+      'vitest.integration.config.ts',
+    );
+  const tf2 =
+    collectedBy(
+      'vitest.tf2.config.ts',
+    );
+  const balatro =
+    collectedBy(
+      'vitest.balatro.config.ts',
+    );
+  const balatroE2e =
+    collectedBy(
+      'vitest.balatro-e2e.config.ts',
+    );
+  const collected =
+    new Set(
+      [
+        ...main,
+        ...epic,
+        ...integration,
+        ...tf2,
+        ...balatro,
+        ...balatroE2e,
+      ],
+    );
+  const excused =
+    new Set(
+      UNCOLLECTED_BY_DESIGN.map(
+        (
+          entry,
+        ) =>
+          entry.file,
+      ),
+    );
 
   it('finds test files at all — guards the walker itself', () => {
     // A broken walk would make every assertion below vacuously true. The floor
     // is well under the current count (248 + 11 epic) on purpose: it is here to
     // catch a walker that returns nothing, not to police the suite's size.
-    expect(onDisk.length).toBeGreaterThan(200);
-    expect(onDisk).toContain('lib/__tests__/test-discovery.test.ts');
-    expect(collected.size).toBeGreaterThan(200);
+    expect(
+      onDisk.length,
+    ).toBeGreaterThan(
+      200,
+    );
+    expect(
+      onDisk,
+    ).toContain(
+      'lib/__tests__/test-discovery.test.ts',
+    );
+    expect(
+      collected.size,
+    ).toBeGreaterThan(
+      200,
+    );
   });
 
   it('collects every test file in the repo into a suite', () => {
-    const orphans = onDisk.filter((file) => !collected.has(file) && !excused.has(file));
+    const orphans =
+      onDisk.filter(
+        (
+          file,
+        ) =>
+          !collected.has(
+            file,
+          ) &&
+          !excused.has(
+            file,
+          ),
+      );
     expect(
       orphans,
       'These files look like tests and run nowhere. Either they belong to a suite (they will ' +
         'be picked up automatically — discovery is a glob) or they are not tests and should ' +
         'not be named *.test.ts. A deliberate opt-out goes in UNCOLLECTED_BY_DESIGN, with a reason.',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('keeps the opt-out list honest — no entry for a file that is gone', () => {
-    const stale = UNCOLLECTED_BY_DESIGN.filter(({ file }) => !existsSync(join(ROOT, file)));
-    expect(stale.map((entry) => entry.file)).toEqual([]);
+    const stale =
+      UNCOLLECTED_BY_DESIGN.filter(
+        ({
+          file,
+        }) =>
+          !existsSync(
+            join(
+              ROOT,
+              file,
+            ),
+          ),
+      );
+    expect(
+      stale.map(
+        (
+          entry,
+        ) =>
+          entry.file,
+      ),
+    ).toEqual(
+      [],
+    );
   });
 
   it('keeps the opt-out list honest — no entry for a file that IS collected', () => {
     // If a file ends up in a suite anyway, the exemption is a lie about the
     // suite and should come out rather than sit there implying an exclusion.
-    const contradicted = UNCOLLECTED_BY_DESIGN.filter(({ file }) => collected.has(file));
-    expect(contradicted.map((entry) => entry.file)).toEqual([]);
+    const contradicted =
+      UNCOLLECTED_BY_DESIGN.filter(
+        ({
+          file,
+        }) =>
+          collected.has(
+            file,
+          ),
+      );
+    expect(
+      contradicted.map(
+        (
+          entry,
+        ) =>
+          entry.file,
+      ),
+    ).toEqual(
+      [],
+    );
   });
 
   it('runs the epic suite from its own config, and only the epic suite', () => {
     // The epic tests launch Chromium; the main suite is environment-agnostic by
     // design. Mixing them would make every `pnpm test` need a browser install.
-    expect(epic.length).toBeGreaterThan(0);
-    expect(epic.every((file) => file.startsWith('scripts/epic/'))).toBe(true);
-    expect(main.some((file) => file.startsWith('scripts/epic/'))).toBe(false);
+    expect(
+      epic.length,
+    ).toBeGreaterThan(
+      0,
+    );
+    expect(
+      epic.every(
+        (
+          file,
+        ) =>
+          file.startsWith(
+            'scripts/epic/',
+          ),
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      main.some(
+        (
+          file,
+        ) =>
+          file.startsWith(
+            'scripts/epic/',
+          ),
+      ),
+    ).toBe(
+      false,
+    );
   });
 
   it('runs multiplayer Balatro from its own configs, and never twice', () => {
@@ -145,20 +367,95 @@ describe('test discovery', () => {
     // excludes for it, and the e2e suite (browsers, a hub, Postgres) is separate
     // again. A file collected by two suites runs twice and, worse, means the
     // main suite's mission-critical scope has quietly grown.
-    const balatroRoots = [
-      'features/balatro/engine/mp/',
-      'lib/shared/p2p/',
-      'features/balatro/server/hub/',
-      'scripts/balatro/',
-    ];
-    expect(balatro).toContain('features/balatro/engine/mp/__tests__/lua-specs.test.ts');
-    expect(balatro.every((file) => balatroRoots.some((root) => file.startsWith(root)))).toBe(true);
-    expect(main.filter((file) => balatroRoots.some((root) => file.startsWith(root)))).toEqual([]);
-    expect(balatroE2e.every((file) => file.startsWith('testing/balatro-e2e/'))).toBe(true);
-    expect(main.some((file) => file.startsWith('testing/balatro-e2e/'))).toBe(false);
-    const both = balatro.filter(
-      (file) => main.includes(file) || tf2.includes(file) || balatroE2e.includes(file),
+    const balatroRoots =
+      [
+        'features/balatro/engine/mp/',
+        'lib/shared/p2p/',
+        'features/balatro/server/hub/',
+        'scripts/balatro/',
+      ];
+    expect(
+      balatro,
+    ).toContain(
+      'features/balatro/engine/mp/__tests__/lua-specs.test.ts',
     );
-    expect(both).toEqual([]);
+    expect(
+      balatro.every(
+        (
+          file,
+        ) =>
+          balatroRoots.some(
+            (
+              root,
+            ) =>
+              file.startsWith(
+                root,
+              ),
+          ),
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      main.filter(
+        (
+          file,
+        ) =>
+          balatroRoots.some(
+            (
+              root,
+            ) =>
+              file.startsWith(
+                root,
+              ),
+          ),
+      ),
+    ).toEqual(
+      [],
+    );
+    expect(
+      balatroE2e.every(
+        (
+          file,
+        ) =>
+          file.startsWith(
+            'testing/balatro-e2e/',
+          ),
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      main.some(
+        (
+          file,
+        ) =>
+          file.startsWith(
+            'testing/balatro-e2e/',
+          ),
+      ),
+    ).toBe(
+      false,
+    );
+    const both =
+      balatro.filter(
+        (
+          file,
+        ) =>
+          main.includes(
+            file,
+          ) ||
+          tf2.includes(
+            file,
+          ) ||
+          balatroE2e.includes(
+            file,
+          ),
+      );
+    expect(
+      both,
+    ).toEqual(
+      [],
+    );
   });
 });

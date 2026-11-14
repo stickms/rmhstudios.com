@@ -14,30 +14,41 @@
 
 /* ─── Charts ─────────────────────────────────────────────────────────────── */
 
-export const DIFFICULTIES = ['easy', 'normal', 'hard', 'expert'] as const;
-export type Difficulty = (typeof DIFFICULTIES)[number];
+export const DIFFICULTIES =
+  [
+    'easy',
+    'normal',
+    'hard',
+    'expert',
+  ] as const;
+export type Difficulty =
+  (typeof DIFFICULTIES)[number];
 
-export const SLICE_TYPES = [
-  'STANDARD',
-  'MOVING',
-  'LONG',
-  'SILENT',
-  'SPEED',
-  'BOMB',
-  'SWITCH',
-] as const;
-export type SliceType = (typeof SLICE_TYPES)[number];
+export const SLICE_TYPES =
+  [
+    'STANDARD',
+    'MOVING',
+    'LONG',
+    'SILENT',
+    'SPEED',
+    'BOMB',
+    'SWITCH',
+  ] as const;
+export type SliceType =
+  (typeof SLICE_TYPES)[number];
 
-export const HIT_RESULTS = [
-  'MARVELOUS',
-  'PERFECT',
-  'GREAT',
-  'GOOD',
-  'BAD',
-  'MISS',
-  'NONE',
-] as const;
-export type HitResult = (typeof HIT_RESULTS)[number];
+export const HIT_RESULTS =
+  [
+    'MARVELOUS',
+    'PERFECT',
+    'GREAT',
+    'GOOD',
+    'BAD',
+    'MISS',
+    'NONE',
+  ] as const;
+export type HitResult =
+  (typeof HIT_RESULTS)[number];
 
 /**
  * Timing windows in seconds, measured from the note's exact time.
@@ -46,7 +57,14 @@ export type HitResult = (typeof HIT_RESULTS)[number];
  * playback rate (a 2x chart gives you the same *musical* leniency, which is
  * half the real-time leniency) and by {@link STRICT_TIMING_FACTOR}.
  */
-export const HIT_WINDOWS: Record<Exclude<HitResult, 'MISS' | 'NONE'>, number> = {
+export const HIT_WINDOWS: Record<
+  Exclude<
+    HitResult,
+    | 'MISS'
+    | 'NONE'
+  >,
+  number
+> = {
   MARVELOUS: 0.02,
   PERFECT: 0.033333,
   GREAT: 0.108333,
@@ -73,7 +91,14 @@ export const STRICT_TIMING_FACTOR = 0.7;
 export const LENIENT_TIMING_FACTOR = 1.4;
 
 /** Base points per judgement, before the combo and modifier multipliers. */
-export const HIT_POINTS: Record<Exclude<HitResult, 'MISS' | 'NONE'>, number> = {
+export const HIT_POINTS: Record<
+  Exclude<
+    HitResult,
+    | 'MISS'
+    | 'NONE'
+  >,
+  number
+> = {
   MARVELOUS: 250,
   PERFECT: 200,
   GREAT: 125,
@@ -85,7 +110,13 @@ export const HIT_POINTS: Record<Exclude<HitResult, 'MISS' | 'NONE'>, number> = {
  * Accuracy weight per judgement, out of 100. Accuracy is
  * `sum(weight) / (notes * 100)`, so a full MARVELOUS run is exactly 1.0.
  */
-export const ACCURACY_WEIGHTS: Record<Exclude<HitResult, 'NONE'>, number> = {
+export const ACCURACY_WEIGHTS: Record<
+  Exclude<
+    HitResult,
+    'NONE'
+  >,
+  number
+> = {
   MARVELOUS: 100,
   PERFECT: 100,
   GREAT: 75,
@@ -152,7 +183,13 @@ export const HEALTH_MAX = 100;
  * cannot. The asymmetry between the gains (≤ +1.2) and MISS (−6) is what makes
  * it a gauge rather than a slowly-filling bar.
  */
-export const HEALTH_DELTA: Record<Exclude<HitResult, 'NONE'>, number> = {
+export const HEALTH_DELTA: Record<
+  Exclude<
+    HitResult,
+    'NONE'
+  >,
+  number
+> = {
   MARVELOUS: 1.2,
   PERFECT: 1.0,
   GREAT: 0.2,
@@ -203,12 +240,16 @@ export const MULTIPLAYER_MIN_SPEED = 1.0;
 /* ─── Score multipliers ──────────────────────────────────────────────────── */
 
 /** Base multiplier per difficulty — more notes, more credit. */
-export const DIFFICULTY_MULTIPLIERS: Record<Difficulty, number> = {
-  easy: 0.7,
-  normal: 1.0,
-  hard: 1.3,
-  expert: 1.5,
-};
+export const DIFFICULTY_MULTIPLIERS: Record<
+  Difficulty,
+  number
+> =
+  {
+    easy: 0.7,
+    normal: 1.0,
+    hard: 1.3,
+    expert: 1.5,
+  };
 
 /**
  * What each optional modifier adds to the score multiplier.
@@ -217,36 +258,37 @@ export const DIFFICULTY_MULTIPLIERS: Record<Difficulty, number> = {
  * be worth meaningfully more than one, but not 6× more, or the leaderboard
  * becomes a modifier-stacking contest rather than a rhythm game.
  */
-export const MODIFIER_BONUSES = {
-  /**
-   * M2 — S-Random. Priced with `switching` (0.15): both rewrite where your
-   * hands go without touching the timing, and neither hides anything. It is
-   * NOT priced with Strict Timing, which shrinks the window itself.
-   */
-  sRandom: 0.15,
-  invisible: 0.2,
-  bombs: 0.15,
-  switching: 0.15,
-  spin: 0.15,
-  strictTiming: 0.25,
-  oneTrack: 0.15,
-  /**
-   * The opt-in health gauge. Worth less than Strict Timing (0.25) because it
-   * costs consistency rather than precision — and it is the one bonus that can
-   * be lost mid-run: draining to zero forfeits it (see `calculateScoreMultiplier`).
-   */
-  healthGauge: 0.2,
-  /**
-   * M6 — perfect-or-die. `suddenDeath` sits below it in the same exclusion
-   * group (`applyExclusions` in `modifiers.ts` drops `suddenDeath` when both
-   * are set, so this is never stacked on top of a second "one mistake ends
-   * it" bonus) but currently has no bonus of its own to be worth more than —
-   * see `docs/_handoff/note-vocab-requests.md`. Sized well above every other
-   * entry here because the run this pays for is qualitatively harder than
-   * "don't miss": every GREAT or worse, not just a MISS, ends it.
-   */
-  perfectionist: 0.75,
-} as const;
+export const MODIFIER_BONUSES =
+  {
+    /**
+     * M2 — S-Random. Priced with `switching` (0.15): both rewrite where your
+     * hands go without touching the timing, and neither hides anything. It is
+     * NOT priced with Strict Timing, which shrinks the window itself.
+     */
+    sRandom: 0.15,
+    invisible: 0.2,
+    bombs: 0.15,
+    switching: 0.15,
+    spin: 0.15,
+    strictTiming: 0.25,
+    oneTrack: 0.15,
+    /**
+     * The opt-in health gauge. Worth less than Strict Timing (0.25) because it
+     * costs consistency rather than precision — and it is the one bonus that can
+     * be lost mid-run: draining to zero forfeits it (see `calculateScoreMultiplier`).
+     */
+    healthGauge: 0.2,
+    /**
+     * M6 — perfect-or-die. `suddenDeath` sits below it in the same exclusion
+     * group (`applyExclusions` in `modifiers.ts` drops `suddenDeath` when both
+     * are set, so this is never stacked on top of a second "one mistake ends
+     * it" bonus) but currently has no bonus of its own to be worth more than —
+     * see `docs/_handoff/note-vocab-requests.md`. Sized well above every other
+     * entry here because the run this pays for is qualitatively harder than
+     * "don't miss": every GREAT or worse, not just a MISS, ends it.
+     */
+    perfectionist: 0.75,
+  } as const;
 
 /**
  * A9 — deliberately absent: Lenient Timing has no entry here. It makes the
@@ -276,8 +318,13 @@ export const SPEED_BONUS_PER_X = 0.5;
  * `bpm` — speed scales with the chart's BPM, so beat spacing on screen stays
  * visually consistent across songs of different tempo (StepMania X-mod, IIDX).
  */
-export const SCROLL_MODES = ['constant', 'bpm'] as const;
-export type ScrollMode = (typeof SCROLL_MODES)[number];
+export const SCROLL_MODES =
+  [
+    'constant',
+    'bpm',
+  ] as const;
+export type ScrollMode =
+  (typeof SCROLL_MODES)[number];
 export const MIN_SCROLL_SPEED = 0.5;
 export const MAX_SCROLL_SPEED = 3.0;
 /**
@@ -312,7 +359,8 @@ export const BASE_APPROACH_SEC = 3.0;
  * match in sync. A player on a slower scroll speed gets less runway than they
  * would like; they do not get a desynced match.
  */
-export const LEAD_IN_SECONDS = BASE_APPROACH_SEC;
+export const LEAD_IN_SECONDS =
+  BASE_APPROACH_SEC;
 
 /**
  * The visibility family (M3): what used to be one `invisible` toggle.
@@ -321,8 +369,15 @@ export const LEAD_IN_SECONDS = BASE_APPROACH_SEC;
  * target for a persisted `invisible: true` from before this split existed —
  * see the `migrate` in `store.ts`.
  */
-export const VISIBILITY_MODES = ['fadeOut', 'fadeIn', 'flashlight', 'laneCover'] as const;
-export type VisibilityMode = (typeof VISIBILITY_MODES)[number];
+export const VISIBILITY_MODES =
+  [
+    'fadeOut',
+    'fadeIn',
+    'flashlight',
+    'laneCover',
+  ] as const;
+export type VisibilityMode =
+  (typeof VISIBILITY_MODES)[number];
 
 /** Fraction of the approach a lane cover (V10) may hide, 0 = no cover. */
 export const MIN_LANE_COVER = 0;
@@ -397,19 +452,31 @@ export const RESUME_COUNTDOWN_SECONDS = 3;
 export const MAX_MATCH_PAUSES = 3;
 
 /** Idle lobbies are reaped after this long with no activity. */
-export const LOBBY_IDLE_TIMEOUT_MS = 45 * 60_000;
+export const LOBBY_IDLE_TIMEOUT_MS =
+  45 *
+  60_000;
 /** Chat lines kept per lobby, and the cap on one line's length. */
 export const CHAT_HISTORY = 50;
 export const CHAT_MAX_LENGTH = 300;
 
 /* ─── Uploads ────────────────────────────────────────────────────────────── */
 
-export const AUDIO_MAX_BYTES = 50 * 1024 * 1024;
-export const COVER_MAX_BYTES = 10 * 1024 * 1024;
+export const AUDIO_MAX_BYTES =
+  50 *
+  1024 *
+  1024;
+export const COVER_MAX_BYTES =
+  10 *
+  1024 *
+  1024;
 /** Album covers are display-only; a 1024px square WebP is plenty. */
 export const COVER_SIZE = 1024;
 /** Site-wide ceiling on stored audio. */
-export const TOTAL_STORAGE_LIMIT_BYTES = 10 * 1024 * 1024 * 1024;
+export const TOTAL_STORAGE_LIMIT_BYTES =
+  10 *
+  1024 *
+  1024 *
+  1024;
 /**
  * Per-account ceiling, so one uploader cannot consume the shared 10 GB.
  *
@@ -418,11 +485,16 @@ export const TOTAL_STORAGE_LIMIT_BYTES = 10 * 1024 * 1024 * 1024;
  * player's next upload failed with a message about a limit they had no part in
  * reaching.
  */
-export const PER_USER_STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024;
+export const PER_USER_STORAGE_LIMIT_BYTES =
+  1024 *
+  1024 *
+  1024;
 /** Tracks shorter than this have nothing to chart. */
 export const MIN_SONG_DURATION_SEC = 5;
 /** And a rhythm game does not want your three-hour DJ set. */
-export const MAX_SONG_DURATION_SEC = 15 * 60;
+export const MAX_SONG_DURATION_SEC =
+  15 *
+  60;
 
 /**
  * Ceiling on the Float32 PCM a decode is allowed to allocate.
@@ -438,7 +510,10 @@ export const MAX_SONG_DURATION_SEC = 15 * 60;
  * reports after it. See `lib/audio/probe.ts` for why that ordering is the whole
  * point.
  */
-export const MAX_DECODED_PCM_BYTES = 400 * 1024 * 1024;
+export const MAX_DECODED_PCM_BYTES =
+  400 *
+  1024 *
+  1024;
 
 /**
  * Ceiling on the whole multipart upload body, checked against `Content-Length`
@@ -449,7 +524,12 @@ export const MAX_DECODED_PCM_BYTES = 400 * 1024 * 1024;
  * 1.5 GB POST here would be held in the web container's memory in full before
  * the 50 MB audio ceiling got a chance to look at it.
  */
-export const UPLOAD_BODY_MAX_BYTES = AUDIO_MAX_BYTES + COVER_MAX_BYTES + 2 * 1024 * 1024;
+export const UPLOAD_BODY_MAX_BYTES =
+  AUDIO_MAX_BYTES +
+  COVER_MAX_BYTES +
+  2 *
+    1024 *
+    1024;
 
 export const SONG_TITLE_MAX = 200;
 export const SONG_ARTIST_MAX = 200;
@@ -472,29 +552,72 @@ export const LEADERBOARD_PAGE_SIZE_MAX = 100;
  * trivially easy song, and Postgres sorts NULLs FIRST on DESC by default, which
  * would put every unrated song at the top of "hardest first".
  */
-export const SONG_SORTS = ['recent', 'popular', 'liked', 'title', 'duration', 'difficulty'] as const;
-export type SongSort = (typeof SONG_SORTS)[number];
+export const SONG_SORTS =
+  [
+    'recent',
+    'popular',
+    'liked',
+    'title',
+    'duration',
+    'difficulty',
+  ] as const;
+export type SongSort =
+  (typeof SONG_SORTS)[number];
 
 /**
  * Storage key prefixes. Songs used to be written straight to `db/music` on the
  * web container's local disk, which meant a blue/green deploy could serve a
  * library whose files were on the other container.
  */
-export const SONG_AUDIO_PREFIX = 'slice-it/audio/';
-export const SONG_COVER_PREFIX = 'slice-it/covers/';
+export const SONG_AUDIO_PREFIX =
+  'slice-it/audio/';
+export const SONG_COVER_PREFIX =
+  'slice-it/covers/';
 
 /* ─── Ranks ──────────────────────────────────────────────────────────────── */
 
 /** Accuracy → letter grade, highest threshold first. */
-export const GRADE_THRESHOLDS: readonly { grade: string; min: number }[] = [
-  { grade: 'SS', min: 1 },
-  { grade: 'S', min: 0.95 },
-  { grade: 'A', min: 0.9 },
-  { grade: 'B', min: 0.8 },
-  { grade: 'C', min: 0.7 },
-  { grade: 'D', min: 0.6 },
-  { grade: 'F', min: 0 },
-];
+export const GRADE_THRESHOLDS: readonly {
+  grade: string;
+  min: number;
+}[] =
+  [
+    {
+      grade:
+        'SS',
+      min: 1,
+    },
+    {
+      grade:
+        'S',
+      min: 0.95,
+    },
+    {
+      grade:
+        'A',
+      min: 0.9,
+    },
+    {
+      grade:
+        'B',
+      min: 0.8,
+    },
+    {
+      grade:
+        'C',
+      min: 0.7,
+    },
+    {
+      grade:
+        'D',
+      min: 0.6,
+    },
+    {
+      grade:
+        'F',
+      min: 0,
+    },
+  ];
 
 /* ─── Shared presentation ────────────────────────────────────────────────── */
 
@@ -509,37 +632,52 @@ export const GRADE_THRESHOLDS: readonly { grade: string; min: number }[] = [
  * is a piece of *vocabulary* the player learns, and it has to mean the same
  * thing in both themes.
  */
-export const JUDGEMENT_COLORS: Record<HitResult, string> = {
-  MARVELOUS: '#0891b2',
-  PERFECT: '#B4954A',
-  GREAT: '#15803d',
-  GOOD: '#1d4ed8',
-  BAD: '#7e22ce',
-  MISS: '#64748b',
-  NONE: '#64748b',
-};
+export const JUDGEMENT_COLORS: Record<
+  HitResult,
+  string
+> =
+  {
+    MARVELOUS:
+      '#0891b2',
+    PERFECT:
+      '#B4954A',
+    GREAT:
+      '#15803d',
+    GOOD: '#1d4ed8',
+    BAD: '#7e22ce',
+    MISS: '#64748b',
+    NONE: '#64748b',
+  };
 
 /** The judgements a results-screen histogram lists, best to worst. */
-export const JUDGEMENT_ORDER = [
-  'MARVELOUS',
-  'PERFECT',
-  'GREAT',
-  'GOOD',
-  'BAD',
-  'MISS',
-] as const satisfies readonly Exclude<HitResult, 'NONE'>[];
+export const JUDGEMENT_ORDER =
+  [
+    'MARVELOUS',
+    'PERFECT',
+    'GREAT',
+    'GOOD',
+    'BAD',
+    'MISS',
+  ] as const satisfies readonly Exclude<
+    HitResult,
+    'NONE'
+  >[];
 
 /**
  * Note colour by beat subdivision — StepMania's palette, which two decades of
  * players in this genre already read fluently: red on the beat, blue on the
  * eighth, purple on a triplet, yellow on the sixteenth. Keyed by `Slice.quant`.
  */
-export const QUANT_COLORS: Record<number, string> = {
-  1: '#ef4444',
-  2: '#3b82f6',
-  3: '#a855f7',
-  4: '#eab308',
-};
+export const QUANT_COLORS: Record<
+  number,
+  string
+> =
+  {
+    1: '#ef4444',
+    2: '#3b82f6',
+    3: '#a855f7',
+    4: '#eab308',
+  };
 
 /* ─── Practice guides (P4) ───────────────────────────────────────────────── */
 
@@ -579,7 +717,20 @@ export const MIN_LINE_POSITION = 0.08;
 export const MAX_LINE_POSITION = 0.4;
 
 /** Clamp a persisted judgement-line position back into the readable range. */
-export function clampLinePosition(value: number): number {
-  if (!Number.isFinite(value)) return DEFAULT_LINE_POSITION;
-  return Math.max(MIN_LINE_POSITION, Math.min(MAX_LINE_POSITION, value));
+export function clampLinePosition(
+  value: number,
+): number {
+  if (
+    !Number.isFinite(
+      value,
+    )
+  )
+    return DEFAULT_LINE_POSITION;
+  return Math.max(
+    MIN_LINE_POSITION,
+    Math.min(
+      MAX_LINE_POSITION,
+      value,
+    ),
+  );
 }

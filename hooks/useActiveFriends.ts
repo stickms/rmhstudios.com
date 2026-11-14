@@ -1,7 +1,14 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';
-import { pulseSnapshot, requestPulse, subscribePulse } from '@/lib/pulse';
+import {
+  pulseSnapshot,
+  requestPulse,
+  subscribePulse,
+} from '@/lib/pulse';
 import type { ActiveFriend } from '@/lib/presence-types';
 
 /**
@@ -13,22 +20,64 @@ import type { ActiveFriend } from '@/lib/presence-types';
  * only computed while a consumer is actually mounted. Still gated on signed-in +
  * browser-idle.
  */
-export function useActiveFriends(enabled = true): {
-  friends: ActiveFriend[] | null;
+export function useActiveFriends(
+  enabled = true,
+): {
+  friends:
+    | ActiveFriend[]
+    | null;
   refresh: () => void;
 } {
-  const { data: session } = useSession();
-  const idle = useIdleReady();
-  const [friends, setFriends] = useState<ActiveFriend[] | null>(
-    () => pulseSnapshot().activeFriends as ActiveFriend[] | null,
-  );
+  const {
+    data: session,
+  } =
+    useSession();
+  const idle =
+    useIdleReady();
+  const [
+    friends,
+    setFriends,
+  ] =
+    useState<
+      | ActiveFriend[]
+      | null
+    >(
+      () =>
+        pulseSnapshot()
+          .activeFriends as
+          | ActiveFriend[]
+          | null,
+    );
 
   useEffect(() => {
-    if (!enabled || !session?.user || !idle) return;
-    return subscribePulse(['activeFriends'], (data) =>
-      setFriends(data.activeFriends as ActiveFriend[] | null),
+    if (
+      !enabled ||
+      !session?.user ||
+      !idle
+    )
+      return;
+    return subscribePulse(
+      [
+        'activeFriends',
+      ],
+      (
+        data,
+      ) =>
+        setFriends(
+          data.activeFriends as
+            | ActiveFriend[]
+            | null,
+        ),
     );
-  }, [enabled, session?.user, idle]);
+  }, [
+    enabled,
+    session?.user,
+    idle,
+  ]);
 
-  return { friends, refresh: requestPulse };
+  return {
+    friends,
+    refresh:
+      requestPulse,
+  };
 }

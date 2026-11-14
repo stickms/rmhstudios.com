@@ -23,12 +23,20 @@ export const MAX_LINK_HOST_LENGTH = 200;
 export interface ProfileLinkDTO {
   id: string;
   url: string;
-  label: string | null;
-  host: string | null;
+  label:
+    | string
+    | null;
+  host:
+    | string
+    | null;
   position: number;
   /** ISO timestamp of the last successful `rel="me"` match, or null. */
-  verifiedAt: string | null;
-  lastCheckedAt: string | null;
+  verifiedAt:
+    | string
+    | null;
+  lastCheckedAt:
+    | string
+    | null;
 }
 
 /**
@@ -40,12 +48,37 @@ export interface ProfileLinkDTO {
  * claim, and an investigation that misses one of them is the investigation
  * failing.
  */
-export function linkHost(url: string): string | null {
+export function linkHost(
+  url: string,
+):
+  | string
+  | null {
   try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
-    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
-    return host.slice(0, MAX_LINK_HOST_LENGTH) || null;
+    const parsed =
+      new URL(
+        url,
+      );
+    if (
+      parsed.protocol !==
+        'http:' &&
+      parsed.protocol !==
+        'https:'
+    )
+      return null;
+    const host =
+      parsed.hostname
+        .toLowerCase()
+        .replace(
+          /^www\./,
+          '',
+        );
+    return (
+      host.slice(
+        0,
+        MAX_LINK_HOST_LENGTH,
+      ) ||
+      null
+    );
   } catch {
     return null;
   }
@@ -60,14 +93,35 @@ export function linkHost(url: string): string | null {
  * same page to some servers and different pages to others, and guessing is
  * worse than storing what the user wrote.
  */
-export function normalizeLinkUrl(url: string): string {
+export function normalizeLinkUrl(
+  url: string,
+): string {
   try {
-    const parsed = new URL(url.trim());
-    parsed.hash = '';
-    if (parsed.search === '?') parsed.search = '';
-    return parsed.toString().slice(0, MAX_LINK_URL_LENGTH);
+    const parsed =
+      new URL(
+        url.trim(),
+      );
+    parsed.hash =
+      '';
+    if (
+      parsed.search ===
+      '?'
+    )
+      parsed.search =
+        '';
+    return parsed
+      .toString()
+      .slice(
+        0,
+        MAX_LINK_URL_LENGTH,
+      );
   } catch {
-    return url.trim().slice(0, MAX_LINK_URL_LENGTH);
+    return url
+      .trim()
+      .slice(
+        0,
+        MAX_LINK_URL_LENGTH,
+      );
   }
 }
 
@@ -76,13 +130,37 @@ export function normalizeLinkUrl(url: string): string {
  * `/`, the first path segment. `https://example.com/blog/2026/x` reads as
  * `example.com/blog`.
  */
-export function linkDisplayLabel(link: { label?: string | null; url: string }): string {
-  if (link.label) return link.label;
+export function linkDisplayLabel(link: {
+  label?:
+    | string
+    | null;
+  url: string;
+}): string {
+  if (
+    link.label
+  )
+    return link.label;
   try {
-    const parsed = new URL(link.url);
-    const host = parsed.hostname.replace(/^www\./, '');
-    const first = parsed.pathname.split('/').filter(Boolean)[0];
-    return first ? `${host}/${first}` : host;
+    const parsed =
+      new URL(
+        link.url,
+      );
+    const host =
+      parsed.hostname.replace(
+        /^www\./,
+        '',
+      );
+    const first =
+      parsed.pathname
+        .split(
+          '/',
+        )
+        .filter(
+          Boolean,
+        )[0];
+    return first
+      ? `${host}/${first}`
+      : host;
   } catch {
     return link.url;
   }

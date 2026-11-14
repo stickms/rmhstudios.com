@@ -62,46 +62,132 @@
  * `head()`; nothing here is required.
  */
 
-import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
+import {
+  buildCanonical,
+  buildMeta,
+  ogCardPath,
+} from '@/lib/seo';
 import { jsonLdScript } from '@/lib/schema';
 
 /** A JSON-LD node, as the builders in `lib/schema.ts` return it. */
-type JsonLd = Record<string, unknown>;
+type JsonLd =
+  Record<
+    string,
+    unknown
+  >;
 
 /** The kinds that have a dynamic OG card renderer under `/api/og/<kind>/<id>`. */
-export type OgCardKind = Parameters<typeof ogCardPath>[0];
+export type OgCardKind =
+  Parameters<
+    typeof ogCardPath
+  >[0];
 
 /** What TanStack hands `head()`. Narrowed to the two fields a spec can use. */
-export interface PageHeadContext<TLoaderData, TParams> {
+export interface PageHeadContext<
+  TLoaderData,
+  TParams,
+> {
   loaderData?: TLoaderData;
   params: TParams;
 }
 
 /** A spec field that is either a constant or derived from the head context. */
-type Derivable<TValue, TLoaderData, TParams> =
-  TValue | ((ctx: PageHeadContext<TLoaderData, TParams>) => TValue);
+type Derivable<
+  TValue,
+  TLoaderData,
+  TParams,
+> =
+  | TValue
+  | ((
+      ctx: PageHeadContext<
+        TLoaderData,
+        TParams
+      >,
+    ) => TValue);
 
-export interface PageSpec<TLoaderData = unknown, TParams = Record<string, string>> {
+export interface PageSpec<
+  TLoaderData =
+    unknown,
+  TParams =
+    Record<
+      string,
+      string
+    >,
+> {
   /** Site-relative path. Used for both `og:url` and the canonical link. */
-  path: Derivable<string, TLoaderData, TParams>;
-  title: Derivable<string, TLoaderData, TParams>;
-  description: Derivable<string, TLoaderData, TParams>;
+  path: Derivable<
+    string,
+    TLoaderData,
+    TParams
+  >;
+  title: Derivable<
+    string,
+    TLoaderData,
+    TParams
+  >;
+  description: Derivable<
+    string,
+    TLoaderData,
+    TParams
+  >;
   /**
    * Point at a dynamically rendered card. Mutually exclusive with `image`;
    * return `null` to fall through to the section card `buildMeta` picks.
    */
   ogCard?: (
-    ctx: PageHeadContext<TLoaderData, TParams>,
-  ) => { kind: OgCardKind; id: string } | null | undefined;
+    ctx: PageHeadContext<
+      TLoaderData,
+      TParams
+    >,
+  ) =>
+    | {
+        kind: OgCardKind;
+        id: string;
+      }
+    | null
+    | undefined;
   /** A static image path, when the page has one of its own. */
-  image?: Derivable<string | undefined, TLoaderData, TParams>;
-  imageAlt?: Derivable<string | undefined, TLoaderData, TParams>;
+  image?: Derivable<
+    | string
+    | undefined,
+    TLoaderData,
+    TParams
+  >;
+  imageAlt?: Derivable<
+    | string
+    | undefined,
+    TLoaderData,
+    TParams
+  >;
   /** Pass `null` for art of unknown shape — see `buildMeta`'s `imageSize`. */
-  imageSize?: Derivable<{ width: number; height: number } | null | undefined, TLoaderData, TParams>;
+  imageSize?: Derivable<
+    | {
+        width: number;
+        height: number;
+      }
+    | null
+    | undefined,
+    TLoaderData,
+    TParams
+  >;
   /** `og:type`; `'article'` for posts and news. Defaults to `'website'`. */
-  type?: Derivable<string | undefined, TLoaderData, TParams>;
+  type?: Derivable<
+    | string
+    | undefined,
+    TLoaderData,
+    TParams
+  >;
   /** JSON-LD nodes for this page. Emitted through `jsonLdScript` (which escapes `<`). */
-  jsonLd?: (ctx: PageHeadContext<TLoaderData, TParams>) => JsonLd[] | JsonLd | null | undefined;
+  jsonLd?: (
+    ctx: PageHeadContext<
+      TLoaderData,
+      TParams
+    >,
+  ) =>
+    | JsonLd[]
+    | JsonLd
+    | null
+    | undefined;
   /**
    * Keep the page out of the index. Still emits the title and canonical: a
    * noindex page is still a browser tab, a bookmark and a screen-reader
@@ -110,23 +196,51 @@ export interface PageSpec<TLoaderData = unknown, TParams = Record<string, string
   noIndex?: boolean;
 }
 
-function resolve<TValue, TLoaderData, TParams>(
-  value: Derivable<TValue, TLoaderData, TParams>,
-  ctx: PageHeadContext<TLoaderData, TParams>,
+function resolve<
+  TValue,
+  TLoaderData,
+  TParams,
+>(
+  value: Derivable<
+    TValue,
+    TLoaderData,
+    TParams
+  >,
+  ctx: PageHeadContext<
+    TLoaderData,
+    TParams
+  >,
 ): TValue {
-  return typeof value === 'function'
-    ? (value as (c: PageHeadContext<TLoaderData, TParams>) => TValue)(ctx)
+  return typeof value ===
+    'function'
+    ? (
+        value as (
+          c: PageHeadContext<
+            TLoaderData,
+            TParams
+          >,
+        ) => TValue
+      )(
+        ctx,
+      )
     : value;
 }
 
 /** One entry of the array `buildMeta` produces (`{title}` / `{name,content}` / `{property,content}`). */
-type MetaTag = ReturnType<typeof buildMeta>[number];
+type MetaTag =
+  ReturnType<
+    typeof buildMeta
+  >[number];
 
 /** The `head()` return shape TanStack renders. */
 export interface PageHead {
   meta: MetaTag[];
-  links: ReturnType<typeof buildCanonical>[];
-  scripts: ReturnType<typeof jsonLdScript>[];
+  links: ReturnType<
+    typeof buildCanonical
+  >[];
+  scripts: ReturnType<
+    typeof jsonLdScript
+  >[];
 }
 
 /**
@@ -135,38 +249,128 @@ export interface PageHead {
  * Returns the function itself (not the object), so it drops straight into
  * `createFileRoute(...)({ head: definePage({ … }) })`.
  */
-export function definePage<TLoaderData = unknown, TParams = Record<string, string>>(
-  spec: PageSpec<TLoaderData, TParams>,
-): (ctx: PageHeadContext<TLoaderData, TParams>) => PageHead {
-  return (ctx) => {
-    const path = resolve(spec.path, ctx);
-    const card = spec.ogCard?.(ctx);
+export function definePage<
+  TLoaderData =
+    unknown,
+  TParams =
+    Record<
+      string,
+      string
+    >,
+>(
+  spec: PageSpec<
+    TLoaderData,
+    TParams
+  >,
+): (
+  ctx: PageHeadContext<
+    TLoaderData,
+    TParams
+  >,
+) => PageHead {
+  return (
+    ctx,
+  ) => {
+    const path =
+      resolve(
+        spec.path,
+        ctx,
+      );
+    const card =
+      spec.ogCard?.(
+        ctx,
+      );
     // `ogCard` and `image` cannot both win; the dynamic card is the more
     // specific statement, so it takes precedence when a spec sets both.
-    const image = card ? ogCardPath(card.kind, card.id) : resolve(spec.image, ctx);
-    const jsonLd = spec.jsonLd?.(ctx);
-    const nodes = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+    const image =
+      card
+        ? ogCardPath(
+            card.kind,
+            card.id,
+          )
+        : resolve(
+            spec.image,
+            ctx,
+          );
+    const jsonLd =
+      spec.jsonLd?.(
+        ctx,
+      );
+    const nodes =
+      jsonLd
+        ? Array.isArray(
+            jsonLd,
+          )
+          ? jsonLd
+          : [
+              jsonLd,
+            ]
+        : [];
 
     return {
       meta: [
-        ...buildMeta({
-          title: resolve(spec.title, ctx),
-          description: resolve(spec.description, ctx),
-          path,
-          image,
-          imageAlt: resolve(spec.imageAlt, ctx),
-          imageSize: resolve(spec.imageSize, ctx),
-          type: resolve(spec.type, ctx) ?? 'website',
-        }),
+        ...buildMeta(
+          {
+            title:
+              resolve(
+                spec.title,
+                ctx,
+              ),
+            description:
+              resolve(
+                spec.description,
+                ctx,
+              ),
+            path,
+            image,
+            imageAlt:
+              resolve(
+                spec.imageAlt,
+                ctx,
+              ),
+            imageSize:
+              resolve(
+                spec.imageSize,
+                ctx,
+              ),
+            type:
+              resolve(
+                spec.type,
+                ctx,
+              ) ??
+              'website',
+          },
+        ),
         // `follow` and not `nofollow`: these pages link into the public site and
         // there is no reason to throw that link equity away — only the page
         // itself should stay out of the index.
-        ...(spec.noIndex ? [{ name: 'robots', content: 'noindex, follow' }] : []),
+        ...(spec.noIndex
+          ? [
+              {
+                name: 'robots',
+                content:
+                  'noindex, follow',
+              },
+            ]
+          : []),
       ],
-      links: [buildCanonical(path)],
+      links:
+        [
+          buildCanonical(
+            path,
+          ),
+        ],
       // One script element for the whole page: multiple JSON-LD blocks are legal
       // but harder to validate, and `jsonLdScript` already accepts an array.
-      scripts: nodes.length > 0 ? [jsonLdScript(nodes)] : [],
+      scripts:
+        nodes.length >
+        0
+          ? [
+              jsonLdScript(
+                nodes,
+              ),
+            ]
+          : [],
     };
   };
 }

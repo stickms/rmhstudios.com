@@ -27,7 +27,9 @@
 
 import type { ListingType } from './types';
 
-export type AffordabilityMode = 'rent' | 'buy';
+export type AffordabilityMode =
+  | 'rent'
+  | 'buy';
 
 export interface IncomeProfile {
   /** Gross ANNUAL household income, whole dollars. `0` means "not entered". */
@@ -54,17 +56,18 @@ export interface IncomeProfile {
  * US-ish middle-of-the-road starting values. Every one is visible and editable
  * in the panel — they are a starting point, not a claim about the user.
  */
-export const DEFAULT_INCOME_PROFILE: IncomeProfile = {
-  annualIncome: 0,
-  monthlyDebts: 0,
-  housingRatio: 0.3,
-  downPayment: 0,
-  interestRate: 6.5,
-  termYears: 30,
-  propertyTaxRate: 1.1,
-  annualInsurance: 1800,
-  monthlyHoa: 0,
-};
+export const DEFAULT_INCOME_PROFILE: IncomeProfile =
+  {
+    annualIncome: 0,
+    monthlyDebts: 0,
+    housingRatio: 0.3,
+    downPayment: 0,
+    interestRate: 6.5,
+    termYears: 30,
+    propertyTaxRate: 1.1,
+    annualInsurance: 1800,
+    monthlyHoa: 0,
+  };
 
 export const MIN_HOUSING_RATIO = 0.1;
 export const MAX_HOUSING_RATIO = 0.6;
@@ -74,14 +77,33 @@ export const MAX_HOUSING_RATIO = 0.6;
 /* -------------------------------------------------------------------------- */
 
 /** Gross income per month. Non-finite or negative input reads as zero. */
-export function monthlyGross(annualIncome: number): number {
-  if (!Number.isFinite(annualIncome) || annualIncome <= 0) return 0;
-  return annualIncome / 12;
+export function monthlyGross(
+  annualIncome: number,
+): number {
+  if (
+    !Number.isFinite(
+      annualIncome,
+    ) ||
+    annualIncome <=
+      0
+  )
+    return 0;
+  return (
+    annualIncome /
+    12
+  );
 }
 
 /** Whether the profile carries enough to judge anything at all. */
-export function hasIncome(profile: IncomeProfile): boolean {
-  return monthlyGross(profile.annualIncome) > 0;
+export function hasIncome(
+  profile: IncomeProfile,
+): boolean {
+  return (
+    monthlyGross(
+      profile.annualIncome,
+    ) >
+    0
+  );
 }
 
 /**
@@ -89,17 +111,55 @@ export function hasIncome(profile: IncomeProfile): boolean {
  * floored at zero. Debts are subtracted rather than folded into a second ratio
  * because one number the user can see beats two rules they have to reconcile.
  */
-export function maxMonthlyHousing(profile: IncomeProfile): number {
-  const gross = monthlyGross(profile.annualIncome);
-  if (gross === 0) return 0;
-  const ratio = clampRatio(profile.housingRatio);
-  const debts = Number.isFinite(profile.monthlyDebts) ? Math.max(0, profile.monthlyDebts) : 0;
-  return Math.max(0, gross * ratio - debts);
+export function maxMonthlyHousing(
+  profile: IncomeProfile,
+): number {
+  const gross =
+    monthlyGross(
+      profile.annualIncome,
+    );
+  if (
+    gross ===
+    0
+  )
+    return 0;
+  const ratio =
+    clampRatio(
+      profile.housingRatio,
+    );
+  const debts =
+    Number.isFinite(
+      profile.monthlyDebts,
+    )
+      ? Math.max(
+          0,
+          profile.monthlyDebts,
+        )
+      : 0;
+  return Math.max(
+    0,
+    gross *
+      ratio -
+      debts,
+  );
 }
 
-function clampRatio(ratio: number): number {
-  if (!Number.isFinite(ratio)) return DEFAULT_INCOME_PROFILE.housingRatio;
-  return Math.min(MAX_HOUSING_RATIO, Math.max(MIN_HOUSING_RATIO, ratio));
+function clampRatio(
+  ratio: number,
+): number {
+  if (
+    !Number.isFinite(
+      ratio,
+    )
+  )
+    return DEFAULT_INCOME_PROFILE.housingRatio;
+  return Math.min(
+    MAX_HOUSING_RATIO,
+    Math.max(
+      MIN_HOUSING_RATIO,
+      ratio,
+    ),
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -118,15 +178,58 @@ export function monthlyPayment(
   annualRatePct: number,
   termYears: number,
 ): number {
-  if (!Number.isFinite(principal) || principal <= 0) return 0;
-  const n = Number.isFinite(termYears) ? Math.round(termYears * 12) : 0;
-  if (n <= 0) return principal;
+  if (
+    !Number.isFinite(
+      principal,
+    ) ||
+    principal <=
+      0
+  )
+    return 0;
+  const n =
+    Number.isFinite(
+      termYears,
+    )
+      ? Math.round(
+          termYears *
+            12,
+        )
+      : 0;
+  if (
+    n <=
+    0
+  )
+    return principal;
 
-  const r = Number.isFinite(annualRatePct) ? annualRatePct / 100 / 12 : 0;
-  if (r <= 0) return principal / n;
+  const r =
+    Number.isFinite(
+      annualRatePct,
+    )
+      ? annualRatePct /
+        100 /
+        12
+      : 0;
+  if (
+    r <=
+    0
+  )
+    return (
+      principal /
+      n
+    );
 
-  const factor = Math.pow(1 + r, -n);
-  return (principal * r) / (1 - factor);
+  const factor =
+    Math.pow(
+      1 +
+        r,
+      -n,
+    );
+  return (
+    (principal *
+      r) /
+    (1 -
+      factor)
+  );
 }
 
 export interface PaymentBreakdown {
@@ -152,33 +255,103 @@ export interface PaymentBreakdown {
 }
 
 /** Full monthly cost of owning a listing at `price`, under this profile. */
-export function purchaseBreakdown(price: number, profile: IncomeProfile): PaymentBreakdown {
-  const safePrice = Number.isFinite(price) && price > 0 ? price : 0;
-  const down = Math.min(
-    safePrice,
-    Number.isFinite(profile.downPayment) ? Math.max(0, profile.downPayment) : 0,
-  );
-  const loanAmount = Math.max(0, safePrice - down);
+export function purchaseBreakdown(
+  price: number,
+  profile: IncomeProfile,
+): PaymentBreakdown {
+  const safePrice =
+    Number.isFinite(
+      price,
+    ) &&
+    price >
+      0
+      ? price
+      : 0;
+  const down =
+    Math.min(
+      safePrice,
+      Number.isFinite(
+        profile.downPayment,
+      )
+        ? Math.max(
+            0,
+            profile.downPayment,
+          )
+        : 0,
+    );
+  const loanAmount =
+    Math.max(
+      0,
+      safePrice -
+        down,
+    );
 
-  const principalAndInterest = monthlyPayment(loanAmount, profile.interestRate, profile.termYears);
-  const monthlyRate = Number.isFinite(profile.interestRate)
-    ? Math.max(0, profile.interestRate) / 100 / 12
-    : 0;
-  const firstMonthInterest = loanAmount * monthlyRate;
-  const firstMonthPrincipal = Math.max(0, principalAndInterest - firstMonthInterest);
+  const principalAndInterest =
+    monthlyPayment(
+      loanAmount,
+      profile.interestRate,
+      profile.termYears,
+    );
+  const monthlyRate =
+    Number.isFinite(
+      profile.interestRate,
+    )
+      ? Math.max(
+          0,
+          profile.interestRate,
+        ) /
+        100 /
+        12
+      : 0;
+  const firstMonthInterest =
+    loanAmount *
+    monthlyRate;
+  const firstMonthPrincipal =
+    Math.max(
+      0,
+      principalAndInterest -
+        firstMonthInterest,
+    );
 
-  const taxRate = Number.isFinite(profile.propertyTaxRate)
-    ? Math.max(0, profile.propertyTaxRate)
-    : 0;
-  const tax = (safePrice * (taxRate / 100)) / 12;
-  const insurance = Number.isFinite(profile.annualInsurance)
-    ? Math.max(0, profile.annualInsurance) / 12
-    : 0;
-  const hoa = Number.isFinite(profile.monthlyHoa) ? Math.max(0, profile.monthlyHoa) : 0;
+  const taxRate =
+    Number.isFinite(
+      profile.propertyTaxRate,
+    )
+      ? Math.max(
+          0,
+          profile.propertyTaxRate,
+        )
+      : 0;
+  const tax =
+    (safePrice *
+      (taxRate /
+        100)) /
+    12;
+  const insurance =
+    Number.isFinite(
+      profile.annualInsurance,
+    )
+      ? Math.max(
+          0,
+          profile.annualInsurance,
+        ) /
+        12
+      : 0;
+  const hoa =
+    Number.isFinite(
+      profile.monthlyHoa,
+    )
+      ? Math.max(
+          0,
+          profile.monthlyHoa,
+        )
+      : 0;
 
   return {
-    price: safePrice,
-    downPayment: down,
+    price:
+      safePrice,
+    downPayment:
+      down,
     loanAmount,
     principalAndInterest,
     firstMonthInterest,
@@ -186,7 +359,11 @@ export function purchaseBreakdown(price: number, profile: IncomeProfile): Paymen
     tax,
     insurance,
     hoa,
-    total: principalAndInterest + tax + insurance + hoa,
+    total:
+      principalAndInterest +
+      tax +
+      insurance +
+      hoa,
   };
 }
 
@@ -210,61 +387,140 @@ export interface AffordabilityVerdict {
   /** Dollars per month above budget; `0` when within it. */
   overBy: number;
   /** Monthly cost as a share of gross monthly income; `null` without income. */
-  shareOfIncome: number | null;
+  shareOfIncome:
+    | number
+    | null;
 }
 
-const UNKNOWN: AffordabilityVerdict = {
-  known: false,
-  affordable: false,
-  monthlyCost: 0,
-  budget: 0,
-  overBy: 0,
-  shareOfIncome: null,
-};
+const UNKNOWN: AffordabilityVerdict =
+  {
+    known: false,
+    affordable: false,
+    monthlyCost: 0,
+    budget: 0,
+    overBy: 0,
+    shareOfIncome:
+      null,
+  };
 
-function verdict(monthlyCost: number, profile: IncomeProfile): AffordabilityVerdict {
-  const budget = maxMonthlyHousing(profile);
-  const gross = monthlyGross(profile.annualIncome);
+function verdict(
+  monthlyCost: number,
+  profile: IncomeProfile,
+): AffordabilityVerdict {
+  const budget =
+    maxMonthlyHousing(
+      profile,
+    );
+  const gross =
+    monthlyGross(
+      profile.annualIncome,
+    );
   return {
     known: true,
-    affordable: monthlyCost <= budget,
+    affordable:
+      monthlyCost <=
+      budget,
     monthlyCost,
     budget,
-    overBy: Math.max(0, monthlyCost - budget),
-    shareOfIncome: gross > 0 ? monthlyCost / gross : null,
+    overBy:
+      Math.max(
+        0,
+        monthlyCost -
+          budget,
+      ),
+    shareOfIncome:
+      gross >
+      0
+        ? monthlyCost /
+          gross
+        : null,
   };
 }
 
 /** Judge a monthly rent. */
-export function assessRent(monthlyRent: number, profile: IncomeProfile): AffordabilityVerdict {
-  if (!hasIncome(profile)) return UNKNOWN;
-  if (!Number.isFinite(monthlyRent) || monthlyRent <= 0) return UNKNOWN;
-  return verdict(monthlyRent, profile);
+export function assessRent(
+  monthlyRent: number,
+  profile: IncomeProfile,
+): AffordabilityVerdict {
+  if (
+    !hasIncome(
+      profile,
+    )
+  )
+    return UNKNOWN;
+  if (
+    !Number.isFinite(
+      monthlyRent,
+    ) ||
+    monthlyRent <=
+      0
+  )
+    return UNKNOWN;
+  return verdict(
+    monthlyRent,
+    profile,
+  );
 }
 
 /** Judge a purchase price, using the full monthly payment rather than the price. */
-export function assessPurchase(price: number, profile: IncomeProfile): AffordabilityVerdict {
-  if (!hasIncome(profile)) return UNKNOWN;
-  if (!Number.isFinite(price) || price <= 0) return UNKNOWN;
-  return verdict(purchaseBreakdown(price, profile).total, profile);
+export function assessPurchase(
+  price: number,
+  profile: IncomeProfile,
+): AffordabilityVerdict {
+  if (
+    !hasIncome(
+      profile,
+    )
+  )
+    return UNKNOWN;
+  if (
+    !Number.isFinite(
+      price,
+    ) ||
+    price <=
+      0
+  )
+    return UNKNOWN;
+  return verdict(
+    purchaseBreakdown(
+      price,
+      profile,
+    )
+      .total,
+    profile,
+  );
 }
 
 /** Judge a listing, picking the rule from its own type. */
 export function assessListing(
-  listing: { price: number; listingType: ListingType },
+  listing: {
+    price: number;
+    listingType: ListingType;
+  },
   profile: IncomeProfile,
 ): AffordabilityVerdict {
-  return listing.listingType === 'SALE'
-    ? assessPurchase(listing.price, profile)
-    : assessRent(listing.price, profile);
+  return listing.listingType ===
+    'SALE'
+    ? assessPurchase(
+        listing.price,
+        profile,
+      )
+    : assessRent(
+        listing.price,
+        profile,
+      );
 }
 
 /**
  * The highest monthly rent inside budget — the "what can I afford" number, as
  * opposed to the per-listing yes/no. Zero when no income is entered.
  */
-export function maxAffordableRent(profile: IncomeProfile): number {
-  return maxMonthlyHousing(profile);
+export function maxAffordableRent(
+  profile: IncomeProfile,
+): number {
+  return maxMonthlyHousing(
+    profile,
+  );
 }
 
 /**
@@ -276,18 +532,54 @@ export function maxAffordableRent(profile: IncomeProfile): number {
  * the loan is large. Forty iterations over a 0…$50M bracket lands well inside a
  * dollar, and it runs once per profile change, not per listing.
  */
-export function maxAffordablePrice(profile: IncomeProfile): number {
-  const budget = maxMonthlyHousing(profile);
-  if (budget <= 0) return 0;
+export function maxAffordablePrice(
+  profile: IncomeProfile,
+): number {
+  const budget =
+    maxMonthlyHousing(
+      profile,
+    );
+  if (
+    budget <=
+    0
+  )
+    return 0;
 
   let low = 0;
   let high = 50_000_000;
-  if (purchaseBreakdown(high, profile).total <= budget) return high;
+  if (
+    purchaseBreakdown(
+      high,
+      profile,
+    )
+      .total <=
+    budget
+  )
+    return high;
 
-  for (let i = 0; i < 40; i++) {
-    const mid = (low + high) / 2;
-    if (purchaseBreakdown(mid, profile).total <= budget) low = mid;
-    else high = mid;
+  for (
+    let i = 0;
+    i <
+    40;
+    i++
+  ) {
+    const mid =
+      (low +
+        high) /
+      2;
+    if (
+      purchaseBreakdown(
+        mid,
+        profile,
+      )
+        .total <=
+      budget
+    )
+      low =
+        mid;
+    else
+      high =
+        mid;
   }
   return low;
 }
@@ -296,38 +588,140 @@ export function maxAffordablePrice(profile: IncomeProfile): number {
 /* Device-only persistence                                                    */
 /* -------------------------------------------------------------------------- */
 
-export const INCOME_STORAGE_KEY = 'rmh-homes-affordability';
+export const INCOME_STORAGE_KEY =
+  'rmh-homes-affordability';
 
-function num(value: unknown, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+function num(
+  value: unknown,
+  fallback: number,
+): number {
+  return typeof value ===
+    'number' &&
+    Number.isFinite(
+      value,
+    )
+    ? value
+    : fallback;
 }
 
 /** Pure parse of a stored profile, so the merge rules are testable without a DOM. */
-export function parseIncomeProfile(raw: string | null | undefined): IncomeProfile {
-  if (!raw) return { ...DEFAULT_INCOME_PROFILE };
+export function parseIncomeProfile(
+  raw:
+    | string
+    | null
+    | undefined,
+): IncomeProfile {
+  if (
+    !raw
+  )
+    return {
+      ...DEFAULT_INCOME_PROFILE,
+    };
   let parsed: unknown;
   try {
-    parsed = JSON.parse(raw);
+    parsed =
+      JSON.parse(
+        raw,
+      );
   } catch {
-    return { ...DEFAULT_INCOME_PROFILE };
+    return {
+      ...DEFAULT_INCOME_PROFILE,
+    };
   }
-  if (!parsed || typeof parsed !== 'object') return { ...DEFAULT_INCOME_PROFILE };
-  const p = parsed as Record<string, unknown>;
+  if (
+    !parsed ||
+    typeof parsed !==
+      'object'
+  )
+    return {
+      ...DEFAULT_INCOME_PROFILE,
+    };
+  const p =
+    parsed as Record<
+      string,
+      unknown
+    >;
   return {
-    annualIncome: Math.max(0, num(p.annualIncome, DEFAULT_INCOME_PROFILE.annualIncome)),
-    monthlyDebts: Math.max(0, num(p.monthlyDebts, DEFAULT_INCOME_PROFILE.monthlyDebts)),
-    housingRatio: clampRatio(num(p.housingRatio, DEFAULT_INCOME_PROFILE.housingRatio)),
-    downPayment: Math.max(0, num(p.downPayment, DEFAULT_INCOME_PROFILE.downPayment)),
-    interestRate: Math.max(0, num(p.interestRate, DEFAULT_INCOME_PROFILE.interestRate)),
-    termYears: Math.max(0, num(p.termYears, DEFAULT_INCOME_PROFILE.termYears)),
-    propertyTaxRate: Math.max(0, num(p.propertyTaxRate, DEFAULT_INCOME_PROFILE.propertyTaxRate)),
-    annualInsurance: Math.max(0, num(p.annualInsurance, DEFAULT_INCOME_PROFILE.annualInsurance)),
-    monthlyHoa: Math.max(0, num(p.monthlyHoa, DEFAULT_INCOME_PROFILE.monthlyHoa)),
+    annualIncome:
+      Math.max(
+        0,
+        num(
+          p.annualIncome,
+          DEFAULT_INCOME_PROFILE.annualIncome,
+        ),
+      ),
+    monthlyDebts:
+      Math.max(
+        0,
+        num(
+          p.monthlyDebts,
+          DEFAULT_INCOME_PROFILE.monthlyDebts,
+        ),
+      ),
+    housingRatio:
+      clampRatio(
+        num(
+          p.housingRatio,
+          DEFAULT_INCOME_PROFILE.housingRatio,
+        ),
+      ),
+    downPayment:
+      Math.max(
+        0,
+        num(
+          p.downPayment,
+          DEFAULT_INCOME_PROFILE.downPayment,
+        ),
+      ),
+    interestRate:
+      Math.max(
+        0,
+        num(
+          p.interestRate,
+          DEFAULT_INCOME_PROFILE.interestRate,
+        ),
+      ),
+    termYears:
+      Math.max(
+        0,
+        num(
+          p.termYears,
+          DEFAULT_INCOME_PROFILE.termYears,
+        ),
+      ),
+    propertyTaxRate:
+      Math.max(
+        0,
+        num(
+          p.propertyTaxRate,
+          DEFAULT_INCOME_PROFILE.propertyTaxRate,
+        ),
+      ),
+    annualInsurance:
+      Math.max(
+        0,
+        num(
+          p.annualInsurance,
+          DEFAULT_INCOME_PROFILE.annualInsurance,
+        ),
+      ),
+    monthlyHoa:
+      Math.max(
+        0,
+        num(
+          p.monthlyHoa,
+          DEFAULT_INCOME_PROFILE.monthlyHoa,
+        ),
+      ),
   };
 }
 
 function storage(): Storage | null {
-  if (typeof window === 'undefined') return null;
+  if (
+    typeof window ===
+    'undefined'
+  )
+    return null;
   try {
     return window.localStorage;
   } catch {
@@ -336,20 +730,43 @@ function storage(): Storage | null {
 }
 
 export function loadIncomeProfile(): IncomeProfile {
-  const store = storage();
-  if (!store) return { ...DEFAULT_INCOME_PROFILE };
+  const store =
+    storage();
+  if (
+    !store
+  )
+    return {
+      ...DEFAULT_INCOME_PROFILE,
+    };
   try {
-    return parseIncomeProfile(store.getItem(INCOME_STORAGE_KEY));
+    return parseIncomeProfile(
+      store.getItem(
+        INCOME_STORAGE_KEY,
+      ),
+    );
   } catch {
-    return { ...DEFAULT_INCOME_PROFILE };
+    return {
+      ...DEFAULT_INCOME_PROFILE,
+    };
   }
 }
 
-export function persistIncomeProfile(profile: IncomeProfile): void {
-  const store = storage();
-  if (!store) return;
+export function persistIncomeProfile(
+  profile: IncomeProfile,
+): void {
+  const store =
+    storage();
+  if (
+    !store
+  )
+    return;
   try {
-    store.setItem(INCOME_STORAGE_KEY, JSON.stringify(profile));
+    store.setItem(
+      INCOME_STORAGE_KEY,
+      JSON.stringify(
+        profile,
+      ),
+    );
   } catch {
     // Quota / private mode. The session keeps working from memory.
   }
@@ -357,10 +774,16 @@ export function persistIncomeProfile(profile: IncomeProfile): void {
 
 /** Wipe the stored figure. The panel offers this next to the input. */
 export function clearIncomeProfile(): void {
-  const store = storage();
-  if (!store) return;
+  const store =
+    storage();
+  if (
+    !store
+  )
+    return;
   try {
-    store.removeItem(INCOME_STORAGE_KEY);
+    store.removeItem(
+      INCOME_STORAGE_KEY,
+    );
   } catch {
     /* nothing to do — there is no other copy anywhere */
   }
@@ -371,18 +794,38 @@ export function clearIncomeProfile(): void {
 /* -------------------------------------------------------------------------- */
 
 /** `"$1,850"` — whole dollars, because cents are noise at these magnitudes. */
-export function formatMoney(value: number): string {
-  if (!Number.isFinite(value)) return '—';
+export function formatMoney(
+  value: number,
+): string {
+  if (
+    !Number.isFinite(
+      value,
+    )
+  )
+    return '—';
   return `$${Math.round(value).toLocaleString('en-US')}`;
 }
 
 /** `"$1,850/mo"`. */
-export function formatMonthly(value: number): string {
+export function formatMonthly(
+  value: number,
+): string {
   return `${formatMoney(value)}/mo`;
 }
 
 /** `"31%"` from a 0–1 share. */
-export function formatShare(share: number | null): string {
-  if (share == null || !Number.isFinite(share)) return '—';
+export function formatShare(
+  share:
+    | number
+    | null,
+): string {
+  if (
+    share ==
+      null ||
+    !Number.isFinite(
+      share,
+    )
+  )
+    return '—';
   return `${Math.round(share * 100)}%`;
 }

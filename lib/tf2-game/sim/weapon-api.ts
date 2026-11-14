@@ -17,17 +17,35 @@
  * applyDamage, emitSound, emitEffect, traces and the shared random stream.
  */
 
-import type { UserCmd, TraceResult, TraceFilter } from '../core/types';
+import type {
+  UserCmd,
+  TraceResult,
+  TraceFilter,
+} from '../core/types';
 import type { Vec3 } from '../core/vec';
 import type { UniformRandomStream } from '../core/random';
-import { IN_ATTACK, IN_ATTACK2, IN_RELOAD } from '../core/constants';
-import type { NetRecord, NetSchema } from './net-schema';
-import type { DamageInfo, RadiusDamageInfo } from './damage';
+import {
+  IN_ATTACK,
+  IN_ATTACK2,
+  IN_RELOAD,
+} from '../core/constants';
+import type {
+  NetRecord,
+  NetSchema,
+} from './net-schema';
+import type {
+  DamageInfo,
+  RadiusDamageInfo,
+} from './damage';
 import type { Entity } from './entity';
 import type { EffectEvent } from './events';
 import type { Player } from './player';
 import type { CatalogAttribute } from '../../tf2-loadout/catalog-types';
-import { AttributeSet, hookPlayer, hookWeapon } from './items/attributes';
+import {
+  AttributeSet,
+  hookPlayer,
+  hookWeapon,
+} from './items/attributes';
 
 // ─── Slots and ammo ────────────────────────────────────────────────────────
 /** Loadout slots (TF_WPN_TYPE_* / loadout_positions_t order). */
@@ -75,7 +93,10 @@ export interface FireBulletsParams {
   damage: number;
   damageType: number;
   customKill: number;
-  critType: 0 | 1 | 2;
+  critType:
+    | 0
+    | 1
+    | 2;
   /** The command's random seed (spread is shared with client prediction). */
   seed: number;
   /** Max range (weapon "Range"), default 8192. */
@@ -93,19 +114,35 @@ export interface FireBulletsParams {
    * damage was added to the victim's accumulated info — the place for
    * headshots (set critType/customKill from `tr.hitGroup`).
    */
-  onHit?: (victim: Entity, tr: TraceResult, info: DamageInfo) => void;
+  onHit?: (
+    victim: Entity,
+    tr: TraceResult,
+    info: DamageInfo,
+  ) => void;
 }
 
 export interface SpawnProjectileParams {
   origin: Vec3;
   angles: Vec3;
   velocity: Vec3;
-  owner: Player | Entity;
+  owner:
+    | Player
+    | Entity;
   weapon: Weapon | null;
   damage: number;
-  critType: 0 | 1 | 2;
+  critType:
+    | 0
+    | 1
+    | 2;
   /** Extra fields the projectile class reads (radius, fuse, etc.). */
-  extra?: Readonly<Record<string, number | string | boolean>>;
+  extra?: Readonly<
+    Record<
+      string,
+      | number
+      | string
+      | boolean
+    >
+  >;
 }
 
 export interface SoundOptions {
@@ -125,13 +162,37 @@ export interface WeaponHost {
   readonly tickCount: number;
   /** False while a client re-simulates for prediction: no authoritative damage, no spawning. */
   readonly isServer: boolean;
-  fireBullets(params: FireBulletsParams): void;
-  spawnProjectile(classname: string, params: SpawnProjectileParams): Entity | null;
-  radiusDamage(r: RadiusDamageInfo): void;
-  applyDamage(victim: Entity, info: DamageInfo): number;
-  emitSound(name: string, opts?: SoundOptions): void;
-  emitEffect(effect: Omit<EffectEvent, 'type'>): void;
-  traceLine(start: Vec3, end: Vec3, mask: number, filter: TraceFilter | null, out: TraceResult): TraceResult;
+  fireBullets(
+    params: FireBulletsParams,
+  ): void;
+  spawnProjectile(
+    classname: string,
+    params: SpawnProjectileParams,
+  ): Entity | null;
+  radiusDamage(
+    r: RadiusDamageInfo,
+  ): void;
+  applyDamage(
+    victim: Entity,
+    info: DamageInfo,
+  ): number;
+  emitSound(
+    name: string,
+    opts?: SoundOptions,
+  ): void;
+  emitEffect(
+    effect: Omit<
+      EffectEvent,
+      'type'
+    >,
+  ): void;
+  traceLine(
+    start: Vec3,
+    end: Vec3,
+    mask: number,
+    filter: TraceFilter | null,
+    out: TraceResult,
+  ): TraceResult;
   traceHull(
     start: Vec3,
     end: Vec3,
@@ -142,10 +203,20 @@ export interface WeaponHost {
     out: TraceResult,
   ): TraceResult;
   /** A hitscan trace that tests player hitboxes (lag-compensated when `cmdTick` is given). */
-  traceAttack(attacker: Player, start: Vec3, end: Vec3, out: TraceResult, cmdTick?: number): TraceResult;
+  traceAttack(
+    attacker: Player,
+    start: Vec3,
+    end: Vec3,
+    out: TraceResult,
+    cmdTick?: number,
+  ): TraceResult;
   /** A random stream seeded for this command (SharedRandomFloat). Reused: read it before the next call. */
-  sharedRandom(seed: number): UniformRandomStream;
-  entity(id: number): Entity | null;
+  sharedRandom(
+    seed: number,
+  ): UniformRandomStream;
+  entity(
+    id: number,
+  ): Entity | null;
 }
 
 // ─── The weapon contract ───────────────────────────────────────────────────
@@ -174,7 +245,9 @@ export interface Weapon {
   lastFireTime: number;
 
   /** Given to a player (GiveNamedItem / Equip). */
-  equip(owner: Player): void;
+  equip(
+    owner: Player,
+  ): void;
   /** May the owner switch to it (CanDeploy: needs ammo for some weapons)? */
   canDeploy(): boolean;
   /** Becoming active: sets the draw delay. Returns false to refuse. */
@@ -182,11 +255,17 @@ export interface Weapon {
   /** May the owner switch away (CanHolster: e.g. not mid-charge)? */
   canHolster(): boolean;
   /** Switching away to `next`. Returns false to refuse. */
-  holster(next: Weapon | null): boolean;
+  holster(
+    next: Weapon | null,
+  ): boolean;
   /** Runs for the active weapon once per user command (ItemPostFrame). */
-  itemPostFrame(cmd: UserCmd): void;
+  itemPostFrame(
+    cmd: UserCmd,
+  ): void;
   /** Runs for every non-active weapon once per user command (ItemHolsterFrame). */
-  itemHolsterFrame(cmd: UserCmd): void;
+  itemHolsterFrame(
+    cmd: UserCmd,
+  ): void;
   /** Resupply / respawn: full clip, reset state (GiveDefaultAmmo + WeaponReset). */
   refill(): void;
   /** The owner died (DropAmmo, stop sounds). */
@@ -210,9 +289,13 @@ export interface Weapon {
    */
   netSchema?(): NetSchema;
   /** Writes the prediction state into a NET_WEAPON record (or `netSchema()`'s). */
-  writeNet(out: NetRecord): void;
+  writeNet(
+    out: NetRecord,
+  ): void;
   /** Restores prediction state from a NET_WEAPON record (client). */
-  readNet(rec: NetRecord): void;
+  readNet(
+    rec: NetRecord,
+  ): void;
 }
 
 /** Static numbers a weapon is built from (tf_weapon_*.txt WeaponData + item attributes). */
@@ -248,31 +331,41 @@ export interface WeaponStats {
   speedMod: number;
 }
 
-export const defaultWeaponStats = (over: Partial<WeaponStats> = {}): WeaponStats => ({
-  classname: 'tf_weapon_stub',
-  defindex: -1,
-  slot: SLOT_PRIMARY,
-  weaponId: 0,
-  ammoType: TF_AMMO_DUMMY,
-  maxClip: -1,
-  ammoPerShot: 1,
-  damage: 0,
-  bulletsPerShot: 1,
-  spread: 0,
-  range: 8192,
-  fireDelay: 0.5,
-  timeIdle: 1,
-  reloadTime: 1,
-  reloadStartTime: 0,
-  reloadsSingly: false,
-  damageType: 0,
-  killIcon: '',
-  worldModel: '',
-  viewModel: '',
-  deployTimeMult: 1,
-  speedMod: 1,
-  ...over,
-});
+export const defaultWeaponStats =
+  (
+    over: Partial<WeaponStats> = {},
+  ): WeaponStats => ({
+    classname:
+      'tf_weapon_stub',
+    defindex:
+      -1,
+    slot: SLOT_PRIMARY,
+    weaponId: 0,
+    ammoType:
+      TF_AMMO_DUMMY,
+    maxClip:
+      -1,
+    ammoPerShot: 1,
+    damage: 0,
+    bulletsPerShot: 1,
+    spread: 0,
+    range: 8192,
+    fireDelay: 0.5,
+    timeIdle: 1,
+    reloadTime: 1,
+    reloadStartTime: 0,
+    reloadsSingly: false,
+    damageType: 0,
+    killIcon:
+      '',
+    worldModel:
+      '',
+    viewModel:
+      '',
+    deployTimeMult: 1,
+    speedMod: 1,
+    ...over,
+  });
 
 /**
  * The shared frame logic of CTFWeaponBase over CBaseCombatWeapon. Subclasses
@@ -281,7 +374,8 @@ export const defaultWeaponStats = (over: Partial<WeaponStats> = {}): WeaponStats
  */
 export abstract class BaseWeapon implements Weapon {
   readonly stats: WeaponStats;
-  owner: Player | null = null;
+  owner: Player | null =
+    null;
   clip: number;
   nextPrimaryAttack = 0;
   nextSecondaryAttack = 0;
@@ -289,7 +383,8 @@ export abstract class BaseWeapon implements Weapon {
   lastFireTime = 0;
   /** curtime of the last deploy (m_flLastDeployTime). */
   deployedAt = 0;
-  reloadMode = TF_RELOAD_START;
+  reloadMode =
+    TF_RELOAD_START;
   /** A full-clip reload is in progress (CBaseCombatWeapon::m_bInReload). */
   inReload = false;
   /** Shots left this volley that are crits (weapon crit buckets live in the weapons module). */
@@ -297,62 +392,125 @@ export abstract class BaseWeapon implements Weapon {
   protected inAttack = false;
   protected inAttack2 = false;
   /** The item's attributes (set by `createWeapon` from the spec). */
-  attributes: AttributeSet = AttributeSet.EMPTY;
+  attributes: AttributeSet =
+    AttributeSet.EMPTY;
   provideOnActive = false;
 
-  constructor(stats: WeaponStats) {
-    this.stats = stats;
-    this.clip = stats.maxClip;
+  constructor(
+    stats: WeaponStats,
+  ) {
+    this.stats =
+      stats;
+    this.clip =
+      stats.maxClip;
   }
 
   get classname(): string {
-    return this.stats.classname;
+    return this
+      .stats
+      .classname;
   }
   get defindex(): number {
-    return this.stats.defindex;
+    return this
+      .stats
+      .defindex;
   }
   get slot(): number {
-    return this.stats.slot;
+    return this
+      .stats
+      .slot;
   }
   get weaponId(): number {
-    return this.stats.weaponId;
+    return this
+      .stats
+      .weaponId;
   }
   get ammoType(): number {
-    return this.stats.ammoType;
+    return this
+      .stats
+      .ammoType;
   }
   get maxClip(): number {
-    return this.stats.maxClip;
+    return this
+      .stats
+      .maxClip;
   }
   get killIcon(): string {
-    return this.stats.killIcon;
+    return this
+      .stats
+      .killIcon;
   }
   get worldModel(): string {
-    return this.stats.worldModel;
+    return this
+      .stats
+      .worldModel;
   }
   get viewModel(): string {
-    return this.stats.viewModel;
+    return this
+      .stats
+      .viewModel;
   }
 
   protected get curtime(): number {
-    return this.owner ? this.owner.world.curtime : 0;
+    return this
+      .owner
+      ? this
+          .owner
+          .world
+          .curtime
+      : 0;
   }
 
   usesClip(): boolean {
-    return this.stats.maxClip >= 0;
+    return (
+      this
+        .stats
+        .maxClip >=
+      0
+    );
   }
 
   /** Reserve ammo the owner carries for this weapon. */
   reserveAmmo(): number {
-    return this.owner && this.stats.ammoType !== TF_AMMO_DUMMY ? this.owner.ammo[this.stats.ammoType] : 0;
+    return this
+      .owner &&
+      this
+        .stats
+        .ammoType !==
+        TF_AMMO_DUMMY
+      ? this
+          .owner
+          .ammo[
+          this
+            .stats
+            .ammoType
+        ]
+      : 0;
   }
 
   hasAmmo(): boolean {
-    if (this.stats.ammoType === TF_AMMO_DUMMY) return true;
-    return (this.usesClip() && this.clip > 0) || this.reserveAmmo() > 0;
+    if (
+      this
+        .stats
+        .ammoType ===
+      TF_AMMO_DUMMY
+    )
+      return true;
+    return (
+      (this.usesClip() &&
+        this
+          .clip >
+          0) ||
+      this.reserveAmmo() >
+        0
+    );
   }
 
-  equip(owner: Player): void {
-    this.owner = owner;
+  equip(
+    owner: Player,
+  ): void {
+    this.owner =
+      owner;
     this.refill();
   }
 
@@ -367,30 +525,107 @@ export abstract class BaseWeapon implements Weapon {
    * has been out longer than the switch time, and a sword's slower holster.
    */
   deployTimeMultiplier(): number {
-    const o = this.owner;
-    let mult = this.stats.deployTimeMult;
-    if (!o) return mult;
-    mult = hookPlayer(o, 'mult_deploy_time', mult);
-    const last = o.lastSlot >= 0 ? o.weapons[o.lastSlot] : null;
-    if (last && last !== this) {
-      const lw = last as Weapon & { deployedAt?: number };
-      if (this.curtime - (lw.deployedAt ?? 0) > TF_WEAPON_SWITCH_TIME) {
-        mult = hookWeapon(last, null, 'mult_switch_from_wep_deploy_time', mult);
+    const o =
+      this
+        .owner;
+    let mult =
+      this
+        .stats
+        .deployTimeMult;
+    if (
+      !o
+    )
+      return mult;
+    mult =
+      hookPlayer(
+        o,
+        'mult_deploy_time',
+        mult,
+      );
+    const last =
+      o.lastSlot >=
+      0
+        ? o
+            .weapons[
+            o
+              .lastSlot
+          ]
+        : null;
+    if (
+      last &&
+      last !==
+        this
+    ) {
+      const lw =
+        last as Weapon & {
+          deployedAt?: number;
+        };
+      if (
+        this
+          .curtime -
+          (lw.deployedAt ??
+            0) >
+        TF_WEAPON_SWITCH_TIME
+      ) {
+        mult =
+          hookWeapon(
+            last,
+            null,
+            'mult_switch_from_wep_deploy_time',
+            mult,
+          );
       }
-      if (hookWeapon(last, null, 'is_a_sword', 0) !== 0 && this.attributes.apply('is_a_sword', 0) === 0) mult *= 1.75;
+      if (
+        hookWeapon(
+          last,
+          null,
+          'is_a_sword',
+          0,
+        ) !==
+          0 &&
+        this.attributes.apply(
+          'is_a_sword',
+          0,
+        ) ===
+          0
+      )
+        mult *= 1.75;
     }
-    return Math.max(mult, 0.00001);
+    return Math.max(
+      mult,
+      0.00001,
+    );
   }
 
   /** SDK: CTFWeaponBase::Deploy — the next attack waits for the draw. */
   deploy(): boolean {
-    const t = this.curtime;
-    const delay = TF_WEAPON_SWITCH_TIME * this.deployTimeMultiplier();
-    this.nextPrimaryAttack = Math.max(this.nextPrimaryAttack, t + delay);
-    this.nextSecondaryAttack = Math.max(this.nextSecondaryAttack, t + delay);
-    this.timeWeaponIdle = t + delay;
-    this.deployedAt = t;
-    this.reloadMode = TF_RELOAD_START;
+    const t =
+      this
+        .curtime;
+    const delay =
+      TF_WEAPON_SWITCH_TIME *
+      this.deployTimeMultiplier();
+    this.nextPrimaryAttack =
+      Math.max(
+        this
+          .nextPrimaryAttack,
+        t +
+          delay,
+      );
+    this.nextSecondaryAttack =
+      Math.max(
+        this
+          .nextSecondaryAttack,
+        t +
+          delay,
+      );
+    this.timeWeaponIdle =
+      t +
+      delay;
+    this.deployedAt =
+      t;
+    this.reloadMode =
+      TF_RELOAD_START;
     this.inReload = false;
     return true;
   }
@@ -400,18 +635,22 @@ export abstract class BaseWeapon implements Weapon {
   }
 
   /** SDK: CTFWeaponBase::Holster — aborts a reload. */
-  holster(_next: Weapon | null): boolean {
+  holster(
+    _next: Weapon | null,
+  ): boolean {
     this.abortReload();
     return true;
   }
 
   abortReload(): void {
     this.inReload = false;
-    this.reloadMode = TF_RELOAD_START;
+    this.reloadMode =
+      TF_RELOAD_START;
   }
 
   refill(): void {
-    this.clip = this.stats.maxClip;
+    this.clip =
+      this.stats.maxClip;
     this.abortReload();
     this.nextPrimaryAttack = 0;
     this.nextSecondaryAttack = 0;
@@ -422,32 +661,93 @@ export abstract class BaseWeapon implements Weapon {
   }
 
   speedMod(): number {
-    return this.stats.speedMod;
+    return this
+      .stats
+      .speedMod;
   }
 
   /** Fires. Implementations consume ammo (`consumeAmmo`) and set the next attack time. */
-  abstract primaryAttack(cmd: UserCmd): void;
+  abstract primaryAttack(
+    cmd: UserCmd,
+  ): void;
 
-  secondaryAttack(_cmd: UserCmd): void {
-    this.nextSecondaryAttack = this.curtime + 0.5;
+  secondaryAttack(
+    _cmd: UserCmd,
+  ): void {
+    this.nextSecondaryAttack =
+      this
+        .curtime +
+      0.5;
   }
 
-  weaponIdle(_cmd: UserCmd): void {}
+  weaponIdle(
+    _cmd: UserCmd,
+  ): void {}
 
   /** Uses one shot's ammo from the clip or reserve. */
-  consumeAmmo(amount = this.stats.ammoPerShot): void {
-    if (!this.owner || this.stats.ammoType === TF_AMMO_DUMMY) return;
-    if (this.usesClip()) this.clip = Math.max(0, this.clip - amount);
+  consumeAmmo(
+    amount = this
+      .stats
+      .ammoPerShot,
+  ): void {
+    if (
+      !this
+        .owner ||
+      this
+        .stats
+        .ammoType ===
+        TF_AMMO_DUMMY
+    )
+      return;
+    if (
+      this.usesClip()
+    )
+      this.clip =
+        Math.max(
+          0,
+          this
+            .clip -
+            amount,
+        );
     else {
-      const a = this.owner.ammo;
-      a[this.stats.ammoType] = Math.max(0, a[this.stats.ammoType] - amount);
+      const a =
+        this
+          .owner
+          .ammo;
+      a[
+        this.stats.ammoType
+      ] =
+        Math.max(
+          0,
+          a[
+            this
+              .stats
+              .ammoType
+          ] -
+            amount,
+        );
     }
   }
 
   /** True when the weapon could shoot right now (ammo-wise). */
   canPrimaryAttack(): boolean {
-    if (this.stats.ammoType === TF_AMMO_DUMMY) return true;
-    return this.usesClip() ? this.clip >= this.stats.ammoPerShot : this.reserveAmmo() >= this.stats.ammoPerShot;
+    if (
+      this
+        .stats
+        .ammoType ===
+      TF_AMMO_DUMMY
+    )
+      return true;
+    return this.usesClip()
+      ? this
+          .clip >=
+          this
+            .stats
+            .ammoPerShot
+      : this.reserveAmmo() >=
+          this
+            .stats
+            .ammoPerShot;
   }
 
   /**
@@ -455,105 +755,364 @@ export abstract class BaseWeapon implements Weapon {
    * reduced to the stock flow: auto-reload, attack2, attack (or reload on an
    * empty clip), manual reload, idle; then the single-reload state machine.
    */
-  itemPostFrame(cmd: UserCmd): void {
-    const owner = this.owner;
-    if (!owner) return;
-    const t = this.curtime;
-    let buttons = cmd.buttons;
-    const needsReload = this.usesClip() && this.clip < this.stats.maxClip && this.reserveAmmo() > 0;
-    if (owner.autoReload && !(buttons & (IN_ATTACK | IN_ATTACK2)) && needsReload) buttons |= IN_RELOAD;
-    if (this.inAttack && !(buttons & IN_ATTACK)) this.inAttack = false;
-    if (this.inAttack2 && !(buttons & IN_ATTACK2)) this.inAttack2 = false;
+  itemPostFrame(
+    cmd: UserCmd,
+  ): void {
+    const owner =
+      this
+        .owner;
+    if (
+      !owner
+    )
+      return;
+    const t =
+      this
+        .curtime;
+    let buttons =
+      cmd.buttons;
+    const needsReload =
+      this.usesClip() &&
+      this
+        .clip <
+        this
+          .stats
+          .maxClip &&
+      this.reserveAmmo() >
+        0;
+    if (
+      owner.autoReload &&
+      !(
+        buttons &
+        (IN_ATTACK |
+          IN_ATTACK2)
+      ) &&
+      needsReload
+    )
+      buttons |=
+        IN_RELOAD;
+    if (
+      this
+        .inAttack &&
+      !(
+        buttons &
+        IN_ATTACK
+      )
+    )
+      this.inAttack = false;
+    if (
+      this
+        .inAttack2 &&
+      !(
+        buttons &
+        IN_ATTACK2
+      )
+    )
+      this.inAttack2 = false;
 
     // A full-clip reload finishing (CBaseCombatWeapon::ItemPostFrame m_bInReload branch).
-    if (this.inReload && !this.stats.reloadsSingly && this.nextPrimaryAttack <= t) {
+    if (
+      this
+        .inReload &&
+      !this
+        .stats
+        .reloadsSingly &&
+      this
+        .nextPrimaryAttack <=
+        t
+    ) {
       this.finishReload();
       this.inReload = false;
     }
 
-    if (buttons & IN_ATTACK2 && this.nextSecondaryAttack <= t) {
-      this.secondaryAttack(cmd);
+    if (
+      buttons &
+        IN_ATTACK2 &&
+      this
+        .nextSecondaryAttack <=
+        t
+    ) {
+      this.secondaryAttack(
+        cmd,
+      );
       this.inAttack2 = true;
-    } else if (buttons & IN_ATTACK && this.nextPrimaryAttack <= t && !owner.cannotAttack()) {
-      if (this.usesClip() && this.clip < this.stats.ammoPerShot && this.stats.ammoType !== TF_AMMO_DUMMY) {
-        if (this.reserveAmmo() > 0) this.reload();
-      } else if (this.canPrimaryAttack()) {
-        if (this.stats.reloadsSingly) this.abortReload();
-        this.primaryAttack(cmd);
+    } else if (
+      buttons &
+        IN_ATTACK &&
+      this
+        .nextPrimaryAttack <=
+        t &&
+      !owner.cannotAttack()
+    ) {
+      if (
+        this.usesClip() &&
+        this
+          .clip <
+          this
+            .stats
+            .ammoPerShot &&
+        this
+          .stats
+          .ammoType !==
+          TF_AMMO_DUMMY
+      ) {
+        if (
+          this.reserveAmmo() >
+          0
+        )
+          this.reload();
+      } else if (
+        this.canPrimaryAttack()
+      ) {
+        if (
+          this
+            .stats
+            .reloadsSingly
+        )
+          this.abortReload();
+        this.primaryAttack(
+          cmd,
+        );
         this.inAttack = true;
       }
     }
 
-    if (buttons & IN_RELOAD && this.usesClip() && !this.inReload && !(buttons & IN_ATTACK && this.clip > 0)) {
+    if (
+      buttons &
+        IN_RELOAD &&
+      this.usesClip() &&
+      !this
+        .inReload &&
+      !(
+        buttons &
+          IN_ATTACK &&
+        this
+          .clip >
+          0
+      )
+    ) {
       this.reload();
     }
 
-    if (!(buttons & (IN_ATTACK | IN_ATTACK2 | IN_RELOAD)) && !this.inReload && this.timeWeaponIdle <= t) {
-      this.weaponIdle(cmd);
+    if (
+      !(
+        buttons &
+        (IN_ATTACK |
+          IN_ATTACK2 |
+          IN_RELOAD)
+      ) &&
+      !this
+        .inReload &&
+      this
+        .timeWeaponIdle <=
+        t
+    ) {
+      this.weaponIdle(
+        cmd,
+      );
     }
 
-    if (this.stats.reloadsSingly && this.reloadMode !== TF_RELOAD_START) this.reloadSinglyFrame();
+    if (
+      this
+        .stats
+        .reloadsSingly &&
+      this
+        .reloadMode !==
+        TF_RELOAD_START
+    )
+      this.reloadSinglyFrame();
   }
 
-  itemHolsterFrame(_cmd: UserCmd): void {}
+  itemHolsterFrame(
+    _cmd: UserCmd,
+  ): void {}
 
   /** SDK: CTFWeaponBase::Reload. */
   reload(): boolean {
-    if (!this.usesClip() || this.clip >= this.stats.maxClip || this.reserveAmmo() <= 0) return false;
-    if (this.stats.reloadsSingly) {
-      if (this.reloadMode === TF_RELOAD_START) this.reloadSinglyFrame();
+    if (
+      !this.usesClip() ||
+      this
+        .clip >=
+        this
+          .stats
+          .maxClip ||
+      this.reserveAmmo() <=
+        0
+    )
+      return false;
+    if (
+      this
+        .stats
+        .reloadsSingly
+    ) {
+      if (
+        this
+          .reloadMode ===
+        TF_RELOAD_START
+      )
+        this.reloadSinglyFrame();
       return true;
     }
-    if (this.inReload) return false;
-    const t = this.curtime;
+    if (
+      this
+        .inReload
+    )
+      return false;
+    const t =
+      this
+        .curtime;
     this.inReload = true;
-    this.nextPrimaryAttack = t + this.stats.reloadTime;
-    this.nextSecondaryAttack = t + this.stats.reloadTime;
-    this.timeWeaponIdle = t + this.stats.reloadTime;
+    this.nextPrimaryAttack =
+      t +
+      this
+        .stats
+        .reloadTime;
+    this.nextSecondaryAttack =
+      t +
+      this
+        .stats
+        .reloadTime;
+    this.timeWeaponIdle =
+      t +
+      this
+        .stats
+        .reloadTime;
     this.onReloadStart();
     return true;
   }
 
   /** Moves reserve ammo into the clip (CBaseCombatWeapon::FinishReload). */
   finishReload(): void {
-    if (!this.owner) return;
-    const a = this.owner.ammo;
-    const want = this.stats.maxClip - this.clip;
-    const take = Math.min(want, a[this.stats.ammoType]);
-    this.clip += take;
-    a[this.stats.ammoType] -= take;
+    if (
+      !this
+        .owner
+    )
+      return;
+    const a =
+      this
+        .owner
+        .ammo;
+    const want =
+      this
+        .stats
+        .maxClip -
+      this
+        .clip;
+    const take =
+      Math.min(
+        want,
+        a[
+          this
+            .stats
+            .ammoType
+        ],
+      );
+    this.clip +=
+      take;
+    a[
+      this.stats.ammoType
+    ] -=
+      take;
   }
 
   /** SDK: CTFWeaponBase::ReloadSingly — start, shell after shell, finish. */
   protected reloadSinglyFrame(): void {
-    const owner = this.owner;
-    if (!owner) return;
-    const t = this.curtime;
-    if (this.nextPrimaryAttack > t && this.reloadMode === TF_RELOAD_START) return;
-    switch (this.reloadMode) {
+    const owner =
+      this
+        .owner;
+    if (
+      !owner
+    )
+      return;
+    const t =
+      this
+        .curtime;
+    if (
+      this
+        .nextPrimaryAttack >
+        t &&
+      this
+        .reloadMode ===
+        TF_RELOAD_START
+    )
+      return;
+    switch (
+      this
+        .reloadMode
+    ) {
       case TF_RELOAD_START:
-        this.timeWeaponIdle = t + this.stats.reloadStartTime;
-        this.reloadMode = TF_RELOADING;
+        this.timeWeaponIdle =
+          t +
+          this
+            .stats
+            .reloadStartTime;
+        this.reloadMode =
+          TF_RELOADING;
         this.onReloadStart();
         return;
       case TF_RELOADING:
-        if (this.timeWeaponIdle > t) return;
-        this.timeWeaponIdle = t + this.stats.reloadTime;
-        this.reloadMode = TF_RELOADING_CONTINUE;
+        if (
+          this
+            .timeWeaponIdle >
+          t
+        )
+          return;
+        this.timeWeaponIdle =
+          t +
+          this
+            .stats
+            .reloadTime;
+        this.reloadMode =
+          TF_RELOADING_CONTINUE;
         return;
       case TF_RELOADING_CONTINUE: {
-        if (this.timeWeaponIdle > t) return;
-        const a = owner.ammo;
-        if (a[this.stats.ammoType] > 0 && this.clip < this.stats.maxClip) {
-          this.clip++;
-          a[this.stats.ammoType]--;
+        if (
+          this
+            .timeWeaponIdle >
+          t
+        )
+          return;
+        const a =
+          owner.ammo;
+        if (
+          a[
+            this
+              .stats
+              .ammoType
+          ] >
+            0 &&
+          this
+            .clip <
+            this
+              .stats
+              .maxClip
+        ) {
+          this
+            .clip++;
+          a[
+            this
+              .stats
+              .ammoType
+          ]--;
         }
         this.reloadMode =
-          this.clip === this.stats.maxClip || a[this.stats.ammoType] <= 0 ? TF_RELOAD_FINISH : TF_RELOADING;
+          this
+            .clip ===
+            this
+              .stats
+              .maxClip ||
+          a[
+            this
+              .stats
+              .ammoType
+          ] <=
+            0
+            ? TF_RELOAD_FINISH
+            : TF_RELOADING;
         return;
       }
       default:
-        this.reloadMode = TF_RELOAD_START;
+        this.reloadMode =
+          TF_RELOAD_START;
         return;
     }
   }
@@ -561,42 +1120,80 @@ export abstract class BaseWeapon implements Weapon {
   /** Hook: a reload began (sounds, anim events). */
   protected onReloadStart(): void {}
 
-  writeNet(out: NetRecord): void {
-    out.defindex = this.defindex;
-    out.slot = this.slot;
-    out.owner = this.owner ? this.owner.id : -1;
-    out.clip = this.clip;
-    out.nextPrimaryAttack = this.nextPrimaryAttack;
-    out.nextSecondaryAttack = this.nextSecondaryAttack;
-    out.timeWeaponIdle = this.timeWeaponIdle;
-    out.reloadState = this.reloadMode;
-    out.inReload = this.inReload;
-    out.deployedAt = this.deployedAt;
-    out.critShots = this.critShots;
-    out.lastFireTime = this.lastFireTime;
+  writeNet(
+    out: NetRecord,
+  ): void {
+    out.defindex =
+      this.defindex;
+    out.slot =
+      this.slot;
+    out.owner =
+      this
+        .owner
+        ? this
+            .owner
+            .id
+        : -1;
+    out.clip =
+      this.clip;
+    out.nextPrimaryAttack =
+      this.nextPrimaryAttack;
+    out.nextSecondaryAttack =
+      this.nextSecondaryAttack;
+    out.timeWeaponIdle =
+      this.timeWeaponIdle;
+    out.reloadState =
+      this.reloadMode;
+    out.inReload =
+      this.inReload;
+    out.deployedAt =
+      this.deployedAt;
+    out.critShots =
+      this.critShots;
+    out.lastFireTime =
+      this.lastFireTime;
     out.aux0 = 0;
     out.aux1 = 0;
     out.aux2 = 0;
     out.aux3 = 0;
-    this.writeNetExtra(out);
+    this.writeNetExtra(
+      out,
+    );
   }
 
-  readNet(rec: NetRecord): void {
-    this.clip = rec.clip as number;
-    this.nextPrimaryAttack = rec.nextPrimaryAttack as number;
-    this.nextSecondaryAttack = rec.nextSecondaryAttack as number;
-    this.timeWeaponIdle = rec.timeWeaponIdle as number;
-    this.reloadMode = rec.reloadState as number;
-    this.inReload = rec.inReload as boolean;
-    this.deployedAt = rec.deployedAt as number;
-    this.critShots = rec.critShots as number;
-    this.lastFireTime = rec.lastFireTime as number;
-    this.readNetExtra(rec);
+  readNet(
+    rec: NetRecord,
+  ): void {
+    this.clip =
+      rec.clip as number;
+    this.nextPrimaryAttack =
+      rec.nextPrimaryAttack as number;
+    this.nextSecondaryAttack =
+      rec.nextSecondaryAttack as number;
+    this.timeWeaponIdle =
+      rec.timeWeaponIdle as number;
+    this.reloadMode =
+      rec.reloadState as number;
+    this.inReload =
+      rec.inReload as boolean;
+    this.deployedAt =
+      rec.deployedAt as number;
+    this.critShots =
+      rec.critShots as number;
+    this.lastFireTime =
+      rec.lastFireTime as number;
+    this.readNetExtra(
+      rec,
+    );
   }
 
   /** Weapon-specific prediction state into aux0–aux3. */
-  protected writeNetExtra(_out: NetRecord): void {}
-  protected readNetExtra(_rec: NetRecord): void {}
+  protected writeNetExtra(
+    _out: NetRecord,
+  ): void {}
+  protected readNetExtra(
+    _rec: NetRecord,
+  ): void {}
 }
 
 /**
@@ -605,34 +1202,87 @@ export abstract class BaseWeapon implements Weapon {
  * core, bots and the net layer run before the real weapon module registers.
  */
 export class StubWeapon extends BaseWeapon {
-  primaryAttack(cmd: UserCmd): void {
-    const owner = this.owner;
-    if (!owner) return;
-    const t = this.curtime;
+  primaryAttack(
+    cmd: UserCmd,
+  ): void {
+    const owner =
+      this
+        .owner;
+    if (
+      !owner
+    )
+      return;
+    const t =
+      this
+        .curtime;
     this.consumeAmmo();
-    if (this.stats.damage > 0) {
-      const src = owner.eyePosition({ x: 0, y: 0, z: 0 });
-      owner.world.fireBullets({
-        attacker: owner,
-        weapon: this,
-        src,
-        angles: owner.eyeAngles,
-        spread: this.stats.spread,
-        bulletsPerShot: this.stats.bulletsPerShot,
-        damage: this.stats.damage,
-        damageType: this.stats.damageType,
-        customKill: 0,
-        critType: 0,
-        seed: cmd.randomSeed,
-        range: this.stats.range,
-        lastFireTime: this.lastFireTime,
-        tracerFreq: 2,
-        cmdTick: cmd.tickCount,
-      });
+    if (
+      this
+        .stats
+        .damage >
+      0
+    ) {
+      const src =
+        owner.eyePosition(
+          {
+            x: 0,
+            y: 0,
+            z: 0,
+          },
+        );
+      owner.world.fireBullets(
+        {
+          attacker:
+            owner,
+          weapon:
+            this,
+          src,
+          angles:
+            owner.eyeAngles,
+          spread:
+            this
+              .stats
+              .spread,
+          bulletsPerShot:
+            this
+              .stats
+              .bulletsPerShot,
+          damage:
+            this
+              .stats
+              .damage,
+          damageType:
+            this
+              .stats
+              .damageType,
+          customKill: 0,
+          critType: 0,
+          seed: cmd.randomSeed,
+          range:
+            this
+              .stats
+              .range,
+          lastFireTime:
+            this
+              .lastFireTime,
+          tracerFreq: 2,
+          cmdTick:
+            cmd.tickCount,
+        },
+      );
     }
-    this.lastFireTime = t;
-    this.nextPrimaryAttack = t + this.stats.fireDelay;
-    this.timeWeaponIdle = t + this.stats.timeIdle;
+    this.lastFireTime =
+      t;
+    this.nextPrimaryAttack =
+      t +
+      this
+        .stats
+        .fireDelay;
+    this.timeWeaponIdle =
+      t +
+      this
+        .stats
+        .timeIdle;
   }
 }
 
@@ -649,45 +1299,150 @@ export interface WeaponSpec {
   attributes?: readonly CatalogAttribute[];
 }
 
-export type WeaponFactory = (spec: WeaponSpec) => Weapon;
+export type WeaponFactory =
+  (
+    spec: WeaponSpec,
+  ) => Weapon;
 
-const byDefindex = new Map<number, WeaponFactory>();
-const byClassname = new Map<string, WeaponFactory>();
+const byDefindex =
+  new Map<
+    number,
+    WeaponFactory
+  >();
+const byClassname =
+  new Map<
+    string,
+    WeaponFactory
+  >();
 /** Optional resolver from a defindex to its spec (installed by the data/items layer). */
-let specResolver: ((key: number | string) => WeaponSpec | null) | null = null;
+let specResolver:
+  | ((
+      key:
+        | number
+        | string,
+    ) => WeaponSpec | null)
+  | null =
+  null;
 
 /** Registers a factory for an item definition index or a weapon classname. */
-export function registerWeapon(key: number | string, factory: WeaponFactory): void {
-  if (typeof key === 'number') byDefindex.set(key, factory);
-  else byClassname.set(key.toLowerCase(), factory);
+export function registerWeapon(
+  key:
+    | number
+    | string,
+  factory: WeaponFactory,
+): void {
+  if (
+    typeof key ===
+    'number'
+  )
+    byDefindex.set(
+      key,
+      factory,
+    );
+  else
+    byClassname.set(
+      key.toLowerCase(),
+      factory,
+    );
 }
 
 /** Installs the lookup used when `createWeapon` is given a bare defindex/classname. */
-export function setWeaponSpecResolver(fn: ((key: number | string) => WeaponSpec | null) | null): void {
-  specResolver = fn;
+export function setWeaponSpecResolver(
+  fn:
+    | ((
+        key:
+          | number
+          | string,
+      ) => WeaponSpec | null)
+    | null,
+): void {
+  specResolver =
+    fn;
 }
 
 /**
  * Builds a weapon for an item: the defindex factory wins, then the
  * classname factory, then a StubWeapon carrying the item's identity.
  */
-export function createWeapon(key: number | string | WeaponSpec): Weapon | null {
+export function createWeapon(
+  key:
+    | number
+    | string
+    | WeaponSpec,
+): Weapon | null {
   let spec: WeaponSpec | null;
-  if (typeof key === 'object') spec = key;
-  else spec = specResolver ? specResolver(key) : null;
-  if (!spec) {
-    if (typeof key === 'number') return null;
-    spec = { defindex: -1, classname: String(key).toLowerCase(), slot: SLOT_PRIMARY };
+  if (
+    typeof key ===
+    'object'
+  )
+    spec =
+      key;
+  else
+    spec =
+      specResolver
+        ? specResolver(
+            key,
+          )
+        : null;
+  if (
+    !spec
+  ) {
+    if (
+      typeof key ===
+      'number'
+    )
+      return null;
+    spec =
+      {
+        defindex:
+          -1,
+        classname:
+          String(
+            key,
+          ).toLowerCase(),
+        slot: SLOT_PRIMARY,
+      };
   }
-  const f = byDefindex.get(spec.defindex) ?? byClassname.get(spec.classname.toLowerCase());
-  const w =
-    f?.(spec) ??
-    new StubWeapon(
-      defaultWeaponStats({ classname: spec.classname, defindex: spec.defindex, slot: spec.slot, ...spec.stats }),
+  const f =
+    byDefindex.get(
+      spec.defindex,
+    ) ??
+    byClassname.get(
+      spec.classname.toLowerCase(),
     );
-  if (spec.attributes?.length && w instanceof BaseWeapon) {
-    w.attributes = new AttributeSet(spec.attributes);
-    w.provideOnActive = w.attributes.apply('provide_on_active', 0) === 1;
+  const w =
+    f?.(
+      spec,
+    ) ??
+    new StubWeapon(
+      defaultWeaponStats(
+        {
+          classname:
+            spec.classname,
+          defindex:
+            spec.defindex,
+          slot: spec.slot,
+          ...spec.stats,
+        },
+      ),
+    );
+  if (
+    spec
+      .attributes
+      ?.length &&
+    w instanceof
+      BaseWeapon
+  ) {
+    w.attributes =
+      new AttributeSet(
+        spec.attributes,
+      );
+    w.provideOnActive =
+      w.attributes.apply(
+        'provide_on_active',
+        0,
+      ) ===
+      1;
   }
   return w;
 }
@@ -696,5 +1451,6 @@ export function createWeapon(key: number | string | WeaponSpec): Weapon | null {
 export function clearWeaponRegistry(): void {
   byDefindex.clear();
   byClassname.clear();
-  specResolver = null;
+  specResolver =
+    null;
 }

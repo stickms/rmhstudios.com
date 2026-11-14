@@ -7,7 +7,12 @@
  * Volume, captions, and PiP are local-only (always available).
  */
 
-import { useCallback, useState, useRef, useEffect } from 'react';
+import {
+  useCallback,
+  useState,
+  useRef,
+  useEffect,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import {
@@ -27,7 +32,9 @@ import {
   Hand,
   Star,
 } from 'lucide-react';
-import SeekBar, { seekRoom } from './SeekBar';
+import SeekBar, {
+  seekRoom,
+} from './SeekBar';
 import SyncStatus from './SyncStatus';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
@@ -37,7 +44,10 @@ import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import { PLAYBACK_SPEEDS } from '@/lib/rmhtube/constants';
 import { toast } from '@/lib/shared/app-toast';
-import type { VideoState, ClientQueueItem } from '@/lib/rmhtube/types';
+import type {
+  VideoState,
+  ClientQueueItem,
+} from '@/lib/rmhtube/types';
 
 interface HostControlsProps {
   isHost: boolean;
@@ -58,230 +68,638 @@ export default function HostControls({
   onPiP,
   onFullscreen,
 }: HostControlsProps) {
-  const playing = videoState?.playing ?? false;
-  const currentTime = videoState?.currentTime ?? 0;
-  const duration = currentItem?.duration ?? null;
-  const currentSpeed = videoState?.playbackRate ?? 1;
+  const playing =
+    videoState?.playing ??
+    false;
+  const currentTime =
+    videoState?.currentTime ??
+    0;
+  const duration =
+    currentItem?.duration ??
+    null;
+  const currentSpeed =
+    videoState?.playbackRate ??
+    1;
   // A broadcast has no position to report and no rate to change — showing a
   // running clock against a sliding DVR window is worse than showing nothing.
-  const isLive = videoState?.mode === 'live';
+  const isLive =
+    videoState?.mode ===
+    'live';
 
-  const masterVolume = useRmhTubeStore((s) => s.settings.masterVolume);
-  const muted = useRmhTubeStore((s) => s.settings.muted);
-  const captionsEnabled = useRmhTubeStore((s) => s.settings.captionsEnabled);
-  const updateSettings = useRmhTubeStore((s) => s.updateSettings);
+  const masterVolume =
+    useRmhTubeStore(
+      (
+        s,
+      ) =>
+        s
+          .settings
+          .masterVolume,
+    );
+  const muted =
+    useRmhTubeStore(
+      (
+        s,
+      ) =>
+        s
+          .settings
+          .muted,
+    );
+  const captionsEnabled =
+    useRmhTubeStore(
+      (
+        s,
+      ) =>
+        s
+          .settings
+          .captionsEnabled,
+    );
+  const updateSettings =
+    useRmhTubeStore(
+      (
+        s,
+      ) =>
+        s.updateSettings,
+    );
 
-  const { t } = useTranslation('c-rmhtube');
-  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhtube',
+    );
+  const [
+    showSpeedMenu,
+    setShowSpeedMenu,
+  ] =
+    useState(
+      false,
+    );
   // Held mounted for its close (globals.css §7.1); the outside-click listener
   // below stays on the raw flag.
-  const speedMenu = usePopPresence(showSpeedMenu);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const speedMenuRef = useRef<HTMLDivElement>(null);
+  const speedMenu =
+    usePopPresence(
+      showSpeedMenu,
+    );
+  const [
+    isFullscreen,
+    setIsFullscreen,
+  ] =
+    useState(
+      false,
+    );
+  const speedMenuRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
 
   // Track fullscreen state
   useEffect(() => {
-    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    const handleFullscreenChange =
+      () =>
+        setIsFullscreen(
+          !!document.fullscreenElement,
+        );
+    document.addEventListener(
+      'fullscreenchange',
+      handleFullscreenChange,
+    );
+    return () =>
+      document.removeEventListener(
+        'fullscreenchange',
+        handleFullscreenChange,
+      );
   }, []);
 
   // Close speed menu when clicking outside
   useEffect(() => {
-    if (!showSpeedMenu) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (speedMenuRef.current && !speedMenuRef.current.contains(e.target as Node)) {
-        setShowSpeedMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showSpeedMenu]);
-
-  const handlePlayPause = useCallback(() => {
-    if (isLeader) {
-      // Optimistic, so the button answers the click rather than the round trip.
-      // `rev` advances with it: the store drops anchors older than the one it
-      // holds, and without a bump this local anchor would lose to the in-flight
-      // heartbeat that still says the opposite.
-      const room = useRmhTubeStore.getState().room;
-      if (room) {
-        const now = getServerNow();
-        useRmhTubeStore.getState().setVideoState({
-          ...room.videoState,
-          // Re-anchored at the projected position: keeping the old anchor's
-          // `currentTime` with a fresh `updatedAt` rewound the leader's own view
-          // by however long it had been since the last heartbeat.
-          currentTime: extrapolate(room.videoState, now),
-          playing: !playing,
-          updatedAt: now,
-          rev: room.videoState.rev + 1,
-        });
-      }
-      emit(playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});
-    } else {
-      toast.info(
-        t('only-leader-playback', { defaultValue: 'Only the leader can control playback' }),
+    if (
+      !showSpeedMenu
+    )
+      return;
+    const handleClickOutside =
+      (
+        e: MouseEvent,
+      ) => {
+        if (
+          speedMenuRef.current &&
+          !speedMenuRef.current.contains(
+            e.target as Node,
+          )
+        ) {
+          setShowSpeedMenu(
+            false,
+          );
+        }
+      };
+    document.addEventListener(
+      'mousedown',
+      handleClickOutside,
+    );
+    return () =>
+      document.removeEventListener(
+        'mousedown',
+        handleClickOutside,
       );
-    }
-  }, [isLeader, playing, t]);
+  }, [
+    showSpeedMenu,
+  ]);
 
-  const handleSkip = useCallback(() => {
-    if (isLeader) {
-      emit(C2S.QUEUE_SKIP, {});
-      onSkip?.();
-    } else {
-      toast.info(t('only-leader-skip', { defaultValue: 'Only the leader can skip' }));
-    }
-  }, [isLeader, onSkip, t]);
-
-  const handleMuteToggle = useCallback(() => {
-    updateSettings({ muted: !muted });
-  }, [muted, updateSettings]);
-
-  const handleVolumeChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const vol = parseFloat(e.target.value);
-      updateSettings({ masterVolume: vol, muted: vol === 0 });
-    },
-    [updateSettings],
-  );
-
-  const handleCaptionsToggle = useCallback(() => {
-    updateSettings({ captionsEnabled: !captionsEnabled });
-  }, [captionsEnabled, updateSettings]);
-
-  const handleSpeedSelect = useCallback(
-    (speed: number) => {
-      if (!isLeader) {
-        toast.info(t('only-leader-speed', { defaultValue: 'Only the leader can change speed' }));
-        return;
+  const handlePlayPause =
+    useCallback(() => {
+      if (
+        isLeader
+      ) {
+        // Optimistic, so the button answers the click rather than the round trip.
+        // `rev` advances with it: the store drops anchors older than the one it
+        // holds, and without a bump this local anchor would lose to the in-flight
+        // heartbeat that still says the opposite.
+        const room =
+          useRmhTubeStore.getState()
+            .room;
+        if (
+          room
+        ) {
+          const now =
+            getServerNow();
+          useRmhTubeStore
+            .getState()
+            .setVideoState(
+              {
+                ...room.videoState,
+                // Re-anchored at the projected position: keeping the old anchor's
+                // `currentTime` with a fresh `updatedAt` rewound the leader's own view
+                // by however long it had been since the last heartbeat.
+                currentTime:
+                  extrapolate(
+                    room.videoState,
+                    now,
+                  ),
+                playing:
+                  !playing,
+                updatedAt:
+                  now,
+                rev:
+                  room
+                    .videoState
+                    .rev +
+                  1,
+              },
+            );
+        }
+        emit(
+          playing
+            ? C2S.SYNC_PAUSE
+            : C2S.SYNC_PLAY,
+          {},
+        );
+      } else {
+        toast.info(
+          t(
+            'only-leader-playback',
+            {
+              defaultValue:
+                'Only the leader can control playback',
+            },
+          ),
+        );
       }
-      emit(C2S.SYNC_SET_SPEED, { speed });
-      setShowSpeedMenu(false);
-    },
-    [isLeader, t],
-  );
+    }, [
+      isLeader,
+      playing,
+      t,
+    ]);
 
-  const handleSpeedCycle = useCallback(() => {
-    if (!isLeader) return;
-    const idx = PLAYBACK_SPEEDS.indexOf(currentSpeed as (typeof PLAYBACK_SPEEDS)[number]);
-    const nextIdx = idx === -1 ? 2 : (idx + 1) % PLAYBACK_SPEEDS.length; // default to 1x then next
-    emit(C2S.SYNC_SET_SPEED, { speed: PLAYBACK_SPEEDS[nextIdx] });
-  }, [isLeader, currentSpeed]);
+  const handleSkip =
+    useCallback(() => {
+      if (
+        isLeader
+      ) {
+        emit(
+          C2S.QUEUE_SKIP,
+          {},
+        );
+        onSkip?.();
+      } else {
+        toast.info(
+          t(
+            'only-leader-skip',
+            {
+              defaultValue:
+                'Only the leader can skip',
+            },
+          ),
+        );
+      }
+    }, [
+      isLeader,
+      onSkip,
+      t,
+    ]);
 
-  const handlePiP = useCallback(() => {
-    onPiP?.();
-  }, [onPiP]);
+  const handleMuteToggle =
+    useCallback(() => {
+      updateSettings(
+        {
+          muted:
+            !muted,
+        },
+      );
+    }, [
+      muted,
+      updateSettings,
+    ]);
+
+  const handleVolumeChange =
+    useCallback(
+      (
+        e: React.ChangeEvent<HTMLInputElement>,
+      ) => {
+        const vol =
+          parseFloat(
+            e
+              .target
+              .value,
+          );
+        updateSettings(
+          {
+            masterVolume:
+              vol,
+            muted:
+              vol ===
+              0,
+          },
+        );
+      },
+      [
+        updateSettings,
+      ],
+    );
+
+  const handleCaptionsToggle =
+    useCallback(() => {
+      updateSettings(
+        {
+          captionsEnabled:
+            !captionsEnabled,
+        },
+      );
+    }, [
+      captionsEnabled,
+      updateSettings,
+    ]);
+
+  const handleSpeedSelect =
+    useCallback(
+      (
+        speed: number,
+      ) => {
+        if (
+          !isLeader
+        ) {
+          toast.info(
+            t(
+              'only-leader-speed',
+              {
+                defaultValue:
+                  'Only the leader can change speed',
+              },
+            ),
+          );
+          return;
+        }
+        emit(
+          C2S.SYNC_SET_SPEED,
+          {
+            speed,
+          },
+        );
+        setShowSpeedMenu(
+          false,
+        );
+      },
+      [
+        isLeader,
+        t,
+      ],
+    );
+
+  const handleSpeedCycle =
+    useCallback(() => {
+      if (
+        !isLeader
+      )
+        return;
+      const idx =
+        PLAYBACK_SPEEDS.indexOf(
+          currentSpeed as (typeof PLAYBACK_SPEEDS)[number],
+        );
+      const nextIdx =
+        idx ===
+        -1
+          ? 2
+          : (idx +
+              1) %
+            PLAYBACK_SPEEDS.length; // default to 1x then next
+      emit(
+        C2S.SYNC_SET_SPEED,
+        {
+          speed:
+            PLAYBACK_SPEEDS[
+              nextIdx
+            ],
+        },
+      );
+    }, [
+      isLeader,
+      currentSpeed,
+    ]);
+
+  const handlePiP =
+    useCallback(() => {
+      onPiP?.();
+    }, [
+      onPiP,
+    ]);
 
   /** ±10 s from where the room IS (projected), not the last anchor. */
-  const handleJump = useCallback(
-    (delta: number) => {
-      const vs = useRmhTubeStore.getState().room?.videoState;
-      if (!vs || !isLeader) return;
-      seekRoom(extrapolate(vs, getServerNow()) + delta);
-    },
-    [isLeader],
-  );
+  const handleJump =
+    useCallback(
+      (
+        delta: number,
+      ) => {
+        const vs =
+          useRmhTubeStore.getState()
+            .room
+            ?.videoState;
+        if (
+          !vs ||
+          !isLeader
+        )
+          return;
+        seekRoom(
+          extrapolate(
+            vs,
+            getServerNow(),
+          ) +
+            delta,
+        );
+      },
+      [
+        isLeader,
+      ],
+    );
 
-  const handleControlRequest = useCallback(() => {
-    if (isHost) {
-      const me = useRmhTubeStore.getState().room?.myUserId;
-      if (me) emit(C2S.ROOM_SET_LEADER, { targetUserId: me });
-      return;
-    }
-    emit(C2S.ROOM_REQUEST_CONTROL, {});
-    toast.info(t('control-requested', { defaultValue: 'Asked the host and leader for control' }));
-  }, [isHost, t]);
+  const handleControlRequest =
+    useCallback(() => {
+      if (
+        isHost
+      ) {
+        const me =
+          useRmhTubeStore.getState()
+            .room
+            ?.myUserId;
+        if (
+          me
+        )
+          emit(
+            C2S.ROOM_SET_LEADER,
+            {
+              targetUserId:
+                me,
+            },
+          );
+        return;
+      }
+      emit(
+        C2S.ROOM_REQUEST_CONTROL,
+        {},
+      );
+      toast.info(
+        t(
+          'control-requested',
+          {
+            defaultValue:
+              'Asked the host and leader for control',
+          },
+        ),
+      );
+    }, [
+      isHost,
+      t,
+    ]);
 
-  const handleFullscreenToggle = useCallback(() => {
-    if (onFullscreen) {
-      onFullscreen();
-    } else if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      document.documentElement.requestFullscreen();
-    }
-  }, [onFullscreen]);
+  const handleFullscreenToggle =
+    useCallback(() => {
+      if (
+        onFullscreen
+      ) {
+        onFullscreen();
+      } else if (
+        document.fullscreenElement
+      ) {
+        document.exitFullscreen();
+      } else {
+        document.documentElement.requestFullscreen();
+      }
+    }, [
+      onFullscreen,
+    ]);
 
-  if (!currentItem) return null;
+  if (
+    !currentItem
+  )
+    return null;
 
-  const VolumeIcon = muted || masterVolume === 0 ? VolumeX : masterVolume < 0.5 ? Volume1 : Volume2;
+  const VolumeIcon =
+    muted ||
+    masterVolume ===
+      0
+      ? VolumeX
+      : masterVolume <
+          0.5
+        ? Volume1
+        : Volume2;
 
-  const pipSupported = typeof document !== 'undefined' && document.pictureInPictureEnabled;
+  const pipSupported =
+    typeof document !==
+      'undefined' &&
+    document.pictureInPictureEnabled;
 
   return (
     <div className="border-b border-app-border">
       <div className="flex items-center gap-3 px-4 py-2 bg-app-bg-subtle">
         {/* Play/Pause — visible to all */}
         <button
-          onClick={handlePlayPause}
-          aria-label={playing ? t('pause', { defaultValue: 'Pause' }) : t('play', { defaultValue: 'Play' })}
+          onClick={
+            handlePlayPause
+          }
+          aria-label={
+            playing
+              ? t(
+                  'pause',
+                  {
+                    defaultValue:
+                      'Pause',
+                  },
+                )
+              : t(
+                  'play',
+                  {
+                    defaultValue:
+                      'Play',
+                  },
+                )
+          }
           className="shrink-0 rounded-full p-2 transition-colors bg-app-accent text-app-accent-fg hover:bg-app-accent-hover"
         >
-          {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          {playing ? (
+            <Pause className="h-4 w-4" />
+          ) : (
+            <Play className="h-4 w-4" />
+          )}
         </button>
 
-        {isLeader && !isLive && (
-          <>
-            <button
-              onClick={() => handleJump(-10)}
-              className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
-              title={t('back-10', { defaultValue: 'Back 10 seconds' })}
-              aria-label={t('back-10', { defaultValue: 'Back 10 seconds' })}
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => handleJump(10)}
-              className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
-              title={t('forward-10', { defaultValue: 'Forward 10 seconds' })}
-              aria-label={t('forward-10', { defaultValue: 'Forward 10 seconds' })}
-            >
-              <RotateCw className="h-4 w-4" />
-            </button>
-          </>
-        )}
+        {isLeader &&
+          !isLive && (
+            <>
+              <button
+                onClick={() =>
+                  handleJump(
+                    -10,
+                  )
+                }
+                className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
+                title={t(
+                  'back-10',
+                  {
+                    defaultValue:
+                      'Back 10 seconds',
+                  },
+                )}
+                aria-label={t(
+                  'back-10',
+                  {
+                    defaultValue:
+                      'Back 10 seconds',
+                  },
+                )}
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() =>
+                  handleJump(
+                    10,
+                  )
+                }
+                className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
+                title={t(
+                  'forward-10',
+                  {
+                    defaultValue:
+                      'Forward 10 seconds',
+                  },
+                )}
+                aria-label={t(
+                  'forward-10',
+                  {
+                    defaultValue:
+                      'Forward 10 seconds',
+                  },
+                )}
+              >
+                <RotateCw className="h-4 w-4" />
+              </button>
+            </>
+          )}
 
         {!isLeader && (
           <button
-            onClick={handleControlRequest}
+            onClick={
+              handleControlRequest
+            }
             className="shrink-0 flex items-center gap-1 rounded-app-sm px-2 py-1.5 text-xs font-medium transition-colors text-app-info hover:bg-app-info-dim"
             title={
               isHost
-                ? t('take-control', { defaultValue: 'Take control' })
-                : t('request-control', { defaultValue: 'Request control' })
+                ? t(
+                    'take-control',
+                    {
+                      defaultValue:
+                        'Take control',
+                    },
+                  )
+                : t(
+                    'request-control',
+                    {
+                      defaultValue:
+                        'Request control',
+                    },
+                  )
             }
           >
             {isHost ? (
-              <Star className="h-3.5 w-3.5" aria-hidden />
+              <Star
+                className="h-3.5 w-3.5"
+                aria-hidden
+              />
             ) : (
-              <Hand className="h-3.5 w-3.5" aria-hidden />
+              <Hand
+                className="h-3.5 w-3.5"
+                aria-hidden
+              />
             )}
             <span className="hidden sm:inline">
               {isHost
-                ? t('take-control', { defaultValue: 'Take control' })
-                : t('request-control', { defaultValue: 'Request control' })}
+                ? t(
+                    'take-control',
+                    {
+                      defaultValue:
+                        'Take control',
+                    },
+                  )
+                : t(
+                    'request-control',
+                    {
+                      defaultValue:
+                        'Request control',
+                    },
+                  )}
             </span>
           </button>
         )}
 
         {/* Now playing title */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate text-app-text">{currentItem.title}</p>
+          <p className="text-sm font-medium truncate text-app-text">
+            {
+              currentItem.title
+            }
+          </p>
           {isLive ? (
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-app-danger">
               <span
                 className="inline-block h-1.5 w-1.5 rounded-full bg-app-danger"
                 aria-hidden
               />
-              {t('live', { defaultValue: 'Live' })}
+              {t(
+                'live',
+                {
+                  defaultValue:
+                    'Live',
+                },
+              )}
             </p>
           ) : (
             <p className="text-xs text-app-text-dim">
               {/* Live position is on the seek bar below; this is the fallback
                 when the duration is not known yet. */}
-              {duration ? formatDuration(duration) : formatDuration(currentTime)}
+              {duration
+                ? formatDuration(
+                    duration,
+                  )
+                : formatDuration(
+                    currentTime,
+                  )}
             </p>
           )}
         </div>
@@ -291,32 +709,71 @@ export default function HostControls({
         {/* Volume — always visible */}
         <div className="shrink-0 flex items-center gap-1.5">
           <button
-            onClick={handleMuteToggle}
+            onClick={
+              handleMuteToggle
+            }
             className="rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
             title={
-              muted ? t('unmute', { defaultValue: 'Unmute' }) : t('mute', { defaultValue: 'Mute' })
+              muted
+                ? t(
+                    'unmute',
+                    {
+                      defaultValue:
+                        'Unmute',
+                    },
+                  )
+                : t(
+                    'mute',
+                    {
+                      defaultValue:
+                        'Mute',
+                    },
+                  )
             }
           >
             <VolumeIcon className="h-4 w-4" />
           </button>
           <input
             type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={muted ? 0 : masterVolume}
-            onChange={handleVolumeChange}
+            min={
+              0
+            }
+            max={
+              1
+            }
+            step={
+              0.05
+            }
+            value={
+              muted
+                ? 0
+                : masterVolume
+            }
+            onChange={
+              handleVolumeChange
+            }
             className="w-20 h-1 accent-app-accent cursor-pointer"
-            title={t('volume-pct', {
-              defaultValue: 'Volume: {{pct}}%',
-              pct: Math.round((muted ? 0 : masterVolume) * 100),
-            })}
+            title={t(
+              'volume-pct',
+              {
+                defaultValue:
+                  'Volume: {{pct}}%',
+                pct: Math.round(
+                  (muted
+                    ? 0
+                    : masterVolume) *
+                    100,
+                ),
+              },
+            )}
           />
         </div>
 
         {/* Captions toggle — always visible */}
         <button
-          onClick={handleCaptionsToggle}
+          onClick={
+            handleCaptionsToggle
+          }
           className={`shrink-0 rounded-app-sm p-2 transition-colors ${
             captionsEnabled
               ? 'text-app-accent bg-app-accent-dim'
@@ -324,8 +781,20 @@ export default function HostControls({
           }`}
           title={
             captionsEnabled
-              ? t('disable-captions', { defaultValue: 'Disable captions' })
-              : t('enable-captions', { defaultValue: 'Enable captions' })
+              ? t(
+                  'disable-captions',
+                  {
+                    defaultValue:
+                      'Disable captions',
+                  },
+                )
+              : t(
+                  'enable-captions',
+                  {
+                    defaultValue:
+                      'Enable captions',
+                  },
+                )
           }
         >
           <Subtitles className="h-4 w-4" />
@@ -333,51 +802,99 @@ export default function HostControls({
 
         {/* Playback Speed — host can change, non-host reads current speed.
           Hidden on a broadcast: the providers ignore the rate on a live edge. */}
-        <div className={`relative shrink-0 ${isLive ? 'hidden' : ''}`} ref={speedMenuRef}>
+        <div
+          className={`relative shrink-0 ${isLive ? 'hidden' : ''}`}
+          ref={
+            speedMenuRef
+          }
+        >
           <button
-            onClick={() => setShowSpeedMenu((v) => !v)}
-            onDoubleClick={isLeader ? handleSpeedCycle : undefined}
+            onClick={() =>
+              setShowSpeedMenu(
+                (
+                  v,
+                ) =>
+                  !v,
+              )
+            }
+            onDoubleClick={
+              isLeader
+                ? handleSpeedCycle
+                : undefined
+            }
             className={`rounded-app-sm p-2 transition-colors flex items-center gap-1 ${
-              currentSpeed !== 1
+              currentSpeed !==
+              1
                 ? 'text-app-accent bg-app-accent-dim'
                 : 'text-app-text-muted hover:text-app-text hover:bg-app-surface-hover'
             }`}
             title={
               isLeader
-                ? t('speed-title-leader', {
-                    defaultValue: 'Playback speed: {{speed}}x (click to change)',
-                    speed: currentSpeed,
-                  })
-                : t('speed-title', {
-                    defaultValue: 'Playback speed: {{speed}}x',
-                    speed: currentSpeed,
-                  })
+                ? t(
+                    'speed-title-leader',
+                    {
+                      defaultValue:
+                        'Playback speed: {{speed}}x (click to change)',
+                      speed:
+                        currentSpeed,
+                    },
+                  )
+                : t(
+                    'speed-title',
+                    {
+                      defaultValue:
+                        'Playback speed: {{speed}}x',
+                      speed:
+                        currentSpeed,
+                    },
+                  )
             }
           >
             <Gauge className="h-4 w-4" />
-            <span className="text-xs font-medium">{currentSpeed}x</span>
+            <span className="text-xs font-medium">
+              {
+                currentSpeed
+              }
+              x
+            </span>
           </button>
 
           {/* Speed dropdown — visible to all, handler guards permissions */}
           {speedMenu.present && (
             <div
               data-motion="pop"
-              data-state={speedMenu.state}
+              data-state={
+                speedMenu.state
+              }
               className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-app-sm app-glass py-1 min-w-25"
             >
-              {PLAYBACK_SPEEDS.map((speed) => (
-                <button
-                  key={speed}
-                  onClick={() => handleSpeedSelect(speed)}
-                  className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
-                    speed === currentSpeed
-                      ? 'text-app-accent bg-app-accent-dim font-medium'
-                      : 'text-app-text hover:bg-app-surface-hover'
-                  }`}
-                >
-                  {speed}x
-                </button>
-              ))}
+              {PLAYBACK_SPEEDS.map(
+                (
+                  speed,
+                ) => (
+                  <button
+                    key={
+                      speed
+                    }
+                    onClick={() =>
+                      handleSpeedSelect(
+                        speed,
+                      )
+                    }
+                    className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                      speed ===
+                      currentSpeed
+                        ? 'text-app-accent bg-app-accent-dim font-medium'
+                        : 'text-app-text hover:bg-app-surface-hover'
+                    }`}
+                  >
+                    {
+                      speed
+                    }
+                    x
+                  </button>
+                ),
+              )}
             </div>
           )}
         </div>
@@ -385,9 +902,17 @@ export default function HostControls({
         {/* PiP — always visible (when browser supports it) */}
         {pipSupported && (
           <button
-            onClick={handlePiP}
+            onClick={
+              handlePiP
+            }
             className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
-            title={t('picture-in-picture', { defaultValue: 'Picture-in-Picture' })}
+            title={t(
+              'picture-in-picture',
+              {
+                defaultValue:
+                  'Picture-in-Picture',
+              },
+            )}
           >
             <PictureInPicture2 className="h-4 w-4" />
           </button>
@@ -395,27 +920,63 @@ export default function HostControls({
 
         {/* Fullscreen toggle — always visible */}
         <button
-          onClick={handleFullscreenToggle}
+          onClick={
+            handleFullscreenToggle
+          }
           className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
           title={
             isFullscreen
-              ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' })
-              : t('fullscreen', { defaultValue: 'Fullscreen' })
+              ? t(
+                  'exit-fullscreen',
+                  {
+                    defaultValue:
+                      'Exit fullscreen',
+                  },
+                )
+              : t(
+                  'fullscreen',
+                  {
+                    defaultValue:
+                      'Fullscreen',
+                  },
+                )
           }
         >
-          {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+          {isFullscreen ? (
+            <Minimize className="h-4 w-4" />
+          ) : (
+            <Maximize className="h-4 w-4" />
+          )}
         </button>
 
         {/* Skip — visible to all */}
         <button
-          onClick={handleSkip}
+          onClick={
+            handleSkip
+          }
           className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
-          title={t('skip-to-next', { defaultValue: 'Skip to next' })}
+          title={t(
+            'skip-to-next',
+            {
+              defaultValue:
+                'Skip to next',
+            },
+          )}
         >
           <SkipForward className="h-4 w-4" />
         </button>
       </div>
-      {!isLive && duration ? <SeekBar duration={duration} isLeader={isLeader} /> : null}
+      {!isLive &&
+      duration ? (
+        <SeekBar
+          duration={
+            duration
+          }
+          isLeader={
+            isLeader
+          }
+        />
+      ) : null}
     </div>
   );
 }

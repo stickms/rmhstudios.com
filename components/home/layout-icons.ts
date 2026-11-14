@@ -33,33 +33,44 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-const ICONS: Record<string, LucideIcon> = {
-  Gamepad2,
-  Flame,
-  History,
-  Users,
-  Briefcase,
-  Radio,
-  CalendarDays,
-  Coins,
-  Wand2,
-  Library,
-  ShoppingBag,
-  TrendingUp,
-  Trophy,
-  Store,
-  HelpCircle,
-  ListMusic,
-  Building2,
-  Car,
-  Terminal,
-  Landmark,
-  Shield,
-  Eye,
-  Atom,
-  Brain,
-};
+const ICONS: Record<
+  string,
+  LucideIcon
+> =
+  {
+    Gamepad2,
+    Flame,
+    History,
+    Users,
+    Briefcase,
+    Radio,
+    CalendarDays,
+    Coins,
+    Wand2,
+    Library,
+    ShoppingBag,
+    TrendingUp,
+    Trophy,
+    Store,
+    HelpCircle,
+    ListMusic,
+    Building2,
+    Car,
+    Terminal,
+    Landmark,
+    Shield,
+    Eye,
+    Atom,
+    Brain,
+  };
 
-export function iconFor(name: string): LucideIcon {
-  return ICONS[name] ?? Square;
+export function iconFor(
+  name: string,
+): LucideIcon {
+  return (
+    ICONS[
+      name
+    ] ??
+    Square
+  );
 }

@@ -1,5 +1,15 @@
-import { useRef, useState } from 'react';
-import { Crown, Gamepad2, LogOut, UserPlus, Users, X } from 'lucide-react';
+import {
+  useRef,
+  useState,
+} from 'react';
+import {
+  Crown,
+  Gamepad2,
+  LogOut,
+  UserPlus,
+  Users,
+  X,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { VoiceRoomBanner } from '@/components/groupcall/VoiceRoomBanner';
@@ -15,36 +25,93 @@ import type { PartyMemberView } from '@/lib/party/types';
  * registered a `PartyJoinable`, so listing them here is safe before rollout.
  * `id` must match the game's `registerPartyGame(id, …)` id (also its route).
  */
-const PARTY_GAMES: { id: string; label: string }[] = [
-  { id: 'rmhbox', label: 'RMHBox' },
-  { id: 'synapse-storm', label: 'Synapse Storm' },
-  { id: 'holdem', label: "Hold'em" },
-  { id: 'kowloon-knockout', label: 'Kowloon Knockout' },
-  { id: 'gabriels-horn', label: "Gabriel's Horn" },
-];
+const PARTY_GAMES: {
+  id: string;
+  label: string;
+}[] =
+  [
+    {
+      id: 'rmhbox',
+      label:
+        'RMHBox',
+    },
+    {
+      id: 'synapse-storm',
+      label:
+        'Synapse Storm',
+    },
+    {
+      id: 'holdem',
+      label:
+        "Hold'em",
+    },
+    {
+      id: 'kowloon-knockout',
+      label:
+        'Kowloon Knockout',
+    },
+    {
+      id: 'gabriels-horn',
+      label:
+        "Gabriel's Horn",
+    },
+  ];
 
-function MemberAvatar({ member, size = 30 }: { member: PartyMemberView; size?: number }) {
-  const initial = (member.name?.trim()?.[0] ?? '?').toUpperCase();
+function MemberAvatar({
+  member,
+  size = 30,
+}: {
+  member: PartyMemberView;
+  size?: number;
+}) {
+  const initial =
+    (
+      member.name?.trim()?.[0] ??
+      '?'
+    ).toUpperCase();
   return (
-    <span className="relative inline-flex" title={member.name ?? undefined}>
+    <span
+      className="relative inline-flex"
+      title={
+        member.name ??
+        undefined
+      }
+    >
       {member.image ? (
         <img
-          src={member.image}
+          src={
+            member.image
+          }
           alt=""
           className="rounded-full object-cover ring-2 ring-site-bg"
-          style={{ width: size, height: size }}
+          style={{
+            width:
+              size,
+            height:
+              size,
+          }}
         />
       ) : (
         <span
           aria-hidden
           className="grid place-items-center rounded-full bg-site-surface-hover text-xs font-semibold text-site-text-muted ring-2 ring-site-bg"
-          style={{ width: size, height: size }}
+          style={{
+            width:
+              size,
+            height:
+              size,
+          }}
         >
-          {initial}
+          {
+            initial
+          }
         </span>
       )}
       {member.isLeader && (
-        <Crown className="absolute -right-1 -top-1 h-3.5 w-3.5 text-site-warning" aria-hidden />
+        <Crown
+          className="absolute -right-1 -top-1 h-3.5 w-3.5 text-site-warning"
+          aria-hidden
+        />
       )}
     </span>
   );
@@ -60,12 +127,39 @@ function MemberAvatar({ member, size = 30 }: { member: PartyMemberView; size?: n
  *   it does not float over the page.
  * - non-inline: a fixed docked pill (kept for game shells / future use).
  */
-export function PartyBar({ inline = true }: { inline?: boolean }) {
-  const { t } = useTranslation('site');
-  const { data: session } = useSession();
-  const { party, createParty, leave, queue } = useParty();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+export function PartyBar({
+  inline = true,
+}: {
+  inline?: boolean;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
+  const {
+    data: session,
+  } =
+    useSession();
+  const {
+    party,
+    createParty,
+    leave,
+    queue,
+  } =
+    useParty();
+  const [
+    menuOpen,
+    setMenuOpen,
+  ] =
+    useState(
+      false,
+    );
+  const triggerRef =
+    useRef<HTMLButtonElement>(
+      null,
+    );
 
   // Placement, the viewport clamp, the close animation, Escape, outside-press
   // dismissal, focus return and the roving arrow keys all live in AnchoredMenu
@@ -76,91 +170,218 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   // z-index 1) and painted under the shell's chrome. AnchoredMenu portals to
   // <body>.
 
-  if (!session?.user) return null;
+  if (
+    !session?.user
+  )
+    return null;
 
-  const core = !party ? (
-    <Button size="sm" variant="default" onClick={createParty}>
-      <UserPlus className="h-4 w-4" aria-hidden />
-      {t('party-start', { defaultValue: 'Start a party' })}
-    </Button>
-  ) : (
-    <>
-      <div className="flex -space-x-2">
-        {party.members.map((m) => (
-          <MemberAvatar key={m.userId} member={m} />
-        ))}
-      </div>
-      <span className="px-2 text-xs text-site-text-muted">
-        {party.members.length}/{party.maxSize}
-      </span>
-
-      <VoiceRoomBanner origin="party" originId={party.id} className="min-w-0" />
-
-      <div className="relative">
-        <Button
-          ref={triggerRef}
-          size="sm"
-          variant="default"
-          onClick={() => setMenuOpen((o) => !o)}
-          aria-haspopup="menu"
-          aria-expanded={menuOpen}
-        >
-          <Gamepad2 className="h-4 w-4" aria-hidden />
-          {t('party-choose-game', { defaultValue: 'Choose game' })}
-        </Button>
-        <AnchoredMenu
-          open={menuOpen}
-          onClose={() => setMenuOpen(false)}
-          anchorRef={triggerRef}
-          label={t('party-games', { defaultValue: 'Party games' })}
-          // Inline card opens the menu downward; the docked pill opens it up.
-          // The pop (globals.css §7.1) unfurls from whichever edge that put it
-          // on, so the same menu grows down out of the card and up out of the
-          // dock — and flips on its own when the chosen side has no room.
-          side={inline ? 'bottom' : 'top'}
-          className="w-52"
-        >
-          <div className="flex items-center justify-between gap-2 px-3 py-2">
-            <span className="text-xs font-semibold text-site-text-muted">
-              {t('party-games', { defaultValue: 'Party games' })}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => setMenuOpen(false)}
-              aria-label={t('close', { defaultValue: 'Close' })}
-            >
-              <X aria-hidden />
-            </Button>
-          </div>
-          {PARTY_GAMES.map((g) => (
-            <MenuItem
-              key={g.id}
-              icon={Gamepad2}
-              onSelect={() => {
-                queue(g.id);
-                setMenuOpen(false);
-              }}
-            >
-              {g.label}
-            </MenuItem>
-          ))}
-        </AnchoredMenu>
-      </div>
-
+  const core =
+    !party ? (
       <Button
         size="sm"
-        variant="ghost"
-        onClick={leave}
-        aria-label={t('party-leave', { defaultValue: 'Leave party' })}
+        variant="default"
+        onClick={
+          createParty
+        }
       >
-        <LogOut className="h-4 w-4" aria-hidden />
+        <UserPlus
+          className="h-4 w-4"
+          aria-hidden
+        />
+        {t(
+          'party-start',
+          {
+            defaultValue:
+              'Start a party',
+          },
+        )}
       </Button>
-    </>
-  );
+    ) : (
+      <>
+        <div className="flex -space-x-2">
+          {party.members.map(
+            (
+              m,
+            ) => (
+              <MemberAvatar
+                key={
+                  m.userId
+                }
+                member={
+                  m
+                }
+              />
+            ),
+          )}
+        </div>
+        <span className="px-2 text-xs text-site-text-muted">
+          {
+            party
+              .members
+              .length
+          }
+          /
+          {
+            party.maxSize
+          }
+        </span>
 
-  if (inline) {
+        <VoiceRoomBanner
+          origin="party"
+          originId={
+            party.id
+          }
+          className="min-w-0"
+        />
+
+        <div className="relative">
+          <Button
+            ref={
+              triggerRef
+            }
+            size="sm"
+            variant="default"
+            onClick={() =>
+              setMenuOpen(
+                (
+                  o,
+                ) =>
+                  !o,
+              )
+            }
+            aria-haspopup="menu"
+            aria-expanded={
+              menuOpen
+            }
+          >
+            <Gamepad2
+              className="h-4 w-4"
+              aria-hidden
+            />
+            {t(
+              'party-choose-game',
+              {
+                defaultValue:
+                  'Choose game',
+              },
+            )}
+          </Button>
+          <AnchoredMenu
+            open={
+              menuOpen
+            }
+            onClose={() =>
+              setMenuOpen(
+                false,
+              )
+            }
+            anchorRef={
+              triggerRef
+            }
+            label={t(
+              'party-games',
+              {
+                defaultValue:
+                  'Party games',
+              },
+            )}
+            // Inline card opens the menu downward; the docked pill opens it up.
+            // The pop (globals.css §7.1) unfurls from whichever edge that put it
+            // on, so the same menu grows down out of the card and up out of the
+            // dock — and flips on its own when the chosen side has no room.
+            side={
+              inline
+                ? 'bottom'
+                : 'top'
+            }
+            className="w-52"
+          >
+            <div className="flex items-center justify-between gap-2 px-3 py-2">
+              <span className="text-xs font-semibold text-site-text-muted">
+                {t(
+                  'party-games',
+                  {
+                    defaultValue:
+                      'Party games',
+                  },
+                )}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                onClick={() =>
+                  setMenuOpen(
+                    false,
+                  )
+                }
+                aria-label={t(
+                  'close',
+                  {
+                    defaultValue:
+                      'Close',
+                  },
+                )}
+              >
+                <X
+                  aria-hidden
+                />
+              </Button>
+            </div>
+            {PARTY_GAMES.map(
+              (
+                g,
+              ) => (
+                <MenuItem
+                  key={
+                    g.id
+                  }
+                  icon={
+                    Gamepad2
+                  }
+                  onSelect={() => {
+                    queue(
+                      g.id,
+                    );
+                    setMenuOpen(
+                      false,
+                    );
+                  }}
+                >
+                  {
+                    g.label
+                  }
+                </MenuItem>
+              ),
+            )}
+          </AnchoredMenu>
+        </div>
+
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={
+            leave
+          }
+          aria-label={t(
+            'party-leave',
+            {
+              defaultValue:
+                'Leave party',
+            },
+          )}
+        >
+          <LogOut
+            className="h-4 w-4"
+            aria-hidden
+          />
+        </Button>
+      </>
+    );
+
+  if (
+    inline
+  ) {
     // The heading row wraps, and the description claims a whole row of its own
     // below `sm`. As one unwrapped row the sentence took the width and left
     // "Party up" about 40px, which rendered as "Party" over "up". (Comment here
@@ -169,17 +390,34 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
     return (
       <section className="relative rounded-site px-4 py-3">
         <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-2">
-          <Users className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
+          <Users
+            className="h-4 w-4 shrink-0 text-site-accent"
+            aria-hidden
+          />
           <h2 className="site-section-label">
-            {t('party-heading', { defaultValue: 'Party up' })}
+            {t(
+              'party-heading',
+              {
+                defaultValue:
+                  'Party up',
+              },
+            )}
           </h2>
           <p className="basis-full text-xs text-site-text-muted sm:basis-auto">
-            {t('party-subheading', {
-              defaultValue: 'Start a party and pick a game to play with friends.',
-            })}
+            {t(
+              'party-subheading',
+              {
+                defaultValue:
+                  'Start a party and pick a game to play with friends.',
+              },
+            )}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">{core}</div>
+        <div className="flex flex-wrap items-center gap-2">
+          {
+            core
+          }
+        </div>
       </section>
     );
   }
@@ -187,7 +425,9 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   return (
     <div className="pointer-events-none bottom-above-dock fixed inset-x-0 z-40 flex justify-center px-3 md:bottom-4">
       <div className="pointer-events-auto surface-chrome flex items-center gap-2 rounded-full px-3 py-2">
-        {core}
+        {
+          core
+        }
       </div>
     </div>
   );

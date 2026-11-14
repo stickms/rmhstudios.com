@@ -14,43 +14,119 @@
 import { useEffect } from 'react';
 
 interface KeyboardLock {
-  lock?: (codes?: string[]) => Promise<void>;
+  lock?: (
+    codes?: string[],
+  ) => Promise<void>;
   unlock?: () => void;
 }
 
 /** Tab/window shortcuts a game key combination can trigger by accident. */
-const GUARDED_KEYS = new Set(['KeyW', 'KeyT', 'KeyN', 'KeyQ', 'KeyR']);
+const GUARDED_KEYS =
+  new Set(
+    [
+      'KeyW',
+      'KeyT',
+      'KeyN',
+      'KeyQ',
+      'KeyR',
+    ],
+  );
 
-export function useCloseGuard(active: boolean): void {
+export function useCloseGuard(
+  active: boolean,
+): void {
   useEffect(() => {
-    if (!active || typeof window === 'undefined') return;
-    const keyboard = (navigator as Navigator & { keyboard?: KeyboardLock }).keyboard;
+    if (
+      !active ||
+      typeof window ===
+        'undefined'
+    )
+      return;
+    const keyboard =
+      (
+        navigator as Navigator & {
+          keyboard?: KeyboardLock;
+        }
+      )
+        .keyboard;
 
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      // Older Chromium needs returnValue set to show the prompt.
-      e.returnValue = '';
-    };
+    const onBeforeUnload =
+      (
+        e: BeforeUnloadEvent,
+      ) => {
+        e.preventDefault();
+        // Older Chromium needs returnValue set to show the prompt.
+        e.returnValue =
+          '';
+      };
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && GUARDED_KEYS.has(e.code)) e.preventDefault();
-    };
+    const onKeyDown =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          (e.ctrlKey ||
+            e.metaKey) &&
+          GUARDED_KEYS.has(
+            e.code,
+          )
+        )
+          e.preventDefault();
+      };
 
-    const syncLock = () => {
-      if (!keyboard?.lock) return;
-      if (document.fullscreenElement) keyboard.lock().catch(() => {});
-      else keyboard.unlock?.();
-    };
+    const syncLock =
+      () => {
+        if (
+          !keyboard?.lock
+        )
+          return;
+        if (
+          document.fullscreenElement
+        )
+          keyboard
+            .lock()
+            .catch(
+              () => {},
+            );
+        else
+          keyboard.unlock?.();
+      };
 
-    window.addEventListener('beforeunload', onBeforeUnload);
-    window.addEventListener('keydown', onKeyDown, { capture: true });
-    document.addEventListener('fullscreenchange', syncLock);
+    window.addEventListener(
+      'beforeunload',
+      onBeforeUnload,
+    );
+    window.addEventListener(
+      'keydown',
+      onKeyDown,
+      {
+        capture: true,
+      },
+    );
+    document.addEventListener(
+      'fullscreenchange',
+      syncLock,
+    );
     syncLock();
     return () => {
-      window.removeEventListener('beforeunload', onBeforeUnload);
-      window.removeEventListener('keydown', onKeyDown, { capture: true });
-      document.removeEventListener('fullscreenchange', syncLock);
+      window.removeEventListener(
+        'beforeunload',
+        onBeforeUnload,
+      );
+      window.removeEventListener(
+        'keydown',
+        onKeyDown,
+        {
+          capture: true,
+        },
+      );
+      document.removeEventListener(
+        'fullscreenchange',
+        syncLock,
+      );
       keyboard?.unlock?.();
     };
-  }, [active]);
+  }, [
+    active,
+  ]);
 }

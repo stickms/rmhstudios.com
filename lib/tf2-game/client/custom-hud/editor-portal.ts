@@ -11,14 +11,32 @@
  * editor-portal.test.ts.
  */
 
-import { portalRoot, type PortalDoc } from '@/lib/tf2-hud/portal-root';
+import {
+  portalRoot,
+  type PortalDoc,
+} from '@/lib/tf2-hud/portal-root';
 
 /** The element the editor mounts in: the themed root inside the full-screen element, else the page's. */
-export function editorContainer(doc: PortalDoc & { body: HTMLElement } = document): HTMLElement {
-  return portalRoot(doc) ?? doc.body;
+export function editorContainer(
+  doc: PortalDoc & {
+    body: HTMLElement;
+  } = document,
+): HTMLElement {
+  return (
+    portalRoot(
+      doc,
+    ) ??
+    doc.body
+  );
 }
 
-type LockDoc = Pick<Document, 'exitPointerLock'> & { pointerLockElement: Element | null };
+type LockDoc =
+  Pick<
+    Document,
+    'exitPointerLock'
+  > & {
+    pointerLockElement: Element | null;
+  };
 
 /**
  * The game's pointer lock while the editor has the mouse: `release` lets go of it and remembers the
@@ -26,26 +44,63 @@ type LockDoc = Pick<Document, 'exitPointerLock'> & { pointerLockElement: Element
  * game: a browser grants pointer lock only during a user gesture.
  */
 export class PointerLockMemo {
-  private target: Element | null = null;
+  private target: Element | null =
+    null;
 
-  release(doc: LockDoc): void {
-    this.target = doc.pointerLockElement;
-    if (this.target) doc.exitPointerLock();
+  release(
+    doc: LockDoc,
+  ): void {
+    this.target =
+      doc.pointerLockElement;
+    if (
+      this
+        .target
+    )
+      doc.exitPointerLock();
   }
 
   get held(): boolean {
-    return this.target !== null;
+    return (
+      this
+        .target !==
+      null
+    );
   }
 
   restore(): void {
-    const el = this.target as
-      (Element & { requestPointerLock?: () => Promise<void> | void }) | null;
-    this.target = null;
-    if (!el || !el.isConnected || typeof el.requestPointerLock !== 'function') return;
+    const el =
+      this
+        .target as
+        | (Element & {
+            requestPointerLock?: () => Promise<void> | void;
+          })
+        | null;
+    this.target =
+      null;
+    if (
+      !el ||
+      !el.isConnected ||
+      typeof el.requestPointerLock !==
+        'function'
+    )
+      return;
     try {
-      const p = el.requestPointerLock();
-      if (p && typeof (p as Promise<void>).catch === 'function')
-        (p as Promise<void>).catch(() => undefined);
+      const p =
+        el.requestPointerLock();
+      if (
+        p &&
+        typeof (
+          p as Promise<void>
+        )
+          .catch ===
+          'function'
+      )
+        (
+          p as Promise<void>
+        ).catch(
+          () =>
+            undefined,
+        );
     } catch {
       // Refused (no gesture, the document lost focus): the game asks again on the next click, as always.
     }

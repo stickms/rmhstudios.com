@@ -30,7 +30,12 @@
  * still wins once it lands; it is the same box, so nothing moves.
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { ASPECT } from '@features/laundry-sort/engine/constants';
 import { cn } from '@/lib/utils';
 
@@ -46,64 +51,166 @@ export interface StageSize {
   height: number;
 }
 
-export function AspectStage({ children, outerChildren, className }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState<StageSize>({ width: 0, height: 0 });
+export function AspectStage({
+  children,
+  outerChildren,
+  className,
+}: Props) {
+  const containerRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const [
+    size,
+    setSize,
+  ] =
+    useState<StageSize>(
+      {
+        width: 0,
+        height: 0,
+      },
+    );
 
   useEffect(() => {
-    const element = containerRef.current;
-    if (!element) return;
+    const element =
+      containerRef.current;
+    if (
+      !element
+    )
+      return;
 
-    const measure = () => {
-      // clientWidth/Height are the padding box; subtracting the computed
-      // padding gives the content box, which is what the safe-area insets have
-      // already carved out for us.
-      const style = window.getComputedStyle(element);
-      const width0 =
-        element.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-      const height0 =
-        element.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-      const rect = { width: width0, height: height0 };
-      if (rect.width <= 0 || rect.height <= 0) return;
-      // The largest 16:9 box that fits — width-bound on a tall window,
-      // height-bound on a wide one.
-      const widthBound = rect.width / rect.height > ASPECT;
-      const width = widthBound ? rect.height * ASPECT : rect.width;
-      const height = widthBound ? rect.height : rect.width / ASPECT;
-      setSize((prev) =>
-        // Sub-pixel churn would resize the drawing buffer on every scroll of a
-        // mobile URL bar, and a buffer reallocation is not free.
-        Math.abs(prev.width - width) < 0.5 && Math.abs(prev.height - height) < 0.5
-          ? prev
-          : { width, height },
-      );
-    };
+    const measure =
+      () => {
+        // clientWidth/Height are the padding box; subtracting the computed
+        // padding gives the content box, which is what the safe-area insets have
+        // already carved out for us.
+        const style =
+          window.getComputedStyle(
+            element,
+          );
+        const width0 =
+          element.clientWidth -
+          parseFloat(
+            style.paddingLeft,
+          ) -
+          parseFloat(
+            style.paddingRight,
+          );
+        const height0 =
+          element.clientHeight -
+          parseFloat(
+            style.paddingTop,
+          ) -
+          parseFloat(
+            style.paddingBottom,
+          );
+        const rect =
+          {
+            width:
+              width0,
+            height:
+              height0,
+          };
+        if (
+          rect.width <=
+            0 ||
+          rect.height <=
+            0
+        )
+          return;
+        // The largest 16:9 box that fits — width-bound on a tall window,
+        // height-bound on a wide one.
+        const widthBound =
+          rect.width /
+            rect.height >
+          ASPECT;
+        const width =
+          widthBound
+            ? rect.height *
+              ASPECT
+            : rect.width;
+        const height =
+          widthBound
+            ? rect.height
+            : rect.width /
+              ASPECT;
+        setSize(
+          (
+            prev,
+          ) =>
+            // Sub-pixel churn would resize the drawing buffer on every scroll of a
+            // mobile URL bar, and a buffer reallocation is not free.
+            Math.abs(
+              prev.width -
+                width,
+            ) <
+              0.5 &&
+            Math.abs(
+              prev.height -
+                height,
+            ) <
+              0.5
+              ? prev
+              : {
+                  width,
+                  height,
+                },
+        );
+      };
 
     measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
+    const observer =
+      new ResizeObserver(
+        measure,
+      );
+    observer.observe(
+      element,
+    );
     // Orientation changes on iOS report the pre-rotation size to
     // ResizeObserver, so re-measure once the viewport has settled.
-    window.addEventListener('orientationchange', measure);
+    window.addEventListener(
+      'orientationchange',
+      measure,
+    );
     return () => {
       observer.disconnect();
-      window.removeEventListener('orientationchange', measure);
+      window.removeEventListener(
+        'orientationchange',
+        measure,
+      );
     };
   }, []);
 
   return (
     <div
-      ref={containerRef}
-      className={cn('ls-stage-frame relative h-full w-full overflow-hidden', className)}
+      ref={
+        containerRef
+      }
+      className={cn(
+        'ls-stage-frame relative h-full w-full overflow-hidden',
+        className,
+      )}
     >
-      {outerChildren}
+      {
+        outerChildren
+      }
       <div className="ls-stage-inset flex items-center justify-center">
         <div
           data-slot="laundry-stage"
           className="ls-stage-box relative overflow-hidden rounded-site bg-black "
-          style={{ width: size.width || undefined, height: size.height || undefined }}
+          style={{
+            width:
+              size.width ||
+              undefined,
+            height:
+              size.height ||
+              undefined,
+          }}
         >
-          {size.width > 0 ? children : null}
+          {size.width >
+          0
+            ? children
+            : null}
         </div>
       </div>
     </div>

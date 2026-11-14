@@ -21,27 +21,51 @@ import type { Vec3 } from '../../core/vec';
 // ─── Attributes ─────────────────────────────────────────────────────────────
 
 /** The standing hull does not fit: crouch through. */
-export const NAV_CROUCH = 1 << 0;
+export const NAV_CROUCH =
+  1 <<
+  0;
 /** Feet in water. */
-export const NAV_WATER = 1 << 1;
+export const NAV_WATER =
+  1 <<
+  1;
 /** Inside a RED / BLU func_respawnroom. */
-export const NAV_RED_SPAWN = 1 << 2;
-export const NAV_BLUE_SPAWN = 1 << 3;
+export const NAV_RED_SPAWN =
+  1 <<
+  2;
+export const NAV_BLUE_SPAWN =
+  1 <<
+  3;
 /** Inside a trigger_capture_area. */
-export const NAV_CAPTURE = 1 << 4;
+export const NAV_CAPTURE =
+  1 <<
+  4;
 /** Inside a func_regenerate (resupply cabinet). */
-export const NAV_RESUPPLY = 1 << 5;
+export const NAV_RESUPPLY =
+  1 <<
+  5;
 /** Holds a health kit / an ammo pack. */
-export const NAV_HEALTH = 1 << 6;
-export const NAV_AMMO = 1 << 7;
+export const NAV_HEALTH =
+  1 <<
+  6;
+export const NAV_AMMO =
+  1 <<
+  7;
 /** Overlaps a door or toggled brush (see `blocker`): checked at runtime. */
-export const NAV_DOOR = 1 << 8;
+export const NAV_DOOR =
+  1 <<
+  8;
 /** Head under water (swimming). */
-export const NAV_DEEP_WATER = 1 << 9;
+export const NAV_DEEP_WATER =
+  1 <<
+  9;
 /** Near a payload track (path_track). */
-export const NAV_CART_PATH = 1 << 10;
+export const NAV_CART_PATH =
+  1 <<
+  10;
 /** Inside a func_capturezone (CTF). */
-export const NAV_CAPTURE_ZONE = 1 << 11;
+export const NAV_CAPTURE_ZONE =
+  1 <<
+  11;
 
 /** Connection kinds, easiest first. */
 export const CONN_WALK = 0;
@@ -166,94 +190,466 @@ export class NavMesh implements NavMeshData {
   private readonly lookAreas: Uint32Array;
   private readonly rowBytes: number;
 
-  constructor(d: NavMeshData) {
-    this.cellSize = d.cellSize;
-    this.areaCount = d.areaCount;
-    this.gx0 = d.gx0;
-    this.gy0 = d.gy0;
-    this.gx1 = d.gx1;
-    this.gy1 = d.gy1;
-    this.cz = d.cz;
-    this.dzdx = d.dzdx;
-    this.dzdy = d.dzdy;
-    this.attrs = d.attrs;
-    this.blocker = d.blocker;
-    this.sector = d.sector;
-    this.connStart = d.connStart;
-    this.connTo = d.connTo;
-    this.connType = d.connType;
-    this.portal = d.portal;
-    this.sectorCount = d.sectorCount;
-    this.vis = d.vis;
-    this.pois = d.pois;
-    this.blockers = d.blockers;
-    this.rowBytes = (d.sectorCount + 7) >> 3;
+  constructor(
+    d: NavMeshData,
+  ) {
+    this.cellSize =
+      d.cellSize;
+    this.areaCount =
+      d.areaCount;
+    this.gx0 =
+      d.gx0;
+    this.gy0 =
+      d.gy0;
+    this.gx1 =
+      d.gx1;
+    this.gy1 =
+      d.gy1;
+    this.cz =
+      d.cz;
+    this.dzdx =
+      d.dzdx;
+    this.dzdy =
+      d.dzdy;
+    this.attrs =
+      d.attrs;
+    this.blocker =
+      d.blocker;
+    this.sector =
+      d.sector;
+    this.connStart =
+      d.connStart;
+    this.connTo =
+      d.connTo;
+    this.connType =
+      d.connType;
+    this.portal =
+      d.portal;
+    this.sectorCount =
+      d.sectorCount;
+    this.vis =
+      d.vis;
+    this.pois =
+      d.pois;
+    this.blockers =
+      d.blockers;
+    this.rowBytes =
+      (d.sectorCount +
+        7) >>
+      3;
 
-    const n = d.areaCount;
-    const h = d.cellSize * 0.5;
-    this.minX = new Float32Array(n);
-    this.minY = new Float32Array(n);
-    this.maxX = new Float32Array(n);
-    this.maxY = new Float32Array(n);
-    this.cx = new Float32Array(n);
-    this.cy = new Float32Array(n);
-    let bx0 = Infinity;
-    let by0 = Infinity;
-    let bx1 = -Infinity;
-    let by1 = -Infinity;
-    for (let a = 0; a < n; a++) {
-      this.minX[a] = d.gx0[a] * d.cellSize - h;
-      this.minY[a] = d.gy0[a] * d.cellSize - h;
-      this.maxX[a] = d.gx1[a] * d.cellSize + h;
-      this.maxY[a] = d.gy1[a] * d.cellSize + h;
-      this.cx[a] = (this.minX[a] + this.maxX[a]) * 0.5;
-      this.cy[a] = (this.minY[a] + this.maxY[a]) * 0.5;
-      if (this.minX[a] < bx0) bx0 = this.minX[a];
-      if (this.minY[a] < by0) by0 = this.minY[a];
-      if (this.maxX[a] > bx1) bx1 = this.maxX[a];
-      if (this.maxY[a] > by1) by1 = this.maxY[a];
+    const n =
+      d.areaCount;
+    const h =
+      d.cellSize *
+      0.5;
+    this.minX =
+      new Float32Array(
+        n,
+      );
+    this.minY =
+      new Float32Array(
+        n,
+      );
+    this.maxX =
+      new Float32Array(
+        n,
+      );
+    this.maxY =
+      new Float32Array(
+        n,
+      );
+    this.cx =
+      new Float32Array(
+        n,
+      );
+    this.cy =
+      new Float32Array(
+        n,
+      );
+    let bx0 =
+      Infinity;
+    let by0 =
+      Infinity;
+    let bx1 =
+      -Infinity;
+    let by1 =
+      -Infinity;
+    for (
+      let a = 0;
+      a <
+      n;
+      a++
+    ) {
+      this.minX[
+        a
+      ] =
+        d
+          .gx0[
+          a
+        ] *
+          d.cellSize -
+        h;
+      this.minY[
+        a
+      ] =
+        d
+          .gy0[
+          a
+        ] *
+          d.cellSize -
+        h;
+      this.maxX[
+        a
+      ] =
+        d
+          .gx1[
+          a
+        ] *
+          d.cellSize +
+        h;
+      this.maxY[
+        a
+      ] =
+        d
+          .gy1[
+          a
+        ] *
+          d.cellSize +
+        h;
+      this.cx[
+        a
+      ] =
+        (this
+          .minX[
+          a
+        ] +
+          this
+            .maxX[
+            a
+          ]) *
+        0.5;
+      this.cy[
+        a
+      ] =
+        (this
+          .minY[
+          a
+        ] +
+          this
+            .maxY[
+            a
+          ]) *
+        0.5;
+      if (
+        this
+          .minX[
+          a
+        ] <
+        bx0
+      )
+        bx0 =
+          this
+            .minX[
+            a
+          ];
+      if (
+        this
+          .minY[
+          a
+        ] <
+        by0
+      )
+        by0 =
+          this
+            .minY[
+            a
+          ];
+      if (
+        this
+          .maxX[
+          a
+        ] >
+        bx1
+      )
+        bx1 =
+          this
+            .maxX[
+            a
+          ];
+      if (
+        this
+          .maxY[
+          a
+        ] >
+        by1
+      )
+        by1 =
+          this
+            .maxY[
+            a
+          ];
     }
-    if (n === 0) bx0 = by0 = bx1 = by1 = 0;
-    this.lookX0 = Math.floor(bx0 / LOOKUP_CELL);
-    this.lookY0 = Math.floor(by0 / LOOKUP_CELL);
-    this.lookW = Math.floor(bx1 / LOOKUP_CELL) - this.lookX0 + 1;
-    this.lookH = Math.floor(by1 / LOOKUP_CELL) - this.lookY0 + 1;
-    const cells = this.lookW * this.lookH;
-    const counts = new Uint32Array(cells + 1);
-    const forCells = (a: number, fn: (c: number) => void): void => {
-      const x0 = Math.floor(this.minX[a] / LOOKUP_CELL) - this.lookX0;
-      const x1 = Math.floor((this.maxX[a] - 0.01) / LOOKUP_CELL) - this.lookX0;
-      const y0 = Math.floor(this.minY[a] / LOOKUP_CELL) - this.lookY0;
-      const y1 = Math.floor((this.maxY[a] - 0.01) / LOOKUP_CELL) - this.lookY0;
-      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) fn(y * this.lookW + x);
-    };
-    for (let a = 0; a < n; a++) forCells(a, (c) => counts[c + 1]++);
-    for (let c = 0; c < cells; c++) counts[c + 1] += counts[c];
-    this.lookStart = counts;
-    this.lookAreas = new Uint32Array(counts[cells]);
-    const fill = counts.slice(0, cells);
-    for (let a = 0; a < n; a++) forCells(a, (c) => (this.lookAreas[fill[c]++] = a));
+    if (
+      n ===
+      0
+    )
+      bx0 =
+        by0 =
+        bx1 =
+        by1 =
+          0;
+    this.lookX0 =
+      Math.floor(
+        bx0 /
+          LOOKUP_CELL,
+      );
+    this.lookY0 =
+      Math.floor(
+        by0 /
+          LOOKUP_CELL,
+      );
+    this.lookW =
+      Math.floor(
+        bx1 /
+          LOOKUP_CELL,
+      ) -
+      this
+        .lookX0 +
+      1;
+    this.lookH =
+      Math.floor(
+        by1 /
+          LOOKUP_CELL,
+      ) -
+      this
+        .lookY0 +
+      1;
+    const cells =
+      this
+        .lookW *
+      this
+        .lookH;
+    const counts =
+      new Uint32Array(
+        cells +
+          1,
+      );
+    const forCells =
+      (
+        a: number,
+        fn: (
+          c: number,
+        ) => void,
+      ): void => {
+        const x0 =
+          Math.floor(
+            this
+              .minX[
+              a
+            ] /
+              LOOKUP_CELL,
+          ) -
+          this
+            .lookX0;
+        const x1 =
+          Math.floor(
+            (this
+              .maxX[
+              a
+            ] -
+              0.01) /
+              LOOKUP_CELL,
+          ) -
+          this
+            .lookX0;
+        const y0 =
+          Math.floor(
+            this
+              .minY[
+              a
+            ] /
+              LOOKUP_CELL,
+          ) -
+          this
+            .lookY0;
+        const y1 =
+          Math.floor(
+            (this
+              .maxY[
+              a
+            ] -
+              0.01) /
+              LOOKUP_CELL,
+          ) -
+          this
+            .lookY0;
+        for (
+          let y =
+            y0;
+          y <=
+          y1;
+          y++
+        )
+          for (
+            let x =
+              x0;
+            x <=
+            x1;
+            x++
+          )
+            fn(
+              y *
+                this
+                  .lookW +
+                x,
+            );
+      };
+    for (
+      let a = 0;
+      a <
+      n;
+      a++
+    )
+      forCells(
+        a,
+        (
+          c,
+        ) =>
+          counts[
+            c +
+              1
+          ]++,
+      );
+    for (
+      let c = 0;
+      c <
+      cells;
+      c++
+    )
+      counts[
+        c +
+          1
+      ] +=
+        counts[
+          c
+        ];
+    this.lookStart =
+      counts;
+    this.lookAreas =
+      new Uint32Array(
+        counts[
+          cells
+        ],
+      );
+    const fill =
+      counts.slice(
+        0,
+        cells,
+      );
+    for (
+      let a = 0;
+      a <
+      n;
+      a++
+    )
+      forCells(
+        a,
+        (
+          c,
+        ) =>
+          (this.lookAreas[
+            fill[
+              c
+            ]++
+          ] =
+            a),
+      );
   }
 
   /** Floor height of area `a` at (x, y) (the plane extended past the edges). */
-  zAt(a: number, x: number, y: number): number {
-    return this.cz[a] + this.dzdx[a] * (x - this.cx[a]) + this.dzdy[a] * (y - this.cy[a]);
+  zAt(
+    a: number,
+    x: number,
+    y: number,
+  ): number {
+    return (
+      this
+        .cz[
+        a
+      ] +
+      this
+        .dzdx[
+        a
+      ] *
+        (x -
+          this
+            .cx[
+            a
+          ]) +
+      this
+        .dzdy[
+        a
+      ] *
+        (y -
+          this
+            .cy[
+            a
+          ])
+    );
   }
 
   /** The area's centre on its floor. */
-  center(a: number, out: Vec3): Vec3 {
-    out.x = this.cx[a];
-    out.y = this.cy[a];
-    out.z = this.cz[a];
+  center(
+    a: number,
+    out: Vec3,
+  ): Vec3 {
+    out.x =
+      this.cx[
+        a
+      ];
+    out.y =
+      this.cy[
+        a
+      ];
+    out.z =
+      this.cz[
+        a
+      ];
     return out;
   }
 
-  contains2D(a: number, x: number, y: number, tolerance = 0): boolean {
+  contains2D(
+    a: number,
+    x: number,
+    y: number,
+    tolerance = 0,
+  ): boolean {
     return (
-      x >= this.minX[a] - tolerance &&
-      x <= this.maxX[a] + tolerance &&
-      y >= this.minY[a] - tolerance &&
-      y <= this.maxY[a] + tolerance
+      x >=
+        this
+          .minX[
+          a
+        ] -
+          tolerance &&
+      x <=
+        this
+          .maxX[
+          a
+        ] +
+          tolerance &&
+      y >=
+        this
+          .minY[
+          a
+        ] -
+          tolerance &&
+      y <=
+        this
+          .maxY[
+          a
+        ] +
+          tolerance
     );
   }
 
@@ -262,21 +658,114 @@ export class NavMesh implements NavMeshData {
    * floor at most `above` below the point's feet and at most `below` above
    * them, the highest such floor (CNavMesh::GetNavArea). −1 when none.
    */
-  areaAt(x: number, y: number, z: number, above = 120, below = 30): number {
-    const cxi = Math.floor(x / LOOKUP_CELL) - this.lookX0;
-    const cyi = Math.floor(y / LOOKUP_CELL) - this.lookY0;
-    if (cxi < 0 || cyi < 0 || cxi >= this.lookW || cyi >= this.lookH) return -1;
-    const c = cyi * this.lookW + cxi;
-    let best = -1;
-    let bestZ = -Infinity;
-    for (let i = this.lookStart[c]; i < this.lookStart[c + 1]; i++) {
-      const a = this.lookAreas[i];
-      if (x < this.minX[a] || x > this.maxX[a] || y < this.minY[a] || y > this.maxY[a]) continue;
-      const fz = this.zAt(a, x, y);
-      if (fz > z + below || fz < z - above) continue;
-      if (fz > bestZ) {
-        bestZ = fz;
-        best = a;
+  areaAt(
+    x: number,
+    y: number,
+    z: number,
+    above = 120,
+    below = 30,
+  ): number {
+    const cxi =
+      Math.floor(
+        x /
+          LOOKUP_CELL,
+      ) -
+      this
+        .lookX0;
+    const cyi =
+      Math.floor(
+        y /
+          LOOKUP_CELL,
+      ) -
+      this
+        .lookY0;
+    if (
+      cxi <
+        0 ||
+      cyi <
+        0 ||
+      cxi >=
+        this
+          .lookW ||
+      cyi >=
+        this
+          .lookH
+    )
+      return -1;
+    const c =
+      cyi *
+        this
+          .lookW +
+      cxi;
+    let best =
+      -1;
+    let bestZ =
+      -Infinity;
+    for (
+      let i =
+        this
+          .lookStart[
+          c
+        ];
+      i <
+      this
+        .lookStart[
+        c +
+          1
+      ];
+      i++
+    ) {
+      const a =
+        this
+          .lookAreas[
+          i
+        ];
+      if (
+        x <
+          this
+            .minX[
+            a
+          ] ||
+        x >
+          this
+            .maxX[
+            a
+          ] ||
+        y <
+          this
+            .minY[
+            a
+          ] ||
+        y >
+          this
+            .maxY[
+            a
+          ]
+      )
+        continue;
+      const fz =
+        this.zAt(
+          a,
+          x,
+          y,
+        );
+      if (
+        fz >
+          z +
+            below ||
+        fz <
+          z -
+            above
+      )
+        continue;
+      if (
+        fz >
+        bestZ
+      ) {
+        bestZ =
+          fz;
+        best =
+          a;
       }
     }
     return best;
@@ -287,32 +776,181 @@ export class NavMesh implements NavMeshData {
    * without the LOS check): areaAt first, then the closest rectangle by 3D
    * distance to its floor.
    */
-  nearestArea(x: number, y: number, z: number, radius = 300): number {
-    const hit = this.areaAt(x, y, z);
-    if (hit >= 0) return hit;
-    const r = Math.ceil(radius / LOOKUP_CELL);
-    const cxi = Math.floor(x / LOOKUP_CELL) - this.lookX0;
-    const cyi = Math.floor(y / LOOKUP_CELL) - this.lookY0;
-    let best = -1;
-    let bestD = radius * radius;
-    for (let yy = cyi - r; yy <= cyi + r; yy++) {
-      if (yy < 0 || yy >= this.lookH) continue;
-      for (let xx = cxi - r; xx <= cxi + r; xx++) {
-        if (xx < 0 || xx >= this.lookW) continue;
-        const c = yy * this.lookW + xx;
-        for (let i = this.lookStart[c]; i < this.lookStart[c + 1]; i++) {
-          const a = this.lookAreas[i];
-          const px = x < this.minX[a] ? this.minX[a] : x > this.maxX[a] ? this.maxX[a] : x;
-          const py = y < this.minY[a] ? this.minY[a] : y > this.maxY[a] ? this.maxY[a] : y;
-          const pz = this.zAt(a, px, py);
-          const dx = px - x;
-          const dy = py - y;
+  nearestArea(
+    x: number,
+    y: number,
+    z: number,
+    radius = 300,
+  ): number {
+    const hit =
+      this.areaAt(
+        x,
+        y,
+        z,
+      );
+    if (
+      hit >=
+      0
+    )
+      return hit;
+    const r =
+      Math.ceil(
+        radius /
+          LOOKUP_CELL,
+      );
+    const cxi =
+      Math.floor(
+        x /
+          LOOKUP_CELL,
+      ) -
+      this
+        .lookX0;
+    const cyi =
+      Math.floor(
+        y /
+          LOOKUP_CELL,
+      ) -
+      this
+        .lookY0;
+    let best =
+      -1;
+    let bestD =
+      radius *
+      radius;
+    for (
+      let yy =
+        cyi -
+        r;
+      yy <=
+      cyi +
+        r;
+      yy++
+    ) {
+      if (
+        yy <
+          0 ||
+        yy >=
+          this
+            .lookH
+      )
+        continue;
+      for (
+        let xx =
+          cxi -
+          r;
+        xx <=
+        cxi +
+          r;
+        xx++
+      ) {
+        if (
+          xx <
+            0 ||
+          xx >=
+            this
+              .lookW
+        )
+          continue;
+        const c =
+          yy *
+            this
+              .lookW +
+          xx;
+        for (
+          let i =
+            this
+              .lookStart[
+              c
+            ];
+          i <
+          this
+            .lookStart[
+            c +
+              1
+          ];
+          i++
+        ) {
+          const a =
+            this
+              .lookAreas[
+              i
+            ];
+          const px =
+            x <
+            this
+              .minX[
+              a
+            ]
+              ? this
+                  .minX[
+                  a
+                ]
+              : x >
+                  this
+                    .maxX[
+                    a
+                  ]
+                ? this
+                    .maxX[
+                    a
+                  ]
+                : x;
+          const py =
+            y <
+            this
+              .minY[
+              a
+            ]
+              ? this
+                  .minY[
+                  a
+                ]
+              : y >
+                  this
+                    .maxY[
+                    a
+                  ]
+                ? this
+                    .maxY[
+                    a
+                  ]
+                : y;
+          const pz =
+            this.zAt(
+              a,
+              px,
+              py,
+            );
+          const dx =
+            px -
+            x;
+          const dy =
+            py -
+            y;
           // Floors above the point count double (prefer the ground under us).
-          const dz = pz > z ? (pz - z) * 2 : z - pz;
-          const d = dx * dx + dy * dy + dz * dz;
-          if (d < bestD) {
-            bestD = d;
-            best = a;
+          const dz =
+            pz >
+            z
+              ? (pz -
+                  z) *
+                2
+              : z -
+                pz;
+          const d =
+            dx *
+              dx +
+            dy *
+              dy +
+            dz *
+              dz;
+          if (
+            d <
+            bestD
+          ) {
+            bestD =
+              d;
+            best =
+              a;
           }
         }
       }
@@ -328,63 +966,290 @@ export class NavMesh implements NavMeshData {
     maxY: number,
     zMin: number,
     zMax: number,
-    fn: (a: number) => void,
+    fn: (
+      a: number,
+    ) => void,
   ): void {
-    const x0 = Math.max(0, Math.floor(minX / LOOKUP_CELL) - this.lookX0);
-    const x1 = Math.min(this.lookW - 1, Math.floor(maxX / LOOKUP_CELL) - this.lookX0);
-    const y0 = Math.max(0, Math.floor(minY / LOOKUP_CELL) - this.lookY0);
-    const y1 = Math.min(this.lookH - 1, Math.floor(maxY / LOOKUP_CELL) - this.lookY0);
-    for (let y = y0; y <= y1; y++) {
-      for (let x = x0; x <= x1; x++) {
-        const c = y * this.lookW + x;
-        for (let i = this.lookStart[c]; i < this.lookStart[c + 1]; i++) {
-          const a = this.lookAreas[i];
+    const x0 =
+      Math.max(
+        0,
+        Math.floor(
+          minX /
+            LOOKUP_CELL,
+        ) -
+          this
+            .lookX0,
+      );
+    const x1 =
+      Math.min(
+        this
+          .lookW -
+          1,
+        Math.floor(
+          maxX /
+            LOOKUP_CELL,
+        ) -
+          this
+            .lookX0,
+      );
+    const y0 =
+      Math.max(
+        0,
+        Math.floor(
+          minY /
+            LOOKUP_CELL,
+        ) -
+          this
+            .lookY0,
+      );
+    const y1 =
+      Math.min(
+        this
+          .lookH -
+          1,
+        Math.floor(
+          maxY /
+            LOOKUP_CELL,
+        ) -
+          this
+            .lookY0,
+      );
+    for (
+      let y =
+        y0;
+      y <=
+      y1;
+      y++
+    ) {
+      for (
+        let x =
+          x0;
+        x <=
+        x1;
+        x++
+      ) {
+        const c =
+          y *
+            this
+              .lookW +
+          x;
+        for (
+          let i =
+            this
+              .lookStart[
+              c
+            ];
+          i <
+          this
+            .lookStart[
+            c +
+              1
+          ];
+          i++
+        ) {
+          const a =
+            this
+              .lookAreas[
+              i
+            ];
           if (
-            this.maxX[a] < minX ||
-            this.minX[a] > maxX ||
-            this.maxY[a] < minY ||
-            this.minY[a] > maxY
+            this
+              .maxX[
+              a
+            ] <
+              minX ||
+            this
+              .minX[
+              a
+            ] >
+              maxX ||
+            this
+              .maxY[
+              a
+            ] <
+              minY ||
+            this
+              .minY[
+              a
+            ] >
+              maxY
           )
             continue;
           // An area spanning several cells is reported once: only from its first overlapped cell.
-          const fx = Math.max(x0, Math.floor(this.minX[a] / LOOKUP_CELL) - this.lookX0);
-          const fy = Math.max(y0, Math.floor(this.minY[a] / LOOKUP_CELL) - this.lookY0);
-          if (fx !== x || fy !== y) continue;
-          if (this.cz[a] < zMin || this.cz[a] > zMax) continue;
-          fn(a);
+          const fx =
+            Math.max(
+              x0,
+              Math.floor(
+                this
+                  .minX[
+                  a
+                ] /
+                  LOOKUP_CELL,
+              ) -
+                this
+                  .lookX0,
+            );
+          const fy =
+            Math.max(
+              y0,
+              Math.floor(
+                this
+                  .minY[
+                  a
+                ] /
+                  LOOKUP_CELL,
+              ) -
+                this
+                  .lookY0,
+            );
+          if (
+            fx !==
+              x ||
+            fy !==
+              y
+          )
+            continue;
+          if (
+            this
+              .cz[
+              a
+            ] <
+              zMin ||
+            this
+              .cz[
+              a
+            ] >
+              zMax
+          )
+            continue;
+          fn(
+            a,
+          );
         }
       }
     }
   }
 
   /** Potentially visible (sector PVS, symmetric). */
-  isPotentiallyVisible(a: number, b: number): boolean {
-    const sa = this.sector[a];
-    const sb = this.sector[b];
-    if (sa === sb) return true;
-    return (this.vis[sa * this.rowBytes + (sb >> 3)] & (1 << (sb & 7))) !== 0;
+  isPotentiallyVisible(
+    a: number,
+    b: number,
+  ): boolean {
+    const sa =
+      this
+        .sector[
+        a
+      ];
+    const sb =
+      this
+        .sector[
+        b
+      ];
+    if (
+      sa ===
+      sb
+    )
+      return true;
+    return (
+      (this
+        .vis[
+        sa *
+          this
+            .rowBytes +
+          (sb >>
+            3)
+      ] &
+        (1 <<
+          (sb &
+            7))) !==
+      0
+    );
   }
 
   /** Sector-level test (for callers iterating sectors). */
-  sectorsVisible(sa: number, sb: number): boolean {
-    if (sa === sb) return true;
-    return (this.vis[sa * this.rowBytes + (sb >> 3)] & (1 << (sb & 7))) !== 0;
+  sectorsVisible(
+    sa: number,
+    sb: number,
+  ): boolean {
+    if (
+      sa ===
+      sb
+    )
+      return true;
+    return (
+      (this
+        .vis[
+        sa *
+          this
+            .rowBytes +
+          (sb >>
+            3)
+      ] &
+        (1 <<
+          (sb &
+            7))) !==
+      0
+    );
   }
 
   /** Area size in square units. */
-  areaSize(a: number): number {
-    return (this.maxX[a] - this.minX[a]) * (this.maxY[a] - this.minY[a]);
+  areaSize(
+    a: number,
+  ): number {
+    return (
+      (this
+        .maxX[
+        a
+      ] -
+        this
+          .minX[
+          a
+        ]) *
+      (this
+        .maxY[
+        a
+      ] -
+        this
+          .minY[
+          a
+        ])
+    );
   }
 
   /** The connection index from a to b, or −1. */
-  connectionBetween(a: number, b: number): number {
-    for (let c = this.connStart[a]; c < this.connStart[a + 1]; c++)
-      if (this.connTo[c] === b) return c;
+  connectionBetween(
+    a: number,
+    b: number,
+  ): number {
+    for (
+      let c =
+        this
+          .connStart[
+          a
+        ];
+      c <
+      this
+        .connStart[
+        a +
+          1
+      ];
+      c++
+    )
+      if (
+        this
+          .connTo[
+          c
+        ] ===
+        b
+      )
+        return c;
     return -1;
   }
 
   /** Total connection count. */
   get connectionCount(): number {
-    return this.connTo.length;
+    return this
+      .connTo
+      .length;
   }
 }

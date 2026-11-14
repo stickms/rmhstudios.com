@@ -8,7 +8,10 @@
  */
 
 import type { SearchSchemaInput } from '@tanstack/react-router';
-import { SONG_SORTS, type SongSort } from './constants';
+import {
+  SONG_SORTS,
+  type SongSort,
+} from './constants';
 
 /* ─── Sorting ────────────────────────────────────────────────────────────── */
 
@@ -26,43 +29,84 @@ import { SONG_SORTS, type SongSort } from './constants';
  * IS typed. That default is the actual fix L14 asks for: before it, typing a
  * query re-filtered the list and left it ordered by upload date.
  */
-export const LIBRARY_EXTRA_SORTS = ['artist', 'bpm', 'plays', 'yourScore', 'relevance'] as const;
-export type LibraryExtraSort = (typeof LIBRARY_EXTRA_SORTS)[number];
+export const LIBRARY_EXTRA_SORTS =
+  [
+    'artist',
+    'bpm',
+    'plays',
+    'yourScore',
+    'relevance',
+  ] as const;
+export type LibraryExtraSort =
+  (typeof LIBRARY_EXTRA_SORTS)[number];
 
-export const LIBRARY_SORTS = [...SONG_SORTS, ...LIBRARY_EXTRA_SORTS] as const;
-export type LibrarySort = SongSort | LibraryExtraSort;
+export const LIBRARY_SORTS =
+  [
+    ...SONG_SORTS,
+    ...LIBRARY_EXTRA_SORTS,
+  ] as const;
+export type LibrarySort =
+  | SongSort
+  | LibraryExtraSort;
 
-export const SORT_DIRECTIONS = ['asc', 'desc'] as const;
-export type SortDirection = (typeof SORT_DIRECTIONS)[number];
+export const SORT_DIRECTIONS =
+  [
+    'asc',
+    'desc',
+  ] as const;
+export type SortDirection =
+  (typeof SORT_DIRECTIONS)[number];
 
 /**
  * The direction a sort runs when the caller does not say — i.e. what the grid's
  * dropdown already meant by each of the five base {@link SongSort} values, plus
  * a sensible default for the four table-only ones.
  */
-export const DEFAULT_SORT_DIRECTION: Record<LibrarySort, SortDirection> = {
-  recent: 'desc',
-  popular: 'desc',
-  liked: 'desc',
-  title: 'asc',
-  duration: 'asc',
-  /** Hardest first — "find something at my level" is asked upward, not down. */
-  difficulty: 'desc',
-  artist: 'asc',
-  bpm: 'asc',
-  plays: 'desc',
-  yourScore: 'desc',
-  /** Best match first. `asc` on relevance is not a thing anyone wants. */
-  relevance: 'desc',
-};
+export const DEFAULT_SORT_DIRECTION: Record<
+  LibrarySort,
+  SortDirection
+> =
+  {
+    recent:
+      'desc',
+    popular:
+      'desc',
+    liked:
+      'desc',
+    title:
+      'asc',
+    duration:
+      'asc',
+    /** Hardest first — "find something at my level" is asked upward, not down. */
+    difficulty:
+      'desc',
+    artist:
+      'asc',
+    bpm: 'asc',
+    plays:
+      'desc',
+    yourScore:
+      'desc',
+    /** Best match first. `asc` on relevance is not a thing anyone wants. */
+    relevance:
+      'desc',
+  };
 
 /** Sort keys that need a signed-in viewer to mean anything. */
-export const AUTH_ONLY_SORTS: readonly LibrarySort[] = ['yourScore'];
+export const AUTH_ONLY_SORTS: readonly LibrarySort[] =
+  [
+    'yourScore',
+  ];
 
 /* ─── View mode ──────────────────────────────────────────────────────────── */
 
-export const LIBRARY_VIEWS = ['grid', 'table'] as const;
-export type LibraryView = (typeof LIBRARY_VIEWS)[number];
+export const LIBRARY_VIEWS =
+  [
+    'grid',
+    'table',
+  ] as const;
+export type LibraryView =
+  (typeof LIBRARY_VIEWS)[number];
 
 /* ─── URL search params (L18) ───────────────────────────────────────────── */
 
@@ -75,7 +119,9 @@ export interface LibrarySearchInput {
   dir?: SortDirection;
   view?: LibraryView;
   /** Unrelated params (`?lobby=`) pass through untouched — see below. */
-  [key: string]: unknown;
+  [
+    key: string
+  ]: unknown;
 }
 
 /** The search params after {@link validateLibrarySearch}: defaults filled in. */
@@ -89,14 +135,41 @@ const UUID_RE =
   /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/;
 
 /** A trimmed string no longer than `max`, or `undefined` for anything else. */
-function boundedString(value: unknown, max: number): string | undefined {
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
-  return trimmed.length <= max ? trimmed : undefined;
+function boundedString(
+  value: unknown,
+  max: number,
+):
+  | string
+  | undefined {
+  if (
+    typeof value !==
+    'string'
+  )
+    return undefined;
+  const trimmed =
+    value.trim();
+  return trimmed.length <=
+    max
+    ? trimmed
+    : undefined;
 }
 
-function oneOf<T extends string>(value: unknown, options: readonly T[]): T | undefined {
-  return typeof value === 'string' && (options as readonly string[]).includes(value)
+function oneOf<
+  T extends
+    string,
+>(
+  value: unknown,
+  options: readonly T[],
+):
+  | T
+  | undefined {
+  return typeof value ===
+    'string' &&
+    (
+      options as readonly string[]
+    ).includes(
+      value,
+    )
     ? (value as T)
     : undefined;
 }
@@ -127,32 +200,76 @@ function oneOf<T extends string>(value: unknown, options: readonly T[]): T | und
  *   means something to the table's per-column toggle.
  */
 export function validateLibrarySearch(
-  raw: LibrarySearchInput & SearchSchemaInput,
+  raw: LibrarySearchInput &
+    SearchSchemaInput,
 ): LibrarySearch {
-  return parseLibrarySearch(raw);
+  return parseLibrarySearch(
+    raw,
+  );
 }
 
-function parseLibrarySearch(raw: LibrarySearchInput): LibrarySearch {
-  if (!raw || typeof raw !== 'object') return { ...DEFAULT_LIBRARY_SEARCH };
-  const out: LibrarySearch = {
-    ...raw,
-    q: boundedString(raw.q, 120) ?? '',
-    sort: oneOf(raw.sort, LIBRARY_SORTS) ?? 'recent',
-    artist: boundedString(raw.artist, 200),
-    packId: typeof raw.packId === 'string' && UUID_RE.test(raw.packId) ? raw.packId : undefined,
-    dir: oneOf(raw.dir, SORT_DIRECTIONS),
-    view: oneOf(raw.view, LIBRARY_VIEWS) ?? 'grid',
-  };
+function parseLibrarySearch(
+  raw: LibrarySearchInput,
+): LibrarySearch {
+  if (
+    !raw ||
+    typeof raw !==
+      'object'
+  )
+    return {
+      ...DEFAULT_LIBRARY_SEARCH,
+    };
+  const out: LibrarySearch =
+    {
+      ...raw,
+      q:
+        boundedString(
+          raw.q,
+          120,
+        ) ??
+        '',
+      sort:
+        oneOf(
+          raw.sort,
+          LIBRARY_SORTS,
+        ) ??
+        'recent',
+      artist:
+        boundedString(
+          raw.artist,
+          200,
+        ),
+      packId:
+        typeof raw.packId ===
+          'string' &&
+        UUID_RE.test(
+          raw.packId,
+        )
+          ? raw.packId
+          : undefined,
+      dir: oneOf(
+        raw.dir,
+        SORT_DIRECTIONS,
+      ),
+      view:
+        oneOf(
+          raw.view,
+          LIBRARY_VIEWS,
+        ) ??
+        'grid',
+    };
   return out;
 }
 
-export const DEFAULT_LIBRARY_SEARCH: LibrarySearch = {
-  q: '',
-  sort: 'recent',
-  artist: undefined,
-  dir: undefined,
-  view: 'grid',
-};
+export const DEFAULT_LIBRARY_SEARCH: LibrarySearch =
+  {
+    q: '',
+    sort: 'recent',
+    artist:
+      undefined,
+    dir: undefined,
+    view: 'grid',
+  };
 
 /**
  * The sort a browse should run under, given what the user has actually asked
@@ -168,10 +285,28 @@ export const DEFAULT_LIBRARY_SEARCH: LibrarySearch = {
  *   `recent` rather than producing an arbitrary order. This is reachable from a
  *   hand-edited URL and from clearing the search box with the sort left alone.
  */
-export function effectiveLibrarySort(sort: LibrarySort, query: string | undefined): LibrarySort {
-  const hasQuery = Boolean(query && query.trim());
-  if (!hasQuery) return sort === 'relevance' ? 'recent' : sort;
-  return sort === 'recent' ? 'relevance' : sort;
+export function effectiveLibrarySort(
+  sort: LibrarySort,
+  query:
+    | string
+    | undefined,
+): LibrarySort {
+  const hasQuery =
+    Boolean(
+      query &&
+      query.trim(),
+    );
+  if (
+    !hasQuery
+  )
+    return sort ===
+      'relevance'
+      ? 'recent'
+      : sort;
+  return sort ===
+    'recent'
+    ? 'relevance'
+    : sort;
 }
 
 /**
@@ -182,6 +317,14 @@ export function effectiveLibrarySort(sort: LibrarySort, query: string | undefine
  * `MultiplayerLobby` mount under `/slice-it/`) that read search loosely typed
  * rather than through `Route.useSearch()`, and it is cheap enough to always run.
  */
-export function normalizeLibrarySearch(raw: unknown): LibrarySearch {
-  return parseLibrarySearch((raw && typeof raw === 'object' ? raw : {}) as LibrarySearchInput);
+export function normalizeLibrarySearch(
+  raw: unknown,
+): LibrarySearch {
+  return parseLibrarySearch(
+    (raw &&
+    typeof raw ===
+      'object'
+      ? raw
+      : {}) as LibrarySearchInput,
+  );
 }

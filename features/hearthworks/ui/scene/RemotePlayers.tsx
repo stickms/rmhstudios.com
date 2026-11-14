@@ -7,80 +7,313 @@
  * figure toward where the host last saw them instead. Their own skin shows (model or stand-in).
  */
 
-import { useEffect, useMemo, useRef } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { useFrame } from '@react-three/fiber';
 import type * as THREE from 'three';
 import { PALETTE } from '@features/hearthworks/engine/art';
-import { newDrive, type AirState } from '@features/hearthworks/engine/skins/animator';
-import { MotionEstimator, airFromVelocity } from '@features/hearthworks/engine/skins/motion-estimator';
-import { hearthworksStore, useHearthworks } from '@features/hearthworks/engine/store';
+import {
+  newDrive,
+  type AirState,
+} from '@features/hearthworks/engine/skins/animator';
+import {
+  MotionEstimator,
+  airFromVelocity,
+} from '@features/hearthworks/engine/skins/motion-estimator';
+import {
+  hearthworksStore,
+  useHearthworks,
+} from '@features/hearthworks/engine/store';
 import { tileTop } from '@features/hearthworks/engine/world';
 import { driveFromEvents } from './figure-events';
 import { GunProp } from './GunProp';
 import { SkinFigure } from './SkinFigure';
 
-function RemotePlayer({ id }: { id: string }) {
-  const root = useRef<THREE.Group>(null);
-  const skin = useHearthworks((s) => s.world.players[id]?.skin ?? 'citizen');
-  const armed = useHearthworks((s) => (s.world.players[id]?.arms.equipped ?? null) !== null);
-  const poses = useHearthworks((s) => s.driver?.poses);
-  const drive = useMemo(() => newDrive(), []);
-  const motion = useMemo(() => new MotionEstimator(), []);
-  const lastY = useRef<number | null>(null);
-  const air = useRef<AirState>('ground');
+function RemotePlayer({
+  id,
+}: {
+  id: string;
+}) {
+  const root =
+    useRef<THREE.Group>(
+      null,
+    );
+  const skin =
+    useHearthworks(
+      (
+        s,
+      ) =>
+        s
+          .world
+          .players[
+          id
+        ]
+          ?.skin ??
+        'citizen',
+    );
+  const armed =
+    useHearthworks(
+      (
+        s,
+      ) =>
+        (s
+          .world
+          .players[
+          id
+        ]
+          ?.arms
+          .equipped ??
+          null) !==
+        null,
+    );
+  const poses =
+    useHearthworks(
+      (
+        s,
+      ) =>
+        s
+          .driver
+          ?.poses,
+    );
+  const drive =
+    useMemo(
+      () =>
+        newDrive(),
+      [],
+    );
+  const motion =
+    useMemo(
+      () =>
+        new MotionEstimator(),
+      [],
+    );
+  const lastY =
+    useRef<
+      | number
+      | null
+    >(
+      null,
+    );
+  const air =
+    useRef<AirState>(
+      'ground',
+    );
 
-  useEffect(() => driveFromEvents(hearthworksStore, { kind: 'player', id }, drive), [drive, id]);
+  useEffect(
+    () =>
+      driveFromEvents(
+        hearthworksStore,
+        {
+          kind: 'player',
+          id,
+        },
+        drive,
+      ),
+    [
+      drive,
+      id,
+    ],
+  );
 
-  useFrame((_, delta) => {
-    const g = root.current;
-    const w = hearthworksStore.getState().world;
-    const p = w.players[id];
-    if (!g || !p) return;
-    const pose = poses?.sample(id, performance.now());
-    if (pose) {
-      const y = tileTop(w, Math.round(pose.x), Math.round(pose.z));
-      const vy = lastY.current === null || delta <= 0 ? 0 : (y - lastY.current) / delta;
-      lastY.current = y;
-      air.current = airFromVelocity(air.current, vy);
-      g.visible = true;
-      g.position.set(pose.x, y, pose.z);
-      // Face the way they are heading; stand as they were last facing when they stop.
-      g.rotation.y = pose.yaw;
-      drive.speed = pose.speed;
-      drive.air = air.current;
-    } else {
-      motion.observe(p.x, tileTop(w, Math.round(p.x), Math.round(p.z)), p.z);
-      const m = motion.step(delta);
-      g.visible = true;
-      g.position.set(m.x, m.y, m.z);
-      g.rotation.y = m.yaw;
-      drive.speed = m.speed;
-      drive.air = m.air;
-    }
-    drive.dead = p.arms.downedUntil > w.tick;
-  });
+  useFrame(
+    (
+      _,
+      delta,
+    ) => {
+      const g =
+        root.current;
+      const w =
+        hearthworksStore.getState()
+          .world;
+      const p =
+        w
+          .players[
+          id
+        ];
+      if (
+        !g ||
+        !p
+      )
+        return;
+      const pose =
+        poses?.sample(
+          id,
+          performance.now(),
+        );
+      if (
+        pose
+      ) {
+        const y =
+          tileTop(
+            w,
+            Math.round(
+              pose.x,
+            ),
+            Math.round(
+              pose.z,
+            ),
+          );
+        const vy =
+          lastY.current ===
+            null ||
+          delta <=
+            0
+            ? 0
+            : (y -
+                lastY.current) /
+              delta;
+        lastY.current =
+          y;
+        air.current =
+          airFromVelocity(
+            air.current,
+            vy,
+          );
+        g.visible = true;
+        g.position.set(
+          pose.x,
+          y,
+          pose.z,
+        );
+        // Face the way they are heading; stand as they were last facing when they stop.
+        g.rotation.y =
+          pose.yaw;
+        drive.speed =
+          pose.speed;
+        drive.air =
+          air.current;
+      } else {
+        motion.observe(
+          p.x,
+          tileTop(
+            w,
+            Math.round(
+              p.x,
+            ),
+            Math.round(
+              p.z,
+            ),
+          ),
+          p.z,
+        );
+        const m =
+          motion.step(
+            delta,
+          );
+        g.visible = true;
+        g.position.set(
+          m.x,
+          m.y,
+          m.z,
+        );
+        g.rotation.y =
+          m.yaw;
+        drive.speed =
+          m.speed;
+        drive.air =
+          m.air;
+      }
+      drive.dead =
+        p
+          .arms
+          .downedUntil >
+        w.tick;
+    },
+  );
 
   return (
-    <group ref={root} visible={false}>
-      <SkinFigure skin={skin} drive={drive} held={armed ? <GunProp color={PALETTE.ink} /> : null} />
+    <group
+      ref={
+        root
+      }
+      visible={
+        false
+      }
+    >
+      <SkinFigure
+        skin={
+          skin
+        }
+        drive={
+          drive
+        }
+        held={
+          armed ? (
+            <GunProp
+              color={
+                PALETTE.ink
+              }
+            />
+          ) : null
+        }
+      />
     </group>
   );
 }
 
 export function RemotePlayers() {
-  const world = useHearthworks((s) => s.world);
-  const me = useHearthworks((s) => s.playerId);
-  const shared = useHearthworks((s) => s.driver !== null);
-  useHearthworks((s) => s.rev);
+  const world =
+    useHearthworks(
+      (
+        s,
+      ) =>
+        s.world,
+    );
+  const me =
+    useHearthworks(
+      (
+        s,
+      ) =>
+        s.playerId,
+    );
+  const shared =
+    useHearthworks(
+      (
+        s,
+      ) =>
+        s.driver !==
+        null,
+    );
+  useHearthworks(
+    (
+      s,
+    ) =>
+      s.rev,
+  );
 
-  if (!shared) return null;
+  if (
+    !shared
+  )
+    return null;
   return (
     <>
-      {Object.values(world.players)
-        .filter((p) => p.id !== me)
-        .map((p) => (
-          <RemotePlayer key={p.id} id={p.id} />
-        ))}
+      {Object.values(
+        world.players,
+      )
+        .filter(
+          (
+            p,
+          ) =>
+            p.id !==
+            me,
+        )
+        .map(
+          (
+            p,
+          ) => (
+            <RemotePlayer
+              key={
+                p.id
+              }
+              id={
+                p.id
+              }
+            />
+          ),
+        )}
     </>
   );
 }

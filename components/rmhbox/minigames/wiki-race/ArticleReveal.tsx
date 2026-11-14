@@ -13,7 +13,11 @@
  */
 
 import { m as motion } from 'framer-motion';
-import { ArrowRight, BookOpen, Target } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Target,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface ArticleInfo {
@@ -28,90 +32,198 @@ interface ArticleRevealProps {
   duration: number;
 }
 
-const difficultyColors: Record<string, string> = {
-  easy: 'bg-app-success/20 text-app-success',
-  medium: 'bg-app-warning/20 text-app-warning',
-  hard: 'bg-app-danger/20 text-app-danger',
-};
+const difficultyColors: Record<
+  string,
+  string
+> =
+  {
+    easy: 'bg-app-success/20 text-app-success',
+    medium:
+      'bg-app-warning/20 text-app-warning',
+    hard: 'bg-app-danger/20 text-app-danger',
+  };
 
 export default function ArticleReveal({
   startArticle,
   targetArticle,
   difficulty,
-  duration: _duration,
+  duration:
+    _duration,
 }: ArticleRevealProps) {
   void _duration;
-  const { t } = useTranslation("c-rmhbox");
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
 
   return (
     <div className="flex flex-col items-center gap-6 py-6">
       <motion.h2
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{
+          opacity: 0,
+          y: -20,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
         className="text-xl font-bold"
       >
         Wiki-Race
       </motion.h2>
 
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
+        initial={{
+          opacity: 0,
+        }}
+        animate={{
+          opacity: 1,
+        }}
+        transition={{
+          delay: 0.2,
+        }}
         className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${
-          difficultyColors[difficulty] ?? difficultyColors.medium
+          difficultyColors[
+            difficulty
+          ] ??
+          difficultyColors.medium
         }`}
       >
-        {difficulty}
+        {
+          difficulty
+        }
       </motion.div>
 
       <div className="flex w-full items-center justify-center gap-4">
         {/* Start article */}
         <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
+          initial={{
+            opacity: 0,
+            x: -30,
+          }}
+          animate={{
+            opacity: 1,
+            x: 0,
+          }}
+          transition={{
+            delay: 0.4,
+            duration: 0.5,
+          }}
           className="app-glass flex-1 rounded-app p-4"
         >
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-app-text-muted">
-            <BookOpen size={12} />
-            {t("wiki-race-start-label", { defaultValue: "Start" })}
+            <BookOpen
+              size={
+                12
+              }
+            />
+            {t(
+              'wiki-race-start-label',
+              {
+                defaultValue:
+                  'Start',
+              },
+            )}
           </div>
-          <h3 className="text-lg font-bold text-app-accent">{startArticle.title}</h3>
-          <p className="mt-1 text-sm text-app-text-muted">{startArticle.description}</p>
+          <h3 className="text-lg font-bold text-app-accent">
+            {
+              startArticle.title
+            }
+          </h3>
+          <p className="mt-1 text-sm text-app-text-muted">
+            {
+              startArticle.description
+            }
+          </p>
         </motion.div>
 
         {/* Arrow */}
         <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.7, type: 'spring' }}
+          initial={{
+            opacity: 0,
+            scale: 0,
+          }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+          }}
+          transition={{
+            delay: 0.7,
+            type: 'spring',
+          }}
         >
-          <ArrowRight size={24} className="text-app-accent" />
+          <ArrowRight
+            size={
+              24
+            }
+            className="text-app-accent"
+          />
         </motion.div>
 
         {/* Target article */}
         <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 1, duration: 0.5 }}
+          initial={{
+            opacity: 0,
+            x: 30,
+          }}
+          animate={{
+            opacity: 1,
+            x: 0,
+          }}
+          transition={{
+            delay: 1,
+            duration: 0.5,
+          }}
           className="flex-1 rounded-app border-2 border-app-accent/50 bg-app-accent/5 p-4"
         >
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-app-accent">
-            <Target size={12} />
-            {t("wiki-race-target-label", { defaultValue: "Target" })}
+            <Target
+              size={
+                12
+              }
+            />
+            {t(
+              'wiki-race-target-label',
+              {
+                defaultValue:
+                  'Target',
+              },
+            )}
           </div>
-          <h3 className="text-lg font-bold">{targetArticle.title}</h3>
-          <p className="mt-1 text-sm text-app-text-muted">{targetArticle.description}</p>
+          <h3 className="text-lg font-bold">
+            {
+              targetArticle.title
+            }
+          </h3>
+          <p className="mt-1 text-sm text-app-text-muted">
+            {
+              targetArticle.description
+            }
+          </p>
         </motion.div>
       </div>
 
       <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
+        initial={{
+          opacity: 0,
+        }}
+        animate={{
+          opacity: 1,
+        }}
+        transition={{
+          delay: 1.5,
+        }}
         className="text-sm text-app-text-muted"
       >
-        {t("wiki-race-navigate-instruction", { defaultValue: "Navigate from Start → Target by clicking only wiki links!" })}
+        {t(
+          'wiki-race-navigate-instruction',
+          {
+            defaultValue:
+              'Navigate from Start → Target by clicking only wiki links!',
+          },
+        )}
       </motion.p>
     </div>
   );

@@ -23,25 +23,72 @@
  * `limit` is clamped to at least 1, so a bad value degrades to sequential
  * execution rather than deadlocking on zero workers.
  */
-export async function mapWithConcurrency<T, R>(
+export async function mapWithConcurrency<
+  T,
+  R,
+>(
   items: readonly T[],
   limit: number,
-  fn: (item: T, index: number) => Promise<R>,
-): Promise<R[]> {
-  if (items.length === 0) return [];
+  fn: (
+    item: T,
+    index: number,
+  ) => Promise<R>,
+): Promise<
+  R[]
+> {
+  if (
+    items.length ===
+    0
+  )
+    return [];
 
-  const width = Math.max(1, Math.min(Math.floor(limit) || 1, items.length));
-  const results = new Array<R>(items.length);
+  const width =
+    Math.max(
+      1,
+      Math.min(
+        Math.floor(
+          limit,
+        ) ||
+          1,
+        items.length,
+      ),
+    );
+  const results =
+    new Array<R>(
+      items.length,
+    );
   let cursor = 0;
 
-  const worker = async (): Promise<void> => {
-    for (;;) {
-      const index = cursor++;
-      if (index >= items.length) return;
-      results[index] = await fn(items[index], index);
-    }
-  };
+  const worker =
+    async (): Promise<void> => {
+      for (;;) {
+        const index =
+          cursor++;
+        if (
+          index >=
+          items.length
+        )
+          return;
+        results[
+          index
+        ] =
+          await fn(
+            items[
+              index
+            ],
+            index,
+          );
+      }
+    };
 
-  await Promise.all(Array.from({ length: width }, worker));
+  await Promise.all(
+    Array.from(
+      {
+        length:
+          width,
+      },
+      worker,
+    ),
+  );
   return results;
 }

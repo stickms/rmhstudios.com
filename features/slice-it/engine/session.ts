@@ -14,7 +14,11 @@
 
 import { createSeededRandom } from './chart';
 
-export type SessionMode = 'warmup' | 'endless' | 'marathon' | 'timeAttack';
+export type SessionMode =
+  | 'warmup'
+  | 'endless'
+  | 'marathon'
+  | 'timeAttack';
 
 export interface SessionRun {
   /** 0–1. */
@@ -41,7 +45,11 @@ export interface SessionState {
   /** Seconds of gameplay elapsed, for `timeAttack`. Menus do not count. */
   elapsed: number;
   /** Set once the session is over, with the reason. */
-  ended: null | 'failed' | 'time' | 'stopped';
+  ended:
+    | null
+    | 'failed'
+    | 'time'
+    | 'stopped';
 }
 
 export interface SessionLimits {
@@ -50,15 +58,23 @@ export interface SessionLimits {
 }
 
 /** A fresh session at a starting difficulty. */
-export function startSession(mode: SessionMode, startRating: number): SessionState {
+export function startSession(
+  mode: SessionMode,
+  startRating: number,
+): SessionState {
   return {
     mode,
-    history: [],
+    history:
+      [],
     score: 0,
-    targetRating: clampRating(startRating),
+    targetRating:
+      clampRating(
+        startRating,
+      ),
     drainMultiplier: 1,
     elapsed: 0,
-    ended: null,
+    ended:
+      null,
   };
 }
 
@@ -67,9 +83,22 @@ export function startSession(mode: SessionMode, startRating: number): SessionSta
  * session that has been going well for twenty songs should keep asking for the
  * hardest charts that exist, not for a rating no chart has.
  */
-function clampRating(rating: number): number {
-  if (!Number.isFinite(rating)) return 5;
-  return Math.max(1, Math.min(20, rating));
+function clampRating(
+  rating: number,
+): number {
+  if (
+    !Number.isFinite(
+      rating,
+    )
+  )
+    return 5;
+  return Math.max(
+    1,
+    Math.min(
+      20,
+      rating,
+    ),
+  );
 }
 
 /**
@@ -81,11 +110,36 @@ function clampRating(rating: number): number {
  * roughly a 75% clear rate: high enough to feel like progress, low enough that
  * the ladder is still climbing.
  */
-export function nextRating(current: number, run: SessionRun): number {
-  if (!run.cleared) return clampRating(current - 1.2);
-  if (run.accuracy > 0.97) return clampRating(current + 0.8);
-  if (run.accuracy > 0.9) return clampRating(current + 0.4);
-  return clampRating(current);
+export function nextRating(
+  current: number,
+  run: SessionRun,
+): number {
+  if (
+    !run.cleared
+  )
+    return clampRating(
+      current -
+        1.2,
+    );
+  if (
+    run.accuracy >
+    0.97
+  )
+    return clampRating(
+      current +
+        0.8,
+    );
+  if (
+    run.accuracy >
+    0.9
+  )
+    return clampRating(
+      current +
+        0.4,
+    );
+  return clampRating(
+    current,
+  );
 }
 
 /**
@@ -96,10 +150,24 @@ export function nextRating(current: number, run: SessionRun): number {
  * means it is a timer with music over it. Logarithmic in the song count so the
  * first few steps are perceptible and the twentieth is not absurd.
  */
-export function endlessStep(songsCleared: number, baseRating: number) {
+export function endlessStep(
+  songsCleared: number,
+  baseRating: number,
+) {
   return {
-    targetRating: clampRating(baseRating + Math.log2(songsCleared + 1) * 1.5),
-    drainMultiplier: 1 + songsCleared * 0.08,
+    targetRating:
+      clampRating(
+        baseRating +
+          Math.log2(
+            songsCleared +
+              1,
+          ) *
+            1.5,
+      ),
+    drainMultiplier:
+      1 +
+      songsCleared *
+        0.08,
   };
 }
 
@@ -116,29 +184,64 @@ export function advanceSession(
   run: SessionRun,
   limits: SessionLimits = {},
 ): SessionState {
-  if (state.ended) return state;
+  if (
+    state.ended
+  )
+    return state;
 
-  const next: SessionState = {
-    ...state,
-    history: [...state.history, chartId],
-    score: state.score + Math.max(0, run.score),
-    elapsed: state.elapsed + Math.max(0, run.duration),
-  };
+  const next: SessionState =
+    {
+      ...state,
+      history:
+        [
+          ...state.history,
+          chartId,
+        ],
+      score:
+        state.score +
+        Math.max(
+          0,
+          run.score,
+        ),
+      elapsed:
+        state.elapsed +
+        Math.max(
+          0,
+          run.duration,
+        ),
+    };
 
-  switch (state.mode) {
+  switch (
+    state.mode
+  ) {
     case 'warmup':
-      next.targetRating = nextRating(state.targetRating, run);
+      next.targetRating =
+        nextRating(
+          state.targetRating,
+          run,
+        );
       break;
 
     case 'endless': {
-      if (!run.cleared) {
+      if (
+        !run.cleared
+      ) {
         // Endless ends on a failure, by definition — that is the score.
-        next.ended = 'failed';
+        next.ended =
+          'failed';
         break;
       }
-      const step = endlessStep(next.history.length, state.targetRating);
-      next.targetRating = step.targetRating;
-      next.drainMultiplier = step.drainMultiplier;
+      const step =
+        endlessStep(
+          next
+            .history
+            .length,
+          state.targetRating,
+        );
+      next.targetRating =
+        step.targetRating;
+      next.drainMultiplier =
+        step.drainMultiplier;
       break;
     }
 
@@ -146,8 +249,14 @@ export function advanceSession(
       // Checked AFTER the run is banked. A session that discarded the song the
       // clock expired during would punish the player for the length of a chart
       // they did not choose.
-      if (limits.timeLimit !== undefined && next.elapsed >= limits.timeLimit) {
-        next.ended = 'time';
+      if (
+        limits.timeLimit !==
+          undefined &&
+        next.elapsed >=
+          limits.timeLimit
+      ) {
+        next.ended =
+          'time';
       }
       break;
 
@@ -161,8 +270,16 @@ export function advanceSession(
 }
 
 /** Stop a session deliberately. */
-export function stopSession(state: SessionState): SessionState {
-  return state.ended ? state : { ...state, ended: 'stopped' };
+export function stopSession(
+  state: SessionState,
+): SessionState {
+  return state.ended
+    ? state
+    : {
+        ...state,
+        ended:
+          'stopped',
+      };
 }
 
 /**
@@ -176,30 +293,85 @@ export function stopSession(state: SessionState): SessionState {
  */
 export function pickNextChart(
   state: SessionState,
-  pool: { id: string; rating: number | null }[],
+  pool: {
+    id: string;
+    rating:
+      | number
+      | null;
+  }[],
   seed: string,
-): string | null {
-  const played = new Set(state.history);
-  const fresh = pool.filter((chart) => !played.has(chart.id));
-  if (fresh.length === 0) return null;
+):
+  | string
+  | null {
+  const played =
+    new Set(
+      state.history,
+    );
+  const fresh =
+    pool.filter(
+      (
+        chart,
+      ) =>
+        !played.has(
+          chart.id,
+        ),
+    );
+  if (
+    fresh.length ===
+    0
+  )
+    return null;
 
   // Marathon and time attack do not ladder, so anything unplayed will do —
   // seeded so a session is reproducible from its seed for testing and for a
   // shared "same queue as me" link.
-  const rng = createSeededRandom(`${seed}:${state.history.length}`);
-  if (state.mode === 'marathon' || state.mode === 'timeAttack') {
-    return fresh[Math.floor(rng() * fresh.length)].id;
+  const rng =
+    createSeededRandom(
+      `${seed}:${state.history.length}`,
+    );
+  if (
+    state.mode ===
+      'marathon' ||
+    state.mode ===
+      'timeAttack'
+  ) {
+    return fresh[
+      Math.floor(
+        rng() *
+          fresh.length,
+      )
+    ]
+      .id;
   }
 
   // Laddered modes want the closest rating to the target. Unrated charts sort
   // last rather than being excluded: a pool of entirely unrated charts should
   // still produce a session, just an unladdered one.
-  const scored = fresh
-    .map((chart) => ({
-      chart,
-      distance: chart.rating === null ? Infinity : Math.abs(chart.rating - state.targetRating),
-    }))
-    .sort((a, b) => a.distance - b.distance);
+  const scored =
+    fresh
+      .map(
+        (
+          chart,
+        ) => ({
+          chart,
+          distance:
+            chart.rating ===
+            null
+              ? Infinity
+              : Math.abs(
+                  chart.rating -
+                    state.targetRating,
+                ),
+        }),
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          a.distance -
+          b.distance,
+      );
 
   // Choose among the closest few rather than strictly the nearest, or a
   // session at a stable rating serves the same chart every time the player
@@ -209,9 +381,30 @@ export function pickNextChart(
   // pool on a small library — which is every new install — so the ladder would
   // silently degrade to random selection at exactly the point a player is most
   // likely to notice the game handing them something far too hard.
-  const bandSize = Math.max(1, Math.min(5, Math.ceil(scored.length / 3)));
-  const band = scored.slice(0, bandSize);
-  return band[Math.floor(rng() * band.length)].chart.id;
+  const bandSize =
+    Math.max(
+      1,
+      Math.min(
+        5,
+        Math.ceil(
+          scored.length /
+            3,
+        ),
+      ),
+    );
+  const band =
+    scored.slice(
+      0,
+      bandSize,
+    );
+  return band[
+    Math.floor(
+      rng() *
+        band.length,
+    )
+  ]
+    .chart
+    .id;
 }
 
 /**
@@ -227,25 +420,102 @@ export function pickNextChart(
  * everybody plays the same unusual configuration is the only time most of them
  * get used.
  */
-export function weeklyModifierKeys(weekKey: string): string[] {
-  const pool = ['bombs', 'switching', 'spin', 'strictTiming', 'oneTrack', 'sRandom'];
-  const rng = createSeededRandom(`slice-weekly:${weekKey}`);
-  const shuffled = [...pool];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+export function weeklyModifierKeys(
+  weekKey: string,
+): string[] {
+  const pool =
+    [
+      'bombs',
+      'switching',
+      'spin',
+      'strictTiming',
+      'oneTrack',
+      'sRandom',
+    ];
+  const rng =
+    createSeededRandom(
+      `slice-weekly:${weekKey}`,
+    );
+  const shuffled =
+    [
+      ...pool,
+    ];
+  for (
+    let i =
+      shuffled.length -
+      1;
+    i >
+    0;
+    i--
+  ) {
+    const j =
+      Math.floor(
+        rng() *
+          (i +
+            1),
+      );
+    [
+      shuffled[
+        i
+      ],
+      shuffled[
+        j
+      ],
+    ] =
+      [
+        shuffled[
+          j
+        ],
+        shuffled[
+          i
+        ],
+      ];
   }
-  return shuffled.slice(0, 2).sort();
+  return shuffled
+    .slice(
+      0,
+      2,
+    )
+    .sort();
 }
 
 /** ISO-ish week key (`2026-W32`) in UTC, matching the daily's day-key style. */
-export function weekKeyOf(date: Date): string {
-  const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+export function weekKeyOf(
+  date: Date,
+): string {
+  const utc =
+    new Date(
+      Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+      ),
+    );
   // Thursday of the current week decides the year, per ISO 8601 — without this
   // the last days of December land in week 1 of the wrong year.
-  const day = utc.getUTCDay() || 7;
-  utc.setUTCDate(utc.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
-  const week = Math.ceil(((utc.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+  const day =
+    utc.getUTCDay() ||
+    7;
+  utc.setUTCDate(
+    utc.getUTCDate() +
+      4 -
+      day,
+  );
+  const yearStart =
+    new Date(
+      Date.UTC(
+        utc.getUTCFullYear(),
+        0,
+        1,
+      ),
+    );
+  const week =
+    Math.ceil(
+      ((utc.getTime() -
+        yearStart.getTime()) /
+        86_400_000 +
+        1) /
+        7,
+    );
   return `${utc.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 }

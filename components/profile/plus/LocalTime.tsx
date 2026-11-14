@@ -1,7 +1,16 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Clock, Moon } from 'lucide-react';
-import { localClock, type LocalClock } from '@/lib/profile/plus';
+import {
+  Clock,
+  Moon,
+} from 'lucide-react';
+import {
+  localClock,
+  type LocalClock,
+} from '@/lib/profile/plus';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useProfilePlus } from './useProfilePlus';
 import { useArrival } from '@/components/ui/arrive';
@@ -12,18 +21,52 @@ import { cn } from '@/lib/utils';
  * from the member's opt-in IANA zone — nothing about the viewer is sent
  * anywhere, and it ticks once a minute, not per frame.
  */
-function useLocalClock(timezone: string | null | undefined): LocalClock | null {
-  const [clock, setClock] = useState<LocalClock | null>(null);
+function useLocalClock(
+  timezone:
+    | string
+    | null
+    | undefined,
+): LocalClock | null {
+  const [
+    clock,
+    setClock,
+  ] =
+    useState<LocalClock | null>(
+      null,
+    );
   useEffect(() => {
-    if (!timezone) {
-      setClock(null);
+    if (
+      !timezone
+    ) {
+      setClock(
+        null,
+      );
       return;
     }
-    const tick = () => setClock(localClock(timezone, new Date(), document.documentElement.lang));
+    const tick =
+      () =>
+        setClock(
+          localClock(
+            timezone,
+            new Date(),
+            document
+              .documentElement
+              .lang,
+          ),
+        );
     tick();
-    const id = window.setInterval(tick, 60_000);
-    return () => window.clearInterval(id);
-  }, [timezone]);
+    const id =
+      window.setInterval(
+        tick,
+        60_000,
+      );
+    return () =>
+      window.clearInterval(
+        id,
+      );
+  }, [
+    timezone,
+  ]);
   return clock;
 }
 
@@ -32,16 +75,37 @@ export function LocalTimeChip({
   name,
   className,
 }: {
-  timezone: string | null | undefined;
+  timezone:
+    | string
+    | null
+    | undefined;
   name: string;
   className?: string;
 }) {
-  const { t } = useTranslation('f-profile-plus');
-  const clock = useLocalClock(timezone);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-profile-plus',
+    );
+  const clock =
+    useLocalClock(
+      timezone,
+    );
   // Computed in the browser after mount, so it always lands after the first paint.
-  const arrival = useArrival(clock !== null);
-  if (!clock) return null;
-  const Icon = clock.isNight ? Moon : Clock;
+  const arrival =
+    useArrival(
+      clock !==
+        null,
+    );
+  if (
+    !clock
+  )
+    return null;
+  const Icon =
+    clock.isNight
+      ? Moon
+      : Clock;
   return (
     <span
       className={cn(
@@ -49,15 +113,25 @@ export function LocalTimeChip({
         arrival,
         className,
       )}
-      title={timezone ?? undefined}
+      title={
+        timezone ??
+        undefined
+      }
     >
-      <Icon className="size-4 shrink-0" aria-hidden />
+      <Icon
+        className="size-4 shrink-0"
+        aria-hidden
+      />
       <span>
-        {t('local-time', {
-          time: clock.time,
-          name,
-          defaultValue: "It's {{time}} for {{name}}",
-        })}
+        {t(
+          'local-time',
+          {
+            time: clock.time,
+            name,
+            defaultValue:
+              "It's {{time}} for {{name}}",
+          },
+        )}
       </span>
     </span>
   );
@@ -68,10 +142,34 @@ export function LocalTimeChip({
  * cacheable request) once the header has rendered, and renders nothing for the
  * many members who have not shared a timezone.
  */
-export default function DmLocalTime({ userId, name }: { userId: string; name: string }) {
+export default function DmLocalTime({
+  userId,
+  name,
+}: {
+  userId: string;
+  name: string;
+}) {
   // After first paint and idle: the header must never wait on this.
-  const idle = useIdleReady();
-  const view = useProfilePlus(userId, idle);
-  if (!view?.timezone) return null;
-  return <LocalTimeChip timezone={view.timezone} name={name} className="text-xs" />;
+  const idle =
+    useIdleReady();
+  const view =
+    useProfilePlus(
+      userId,
+      idle,
+    );
+  if (
+    !view?.timezone
+  )
+    return null;
+  return (
+    <LocalTimeChip
+      timezone={
+        view.timezone
+      }
+      name={
+        name
+      }
+      className="text-xs"
+    />
+  );
 }

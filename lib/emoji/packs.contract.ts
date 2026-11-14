@@ -8,43 +8,119 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type { InstalledPack, PackItem, PackSummary } from '@/lib/emoji/packs';
-import type { addItemSchema, browsePacksQuery, createPackSchema } from '@/lib/emoji/packs-schema';
+import type {
+  InstalledPack,
+  PackItem,
+  PackSummary,
+} from '@/lib/emoji/packs';
+import type {
+  addItemSchema,
+  browsePacksQuery,
+  createPackSchema,
+} from '@/lib/emoji/packs-schema';
 
-export const browsePacksApi = endpoint<{
-  query: z.infer<typeof browsePacksQuery>;
-  res: { packs: PackSummary[] };
-}>()({ method: 'GET', path: '/api/emoji-packs' });
+export const browsePacksApi =
+  endpoint<{
+    query: z.infer<
+      typeof browsePacksQuery
+    >;
+    res: {
+      packs: PackSummary[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/emoji-packs',
+    },
+  );
 
 /** 201. */
-export const createPackApi = endpoint<{
-  body: z.infer<typeof createPackSchema>;
-  res: { pack: PackSummary };
-}>()({ method: 'POST', path: '/api/emoji-packs' });
+export const createPackApi =
+  endpoint<{
+    body: z.infer<
+      typeof createPackSchema
+    >;
+    res: {
+      pack: PackSummary;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/emoji-packs',
+    },
+  );
 
 /** The viewer's installed packs (with items) and the packs they own. */
-export const installedPacksApi = endpoint<{
-  res: { installed: InstalledPack[]; owned: PackSummary[] };
-}>()({ method: 'GET', path: '/api/emoji-packs/installed' });
+export const installedPacksApi =
+  endpoint<{
+    res: {
+      installed: InstalledPack[];
+      owned: PackSummary[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/emoji-packs/installed',
+    },
+  );
 
-export const subscribePackApi = endpoint<{ res: { ok: true } }>()({
-  method: 'POST',
-  path: '/api/emoji-packs/$slug/subscribe',
-});
+export const subscribePackApi =
+  endpoint<{
+    res: {
+      ok: true;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/emoji-packs/$slug/subscribe',
+    },
+  );
 
-export const unsubscribePackApi = endpoint<{ res: { ok: true } }>()({
-  method: 'DELETE',
-  path: '/api/emoji-packs/$slug/subscribe',
-});
+export const unsubscribePackApi =
+  endpoint<{
+    res: {
+      ok: true;
+    };
+  }>()(
+    {
+      method:
+        'DELETE',
+      path: '/api/emoji-packs/$slug/subscribe',
+    },
+  );
 
 /** 201. */
-export const addPackItemApi = endpoint<{
-  body: z.infer<typeof addItemSchema>;
-  res: { item: PackItem };
-}>()({ method: 'POST', path: '/api/emoji-packs/$slug/items' });
+export const addPackItemApi =
+  endpoint<{
+    body: z.infer<
+      typeof addItemSchema
+    >;
+    res: {
+      item: PackItem;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/emoji-packs/$slug/items',
+    },
+  );
 
 /** Multipart: `image` and `kind` ('emoji' | 'sticker'). 402 when building packs needs a membership. */
-export const uploadPackItemImageApi = endpoint<{ body: FormData; res: { mediaId: string } }>()({
-  method: 'POST',
-  path: '/api/emoji-packs/$slug/upload',
-});
+export const uploadPackItemImageApi =
+  endpoint<{
+    body: FormData;
+    res: {
+      mediaId: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/emoji-packs/$slug/upload',
+    },
+  );

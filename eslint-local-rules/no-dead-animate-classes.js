@@ -13,11 +13,13 @@
  */
 import { createPatternRule } from './class-strings.js';
 
-export default createPatternRule({
-  description:
-    'No tailwindcss-animate classes: the plugin is not installed (design-language §13 rule 9)',
-  message:
-    '`{{match}}` compiles to no CSS (tailwindcss-animate is not installed). Use lib/motion.ts variants (scaleIn / popIn / modalContent) or an existing CSS enter.',
-  pattern:
-    /(?<![\w:./-])(?:[\w-]+(?:\[[^\]]*\])?:)*(?:animate-(?:in|out)|fade-(?:in|out)|zoom-(?:in|out)|slide-(?:in-from|out-to)-(?:top|bottom|left|right)|fill-mode-(?:both|forwards|backwards|none))(?:-(?:\d+(?:\/\d+)?|\[[^\]]*\]))?(?![\w./-])/g,
-});
+export default createPatternRule(
+  {
+    description:
+      'No tailwindcss-animate classes: the plugin is not installed (design-language §13 rule 9)',
+    message:
+      '`{{match}}` compiles to no CSS (tailwindcss-animate is not installed). Use lib/motion.ts variants (scaleIn / popIn / modalContent) or an existing CSS enter.',
+    pattern:
+      /(?<![\w:./-])(?:[\w-]+(?:\[[^\]]*\])?:)*(?:animate-(?:in|out)|fade-(?:in|out)|zoom-(?:in|out)|slide-(?:in-from|out-to)-(?:top|bottom|left|right)|fill-mode-(?:both|forwards|backwards|none))(?:-(?:\d+(?:\/\d+)?|\[[^\]]*\]))?(?![\w./-])/g,
+  },
+);

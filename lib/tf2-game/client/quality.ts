@@ -24,12 +24,20 @@
  * WebGL context when given one.
  */
 
-import type { DetailLevel, GameSettings, QualityTier } from './settings';
+import type {
+  DetailLevel,
+  GameSettings,
+  QualityTier,
+} from './settings';
 
 /** The Video tab's Advanced knobs (`GameSettings.video`). */
-export type VideoOverrides = GameSettings['video'];
+export type VideoOverrides =
+  GameSettings['video'];
 
-export type DeviceTier = 'desktop' | 'laptop' | 'mobile';
+export type DeviceTier =
+  | 'desktop'
+  | 'laptop'
+  | 'mobile';
 
 export interface DeviceInfo {
   /** A WebGL2 context is available (three.js needs it). */
@@ -73,144 +81,369 @@ export interface QualityPlan {
   antialias: boolean;
 }
 
-export const TIER_PRESETS: Readonly<Record<DeviceTier, Omit<QualityPlan, 'tier' | 'maxTextureSize'> & { textureCap: number }>> = {
-  desktop: {
-    resolutionScale: 1,
-    minResolutionScale: 0.5,
-    dprCap: 2,
-    textureCap: 1024,
-    anisotropy: 8,
-    particleBudget: 64,
-    propDrawDistance: 0,
-    portalRecursion: 2,
-    targetFrameMs: 1000 / 60,
-    antialias: true,
-  },
-  laptop: {
-    resolutionScale: 0.85,
-    minResolutionScale: 0.5,
-    dprCap: 1.5,
-    textureCap: 1024,
-    anisotropy: 4,
-    particleBudget: 40,
-    propDrawDistance: 4096,
-    portalRecursion: 2,
-    targetFrameMs: 1000 / 60,
-    antialias: false,
-  },
-  mobile: {
-    resolutionScale: 0.7,
-    minResolutionScale: 0.4,
-    dprCap: 1.5,
-    textureCap: 512,
-    anisotropy: 2,
-    particleBudget: 20,
-    propDrawDistance: 2560,
-    portalRecursion: 1,
-    targetFrameMs: 1000 / 30,
-    antialias: false,
-  },
-};
+export const TIER_PRESETS: Readonly<
+  Record<
+    DeviceTier,
+    Omit<
+      QualityPlan,
+      | 'tier'
+      | 'maxTextureSize'
+    > & {
+      textureCap: number;
+    }
+  >
+> =
+  {
+    desktop:
+      {
+        resolutionScale: 1,
+        minResolutionScale: 0.5,
+        dprCap: 2,
+        textureCap: 1024,
+        anisotropy: 8,
+        particleBudget: 64,
+        propDrawDistance: 0,
+        portalRecursion: 2,
+        targetFrameMs:
+          1000 /
+          60,
+        antialias: true,
+      },
+    laptop:
+      {
+        resolutionScale: 0.85,
+        minResolutionScale: 0.5,
+        dprCap: 1.5,
+        textureCap: 1024,
+        anisotropy: 4,
+        particleBudget: 40,
+        propDrawDistance: 4096,
+        portalRecursion: 2,
+        targetFrameMs:
+          1000 /
+          60,
+        antialias: false,
+      },
+    mobile:
+      {
+        resolutionScale: 0.7,
+        minResolutionScale: 0.4,
+        dprCap: 1.5,
+        textureCap: 512,
+        anisotropy: 2,
+        particleBudget: 20,
+        propDrawDistance: 2560,
+        portalRecursion: 1,
+        targetFrameMs:
+          1000 /
+          30,
+        antialias: false,
+      },
+  };
 
 /** The Quality setting's explicit tiers. */
-const SETTING_TIER: Record<Exclude<QualityTier, 'auto'>, DeviceTier> = {
+const SETTING_TIER: Record<
+  Exclude<
+    QualityTier,
+    'auto'
+  >,
+  DeviceTier
+> = {
   low: 'mobile',
-  medium: 'laptop',
+  medium:
+    'laptop',
   high: 'desktop',
 };
 
-const MOBILE_UA = /Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i;
+const MOBILE_UA =
+  /Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i;
 /** Integrated / power-saving GPUs a desktop browser may report. */
-const LOW_POWER_GPU = /Intel\(R\) (HD|UHD) Graphics|Mali|Adreno|PowerVR|Apple GPU|SwiftShader|llvmpipe|Software/i;
+const LOW_POWER_GPU =
+  /Intel\(R\) (HD|UHD) Graphics|Mali|Adreno|PowerVR|Apple GPU|SwiftShader|llvmpipe|Software/i;
 
 /** The device class from what the browser tells us. Pure. */
-export function deviceTier(d: DeviceInfo): DeviceTier {
-  if (d.touchFirst || d.mobileUa) return 'mobile';
-  const fewCores = d.cores !== undefined && d.cores <= 4;
-  const lowMemory = d.deviceMemory !== undefined && d.deviceMemory <= 4;
-  const smallTextures = d.maxTextureSize > 0 && d.maxTextureSize < 8192;
-  const lowPowerGpu = d.gpu !== '' && LOW_POWER_GPU.test(d.gpu);
-  if (fewCores || lowMemory || smallTextures || lowPowerGpu) return 'laptop';
+export function deviceTier(
+  d: DeviceInfo,
+): DeviceTier {
+  if (
+    d.touchFirst ||
+    d.mobileUa
+  )
+    return 'mobile';
+  const fewCores =
+    d.cores !==
+      undefined &&
+    d.cores <=
+      4;
+  const lowMemory =
+    d.deviceMemory !==
+      undefined &&
+    d.deviceMemory <=
+      4;
+  const smallTextures =
+    d.maxTextureSize >
+      0 &&
+    d.maxTextureSize <
+      8192;
+  const lowPowerGpu =
+    d.gpu !==
+      '' &&
+    LOW_POWER_GPU.test(
+      d.gpu,
+    );
+  if (
+    fewCores ||
+    lowMemory ||
+    smallTextures ||
+    lowPowerGpu
+  )
+    return 'laptop';
   return 'desktop';
 }
 
 /** A detail level's tier (`auto`: the Quality tier's own). */
-const levelTier = (level: DetailLevel | undefined, tier: DeviceTier): DeviceTier =>
-  !level || level === 'auto' ? tier : SETTING_TIER[level];
+const levelTier =
+  (
+    level:
+      | DetailLevel
+      | undefined,
+    tier: DeviceTier,
+  ): DeviceTier =>
+    !level ||
+    level ===
+      'auto'
+      ? tier
+      : SETTING_TIER[
+          level
+        ];
 
 /**
  * What to render with: the tier's preset, the Video tab's Advanced knobs over it (texture detail →
  * texture cap, model detail → prop draw distance, effect detail → particle budget, antialiasing,
  * anisotropic filtering, a fixed resolution scale), capped by what the GPU can hold. Pure.
  */
-export function planQuality(d: DeviceInfo, setting: QualityTier = 'auto', video?: VideoOverrides): QualityPlan {
-  const tier = setting === 'auto' ? deviceTier(d) : SETTING_TIER[setting];
-  const base = TIER_PRESETS[tier];
-  const p = {
-    ...base,
-    textureCap: TIER_PRESETS[levelTier(video?.textureDetail, tier)].textureCap,
-    propDrawDistance: TIER_PRESETS[levelTier(video?.modelDetail, tier)].propDrawDistance,
-    particleBudget: TIER_PRESETS[levelTier(video?.effectsDetail, tier)].particleBudget,
-    antialias: !video || video.antialias === 'auto' ? base.antialias : video.antialias === 'on',
-    anisotropy: video && video.anisotropy > 0 ? video.anisotropy : base.anisotropy,
-  };
+export function planQuality(
+  d: DeviceInfo,
+  setting: QualityTier = 'auto',
+  video?: VideoOverrides,
+): QualityPlan {
+  const tier =
+    setting ===
+    'auto'
+      ? deviceTier(
+          d,
+        )
+      : SETTING_TIER[
+          setting
+        ];
+  const base =
+    TIER_PRESETS[
+      tier
+    ];
+  const p =
+    {
+      ...base,
+      textureCap:
+        TIER_PRESETS[
+          levelTier(
+            video?.textureDetail,
+            tier,
+          )
+        ]
+          .textureCap,
+      propDrawDistance:
+        TIER_PRESETS[
+          levelTier(
+            video?.modelDetail,
+            tier,
+          )
+        ]
+          .propDrawDistance,
+      particleBudget:
+        TIER_PRESETS[
+          levelTier(
+            video?.effectsDetail,
+            tier,
+          )
+        ]
+          .particleBudget,
+      antialias:
+        !video ||
+        video.antialias ===
+          'auto'
+          ? base.antialias
+          : video.antialias ===
+            'on',
+      anisotropy:
+        video &&
+        video.anisotropy >
+          0
+          ? video.anisotropy
+          : base.anisotropy,
+    };
   // A scale set by hand is held: the governor neither lowers nor raises it.
-  if (video && video.resolutionScale > 0) {
-    p.resolutionScale = video.resolutionScale;
-    p.minResolutionScale = video.resolutionScale;
+  if (
+    video &&
+    video.resolutionScale >
+      0
+  ) {
+    p.resolutionScale =
+      video.resolutionScale;
+    p.minResolutionScale =
+      video.resolutionScale;
   }
-  const gpuCap = d.maxTextureSize > 0 ? d.maxTextureSize : p.textureCap;
+  const gpuCap =
+    d.maxTextureSize >
+    0
+      ? d.maxTextureSize
+      : p.textureCap;
   // A 2 GB device keeps textures at 512 whatever the tier says (decoded textures are the biggest heap user).
-  const memoryCap = d.deviceMemory !== undefined && d.deviceMemory <= 2 ? 512 : p.textureCap;
+  const memoryCap =
+    d.deviceMemory !==
+      undefined &&
+    d.deviceMemory <=
+      2
+      ? 512
+      : p.textureCap;
   return {
     tier,
-    resolutionScale: p.resolutionScale,
-    minResolutionScale: p.minResolutionScale,
-    dprCap: Math.min(p.dprCap, Math.max(1, d.dpr || 1)),
-    maxTextureSize: Math.min(p.textureCap, gpuCap, memoryCap),
-    anisotropy: p.anisotropy,
-    particleBudget: p.particleBudget,
-    propDrawDistance: p.propDrawDistance,
-    portalRecursion: p.portalRecursion,
-    targetFrameMs: p.targetFrameMs,
-    antialias: p.antialias,
+    resolutionScale:
+      p.resolutionScale,
+    minResolutionScale:
+      p.minResolutionScale,
+    dprCap:
+      Math.min(
+        p.dprCap,
+        Math.max(
+          1,
+          d.dpr ||
+            1,
+        ),
+      ),
+    maxTextureSize:
+      Math.min(
+        p.textureCap,
+        gpuCap,
+        memoryCap,
+      ),
+    anisotropy:
+      p.anisotropy,
+    particleBudget:
+      p.particleBudget,
+    propDrawDistance:
+      p.propDrawDistance,
+    portalRecursion:
+      p.portalRecursion,
+    targetFrameMs:
+      p.targetFrameMs,
+    antialias:
+      p.antialias,
   };
 }
 
 /** Reads the device. `gl` (any WebGL context) adds the texture limit and the GPU name. */
-export function detectDevice(gl?: WebGLRenderingContext | WebGL2RenderingContext | null): DeviceInfo {
-  const nav = (typeof navigator !== 'undefined' ? navigator : undefined) as
-    | (Navigator & { deviceMemory?: number })
-    | undefined;
+export function detectDevice(
+  gl?:
+    | WebGLRenderingContext
+    | WebGL2RenderingContext
+    | null,
+): DeviceInfo {
+  const nav =
+    (
+      typeof navigator !==
+      'undefined'
+        ? navigator
+        : undefined
+    ) as
+      | (Navigator & {
+          deviceMemory?: number;
+        })
+      | undefined;
   let touchFirst: boolean;
   try {
     touchFirst =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(pointer: coarse)').matches &&
-      !window.matchMedia('(hover: hover)').matches;
+      typeof window !==
+        'undefined' &&
+      typeof window.matchMedia ===
+        'function' &&
+      window.matchMedia(
+        '(pointer: coarse)',
+      )
+        .matches &&
+      !window.matchMedia(
+        '(hover: hover)',
+      )
+        .matches;
   } catch {
     touchFirst = false;
   }
   let maxTextureSize = 0;
-  let gpu = '';
+  let gpu =
+    '';
   let webgl2 = false;
-  if (gl) {
+  if (
+    gl
+  ) {
     try {
-      maxTextureSize = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 0;
-      webgl2 = typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext;
-      const ext = gl.getExtension('WEBGL_debug_renderer_info');
-      if (ext) gpu = String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) ?? '');
+      maxTextureSize =
+        Number(
+          gl.getParameter(
+            gl.MAX_TEXTURE_SIZE,
+          ),
+        ) ||
+        0;
+      webgl2 =
+        typeof WebGL2RenderingContext !==
+          'undefined' &&
+        gl instanceof
+          WebGL2RenderingContext;
+      const ext =
+        gl.getExtension(
+          'WEBGL_debug_renderer_info',
+        );
+      if (
+        ext
+      )
+        gpu =
+          String(
+            gl.getParameter(
+              ext.UNMASKED_RENDERER_WEBGL,
+            ) ??
+              '',
+          );
     } catch {
       /* a lost context answers nothing; keep the defaults */
     }
-  } else if (typeof document !== 'undefined') {
+  } else if (
+    typeof document !==
+    'undefined'
+  ) {
     try {
-      const probe = document.createElement('canvas').getContext('webgl2');
-      webgl2 = !!probe;
-      if (probe) {
-        maxTextureSize = Number(probe.getParameter(probe.MAX_TEXTURE_SIZE)) || 0;
-        probe.getExtension('WEBGL_lose_context')?.loseContext();
+      const probe =
+        document
+          .createElement(
+            'canvas',
+          )
+          .getContext(
+            'webgl2',
+          );
+      webgl2 =
+        !!probe;
+      if (
+        probe
+      ) {
+        maxTextureSize =
+          Number(
+            probe.getParameter(
+              probe.MAX_TEXTURE_SIZE,
+            ),
+          ) ||
+          0;
+        probe
+          .getExtension(
+            'WEBGL_lose_context',
+          )
+          ?.loseContext();
       }
     } catch {
       webgl2 = false;
@@ -219,34 +452,53 @@ export function detectDevice(gl?: WebGLRenderingContext | WebGL2RenderingContext
   return {
     webgl2,
     maxTextureSize,
-    deviceMemory: typeof nav?.deviceMemory === 'number' ? nav.deviceMemory : undefined,
-    cores: typeof nav?.hardwareConcurrency === 'number' ? nav.hardwareConcurrency : undefined,
+    deviceMemory:
+      typeof nav?.deviceMemory ===
+      'number'
+        ? nav.deviceMemory
+        : undefined,
+    cores:
+      typeof nav?.hardwareConcurrency ===
+      'number'
+        ? nav.hardwareConcurrency
+        : undefined,
     touchFirst,
-    mobileUa: !!nav && MOBILE_UA.test(nav.userAgent ?? ''),
+    mobileUa:
+      !!nav &&
+      MOBILE_UA.test(
+        nav.userAgent ??
+          '',
+      ),
     gpu,
-    dpr: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
+    dpr:
+      typeof window !==
+      'undefined'
+        ? window.devicePixelRatio ||
+          1
+        : 1,
   };
 }
 
 // ─── Frame-time governor ───────────────────────────────────────────────────
 
 /** Governor constants. */
-export const GOVERNOR = {
-  /** Exponential moving average weight of one frame. */
-  emaAlpha: 0.08,
-  /** Over budget by this factor for `downAfterMs` → scale down. */
-  overFactor: 1.3,
-  downAfterMs: 1000,
-  downStep: 0.1,
-  /** Within budget (≤ this factor) for the cooldown → scale up. */
-  underFactor: 1.08,
-  upStep: 0.05,
-  /** First cooldown before an increase; doubles when an increase is taken back. */
-  upCooldownMs: 3000,
-  maxUpCooldownMs: 48000,
-  /** Frames longer than this are hitches (a GC, a tab switch), not load. */
-  hitchMs: 250,
-} as const;
+export const GOVERNOR =
+  {
+    /** Exponential moving average weight of one frame. */
+    emaAlpha: 0.08,
+    /** Over budget by this factor for `downAfterMs` → scale down. */
+    overFactor: 1.3,
+    downAfterMs: 1000,
+    downStep: 0.1,
+    /** Within budget (≤ this factor) for the cooldown → scale up. */
+    underFactor: 1.08,
+    upStep: 0.05,
+    /** First cooldown before an increase; doubles when an increase is taken back. */
+    upCooldownMs: 3000,
+    maxUpCooldownMs: 48000,
+    /** Frames longer than this are hitches (a GC, a tab switch), not load. */
+    hitchMs: 250,
+  } as const;
 
 export class FrameGovernor {
   /** Current resolution scale. */
@@ -255,46 +507,145 @@ export class FrameGovernor {
   ema = 0;
   private overFor = 0;
   private underFor = 0;
-  private cooldown: number = GOVERNOR.upCooldownMs;
+  private cooldown: number =
+    GOVERNOR.upCooldownMs;
   /** ms since the last increase (to detect one that had to be taken back). */
-  private sinceUp = Infinity;
+  private sinceUp =
+    Infinity;
   changes = 0;
 
   constructor(
-    private readonly plan: Pick<QualityPlan, 'resolutionScale' | 'minResolutionScale' | 'targetFrameMs'>,
+    private readonly plan: Pick<
+      QualityPlan,
+      | 'resolutionScale'
+      | 'minResolutionScale'
+      | 'targetFrameMs'
+    >,
     private readonly maxScale = plan.resolutionScale,
   ) {
-    this.scale = plan.resolutionScale;
+    this.scale =
+      plan.resolutionScale;
   }
 
   /** One frame of `dtMs`. Returns true when the scale changed (resize the drawing buffer). */
-  sample(dtMs: number): boolean {
-    if (!(dtMs > 0) || dtMs > GOVERNOR.hitchMs) return false;
-    this.ema = this.ema === 0 ? dtMs : this.ema + (dtMs - this.ema) * GOVERNOR.emaAlpha;
-    this.sinceUp += dtMs;
-    const target = this.plan.targetFrameMs;
-    if (this.ema > target * GOVERNOR.overFactor) {
-      this.overFor += dtMs;
+  sample(
+    dtMs: number,
+  ): boolean {
+    if (
+      !(
+        dtMs >
+        0
+      ) ||
+      dtMs >
+        GOVERNOR.hitchMs
+    )
+      return false;
+    this.ema =
+      this
+        .ema ===
+      0
+        ? dtMs
+        : this
+            .ema +
+          (dtMs -
+            this
+              .ema) *
+            GOVERNOR.emaAlpha;
+    this.sinceUp +=
+      dtMs;
+    const target =
+      this
+        .plan
+        .targetFrameMs;
+    if (
+      this
+        .ema >
+      target *
+        GOVERNOR.overFactor
+    ) {
+      this.overFor +=
+        dtMs;
       this.underFor = 0;
-      if (this.overFor >= GOVERNOR.downAfterMs && this.scale > this.plan.minResolutionScale + 1e-9) {
+      if (
+        this
+          .overFor >=
+          GOVERNOR.downAfterMs &&
+        this
+          .scale >
+          this
+            .plan
+            .minResolutionScale +
+            1e-9
+      ) {
         // An increase that did not hold: wait longer before the next one.
-        if (this.sinceUp < this.cooldown * 2) this.cooldown = Math.min(GOVERNOR.maxUpCooldownMs, this.cooldown * 2);
-        this.scale = Math.max(this.plan.minResolutionScale, round2(this.scale - GOVERNOR.downStep));
+        if (
+          this
+            .sinceUp <
+          this
+            .cooldown *
+            2
+        )
+          this.cooldown =
+            Math.min(
+              GOVERNOR.maxUpCooldownMs,
+              this
+                .cooldown *
+                2,
+            );
+        this.scale =
+          Math.max(
+            this
+              .plan
+              .minResolutionScale,
+            round2(
+              this
+                .scale -
+                GOVERNOR.downStep,
+            ),
+          );
         this.overFor = 0;
-        this.ema = target; // judge the new scale on its own frames
-        this.changes++;
+        this.ema =
+          target; // judge the new scale on its own frames
+        this
+          .changes++;
         return true;
       }
       return false;
     }
     this.overFor = 0;
-    if (this.ema <= target * GOVERNOR.underFactor) {
-      this.underFor += dtMs;
-      if (this.underFor >= this.cooldown && this.scale < this.maxScale - 1e-9) {
-        this.scale = Math.min(this.maxScale, round2(this.scale + GOVERNOR.upStep));
+    if (
+      this
+        .ema <=
+      target *
+        GOVERNOR.underFactor
+    ) {
+      this.underFor +=
+        dtMs;
+      if (
+        this
+          .underFor >=
+          this
+            .cooldown &&
+        this
+          .scale <
+          this
+            .maxScale -
+            1e-9
+      ) {
+        this.scale =
+          Math.min(
+            this
+              .maxScale,
+            round2(
+              this
+                .scale +
+                GOVERNOR.upStep,
+            ),
+          );
         this.underFor = 0;
         this.sinceUp = 0;
-        this.changes++;
+        this
+          .changes++;
         return true;
       }
     } else {
@@ -304,9 +655,32 @@ export class FrameGovernor {
   }
 }
 
-const round2 = (v: number): number => Math.round(v * 100) / 100;
+const round2 =
+  (
+    v: number,
+  ): number =>
+    Math.round(
+      v *
+        100,
+    ) /
+    100;
 
 /** The drawing-buffer pixel ratio for a plan and governor scale. */
-export function pixelRatioFor(plan: Pick<QualityPlan, 'dprCap'>, dpr: number, scale: number): number {
-  return Math.max(0.25, Math.min(dpr || 1, plan.dprCap) * scale);
+export function pixelRatioFor(
+  plan: Pick<
+    QualityPlan,
+    'dprCap'
+  >,
+  dpr: number,
+  scale: number,
+): number {
+  return Math.max(
+    0.25,
+    Math.min(
+      dpr ||
+        1,
+      plan.dprCap,
+    ) *
+      scale,
+  );
 }

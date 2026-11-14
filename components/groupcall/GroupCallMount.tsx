@@ -17,23 +17,49 @@
  * and it opens as soon as the surface loads, milliseconds after hydration.
  */
 
-import { Suspense, lazy } from 'react';
+import {
+  Suspense,
+  lazy,
+} from 'react';
 import { useSession } from '@/components/Providers';
 
-const GroupCallSurface = lazy(() =>
-  import('@/components/groupcall/GroupCallSurface').then((m) => ({ default: m.GroupCallSurface })),
-);
+const GroupCallSurface =
+  lazy(
+    () =>
+      import('@/components/groupcall/GroupCallSurface').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.GroupCallSurface,
+        }),
+      ),
+  );
 
 export function GroupCallMount() {
-  const { data: session } = useSession();
-  const userId = session?.user?.id ?? null;
+  const {
+    data: session,
+  } =
+    useSession();
+  const userId =
+    session
+      ?.user
+      ?.id ??
+    null;
 
-  if (!userId) return null;
+  if (
+    !userId
+  )
+    return null;
 
   // No fallback: there is nothing to show until a call exists, and a spinner in
   // global chrome would flash on every page load.
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        null
+      }
+    >
       <GroupCallSurface />
     </Suspense>
   );

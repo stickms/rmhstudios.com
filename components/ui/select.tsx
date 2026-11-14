@@ -39,7 +39,11 @@
 
 import * as React from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
-import { Check, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -64,24 +68,50 @@ import { cn } from '@/lib/utils';
  * from. Material, not colour: this tier's rows and panel are the raised/inset
  * shadow pair, which no amount of token swapping on the site tier produces.
  */
-export type SelectTier = 'site' | 'app' | 'slice';
+export type SelectTier =
+  | 'site'
+  | 'app'
+  | 'slice';
 
 /**
  * Stands in for `''`, which Radix will not accept as an item value. Long and
  * private so it can never collide with a real option value.
  */
-const EMPTY_VALUE = '__rmh_select_empty__';
-const toItemValue = (value: string) => (value === '' ? EMPTY_VALUE : value);
-const fromItemValue = (value: string) => (value === EMPTY_VALUE ? '' : value);
+const EMPTY_VALUE =
+  '__rmh_select_empty__';
+const toItemValue =
+  (
+    value: string,
+  ) =>
+    value ===
+    ''
+      ? EMPTY_VALUE
+      : value;
+const fromItemValue =
+  (
+    value: string,
+  ) =>
+    value ===
+    EMPTY_VALUE
+      ? ''
+      : value;
 
-type OptionNode = {
-  kind: 'option';
-  value: string;
-  label: React.ReactNode;
-  disabled?: boolean;
-};
-type GroupNode = { kind: 'group'; label: string; options: OptionNode[] };
-type ParsedNode = OptionNode | GroupNode;
+type OptionNode =
+  {
+    kind: 'option';
+    value: string;
+    label: React.ReactNode;
+    disabled?: boolean;
+  };
+type GroupNode =
+  {
+    kind: 'group';
+    label: string;
+    options: OptionNode[];
+  };
+type ParsedNode =
+  | OptionNode
+  | GroupNode;
 
 /**
  * Read `<option>` / `<optgroup>` children into a data model.
@@ -91,49 +121,121 @@ type ParsedNode = OptionNode | GroupNode;
  * `label` attribute instead of children, so both are honoured, and an option
  * with no explicit `value` falls back to its text exactly as HTML does.
  */
-function parseOptions(children: React.ReactNode): ParsedNode[] {
-  const out: ParsedNode[] = [];
+function parseOptions(
+  children: React.ReactNode,
+): ParsedNode[] {
+  const out: ParsedNode[] =
+    [];
 
-  const readOption = (element: React.ReactElement): OptionNode => {
-    const props = element.props as React.OptionHTMLAttributes<HTMLOptionElement> & {
-      children?: React.ReactNode;
-    };
-    const label = props.children ?? props.label ?? '';
-    return {
-      kind: 'option',
-      value: String(props.value ?? (typeof label === 'string' ? label : '')),
-      label,
-      disabled: props.disabled,
-    };
-  };
-
-  const walk = (node: React.ReactNode, into: ParsedNode[]) => {
-    React.Children.forEach(node, (child) => {
-      if (!React.isValidElement(child)) return;
-      if (child.type === React.Fragment) {
-        walk((child.props as { children?: React.ReactNode }).children, into);
-        return;
-      }
-      if (child.type === 'option') {
-        into.push(readOption(child));
-        return;
-      }
-      if (child.type === 'optgroup') {
-        const props = child.props as React.OptgroupHTMLAttributes<HTMLOptGroupElement> & {
+  const readOption =
+    (
+      element: React.ReactElement,
+    ): OptionNode => {
+      const props =
+        element.props as React.OptionHTMLAttributes<HTMLOptionElement> & {
           children?: React.ReactNode;
         };
-        const nested: ParsedNode[] = [];
-        walk(props.children, nested);
-        into.push({
-          kind: 'group',
-          label: props.label ?? '',
-          options: nested.filter((n): n is OptionNode => n.kind === 'option'),
-        });
-      }
-    });
-  };
+      const label =
+        props.children ??
+        props.label ??
+        '';
+      return {
+        kind: 'option',
+        value:
+          String(
+            props.value ??
+              (typeof label ===
+              'string'
+                ? label
+                : ''),
+          ),
+        label,
+        disabled:
+          props.disabled,
+      };
+    };
 
-  walk(children, out);
+  const walk =
+    (
+      node: React.ReactNode,
+      into: ParsedNode[],
+    ) => {
+      React.Children.forEach(
+        node,
+        (
+          child,
+        ) => {
+          if (
+            !React.isValidElement(
+              child,
+            )
+          )
+            return;
+          if (
+            child.type ===
+            React.Fragment
+          ) {
+            walk(
+              (
+                child.props as {
+                  children?: React.ReactNode;
+                }
+              )
+                .children,
+              into,
+            );
+            return;
+          }
+          if (
+            child.type ===
+            'option'
+          ) {
+            into.push(
+              readOption(
+                child,
+              ),
+            );
+            return;
+          }
+          if (
+            child.type ===
+            'optgroup'
+          ) {
+            const props =
+              child.props as React.OptgroupHTMLAttributes<HTMLOptGroupElement> & {
+                children?: React.ReactNode;
+              };
+            const nested: ParsedNode[] =
+              [];
+            walk(
+              props.children,
+              nested,
+            );
+            into.push(
+              {
+                kind: 'group',
+                label:
+                  props.label ??
+                  '',
+                options:
+                  nested.filter(
+                    (
+                      n,
+                    ): n is OptionNode =>
+                      n.kind ===
+                      'option',
+                  ),
+              },
+            );
+          }
+        },
+      );
+    };
+
+  walk(
+    children,
+    out,
+  );
   return out;
 }
 
@@ -148,16 +250,27 @@ function parseOptions(children: React.ReactNode): ParsedNode[] {
  */
 export interface SelectProps extends Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
-  'onChange' | 'value' | 'defaultValue' | 'type'
+  | 'onChange'
+  | 'value'
+  | 'defaultValue'
+  | 'type'
 > {
   /** Compact controls for toolbars (36px); standard form selects are 40px (K4). */
-  controlSize?: 'sm' | 'default';
+  controlSize?:
+    | 'sm'
+    | 'default';
   /** Layout classes for the chevron-owning wrapper. */
   containerClassName?: string;
-  value?: string | number;
-  defaultValue?: string | number;
+  value?:
+    | string
+    | number;
+  defaultValue?:
+    | string
+    | number;
   /** Native-shaped change handler — read `e.target.value` as you always have. */
-  onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  onChange?: (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => void;
   /** Forwarded to Radix's hidden native input, so `<form>` submission works. */
   name?: string;
   /** Marks that hidden input required, so native form validation still fires. */
@@ -169,212 +282,385 @@ export interface SelectProps extends Omit<
 }
 
 /** Per-tier classes. Same structure, two palettes. */
-const TIER_CLASSES = {
-  site: {
-    // Steel K4 (a 40px field: surface fill, 1px border) and S5 (the list is an overlay: `--site-surface`, 1px border,
-    // 8px radius, the T4 shadow, no blur). Rows are plain text; the highlighted row takes `--site-bg-subtle` (M1). The
-    // focus ring is the global K10 outline.
-    trigger:
-      'rounded-site border border-site-border bg-site-surface text-site-text text-base sm:text-sm aria-invalid:border-site-danger',
-    content: 'surface-overlay text-site-text',
-    item: 'rounded-none text-sm text-site-text data-[highlighted]:bg-site-bg-subtle data-[state=checked]:font-semibold',
-    label: 'text-site-text-muted',
-    scrollButton: 'text-site-text-muted',
-    chevron: 'text-site-text-muted',
-  },
-  slice: {
-    // Inset trigger — the neumorphic rule is that a value you read out of a
-    // control is recessed, and the thing you press is raised.
-    trigger:
-      'rounded-[var(--slice-radius,12px)] border-0 bg-(--slice-bg) text-(--slice-text) text-sm shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] focus-visible:ring-2 focus-visible:ring-(--slice-primary)',
-    // The popup is a raised panel sitting above the surface, so it takes the
-    // outward pair — the mirror of the trigger it came out of.
-    content:
-      'rounded-[var(--slice-radius-lg,16px)] border-0 bg-(--slice-bg) text-(--slice-text) shadow-[6px_6px_14px_var(--slice-shadow-dark),-6px_-6px_14px_var(--slice-shadow-light)]',
-    item: 'rounded-none text-sm text-(--slice-text) [--evert-tint:color-mix(in_srgb,var(--slice-shadow-dark)_30%,transparent)] data-[state=checked]:text-(--slice-primary) data-[state=checked]:font-bold',
-    label: 'text-(--slice-text-light)',
-    scrollButton: 'text-(--slice-text-muted)',
-    chevron: 'text-(--slice-text-muted)',
-  },
-  app: {
-    trigger:
-      'rounded-app-sm border border-app-border bg-app-surface text-app-text text-sm hover:border-app-border-bright focus-visible:border-app-accent focus-visible:ring-2 focus-visible:ring-app-accent',
-    content:
-      'rounded-app-sm border border-app-border bg-app-surface text-app-text shadow-[var(--app-shadow)]',
-    item: 'rounded-none text-sm text-app-text [--evert-tint:var(--app-surface-hover)] [--evert-rest-opacity:1] data-[state=checked]:text-app-accent',
-    label: 'text-app-text-dim',
-    scrollButton: 'text-app-text-dim',
-    chevron: 'text-app-text-dim',
-  },
-} as const;
-
-const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
-  (
-    {
-      className,
-      children,
-      controlSize = 'default',
-      containerClassName,
-      value,
-      defaultValue,
-      onChange,
-      name,
-      disabled,
-      required,
-      placeholder,
-      tier = 'site',
-      ...props
+const TIER_CLASSES =
+  {
+    site: {
+      // Steel K4 (a 40px field: surface fill, 1px border) and S5 (the list is an overlay: `--site-surface`, 1px border,
+      // 8px radius, the T4 shadow, no blur). Rows are plain text; the highlighted row takes `--site-bg-subtle` (M1). The
+      // focus ring is the global K10 outline.
+      trigger:
+        'rounded-site border border-site-border bg-site-surface text-site-text text-base sm:text-sm aria-invalid:border-site-danger',
+      content:
+        'surface-overlay text-site-text',
+      item: 'rounded-none text-sm text-site-text data-[highlighted]:bg-site-bg-subtle data-[state=checked]:font-semibold',
+      label:
+        'text-site-text-muted',
+      scrollButton:
+        'text-site-text-muted',
+      chevron:
+        'text-site-text-muted',
     },
-    ref,
-  ) => {
-    const nodes = React.useMemo(() => parseOptions(children), [children]);
-    const styles = TIER_CLASSES[tier];
-
-    // `--app-*` lives on the `.app-theme` shell, so an app-tier popup has to be
-    // portalled inside it or every token resolves to nothing. Resolved after
-    // mount (there is no DOM during SSR) and left null for the site tier, where
-    // Radix's default `<body>` container is correct.
-    // Both scoped tiers portal into the element their tokens are declared on.
-    // `site` stays null so Radix uses its `<body>` default, which is correct
-    // there because `--site-*` lives on `:root`.
-    const [appContainer, setAppContainer] = React.useState<HTMLElement | null>(null);
-    React.useEffect(() => {
-      const host = tier === 'app' ? '.app-theme' : tier === 'slice' ? '.slice-theme' : null;
-      if (!host) return;
-      setAppContainer(document.querySelector<HTMLElement>(host));
-    }, [tier]);
-
-    const handleValueChange = React.useCallback(
-      (next: string) => {
-        const plain = fromItemValue(next);
-        const target = { value: plain, name: name ?? '' };
-        onChange?.({ target, currentTarget: target } as React.ChangeEvent<HTMLSelectElement>);
+    slice:
+      {
+        // Inset trigger — the neumorphic rule is that a value you read out of a
+        // control is recessed, and the thing you press is raised.
+        trigger:
+          'rounded-[var(--slice-radius,12px)] border-0 bg-(--slice-bg) text-(--slice-text) text-sm shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] focus-visible:ring-2 focus-visible:ring-(--slice-primary)',
+        // The popup is a raised panel sitting above the surface, so it takes the
+        // outward pair — the mirror of the trigger it came out of.
+        content:
+          'rounded-[var(--slice-radius-lg,16px)] border-0 bg-(--slice-bg) text-(--slice-text) shadow-[6px_6px_14px_var(--slice-shadow-dark),-6px_-6px_14px_var(--slice-shadow-light)]',
+        item: 'rounded-none text-sm text-(--slice-text) [--evert-tint:color-mix(in_srgb,var(--slice-shadow-dark)_30%,transparent)] data-[state=checked]:text-(--slice-primary) data-[state=checked]:font-bold',
+        label:
+          'text-(--slice-text-light)',
+        scrollButton:
+          'text-(--slice-text-muted)',
+        chevron:
+          'text-(--slice-text-muted)',
       },
-      [onChange, name],
-    );
+    app: {
+      trigger:
+        'rounded-app-sm border border-app-border bg-app-surface text-app-text text-sm hover:border-app-border-bright focus-visible:border-app-accent focus-visible:ring-2 focus-visible:ring-app-accent',
+      content:
+        'rounded-app-sm border border-app-border bg-app-surface text-app-text shadow-[var(--app-shadow)]',
+      item: 'rounded-none text-sm text-app-text [--evert-tint:var(--app-surface-hover)] [--evert-rest-opacity:1] data-[state=checked]:text-app-accent',
+      label:
+        'text-app-text-dim',
+      scrollButton:
+        'text-app-text-dim',
+      chevron:
+        'text-app-text-dim',
+    },
+  } as const;
 
-    const renderOption = (option: OptionNode, key: React.Key) => (
-      <SelectPrimitive.Item
-        key={key}
-        value={toItemValue(option.value)}
-        disabled={option.disabled}
-        data-slot="select-item"
-        className={cn(
-          // The same row metrics as `MenuItem` (components/ui/menu.tsx), because
-          // a select's list and an overflow menu are the same object to whoever
-          // is looking at them: same gap, same padding, same `min-h-9` with the
-          // `pointer-coarse:min-h-11` touch floor. These rows were `py-1.5
-          // pl-2.5`, which lands at ~30px — under the floor, and visibly tighter
-          // than the menu that opens from the button next to it.
-          'relative flex w-full min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none items-center gap-2.5 py-2 pl-4 pr-9 outline-none',
-          'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-          styles.item,
-        )}
-      >
-        <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
-        <SelectPrimitive.ItemIndicator className="absolute right-2.5 flex items-center">
-          <Check className="h-3.5 w-3.5" aria-hidden />
-        </SelectPrimitive.ItemIndicator>
-      </SelectPrimitive.Item>
-    );
+const Select =
+  React.forwardRef<
+    HTMLButtonElement,
+    SelectProps
+  >(
+    (
+      {
+        className,
+        children,
+        controlSize = 'default',
+        containerClassName,
+        value,
+        defaultValue,
+        onChange,
+        name,
+        disabled,
+        required,
+        placeholder,
+        tier = 'site',
+        ...props
+      },
+      ref,
+    ) => {
+      const nodes =
+        React.useMemo(
+          () =>
+            parseOptions(
+              children,
+            ),
+          [
+            children,
+          ],
+        );
+      const styles =
+        TIER_CLASSES[
+          tier
+        ];
 
-    return (
-      <SelectPrimitive.Root
-        value={value === undefined ? undefined : toItemValue(String(value))}
-        defaultValue={defaultValue === undefined ? undefined : toItemValue(String(defaultValue))}
-        onValueChange={handleValueChange}
-        disabled={disabled}
-        required={required}
-        name={name}
-      >
-        <span className={cn('relative block', containerClassName)} data-slot="select-control">
-          <SelectPrimitive.Trigger
-            ref={ref}
-            data-slot="select"
-            className={cn(
-              'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition-colors duration-(--m1) ease-[ease]',
-              // Full-size selects match Input (K4, 40px); compact ones are 36px.
-              controlSize === 'sm' ? 'h-9 px-3 py-1 pr-9' : 'h-10 px-3 py-2 pr-9',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-              // The value can be longer than the control: clip it rather than let
-              // it push the chevron out of the box.
-              '[&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:text-left',
-              styles.trigger,
-              className,
+      // `--app-*` lives on the `.app-theme` shell, so an app-tier popup has to be
+      // portalled inside it or every token resolves to nothing. Resolved after
+      // mount (there is no DOM during SSR) and left null for the site tier, where
+      // Radix's default `<body>` container is correct.
+      // Both scoped tiers portal into the element their tokens are declared on.
+      // `site` stays null so Radix uses its `<body>` default, which is correct
+      // there because `--site-*` lives on `:root`.
+      const [
+        appContainer,
+        setAppContainer,
+      ] =
+        React.useState<HTMLElement | null>(
+          null,
+        );
+      React.useEffect(() => {
+        const host =
+          tier ===
+          'app'
+            ? '.app-theme'
+            : tier ===
+                'slice'
+              ? '.slice-theme'
+              : null;
+        if (
+          !host
+        )
+          return;
+        setAppContainer(
+          document.querySelector<HTMLElement>(
+            host,
+          ),
+        );
+      }, [
+        tier,
+      ]);
+
+      const handleValueChange =
+        React.useCallback(
+          (
+            next: string,
+          ) => {
+            const plain =
+              fromItemValue(
+                next,
+              );
+            const target =
+              {
+                value:
+                  plain,
+                name:
+                  name ??
+                  '',
+              };
+            onChange?.(
+              {
+                target,
+                currentTarget:
+                  target,
+              } as React.ChangeEvent<HTMLSelectElement>,
+            );
+          },
+          [
+            onChange,
+            name,
+          ],
+        );
+
+      const renderOption =
+        (
+          option: OptionNode,
+          key: React.Key,
+        ) => (
+          <SelectPrimitive.Item
+            key={
+              key
+            }
+            value={toItemValue(
+              option.value,
             )}
-            {...props}
+            disabled={
+              option.disabled
+            }
+            data-slot="select-item"
+            className={cn(
+              // The same row metrics as `MenuItem` (components/ui/menu.tsx), because
+              // a select's list and an overflow menu are the same object to whoever
+              // is looking at them: same gap, same padding, same `min-h-9` with the
+              // `pointer-coarse:min-h-11` touch floor. These rows were `py-1.5
+              // pl-2.5`, which lands at ~30px — under the floor, and visibly tighter
+              // than the menu that opens from the button next to it.
+              'relative flex w-full min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none items-center gap-2.5 py-2 pl-4 pr-9 outline-none',
+              'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+              styles.item,
+            )}
           >
-            <SelectPrimitive.Value placeholder={placeholder} />
-            <SelectPrimitive.Icon asChild>
-              <ChevronDown
+            <SelectPrimitive.ItemText>
+              {
+                option.label
+              }
+            </SelectPrimitive.ItemText>
+            <SelectPrimitive.ItemIndicator className="absolute right-2.5 flex items-center">
+              <Check
+                className="h-3.5 w-3.5"
                 aria-hidden
-                className={cn(
-                  'pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2',
-                  styles.chevron,
-                )}
               />
-            </SelectPrimitive.Icon>
-          </SelectPrimitive.Trigger>
+            </SelectPrimitive.ItemIndicator>
+          </SelectPrimitive.Item>
+        );
 
-          <SelectPrimitive.Portal container={appContainer ?? undefined}>
-            <SelectPrimitive.Content
-              data-slot="select-content"
-              // M5: an overlay fades in and out in 160 ms (no scale, no slide) via `data-motion="pop"`, which
-              // app/styles/steel-overlay.css reduces to an opacity transition.
-              data-motion="pop"
-              position="popper"
-              sideOffset={6}
+      return (
+        <SelectPrimitive.Root
+          value={
+            value ===
+            undefined
+              ? undefined
+              : toItemValue(
+                  String(
+                    value,
+                  ),
+                )
+          }
+          defaultValue={
+            defaultValue ===
+            undefined
+              ? undefined
+              : toItemValue(
+                  String(
+                    defaultValue,
+                  ),
+                )
+          }
+          onValueChange={
+            handleValueChange
+          }
+          disabled={
+            disabled
+          }
+          required={
+            required
+          }
+          name={
+            name
+          }
+        >
+          <span
+            className={cn(
+              'relative block',
+              containerClassName,
+            )}
+            data-slot="select-control"
+          >
+            <SelectPrimitive.Trigger
+              ref={
+                ref
+              }
+              data-slot="select"
               className={cn(
-                // The whole point of the rewrite: the list is one of OUR surfaces,
-                // in the theme's own material. `surface-overlay` is the shared
-                // floating-panel tier (globals.css §5.1). z-60 clears the z-50
-                // dialogs a select can be opened from inside.
-                'z-topbar max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden py-1.5',
-                styles.content,
+                'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition-colors duration-(--m1) ease-[ease]',
+                // Full-size selects match Input (K4, 40px); compact ones are 36px.
+                controlSize ===
+                  'sm'
+                  ? 'h-9 px-3 py-1 pr-9'
+                  : 'h-10 px-3 py-2 pr-9',
+                'disabled:cursor-not-allowed disabled:opacity-50',
+                // The value can be longer than the control: clip it rather than let
+                // it push the chevron out of the box.
+                '[&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:text-left',
+                styles.trigger,
+                className,
               )}
+              {...props}
             >
-              <SelectPrimitive.ScrollUpButton
-                className={cn('flex h-5 items-center justify-center', styles.scrollButton)}
+              <SelectPrimitive.Value
+                placeholder={
+                  placeholder
+                }
+              />
+              <SelectPrimitive.Icon
+                asChild
               >
-                <ChevronUp className="h-3.5 w-3.5" aria-hidden />
-              </SelectPrimitive.ScrollUpButton>
+                <ChevronDown
+                  aria-hidden
+                  className={cn(
+                    'pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2',
+                    styles.chevron,
+                  )}
+                />
+              </SelectPrimitive.Icon>
+            </SelectPrimitive.Trigger>
 
-              <SelectPrimitive.Viewport className="p-0.5">
-                {/* Keyed by position, not by value: a list is free to repeat a
+            <SelectPrimitive.Portal
+              container={
+                appContainer ??
+                undefined
+              }
+            >
+              <SelectPrimitive.Content
+                data-slot="select-content"
+                // M5: an overlay fades in and out in 160 ms (no scale, no slide) via `data-motion="pop"`, which
+                // app/styles/steel-overlay.css reduces to an opacity transition.
+                data-motion="pop"
+                position="popper"
+                sideOffset={
+                  6
+                }
+                className={cn(
+                  // The whole point of the rewrite: the list is one of OUR surfaces,
+                  // in the theme's own material. `surface-overlay` is the shared
+                  // floating-panel tier (globals.css §5.1). z-60 clears the z-50
+                  // dialogs a select can be opened from inside.
+                  'z-topbar max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden py-1.5',
+                  styles.content,
+                )}
+              >
+                <SelectPrimitive.ScrollUpButton
+                  className={cn(
+                    'flex h-5 items-center justify-center',
+                    styles.scrollButton,
+                  )}
+                >
+                  <ChevronUp
+                    className="h-3.5 w-3.5"
+                    aria-hidden
+                  />
+                </SelectPrimitive.ScrollUpButton>
+
+                <SelectPrimitive.Viewport className="p-0.5">
+                  {/* Keyed by position, not by value: a list is free to repeat a
                     value (or use `''` twice for a placeholder plus an "any" row)
                     and React would then drop one of them. */}
-                {nodes.map((node, i) =>
-                  node.kind === 'option' ? (
-                    renderOption(node, `option-${i}`)
-                  ) : (
-                    <SelectPrimitive.Group key={`group-${i}`}>
-                      <SelectPrimitive.Label
-                        className={cn(
-                          // Matches `MenuLabel` — same inset as the rows below it.
-                          'px-3 pb-1 pt-2 text-xs font-semibold',
-                          styles.label,
-                        )}
-                      >
-                        {node.label}
-                      </SelectPrimitive.Label>
-                      {node.options.map((option, j) => renderOption(option, `option-${i}-${j}`))}
-                    </SelectPrimitive.Group>
-                  ),
-                )}
-              </SelectPrimitive.Viewport>
+                  {nodes.map(
+                    (
+                      node,
+                      i,
+                    ) =>
+                      node.kind ===
+                      'option' ? (
+                        renderOption(
+                          node,
+                          `option-${i}`,
+                        )
+                      ) : (
+                        <SelectPrimitive.Group
+                          key={`group-${i}`}
+                        >
+                          <SelectPrimitive.Label
+                            className={cn(
+                              // Matches `MenuLabel` — same inset as the rows below it.
+                              'px-3 pb-1 pt-2 text-xs font-semibold',
+                              styles.label,
+                            )}
+                          >
+                            {
+                              node.label
+                            }
+                          </SelectPrimitive.Label>
+                          {node.options.map(
+                            (
+                              option,
+                              j,
+                            ) =>
+                              renderOption(
+                                option,
+                                `option-${i}-${j}`,
+                              ),
+                          )}
+                        </SelectPrimitive.Group>
+                      ),
+                  )}
+                </SelectPrimitive.Viewport>
 
-              <SelectPrimitive.ScrollDownButton
-                className={cn('flex h-5 items-center justify-center', styles.scrollButton)}
-              >
-                <ChevronDown className="h-3.5 w-3.5" aria-hidden />
-              </SelectPrimitive.ScrollDownButton>
-            </SelectPrimitive.Content>
-          </SelectPrimitive.Portal>
-        </span>
-      </SelectPrimitive.Root>
-    );
-  },
-);
-Select.displayName = 'Select';
+                <SelectPrimitive.ScrollDownButton
+                  className={cn(
+                    'flex h-5 items-center justify-center',
+                    styles.scrollButton,
+                  )}
+                >
+                  <ChevronDown
+                    className="h-3.5 w-3.5"
+                    aria-hidden
+                  />
+                </SelectPrimitive.ScrollDownButton>
+              </SelectPrimitive.Content>
+            </SelectPrimitive.Portal>
+          </span>
+        </SelectPrimitive.Root>
+      );
+    },
+  );
+Select.displayName =
+  'Select';
 
 export { Select };

@@ -5,7 +5,11 @@
  * and fuzzy match suggestions while typing.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import EmojiSentence from './EmojiSentence';
 import GuessInput from './GuessInput';
@@ -24,7 +28,9 @@ interface AudienceViewProps {
   guesses: GuessEntry[];
   maxGuesses: number;
   hasGuessedCorrectly: boolean;
-  onSubmitGuess: (guess: string) => void;
+  onSubmitGuess: (
+    guess: string,
+  ) => void;
   timeRemaining: number;
   correctGuessers: CorrectGuesserInfo[];
   movieTitles?: string[];
@@ -42,62 +48,159 @@ export default function AudienceView({
   onSubmitGuess,
   timeRemaining,
   correctGuessers,
-  movieTitles: propMovieTitles,
+  movieTitles:
+    propMovieTitles,
   guessLog,
 }: AudienceViewProps) {
-  const { t } = useTranslation("c-rmhbox");
-  const disabled = hasGuessedCorrectly || guesses.length >= maxGuesses;
-  const [movieTitles, setMovieTitles] = useState<string[]>(propMovieTitles ?? []);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
+  const disabled =
+    hasGuessedCorrectly ||
+    guesses.length >=
+      maxGuesses;
+  const [
+    movieTitles,
+    setMovieTitles,
+  ] =
+    useState<
+      string[]
+    >(
+      propMovieTitles ??
+        [],
+    );
 
   // Load movie titles from state snapshot for fuzzy autocomplete (fallback if not passed via props)
-  const loadMovieTitles = useCallback(async () => {
-    if (movieTitles.length > 0) return; // Already have titles from props
-    try {
-      const { useRMHboxStore } = await import('@/lib/rmhbox/store');
-      const snapshot = useRMHboxStore.getState().gameState;
-      if (snapshot && Array.isArray(snapshot.movieTitles)) {
-        setMovieTitles(snapshot.movieTitles as string[]);
+  const loadMovieTitles =
+    useCallback(async () => {
+      if (
+        movieTitles.length >
+        0
+      )
+        return; // Already have titles from props
+      try {
+        const {
+          useRMHboxStore,
+        } =
+          await import('@/lib/rmhbox/store');
+        const snapshot =
+          useRMHboxStore.getState()
+            .gameState;
+        if (
+          snapshot &&
+          Array.isArray(
+            snapshot.movieTitles,
+          )
+        ) {
+          setMovieTitles(
+            snapshot.movieTitles as string[],
+          );
+        }
+      } catch {
+        // Ignore — will work without autocomplete
       }
-    } catch {
-      // Ignore — will work without autocomplete
-    }
-  }, [movieTitles.length]);
+    }, [
+      movieTitles.length,
+    ]);
 
   useEffect(() => {
     loadMovieTitles();
-  }, [loadMovieTitles]);
+  }, [
+    loadMovieTitles,
+  ]);
 
   return (
     <div className="flex flex-col items-center gap-3 p-4 w-full max-w-md mx-auto">
       <div className="flex items-center justify-between w-full">
         <span className="text-xs text-app-text-muted">
-          {t("round-producer", { defaultValue: "Round {{round}} • Producer: ", round: roundNumber })}<span className="font-semibold text-app-text">{producerName}</span>
+          {t(
+            'round-producer',
+            {
+              defaultValue:
+                'Round {{round}} • Producer: ',
+              round:
+                roundNumber,
+            },
+          )}
+          <span className="font-semibold text-app-text">
+            {
+              producerName
+            }
+          </span>
         </span>
-        <span className="text-sm font-mono text-app-text-muted">{timeRemaining}s</span>
+        <span className="text-sm font-mono text-app-text-muted">
+          {
+            timeRemaining
+          }
+          s
+        </span>
       </div>
 
-      <EmojiSentence emojis={emojis} maxEmojis={maxEmojis} readOnly />
+      <EmojiSentence
+        emojis={
+          emojis
+        }
+        maxEmojis={
+          maxEmojis
+        }
+        readOnly
+      />
 
       {hasGuessedCorrectly ? (
         <div className="text-center py-4">
-          <span className="text-2xl">🎉</span>
-          <p className="text-sm font-semibold text-app-success mt-1">{t("guessed-correctly", { defaultValue: "You guessed correctly!" })}</p>
+          <span className="text-2xl">
+            🎉
+          </span>
+          <p className="text-sm font-semibold text-app-success mt-1">
+            {t(
+              'guessed-correctly',
+              {
+                defaultValue:
+                  'You guessed correctly!',
+              },
+            )}
+          </p>
         </div>
       ) : (
         <GuessInput
-          onSubmit={onSubmitGuess}
-          disabled={disabled}
-          maxGuesses={maxGuesses}
-          guessesUsed={guesses.length}
-          movieTitles={movieTitles}
+          onSubmit={
+            onSubmitGuess
+          }
+          disabled={
+            disabled
+          }
+          maxGuesses={
+            maxGuesses
+          }
+          guessesUsed={
+            guesses.length
+          }
+          movieTitles={
+            movieTitles
+          }
         />
       )}
 
-      <GuessHistory guesses={guesses} />
+      <GuessHistory
+        guesses={
+          guesses
+        }
+      />
 
-      <CorrectGuessersPanel correctGuessers={correctGuessers} />
+      <CorrectGuessersPanel
+        correctGuessers={
+          correctGuessers
+        }
+      />
 
-      <GuessLog entries={guessLog} />
+      <GuessLog
+        entries={
+          guessLog
+        }
+      />
     </div>
   );
 }

@@ -38,11 +38,17 @@
  * ```
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import { RESUME_MAX_RATIO } from '@/lib/history/constants';
 
-const ENDPOINT = '/api/history/position';
+const ENDPOINT =
+  '/api/history/position';
 
 /**
  * Below this the reader is effectively at the top: there is nothing to resume,
@@ -56,7 +62,9 @@ const MIN_DELTA = 0.01;
 
 export interface StoredReadPosition {
   fraction: number;
-  anchorId: string | null;
+  anchorId:
+    | string
+    | null;
   updatedAt: string;
 }
 
@@ -64,12 +72,17 @@ export interface UseReadPositionOptions {
   /** Current position as 0–1. Read lazily, only at beacon time. */
   getFraction: () => number;
   /** Nearest stable element id at the current position, when the document has any. */
-  getAnchorId?: () => string | null | undefined;
+  getAnchorId?: () =>
+    | string
+    | null
+    | undefined;
   /**
    * What `restore()` does. The default scrolls the window — to the anchor
    * element when it exists, otherwise to `fraction` of the document.
    */
-  onRestore?: (position: StoredReadPosition) => void;
+  onRestore?: (
+    position: StoredReadPosition,
+  ) => void;
   /** Hold off until the document has laid out; `false` disables everything. */
   enabled?: boolean;
 }
@@ -87,29 +100,74 @@ export interface ReadPositionControls {
   save: () => void;
 }
 
-function dismissKey(kind: string, entityId: string): string {
+function dismissKey(
+  kind: string,
+  entityId: string,
+): string {
   return `rmh-readpos-dismissed:${kind}:${entityId}`;
 }
 
-function wasDismissed(kind: string, entityId: string): boolean {
+function wasDismissed(
+  kind: string,
+  entityId: string,
+): boolean {
   try {
-    return sessionStorage.getItem(dismissKey(kind, entityId)) === '1';
+    return (
+      sessionStorage.getItem(
+        dismissKey(
+          kind,
+          entityId,
+        ),
+      ) ===
+      '1'
+    );
   } catch {
     return false; // private mode / storage disabled — prompting again is harmless
   }
 }
 
-function defaultRestore(position: StoredReadPosition): void {
-  const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
-  if (position.anchorId) {
-    const el = document.getElementById(position.anchorId);
-    if (el) {
-      el.scrollIntoView({ behavior, block: 'start' });
+function defaultRestore(
+  position: StoredReadPosition,
+): void {
+  const behavior: ScrollBehavior =
+    prefersReducedMotion()
+      ? 'auto'
+      : 'smooth';
+  if (
+    position.anchorId
+  ) {
+    const el =
+      document.getElementById(
+        position.anchorId,
+      );
+    if (
+      el
+    ) {
+      el.scrollIntoView(
+        {
+          behavior,
+          block:
+            'start',
+        },
+      );
       return;
     }
   }
-  const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-  window.scrollTo({ top: Math.max(0, scrollable * position.fraction), behavior });
+  const scrollable =
+    document
+      .documentElement
+      .scrollHeight -
+    window.innerHeight;
+  window.scrollTo(
+    {
+      top: Math.max(
+        0,
+        scrollable *
+          position.fraction,
+      ),
+      behavior,
+    },
+  );
 }
 
 /**
@@ -119,121 +177,348 @@ function defaultRestore(position: StoredReadPosition): void {
  */
 export function useReadPosition(
   kind: string,
-  entityId: string | null | undefined,
+  entityId:
+    | string
+    | null
+    | undefined,
   opts: UseReadPositionOptions,
 ): ReadPositionControls {
-  const { getFraction, getAnchorId, onRestore, enabled = true } = opts;
+  const {
+    getFraction,
+    getAnchorId,
+    onRestore,
+    enabled = true,
+  } = opts;
 
-  const [saved, setSaved] = useState<StoredReadPosition | null>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const [
+    saved,
+    setSaved,
+  ] =
+    useState<StoredReadPosition | null>(
+      null,
+    );
+  const [
+    showPrompt,
+    setShowPrompt,
+  ] =
+    useState(
+      false,
+    );
 
   // The callbacks are read at beacon time, not subscribed to: a reader that
   // rebuilds `getFraction` every render must not re-register listeners (or, far
   // worse, fire a write) on every render.
-  const latest = useRef({ getFraction, getAnchorId, onRestore });
-  latest.current = { getFraction, getAnchorId, onRestore };
+  const latest =
+    useRef(
+      {
+        getFraction,
+        getAnchorId,
+        onRestore,
+      },
+    );
+  latest.current =
+    {
+      getFraction,
+      getAnchorId,
+      onRestore,
+    };
 
   /** Fraction of the last successful write, so an idle tab beacons nothing. */
-  const lastSent = useRef<number | null>(null);
+  const lastSent =
+    useRef<
+      | number
+      | null
+    >(
+      null,
+    );
 
   /* ── Read the stored position once ─────────────────────────────────────── */
   useEffect(() => {
-    if (!enabled || !entityId) return;
+    if (
+      !enabled ||
+      !entityId
+    )
+      return;
     let cancelled = false;
 
-    const params = new URLSearchParams({ kind, entityId });
-    fetch(`${ENDPOINT}?${params.toString()}`, { credentials: 'same-origin' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { position?: StoredReadPosition | null } | null) => {
-        if (cancelled) return;
-        const position = data?.position ?? null;
-        setSaved(position);
-        if (!position) return;
-        // Same two bounds the resume rail uses: not at the top, not finished.
-        const worthOffering =
-          position.fraction > MIN_FRACTION && position.fraction < RESUME_MAX_RATIO;
-        if (worthOffering && !wasDismissed(kind, entityId)) setShowPrompt(true);
-      })
-      .catch(() => {
-        // Signed out (401) or offline. A reader that cannot remember your place
-        // is still a reader; there is nothing useful to tell anyone here.
-      });
+    const params =
+      new URLSearchParams(
+        {
+          kind,
+          entityId,
+        },
+      );
+    fetch(
+      `${ENDPOINT}?${params.toString()}`,
+      {
+        credentials:
+          'same-origin',
+      },
+    )
+      .then(
+        (
+          res,
+        ) =>
+          res.ok
+            ? res.json()
+            : null,
+      )
+      .then(
+        (
+          data: {
+            position?: StoredReadPosition | null;
+          } | null,
+        ) => {
+          if (
+            cancelled
+          )
+            return;
+          const position =
+            data?.position ??
+            null;
+          setSaved(
+            position,
+          );
+          if (
+            !position
+          )
+            return;
+          // Same two bounds the resume rail uses: not at the top, not finished.
+          const worthOffering =
+            position.fraction >
+              MIN_FRACTION &&
+            position.fraction <
+              RESUME_MAX_RATIO;
+          if (
+            worthOffering &&
+            !wasDismissed(
+              kind,
+              entityId,
+            )
+          )
+            setShowPrompt(
+              true,
+            );
+        },
+      )
+      .catch(
+        () => {
+          // Signed out (401) or offline. A reader that cannot remember your place
+          // is still a reader; there is nothing useful to tell anyone here.
+        },
+      );
 
     return () => {
       cancelled = true;
     };
-  }, [kind, entityId, enabled]);
+  }, [
+    kind,
+    entityId,
+    enabled,
+  ]);
 
   /* ── Write on tab-hide / teardown, never on scroll ──────────────────────── */
-  const send = useCallback(() => {
-    if (!enabled || !entityId) return;
+  const send =
+    useCallback(() => {
+      if (
+        !enabled ||
+        !entityId
+      )
+        return;
 
-    const raw = latest.current.getFraction();
-    if (!Number.isFinite(raw)) return;
-    const fraction = Math.min(1, Math.max(0, raw));
-    if (fraction < MIN_FRACTION) return;
-    if (lastSent.current != null && Math.abs(fraction - lastSent.current) < MIN_DELTA) return;
+      const raw =
+        latest.current.getFraction();
+      if (
+        !Number.isFinite(
+          raw,
+        )
+      )
+        return;
+      const fraction =
+        Math.min(
+          1,
+          Math.max(
+            0,
+            raw,
+          ),
+        );
+      if (
+        fraction <
+        MIN_FRACTION
+      )
+        return;
+      if (
+        lastSent.current !=
+          null &&
+        Math.abs(
+          fraction -
+            lastSent.current,
+        ) <
+          MIN_DELTA
+      )
+        return;
 
-    const body = JSON.stringify({
+      const body =
+        JSON.stringify(
+          {
+            kind,
+            entityId,
+            fraction,
+            anchorId:
+              latest.current.getAnchorId?.() ??
+              null,
+          },
+        );
+      lastSent.current =
+        fraction;
+
+      // A beacon is queued by the browser and outlives the document; a fetch from
+      // a page being torn down is cancelled. `keepalive` is the fallback for the
+      // (rare) engine without sendBeacon.
+      if (
+        typeof navigator !==
+          'undefined' &&
+        typeof navigator.sendBeacon ===
+          'function'
+      ) {
+        const blob =
+          new Blob(
+            [
+              body,
+            ],
+            {
+              type: 'application/json',
+            },
+          );
+        if (
+          navigator.sendBeacon(
+            ENDPOINT,
+            blob,
+          )
+        )
+          return;
+      }
+      void fetch(
+        ENDPOINT,
+        {
+          method:
+            'POST',
+          headers:
+            {
+              'Content-Type':
+                'application/json',
+            },
+          body,
+          keepalive: true,
+          credentials:
+            'same-origin',
+        },
+      ).catch(
+        () => {},
+      );
+    }, [
       kind,
       entityId,
-      fraction,
-      anchorId: latest.current.getAnchorId?.() ?? null,
-    });
-    lastSent.current = fraction;
-
-    // A beacon is queued by the browser and outlives the document; a fetch from
-    // a page being torn down is cancelled. `keepalive` is the fallback for the
-    // (rare) engine without sendBeacon.
-    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-      const blob = new Blob([body], { type: 'application/json' });
-      if (navigator.sendBeacon(ENDPOINT, blob)) return;
-    }
-    void fetch(ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-      keepalive: true,
-      credentials: 'same-origin',
-    }).catch(() => {});
-  }, [kind, entityId, enabled]);
+      enabled,
+    ]);
 
   useEffect(() => {
-    if (!enabled || !entityId) return;
+    if (
+      !enabled ||
+      !entityId
+    )
+      return;
 
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') send();
-    };
-    document.addEventListener('visibilitychange', onVisibility);
+    const onVisibility =
+      () => {
+        if (
+          document.visibilityState ===
+          'hidden'
+        )
+          send();
+      };
+    document.addEventListener(
+      'visibilitychange',
+      onVisibility,
+    );
     // iOS Safari does not reliably fire `visibilitychange` on tab close; it does
     // fire `pagehide`. Both call the same de-duplicated `send()`.
-    window.addEventListener('pagehide', send);
+    window.addEventListener(
+      'pagehide',
+      send,
+    );
 
     return () => {
-      document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('pagehide', send);
+      document.removeEventListener(
+        'visibilitychange',
+        onVisibility,
+      );
+      window.removeEventListener(
+        'pagehide',
+        send,
+      );
       // Client-side navigation away from the reader hides nothing and unloads
       // nothing, so unmount is the only signal there is.
       send();
     };
-  }, [send, enabled, entityId]);
+  }, [
+    send,
+    enabled,
+    entityId,
+  ]);
 
   /* ── Prompt controls ───────────────────────────────────────────────────── */
-  const dismiss = useCallback(() => {
-    setShowPrompt(false);
-    if (!entityId) return;
-    try {
-      sessionStorage.setItem(dismissKey(kind, entityId), '1');
-    } catch {
-      // Storage disabled — the prompt simply returns on the next visit.
-    }
-  }, [kind, entityId]);
+  const dismiss =
+    useCallback(() => {
+      setShowPrompt(
+        false,
+      );
+      if (
+        !entityId
+      )
+        return;
+      try {
+        sessionStorage.setItem(
+          dismissKey(
+            kind,
+            entityId,
+          ),
+          '1',
+        );
+      } catch {
+        // Storage disabled — the prompt simply returns on the next visit.
+      }
+    }, [
+      kind,
+      entityId,
+    ]);
 
-  const restore = useCallback(() => {
-    setShowPrompt(false);
-    if (!saved) return;
-    (latest.current.onRestore ?? defaultRestore)(saved);
-  }, [saved]);
+  const restore =
+    useCallback(() => {
+      setShowPrompt(
+        false,
+      );
+      if (
+        !saved
+      )
+        return;
+      (
+        latest
+          .current
+          .onRestore ??
+        defaultRestore
+      )(
+        saved,
+      );
+    }, [
+      saved,
+    ]);
 
-  return { saved, showPrompt, restore, dismiss, save: send };
+  return {
+    saved,
+    showPrompt,
+    restore,
+    dismiss,
+    save: send,
+  };
 }

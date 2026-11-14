@@ -26,9 +26,13 @@
  * `useSyncExternalStore` so the toggle re-renders.
  */
 
-import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
+import {
+  getAudioContext,
+  resumeAudioContext,
+} from '@/lib/shared/platform';
 
-const STORAGE_KEY = 'rmh-kaikai-debt-muted';
+const STORAGE_KEY =
+  'rmh-kaikai-debt-muted';
 
 /* -------------------------------------------------------------------------- */
 /* Mute preference                                                            */
@@ -44,20 +48,33 @@ const STORAGE_KEY = 'rmh-kaikai-debt-muted';
  */
 let muted = false;
 let loaded = false;
-const listeners = new Set<() => void>();
+const listeners =
+  new Set<
+    () => void
+  >();
 
 function load(): void {
-  if (loaded || typeof window === 'undefined') return;
+  if (
+    loaded ||
+    typeof window ===
+      'undefined'
+  )
+    return;
   loaded = true;
   try {
-    muted = window.localStorage.getItem(STORAGE_KEY) === '1';
+    muted =
+      window.localStorage.getItem(
+        STORAGE_KEY,
+      ) ===
+      '1';
   } catch {
     // Private mode / storage disabled. Stay with the default.
   }
 }
 
 function emit(): void {
-  for (const l of listeners) l();
+  for (const l of listeners)
+    l();
 }
 
 export function isMuted(): boolean {
@@ -65,12 +82,24 @@ export function isMuted(): boolean {
   return muted;
 }
 
-export function setMuted(next: boolean): void {
+export function setMuted(
+  next: boolean,
+): void {
   load();
-  if (muted === next) return;
-  muted = next;
+  if (
+    muted ===
+    next
+  )
+    return;
+  muted =
+    next;
   try {
-    window.localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      next
+        ? '1'
+        : '0',
+    );
   } catch {
     // Preference is still live for this session; it just will not persist.
   }
@@ -78,14 +107,23 @@ export function setMuted(next: boolean): void {
 }
 
 export function toggleMuted(): boolean {
-  setMuted(!isMuted());
+  setMuted(
+    !isMuted(),
+  );
   return isMuted();
 }
 
 /** `useSyncExternalStore` subscribe. */
-export function subscribeMuted(onChange: () => void): () => void {
-  listeners.add(onChange);
-  return () => listeners.delete(onChange);
+export function subscribeMuted(
+  onChange: () => void,
+): () => void {
+  listeners.add(
+    onChange,
+  );
+  return () =>
+    listeners.delete(
+      onChange,
+    );
 }
 
 /**
@@ -104,14 +142,25 @@ export function getMutedServerSnapshot(): boolean {
 
 /** The context, resumed, or `null` when muted or unavailable. One gate for every sound. */
 function audio(): AudioContext | null {
-  if (isMuted()) return null;
-  const ctx = getAudioContext();
-  if (!ctx) return null;
+  if (
+    isMuted()
+  )
+    return null;
+  const ctx =
+    getAudioContext();
+  if (
+    !ctx
+  )
+    return null;
   resumeAudioContext();
   // A context still suspended after `resume()` has had no gesture yet. Building
   // a graph now would schedule sound at time zero and dump it all at once the
   // moment the reader first clicks.
-  if (ctx.state === 'suspended') return null;
+  if (
+    ctx.state ===
+    'suspended'
+  )
+    return null;
   return ctx;
 }
 
@@ -144,53 +193,175 @@ interface ToneSpec {
  * exactly what a page like this cannot afford, because it reads as a bug rather
  * than as a sound effect.
  */
-function tone(ctx: AudioContext, spec: ToneSpec): void {
-  const start = ctx.currentTime + (spec.delay ?? 0);
-  const end = start + spec.duration;
+function tone(
+  ctx: AudioContext,
+  spec: ToneSpec,
+): void {
+  const start =
+    ctx.currentTime +
+    (spec.delay ??
+      0);
+  const end =
+    start +
+    spec.duration;
 
-  const osc = ctx.createOscillator();
-  osc.type = spec.type;
-  osc.frequency.setValueAtTime(spec.from, start);
-  if (spec.to !== spec.from) osc.frequency.exponentialRampToValueAtTime(Math.max(1, spec.to), end);
+  const osc =
+    ctx.createOscillator();
+  osc.type =
+    spec.type;
+  osc.frequency.setValueAtTime(
+    spec.from,
+    start,
+  );
+  if (
+    spec.to !==
+    spec.from
+  )
+    osc.frequency.exponentialRampToValueAtTime(
+      Math.max(
+        1,
+        spec.to,
+      ),
+      end,
+    );
 
-  const gain = ctx.createGain();
-  const peak = MASTER_GAIN * (spec.level ?? 1);
-  gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(peak, start + Math.min(0.015, spec.duration * 0.2));
-  gain.gain.exponentialRampToValueAtTime(0.0001, end);
+  const gain =
+    ctx.createGain();
+  const peak =
+    MASTER_GAIN *
+    (spec.level ??
+      1);
+  gain.gain.setValueAtTime(
+    0.0001,
+    start,
+  );
+  gain.gain.exponentialRampToValueAtTime(
+    peak,
+    start +
+      Math.min(
+        0.015,
+        spec.duration *
+          0.2,
+      ),
+  );
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    end,
+  );
 
-  osc.connect(gain).connect(ctx.destination);
-  osc.start(start);
-  osc.stop(end + 0.02);
+  osc
+    .connect(
+      gain,
+    )
+    .connect(
+      ctx.destination,
+    );
+  osc.start(
+    start,
+  );
+  osc.stop(
+    end +
+      0.02,
+  );
   // Let the nodes fall off the graph on their own. Disconnecting in an `onended`
   // handler is the usual reflex and it buys nothing here: a stopped source node
   // with no references is collectable, and the handler itself is a reference.
 }
 
 /** A short burst of filtered noise — the sizzle under a cash-register hit. */
-function noise(ctx: AudioContext, duration: number, level: number, sweepTo: number): void {
-  const start = ctx.currentTime;
-  const frames = Math.max(1, Math.floor(ctx.sampleRate * duration));
-  const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1;
+function noise(
+  ctx: AudioContext,
+  duration: number,
+  level: number,
+  sweepTo: number,
+): void {
+  const start =
+    ctx.currentTime;
+  const frames =
+    Math.max(
+      1,
+      Math.floor(
+        ctx.sampleRate *
+          duration,
+      ),
+    );
+  const buffer =
+    ctx.createBuffer(
+      1,
+      frames,
+      ctx.sampleRate,
+    );
+  const data =
+    buffer.getChannelData(
+      0,
+    );
+  for (
+    let i = 0;
+    i <
+    frames;
+    i++
+  )
+    data[
+      i
+    ] =
+      Math.random() *
+        2 -
+      1;
 
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
+  const source =
+    ctx.createBufferSource();
+  source.buffer =
+    buffer;
 
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'bandpass';
+  const filter =
+    ctx.createBiquadFilter();
+  filter.type =
+    'bandpass';
   filter.Q.value = 1.2;
-  filter.frequency.setValueAtTime(2400, start);
-  filter.frequency.exponentialRampToValueAtTime(Math.max(60, sweepTo), start + duration);
+  filter.frequency.setValueAtTime(
+    2400,
+    start,
+  );
+  filter.frequency.exponentialRampToValueAtTime(
+    Math.max(
+      60,
+      sweepTo,
+    ),
+    start +
+      duration,
+  );
 
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(MASTER_GAIN * level, start);
-  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  const gain =
+    ctx.createGain();
+  gain.gain.setValueAtTime(
+    MASTER_GAIN *
+      level,
+    start,
+  );
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    start +
+      duration,
+  );
 
-  source.connect(filter).connect(gain).connect(ctx.destination);
-  source.start(start);
-  source.stop(start + duration + 0.02);
+  source
+    .connect(
+      filter,
+    )
+    .connect(
+      gain,
+    )
+    .connect(
+      ctx.destination,
+    );
+  source.start(
+    start,
+  );
+  source.stop(
+    start +
+      duration +
+      0.02,
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -199,41 +370,156 @@ function noise(ctx: AudioContext, duration: number, level: number, sweepTo: numb
 
 /** A member's debt lands: a cash-register two-note, then a downward crack. */
 export function playDebtAdded(): void {
-  const ctx = audio();
-  if (!ctx) return;
-  tone(ctx, { type: 'square', from: 880, to: 880, duration: 0.07, level: 0.7 });
-  tone(ctx, { type: 'square', from: 1320, to: 1320, duration: 0.1, level: 0.6, delay: 0.07 });
-  tone(ctx, { type: 'sawtooth', from: 2400, to: 180, duration: 0.22, level: 0.5, delay: 0.1 });
-  noise(ctx, 0.3, 0.35, 200);
+  const ctx =
+    audio();
+  if (
+    !ctx
+  )
+    return;
+  tone(
+    ctx,
+    {
+      type: 'square',
+      from: 880,
+      to: 880,
+      duration: 0.07,
+      level: 0.7,
+    },
+  );
+  tone(
+    ctx,
+    {
+      type: 'square',
+      from: 1320,
+      to: 1320,
+      duration: 0.1,
+      level: 0.6,
+      delay: 0.07,
+    },
+  );
+  tone(
+    ctx,
+    {
+      type: 'sawtooth',
+      from: 2400,
+      to: 180,
+      duration: 0.22,
+      level: 0.5,
+      delay: 0.1,
+    },
+  );
+  noise(
+    ctx,
+    0.3,
+    0.35,
+    200,
+  );
 }
 
 /** Somebody else's debt arrives over the wire: the same idea, quieter and lower. */
 export function playRemoteDebt(): void {
-  const ctx = audio();
-  if (!ctx) return;
-  tone(ctx, { type: 'triangle', from: 660, to: 990, duration: 0.12, level: 0.45 });
-  tone(ctx, { type: 'sawtooth', from: 1600, to: 220, duration: 0.18, level: 0.3, delay: 0.06 });
+  const ctx =
+    audio();
+  if (
+    !ctx
+  )
+    return;
+  tone(
+    ctx,
+    {
+      type: 'triangle',
+      from: 660,
+      to: 990,
+      duration: 0.12,
+      level: 0.45,
+    },
+  );
+  tone(
+    ctx,
+    {
+      type: 'sawtooth',
+      from: 1600,
+      to: 220,
+      duration: 0.18,
+      level: 0.3,
+      delay: 0.06,
+    },
+  );
 }
 
 /** The appraiser declined. A flat, unimpressed two-note fall. */
 export function playRejected(): void {
-  const ctx = audio();
-  if (!ctx) return;
-  tone(ctx, { type: 'square', from: 320, to: 320, duration: 0.09, level: 0.5 });
-  tone(ctx, { type: 'square', from: 190, to: 190, duration: 0.18, level: 0.5, delay: 0.1 });
+  const ctx =
+    audio();
+  if (
+    !ctx
+  )
+    return;
+  tone(
+    ctx,
+    {
+      type: 'square',
+      from: 320,
+      to: 320,
+      duration: 0.09,
+      level: 0.5,
+    },
+  );
+  tone(
+    ctx,
+    {
+      type: 'square',
+      from: 190,
+      to: 190,
+      duration: 0.18,
+      level: 0.5,
+      delay: 0.1,
+    },
+  );
 }
 
 /** A page of history is conjured out of the void. */
 export function playLedgerExtended(): void {
-  const ctx = audio();
-  if (!ctx) return;
-  tone(ctx, { type: 'sine', from: 180, to: 720, duration: 0.34, level: 0.42 });
-  noise(ctx, 0.4, 0.22, 120);
+  const ctx =
+    audio();
+  if (
+    !ctx
+  )
+    return;
+  tone(
+    ctx,
+    {
+      type: 'sine',
+      from: 180,
+      to: 720,
+      duration: 0.34,
+      level: 0.42,
+    },
+  );
+  noise(
+    ctx,
+    0.4,
+    0.22,
+    120,
+  );
 }
 
 /** The Q&A answer starts arriving. Deliberately tiny — it fires often. */
 export function playAnswerStart(): void {
-  const ctx = audio();
-  if (!ctx) return;
-  tone(ctx, { type: 'sine', from: 1200, to: 1600, duration: 0.07, level: 0.3 });
+  const ctx =
+    audio();
+  if (
+    !ctx
+  )
+    return;
+  tone(
+    ctx,
+    {
+      type: 'sine',
+      from: 1200,
+      to: 1600,
+      duration: 0.07,
+      level: 0.3,
+    },
+  );
 }

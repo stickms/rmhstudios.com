@@ -22,11 +22,21 @@ import { z } from 'zod';
  * creates for you, its curator is by definition the uploader, and letting the
  * builder mint one by hand would produce "albums" that no upload backs.
  */
-export const PACK_KINDS = ['pack', 'course', 'album'] as const;
-export type PackKind = (typeof PACK_KINDS)[number];
+export const PACK_KINDS =
+  [
+    'pack',
+    'course',
+    'album',
+  ] as const;
+export type PackKind =
+  (typeof PACK_KINDS)[number];
 
 /** The kinds the pack builder offers. See above for why `album` is missing. */
-export const AUTHORABLE_PACK_KINDS = ['pack', 'course'] as const;
+export const AUTHORABLE_PACK_KINDS =
+  [
+    'pack',
+    'course',
+  ] as const;
 
 export const PACK_TITLE_MAX = 120;
 export const PACK_DESCRIPTION_MAX = 2000;
@@ -54,9 +64,28 @@ export const PACK_ITEM_MAX = 200;
 export const POSITION_STEP = 10;
 
 /** The position for an item appended after `lastPosition` (or the first one). */
-export function nextPosition(lastPosition: number | null | undefined): number {
-  if (lastPosition == null || !Number.isFinite(lastPosition)) return POSITION_STEP;
-  return Math.floor(lastPosition / POSITION_STEP) * POSITION_STEP + POSITION_STEP;
+export function nextPosition(
+  lastPosition:
+    | number
+    | null
+    | undefined,
+): number {
+  if (
+    lastPosition ==
+      null ||
+    !Number.isFinite(
+      lastPosition,
+    )
+  )
+    return POSITION_STEP;
+  return (
+    Math.floor(
+      lastPosition /
+        POSITION_STEP,
+    ) *
+      POSITION_STEP +
+    POSITION_STEP
+  );
 }
 
 /**
@@ -72,46 +101,188 @@ export function nextPosition(lastPosition: number | null | undefined): number {
  * very end".
  */
 export function positionBetween(
-  before: number | null | undefined,
-  after: number | null | undefined,
-): number | null {
-  if (before == null && after == null) return POSITION_STEP;
-  if (before == null) return Math.floor((after as number) - POSITION_STEP);
-  if (after == null) return nextPosition(before);
-  if (after - before < 2) return null;
-  return Math.floor((before + after) / 2);
+  before:
+    | number
+    | null
+    | undefined,
+  after:
+    | number
+    | null
+    | undefined,
+):
+  | number
+  | null {
+  if (
+    before ==
+      null &&
+    after ==
+      null
+  )
+    return POSITION_STEP;
+  if (
+    before ==
+    null
+  )
+    return Math.floor(
+      (after as number) -
+        POSITION_STEP,
+    );
+  if (
+    after ==
+    null
+  )
+    return nextPosition(
+      before,
+    );
+  if (
+    after -
+      before <
+    2
+  )
+    return null;
+  return Math.floor(
+    (before +
+      after) /
+      2,
+  );
 }
 
 /** `[a, b, c]` -> `[10, 20, 30]`. The renormalisation `positionBetween` asks for. */
-export function resequence<T>(items: readonly T[]): { item: T; position: number }[] {
-  return items.map((item, index) => ({ item, position: (index + 1) * POSITION_STEP }));
+export function resequence<
+  T,
+>(
+  items: readonly T[],
+): {
+  item: T;
+  position: number;
+}[] {
+  return items.map(
+    (
+      item,
+      index,
+    ) => ({
+      item,
+      position:
+        (index +
+          1) *
+        POSITION_STEP,
+    }),
+  );
 }
 
 /* ─── Wire schemas ───────────────────────────────────────────────────────── */
 
-export const PackCreateZ = z.object({
-  title: z.string().trim().min(1).max(PACK_TITLE_MAX),
-  description: z.string().trim().max(PACK_DESCRIPTION_MAX).optional(),
-  kind: z.enum(AUTHORABLE_PACK_KINDS).default('pack'),
-  isPublic: z.boolean().default(false),
-  /**
-   * Song ids to seed the pack with, in order. Optional: the builder creates an
-   * empty pack and adds to it, but the "make a pack from this selection" path
-   * wants to do both in one request — and one request is one transaction, so a
-   * failure half way cannot leave a titled empty pack behind.
-   */
-  songIds: z.array(z.string().min(1).max(64)).max(PACK_ITEM_MAX).optional(),
-});
-export type PackCreate = z.infer<typeof PackCreateZ>;
+export const PackCreateZ =
+  z.object(
+    {
+      title:
+        z
+          .string()
+          .trim()
+          .min(
+            1,
+          )
+          .max(
+            PACK_TITLE_MAX,
+          ),
+      description:
+        z
+          .string()
+          .trim()
+          .max(
+            PACK_DESCRIPTION_MAX,
+          )
+          .optional(),
+      kind: z
+        .enum(
+          AUTHORABLE_PACK_KINDS,
+        )
+        .default(
+          'pack',
+        ),
+      isPublic:
+        z
+          .boolean()
+          .default(
+            false,
+          ),
+      /**
+       * Song ids to seed the pack with, in order. Optional: the builder creates an
+       * empty pack and adds to it, but the "make a pack from this selection" path
+       * wants to do both in one request — and one request is one transaction, so a
+       * failure half way cannot leave a titled empty pack behind.
+       */
+      songIds:
+        z
+          .array(
+            z
+              .string()
+              .min(
+                1,
+              )
+              .max(
+                64,
+              ),
+          )
+          .max(
+            PACK_ITEM_MAX,
+          )
+          .optional(),
+    },
+  );
+export type PackCreate =
+  z.infer<
+    typeof PackCreateZ
+  >;
 
-export const PackUpdateZ = z
-  .object({
-    title: z.string().trim().min(1).max(PACK_TITLE_MAX).optional(),
-    description: z.string().trim().max(PACK_DESCRIPTION_MAX).nullable().optional(),
-    isPublic: z.boolean().optional(),
-  })
-  .refine((v) => Object.keys(v).length > 0, { message: 'Nothing to update.' });
-export type PackUpdate = z.infer<typeof PackUpdateZ>;
+export const PackUpdateZ =
+  z
+    .object(
+      {
+        title:
+          z
+            .string()
+            .trim()
+            .min(
+              1,
+            )
+            .max(
+              PACK_TITLE_MAX,
+            )
+            .optional(),
+        description:
+          z
+            .string()
+            .trim()
+            .max(
+              PACK_DESCRIPTION_MAX,
+            )
+            .nullable()
+            .optional(),
+        isPublic:
+          z
+            .boolean()
+            .optional(),
+      },
+    )
+    .refine(
+      (
+        v,
+      ) =>
+        Object.keys(
+          v,
+        )
+          .length >
+        0,
+      {
+        message:
+          'Nothing to update.',
+      },
+    );
+export type PackUpdate =
+  z.infer<
+    typeof PackUpdateZ
+  >;
 
 /**
  * Adding, removing and reordering, on one schema.
@@ -122,45 +293,171 @@ export type PackUpdate = z.infer<typeof PackUpdateZ>;
  * and in a way neither side can detect. Sending the order you can see means the
  * server can reject an order that does not match the pack it holds.
  */
-export const PackItemsZ = z
-  .object({
-    add: z.array(z.string().min(1).max(64)).max(PACK_ITEM_MAX).optional(),
-    remove: z.array(z.string().min(1).max(64)).max(PACK_ITEM_MAX).optional(),
-    order: z.array(z.string().min(1).max(64)).max(PACK_ITEM_MAX).optional(),
-  })
-  .refine((v) => Boolean(v.add?.length || v.remove?.length || v.order?.length), {
-    message: 'Nothing to change.',
-  });
-export type PackItemsPatch = z.infer<typeof PackItemsZ>;
+export const PackItemsZ =
+  z
+    .object(
+      {
+        add: z
+          .array(
+            z
+              .string()
+              .min(
+                1,
+              )
+              .max(
+                64,
+              ),
+          )
+          .max(
+            PACK_ITEM_MAX,
+          )
+          .optional(),
+        remove:
+          z
+            .array(
+              z
+                .string()
+                .min(
+                  1,
+                )
+                .max(
+                  64,
+                ),
+            )
+            .max(
+              PACK_ITEM_MAX,
+            )
+            .optional(),
+        order:
+          z
+            .array(
+              z
+                .string()
+                .min(
+                  1,
+                )
+                .max(
+                  64,
+                ),
+            )
+            .max(
+              PACK_ITEM_MAX,
+            )
+            .optional(),
+      },
+    )
+    .refine(
+      (
+        v,
+      ) =>
+        Boolean(
+          v
+            .add
+            ?.length ||
+          v
+            .remove
+            ?.length ||
+          v
+            .order
+            ?.length,
+        ),
+      {
+        message:
+          'Nothing to change.',
+      },
+    );
+export type PackItemsPatch =
+  z.infer<
+    typeof PackItemsZ
+  >;
 
-export const PackListQueryZ = z.object({
-  /** `mine` includes unpublished drafts; the default browse cannot. */
-  scope: z.enum(['public', 'mine']).default('public'),
-  kind: z.enum(PACK_KINDS).optional(),
-  artist: z.string().trim().max(200).optional(),
-  limit: z.coerce.number().int().min(1).max(50).default(24),
-  cursor: z.string().max(64).optional(),
-});
-export type PackListQuery = z.infer<typeof PackListQueryZ>;
+export const PackListQueryZ =
+  z.object(
+    {
+      /** `mine` includes unpublished drafts; the default browse cannot. */
+      scope:
+        z
+          .enum(
+            [
+              'public',
+              'mine',
+            ],
+          )
+          .default(
+            'public',
+          ),
+      kind: z
+        .enum(
+          PACK_KINDS,
+        )
+        .optional(),
+      artist:
+        z
+          .string()
+          .trim()
+          .max(
+            200,
+          )
+          .optional(),
+      limit:
+        z.coerce
+          .number()
+          .int()
+          .min(
+            1,
+          )
+          .max(
+            50,
+          )
+          .default(
+            24,
+          ),
+      cursor:
+        z
+          .string()
+          .max(
+            64,
+          )
+          .optional(),
+    },
+  );
+export type PackListQuery =
+  z.infer<
+    typeof PackListQueryZ
+  >;
 
 /* ─── The client DTO ─────────────────────────────────────────────────────── */
 
 export interface PackSummary {
   id: string;
   title: string;
-  description: string | null;
-  coverUrl: string | null;
+  description:
+    | string
+    | null;
+  coverUrl:
+    | string
+    | null;
   kind: PackKind;
   isPublic: boolean;
-  artistKey: string | null;
+  artistKey:
+    | string
+    | null;
   songCount: number;
   createdAt: string;
-  curator: { id: string; name: string; image: string | null };
+  curator: {
+    id: string;
+    name: string;
+    image:
+      | string
+      | null;
+  };
   /** True when the viewer may edit this pack — i.e. they curate it. */
   isOwner: boolean;
 }
 
 /** `/slice-it/?packId=…` — the library filtered to one pack, in pack order. */
-export function packLibraryPath(packId: string): string {
+export function packLibraryPath(
+  packId: string,
+): string {
   return `/slice-it?packId=${encodeURIComponent(packId)}`;
 }

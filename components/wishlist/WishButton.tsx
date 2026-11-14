@@ -3,7 +3,10 @@ import { Heart } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { addWishApi, removeWishApi } from '@/lib/wishlist/wishlist.contract';
+import {
+  addWishApi,
+  removeWishApi,
+} from '@/lib/wishlist/wishlist.contract';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -26,40 +29,134 @@ export function WishButton({
   initialWished?: boolean;
   /** Optional visible text (e.g. "Notify me"); icon-only when omitted. */
   label?: string;
-  className?: string | undefined;
+  className?:
+    | string
+    | undefined;
 }) {
-  const { t } = useTranslation('c-wishlist');
-  const [wished, setWished] = useState(initialWished);
-  const [busy, setBusy] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-wishlist',
+    );
+  const [
+    wished,
+    setWished,
+  ] =
+    useState(
+      initialWished,
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
 
   async function toggle() {
-    if (busy) return;
-    const next = !wished;
-    setBusy(true);
-    setWished(next);
+    if (
+      busy
+    )
+      return;
+    const next =
+      !wished;
+    setBusy(
+      true,
+    );
+    setWished(
+      next,
+    );
     try {
-      await api(next ? addWishApi : removeWishApi, { body: { entityType, entityId } });
-      if (next) toast.success(t('added', { defaultValue: 'Added to wishlist' }));
+      await api(
+        next
+          ? addWishApi
+          : removeWishApi,
+        {
+          body: {
+            entityType,
+            entityId,
+          },
+        },
+      );
+      if (
+        next
+      )
+        toast.success(
+          t(
+            'added',
+            {
+              defaultValue:
+                'Added to wishlist',
+            },
+          ),
+        );
     } catch {
-      setWished(!next);
-      toast.error(t('error', { defaultValue: "Couldn't update your wishlist" }));
+      setWished(
+        !next,
+      );
+      toast.error(
+        t(
+          'error',
+          {
+            defaultValue:
+              "Couldn't update your wishlist",
+          },
+        ),
+      );
     } finally {
-      setBusy(false);
+      setBusy(
+        false,
+      );
     }
   }
 
   return (
     <Button
       type="button"
-      variant={wished ? 'default' : 'default'}
+      variant={
+        wished
+          ? 'default'
+          : 'default'
+      }
       size="sm"
-      onClick={toggle}
-      disabled={busy}
-      aria-pressed={wished}
-      className={className}
+      onClick={
+        toggle
+      }
+      disabled={
+        busy
+      }
+      aria-pressed={
+        wished
+      }
+      className={
+        className
+      }
     >
-      <Heart className={cn('h-4 w-4', wished && 'fill-current')} aria-hidden />
-      {label ?? (wished ? t('wished', { defaultValue: 'Wishlisted' }) : t('wish', { defaultValue: 'Wishlist' }))}
+      <Heart
+        className={cn(
+          'h-4 w-4',
+          wished &&
+            'fill-current',
+        )}
+        aria-hidden
+      />
+      {label ??
+        (wished
+          ? t(
+              'wished',
+              {
+                defaultValue:
+                  'Wishlisted',
+              },
+            )
+          : t(
+              'wish',
+              {
+                defaultValue:
+                  'Wishlist',
+              },
+            ))}
     </Button>
   );
 }

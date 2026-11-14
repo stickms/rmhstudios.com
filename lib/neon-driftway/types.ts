@@ -26,10 +26,16 @@ export type GameState =
   | 'gameOver'
   | 'levelComplete';
 
-export type LevelId = 1 | 2 | 3;
+export type LevelId =
+  | 1
+  | 2
+  | 3;
 
 /** Roadside dressing set the renderer builds for a level. */
-export type RoadsideStyle = 'sunset' | 'storm' | 'neon';
+export type RoadsideStyle =
+  | 'sunset'
+  | 'storm'
+  | 'neon';
 
 /** Everything the 3D renderer needs to dress a level. */
 export interface LevelVisuals {
@@ -38,7 +44,11 @@ export interface LevelVisuals {
   /** Colour of the band right at the horizon — sells the haze. */
   horizon: string;
   /** Sun/moon disc on the horizon, or null for an overcast sky. */
-  sun: { color: string; size: number; height: number } | null;
+  sun: {
+    color: string;
+    size: number;
+    height: number;
+  } | null;
   roadColor: string;
   laneColor: string;
   /**
@@ -128,7 +138,12 @@ export type ObstacleType =
   | 'boost_pad'
   | 'ability_slowdown';
 
-export type TrafficBehavior = 'keep_lane' | 'drift' | 'signal_and_change' | 'chase_bias' | 'weave';
+export type TrafficBehavior =
+  | 'keep_lane'
+  | 'drift'
+  | 'signal_and_change'
+  | 'chase_bias'
+  | 'weave';
 
 export interface Obstacle {
   id: number;

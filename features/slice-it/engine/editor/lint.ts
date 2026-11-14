@@ -28,10 +28,23 @@ import {
 } from '@features/slice-it/engine/beatmap/lint';
 import { timeAtBeat } from './snap';
 import { singleTimingPoint } from './types';
-import type { Charts, Difficulty, EditorNote, LintIssue, TimingPoint } from './types';
+import type {
+  Charts,
+  Difficulty,
+  EditorNote,
+  LintIssue,
+  TimingPoint,
+} from './types';
 
-export type { LintCode, LintFinding, LintSeverity };
-export { hasBlockingErrors, countBySeverity };
+export type {
+  LintCode,
+  LintFinding,
+  LintSeverity,
+};
+export {
+  hasBlockingErrors,
+  countBySeverity,
+};
 
 /** One difficulty, reduced to what the rules need. */
 export interface LintChartRequest {
@@ -63,23 +76,47 @@ export interface LintResult {
   /** True when at least one finding is an error — publish is blocked. */
   blocked: boolean;
   /** Per-difficulty counts, for the tab badges. */
-  perDifficulty: Record<Difficulty, { errors: number; warnings: number }>;
+  perDifficulty: Record<
+    Difficulty,
+    {
+      errors: number;
+      warnings: number;
+    }
+  >;
 }
 
 /** The empty result, used before the first run and after a reset. */
-export const EMPTY_LINT: LintResult = {
-  revision: -1,
-  findings: [],
-  errors: 0,
-  warnings: 0,
-  blocked: false,
-  perDifficulty: {
-    easy: { errors: 0, warnings: 0 },
-    normal: { errors: 0, warnings: 0 },
-    hard: { errors: 0, warnings: 0 },
-    expert: { errors: 0, warnings: 0 },
-  },
-};
+export const EMPTY_LINT: LintResult =
+  {
+    revision:
+      -1,
+    findings:
+      [],
+    errors: 0,
+    warnings: 0,
+    blocked: false,
+    perDifficulty:
+      {
+        easy: {
+          errors: 0,
+          warnings: 0,
+        },
+        normal:
+          {
+            errors: 0,
+            warnings: 0,
+          },
+        hard: {
+          errors: 0,
+          warnings: 0,
+        },
+        expert:
+          {
+            errors: 0,
+            warnings: 0,
+          },
+      },
+  };
 
 /**
  * A `LintFinding` carries the difficulty it belongs to only through this field,
@@ -102,28 +139,77 @@ export interface ScopedFinding extends LintFinding {
  */
 const MAX_BEATS = 10_000;
 
-export function beatTimes(points: readonly TimingPoint[], duration: number): number[] {
-  if (points.length === 0 || !(duration > 0)) return [];
-  const out: number[] = [];
-  for (let beat = 0; out.length < MAX_BEATS; beat++) {
-    const time = timeAtBeat(beat, points);
-    if (!Number.isFinite(time)) break;
-    if (time > duration) break;
+export function beatTimes(
+  points: readonly TimingPoint[],
+  duration: number,
+): number[] {
+  if (
+    points.length ===
+      0 ||
+    !(
+      duration >
+      0
+    )
+  )
+    return [];
+  const out: number[] =
+    [];
+  for (
+    let beat = 0;
+    out.length <
+    MAX_BEATS;
+    beat++
+  ) {
+    const time =
+      timeAtBeat(
+        beat,
+        points,
+      );
+    if (
+      !Number.isFinite(
+        time,
+      )
+    )
+      break;
+    if (
+      time >
+      duration
+    )
+      break;
     // A degenerate timing point (bpm 0, or a later point earlier in time) can
     // make this stop advancing; bail rather than emit a million identical beats.
-    if (out.length > 0 && time <= out[out.length - 1]) break;
-    out.push(time);
+    if (
+      out.length >
+        0 &&
+      time <=
+        out[
+          out.length -
+            1
+        ]
+    )
+      break;
+    out.push(
+      time,
+    );
   }
   return out;
 }
 
-function toLintNote(note: EditorNote): LintNote {
+function toLintNote(
+  note: EditorNote,
+): LintNote {
   return {
     id: note.id,
     time: note.time,
     lane: note.lane,
     type: note.type,
-    ...(note.duration != null ? { duration: note.duration } : {}),
+    ...(note.duration !=
+    null
+      ? {
+          duration:
+            note.duration,
+        }
+      : {}),
   };
 }
 
@@ -135,16 +221,36 @@ export interface BuildRequestInput {
   checkNesting?: boolean;
 }
 
-export function buildLintRequest(input: BuildRequestInput): LintRequest {
+export function buildLintRequest(
+  input: BuildRequestInput,
+): LintRequest {
   return {
-    revision: input.revision,
-    duration: input.duration,
-    beats: beatTimes(input.timingPoints, input.duration),
-    charts: DIFFICULTIES.map((difficulty) => ({
-      difficulty,
-      notes: input.charts[difficulty].notes.map(toLintNote),
-    })),
-    checkNesting: input.checkNesting !== false,
+    revision:
+      input.revision,
+    duration:
+      input.duration,
+    beats:
+      beatTimes(
+        input.timingPoints,
+        input.duration,
+      ),
+    charts:
+      DIFFICULTIES.map(
+        (
+          difficulty,
+        ) => ({
+          difficulty,
+          notes:
+            input.charts[
+              difficulty
+            ].notes.map(
+              toLintNote,
+            ),
+        }),
+      ),
+    checkNesting:
+      input.checkNesting !==
+      false,
   };
 }
 
@@ -156,57 +262,171 @@ export function buildLintRequest(input: BuildRequestInput): LintRequest {
  * otherwise ship the broken tier, and finding that out from a player is the
  * worst possible time.
  */
-export function runLint(request: LintRequest): LintResult {
-  const findings: ScopedFinding[] = [];
-  const perDifficulty: Record<Difficulty, { errors: number; warnings: number }> = {
-    easy: { errors: 0, warnings: 0 },
-    normal: { errors: 0, warnings: 0 },
-    hard: { errors: 0, warnings: 0 },
-    expert: { errors: 0, warnings: 0 },
-  };
+export function runLint(
+  request: LintRequest,
+): LintResult {
+  const findings: ScopedFinding[] =
+    [];
+  const perDifficulty: Record<
+    Difficulty,
+    {
+      errors: number;
+      warnings: number;
+    }
+  > =
+    {
+      easy: {
+        errors: 0,
+        warnings: 0,
+      },
+      normal:
+        {
+          errors: 0,
+          warnings: 0,
+        },
+      hard: {
+        errors: 0,
+        warnings: 0,
+      },
+      expert:
+        {
+          errors: 0,
+          warnings: 0,
+        },
+    };
 
   for (const chart of request.charts) {
     // A tier with no notes at all is a tier the author has not written yet, not
     // a 4-minute empty stretch. Silence beats a panel full of noise about work
     // that has not started.
-    if (chart.notes.length === 0) continue;
-    const scoped = lintNotes({
-      difficulty: chart.difficulty,
-      notes: chart.notes,
-      duration: request.duration,
-      beats: request.beats.length >= 2 ? request.beats : undefined,
-    }).map((finding) => ({ ...finding, difficulty: chart.difficulty }));
-    findings.push(...scoped);
+    if (
+      chart
+        .notes
+        .length ===
+      0
+    )
+      continue;
+    const scoped =
+      lintNotes(
+        {
+          difficulty:
+            chart.difficulty,
+          notes:
+            chart.notes,
+          duration:
+            request.duration,
+          beats:
+            request
+              .beats
+              .length >=
+            2
+              ? request.beats
+              : undefined,
+        },
+      ).map(
+        (
+          finding,
+        ) => ({
+          ...finding,
+          difficulty:
+            chart.difficulty,
+        }),
+      );
+    findings.push(
+      ...scoped,
+    );
   }
 
-  if (request.checkNesting) {
-    for (let i = 0; i < request.charts.length - 1; i++) {
-      const lower = request.charts[i];
-      const higher = request.charts[i + 1];
-      if (lower.notes.length === 0 || higher.notes.length === 0) continue;
+  if (
+    request.checkNesting
+  ) {
+    for (
+      let i = 0;
+      i <
+      request
+        .charts
+        .length -
+        1;
+      i++
+    ) {
+      const lower =
+        request
+          .charts[
+          i
+        ];
+      const higher =
+        request
+          .charts[
+          i +
+            1
+        ];
+      if (
+        lower
+          .notes
+          .length ===
+          0 ||
+        higher
+          .notes
+          .length ===
+          0
+      )
+        continue;
       findings.push(
-        ...lintNesting(lower, higher).map((finding) => ({
-          ...finding,
-          difficulty: lower.difficulty,
-        })),
+        ...lintNesting(
+          lower,
+          higher,
+        ).map(
+          (
+            finding,
+          ) => ({
+            ...finding,
+            difficulty:
+              lower.difficulty,
+          }),
+        ),
       );
     }
   }
 
-  findings.sort((a, b) => a.time - b.time);
+  findings.sort(
+    (
+      a,
+      b,
+    ) =>
+      a.time -
+      b.time,
+  );
   for (const finding of findings) {
-    const bucket = perDifficulty[finding.difficulty];
-    if (finding.severity === 'error') bucket.errors++;
-    else bucket.warnings++;
+    const bucket =
+      perDifficulty[
+        finding
+          .difficulty
+      ];
+    if (
+      finding.severity ===
+      'error'
+    )
+      bucket.errors++;
+    else
+      bucket.warnings++;
   }
 
-  const { errors, warnings } = countBySeverity(findings);
+  const {
+    errors,
+    warnings,
+  } =
+    countBySeverity(
+      findings,
+    );
   return {
-    revision: request.revision,
+    revision:
+      request.revision,
     findings,
     errors,
     warnings,
-    blocked: errors > 0,
+    blocked:
+      errors >
+      0,
     perDifficulty,
   };
 }
@@ -224,20 +444,47 @@ export function lintWireChart(input: {
   difficulty: Difficulty;
   notes: readonly LintNote[];
   duration: number;
-  timingPoints?: readonly TimingPoint[] | null;
-  bpm?: number | null;
+  timingPoints?:
+    | readonly TimingPoint[]
+    | null;
+  bpm?:
+    | number
+    | null;
 }): LintFinding[] {
   const points =
-    input.timingPoints && input.timingPoints.length > 0
+    input.timingPoints &&
+    input
+      .timingPoints
+      .length >
+      0
       ? input.timingPoints
-      : singleTimingPoint(input.bpm && input.bpm > 0 ? input.bpm : 120);
-  const beats = beatTimes(points, input.duration);
-  return lintNotes({
-    difficulty: input.difficulty,
-    notes: input.notes,
-    duration: input.duration,
-    beats: beats.length >= 2 ? beats : undefined,
-  });
+      : singleTimingPoint(
+          input.bpm &&
+            input.bpm >
+              0
+            ? input.bpm
+            : 120,
+        );
+  const beats =
+    beatTimes(
+      points,
+      input.duration,
+    );
+  return lintNotes(
+    {
+      difficulty:
+        input.difficulty,
+      notes:
+        input.notes,
+      duration:
+        input.duration,
+      beats:
+        beats.length >=
+        2
+          ? beats
+          : undefined,
+    },
+  );
 }
 
 /**
@@ -248,19 +495,53 @@ export function lintWireChart(input: {
  * comparisons a frame, which is exactly the shape of cost that turns a 3 ms
  * draw into a 30 ms one.
  */
-export function issuesByNote(result: LintResult, difficulty: Difficulty): Map<string, LintIssue[]> {
-  const map = new Map<string, LintIssue[]>();
+export function issuesByNote(
+  result: LintResult,
+  difficulty: Difficulty,
+): Map<
+  string,
+  LintIssue[]
+> {
+  const map =
+    new Map<
+      string,
+      LintIssue[]
+    >();
   for (const finding of result.findings as ScopedFinding[]) {
-    if (finding.difficulty !== difficulty) continue;
-    if (!finding.noteId) continue;
-    const issue: LintIssue = {
-      code: finding.code,
-      severity: finding.severity,
-      message: finding.message,
-    };
-    const existing = map.get(finding.noteId);
-    if (existing) existing.push(issue);
-    else map.set(finding.noteId, [issue]);
+    if (
+      finding.difficulty !==
+      difficulty
+    )
+      continue;
+    if (
+      !finding.noteId
+    )
+      continue;
+    const issue: LintIssue =
+      {
+        code: finding.code,
+        severity:
+          finding.severity,
+        message:
+          finding.message,
+      };
+    const existing =
+      map.get(
+        finding.noteId,
+      );
+    if (
+      existing
+    )
+      existing.push(
+        issue,
+      );
+    else
+      map.set(
+        finding.noteId,
+        [
+          issue,
+        ],
+      );
   }
   return map;
 }
@@ -277,21 +558,69 @@ export interface LintGroup {
  * §9's panel design: one row per rule with a count, expandable. Forty separate
  * "off-grid" rows is a list nobody reads; "off-grid × 40" is a decision.
  */
-export function groupFindings(result: LintResult, difficulty?: Difficulty): LintGroup[] {
-  const groups = new Map<LintCode, LintGroup>();
+export function groupFindings(
+  result: LintResult,
+  difficulty?: Difficulty,
+): LintGroup[] {
+  const groups =
+    new Map<
+      LintCode,
+      LintGroup
+    >();
   for (const finding of result.findings as ScopedFinding[]) {
-    if (difficulty && finding.difficulty !== difficulty) continue;
-    const existing = groups.get(finding.code);
-    if (existing) existing.findings.push(finding);
+    if (
+      difficulty &&
+      finding.difficulty !==
+        difficulty
+    )
+      continue;
+    const existing =
+      groups.get(
+        finding.code,
+      );
+    if (
+      existing
+    )
+      existing.findings.push(
+        finding,
+      );
     else
-      groups.set(finding.code, {
-        code: finding.code,
-        severity: finding.severity,
-        findings: [finding],
-      });
+      groups.set(
+        finding.code,
+        {
+          code: finding.code,
+          severity:
+            finding.severity,
+          findings:
+            [
+              finding,
+            ],
+        },
+      );
   }
-  return [...groups.values()].sort((a, b) => {
-    if (a.severity !== b.severity) return a.severity === 'error' ? -1 : 1;
-    return b.findings.length - a.findings.length;
-  });
+  return [
+    ...groups.values(),
+  ].sort(
+    (
+      a,
+      b,
+    ) => {
+      if (
+        a.severity !==
+        b.severity
+      )
+        return a.severity ===
+          'error'
+          ? -1
+          : 1;
+      return (
+        b
+          .findings
+          .length -
+        a
+          .findings
+          .length
+      );
+    },
+  );
 }

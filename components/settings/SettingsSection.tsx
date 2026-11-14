@@ -27,7 +27,16 @@ export function SettingsPageBody({
   return (
     <>
       <NoMargin />
-      <Spine className={cn('settings-page', className)}>{children}</Spine>
+      <Spine
+        className={cn(
+          'settings-page',
+          className,
+        )}
+      >
+        {
+          children
+        }
+      </Spine>
     </>
   );
 }
@@ -55,34 +64,75 @@ export function SettingsSection({
   /** End-aligned header control, typically a `Switch`. */
   action?: React.ReactNode;
   /** `danger` is for irreversible actions (delete account). */
-  tone?: 'default' | 'danger';
+  tone?:
+    | 'default'
+    | 'danger';
   className?: string;
   bodyClassName?: string;
   children?: React.ReactNode;
 }) {
   return (
     <section
-      id={id}
-      data-tone={tone === 'danger' ? 'danger' : undefined}
-      className={cn('settings-group', className)}
+      id={
+        id
+      }
+      data-tone={
+        tone ===
+        'danger'
+          ? 'danger'
+          : undefined
+      }
+      className={cn(
+        'settings-group',
+        className,
+      )}
     >
       <div className="settings-group__head">
         <div className="min-w-0 flex-1">
           {title ? (
-            <h2 id={titleId} className="spine-station t-label settings-group__title">
-              {title}
+            <h2
+              id={
+                titleId
+              }
+              className="spine-station t-label settings-group__title"
+            >
+              {
+                title
+              }
             </h2>
           ) : null}
           {description ? (
-            <p id={descriptionId} className="settings-group__lede t-body">
-              {description}
+            <p
+              id={
+                descriptionId
+              }
+              className="settings-group__lede t-body"
+            >
+              {
+                description
+              }
             </p>
           ) : null}
         </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
+        {action ? (
+          <div className="shrink-0">
+            {
+              action
+            }
+          </div>
+        ) : null}
       </div>
       {children ? (
-        <div className={cn('settings-group__body', bodyClassName)}>{children}</div>
+        <div
+          className={cn(
+            'settings-group__body',
+            bodyClassName,
+          )}
+        >
+          {
+            children
+          }
+        </div>
       ) : null}
     </section>
   );

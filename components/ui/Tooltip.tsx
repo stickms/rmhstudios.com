@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
@@ -26,82 +32,241 @@ const ARROW_INSET = 12;
 /** Gap between the trigger and the bubble — the 8px the transform already used. */
 const ARROW_GAP = 8;
 
-export function Tooltip({ content, children, className, delay = 0.2 }: TooltipProps) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
+export function Tooltip({
+  content,
+  children,
+  className,
+  delay = 0.2,
+}: TooltipProps) {
+  const [
+    isVisible,
+    setIsVisible,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    coords,
+    setCoords,
+  ] =
+    useState(
+      {
+        top: 0,
+        left: 0,
+      },
+    );
   // Horizontal centre after clamping into the viewport; null until measured.
-  const [centre, setCentre] = useState<number | null>(null);
+  const [
+    centre,
+    setCentre,
+  ] =
+    useState<
+      | number
+      | null
+    >(
+      null,
+    );
   // How far the arrow moves to keep pointing at the trigger after that clamp.
-  const [arrowDx, setArrowDx] = useState(0);
+  const [
+    arrowDx,
+    setArrowDx,
+  ] =
+    useState(
+      0,
+    );
   /** Flipped below the trigger because there was no room above it. */
-  const [below, setBelow] = useState(false);
+  const [
+    below,
+    setBelow,
+  ] =
+    useState(
+      false,
+    );
   // Holds the bubble mounted for the length of its close (globals.css §7.1).
-  const { present, state } = usePopPresence(isVisible);
-  const triggerRef = useRef<HTMLSpanElement>(null);
-  const bubbleRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
-  const timeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const tooltipId = useId();
+  const {
+    present,
+    state,
+  } =
+    usePopPresence(
+      isVisible,
+    );
+  const triggerRef =
+    useRef<HTMLSpanElement>(
+      null,
+    );
+  const bubbleRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const [
+    mounted,
+    setMounted,
+  ] =
+    useState(
+      false,
+    );
+  const timeoutId =
+    useRef<ReturnType<
+      typeof setTimeout
+    > | null>(
+      null,
+    );
+  const tooltipId =
+    useId();
 
   useEffect(() => {
-    setMounted(true);
+    setMounted(
+      true,
+    );
     return () => {
-      if (timeoutId.current) clearTimeout(timeoutId.current);
+      if (
+        timeoutId.current
+      )
+        clearTimeout(
+          timeoutId.current,
+        );
     };
   }, []);
 
-  const updateCoords = useCallback(() => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({ top: rect.top, left: rect.left + rect.width / 2 });
-    }
-  }, []);
-
-  const show = useCallback(
-    (withDelay: boolean) => {
-      updateCoords();
-      if (timeoutId.current) clearTimeout(timeoutId.current);
-      if (withDelay) {
-        timeoutId.current = setTimeout(() => {
-          updateCoords();
-          setIsVisible(true);
-        }, delay * 1000);
-      } else {
-        setIsVisible(true);
+  const updateCoords =
+    useCallback(() => {
+      if (
+        triggerRef.current
+      ) {
+        const rect =
+          triggerRef.current.getBoundingClientRect();
+        setCoords(
+          {
+            top: rect.top,
+            left:
+              rect.left +
+              rect.width /
+                2,
+          },
+        );
       }
-    },
-    [delay, updateCoords],
-  );
+    }, []);
 
-  const hide = useCallback(() => {
-    if (timeoutId.current) clearTimeout(timeoutId.current);
-    setIsVisible(false);
-    setCentre(null);
-    setArrowDx(0);
-    setBelow(false);
-  }, []);
+  const show =
+    useCallback(
+      (
+        withDelay: boolean,
+      ) => {
+        updateCoords();
+        if (
+          timeoutId.current
+        )
+          clearTimeout(
+            timeoutId.current,
+          );
+        if (
+          withDelay
+        ) {
+          timeoutId.current =
+            setTimeout(
+              () => {
+                updateCoords();
+                setIsVisible(
+                  true,
+                );
+              },
+              delay *
+                1000,
+            );
+        } else {
+          setIsVisible(
+            true,
+          );
+        }
+      },
+      [
+        delay,
+        updateCoords,
+      ],
+    );
+
+  const hide =
+    useCallback(() => {
+      if (
+        timeoutId.current
+      )
+        clearTimeout(
+          timeoutId.current,
+        );
+      setIsVisible(
+        false,
+      );
+      setCentre(
+        null,
+      );
+      setArrowDx(
+        0,
+      );
+      setBelow(
+        false,
+      );
+    }, []);
 
   useEffect(() => {
-    if (!isVisible) return;
+    if (
+      !isVisible
+    )
+      return;
 
-    const handleUpdate = () => updateCoords();
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') hide();
-    };
+    const handleUpdate =
+      () =>
+        updateCoords();
+    const handleKey =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          e.key ===
+          'Escape'
+        )
+          hide();
+      };
     // Capture-phase so scrolling in ANY container re-anchors the tooltip, and
     // `passive` so that listener can never delay a scroll — this fires on every
     // frame of every scroll while a tooltip is open, which is exactly the shape
     // that makes a page feel heavy if the browser has to wait on it.
-    window.addEventListener('scroll', handleUpdate, { capture: true, passive: true });
-    window.addEventListener('resize', handleUpdate);
-    window.addEventListener('keydown', handleKey);
+    window.addEventListener(
+      'scroll',
+      handleUpdate,
+      {
+        capture: true,
+        passive: true,
+      },
+    );
+    window.addEventListener(
+      'resize',
+      handleUpdate,
+    );
+    window.addEventListener(
+      'keydown',
+      handleKey,
+    );
 
     return () => {
-      window.removeEventListener('scroll', handleUpdate, true);
-      window.removeEventListener('resize', handleUpdate);
-      window.removeEventListener('keydown', handleKey);
+      window.removeEventListener(
+        'scroll',
+        handleUpdate,
+        true,
+      );
+      window.removeEventListener(
+        'resize',
+        handleUpdate,
+      );
+      window.removeEventListener(
+        'keydown',
+        handleKey,
+      );
     };
-  }, [isVisible, updateCoords, hide]);
+  }, [
+    isVisible,
+    updateCoords,
+    hide,
+  ]);
 
   // Keep the bubble on screen. A tooltip on a trigger near either edge would
   // otherwise be centred on the trigger and hang off the viewport with its text
@@ -109,121 +274,244 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
   // Measured from `offsetWidth` (layout width) rather than a bounding rect,
   // because the entrance animation scales the bubble and would under-report it.
   useEffect(() => {
-    if (!isVisible) return;
-    const el = bubbleRef.current;
-    if (!el) return;
+    if (
+      !isVisible
+    )
+      return;
+    const el =
+      bubbleRef.current;
+    if (
+      !el
+    )
+      return;
     // WHICH SIDE. The bubble was pinned above the trigger unconditionally, so a
     // tooltip on anything in the top row of the viewport — the shell's own top
     // bar, the first row of a table, a sticky header — rendered off the top of
     // the screen with its text clipped. The horizontal clamp below has always
     // existed; this is its missing vertical half.
-    const height = el.offsetHeight;
-    setBelow(coords.top - height - ARROW_GAP < VIEWPORT_MARGIN);
+    const height =
+      el.offsetHeight;
+    setBelow(
+      coords.top -
+        height -
+        ARROW_GAP <
+        VIEWPORT_MARGIN,
+    );
 
-    const half = el.offsetWidth / 2;
-    const min = VIEWPORT_MARGIN + half;
-    const max = window.innerWidth - VIEWPORT_MARGIN - half;
+    const half =
+      el.offsetWidth /
+      2;
+    const min =
+      VIEWPORT_MARGIN +
+      half;
+    const max =
+      window.innerWidth -
+      VIEWPORT_MARGIN -
+      half;
     // Bubble wider than the viewport: no clamp can satisfy both edges, so centre.
-    const next = min > max ? window.innerWidth / 2 : Math.min(Math.max(coords.left, min), max);
-    setCentre(next);
+    const next =
+      min >
+      max
+        ? window.innerWidth /
+          2
+        : Math.min(
+            Math.max(
+              coords.left,
+              min,
+            ),
+            max,
+          );
+    setCentre(
+      next,
+    );
     // The arrow tracks the trigger across whatever shift that applied, but stops
     // short of the corners so it never grows out of the bubble's rounded end.
-    const limit = Math.max(0, half - ARROW_INSET);
-    setArrowDx(Math.min(Math.max(coords.left - next, -limit), limit));
-  }, [isVisible, coords.left, coords.top, content]);
+    const limit =
+      Math.max(
+        0,
+        half -
+          ARROW_INSET,
+      );
+    setArrowDx(
+      Math.min(
+        Math.max(
+          coords.left -
+            next,
+          -limit,
+        ),
+        limit,
+      ),
+    );
+  }, [
+    isVisible,
+    coords.left,
+    coords.top,
+    content,
+  ]);
 
-  const tooltipContent = present ? (
-    <div
-      role="tooltip"
-      id={tooltipId}
-      style={{
-        position: 'fixed',
-        top: coords.top,
-        left: centre ?? coords.left,
-        zIndex: 'var(--z-tooltip)',
-        pointerEvents: 'none',
-      }}
-    >
-      {/* `data-motion="pop"` — the site's one enter/exit vocabulary for floating
+  const tooltipContent =
+    present ? (
+      <div
+        role="tooltip"
+        id={
+          tooltipId
+        }
+        style={{
+          position:
+            'fixed',
+          top: coords.top,
+          left:
+            centre ??
+            coords.left,
+          zIndex:
+            'var(--z-tooltip)',
+          pointerEvents:
+            'none',
+        }}
+      >
+        {/* `data-motion="pop"` — the site's one enter/exit vocabulary for floating
  surfaces (globals.css §7.1), which every other popover, menu and select
  already speaks. This was the last floating surface still animating from
  its own framer transition, at its own timing, which is exactly the
  "three different answers" §7.1 was opened to end. `usePopPresence`
  supplies the close, since React unmounts this the instant it hides. */}
-      <div
-        ref={bubbleRef}
-        data-motion="pop"
-        data-state={state}
-        style={{
-          position: 'absolute',
-          bottom: below ? 'auto' : 0,
-          top: below ? 0 : 'auto',
-          left: 0,
-          transform: `translate(-50%, ${below ? ARROW_GAP : -ARROW_GAP}px)`,
-          // The bloom scales from the edge nearest the trigger, so a flipped
-          // tooltip grows downward out of it rather than upward into it.
-          ['--motion-origin' as string]: below ? 'top center' : 'bottom center',
-          maxWidth: `calc(100vw - ${VIEWPORT_MARGIN * 2}px)`,
-        }}
-        className={cn(
-          'px-2.5 py-1 text-xs font-medium text-site-text',
-          // Steel S5: the one raised surface (`--site-surface`, 1px border, 8px radius, the T4 shadow).
-          'surface-overlay',
-          className,
-        )}
-      >
-        {content}
-        {/* Arrow: a border triangle in the BORDER colour with a second, 1px-inset
+        <div
+          ref={
+            bubbleRef
+          }
+          data-motion="pop"
+          data-state={
+            state
+          }
+          style={{
+            position:
+              'absolute',
+            bottom:
+              below
+                ? 'auto'
+                : 0,
+            top: below
+              ? 0
+              : 'auto',
+            left: 0,
+            transform: `translate(-50%, ${below ? ARROW_GAP : -ARROW_GAP}px)`,
+            // The bloom scales from the edge nearest the trigger, so a flipped
+            // tooltip grows downward out of it rather than upward into it.
+            ['--motion-origin' as string]:
+              below
+                ? 'top center'
+                : 'bottom center',
+            maxWidth: `calc(100vw - ${VIEWPORT_MARGIN * 2}px)`,
+          }}
+          className={cn(
+            'px-2.5 py-1 text-xs font-medium text-site-text',
+            // Steel S5: the one raised surface (`--site-surface`, 1px border, 8px radius, the T4 shadow).
+            'surface-overlay',
+            className,
+          )}
+        >
+          {
+            content
+          }
+          {/* Arrow: a border triangle in the BORDER colour with a second, 1px-inset
  triangle in the bubble's own fill over it, so it reads as the bubble's
  hairline-outlined tail. The fill is `--site-surface`, the same colour
  `.surface-overlay` paints with (Steel S5: an overlay is the one raised
  surface, opaque). */}
-        <span
-          aria-hidden
-          className={cn(
-            'absolute -translate-x-1/2 border-4 border-transparent',
-            below ? 'bottom-full border-b-site-border' : 'top-full border-t-site-border',
-          )}
-          style={{ left: `calc(50% + ${arrowDx}px)` }}
-        />
-        <span
-          aria-hidden
-          className={cn(
-            'absolute -translate-x-1/2 border-4 border-transparent',
-            below ? 'bottom-full -mb-px' : 'top-full -mt-px',
-          )}
-          style={{
-            left: `calc(50% + ${arrowDx}px)`,
-            [below ? 'borderBottomColor' : 'borderTopColor']: 'var(--site-surface)',
-          }}
-        />
+          <span
+            aria-hidden
+            className={cn(
+              'absolute -translate-x-1/2 border-4 border-transparent',
+              below
+                ? 'bottom-full border-b-site-border'
+                : 'top-full border-t-site-border',
+            )}
+            style={{
+              left: `calc(50% + ${arrowDx}px)`,
+            }}
+          />
+          <span
+            aria-hidden
+            className={cn(
+              'absolute -translate-x-1/2 border-4 border-transparent',
+              below
+                ? 'bottom-full -mb-px'
+                : 'top-full -mt-px',
+            )}
+            style={{
+              left: `calc(50% + ${arrowDx}px)`,
+              [below
+                ? 'borderBottomColor'
+                : 'borderTopColor']:
+                'var(--site-surface)',
+            }}
+          />
+        </div>
       </div>
-    </div>
-  ) : null;
+    ) : null;
 
   return (
     <>
       <span
-        ref={triggerRef}
+        ref={
+          triggerRef
+        }
         role="presentation"
         className="inline-flex"
-        onMouseEnter={() => show(true)}
-        onMouseLeave={hide}
-        onFocus={() => show(false)}
-        onBlur={hide}
+        onMouseEnter={() =>
+          show(
+            true,
+          )
+        }
+        onMouseLeave={
+          hide
+        }
+        onFocus={() =>
+          show(
+            false,
+          )
+        }
+        onBlur={
+          hide
+        }
       >
-        {React.isValidElement<{ 'aria-describedby'?: string }>(children)
-          ? React.cloneElement(children, {
-              'aria-describedby':
-                [children.props['aria-describedby'], isVisible ? tooltipId : undefined]
-                  .filter(Boolean)
-                  .join(' ') || undefined,
-            })
+        {React.isValidElement<{
+          'aria-describedby'?: string;
+        }>(
+          children,
+        )
+          ? React.cloneElement(
+              children,
+              {
+                'aria-describedby':
+                  [
+                    children
+                      .props[
+                      'aria-describedby'
+                    ],
+                    isVisible
+                      ? tooltipId
+                      : undefined,
+                  ]
+                    .filter(
+                      Boolean,
+                    )
+                    .join(
+                      ' ',
+                    ) ||
+                  undefined,
+              },
+            )
           : children}
       </span>
       {/* Into the fullscreen element when there is one: only its subtree is
           drawn in fullscreen, so a bubble on <body> would never be seen. */}
-      {mounted && createPortal(tooltipContent, document.fullscreenElement ?? document.body)}
+      {mounted &&
+        createPortal(
+          tooltipContent,
+          document.fullscreenElement ??
+            document.body,
+        )}
     </>
   );
 }

@@ -21,7 +21,10 @@
  */
 
 import type { SimEvent } from '../sim/events';
-import { BitReader, BitWriter } from './bitbuf';
+import {
+  BitReader,
+  BitWriter,
+} from './bitbuf';
 import { readEvent } from './event-codec';
 import type { ClientStringTable } from './string-table';
 
@@ -66,11 +69,21 @@ export interface ScoreRow {
 }
 
 export type ReliableMessage =
-  | { kind: 'string'; id: number; value: string }
-  | { kind: 'event'; event: SimEvent }
+  | {
+      kind: 'string';
+      id: number;
+      value: string;
+    }
+  | {
+      kind: 'event';
+      event: SimEvent;
+    }
   | HelloMessage
   | PlayerInfoMessage
-  | { kind: 'scores'; rows: ScoreRow[] };
+  | {
+      kind: 'scores';
+      rows: ScoreRow[];
+    };
 
 export interface DecodedReliable {
   tick: number;
@@ -79,77 +92,200 @@ export interface DecodedReliable {
 
 /** Builds one reliable packet. */
 export class ReliableWriter {
-  private readonly w = new BitWriter(256);
+  private readonly w =
+    new BitWriter(
+      256,
+    );
   private count = 0;
 
-  begin(tick: number): this {
-    this.w.reset(0);
+  begin(
+    tick: number,
+  ): this {
+    this.w.reset(
+      0,
+    );
     this.count = 0;
-    this.w.writeU8(RELIABLE_TAG);
-    this.w.writeVarUint(tick);
+    this.w.writeU8(
+      RELIABLE_TAG,
+    );
+    this.w.writeVarUint(
+      tick,
+    );
     return this;
   }
 
   get empty(): boolean {
-    return this.count === 0;
+    return (
+      this
+        .count ===
+      0
+    );
   }
 
-  private head(kind: number): BitWriter {
-    this.count++;
-    this.w.writeBit(true);
-    this.w.writeBits(kind, 4);
-    return this.w;
+  private head(
+    kind: number,
+  ): BitWriter {
+    this
+      .count++;
+    this.w.writeBit(
+      true,
+    );
+    this.w.writeBits(
+      kind,
+      4,
+    );
+    return this
+      .w;
   }
 
-  string(id: number, value: string): void {
-    const w = this.head(MSG_STRING);
-    w.writeVarUint(id);
-    w.writeString(value, 256);
+  string(
+    id: number,
+    value: string,
+  ): void {
+    const w =
+      this.head(
+        MSG_STRING,
+      );
+    w.writeVarUint(
+      id,
+    );
+    w.writeString(
+      value,
+      256,
+    );
   }
 
   /** A pre-encoded event (event-codec writeEvent). */
-  event(bytes: Uint8Array, bitLength: number): void {
-    this.head(MSG_EVENT).writeBitsFrom(bytes, bitLength);
+  event(
+    bytes: Uint8Array,
+    bitLength: number,
+  ): void {
+    this.head(
+      MSG_EVENT,
+    ).writeBitsFrom(
+      bytes,
+      bitLength,
+    );
   }
 
-  hello(h: Omit<HelloMessage, 'kind'>): void {
-    const w = this.head(MSG_HELLO);
-    w.writeVarUint(h.localEntity + 1);
-    w.writeString(h.map, 64);
-    w.writeString(h.mode, 16);
-    w.writeU8(h.maxPlayers);
-    w.writeVarUint(h.seed >>> 0);
-    w.writeString(h.name, 128);
-    w.writeU8(h.snapshotInterval);
+  hello(
+    h: Omit<
+      HelloMessage,
+      'kind'
+    >,
+  ): void {
+    const w =
+      this.head(
+        MSG_HELLO,
+      );
+    w.writeVarUint(
+      h.localEntity +
+        1,
+    );
+    w.writeString(
+      h.map,
+      64,
+    );
+    w.writeString(
+      h.mode,
+      16,
+    );
+    w.writeU8(
+      h.maxPlayers,
+    );
+    w.writeVarUint(
+      h.seed >>>
+        0,
+    );
+    w.writeString(
+      h.name,
+      128,
+    );
+    w.writeU8(
+      h.snapshotInterval,
+    );
   }
 
-  player(p: Omit<PlayerInfoMessage, 'kind'>): void {
-    const w = this.head(MSG_PLAYER);
-    w.writeVarUint(p.entity);
-    w.writeBit(p.present);
-    if (p.present) {
-      w.writeString(p.name, 128);
-      w.writeBit(p.bot);
+  player(
+    p: Omit<
+      PlayerInfoMessage,
+      'kind'
+    >,
+  ): void {
+    const w =
+      this.head(
+        MSG_PLAYER,
+      );
+    w.writeVarUint(
+      p.entity,
+    );
+    w.writeBit(
+      p.present,
+    );
+    if (
+      p.present
+    ) {
+      w.writeString(
+        p.name,
+        128,
+      );
+      w.writeBit(
+        p.bot,
+      );
     }
   }
 
-  scores(rows: readonly ScoreRow[]): void {
-    const w = this.head(MSG_SCORES);
-    w.writeVarUint(rows.length);
+  scores(
+    rows: readonly ScoreRow[],
+  ): void {
+    const w =
+      this.head(
+        MSG_SCORES,
+      );
+    w.writeVarUint(
+      rows.length,
+    );
     for (const r of rows) {
-      w.writeVarUint(r.entity);
-      w.writeVarInt(r.score);
-      w.writeVarUint(r.kills);
-      w.writeVarUint(r.deaths);
-      w.writeVarUint(r.assists);
-      w.writeVarUint(Math.min(9999, Math.max(0, Math.round(r.pingMs))));
+      w.writeVarUint(
+        r.entity,
+      );
+      w.writeVarInt(
+        r.score,
+      );
+      w.writeVarUint(
+        r.kills,
+      );
+      w.writeVarUint(
+        r.deaths,
+      );
+      w.writeVarUint(
+        r.assists,
+      );
+      w.writeVarUint(
+        Math.min(
+          9999,
+          Math.max(
+            0,
+            Math.round(
+              r.pingMs,
+            ),
+          ),
+        ),
+      );
     }
   }
 
   /** Finishes the packet; null when it carries no message. */
   finish(): Uint8Array | null {
-    if (this.count === 0) return null;
-    this.w.writeBit(false);
+    if (
+      this
+        .count ===
+      0
+    )
+      return null;
+    this.w.writeBit(
+      false,
+    );
     return this.w.toBytes();
   }
 }
@@ -162,67 +298,176 @@ export function decodeReliable(
   bytes: Uint8Array,
   table: ClientStringTable,
 ): DecodedReliable | null {
-  const r = new BitReader(bytes);
-  if (r.readU8() !== RELIABLE_TAG) return null;
-  const tick = r.readVarUint();
-  const messages: ReliableMessage[] = [];
-  const lookup = (id: number) => table.get(id);
+  const r =
+    new BitReader(
+      bytes,
+    );
+  if (
+    r.readU8() !==
+    RELIABLE_TAG
+  )
+    return null;
+  const tick =
+    r.readVarUint();
+  const messages: ReliableMessage[] =
+    [];
+  const lookup =
+    (
+      id: number,
+    ) =>
+      table.get(
+        id,
+      );
   let guard = 0;
-  while (r.readBit()) {
-    if (++guard > 100_000 || r.overflowed) return null;
-    const kind = r.readBits(4);
-    switch (kind) {
+  while (
+    r.readBit()
+  ) {
+    if (
+      ++guard >
+        100_000 ||
+      r.overflowed
+    )
+      return null;
+    const kind =
+      r.readBits(
+        4,
+      );
+    switch (
+      kind
+    ) {
       case MSG_STRING: {
-        const id = r.readVarUint();
-        const value = r.readString(256);
-        table.define(id, value);
-        messages.push({ kind: 'string', id, value });
+        const id =
+          r.readVarUint();
+        const value =
+          r.readString(
+            256,
+          );
+        table.define(
+          id,
+          value,
+        );
+        messages.push(
+          {
+            kind: 'string',
+            id,
+            value,
+          },
+        );
         break;
       }
       case MSG_EVENT:
-        messages.push({ kind: 'event', event: readEvent(r, lookup) });
+        messages.push(
+          {
+            kind: 'event',
+            event:
+              readEvent(
+                r,
+                lookup,
+              ),
+          },
+        );
         break;
       case MSG_HELLO:
-        messages.push({
-          kind: 'hello',
-          localEntity: r.readVarUint() - 1,
-          map: r.readString(64),
-          mode: r.readString(16),
-          maxPlayers: r.readU8(),
-          seed: r.readVarUint(),
-          name: r.readString(128),
-          snapshotInterval: r.readU8(),
-        });
+        messages.push(
+          {
+            kind: 'hello',
+            localEntity:
+              r.readVarUint() -
+              1,
+            map: r.readString(
+              64,
+            ),
+            mode: r.readString(
+              16,
+            ),
+            maxPlayers:
+              r.readU8(),
+            seed: r.readVarUint(),
+            name: r.readString(
+              128,
+            ),
+            snapshotInterval:
+              r.readU8(),
+          },
+        );
         break;
       case MSG_PLAYER: {
-        const entity = r.readVarUint();
-        const present = r.readBit();
-        const name = present ? r.readString(128) : '';
-        const bot = present ? r.readBit() : false;
-        messages.push({ kind: 'player', entity, present, name, bot });
+        const entity =
+          r.readVarUint();
+        const present =
+          r.readBit();
+        const name =
+          present
+            ? r.readString(
+                128,
+              )
+            : '';
+        const bot =
+          present
+            ? r.readBit()
+            : false;
+        messages.push(
+          {
+            kind: 'player',
+            entity,
+            present,
+            name,
+            bot,
+          },
+        );
         break;
       }
       case MSG_SCORES: {
-        const n = r.readVarUint();
-        if (n > 64) return null;
-        const rows: ScoreRow[] = [];
-        for (let i = 0; i < n; i++) {
-          rows.push({
-            entity: r.readVarUint(),
-            score: r.readVarInt(),
-            kills: r.readVarUint(),
-            deaths: r.readVarUint(),
-            assists: r.readVarUint(),
-            pingMs: r.readVarUint(),
-          });
+        const n =
+          r.readVarUint();
+        if (
+          n >
+          64
+        )
+          return null;
+        const rows: ScoreRow[] =
+          [];
+        for (
+          let i = 0;
+          i <
+          n;
+          i++
+        ) {
+          rows.push(
+            {
+              entity:
+                r.readVarUint(),
+              score:
+                r.readVarInt(),
+              kills:
+                r.readVarUint(),
+              deaths:
+                r.readVarUint(),
+              assists:
+                r.readVarUint(),
+              pingMs:
+                r.readVarUint(),
+            },
+          );
         }
-        messages.push({ kind: 'scores', rows });
+        messages.push(
+          {
+            kind: 'scores',
+            rows,
+          },
+        );
         break;
       }
       default:
         return null;
     }
   }
-  if (r.overflowed) return null;
-  return { tick, messages };
+  if (
+    r.overflowed
+  )
+    return null;
+  return {
+    tick,
+    messages,
+  };
 }

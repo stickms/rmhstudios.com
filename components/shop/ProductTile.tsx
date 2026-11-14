@@ -45,24 +45,45 @@ export function ProductTile({
     <button
       type="button"
       data-slot="product-tile"
-      onClick={onOpen}
-      aria-label={label}
+      onClick={
+        onOpen
+      }
+      aria-label={
+        label
+      }
       aria-haspopup="dialog"
       className={cn(
         'group flex min-w-0 flex-col gap-2 rounded-site text-start [&_[data-slot=item-picture]]:transition-[border-color] [&_[data-slot=item-picture]]:duration-(--m1) hover:[&_[data-slot=item-picture]]:border-site-text focus-visible:[&_[data-slot=item-picture]]:border-site-text',
         className,
       )}
     >
-      {picture}
+      {
+        picture
+      }
       <span className="flex min-w-0 flex-col gap-1">
-        <span className="truncate text-sm font-medium text-site-text">{name}</span>
-        {detail || trailing ? (
+        <span className="truncate text-sm font-medium text-site-text">
+          {
+            name
+          }
+        </span>
+        {detail ||
+        trailing ? (
           <span className="t-meta flex min-w-0 items-center justify-between gap-2">
-            {detail}
-            {trailing}
+            {
+              detail
+            }
+            {
+              trailing
+            }
           </span>
         ) : null}
-        {footer ? <span className="t-meta min-w-0 truncate">{footer}</span> : null}
+        {footer ? (
+          <span className="t-meta min-w-0 truncate">
+            {
+              footer
+            }
+          </span>
+        ) : null}
       </span>
     </button>
   );

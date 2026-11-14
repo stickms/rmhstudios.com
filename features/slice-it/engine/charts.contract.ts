@@ -12,24 +12,62 @@ import type {
 } from '@features/slice-it/engine/editor/api-schemas';
 
 /** Seed (or fetch) the author's charts for a song: one row per difficulty. */
-export const seedChartsApi = endpoint<{
-  body: { songId: string; keys: number };
-  res: { charts: ChartDto[] };
-}>()({ method: 'POST', path: '/api/slice-it/charts' });
+export const seedChartsApi =
+  endpoint<{
+    body: {
+      songId: string;
+      keys: number;
+    };
+    res: {
+      charts: ChartDto[];
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/slice-it/charts',
+    },
+  );
 
 /** Autosave / manual save of one difficulty's notes, timing map and SV markers. */
-export const saveChartApi = endpoint<{
-  body: ChartPatchInput;
-  res: ChartDto;
-}>()({ method: 'PATCH', path: '/api/slice-it/charts/$id' });
+export const saveChartApi =
+  endpoint<{
+    body: ChartPatchInput;
+    res: ChartDto;
+  }>()(
+    {
+      method:
+        'PATCH',
+      path: '/api/slice-it/charts/$id',
+    },
+  );
 
 /** Publish or un-publish one difficulty. 422 carries the blocking lint issues. */
-export const publishChartApi = endpoint<{
-  body: { status: 'public' | 'draft' };
-  res: ChartDto;
-}>()({ method: 'POST', path: '/api/slice-it/charts/$id' });
+export const publishChartApi =
+  endpoint<{
+    body: {
+      status:
+        | 'public'
+        | 'draft';
+    };
+    res: ChartDto;
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/slice-it/charts/$id',
+    },
+  );
 
-export const listChartRevisionsApi = endpoint<{ res: { revisions: ChartRevisionDto[] } }>()({
-  method: 'GET',
-  path: '/api/slice-it/charts/$id/revisions',
-});
+export const listChartRevisionsApi =
+  endpoint<{
+    res: {
+      revisions: ChartRevisionDto[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/slice-it/charts/$id/revisions',
+    },
+  );

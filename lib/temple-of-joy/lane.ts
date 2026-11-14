@@ -46,20 +46,74 @@ export const BALL_MASS = 7.2;
  * lane, which is the mistake that produces a rack that looks right from above
  * and racks up wrong when a ball goes through it.
  */
-const ROW_DEPTH = (PIN_SPACING * Math.sqrt(3)) / 2;
+const ROW_DEPTH =
+  (PIN_SPACING *
+    Math.sqrt(
+      3,
+    )) /
+  2;
 
-export const PIN_SPOTS: readonly (readonly [number, number])[] = [
-  [0, 0], //                     1
-  [-PIN_SPACING / 2, ROW_DEPTH], //            2
-  [PIN_SPACING / 2, ROW_DEPTH], //             3
-  [-PIN_SPACING, 2 * ROW_DEPTH], //       4
-  [0, 2 * ROW_DEPTH], //                  5
-  [PIN_SPACING, 2 * ROW_DEPTH], //        6
-  [(-3 * PIN_SPACING) / 2, 3 * ROW_DEPTH], // 7
-  [-PIN_SPACING / 2, 3 * ROW_DEPTH], //       8
-  [PIN_SPACING / 2, 3 * ROW_DEPTH], //        9
-  [(3 * PIN_SPACING) / 2, 3 * ROW_DEPTH], //  10
-];
+export const PIN_SPOTS: readonly (readonly [
+  number,
+  number,
+])[] =
+  [
+    [
+      0,
+      0,
+    ], //                     1
+    [
+      -PIN_SPACING /
+        2,
+      ROW_DEPTH,
+    ], //            2
+    [
+      PIN_SPACING /
+        2,
+      ROW_DEPTH,
+    ], //             3
+    [
+      -PIN_SPACING,
+      2 *
+        ROW_DEPTH,
+    ], //       4
+    [
+      0,
+      2 *
+        ROW_DEPTH,
+    ], //                  5
+    [
+      PIN_SPACING,
+      2 *
+        ROW_DEPTH,
+    ], //        6
+    [
+      (-3 *
+        PIN_SPACING) /
+        2,
+      3 *
+        ROW_DEPTH,
+    ], // 7
+    [
+      -PIN_SPACING /
+        2,
+      3 *
+        ROW_DEPTH,
+    ], //       8
+    [
+      PIN_SPACING /
+        2,
+      3 *
+        ROW_DEPTH,
+    ], //        9
+    [
+      (3 *
+        PIN_SPACING) /
+        2,
+      3 *
+        ROW_DEPTH,
+    ], //  10
+  ];
 
 /* ══════════════════════════════════════════════════════════════════════════
    The release
@@ -75,11 +129,23 @@ const SPIN_MAX = 34;
 
 export interface Release {
   /** Where the ball starts, at the foul line. */
-  position: [number, number, number];
+  position: [
+    number,
+    number,
+    number,
+  ];
   /** Metres per second. */
-  velocity: [number, number, number];
+  velocity: [
+    number,
+    number,
+    number,
+  ];
   /** Radians per second. The y term is the hook; x is the roll down the lane. */
-  angular: [number, number, number];
+  angular: [
+    number,
+    number,
+    number,
+  ];
   radius: number;
 }
 
@@ -96,20 +162,71 @@ export interface Release {
  * friction alone, which both looks wrong and robs the hook of the contact it
  * needs to bite.
  */
-export function release(aim: number, power: number, spin: number, globes: number): Release {
-  const a = clamp(aim, -1, 1);
-  const p = clamp(power, 0, 1);
-  const s = clamp(spin, -1, 1);
-  const radius = bowlBallRadius(globes);
-  const speed = SPEED_MIN + (SPEED_MAX - SPEED_MIN) * p;
-  const x = a * AIM_SPAN * (LANE_WIDTH / 2 - radius);
+export function release(
+  aim: number,
+  power: number,
+  spin: number,
+  globes: number,
+): Release {
+  const a =
+    clamp(
+      aim,
+      -1,
+      1,
+    );
+  const p =
+    clamp(
+      power,
+      0,
+      1,
+    );
+  const s =
+    clamp(
+      spin,
+      -1,
+      1,
+    );
+  const radius =
+    bowlBallRadius(
+      globes,
+    );
+  const speed =
+    SPEED_MIN +
+    (SPEED_MAX -
+      SPEED_MIN) *
+      p;
+  const x =
+    a *
+    AIM_SPAN *
+    (LANE_WIDTH /
+      2 -
+      radius);
 
   return {
-    position: [x, radius + 0.02, 0],
+    position:
+      [
+        x,
+        radius +
+          0.02,
+        0,
+      ],
     // A little lateral velocity toward the middle for an angled stance, so an
     // aim from the edge is a line across the lane rather than a parallel one.
-    velocity: [-a * 0.55, 0, speed],
-    angular: [speed / radius, s * SPIN_MAX, 0],
+    velocity:
+      [
+        -a *
+          0.55,
+        0,
+        speed,
+      ],
+    angular:
+      [
+        speed /
+          radius,
+        s *
+          SPIN_MAX,
+        0,
+      ],
     radius,
   };
 }
@@ -128,9 +245,19 @@ export function release(aim: number, power: number, spin: number, globes: number
  * Returns newtons along x. Zero once the ball is off the boards, because a ball
  * in the gutter has stopped taking part.
  */
-export function hookForce(spinY: number, onLane: boolean): number {
-  if (!onLane) return 0;
-  return spinY * HOOK_COEFFICIENT * BALL_MASS;
+export function hookForce(
+  spinY: number,
+  onLane: boolean,
+): number {
+  if (
+    !onLane
+  )
+    return 0;
+  return (
+    spinY *
+    HOOK_COEFFICIENT *
+    BALL_MASS
+  );
 }
 
 /**
@@ -158,15 +285,47 @@ const HOOK_COEFFICIENT = 0.0052;
  * reach horizontal means waiting for a settle that may never come.
  */
 export function pinStanding(
-  rotation: { x: number; y: number; z: number; w: number },
-  translation: { x: number; y: number; z: number },
+  rotation: {
+    x: number;
+    y: number;
+    z: number;
+    w: number;
+  },
+  translation: {
+    x: number;
+    y: number;
+    z: number;
+  },
 ): boolean {
-  const upright = 1 - 2 * (rotation.x * rotation.x + rotation.z * rotation.z);
-  if (upright < UPRIGHT_MIN) return false;
+  const upright =
+    1 -
+    2 *
+      (rotation.x *
+        rotation.x +
+        rotation.z *
+          rotation.z);
+  if (
+    upright <
+    UPRIGHT_MIN
+  )
+    return false;
   // Off the deck sideways, or in the pit, or fallen through: down, whatever it
   // is doing with its orientation.
-  if (translation.y < PIN_HEIGHT * 0.2) return false;
-  if (Math.abs(translation.x) > LANE_WIDTH / 2 + 0.35) return false;
+  if (
+    translation.y <
+    PIN_HEIGHT *
+      0.2
+  )
+    return false;
+  if (
+    Math.abs(
+      translation.x,
+    ) >
+    LANE_WIDTH /
+      2 +
+      0.35
+  )
+    return false;
   return true;
 }
 
@@ -176,11 +335,27 @@ const UPRIGHT_MIN = 0.819;
 /** How many of a rack are still up. */
 export function countStanding(
   pins: readonly {
-    rotation: { x: number; y: number; z: number; w: number };
-    translation: { x: number; y: number; z: number };
+    rotation: {
+      x: number;
+      y: number;
+      z: number;
+      w: number;
+    };
+    translation: {
+      x: number;
+      y: number;
+      z: number;
+    };
   }[],
 ): number {
   let up = 0;
-  for (const pin of pins) if (pinStanding(pin.rotation, pin.translation)) up++;
+  for (const pin of pins)
+    if (
+      pinStanding(
+        pin.rotation,
+        pin.translation,
+      )
+    )
+      up++;
   return up;
 }

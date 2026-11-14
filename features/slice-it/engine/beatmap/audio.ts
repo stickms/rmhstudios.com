@@ -15,7 +15,9 @@ export interface AudioLike {
   readonly sampleRate: number;
   readonly length: number;
   readonly numberOfChannels: number;
-  getChannelData(channel: number): Float32Array;
+  getChannelData(
+    channel: number,
+  ): Float32Array;
 }
 
 /**
@@ -29,14 +31,33 @@ export function decodedToAudioLike(decoded: {
   sampleRate: number;
   channelData: Float32Array[];
 }): AudioLike {
-  const length = decoded.channelData[0]?.length ?? 0;
+  const length =
+    decoded
+      .channelData[0]
+      ?.length ??
+    0;
   return {
-    sampleRate: decoded.sampleRate,
+    sampleRate:
+      decoded.sampleRate,
     length,
-    numberOfChannels: decoded.channelData.length,
-    getChannelData(channel: number) {
-      const data = decoded.channelData[channel];
-      if (!data) throw new RangeError(`Audio channel ${channel} is unavailable`);
+    numberOfChannels:
+      decoded
+        .channelData
+        .length,
+    getChannelData(
+      channel: number,
+    ) {
+      const data =
+        decoded
+          .channelData[
+          channel
+        ];
+      if (
+        !data
+      )
+        throw new RangeError(
+          `Audio channel ${channel} is unavailable`,
+        );
       return data;
     },
   };
@@ -53,29 +74,82 @@ export function decodedToAudioLike(decoded: {
 export const ANALYSIS_SAMPLE_RATE = 22050;
 
 /** Fold every channel down to one, averaging. */
-export function toMono(audio: AudioLike): Float32Array {
-  const channels = Math.max(1, audio.numberOfChannels);
-  const first = audio.getChannelData(0);
-  if (channels === 1) return first;
+export function toMono(
+  audio: AudioLike,
+): Float32Array {
+  const channels =
+    Math.max(
+      1,
+      audio.numberOfChannels,
+    );
+  const first =
+    audio.getChannelData(
+      0,
+    );
+  if (
+    channels ===
+    1
+  )
+    return first;
 
-  const out = new Float32Array(first.length);
-  out.set(first);
+  const out =
+    new Float32Array(
+      first.length,
+    );
+  out.set(
+    first,
+  );
   let used = 1;
-  for (let c = 1; c < channels; c++) {
+  for (
+    let c = 1;
+    c <
+    channels;
+    c++
+  ) {
     let data: Float32Array;
     try {
-      data = audio.getChannelData(c);
+      data =
+        audio.getChannelData(
+          c,
+        );
     } catch {
       // A buffer that lies about its channel count is not worth failing an
       // upload over — analyse what we could actually read.
       break;
     }
-    const n = Math.min(out.length, data.length);
-    for (let i = 0; i < n; i++) out[i] += data[i];
+    const n =
+      Math.min(
+        out.length,
+        data.length,
+      );
+    for (
+      let i = 0;
+      i <
+      n;
+      i++
+    )
+      out[
+        i
+      ] +=
+        data[
+          i
+        ];
     used++;
   }
-  if (used > 1) {
-    for (let i = 0; i < out.length; i++) out[i] /= used;
+  if (
+    used >
+    1
+  ) {
+    for (
+      let i = 0;
+      i <
+      out.length;
+      i++
+    )
+      out[
+        i
+      ] /=
+        used;
   }
   return out;
 }
@@ -90,23 +164,79 @@ export function toMono(audio: AudioLike): Float32Array {
  * filter, on the other hand, folds hi-hat energy straight down onto the snare
  * band and does move onsets.
  */
-export function resampleMono(input: Float32Array, fromRate: number, toRate: number): Float32Array {
-  if (fromRate <= toRate || !Number.isFinite(fromRate) || fromRate <= 0) return input;
+export function resampleMono(
+  input: Float32Array,
+  fromRate: number,
+  toRate: number,
+): Float32Array {
+  if (
+    fromRate <=
+      toRate ||
+    !Number.isFinite(
+      fromRate,
+    ) ||
+    fromRate <=
+      0
+  )
+    return input;
 
-  const ratio = fromRate / toRate;
-  const outLength = Math.floor(input.length / ratio);
-  const out = new Float32Array(outLength);
-  const width = Math.max(1, Math.floor(ratio));
+  const ratio =
+    fromRate /
+    toRate;
+  const outLength =
+    Math.floor(
+      input.length /
+        ratio,
+    );
+  const out =
+    new Float32Array(
+      outLength,
+    );
+  const width =
+    Math.max(
+      1,
+      Math.floor(
+        ratio,
+      ),
+    );
 
-  for (let i = 0; i < outLength; i++) {
-    const start = Math.floor(i * ratio);
+  for (
+    let i = 0;
+    i <
+    outLength;
+    i++
+  ) {
+    const start =
+      Math.floor(
+        i *
+          ratio,
+      );
     let sum = 0;
     let count = 0;
-    for (let j = 0; j < width && start + j < input.length; j++) {
-      sum += input[start + j];
+    for (
+      let j = 0;
+      j <
+        width &&
+      start +
+        j <
+        input.length;
+      j++
+    ) {
+      sum +=
+        input[
+          start +
+            j
+        ];
       count++;
     }
-    out[i] = count > 0 ? sum / count : 0;
+    out[
+      i
+    ] =
+      count >
+      0
+        ? sum /
+          count
+        : 0;
   }
   return out;
 }
@@ -119,14 +249,34 @@ export interface PreparedAudio {
 }
 
 /** Mono + decimated + duration, ready for the STFT. */
-export function prepareAudio(audio: AudioLike): PreparedAudio {
-  const mono = toMono(audio);
-  const sourceRate = audio.sampleRate > 0 ? audio.sampleRate : 44100;
-  const duration = mono.length / sourceRate;
-  const samples = resampleMono(mono, sourceRate, ANALYSIS_SAMPLE_RATE);
+export function prepareAudio(
+  audio: AudioLike,
+): PreparedAudio {
+  const mono =
+    toMono(
+      audio,
+    );
+  const sourceRate =
+    audio.sampleRate >
+    0
+      ? audio.sampleRate
+      : 44100;
+  const duration =
+    mono.length /
+    sourceRate;
+  const samples =
+    resampleMono(
+      mono,
+      sourceRate,
+      ANALYSIS_SAMPLE_RATE,
+    );
   return {
     samples,
-    sampleRate: Math.min(sourceRate, ANALYSIS_SAMPLE_RATE),
+    sampleRate:
+      Math.min(
+        sourceRate,
+        ANALYSIS_SAMPLE_RATE,
+      ),
     duration,
   };
 }

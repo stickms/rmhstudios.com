@@ -20,7 +20,9 @@ const RELEASE_S = 0.25;
  * the SYNTH's value. A sampled instrument has its own release, so code that needs the number for
  * the sound actually in use asks {@link soundReleaseMs} and never reads this directly.
  */
-export const RELEASE_MS = RELEASE_S * 1000;
+export const RELEASE_MS =
+  RELEASE_S *
+  1000;
 /** Peak gain at full velocity; low enough that a six-note chord does not clip. */
 const PEAK = 0.18;
 /**
@@ -35,7 +37,9 @@ export const MAX_VOICES = 6;
  * sound is the synth, so this is {@link RELEASE_MS}; `opts.instrument` is where a per-instrument
  * release will plug in without a caller changing.
  */
-export function soundReleaseMs(_opts: PlayOptions = {}): number {
+export function soundReleaseMs(
+  _opts: PlayOptions = {},
+): number {
   return RELEASE_MS;
 }
 
@@ -70,12 +74,26 @@ export interface PlayOptions {
  * plays) and `failed` (they never came). The synth is never either, so `soundStatus()` returns
  * only the first three today; lessons already handle the other two (`ear-playback.ts`).
  */
-export type SoundStatus = 'ready' | 'asleep' | 'none' | 'loading' | 'failed';
+export type SoundStatus =
+  | 'ready'
+  | 'asleep'
+  | 'none'
+  | 'loading'
+  | 'failed';
 
 export function soundStatus(): SoundStatus {
-  const ctx = getAudioContext();
-  if (!ctx || ctx.state === 'closed') return 'none';
-  return ctx.state === 'running' ? 'ready' : 'asleep';
+  const ctx =
+    getAudioContext();
+  if (
+    !ctx ||
+    ctx.state ===
+      'closed'
+  )
+    return 'none';
+  return ctx.state ===
+    'running'
+    ? 'ready'
+    : 'asleep';
 }
 
 /**
@@ -83,69 +101,188 @@ export function soundStatus(): SoundStatus {
  * the context never resumed in time). Call inside the gesture.
  */
 export async function wakeSound(): Promise<boolean> {
-  const ctx = getAudioContext();
-  if (!ctx) return false;
-  return resumeAudio(ctx);
+  const ctx =
+    getAudioContext();
+  if (
+    !ctx
+  )
+    return false;
+  return resumeAudio(
+    ctx,
+  );
 }
 
 /** Run `fn` when sound becomes ready or asleep again; returns the unsubscribe. */
-export function onSoundChange(fn: () => void): () => void {
-  const ctx = getAudioContext();
-  if (!ctx) return () => {};
-  ctx.addEventListener('statechange', fn);
-  return () => ctx.removeEventListener('statechange', fn);
+export function onSoundChange(
+  fn: () => void,
+): () => void {
+  const ctx =
+    getAudioContext();
+  if (
+    !ctx
+  )
+    return () => {};
+  ctx.addEventListener(
+    'statechange',
+    fn,
+  );
+  return () =>
+    ctx.removeEventListener(
+      'statechange',
+      fn,
+    );
 }
 
-const voices: Voice[] = [];
-const noop = () => {};
+const voices: Voice[] =
+  [];
+const noop =
+  () => {};
 
 /**
  * Start a note; returns a function that releases it (safe to call twice).
  * `velocity` (0..1) may be given alone or in `opts`.
  */
-export function playNote(midi: number, opts: number | PlayOptions = {}): () => void {
-  const velocity = (typeof opts === 'number' ? opts : opts.velocity) ?? 0.8;
-  const onStart = typeof opts === 'number' ? undefined : opts.onStart;
-  const ctx = getAudioContext();
-  if (!ctx || !Number.isFinite(midi)) return noop;
+export function playNote(
+  midi: number,
+  opts:
+    | number
+    | PlayOptions = {},
+): () => void {
+  const velocity =
+    (typeof opts ===
+    'number'
+      ? opts
+      : opts.velocity) ??
+    0.8;
+  const onStart =
+    typeof opts ===
+    'number'
+      ? undefined
+      : opts.onStart;
+  const ctx =
+    getAudioContext();
+  if (
+    !ctx ||
+    !Number.isFinite(
+      midi,
+    )
+  )
+    return noop;
   // A context starts suspended until a user gesture; notes come from one.
-  if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
-  if (ctx.state === 'closed') return noop;
+  if (
+    ctx.state ===
+    'suspended'
+  )
+    void ctx
+      .resume()
+      .catch(
+        () => {},
+      );
+  if (
+    ctx.state ===
+    'closed'
+  )
+    return noop;
 
-  while (voices.length >= MAX_VOICES) voices[0].release();
+  while (
+    voices.length >=
+    MAX_VOICES
+  )
+    voices[0].release();
 
-  const now = ctx.currentTime;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.value = midiToFreq(midi);
-  const peak = PEAK * Math.min(1, Math.max(0.05, velocity));
-  gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(peak, now + ATTACK_S);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(now);
+  const now =
+    ctx.currentTime;
+  const osc =
+    ctx.createOscillator();
+  const gain =
+    ctx.createGain();
+  osc.type =
+    'triangle';
+  osc.frequency.value =
+    midiToFreq(
+      midi,
+    );
+  const peak =
+    PEAK *
+    Math.min(
+      1,
+      Math.max(
+        0.05,
+        velocity,
+      ),
+    );
+  gain.gain.setValueAtTime(
+    0,
+    now,
+  );
+  gain.gain.linearRampToValueAtTime(
+    peak,
+    now +
+      ATTACK_S,
+  );
+  osc.connect(
+    gain,
+  );
+  gain.connect(
+    ctx.destination,
+  );
+  osc.start(
+    now,
+  );
 
   let released = false;
-  const voice: Voice = {
-    release() {
-      if (released) return;
-      released = true;
-      const i = voices.indexOf(voice);
-      if (i >= 0) voices.splice(i, 1);
-      const t = ctx.currentTime;
-      // Hold the current level, then fall exponentially-ish to silence.
-      gain.gain.cancelScheduledValues(t);
-      gain.gain.setValueAtTime(gain.gain.value, t);
-      gain.gain.setTargetAtTime(0, t, RELEASE_S / 4);
-      osc.stop(t + RELEASE_S);
-      osc.onended = () => {
-        osc.disconnect();
-        gain.disconnect();
-      };
-    },
-  };
-  voices.push(voice);
+  const voice: Voice =
+    {
+      release() {
+        if (
+          released
+        )
+          return;
+        released = true;
+        const i =
+          voices.indexOf(
+            voice,
+          );
+        if (
+          i >=
+          0
+        )
+          voices.splice(
+            i,
+            1,
+          );
+        const t =
+          ctx.currentTime;
+        // Hold the current level, then fall exponentially-ish to silence.
+        gain.gain.cancelScheduledValues(
+          t,
+        );
+        gain.gain.setValueAtTime(
+          gain
+            .gain
+            .value,
+          t,
+        );
+        gain.gain.setTargetAtTime(
+          0,
+          t,
+          RELEASE_S /
+            4,
+        );
+        osc.stop(
+          t +
+            RELEASE_S,
+        );
+        osc.onended =
+          () => {
+            osc.disconnect();
+            gain.disconnect();
+          };
+      },
+    };
+  voices.push(
+    voice,
+  );
   // The synth sounds as it is asked; a sampled instrument calls this when its samples are ready.
   onStart?.();
   return voice.release;

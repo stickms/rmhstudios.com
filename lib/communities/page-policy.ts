@@ -13,19 +13,39 @@
  * button with the same rule the server refuses on.
  */
 
-export const EDIT_POLICIES = ['mods', 'members', 'trusted'] as const;
-export type EditPolicy = (typeof EDIT_POLICIES)[number];
+export const EDIT_POLICIES =
+  [
+    'mods',
+    'members',
+    'trusted',
+  ] as const;
+export type EditPolicy =
+  (typeof EDIT_POLICIES)[number];
 
-export function isEditPolicy(value: string): value is EditPolicy {
-  return (EDIT_POLICIES as readonly string[]).includes(value);
+export function isEditPolicy(
+  value: string,
+): value is EditPolicy {
+  return (
+    EDIT_POLICIES as readonly string[]
+  ).includes(
+    value,
+  );
 }
 
 /** Mirrors `enum CommunityRole`; re-declared so this file stays Prisma-free. */
-export type CommunityRole = 'MEMBER' | 'MOD' | 'ADMIN';
+export type CommunityRole =
+  | 'MEMBER'
+  | 'MOD'
+  | 'ADMIN';
 
 /** How long a member must have been around to count as trusted. */
 export const TRUSTED_MEMBER_DAYS = 30;
-export const TRUSTED_MEMBER_MS = TRUSTED_MEMBER_DAYS * 24 * 60 * 60 * 1000;
+export const TRUSTED_MEMBER_MS =
+  TRUSTED_MEMBER_DAYS *
+  24 *
+  60 *
+  60 *
+  1000;
 
 /** Everything the policy needs to know about one would-be editor. */
 export interface EditorStanding {
@@ -42,8 +62,15 @@ export interface EditorStanding {
   isSiteAdmin?: boolean;
 }
 
-export function isModerator(role: CommunityRole | null): boolean {
-  return role === 'MOD' || role === 'ADMIN';
+export function isModerator(
+  role: CommunityRole | null,
+): boolean {
+  return (
+    role ===
+      'MOD' ||
+    role ===
+      'ADMIN'
+  );
 }
 
 /**
@@ -58,30 +85,84 @@ export function canEditPage(
   standing: EditorStanding,
   now: Date = new Date(),
 ): boolean {
-  if (standing.isSiteAdmin) return true;
-  if (isModerator(standing.role)) return true;
-  if (standing.role === null) return false;
-  if (policy === 'mods') return false;
-  if (policy === 'members') return true;
+  if (
+    standing.isSiteAdmin
+  )
+    return true;
+  if (
+    isModerator(
+      standing.role,
+    )
+  )
+    return true;
+  if (
+    standing.role ===
+    null
+  )
+    return false;
+  if (
+    policy ===
+    'mods'
+  )
+    return false;
+  if (
+    policy ===
+    'members'
+  )
+    return true;
 
   // trusted
-  if (standing.activeStrikes > 0) return false;
-  if (!standing.joinedAt) return false;
-  return now.getTime() - standing.joinedAt.getTime() >= TRUSTED_MEMBER_MS;
+  if (
+    standing.activeStrikes >
+    0
+  )
+    return false;
+  if (
+    !standing.joinedAt
+  )
+    return false;
+  return (
+    now.getTime() -
+      standing.joinedAt.getTime() >=
+    TRUSTED_MEMBER_MS
+  );
 }
 
 /** Why an edit was refused — so the UI can say something more useful than "no". */
-export type EditRefusal = 'NOT_A_MEMBER' | 'MODS_ONLY' | 'TOO_NEW' | 'HAS_STRIKES';
+export type EditRefusal =
+  | 'NOT_A_MEMBER'
+  | 'MODS_ONLY'
+  | 'TOO_NEW'
+  | 'HAS_STRIKES';
 
 export function refusalReason(
   policy: EditPolicy,
   standing: EditorStanding,
   now: Date = new Date(),
 ): EditRefusal | null {
-  if (canEditPage(policy, standing, now)) return null;
-  if (standing.role === null) return 'NOT_A_MEMBER';
-  if (policy === 'mods') return 'MODS_ONLY';
-  if (standing.activeStrikes > 0) return 'HAS_STRIKES';
+  if (
+    canEditPage(
+      policy,
+      standing,
+      now,
+    )
+  )
+    return null;
+  if (
+    standing.role ===
+    null
+  )
+    return 'NOT_A_MEMBER';
+  if (
+    policy ===
+    'mods'
+  )
+    return 'MODS_ONLY';
+  if (
+    standing.activeStrikes >
+    0
+  )
+    return 'HAS_STRIKES';
   return 'TOO_NEW';
 }
 
@@ -95,14 +176,37 @@ export const MAX_PAGE_TITLE = 120;
 export const MAX_PAGE_BODY = 100_000;
 export const MAX_REVISION_SUMMARY = 200;
 
-export function slugifyPageTitle(title: string): string {
-  const slug = title
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, MAX_PAGE_SLUG)
-    .replace(/-+$/, '');
-  return slug || 'page';
+export function slugifyPageTitle(
+  title: string,
+): string {
+  const slug =
+    title
+      .toLowerCase()
+      .normalize(
+        'NFKD',
+      )
+      .replace(
+        /[̀-ͯ]/g,
+        '',
+      )
+      .replace(
+        /[^a-z0-9]+/g,
+        '-',
+      )
+      .replace(
+        /^-+|-+$/g,
+        '',
+      )
+      .slice(
+        0,
+        MAX_PAGE_SLUG,
+      )
+      .replace(
+        /-+$/,
+        '',
+      );
+  return (
+    slug ||
+    'page'
+  );
 }

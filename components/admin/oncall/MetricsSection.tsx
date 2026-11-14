@@ -1,72 +1,224 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import type { ChartSeries, DeployMarker, RangeId } from '@/lib/ops/series';
+import type {
+  ChartSeries,
+  DeployMarker,
+  RangeId,
+} from '@/lib/ops/series';
 import { MetricChart } from './MetricChart';
 import { api } from '@/lib/contract/client';
 import { getAdminOncallSeriesApi } from '@/lib/admin/admin-ops.contract';
 
 /** The metrics history behind every threshold alarm, one chart per metric. */
 export function MetricsSection() {
-  const { t } = useTranslation('f-oncall');
-  const [range, setRange] = useState<RangeId>('24h');
-  const [series, setSeries] = useState<ChartSeries[] | null>(null);
-  const [deploys, setDeploys] = useState<DeployMarker[]>([]);
-  const [failed, setFailed] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const arrival = useArrival(failed || series !== null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-oncall',
+    );
+  const [
+    range,
+    setRange,
+  ] =
+    useState<RangeId>(
+      '24h',
+    );
+  const [
+    series,
+    setSeries,
+  ] =
+    useState<
+      | ChartSeries[]
+      | null
+    >(
+      null,
+    );
+  const [
+    deploys,
+    setDeploys,
+  ] =
+    useState<
+      DeployMarker[]
+    >(
+      [],
+    );
+  const [
+    failed,
+    setFailed,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      false,
+    );
+  const arrival =
+    useArrival(
+      failed ||
+        series !==
+          null,
+    );
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    api(getAdminOncallSeriesApi, { query: { range }, retries: 0 })
-      .then((body) => {
-        if (!cancelled) {
-          setSeries(body.series);
-          setDeploys(body.deploys ?? []);
-          setFailed(false);
-        }
-      })
-      .catch(() => !cancelled && setFailed(true))
-      .finally(() => !cancelled && setLoading(false));
+    setLoading(
+      true,
+    );
+    api(
+      getAdminOncallSeriesApi,
+      {
+        query:
+          {
+            range,
+          },
+        retries: 0,
+      },
+    )
+      .then(
+        (
+          body,
+        ) => {
+          if (
+            !cancelled
+          ) {
+            setSeries(
+              body.series,
+            );
+            setDeploys(
+              body.deploys ??
+                [],
+            );
+            setFailed(
+              false,
+            );
+          }
+        },
+      )
+      .catch(
+        () =>
+          !cancelled &&
+          setFailed(
+            true,
+          ),
+      )
+      .finally(
+        () =>
+          !cancelled &&
+          setLoading(
+            false,
+          ),
+      );
     return () => {
       cancelled = true;
     };
-  }, [range]);
+  }, [
+    range,
+  ]);
 
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="t-heading text-site-text">
-            {t('metrics-title', { defaultValue: 'Metrics' })}
+            {t(
+              'metrics-title',
+              {
+                defaultValue:
+                  'Metrics',
+              },
+            )}
           </h2>
           <p className="mt-1 t-body text-site-text-muted">
-            {t('metrics-body', {
-              defaultValue:
-                'Response times, page loads and LLM calls, with each alarm’s threshold as a dashed line.',
-            })}
+            {t(
+              'metrics-body',
+              {
+                defaultValue:
+                  'Response times, page loads and LLM calls, with each alarm’s threshold as a dashed line.',
+              },
+            )}
           </p>
         </div>
         <Tabs
-          aria-label={t('metrics-range', { defaultValue: 'Time range' })}
-          value={range}
-          onChange={(id) => setRange(id as RangeId)}
+          aria-label={t(
+            'metrics-range',
+            {
+              defaultValue:
+                'Time range',
+            },
+          )}
+          value={
+            range
+          }
+          onChange={(
+            id,
+          ) =>
+            setRange(
+              id as RangeId,
+            )
+          }
           tabs={[
-            { id: '1h', label: t('range-1h', { defaultValue: '1 hour' }) },
-            { id: '24h', label: t('range-24h', { defaultValue: '24 hours' }) },
-            { id: '7d', label: t('range-7d', { defaultValue: '7 days' }) },
+            {
+              id: '1h',
+              label:
+                t(
+                  'range-1h',
+                  {
+                    defaultValue:
+                      '1 hour',
+                  },
+                ),
+            },
+            {
+              id: '24h',
+              label:
+                t(
+                  'range-24h',
+                  {
+                    defaultValue:
+                      '24 hours',
+                  },
+                ),
+            },
+            {
+              id: '7d',
+              label:
+                t(
+                  'range-7d',
+                  {
+                    defaultValue:
+                      '7 days',
+                  },
+                ),
+            },
           ]}
         />
       </div>
       {failed ? (
-        <p className={cn('mt-3 t-body text-site-text-muted', arrival)}>
-          {t('metrics-failed', {
-            defaultValue: 'Could not load the metrics. Refresh to try again.',
-          })}
+        <p
+          className={cn(
+            'mt-3 t-body text-site-text-muted',
+            arrival,
+          )}
+        >
+          {t(
+            'metrics-failed',
+            {
+              defaultValue:
+                'Could not load the metrics. Refresh to try again.',
+            },
+          )}
         </p>
       ) : !series ? (
         <div className="mt-3">
@@ -74,10 +226,35 @@ export function MetricsSection() {
         </div>
       ) : (
         // Keep the previous charts on screen (dimmed) while a new range loads.
-        <div className={cn('mt-3 grid gap-3 xl:grid-cols-2', loading && 'opacity-60', arrival)}>
-          {series.map((s) => (
-            <MetricChart key={s.key} series={s} deploys={deploys} withDate={range === '7d'} />
-          ))}
+        <div
+          className={cn(
+            'mt-3 grid gap-3 xl:grid-cols-2',
+            loading &&
+              'opacity-60',
+            arrival,
+          )}
+        >
+          {series.map(
+            (
+              s,
+            ) => (
+              <MetricChart
+                key={
+                  s.key
+                }
+                series={
+                  s
+                }
+                deploys={
+                  deploys
+                }
+                withDate={
+                  range ===
+                  '7d'
+                }
+              />
+            ),
+          )}
         </div>
       )}
     </section>

@@ -19,21 +19,38 @@ import noDeadAnimateClasses from './no-dead-animate-classes.js';
 import routeNeedsHead from './route-needs-head.js';
 
 /** @type {import('eslint').ESLint.Plugin} */
-const plugin = {
-  meta: { name: 'eslint-plugin-local', version: '1.0.0' },
-  rules: {
-    'no-adhoc-spinner': noAdhocSpinner,
-    'no-adhoc-user-select': noAdhocUserSelect,
-    'no-lucide-namespace-import': noLucideNamespaceImport,
-    'no-use-client-directive': noUseClientDirective,
-    'no-raw-palette-color': noRawPaletteColor,
-    'no-hardcoded-radius': noHardcodedRadius,
-    'no-transition-all': noTransitionAll,
-    'no-arbitrary-type-size': noArbitraryTypeSize,
-    'no-inline-motion': noInlineMotion,
-    'no-dead-animate-classes': noDeadAnimateClasses,
-    'route-needs-head': routeNeedsHead,
-  },
-};
+const plugin =
+  {
+    meta: {
+      name: 'eslint-plugin-local',
+      version:
+        '1.0.0',
+    },
+    rules:
+      {
+        'no-adhoc-spinner':
+          noAdhocSpinner,
+        'no-adhoc-user-select':
+          noAdhocUserSelect,
+        'no-lucide-namespace-import':
+          noLucideNamespaceImport,
+        'no-use-client-directive':
+          noUseClientDirective,
+        'no-raw-palette-color':
+          noRawPaletteColor,
+        'no-hardcoded-radius':
+          noHardcodedRadius,
+        'no-transition-all':
+          noTransitionAll,
+        'no-arbitrary-type-size':
+          noArbitraryTypeSize,
+        'no-inline-motion':
+          noInlineMotion,
+        'no-dead-animate-classes':
+          noDeadAnimateClasses,
+        'route-needs-head':
+          routeNeedsHead,
+      },
+  };
 
 export default plugin;

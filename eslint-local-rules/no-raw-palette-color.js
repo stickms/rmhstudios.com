@@ -18,17 +18,22 @@ const PREFIX =
   '(?:bg|text|border|ring|from|via|to|fill|stroke|divide|outline|shadow|decoration|placeholder|caret|accent)';
 const FAMILY =
   '(?:zinc|gray|slate|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\\d{2,3}';
-const LITERAL = '\\[(?:#|rgba?\\(|hsla?\\(|oklch\\(|oklab\\(|lab\\(|lch\\(|color-mix\\()';
+const LITERAL =
+  '\\[(?:#|rgba?\\(|hsla?\\(|oklch\\(|oklab\\(|lab\\(|lch\\(|color-mix\\()';
 
-export const PATTERN = new RegExp(
-  `(?<![\\w:-])${PREFIX}-(?:${FAMILY}|white|black|${LITERAL})(?![\\w-])`,
-  'g',
+export const PATTERN =
+  new RegExp(
+    `(?<![\\w:-])${PREFIX}-(?:${FAMILY}|white|black|${LITERAL})(?![\\w-])`,
+    'g',
+  );
+
+export default createPatternRule(
+  {
+    description:
+      'Use the Steel section-2 token utilities (bg-site-*, text-site-*, border-site-*), not raw colours (design-language §13 rule 5)',
+    message:
+      'Raw colour `{{match}}`: use a --site-* token utility (bg-site-surface, text-site-muted, border-site-border, text-site-danger, …) or a scoped variable group. See docs/plans/2026-11-11-steel-design-implementation.md §2.',
+    pattern:
+      PATTERN,
+  },
 );
-
-export default createPatternRule({
-  description:
-    'Use the Steel section-2 token utilities (bg-site-*, text-site-*, border-site-*), not raw colours (design-language §13 rule 5)',
-  message:
-    'Raw colour `{{match}}`: use a --site-* token utility (bg-site-surface, text-site-muted, border-site-border, text-site-danger, …) or a scoped variable group. See docs/plans/2026-11-11-steel-design-implementation.md §2.',
-  pattern: PATTERN,
-});

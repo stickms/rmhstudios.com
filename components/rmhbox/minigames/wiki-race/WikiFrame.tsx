@@ -23,7 +23,11 @@
  *   onNavigate: (targetTitle: string) => void
  */
 
-import { useRef, useCallback, useEffect } from 'react';
+import {
+  useRef,
+  useCallback,
+  useEffect,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
@@ -35,7 +39,9 @@ interface WikiFrameProps {
   currentTitle: string;
   isLoading: boolean;
   disabled: boolean;
-  onNavigate: (targetTitle: string) => void;
+  onNavigate: (
+    targetTitle: string,
+  ) => void;
 }
 
 export default function WikiFrame({
@@ -45,11 +51,25 @@ export default function WikiFrame({
   disabled,
   onNavigate,
 }: WikiFrameProps) {
-  const { t } = useTranslation("c-rmhbox");
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
+  const scrollRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const contentRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
   // The first article replaces the spinner: it fades in (M9). Later ones swap under the dimmed old page.
-  const arrival = useArrival(!!html);
+  const arrival =
+    useArrival(
+      !!html,
+    );
 
   /**
    * Handle clicks on wiki links.
@@ -58,74 +78,162 @@ export default function WikiFrame({
    * the scrollable wrapper.  We temporarily lift `inert`, query
    * `elementFromPoint` to find the link under the cursor, then restore it.
    */
-  const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (disabled) return;
+  const handleClick =
+    useCallback(
+      (
+        e: React.MouseEvent<HTMLDivElement>,
+      ) => {
+        if (
+          disabled
+        )
+          return;
 
-      const contentEl = contentRef.current;
-      if (!contentEl) return;
+        const contentEl =
+          contentRef.current;
+        if (
+          !contentEl
+        )
+          return;
 
-      // Lift inert, hit-test, restore
-      contentEl.removeAttribute('inert');
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      contentEl.setAttribute('inert', '');
+        // Lift inert, hit-test, restore
+        contentEl.removeAttribute(
+          'inert',
+        );
+        const el =
+          document.elementFromPoint(
+            e.clientX,
+            e.clientY,
+          );
+        contentEl.setAttribute(
+          'inert',
+          '',
+        );
 
-      const link = (el as HTMLElement | null)?.closest('a[data-wiki-target]') as HTMLAnchorElement | null;
-      if (!link) return;
+        const link =
+          (
+            el as HTMLElement | null
+          )?.closest(
+            'a[data-wiki-target]',
+          ) as HTMLAnchorElement | null;
+        if (
+          !link
+        )
+          return;
 
-      e.preventDefault();
-      e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
 
-      const wikiTarget = link.getAttribute('data-wiki-target');
-      if (wikiTarget) {
-        onNavigate(wikiTarget);
-      }
-    },
-    [disabled, onNavigate],
-  );
+        const wikiTarget =
+          link.getAttribute(
+            'data-wiki-target',
+          );
+        if (
+          wikiTarget
+        ) {
+          onNavigate(
+            wikiTarget,
+          );
+        }
+      },
+      [
+        disabled,
+        onNavigate,
+      ],
+    );
 
   // Scroll to top on article change
   useEffect(() => {
-    scrollRef.current?.scrollTo(0, 0);
-  }, [currentTitle]);
+    scrollRef.current?.scrollTo(
+      0,
+      0,
+    );
+  }, [
+    currentTitle,
+  ]);
 
   return (
     <div className="app-glass relative rounded-app overflow-hidden">
       {/* Title bar */}
       <div className="flex items-center justify-between border-b border-app-border bg-app-surface px-4 py-2">
-        <h3 className="text-sm font-bold truncate">{currentTitle || t("loading", { defaultValue: "Loading…" })}</h3>
+        <h3 className="text-sm font-bold truncate">
+          {currentTitle ||
+            t(
+              'loading',
+              {
+                defaultValue:
+                  'Loading…',
+              },
+            )}
+        </h3>
         {isLoading && (
-          <Loader2 size={14} className="animate-spin text-app-accent" />
+          <Loader2
+            size={
+              14
+            }
+            className="animate-spin text-app-accent"
+          />
         )}
       </div>
 
       {/* Loading overlay */}
-      {isLoading && !html && (
-        <div className="flex h-64 items-center justify-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-          >
-            <Loader2 size={24} className="text-app-accent" />
-          </motion.div>
-        </div>
-      )}
+      {isLoading &&
+        !html && (
+          <div className="flex h-64 items-center justify-center">
+            <motion.div
+              animate={{
+                rotate: 360,
+              }}
+              transition={{
+                repeat:
+                  Infinity,
+                duration: 1,
+                ease: 'linear',
+              }}
+            >
+              <Loader2
+                size={
+                  24
+                }
+                className="text-app-accent"
+              />
+            </motion.div>
+          </div>
+        )}
 
       {/* Article content — scrollable wrapper is NOT inert so scroll+click work */}
       {html && (
         <div
-          ref={scrollRef}
-          onClick={handleClick}
+          ref={
+            scrollRef
+          }
+          onClick={
+            handleClick
+          }
           className={`max-h-[50vh] overflow-y-auto px-4 py-3 text-sm leading-relaxed ${
-            isLoading ? 'opacity-40' : ''
+            isLoading
+              ? 'opacity-40'
+              : ''
           } ${!disabled ? 'wiki-frame-clickable' : ''}`}
         >
           <div
-            ref={contentRef}
-            className={cn('wiki-frame', disabled && 'wiki-frame-disabled', arrival)}
+            ref={
+              contentRef
+            }
+            className={cn(
+              'wiki-frame',
+              disabled &&
+                'wiki-frame-disabled',
+              arrival,
+            )}
             inert
-            dangerouslySetInnerHTML={{ __html: html }}
-            style={{ color: 'var(--app-text)' }}
+            dangerouslySetInnerHTML={{
+              __html:
+                html,
+            }}
+            style={{
+              color:
+                'var(--app-text)',
+            }}
           />
         </div>
       )}

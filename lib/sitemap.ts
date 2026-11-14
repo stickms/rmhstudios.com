@@ -16,15 +16,30 @@
 
 import { currentCycle } from '@/lib/elections/calendar';
 import { isFeedWindow } from '@/lib/elections/feed';
-import { games, apps } from '@/lib/catalog';
+import {
+  games,
+  apps,
+} from '@/lib/catalog';
 
 /** One `<url>` in a sitemap. */
-import { VERTICALS, verticalPriority } from '@/lib/verticals';
+import {
+  VERTICALS,
+  verticalPriority,
+} from '@/lib/verticals';
 
 export interface SitemapEntry {
   loc: string;
-  lastmod?: Date | string;
-  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  lastmod?:
+    | Date
+    | string;
+  changefreq?:
+    | 'always'
+    | 'hourly'
+    | 'daily'
+    | 'weekly'
+    | 'monthly'
+    | 'yearly'
+    | 'never';
   priority?: number;
 }
 
@@ -46,144 +61,481 @@ export const SITEMAP_CHUNK_SIZE = 40_000;
  * secondary surfaces · 0.3 corporate/legal.
  */
 /** Every vertical page, derived from the one place a vertical is declared. */
-const VERTICAL_ROUTES: SitemapEntry[] = VERTICALS.flatMap((v) =>
-  v.pages.map((page) => ({
-    loc: page.segment ? `${v.base}/${page.segment}` : v.base,
-    changefreq: page.cadence,
-    priority: verticalPriority(page),
-  })),
-);
+const VERTICAL_ROUTES: SitemapEntry[] =
+  VERTICALS.flatMap(
+    (
+      v,
+    ) =>
+      v.pages.map(
+        (
+          page,
+        ) => ({
+          loc: page.segment
+            ? `${v.base}/${page.segment}`
+            : v.base,
+          changefreq:
+            page.cadence,
+          priority:
+            verticalPriority(
+              page,
+            ),
+        }),
+      ),
+  );
 
 /** `/elections`, promoted only inside the window the feed card uses (lib/elections/feed.ts). */
-export function electionsSitemapEntry(now: Date = new Date()): SitemapEntry {
-  return isFeedWindow(currentCycle(now), now)
-    ? { loc: '/elections', changefreq: 'hourly', priority: 0.8 }
-    : { loc: '/elections', changefreq: 'weekly', priority: 0.4 };
+export function electionsSitemapEntry(
+  now: Date = new Date(),
+): SitemapEntry {
+  return isFeedWindow(
+    currentCycle(
+      now,
+    ),
+    now,
+  )
+    ? {
+        loc: '/elections',
+        changefreq:
+          'hourly',
+        priority: 0.8,
+      }
+    : {
+        loc: '/elections',
+        changefreq:
+          'weekly',
+        priority: 0.4,
+      };
 }
 
-export const STATIC_ROUTES: SitemapEntry[] = [
-  { loc: '/', changefreq: 'daily', priority: 1.0 },
+export const STATIC_ROUTES: SitemapEntry[] =
+  [
+    {
+      loc: '/',
+      changefreq:
+        'daily',
+      priority: 1.0,
+    },
 
-  // Primary hubs. `/games` is the public catalog index (the library, games and
-  // apps together; `/apps` redirects to it, so it is not listed). It was listed
-  // here for a long time with nothing behind it, then dropped when that was
-  // found, and now exists. `/create` is the creator half of the
-  // same catalog and stays listed — and now that its tabs are real routes
-  // rather than `?tab=` values, the two public ones are their own URLs with
-  // their own canonicals, so they are listed too. (`/create/earnings` is not:
-  // it is one viewer's own dashboard — see EXCLUDED_ROUTES.)
-  { loc: '/games', changefreq: 'weekly', priority: 0.9 },
-  { loc: '/arcade', changefreq: 'daily', priority: 0.6 },
-  { loc: '/daily-mutator', changefreq: 'daily', priority: 0.6 },
-  { loc: '/connections', changefreq: 'daily', priority: 0.5 },
-  { loc: '/rmhbox-packs', changefreq: 'weekly', priority: 0.4 },
-  { loc: '/create', changefreq: 'daily', priority: 0.8 },
-  { loc: '/create/builds', changefreq: 'daily', priority: 0.7 },
-  { loc: '/create/personas', changefreq: 'weekly', priority: 0.6 },
-  { loc: '/explore', changefreq: 'daily', priority: 0.8 },
-  { loc: '/library', changefreq: 'daily', priority: 0.8 },
-  { loc: '/news', changefreq: 'daily', priority: 0.8 },
-  { loc: '/communities', changefreq: 'daily', priority: 0.8 },
-  { loc: '/rings', changefreq: 'weekly', priority: 0.4 },
-  // `/rmhladder`, `/homes` and `/rmhcode` are apps, so `catalogRoutes()`
-  // already emits them — listing them here too would put the same URL in the
-  // sitemap twice, which Search Console reports as a warning.
-  { loc: '/rmhladder/jobs', changefreq: 'daily', priority: 0.8 },
-  { loc: '/homes/rent-split', changefreq: 'monthly', priority: 0.4 },
-  // The TF2 Hub's tools and its workshop (HUDs + loadouts) — a public, regularly changing listing. (`/tf2` itself is the app root, so `catalogRoutes()` emits it.)
-  { loc: '/tf2/play', changefreq: 'monthly', priority: 0.7 },
-  { loc: '/tf2/hud-editor', changefreq: 'monthly', priority: 0.6 },
-  { loc: '/tf2/loadout', changefreq: 'monthly', priority: 0.6 },
-  { loc: '/tf2/workshop', changefreq: 'daily', priority: 0.6 },
+    // Primary hubs. `/games` is the public catalog index (the library, games and
+    // apps together; `/apps` redirects to it, so it is not listed). It was listed
+    // here for a long time with nothing behind it, then dropped when that was
+    // found, and now exists. `/create` is the creator half of the
+    // same catalog and stays listed — and now that its tabs are real routes
+    // rather than `?tab=` values, the two public ones are their own URLs with
+    // their own canonicals, so they are listed too. (`/create/earnings` is not:
+    // it is one viewer's own dashboard — see EXCLUDED_ROUTES.)
+    {
+      loc: '/games',
+      changefreq:
+        'weekly',
+      priority: 0.9,
+    },
+    {
+      loc: '/arcade',
+      changefreq:
+        'daily',
+      priority: 0.6,
+    },
+    {
+      loc: '/daily-mutator',
+      changefreq:
+        'daily',
+      priority: 0.6,
+    },
+    {
+      loc: '/connections',
+      changefreq:
+        'daily',
+      priority: 0.5,
+    },
+    {
+      loc: '/rmhbox-packs',
+      changefreq:
+        'weekly',
+      priority: 0.4,
+    },
+    {
+      loc: '/create',
+      changefreq:
+        'daily',
+      priority: 0.8,
+    },
+    {
+      loc: '/create/builds',
+      changefreq:
+        'daily',
+      priority: 0.7,
+    },
+    {
+      loc: '/create/personas',
+      changefreq:
+        'weekly',
+      priority: 0.6,
+    },
+    {
+      loc: '/explore',
+      changefreq:
+        'daily',
+      priority: 0.8,
+    },
+    {
+      loc: '/library',
+      changefreq:
+        'daily',
+      priority: 0.8,
+    },
+    {
+      loc: '/news',
+      changefreq:
+        'daily',
+      priority: 0.8,
+    },
+    {
+      loc: '/communities',
+      changefreq:
+        'daily',
+      priority: 0.8,
+    },
+    {
+      loc: '/rings',
+      changefreq:
+        'weekly',
+      priority: 0.4,
+    },
+    // `/rmhladder`, `/homes` and `/rmhcode` are apps, so `catalogRoutes()`
+    // already emits them — listing them here too would put the same URL in the
+    // sitemap twice, which Search Console reports as a warning.
+    {
+      loc: '/rmhladder/jobs',
+      changefreq:
+        'daily',
+      priority: 0.8,
+    },
+    {
+      loc: '/homes/rent-split',
+      changefreq:
+        'monthly',
+      priority: 0.4,
+    },
+    // The TF2 Hub's tools and its workshop (HUDs + loadouts) — a public, regularly changing listing. (`/tf2` itself is the app root, so `catalogRoutes()` emits it.)
+    {
+      loc: '/tf2/play',
+      changefreq:
+        'monthly',
+      priority: 0.7,
+    },
+    {
+      loc: '/tf2/hud-editor',
+      changefreq:
+        'monthly',
+      priority: 0.6,
+    },
+    {
+      loc: '/tf2/loadout',
+      changefreq:
+        'monthly',
+      priority: 0.6,
+    },
+    {
+      loc: '/tf2/workshop',
+      changefreq:
+        'daily',
+      priority: 0.6,
+    },
 
-  // Secondary site surfaces.
-  //
-  // Absent on purpose: `/arcade`, `/leaderboard`, `/events`, `/market`,
-  // `/shop`, `/pricing`, `/personas`, `/playlists`, `/spaces` and `/v` all look
-  // like destinations in the nav but are `beforeLoad` redirects into a tab or
-  // section of `/games`, `/create`, `/store`, `/communities` or `/library`.
-  // They are in
-  // `EXCLUDED_ROUTES` as redirects; the pages they land on are listed here
-  // instead. `/shop` and `/pricing` joined that list late — they were listed
-  // here *and* self-canonical while `/store` was too, so one catalog and one
-  // pricing table each claimed two canonical URLs.
-  { loc: '/achievements', changefreq: 'weekly', priority: 0.5 },
-  // Community-made packs: a public browse surface, so it's indexable.
-  { loc: '/emoji-packs', changefreq: 'weekly', priority: 0.5 },
-  // Public per-game speedrun boards.
-  { loc: '/speedruns', changefreq: 'daily', priority: 0.5 },
-  { loc: '/groups', changefreq: 'weekly', priority: 0.5 },
-  { loc: '/help', changefreq: 'monthly', priority: 0.6 },
-  { loc: '/predictions', changefreq: 'daily', priority: 0.5 },
-  // The question of the day and its answers (posts-plus X4): new content daily.
-  { loc: '/qotd', changefreq: 'daily', priority: 0.5 },
-  // P18 delight: public timeline of site eras, and the daily nominated photo.
-  { loc: '/museum', changefreq: 'monthly', priority: 0.4 },
-  // P19 Z5: community pixel canvas (live board, timelapse after the event).
-  { loc: '/canvas', changefreq: 'weekly', priority: 0.4 },
-  { loc: '/photo-of-the-day', changefreq: 'daily', priority: 0.4 },
-  // The generated daily front page (P03 A3): rebuilt once a day from one snapshot row.
-  { loc: '/today', changefreq: 'daily', priority: 0.6 },
-  // The Kaikai Debt Counter. `daily` rather than `weekly` despite being a joke:
-  // the log grows every time anyone adds a line or scrolls past the frontier,
-  // so the page's content genuinely changes faster than most of this list.
-  { loc: '/game-night', changefreq: 'weekly', priority: 0.5 },
-  { loc: '/jams', changefreq: 'daily', priority: 0.5 },
-  { loc: '/kaikaidebtcounter', changefreq: 'daily', priority: 0.4 },
-  { loc: '/quotes', changefreq: 'weekly', priority: 0.4 },
-  { loc: '/ranked', changefreq: 'daily', priority: 0.5 },
-  { loc: '/rideshare', changefreq: 'weekly', priority: 0.5 },
-  { loc: '/roadmap', changefreq: 'weekly', priority: 0.5 },
-  // The programming grid (L1). `daily` because that is literally what it is:
-  // a page whose whole value is that today's contents differ from yesterday's.
-  { loc: '/schedule', changefreq: 'daily', priority: 0.7 },
-  { loc: '/services', changefreq: 'monthly', priority: 0.6 },
-  { loc: '/services/cars', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/services/fashion', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/store', changefreq: 'weekly', priority: 0.5 },
-  { loc: '/study', changefreq: 'weekly', priority: 0.5 },
-  { loc: '/study/browse', changefreq: 'daily', priority: 0.5 },
-  { loc: '/tournaments', changefreq: 'daily', priority: 0.5 },
-  { loc: '/ventures', changefreq: 'monthly', priority: 0.6 },
-  { loc: '/wager', changefreq: 'daily', priority: 0.4 },
+    // Secondary site surfaces.
+    //
+    // Absent on purpose: `/arcade`, `/leaderboard`, `/events`, `/market`,
+    // `/shop`, `/pricing`, `/personas`, `/playlists`, `/spaces` and `/v` all look
+    // like destinations in the nav but are `beforeLoad` redirects into a tab or
+    // section of `/games`, `/create`, `/store`, `/communities` or `/library`.
+    // They are in
+    // `EXCLUDED_ROUTES` as redirects; the pages they land on are listed here
+    // instead. `/shop` and `/pricing` joined that list late — they were listed
+    // here *and* self-canonical while `/store` was too, so one catalog and one
+    // pricing table each claimed two canonical URLs.
+    {
+      loc: '/achievements',
+      changefreq:
+        'weekly',
+      priority: 0.5,
+    },
+    // Community-made packs: a public browse surface, so it's indexable.
+    {
+      loc: '/emoji-packs',
+      changefreq:
+        'weekly',
+      priority: 0.5,
+    },
+    // Public per-game speedrun boards.
+    {
+      loc: '/speedruns',
+      changefreq:
+        'daily',
+      priority: 0.5,
+    },
+    {
+      loc: '/groups',
+      changefreq:
+        'weekly',
+      priority: 0.5,
+    },
+    {
+      loc: '/help',
+      changefreq:
+        'monthly',
+      priority: 0.6,
+    },
+    {
+      loc: '/predictions',
+      changefreq:
+        'daily',
+      priority: 0.5,
+    },
+    // The question of the day and its answers (posts-plus X4): new content daily.
+    {
+      loc: '/qotd',
+      changefreq:
+        'daily',
+      priority: 0.5,
+    },
+    // P18 delight: public timeline of site eras, and the daily nominated photo.
+    {
+      loc: '/museum',
+      changefreq:
+        'monthly',
+      priority: 0.4,
+    },
+    // P19 Z5: community pixel canvas (live board, timelapse after the event).
+    {
+      loc: '/canvas',
+      changefreq:
+        'weekly',
+      priority: 0.4,
+    },
+    {
+      loc: '/photo-of-the-day',
+      changefreq:
+        'daily',
+      priority: 0.4,
+    },
+    // The generated daily front page (P03 A3): rebuilt once a day from one snapshot row.
+    {
+      loc: '/today',
+      changefreq:
+        'daily',
+      priority: 0.6,
+    },
+    // The Kaikai Debt Counter. `daily` rather than `weekly` despite being a joke:
+    // the log grows every time anyone adds a line or scrolls past the frontier,
+    // so the page's content genuinely changes faster than most of this list.
+    {
+      loc: '/game-night',
+      changefreq:
+        'weekly',
+      priority: 0.5,
+    },
+    {
+      loc: '/jams',
+      changefreq:
+        'daily',
+      priority: 0.5,
+    },
+    {
+      loc: '/kaikaidebtcounter',
+      changefreq:
+        'daily',
+      priority: 0.4,
+    },
+    {
+      loc: '/quotes',
+      changefreq:
+        'weekly',
+      priority: 0.4,
+    },
+    {
+      loc: '/ranked',
+      changefreq:
+        'daily',
+      priority: 0.5,
+    },
+    {
+      loc: '/rideshare',
+      changefreq:
+        'weekly',
+      priority: 0.5,
+    },
+    {
+      loc: '/roadmap',
+      changefreq:
+        'weekly',
+      priority: 0.5,
+    },
+    // The programming grid (L1). `daily` because that is literally what it is:
+    // a page whose whole value is that today's contents differ from yesterday's.
+    {
+      loc: '/schedule',
+      changefreq:
+        'daily',
+      priority: 0.7,
+    },
+    {
+      loc: '/services',
+      changefreq:
+        'monthly',
+      priority: 0.6,
+    },
+    {
+      loc: '/services/cars',
+      changefreq:
+        'monthly',
+      priority: 0.4,
+    },
+    {
+      loc: '/services/fashion',
+      changefreq:
+        'monthly',
+      priority: 0.4,
+    },
+    {
+      loc: '/store',
+      changefreq:
+        'weekly',
+      priority: 0.5,
+    },
+    {
+      loc: '/study',
+      changefreq:
+        'weekly',
+      priority: 0.5,
+    },
+    {
+      loc: '/study/browse',
+      changefreq:
+        'daily',
+      priority: 0.5,
+    },
+    {
+      loc: '/tournaments',
+      changefreq:
+        'daily',
+      priority: 0.5,
+    },
+    {
+      loc: '/ventures',
+      changefreq:
+        'monthly',
+      priority: 0.6,
+    },
+    {
+      loc: '/wager',
+      changefreq:
+        'daily',
+      priority: 0.4,
+    },
 
-  { loc: '/changelog', changefreq: 'weekly', priority: 0.4 },
+    {
+      loc: '/changelog',
+      changefreq:
+        'weekly',
+      priority: 0.4,
+    },
 
-  // Developer platform — the API is a promotable product surface.
-  { loc: '/developer', changefreq: 'weekly', priority: 0.6 },
-  { loc: '/developer/ai-practices', changefreq: 'monthly', priority: 0.4 },
+    // Developer platform — the API is a promotable product surface.
+    {
+      loc: '/developer',
+      changefreq:
+        'weekly',
+      priority: 0.6,
+    },
+    {
+      loc: '/developer/ai-practices',
+      changefreq:
+        'monthly',
+      priority: 0.4,
+    },
 
-  // The separately-branded arms are DERIVED from `lib/verticals.ts` rather than
-  // listed here (K2). Eleven microsites shipped in six weeks and this block was
-  // hand-extended each time — twice by a follow-up commit, after the coverage
-  // test below caught the omission in CI rather than in review. One declaration
-  // per vertical means microsite #12 is crawlable because it exists, not
-  // because somebody also remembered to edit this file.
-  ...VERTICAL_ROUTES,
+    // The separately-branded arms are DERIVED from `lib/verticals.ts` rather than
+    // listed here (K2). Eleven microsites shipped in six weeks and this block was
+    // hand-extended each time — twice by a follow-up commit, after the coverage
+    // test below caught the omission in CI rather than in review. One declaration
+    // per vertical means microsite #12 is crawlable because it exists, not
+    // because somebody also remembered to edit this file.
+    ...VERTICAL_ROUTES,
 
-  // Campaigns and standalone statements.
-  { loc: '/black-lives-matter', changefreq: 'yearly', priority: 0.3 },
-  { loc: '/covid', changefreq: 'yearly', priority: 0.3 },
-  // The election hub: results change by the minute around Election Day, so it is crawled
-  // often then, and like any other reference page the rest of the two years.
-  electionsSitemapEntry(),
+    // Campaigns and standalone statements.
+    {
+      loc: '/black-lives-matter',
+      changefreq:
+        'yearly',
+      priority: 0.3,
+    },
+    {
+      loc: '/covid',
+      changefreq:
+        'yearly',
+      priority: 0.3,
+    },
+    // The election hub: results change by the minute around Election Day, so it is crawled
+    // often then, and like any other reference page the rest of the two years.
+    electionsSitemapEntry(),
 
-  // Engineering/design write-ups. Real content, and the kind that earns links.
-  { loc: '/design', changefreq: 'monthly', priority: 0.5 },
-  { loc: '/optimization', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/security', changefreq: 'monthly', priority: 0.4 },
-  // The public incident log. `app/routes/breaches.tsx` calls itself "sibling to
-  // /security" and ships a canonical and a public description, so it is
-  // classified the way its sibling is.
-  { loc: '/breaches', changefreq: 'monthly', priority: 0.4 },
+    // Engineering/design write-ups. Real content, and the kind that earns links.
+    {
+      loc: '/design',
+      changefreq:
+        'monthly',
+      priority: 0.5,
+    },
+    {
+      loc: '/optimization',
+      changefreq:
+        'monthly',
+      priority: 0.4,
+    },
+    {
+      loc: '/security',
+      changefreq:
+        'monthly',
+      priority: 0.4,
+    },
+    // The public incident log. `app/routes/breaches.tsx` calls itself "sibling to
+    // /security" and ships a canonical and a public description, so it is
+    // classified the way its sibling is.
+    {
+      loc: '/breaches',
+      changefreq:
+        'monthly',
+      priority: 0.4,
+    },
 
-  // Legal. Low priority, but they must be crawlable — several app stores and
-  // payment processors check that the linked policy actually resolves.
-  { loc: '/privacy', changefreq: 'yearly', priority: 0.3 },
-  { loc: '/terms', changefreq: 'yearly', priority: 0.3 },
-  { loc: '/cookies', changefreq: 'yearly', priority: 0.3 },
-  { loc: '/copyright', changefreq: 'yearly', priority: 0.3 },
-];
+    // Legal. Low priority, but they must be crawlable — several app stores and
+    // payment processors check that the linked policy actually resolves.
+    {
+      loc: '/privacy',
+      changefreq:
+        'yearly',
+      priority: 0.3,
+    },
+    {
+      loc: '/terms',
+      changefreq:
+        'yearly',
+      priority: 0.3,
+    },
+    {
+      loc: '/cookies',
+      changefreq:
+        'yearly',
+      priority: 0.3,
+    },
+    {
+      loc: '/copyright',
+      changefreq:
+        'yearly',
+      priority: 0.3,
+    },
+  ];
 
 // ────────────────────── games, apps and their hubs ──────────────────────
 
@@ -194,30 +546,99 @@ export const STATIC_ROUTES: SitemapEntry[] = [
  * list. `/rmhbox/minigames` is included because it is a real content page.
  */
 export function catalogRoutes(): SitemapEntry[] {
-  const entries: SitemapEntry[] = [];
+  const entries: SitemapEntry[] =
+    [];
 
   for (const g of games) {
-    if (!g.href.startsWith('/') || g.unlisted) continue;
-    entries.push({ loc: g.href, changefreq: 'weekly', priority: 0.6 });
+    if (
+      !g.href.startsWith(
+        '/',
+      ) ||
+      g.unlisted
+    )
+      continue;
+    entries.push(
+      {
+        loc: g.href,
+        changefreq:
+          'weekly',
+        priority: 0.6,
+      },
+    );
     // The hub is the indexable landing page: the playable route is a
     // full-screen canvas with nothing for a crawler to read.
-    entries.push({ loc: `/games/${g.id}`, changefreq: 'weekly', priority: 0.6 });
+    entries.push(
+      {
+        loc: `/games/${g.id}`,
+        changefreq:
+          'weekly',
+        priority: 0.6,
+      },
+    );
     // Curated-build detail pages mirror the catalog and carry the long copy.
-    entries.push({ loc: `/builds/${g.id}`, changefreq: 'monthly', priority: 0.4 });
+    entries.push(
+      {
+        loc: `/builds/${g.id}`,
+        changefreq:
+          'monthly',
+        priority: 0.4,
+      },
+    );
   }
 
   for (const a of apps) {
-    if (!a.href.startsWith('/') || a.unlisted || a.hidden) continue;
-    entries.push({ loc: a.href, changefreq: 'weekly', priority: 0.6 });
-    entries.push({ loc: `/builds/${a.id}`, changefreq: 'monthly', priority: 0.4 });
+    if (
+      !a.href.startsWith(
+        '/',
+      ) ||
+      a.unlisted ||
+      a.hidden
+    )
+      continue;
+    entries.push(
+      {
+        loc: a.href,
+        changefreq:
+          'weekly',
+        priority: 0.6,
+      },
+    );
+    entries.push(
+      {
+        loc: `/builds/${a.id}`,
+        changefreq:
+          'monthly',
+        priority: 0.4,
+      },
+    );
   }
 
-  entries.push({ loc: '/rmhbox/minigames', changefreq: 'monthly', priority: 0.4 });
+  entries.push(
+    {
+      loc: '/rmhbox/minigames',
+      changefreq:
+        'monthly',
+      priority: 0.4,
+    },
+  );
 
   // A game and an app could in principle share an id; de-dupe on `loc` so the
   // same URL is never emitted twice (a validation warning in Search Console).
-  const seen = new Set<string>();
-  return entries.filter((e) => (seen.has(e.loc) ? false : (seen.add(e.loc), true)));
+  const seen =
+    new Set<string>();
+  return entries.filter(
+    (
+      e,
+    ) =>
+      seen.has(
+        e.loc,
+      )
+        ? false
+        : (seen.add(
+            e.loc,
+          ),
+          true),
+  );
 }
 
 // ─────────────────────── deliberately not indexed ───────────────────────
@@ -248,217 +669,387 @@ export type ExclusionReason =
  *
  * Keyed by the route's `fullPath` with any trailing slash stripped.
  */
-export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
-  // ── personal / auth-gated ──
-  '/analytics': 'personal',
-  '/create/earnings': 'personal', // the viewer's own coins, views and payouts
-  '/bookmarks': 'redirect', // → /saves
-  '/drafts': 'personal',
-  '/connections/new': 'personal', // signed-in authoring form
-  '/games/trades': 'personal', // the viewer's own offers
-  '/games/market': 'noindex', // card listings change by the minute and are behind sign-in to act on
-  '/games/daily': 'noindex', // Steam-framed copy of the /store daily tab; /store is the indexed page
-  '/games/marketplace': 'noindex', // Steam-framed copy of the /store market tab; listings change by the minute
-  '/games/membership': 'noindex', // Steam-framed copy of /store?tab=membership; /store is the indexed page
-  '/games/shop': 'noindex', // Steam-framed copy of the /store coin shop; /store is the indexed page
-  '/games/communities': 'noindex', // Steam-framed copy of the /communities directory; /communities is indexed
-  '/games/store': 'noindex', // discovery page; filters and search make a URL per query
-  '/games/inventory': 'personal', // the viewer's own trading cards and badges
-  '/games/community': 'noindex', // Steam-style community home; the viewer's groups ride on it
-  '/out': 'noindex', // link-warning interstitial; the destination rides in ?url=
-  '/safety/pile-on': 'personal', // the author's one-tap notice from a notification
-  '/history': 'personal',
-  '/rmhmusic/practice': 'personal', // the learner's own card reviews, behind sign-in
-  '/alexdebtcounter': 'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
-  '/sohumbum2': 'redirect', // → /sohumtracker (renamed; the old link was already shared)
-  '/lists': 'redirect', // → /saves?tab=lists
-  '/messages': 'personal',
-  '/notifications': 'personal',
-  '/progress': 'personal',
-  '/reading': 'personal', // highlights, shelves and the reading challenge
-  '/recap': 'personal',
-  '/saves': 'personal',
-  '/feeds': 'personal', // the viewer's own custom feeds and subscriptions (P03 A4)
-  '/series': 'personal', // the viewer's own series and the ones they follow
-  '/sections': 'noindex', // the no-script list of the navigator's destinations; a shell page, not content
-  '/share': 'personal',
-  '/wallet': 'personal',
-  '/trash': 'personal',
-  '/wishlist': 'redirect', // → /saves?tab=wishlist
-  '/wrapped': 'personal',
-  '/creator-studio': 'personal',
-  '/homes/manage': 'personal',
-  '/homes/saved': 'redirect', // → /homes/manage?tab=saved
-  '/homes/submit': 'auth-gated',
-  '/homes/watches': 'redirect', // → /homes/manage?tab=alerts
-  '/rideshare/drive': 'auth-gated',
-  '/rideshare/ride': 'auth-gated',
-  '/rmhladder/alerts': 'personal',
-  '/rmhladder/health': 'personal',
-  '/rmhladder/pipeline': 'personal',
-  '/rmhladder/referrals': 'personal',
-  '/rmhladder/resume': 'personal',
-  '/rmhladder/review': 'personal',
-  '/rmhladder/settings': 'personal',
-  '/settings': 'personal',
-  '/settings/account-status': 'personal',
-  '/settings/appearance': 'personal',
-  '/settings/calendar': 'personal',
-  '/settings/circle': 'personal',
-  '/settings/content': 'personal',
-  '/settings/layout': 'personal',
-  '/settings/notifications': 'personal',
-  '/settings/privacy': 'personal',
-  '/settings/profile': 'personal',
-  '/settings/security': 'personal',
-  '/settings/themes': 'personal',
-  '/studio/themes': 'redirect', // → /settings/themes
-  '/user-builds/manage': 'personal',
-  // P09 calendar: private scheduling tools, each page carries a `noindex` meta tag.
-  '/hunt': 'noindex', // P18 Z2: per-member hunt progress
-  '/translate': 'noindex', // P18 Y4: signed-in contribution tool
-  '/advent': 'noindex', // the viewer's own doors (P11 G2)
-  '/marathon': 'noindex', // P21 F15: a member's own watch lists
-  '/exchange': 'noindex', // gift and mixtape exchanges: the viewer's own list and the new-exchange form
-  '/when': 'noindex', // availability polls: a member's own list and the new-poll form
-  '/office-hours': 'noindex', // a member's own office-hours settings and bookings
-  '/user-builds/submit': 'auth-gated',
-  '/rmhstudy/planner': 'auth-gated', // P21 F4: exam planner
-  '/v/new': 'auth-gated',
-  '/login': 'noindex',
-  '/rmhcode/auth': 'auth-gated',
-  // X8 — the Discord Activity gateway. It only functions inside a Discord
-  // client (it reads the Activity SDK handshake), so a crawler that indexed it
-  // would be advertising a page that renders nothing anywhere else.
-  '/discord': 'noindex',
+export const EXCLUDED_ROUTES: Record<
+  string,
+  ExclusionReason
+> =
+  {
+    // ── personal / auth-gated ──
+    '/analytics':
+      'personal',
+    '/create/earnings':
+      'personal', // the viewer's own coins, views and payouts
+    '/bookmarks':
+      'redirect', // → /saves
+    '/drafts':
+      'personal',
+    '/connections/new':
+      'personal', // signed-in authoring form
+    '/games/trades':
+      'personal', // the viewer's own offers
+    '/games/market':
+      'noindex', // card listings change by the minute and are behind sign-in to act on
+    '/games/daily':
+      'noindex', // Steam-framed copy of the /store daily tab; /store is the indexed page
+    '/games/marketplace':
+      'noindex', // Steam-framed copy of the /store market tab; listings change by the minute
+    '/games/membership':
+      'noindex', // Steam-framed copy of /store?tab=membership; /store is the indexed page
+    '/games/shop':
+      'noindex', // Steam-framed copy of the /store coin shop; /store is the indexed page
+    '/games/communities':
+      'noindex', // Steam-framed copy of the /communities directory; /communities is indexed
+    '/games/store':
+      'noindex', // discovery page; filters and search make a URL per query
+    '/games/inventory':
+      'personal', // the viewer's own trading cards and badges
+    '/games/community':
+      'noindex', // Steam-style community home; the viewer's groups ride on it
+    '/out':
+      'noindex', // link-warning interstitial; the destination rides in ?url=
+    '/safety/pile-on':
+      'personal', // the author's one-tap notice from a notification
+    '/history':
+      'personal',
+    '/rmhmusic/practice':
+      'personal', // the learner's own card reviews, behind sign-in
+    '/alexdebtcounter':
+      'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
+    '/sohumbum2':
+      'redirect', // → /sohumtracker (renamed; the old link was already shared)
+    '/lists':
+      'redirect', // → /saves?tab=lists
+    '/messages':
+      'personal',
+    '/notifications':
+      'personal',
+    '/progress':
+      'personal',
+    '/reading':
+      'personal', // highlights, shelves and the reading challenge
+    '/recap':
+      'personal',
+    '/saves':
+      'personal',
+    '/feeds':
+      'personal', // the viewer's own custom feeds and subscriptions (P03 A4)
+    '/series':
+      'personal', // the viewer's own series and the ones they follow
+    '/sections':
+      'noindex', // the no-script list of the navigator's destinations; a shell page, not content
+    '/share':
+      'personal',
+    '/wallet':
+      'personal',
+    '/trash':
+      'personal',
+    '/wishlist':
+      'redirect', // → /saves?tab=wishlist
+    '/wrapped':
+      'personal',
+    '/creator-studio':
+      'personal',
+    '/homes/manage':
+      'personal',
+    '/homes/saved':
+      'redirect', // → /homes/manage?tab=saved
+    '/homes/submit':
+      'auth-gated',
+    '/homes/watches':
+      'redirect', // → /homes/manage?tab=alerts
+    '/rideshare/drive':
+      'auth-gated',
+    '/rideshare/ride':
+      'auth-gated',
+    '/rmhladder/alerts':
+      'personal',
+    '/rmhladder/health':
+      'personal',
+    '/rmhladder/pipeline':
+      'personal',
+    '/rmhladder/referrals':
+      'personal',
+    '/rmhladder/resume':
+      'personal',
+    '/rmhladder/review':
+      'personal',
+    '/rmhladder/settings':
+      'personal',
+    '/settings':
+      'personal',
+    '/settings/account-status':
+      'personal',
+    '/settings/appearance':
+      'personal',
+    '/settings/calendar':
+      'personal',
+    '/settings/circle':
+      'personal',
+    '/settings/content':
+      'personal',
+    '/settings/layout':
+      'personal',
+    '/settings/notifications':
+      'personal',
+    '/settings/privacy':
+      'personal',
+    '/settings/profile':
+      'personal',
+    '/settings/security':
+      'personal',
+    '/settings/themes':
+      'personal',
+    '/studio/themes':
+      'redirect', // → /settings/themes
+    '/user-builds/manage':
+      'personal',
+    // P09 calendar: private scheduling tools, each page carries a `noindex` meta tag.
+    '/hunt':
+      'noindex', // P18 Z2: per-member hunt progress
+    '/translate':
+      'noindex', // P18 Y4: signed-in contribution tool
+    '/advent':
+      'noindex', // the viewer's own doors (P11 G2)
+    '/marathon':
+      'noindex', // P21 F15: a member's own watch lists
+    '/exchange':
+      'noindex', // gift and mixtape exchanges: the viewer's own list and the new-exchange form
+    '/when':
+      'noindex', // availability polls: a member's own list and the new-poll form
+    '/office-hours':
+      'noindex', // a member's own office-hours settings and bookings
+    '/user-builds/submit':
+      'auth-gated',
+    '/rmhstudy/planner':
+      'auth-gated', // P21 F4: exam planner
+    '/v/new':
+      'auth-gated',
+    '/login':
+      'noindex',
+    '/rmhcode/auth':
+      'auth-gated',
+    // X8 — the Discord Activity gateway. It only functions inside a Discord
+    // client (it reads the Activity SDK handshake), so a crawler that indexed it
+    // would be advertising a page that renders nothing anywhere else.
+    '/discord':
+      'noindex',
 
-  // ── admin ──
-  '/admin': 'admin',
-  '/admin/albums': 'admin',
-  '/admin/reading': 'admin',
-  '/admin/analytics': 'admin',
-  '/admin/performance': 'admin',
-  '/admin/deepseek': 'admin',
-  '/admin/census': 'admin',
-  '/admin/alarms': 'admin',
-  '/admin/announcements': 'admin',
-  '/admin/insights': 'admin',
-  '/admin/appeals': 'admin',
-  '/admin/audit': 'admin',
-  '/admin/flags': 'admin',
-  '/admin/safety': 'admin',
-  '/admin/blog': 'admin',
-  '/admin/blog/new': 'admin',
-  '/admin/economy': 'admin',
-  '/admin/market': 'admin',
-  '/admin/emoji-packs': 'admin',
-  '/admin/delight': 'admin',
-  '/admin/bots': 'admin',
-  '/admin/canvas': 'admin', // P19 Z5/X3
-  '/admin/studio-challenges': 'admin', // P23 F12
-  '/admin/library': 'admin',
-  '/admin/patch-notes': 'admin',
-  '/admin/release-notes': 'admin',
-  '/admin/library-quota': 'redirect', // → /admin/library?tab=appeals
-  '/admin/library-storage': 'redirect', // → /admin/library?tab=storage
-  '/admin/predictions': 'admin',
-  '/admin/qotd': 'admin',
-  '/admin/redemptions': 'admin',
-  '/admin/reports': 'admin',
-  '/admin/rideshare': 'admin',
-  '/admin/security-reports': 'admin',
-  '/admin/slice-it': 'admin',
-  '/admin/slice-it-content': 'admin',
-  '/admin/user-builds': 'admin',
-  '/admin/users': 'admin',
+    // ── admin ──
+    '/admin':
+      'admin',
+    '/admin/albums':
+      'admin',
+    '/admin/reading':
+      'admin',
+    '/admin/analytics':
+      'admin',
+    '/admin/performance':
+      'admin',
+    '/admin/deepseek':
+      'admin',
+    '/admin/census':
+      'admin',
+    '/admin/alarms':
+      'admin',
+    '/admin/announcements':
+      'admin',
+    '/admin/insights':
+      'admin',
+    '/admin/appeals':
+      'admin',
+    '/admin/audit':
+      'admin',
+    '/admin/flags':
+      'admin',
+    '/admin/safety':
+      'admin',
+    '/admin/blog':
+      'admin',
+    '/admin/blog/new':
+      'admin',
+    '/admin/economy':
+      'admin',
+    '/admin/market':
+      'admin',
+    '/admin/emoji-packs':
+      'admin',
+    '/admin/delight':
+      'admin',
+    '/admin/bots':
+      'admin',
+    '/admin/canvas':
+      'admin', // P19 Z5/X3
+    '/admin/studio-challenges':
+      'admin', // P23 F12
+    '/admin/library':
+      'admin',
+    '/admin/patch-notes':
+      'admin',
+    '/admin/release-notes':
+      'admin',
+    '/admin/library-quota':
+      'redirect', // → /admin/library?tab=appeals
+    '/admin/library-storage':
+      'redirect', // → /admin/library?tab=storage
+    '/admin/predictions':
+      'admin',
+    '/admin/qotd':
+      'admin',
+    '/admin/redemptions':
+      'admin',
+    '/admin/reports':
+      'admin',
+    '/admin/rideshare':
+      'admin',
+    '/admin/security-reports':
+      'admin',
+    '/admin/slice-it':
+      'admin',
+    '/admin/slice-it-content':
+      'admin',
+    '/admin/user-builds':
+      'admin',
+    '/admin/users':
+      'admin',
 
-  // ── redirects ──
-  // A sitemap entry that redirects is an indexing error in Search Console, and
-  // `/user-builds` → `/builds` → `/create?tab=games` was two errors for one
-  // URL. `/blog` and `/user-builds` were both in the old sitemap.
-  //
-  // The rest of this block is the trap that made the old list wrong in the
-  // first place: these read like destinations — they have nav entries, they
-  // have names people use — but each is a `beforeLoad` redirect into a tab of
-  // another page. Nothing about the route file's name says so.
-  '/blog': 'redirect', // → /library
-  '/user-builds': 'redirect', // → /builds → /games
-  '/builds': 'redirect', // → /games
-  '/lights-out': 'redirect', // → /daily/lights-out
-  '/apps': 'redirect', // → /games?kind=app (apps are in the library)
-  '/leaderboard': 'redirect', // → /arcade?sub=leaderboard
-  '/events': 'redirect', // → /communities?tab=events
-  '/market': 'redirect', // → /store?tab=market
-  '/shop': 'redirect', // → /store?tab=shop
-  '/pricing': 'redirect', // → /store?tab=membership
-  '/personas': 'redirect', // → /create/personas
-  '/playlists': 'redirect', // → /library?view=playlists
-  '/spaces': 'redirect', // → /communities?tab=spaces
-  '/v': 'redirect', // → /create
-  '/search': 'redirect', // → /explore (the two pages were merged)
-  // Admin-gated: signed-in non-admins are redirected to /rmhladder.
-  '/rmhladder/companies': 'admin',
+    // ── redirects ──
+    // A sitemap entry that redirects is an indexing error in Search Console, and
+    // `/user-builds` → `/builds` → `/create?tab=games` was two errors for one
+    // URL. `/blog` and `/user-builds` were both in the old sitemap.
+    //
+    // The rest of this block is the trap that made the old list wrong in the
+    // first place: these read like destinations — they have nav entries, they
+    // have names people use — but each is a `beforeLoad` redirect into a tab of
+    // another page. Nothing about the route file's name says so.
+    '/blog':
+      'redirect', // → /library
+    '/user-builds':
+      'redirect', // → /builds → /games
+    '/builds':
+      'redirect', // → /games
+    '/lights-out':
+      'redirect', // → /daily/lights-out
+    '/apps':
+      'redirect', // → /games?kind=app (apps are in the library)
+    '/leaderboard':
+      'redirect', // → /arcade?sub=leaderboard
+    '/events':
+      'redirect', // → /communities?tab=events
+    '/market':
+      'redirect', // → /store?tab=market
+    '/shop':
+      'redirect', // → /store?tab=shop
+    '/pricing':
+      'redirect', // → /store?tab=membership
+    '/personas':
+      'redirect', // → /create/personas
+    '/playlists':
+      'redirect', // → /library?view=playlists
+    '/spaces':
+      'redirect', // → /communities?tab=spaces
+    '/v': 'redirect', // → /create
+    '/search':
+      'redirect', // → /explore (the two pages were merged)
+    // Admin-gated: signed-in non-admins are redirected to /rmhladder.
+    '/rmhladder/companies':
+      'admin',
 
-  // ── public but not for the index ──
-  // Unlisted while the game is in development. `buildSitemapEntries` already
-  // skips `unlisted` catalog entries, so this is only here to satisfy the
-  // coverage gate — and it comes out, with the `unlisted` flag, in the commit
-  // that makes the game playable.
-  '/offline': 'noindex', // the service worker's offline shell
-  '/discord/lights-out': 'noindex', // Discord Activity surface, minimal head
-  '/discord/rmhbox': 'noindex',
-  '/rmh-internal-affairs': 'noindex', // internal microsite
-  '/secret': 'noindex', // easter eggs — indexing them defeats the point
-  // Signed-in only and deliberately unsearchable (licensing): also disallowed in
-  // robots.txt and `noindex, nofollow` in its head.
-  '/balatro': 'auth-gated',
-  // One tabletop group's scheduling board. Unlisted rather than permissioned:
-  // anyone with the link may read it, so keeping it out of the sitemap (and its
-  // own `noindex, nofollow`) is the whole of its obscurity.
-  '/pf2ecal': 'noindex',
-  '/secret/cursed-logic': 'noindex',
-  '/secret/signal-forge': 'noindex',
-  '/secret/vega': 'noindex',
-  // A page about one named person, linked from their profile. It is meant to be
-  // found by people who already know them, not by a search for their name.
-  '/sohumbum': 'noindex',
-  // The same person's live activity dossier. Same reasoning, and one more: it
-  // reports on a real account's behaviour, so it is meant to be shared with a
-  // link rather than surfaced by searching their name. Its OG card is public
-  // (a paste should unfurl) — unfurling and indexing are different questions.
-  '/sohumtracker': 'noindex',
+    // ── public but not for the index ──
+    // Unlisted while the game is in development. `buildSitemapEntries` already
+    // skips `unlisted` catalog entries, so this is only here to satisfy the
+    // coverage gate — and it comes out, with the `unlisted` flag, in the commit
+    // that makes the game playable.
+    '/offline':
+      'noindex', // the service worker's offline shell
+    '/discord/lights-out':
+      'noindex', // Discord Activity surface, minimal head
+    '/discord/rmhbox':
+      'noindex',
+    '/rmh-internal-affairs':
+      'noindex', // internal microsite
+    '/secret':
+      'noindex', // easter eggs — indexing them defeats the point
+    // Signed-in only and deliberately unsearchable (licensing): also disallowed in
+    // robots.txt and `noindex, nofollow` in its head.
+    '/balatro':
+      'auth-gated',
+    // One tabletop group's scheduling board. Unlisted rather than permissioned:
+    // anyone with the link may read it, so keeping it out of the sitemap (and its
+    // own `noindex, nofollow`) is the whole of its obscurity.
+    '/pf2ecal':
+      'noindex',
+    '/secret/cursed-logic':
+      'noindex',
+    '/secret/signal-forge':
+      'noindex',
+    '/secret/vega':
+      'noindex',
+    // A page about one named person, linked from their profile. It is meant to be
+    // found by people who already know them, not by a search for their name.
+    '/sohumbum':
+      'noindex',
+    // The same person's live activity dossier. Same reasoning, and one more: it
+    // reports on a real account's behaviour, so it is meant to be shared with a
+    // link rather than surfaced by searching their name. Its OG card is public
+    // (a paste should unfurl) — unfurling and indexing are different questions.
+    '/sohumtracker':
+      'noindex',
 
-  // ── ephemeral realtime rooms ──
-  '/altair/multiplayer': 'ephemeral',
-  '/rmhtype/multiplayer': 'ephemeral',
-  '/tf2/hud-editor/editor': 'noindex', // the workspace itself; its content is the viewer's own HUD
-  '/tf2/hud-editor/mine': 'personal', // a member's own HUDs and local drafts
-  '/tf2/loadout/mine': 'personal', // a member's own saved loadouts
-  '/rmhtype/solo': 'duplicate', // same content as `/rmhtype`
+    // ── ephemeral realtime rooms ──
+    '/altair/multiplayer':
+      'ephemeral',
+    '/rmhtype/multiplayer':
+      'ephemeral',
+    '/tf2/hud-editor/editor':
+      'noindex', // the workspace itself; its content is the viewer's own HUD
+    '/tf2/hud-editor/mine':
+      'personal', // a member's own HUDs and local drafts
+    '/tf2/loadout/mine':
+      'personal', // a member's own saved loadouts
+    '/rmhtype/solo':
+      'duplicate', // same content as `/rmhtype`
 
-  // ── strategies: an in-game meta layer, all of it behind a save ──
-  '/strategies/incidents': 'auth-gated',
-  '/strategies/profile': 'personal',
-  '/strategies/profile/reputation': 'personal',
-  '/strategies/profile/settings': 'personal',
-  '/strategies/puzzles': 'auth-gated',
-  '/strategies/puzzles/archive': 'auth-gated',
-  '/strategies/puzzles/leaderboard': 'auth-gated',
-  '/strategies/safehouse': 'auth-gated',
-  '/strategies/safehouse/drops': 'auth-gated',
-  '/strategies/safehouse/recruit': 'auth-gated',
-  '/strategies/sahur': 'noindex',
+    // ── strategies: an in-game meta layer, all of it behind a save ──
+    '/strategies/incidents':
+      'auth-gated',
+    '/strategies/profile':
+      'personal',
+    '/strategies/profile/reputation':
+      'personal',
+    '/strategies/profile/settings':
+      'personal',
+    '/strategies/puzzles':
+      'auth-gated',
+    '/strategies/puzzles/archive':
+      'auth-gated',
+    '/strategies/puzzles/leaderboard':
+      'auth-gated',
+    '/strategies/safehouse':
+      'auth-gated',
+    '/strategies/safehouse/drops':
+      'auth-gated',
+    '/strategies/safehouse/recruit':
+      'auth-gated',
+    '/strategies/sahur':
+      'noindex',
 
-  // ── daily puzzles: the hub `/daily` is listed via the catalog, the
-  //     individual puzzles rotate their content every day ──
-  '/daily/alibi': 'duplicate',
-  '/daily/chainlink': 'duplicate',
-  '/daily/impostor': 'duplicate',
-  '/daily/lights-out': 'duplicate',
-  '/daily/outcast': 'duplicate',
-  '/daily/globeset': 'duplicate',
-  '/daily/spectrum': 'duplicate',
-};
+    // ── daily puzzles: the hub `/daily` is listed via the catalog, the
+    //     individual puzzles rotate their content every day ──
+    '/daily/alibi':
+      'duplicate',
+    '/daily/chainlink':
+      'duplicate',
+    '/daily/impostor':
+      'duplicate',
+    '/daily/lights-out':
+      'duplicate',
+    '/daily/outcast':
+      'duplicate',
+    '/daily/globeset':
+      'duplicate',
+    '/daily/spectrum':
+      'duplicate',
+  };
 
 /**
  * The child sitemaps `/sitemap.xml` can point at.
@@ -469,18 +1060,20 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
  * wiring at all. `lib/sitemap.server.ts` implements exactly this set, and the
  * test asserts the two halves agree.
  */
-export const SITEMAP_SECTION_NAMES = [
-  'pages',
-  'content',
-  'builds',
-  'users',
-  'posts',
-  'community',
-  'homes',
-  'jobs',
-] as const;
+export const SITEMAP_SECTION_NAMES =
+  [
+    'pages',
+    'content',
+    'builds',
+    'users',
+    'posts',
+    'community',
+    'homes',
+    'jobs',
+  ] as const;
 
-export type SitemapSectionName = (typeof SITEMAP_SECTION_NAMES)[number];
+export type SitemapSectionName =
+  (typeof SITEMAP_SECTION_NAMES)[number];
 
 /**
  * Parameterised routes, and which sitemap section supplies their URLs.
@@ -490,152 +1083,329 @@ export type SitemapSectionName = (typeof SITEMAP_SECTION_NAMES)[number];
  * `SITEMAP_SECTIONS` (`lib/sitemap.server.ts`), and the coverage test asserts
  * that section actually exists.
  */
-export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
-  '/blog/$slug': 'content',
-  '/news/$slug': 'content',
-  '/library/$slug': 'content',
-  '/library/albums/$albumId': 'content',
-  '/games/$gameId': 'pages', // from the catalog, not the DB
-  '/games/$gameId/guides/$guideId': 'content',
-  '/games/profile/$id': null, // a second, noindex view of /u/$userid
-  '/games/hub/$gameId': null, // per-title discussions; the game page and guides stay the indexed ones
-  '/games/market/$gameId/$cardIndex': null, // per-card market page; noindex
-  '/games/hub/$gameId/t/$threadId': null, // user-generated discussions; noindex
-  '/games/trades/new/$id': null, // a signed-in composer
-  '/games/groups/$slug': null, // a second, noindex view of /c/$slug
-  '/builds/$slug': 'pages', // curated builds mirror the catalog
-  '/user-builds/$slug': 'builds',
-  '/v/$slug': 'builds',
-  '/u/$userid': 'users',
-  '/u/$userid/post/$postid': 'posts',
-  '/c/$slug': 'community',
-  '/c/$slug/invite/$code': null, // private-community invite: a capability URL, never listed (the page sets noindex, nofollow)
-  '/personas/$id': 'community',
-  '/study/$deckId': 'community',
-  '/tournaments/$id': 'community',
-  '/jams/$slug': 'community',
-  '/homes/listing/$id': 'homes',
-  '/rmhladder/jobs/$jobId': 'jobs',
+export const DYNAMIC_ROUTES: Record<
+  string,
+  SitemapSectionName | null
+> =
+  {
+    '/blog/$slug':
+      'content',
+    '/news/$slug':
+      'content',
+    '/library/$slug':
+      'content',
+    '/library/albums/$albumId':
+      'content',
+    '/games/$gameId':
+      'pages', // from the catalog, not the DB
+    '/games/$gameId/guides/$guideId':
+      'content',
+    '/games/profile/$id':
+      null, // a second, noindex view of /u/$userid
+    '/games/hub/$gameId':
+      null, // per-title discussions; the game page and guides stay the indexed ones
+    '/games/market/$gameId/$cardIndex':
+      null, // per-card market page; noindex
+    '/games/hub/$gameId/t/$threadId':
+      null, // user-generated discussions; noindex
+    '/games/trades/new/$id':
+      null, // a signed-in composer
+    '/games/groups/$slug':
+      null, // a second, noindex view of /c/$slug
+    '/builds/$slug':
+      'pages', // curated builds mirror the catalog
+    '/user-builds/$slug':
+      'builds',
+    '/v/$slug':
+      'builds',
+    '/u/$userid':
+      'users',
+    '/u/$userid/post/$postid':
+      'posts',
+    '/c/$slug':
+      'community',
+    '/c/$slug/invite/$code':
+      null, // private-community invite: a capability URL, never listed (the page sets noindex, nofollow)
+    '/personas/$id':
+      'community',
+    '/study/$deckId':
+      'community',
+    '/tournaments/$id':
+      'community',
+    '/jams/$slug':
+      'community',
+    '/homes/listing/$id':
+      'homes',
+    '/rmhladder/jobs/$jobId':
+      'jobs',
 
-  // Slice It's two public per-entity pages (L15, X12). Dynamic and deliberately
-  // unlisted rather than sectioned: both are unbounded in the library's own
-  // data (every artist tag anyone ever typed; every player who set a score) and
-  // neither has a `SITEMAP_SECTIONS` supplier. They are reachable by crawl from
-  // `/games/slice-it` and the leaderboards, which is the right amount of
-  // discoverability for them.
-  '/slice-it/artist/$key': null,
-  '/slice-it/player/$handle': null,
-  // C1 — the chart editor. Auth-gated, and a chart's public surface is
-  // `/games/slice-it` and the song's page, not its editing view.
-  '/slice-it/edit/$songId': null,
-  // Member-run webrings: no sitemap shard enumerates them yet.
-  '/rings/$slug': null,
-  // P09 calendar: a poll is a private link between the people it was sent to, and an
-  // office-hours page is a booking form — both `noindex`.
-  '/marathon/$shareId': null, // P21 F15: a shared watch list, noindex
-  '/exchange/$id': null, // an exchange is a private link between its members, noindex
-  '/when/$id': null,
-  '/office-hours/$userId': null,
+    // Slice It's two public per-entity pages (L15, X12). Dynamic and deliberately
+    // unlisted rather than sectioned: both are unbounded in the library's own
+    // data (every artist tag anyone ever typed; every player who set a score) and
+    // neither has a `SITEMAP_SECTIONS` supplier. They are reachable by crawl from
+    // `/games/slice-it` and the leaderboards, which is the right amount of
+    // discoverability for them.
+    '/slice-it/artist/$key':
+      null,
+    '/slice-it/player/$handle':
+      null,
+    // C1 — the chart editor. Auth-gated, and a chart's public surface is
+    // `/games/slice-it` and the song's page, not its editing view.
+    '/slice-it/edit/$songId':
+      null,
+    // Member-run webrings: no sitemap shard enumerates them yet.
+    '/rings/$slug':
+      null,
+    // P09 calendar: a poll is a private link between the people it was sent to, and an
+    // office-hours page is a booking form — both `noindex`.
+    '/marathon/$shareId':
+      null, // P21 F15: a shared watch list, noindex
+    '/exchange/$id':
+      null, // an exchange is a private link between its members, noindex
+    '/when/$id':
+      null,
+    '/office-hours/$userId':
+      null,
 
-  // Dynamic and deliberately unlisted.
-  '/deeplink/$page': null, // sub-pages of the raw-HTML Deeplink microsite
-  '/rmh-internal-affairs/$page': null, // internal microsite
-  '/embed/post/$id': null, // iframe embed of a post that IS listed
-  '/embed/replay/$id': null,
-  '/replays/$id': null, // a match replay; the payload is a binary trace
-  '/moments/$id': null, // short-lived, expires
-  '/profile/$id': null, // legacy alias of `/u/$userid`
-  '/store/$userid': null, // mirrors the profile; would duplicate it
-  '/thread/$rootId': null, // canonicalised to `/u/{handle}/post/{id}`
-  '/feeds/$id': null, // a member-defined feed; `noindex, follow`, reached from /feeds
-  '/series/$id': null, // one author's post series; `noindex, follow`, reached from the posts that belong to it
-  '/sohumbum2/$date': null, // redirects to `/sohumtracker/{date}`
-  // One day of the activity dossier. Unbounded (a new one every day) and
-  // `noindex` like its parent — it exists to be pasted into a chat, where the
-  // OG card does the work, not to be crawled.
-  '/sohumtracker/$date': null,
-  // …and the week and month it belongs to, for the same reason.
-  '/sohumtracker/week/$week': null,
-  '/sohumtracker/month/$month': null,
-  '/tag/$tag': null, // unbounded tag space; crawlable via posts, not listed
-  '/groups/$id': null, // membership-scoped
-  '/spaces/$id': null, // live audio room, gone when it ends
-  '/controller/$code': null, // a phone pad paired to one live game screen
-  '/connections/u/$id': null, // member-made grids: unbounded user content, reached from /connections
-  '/wager/$id': null, // settles and becomes stale within a day
-  '/lists/$id': null, // personal
-  '/messages/$conversationId': null, // personal
-  '/admin/albums/$id': null,
-  '/news/stories/$slug': null, // curated story timelines, linked from each member article
-  '/admin/blog/$slug/edit': null,
-  '/altair/multiplayer/$lobbyId': null, // ephemeral lobby
-  '/rmhbox/$lobbyId': null,
-  '/rmhbox/minigames/$minigameId/history': null,
-  '/rmhmusic/lesson/$lessonId': null, // personal learning progress, behind auth
-  '/rmhstudy/$roomId': null,
-  '/rmhtube/$roomId': null,
-  '/rmhtype/$roomId': null,
-  '/tf2/hud-editor/h/$slug': null, // one HUD; listed through the workshop, not enumerated here
-  '/tf2/hud-editor/s/$token': null, // private share link (noindex)
-  '/tf2/loadout/l/$slug': null, // one loadout; listed through the workshop, not enumerated here
-  '/strategies/puzzles/$mode': null,
-  '/ref/$code': null, // referral link; redirects and is noindex
-};
+    // Dynamic and deliberately unlisted.
+    '/deeplink/$page':
+      null, // sub-pages of the raw-HTML Deeplink microsite
+    '/rmh-internal-affairs/$page':
+      null, // internal microsite
+    '/embed/post/$id':
+      null, // iframe embed of a post that IS listed
+    '/embed/replay/$id':
+      null,
+    '/replays/$id':
+      null, // a match replay; the payload is a binary trace
+    '/moments/$id':
+      null, // short-lived, expires
+    '/profile/$id':
+      null, // legacy alias of `/u/$userid`
+    '/store/$userid':
+      null, // mirrors the profile; would duplicate it
+    '/thread/$rootId':
+      null, // canonicalised to `/u/{handle}/post/{id}`
+    '/feeds/$id':
+      null, // a member-defined feed; `noindex, follow`, reached from /feeds
+    '/series/$id':
+      null, // one author's post series; `noindex, follow`, reached from the posts that belong to it
+    '/sohumbum2/$date':
+      null, // redirects to `/sohumtracker/{date}`
+    // One day of the activity dossier. Unbounded (a new one every day) and
+    // `noindex` like its parent — it exists to be pasted into a chat, where the
+    // OG card does the work, not to be crawled.
+    '/sohumtracker/$date':
+      null,
+    // …and the week and month it belongs to, for the same reason.
+    '/sohumtracker/week/$week':
+      null,
+    '/sohumtracker/month/$month':
+      null,
+    '/tag/$tag':
+      null, // unbounded tag space; crawlable via posts, not listed
+    '/groups/$id':
+      null, // membership-scoped
+    '/spaces/$id':
+      null, // live audio room, gone when it ends
+    '/controller/$code':
+      null, // a phone pad paired to one live game screen
+    '/connections/u/$id':
+      null, // member-made grids: unbounded user content, reached from /connections
+    '/wager/$id':
+      null, // settles and becomes stale within a day
+    '/lists/$id':
+      null, // personal
+    '/messages/$conversationId':
+      null, // personal
+    '/admin/albums/$id':
+      null,
+    '/news/stories/$slug':
+      null, // curated story timelines, linked from each member article
+    '/admin/blog/$slug/edit':
+      null,
+    '/altair/multiplayer/$lobbyId':
+      null, // ephemeral lobby
+    '/rmhbox/$lobbyId':
+      null,
+    '/rmhbox/minigames/$minigameId/history':
+      null,
+    '/rmhmusic/lesson/$lessonId':
+      null, // personal learning progress, behind auth
+    '/rmhstudy/$roomId':
+      null,
+    '/rmhtube/$roomId':
+      null,
+    '/rmhtype/$roomId':
+      null,
+    '/tf2/hud-editor/h/$slug':
+      null, // one HUD; listed through the workshop, not enumerated here
+    '/tf2/hud-editor/s/$token':
+      null, // private share link (noindex)
+    '/tf2/loadout/l/$slug':
+      null, // one loadout; listed through the workshop, not enumerated here
+    '/strategies/puzzles/$mode':
+      null,
+    '/ref/$code':
+      null, // referral link; redirects and is noindex
+  };
 
 // ──────────────────────────── XML rendering ────────────────────────────
 
-export function xmlEscape(value: string): string {
+export function xmlEscape(
+  value: string,
+): string {
   return value.replace(
     /[<>&'"]/g,
-    (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]!,
+    (
+      c,
+    ) =>
+      ({
+        '<': '&lt;',
+        '>': '&gt;',
+        '&': '&amp;',
+        "'": '&apos;',
+        '"': '&quot;',
+      })[
+        c
+      ]!,
   );
 }
 
-function isoDate(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : value;
+function isoDate(
+  value:
+    | Date
+    | string,
+): string {
+  return value instanceof
+    Date
+    ? value.toISOString()
+    : value;
 }
 
 export const URLSET_OPEN =
   '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-export const URLSET_CLOSE = '\n</urlset>\n';
+export const URLSET_CLOSE =
+  '\n</urlset>\n';
 
 /** One `<url>` element. Shared by the string and the streaming renderer so they cannot drift. */
-export function renderUrlEntry(entry: SitemapEntry, origin: string): string {
-  const parts = [`    <loc>${xmlEscape(origin + entry.loc)}</loc>`];
-  if (entry.lastmod) parts.push(`    <lastmod>${isoDate(entry.lastmod)}</lastmod>`);
-  if (entry.changefreq) parts.push(`    <changefreq>${entry.changefreq}</changefreq>`);
-  if (entry.priority !== undefined) {
-    parts.push(`    <priority>${entry.priority.toFixed(1)}</priority>`);
+export function renderUrlEntry(
+  entry: SitemapEntry,
+  origin: string,
+): string {
+  const parts =
+    [
+      `    <loc>${xmlEscape(origin + entry.loc)}</loc>`,
+    ];
+  if (
+    entry.lastmod
+  )
+    parts.push(
+      `    <lastmod>${isoDate(entry.lastmod)}</lastmod>`,
+    );
+  if (
+    entry.changefreq
+  )
+    parts.push(
+      `    <changefreq>${entry.changefreq}</changefreq>`,
+    );
+  if (
+    entry.priority !==
+    undefined
+  ) {
+    parts.push(
+      `    <priority>${entry.priority.toFixed(1)}</priority>`,
+    );
   }
   return `  <url>\n${parts.join('\n')}\n  </url>`;
 }
 
 /** Render a `<urlset>`. `origin` is the absolute site root, no trailing slash. */
-export function renderUrlset(entries: SitemapEntry[], origin: string): string {
-  return URLSET_OPEN + entries.map((e) => renderUrlEntry(e, origin)).join('\n') + URLSET_CLOSE;
+export function renderUrlset(
+  entries: SitemapEntry[],
+  origin: string,
+): string {
+  return (
+    URLSET_OPEN +
+    entries
+      .map(
+        (
+          e,
+        ) =>
+          renderUrlEntry(
+            e,
+            origin,
+          ),
+      )
+      .join(
+        '\n',
+      ) +
+    URLSET_CLOSE
+  );
 }
 
 /** Render a `<sitemapindex>` pointing at child sitemaps. */
-export function renderSitemapIndex(paths: string[], origin: string, lastmod: Date): string {
-  const body = paths
-    .map(
-      (p) =>
-        `  <sitemap>\n    <loc>${xmlEscape(origin + p)}</loc>\n    <lastmod>${lastmod.toISOString()}</lastmod>\n  </sitemap>`,
-    )
-    .join('\n');
+export function renderSitemapIndex(
+  paths: string[],
+  origin: string,
+  lastmod: Date,
+): string {
+  const body =
+    paths
+      .map(
+        (
+          p,
+        ) =>
+          `  <sitemap>\n    <loc>${xmlEscape(origin + p)}</loc>\n    <lastmod>${lastmod.toISOString()}</lastmod>\n  </sitemap>`,
+      )
+      .join(
+        '\n',
+      );
   return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</sitemapindex>\n`;
 }
 
 /** `/sitemaps/users-2.xml` → `{ section: 'users', chunk: 2 }`. */
-export function parseChunkName(name: string): { section: string; chunk: number } | null {
-  const match = /^([a-z]+)(?:-(\d+))?\.xml$/.exec(name);
-  if (!match) return null;
-  const chunk = match[2] ? Number(match[2]) : 1;
-  if (!Number.isInteger(chunk) || chunk < 1 || chunk > 1000) return null;
-  return { section: match[1], chunk };
+export function parseChunkName(
+  name: string,
+): {
+  section: string;
+  chunk: number;
+} | null {
+  const match =
+    /^([a-z]+)(?:-(\d+))?\.xml$/.exec(
+      name,
+    );
+  if (
+    !match
+  )
+    return null;
+  const chunk =
+    match[2]
+      ? Number(
+          match[2],
+        )
+      : 1;
+  if (
+    !Number.isInteger(
+      chunk,
+    ) ||
+    chunk <
+      1 ||
+    chunk >
+      1000
+  )
+    return null;
+  return {
+    section:
+      match[1],
+    chunk,
+  };
 }
 
 /** The inverse: `('users', 2)` → `/sitemaps/users-2.xml`. */
-export function chunkPath(section: string, chunk: number): string {
+export function chunkPath(
+  section: string,
+  chunk: number,
+): string {
   return `/sitemaps/${section}${chunk > 1 ? `-${chunk}` : ''}.xml`;
 }

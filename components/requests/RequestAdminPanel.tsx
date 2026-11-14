@@ -29,93 +29,300 @@ export function RequestAdminPanel({
   onChanged,
 }: {
   request: FeatureRequestDTO;
-  onChanged: (next: FeatureRequestDTO) => void;
+  onChanged: (
+    next: FeatureRequestDTO,
+  ) => void;
 }) {
-  const { t } = useTranslation('c-roadmap');
-  const labels = useRequestStatusLabels();
-  const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<RequestStatus>(request.status);
-  const [note, setNote] = useState(request.officialNote ?? '');
-  const [saving, setSaving] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-roadmap',
+    );
+  const labels =
+    useRequestStatusLabels();
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    status,
+    setStatus,
+  ] =
+    useState<RequestStatus>(
+      request.status,
+    );
+  const [
+    note,
+    setNote,
+  ] =
+    useState(
+      request.officialNote ??
+        '',
+    );
+  const [
+    saving,
+    setSaving,
+  ] =
+    useState(
+      false,
+    );
 
-  const problem = validateStatusNote(status, note);
+  const problem =
+    validateStatusNote(
+      status,
+      note,
+    );
 
   async function save() {
-    if (problem) return;
-    setSaving(true);
+    if (
+      problem
+    )
+      return;
+    setSaving(
+      true,
+    );
     try {
-      const data = await api(updateRequestApi, {
-        params: { id: request.id },
-        body: { status, officialNote: note.trim() || null },
-      });
-      onChanged(data);
-      setOpen(false);
-      toast.success(t('request-saved', { defaultValue: 'Request updated' }));
+      const data =
+        await api(
+          updateRequestApi,
+          {
+            params:
+              {
+                id: request.id,
+              },
+            body: {
+              status,
+              officialNote:
+                note.trim() ||
+                null,
+            },
+          },
+        );
+      onChanged(
+        data,
+      );
+      setOpen(
+        false,
+      );
+      toast.success(
+        t(
+          'request-saved',
+          {
+            defaultValue:
+              'Request updated',
+          },
+        ),
+      );
     } catch (e) {
-      toast.error(serverError(e) ?? t('request-save-failed', { defaultValue: 'Could not save' }));
+      toast.error(
+        serverError(
+          e,
+        ) ??
+          t(
+            'request-save-failed',
+            {
+              defaultValue:
+                'Could not save',
+            },
+          ),
+      );
     } finally {
-      setSaving(false);
+      setSaving(
+        false,
+      );
     }
   }
 
-  if (!open) {
+  if (
+    !open
+  ) {
     return (
-      <Button variant="ghost" size="xs" className="mt-2" onClick={() => setOpen(true)}>
-        {t('request-manage', { defaultValue: 'Manage' })}
+      <Button
+        variant="ghost"
+        size="xs"
+        className="mt-2"
+        onClick={() =>
+          setOpen(
+            true,
+          )
+        }
+      >
+        {t(
+          'request-manage',
+          {
+            defaultValue:
+              'Manage',
+          },
+        )}
       </Button>
     );
   }
 
   return (
     <div className="surface-field mt-3 space-y-3 rounded-site p-4">
-      <label className="block text-xs font-semibold text-site-text-muted" htmlFor={`s-${request.id}`}>
-        {t('request-status', { defaultValue: 'Status' })}
+      <label
+        className="block text-xs font-semibold text-site-text-muted"
+        htmlFor={`s-${request.id}`}
+      >
+        {t(
+          'request-status',
+          {
+            defaultValue:
+              'Status',
+          },
+        )}
       </label>
       <Select
         id={`s-${request.id}`}
-        value={status}
-        onChange={(e) => setStatus(e.target.value as RequestStatus)}
+        value={
+          status
+        }
+        onChange={(
+          e,
+        ) =>
+          setStatus(
+            e
+              .target
+              .value as RequestStatus,
+          )
+        }
       >
-        {REQUEST_STATUSES.map((s) => (
-          <option key={s} value={s}>
-            {labels[s]}
-          </option>
-        ))}
+        {REQUEST_STATUSES.map(
+          (
+            s,
+          ) => (
+            <option
+              key={
+                s
+              }
+              value={
+                s
+              }
+            >
+              {
+                labels[
+                  s
+                ]
+              }
+            </option>
+          ),
+        )}
       </Select>
 
-      <label className="block text-xs font-semibold text-site-text-muted" htmlFor={`n-${request.id}`}>
-        {t('request-note-label', { defaultValue: 'Official reply' })}
+      <label
+        className="block text-xs font-semibold text-site-text-muted"
+        htmlFor={`n-${request.id}`}
+      >
+        {t(
+          'request-note-label',
+          {
+            defaultValue:
+              'Official reply',
+          },
+        )}
       </label>
       <Textarea
         id={`n-${request.id}`}
-        value={note}
-        onChange={(e) => setNote(e.target.value.slice(0, OFFICIAL_NOTE_MAX))}
-        rows={3}
-        placeholder={t('request-note-placeholder', {
-          defaultValue: 'Shipped and declined requests need a reason. Say it here.',
-        })}
+        value={
+          note
+        }
+        onChange={(
+          e,
+        ) =>
+          setNote(
+            e.target.value.slice(
+              0,
+              OFFICIAL_NOTE_MAX,
+            ),
+          )
+        }
+        rows={
+          3
+        }
+        placeholder={t(
+          'request-note-placeholder',
+          {
+            defaultValue:
+              'Shipped and declined requests need a reason. Say it here.',
+          },
+        )}
       />
 
       {problem ? (
-        <p role="status" className="text-xs text-site-warning">
-          {problem === 'NOTE_REQUIRED'
-            ? t('request-note-required', {
-                defaultValue: 'Shipped and declined requests need an official reply.',
-              })
-            : problem === 'NOTE_TOO_SHORT'
-              ? t('request-note-too-short', {
-                  defaultValue: 'That reply is too short to explain anything.',
-                })
-              : t('request-note-too-long', { defaultValue: 'That reply is too long.' })}
+        <p
+          role="status"
+          className="text-xs text-site-warning"
+        >
+          {problem ===
+          'NOTE_REQUIRED'
+            ? t(
+                'request-note-required',
+                {
+                  defaultValue:
+                    'Shipped and declined requests need an official reply.',
+                },
+              )
+            : problem ===
+                'NOTE_TOO_SHORT'
+              ? t(
+                  'request-note-too-short',
+                  {
+                    defaultValue:
+                      'That reply is too short to explain anything.',
+                  },
+                )
+              : t(
+                  'request-note-too-long',
+                  {
+                    defaultValue:
+                      'That reply is too long.',
+                  },
+                )}
         </p>
       ) : null}
 
       <div className="flex justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
-          {t('request-cancel', { defaultValue: 'Cancel' })}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            setOpen(
+              false,
+            )
+          }
+        >
+          {t(
+            'request-cancel',
+            {
+              defaultValue:
+                'Cancel',
+            },
+          )}
         </Button>
-        <Button variant="default" size="sm" onClick={save} loading={saving} disabled={!!problem}>
-          {t('request-save', { defaultValue: 'Save' })}
+        <Button
+          variant="default"
+          size="sm"
+          onClick={
+            save
+          }
+          loading={
+            saving
+          }
+          disabled={
+            !!problem
+          }
+        >
+          {t(
+            'request-save',
+            {
+              defaultValue:
+                'Save',
+            },
+          )}
         </Button>
       </div>
     </div>

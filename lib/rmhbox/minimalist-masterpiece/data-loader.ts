@@ -15,23 +15,43 @@ import fs from 'fs';
 export interface DrawingPrompt {
   text: string;
   category: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty:
+    | 'easy'
+    | 'medium'
+    | 'hard';
 }
 
 // ─── Singleton Cache ─────────────────────────────────────────────
 
-let cachedPrompts: DrawingPrompt[] | null = null;
+let cachedPrompts:
+  | DrawingPrompt[]
+  | null =
+  null;
 
 /**
  * Load drawing prompts from the static JSON file.
  * Caches the result as a singleton for subsequent calls.
  */
 export function loadPrompts(): DrawingPrompt[] {
-  if (cachedPrompts) return cachedPrompts;
+  if (
+    cachedPrompts
+  )
+    return cachedPrompts;
 
-  const filePath = path.join(process.cwd(), 'data/rmhbox/minimalist-masterpiece/prompts.json');
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  cachedPrompts = JSON.parse(raw) as DrawingPrompt[];
+  const filePath =
+    path.join(
+      process.cwd(),
+      'data/rmhbox/minimalist-masterpiece/prompts.json',
+    );
+  const raw =
+    fs.readFileSync(
+      filePath,
+      'utf-8',
+    );
+  cachedPrompts =
+    JSON.parse(
+      raw,
+    ) as DrawingPrompt[];
   return cachedPrompts;
 }
 
@@ -39,11 +59,36 @@ export function loadPrompts(): DrawingPrompt[] {
  * Select a random prompt not in the used set.
  * Falls back to the full pool if all prompts have been used.
  */
-export function selectPromptForGame(pool: DrawingPrompt[], usedTexts: Set<string>): DrawingPrompt {
-  if (pool.length === 0) {
-    throw new Error('Cannot select a prompt from an empty pool');
+export function selectPromptForGame(
+  pool: DrawingPrompt[],
+  usedTexts: Set<string>,
+): DrawingPrompt {
+  if (
+    pool.length ===
+    0
+  ) {
+    throw new Error(
+      'Cannot select a prompt from an empty pool',
+    );
   }
-  const available = pool.filter((p) => !usedTexts.has(p.text));
-  const selection = available.length > 0 ? available : pool;
-  return selection[Math.floor(Math.random() * selection.length)];
+  const available =
+    pool.filter(
+      (
+        p,
+      ) =>
+        !usedTexts.has(
+          p.text,
+        ),
+    );
+  const selection =
+    available.length >
+    0
+      ? available
+      : pool;
+  return selection[
+    Math.floor(
+      Math.random() *
+        selection.length,
+    )
+  ];
 }

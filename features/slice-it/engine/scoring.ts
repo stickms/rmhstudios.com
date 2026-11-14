@@ -45,36 +45,98 @@ export interface ScoreMultiplierOptions {
  * {@link MODIFIER_BONUSES} for why.
  */
 export function calculateScoreMultiplier(
-  modifiers: Partial<Modifiers> | null | undefined,
+  modifiers:
+    | Partial<Modifiers>
+    | null
+    | undefined,
   options?: ScoreMultiplierOptions,
 ): number {
-  if (!modifiers) return 1;
+  if (
+    !modifiers
+  )
+    return 1;
 
-  const difficulty = (modifiers.difficulty ?? 'normal') as Difficulty;
-  let mult = DIFFICULTY_MULTIPLIERS[difficulty] ?? DIFFICULTY_MULTIPLIERS.normal;
+  const difficulty =
+    (modifiers.difficulty ??
+      'normal') as Difficulty;
+  let mult =
+    DIFFICULTY_MULTIPLIERS[
+      difficulty
+    ] ??
+    DIFFICULTY_MULTIPLIERS.normal;
 
-  if (modifiers.invisible) mult += MODIFIER_BONUSES.invisible;
-  if (modifiers.bombs) mult += MODIFIER_BONUSES.bombs;
-  if (modifiers.switching) mult += MODIFIER_BONUSES.switching;
-  if (modifiers.sRandom) mult += MODIFIER_BONUSES.sRandom;
-  if (modifiers.spin) mult += MODIFIER_BONUSES.spin;
-  if (modifiers.strictTiming) mult += MODIFIER_BONUSES.strictTiming;
-  if (modifiers.oneTrack) mult += MODIFIER_BONUSES.oneTrack;
+  if (
+    modifiers.invisible
+  )
+    mult +=
+      MODIFIER_BONUSES.invisible;
+  if (
+    modifiers.bombs
+  )
+    mult +=
+      MODIFIER_BONUSES.bombs;
+  if (
+    modifiers.switching
+  )
+    mult +=
+      MODIFIER_BONUSES.switching;
+  if (
+    modifiers.sRandom
+  )
+    mult +=
+      MODIFIER_BONUSES.sRandom;
+  if (
+    modifiers.spin
+  )
+    mult +=
+      MODIFIER_BONUSES.spin;
+  if (
+    modifiers.strictTiming
+  )
+    mult +=
+      MODIFIER_BONUSES.strictTiming;
+  if (
+    modifiers.oneTrack
+  )
+    mult +=
+      MODIFIER_BONUSES.oneTrack;
   // A broken gauge forfeits the bonus, not the run. Everything the run scored
   // before it broke keeps the higher multiplier — the points are already banked
   // — which is the same shape as a combo: you lose it going forward.
-  if (modifiers.healthGauge && !options?.gaugeBroken) mult += MODIFIER_BONUSES.healthGauge;
+  if (
+    modifiers.healthGauge &&
+    !options?.gaugeBroken
+  )
+    mult +=
+      MODIFIER_BONUSES.healthGauge;
   // M6 — no `gaugeBroken`-style forfeit here: Perfectionist doesn't have a
   // partial-failure state to fall out of. The run either holds PERFECT-or-
   // better the whole way and banks the bonus, or it ends the instant it
   // doesn't — there is no "broken but still playing" middle state to price.
-  if (modifiers.perfectionist) mult += MODIFIER_BONUSES.perfectionist;
+  if (
+    modifiers.perfectionist
+  )
+    mult +=
+      MODIFIER_BONUSES.perfectionist;
   // A9 — deliberately no `lenientTiming` branch. See the constant's own doc
   // comment in `constants.ts`: an unranked, easier window earns nothing.
 
   const speed =
-    typeof modifiers.speed === 'number' && Number.isFinite(modifiers.speed) ? modifiers.speed : 1;
-  if (speed > 1) mult += (speed - 1) * SPEED_BONUS_PER_X;
+    typeof modifiers.speed ===
+      'number' &&
+    Number.isFinite(
+      modifiers.speed,
+    )
+      ? modifiers.speed
+      : 1;
+  if (
+    speed >
+    1
+  )
+    mult +=
+      (speed -
+        1) *
+      SPEED_BONUS_PER_X;
 
   return mult;
 }
@@ -90,15 +152,31 @@ export function calculateScoreMultiplier(
  * blob actually plays like.
  */
 export function timingScale(
-  modifiers: Pick<Modifiers, 'strictTiming' | 'lenientTiming' | 'speed'>,
+  modifiers: Pick<
+    Modifiers,
+    | 'strictTiming'
+    | 'lenientTiming'
+    | 'speed'
+  >,
 ): number {
-  const factor = modifiers.strictTiming
-    ? STRICT_TIMING_FACTOR
-    : modifiers.lenientTiming
-      ? LENIENT_TIMING_FACTOR
+  const factor =
+    modifiers.strictTiming
+      ? STRICT_TIMING_FACTOR
+      : modifiers.lenientTiming
+        ? LENIENT_TIMING_FACTOR
+        : 1;
+  const speed =
+    Number.isFinite(
+      modifiers.speed,
+    ) &&
+    modifiers.speed >
+      0
+      ? modifiers.speed
       : 1;
-  const speed = Number.isFinite(modifiers.speed) && modifiers.speed > 0 ? modifiers.speed : 1;
-  return factor * speed;
+  return (
+    factor *
+    speed
+  );
 }
 
 /**
@@ -111,38 +189,123 @@ export function timingScale(
  * caller index a `Record<Exclude<HitResult, 'NONE'>, number>` judgement
  * histogram straight off this result without an extra runtime guard.
  */
-export function judge(deltaSeconds: number, scale: number): Exclude<HitResult, 'NONE'> {
-  const diff = Math.abs(deltaSeconds);
-  if (diff <= HIT_WINDOWS.MARVELOUS * scale) return 'MARVELOUS';
-  if (diff <= HIT_WINDOWS.PERFECT * scale) return 'PERFECT';
-  if (diff <= HIT_WINDOWS.GREAT * scale) return 'GREAT';
-  if (diff <= HIT_WINDOWS.GOOD * scale) return 'GOOD';
-  if (diff <= HIT_WINDOWS.BAD * scale) return 'BAD';
+export function judge(
+  deltaSeconds: number,
+  scale: number,
+): Exclude<
+  HitResult,
+  'NONE'
+> {
+  const diff =
+    Math.abs(
+      deltaSeconds,
+    );
+  if (
+    diff <=
+    HIT_WINDOWS.MARVELOUS *
+      scale
+  )
+    return 'MARVELOUS';
+  if (
+    diff <=
+    HIT_WINDOWS.PERFECT *
+      scale
+  )
+    return 'PERFECT';
+  if (
+    diff <=
+    HIT_WINDOWS.GREAT *
+      scale
+  )
+    return 'GREAT';
+  if (
+    diff <=
+    HIT_WINDOWS.GOOD *
+      scale
+  )
+    return 'GOOD';
+  if (
+    diff <=
+    HIT_WINDOWS.BAD *
+      scale
+  )
+    return 'BAD';
   return 'MISS';
 }
 
 /** Points a judgement is worth at a given combo and multiplier. */
-export function pointsFor(result: HitResult, combo: number, multiplier: number): number {
-  if (result === 'MISS' || result === 'NONE') return 0;
-  const base = HIT_POINTS[result];
-  return Math.floor(base * (combo > 0 ? combo : 1) * multiplier);
+export function pointsFor(
+  result: HitResult,
+  combo: number,
+  multiplier: number,
+): number {
+  if (
+    result ===
+      'MISS' ||
+    result ===
+      'NONE'
+  )
+    return 0;
+  const base =
+    HIT_POINTS[
+      result
+    ];
+  return Math.floor(
+    base *
+      (combo >
+      0
+        ? combo
+        : 1) *
+      multiplier,
+  );
 }
 
 /** Accuracy weight of a judgement, out of 100. */
-export function accuracyWeight(result: HitResult): number {
-  return result === 'NONE' ? 0 : ACCURACY_WEIGHTS[result];
+export function accuracyWeight(
+  result: HitResult,
+): number {
+  return result ===
+    'NONE'
+    ? 0
+    : ACCURACY_WEIGHTS[
+        result
+      ];
 }
 
 /** `0` when nothing has been judged yet, so a fresh run reads 0% not NaN. */
-export function accuracyOf(hitPoints: number, notesResolved: number): number {
-  if (notesResolved <= 0) return 0;
-  return Math.max(0, Math.min(1, hitPoints / (notesResolved * 100)));
+export function accuracyOf(
+  hitPoints: number,
+  notesResolved: number,
+): number {
+  if (
+    notesResolved <=
+    0
+  )
+    return 0;
+  return Math.max(
+    0,
+    Math.min(
+      1,
+      hitPoints /
+        (notesResolved *
+          100),
+    ),
+  );
 }
 
 /** Letter grade for an accuracy in 0–1. */
-export function gradeFor(accuracy: number): string {
-  for (const { grade, min } of GRADE_THRESHOLDS) {
-    if (accuracy >= min) return grade;
+export function gradeFor(
+  accuracy: number,
+): string {
+  for (const {
+    grade,
+    min,
+  } of GRADE_THRESHOLDS) {
+    if (
+      accuracy >=
+      min
+    )
+      return grade;
   }
   return 'F';
 }
@@ -155,11 +318,34 @@ export function gradeFor(accuracy: number): string {
  * accuracy below 1.0. What is wanted is the *lowest* threshold still out of
  * reach.
  */
-export function nextGradeAbove(accuracy: number): { grade: string; min: number } | null {
-  const value = Number.isFinite(accuracy) ? accuracy : 0;
-  let best: { grade: string; min: number } | null = null;
+export function nextGradeAbove(
+  accuracy: number,
+): {
+  grade: string;
+  min: number;
+} | null {
+  const value =
+    Number.isFinite(
+      accuracy,
+    )
+      ? accuracy
+      : 0;
+  let best: {
+    grade: string;
+    min: number;
+  } | null =
+    null;
   for (const tier of GRADE_THRESHOLDS) {
-    if (tier.min > value && (best === null || tier.min < best.min)) best = tier;
+    if (
+      tier.min >
+        value &&
+      (best ===
+        null ||
+        tier.min <
+          best.min)
+    )
+      best =
+        tier;
   }
   return best;
 }
@@ -181,11 +367,40 @@ export function missesAllowedFor(
   notesResolved: number,
   totalNotes: number,
   targetAccuracy: number,
-): number | null {
-  if (!Number.isFinite(totalNotes) || totalNotes <= 0) return null;
-  const resolved = Math.max(0, Math.min(totalNotes, notesResolved));
-  const best = hitPoints + (totalNotes - resolved) * 100;
-  return Math.max(0, Math.floor((best - targetAccuracy * totalNotes * 100) / 100));
+):
+  | number
+  | null {
+  if (
+    !Number.isFinite(
+      totalNotes,
+    ) ||
+    totalNotes <=
+      0
+  )
+    return null;
+  const resolved =
+    Math.max(
+      0,
+      Math.min(
+        totalNotes,
+        notesResolved,
+      ),
+    );
+  const best =
+    hitPoints +
+    (totalNotes -
+      resolved) *
+      100;
+  return Math.max(
+    0,
+    Math.floor(
+      (best -
+        targetAccuracy *
+          totalNotes *
+          100) /
+        100,
+    ),
+  );
 }
 
 /* ─── Server-side plausibility ───────────────────────────────────────────── */
@@ -216,13 +431,33 @@ export const MAX_NOTES_PER_SECOND = 20;
  */
 export function maxPlausibleScore(
   durationSeconds: number,
-  modifiers: Partial<Modifiers> | null | undefined,
+  modifiers:
+    | Partial<Modifiers>
+    | null
+    | undefined,
 ): number {
-  const duration = Number.isFinite(durationSeconds) && durationSeconds > 0 ? durationSeconds : 0;
+  const duration =
+    Number.isFinite(
+      durationSeconds,
+    ) &&
+    durationSeconds >
+      0
+      ? durationSeconds
+      : 0;
   // A zero-duration or absent song still gets a floor, so a legitimate score on
   // a row with bad metadata is not rejected outright.
-  const notes = Math.max(64, Math.ceil(duration * MAX_NOTES_PER_SECOND));
-  const mult = calculateScoreMultiplier(modifiers);
+  const notes =
+    Math.max(
+      64,
+      Math.ceil(
+        duration *
+          MAX_NOTES_PER_SECOND,
+      ),
+    );
+  const mult =
+    calculateScoreMultiplier(
+      modifiers,
+    );
 
   /**
    * `notes` is already a generous cap on judged instants, not just note
@@ -240,22 +475,49 @@ export function maxPlausibleScore(
    * *simultaneously* at maximum tap density *and* entirely LONG notes would be
    * bounding a shape no chart can be, not the shape G5 actually changed.
    */
-  const perfectChain = HIT_POINTS.MARVELOUS * ((notes * (notes + 1)) / 2);
+  const perfectChain =
+    HIT_POINTS.MARVELOUS *
+    ((notes *
+      (notes +
+        1)) /
+      2);
   // Hold ticks accrue per second of audio, so the bound is "the entire song was
   // one held note at the maximum combo". This used to be modelled per rendered
   // frame at 120 fps — which the engine really did do, and which made the whole
   // ceiling about 120x looser than it needed to be.
-  const holdTicks = HOLD_TICK_POINTS_PER_SECOND * duration * notes;
+  const holdTicks =
+    HOLD_TICK_POINTS_PER_SECOND *
+    duration *
+    notes;
 
-  return Math.ceil((perfectChain + holdTicks) * mult);
+  return Math.ceil(
+    (perfectChain +
+      holdTicks) *
+      mult,
+  );
 }
 
 /**
  * The most combo a run of this length could reach — one per note, no misses.
  */
-export function maxPlausibleCombo(durationSeconds: number): number {
-  const duration = Number.isFinite(durationSeconds) && durationSeconds > 0 ? durationSeconds : 0;
-  return Math.max(64, Math.ceil(duration * MAX_NOTES_PER_SECOND));
+export function maxPlausibleCombo(
+  durationSeconds: number,
+): number {
+  const duration =
+    Number.isFinite(
+      durationSeconds,
+    ) &&
+    durationSeconds >
+      0
+      ? durationSeconds
+      : 0;
+  return Math.max(
+    64,
+    Math.ceil(
+      duration *
+        MAX_NOTES_PER_SECOND,
+    ),
+  );
 }
 
 /** Bomb penalty, exported so the engine and any future replay check agree. */

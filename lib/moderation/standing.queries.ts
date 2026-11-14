@@ -2,5 +2,16 @@
 import { accountStandingApi } from '@/lib/moderation/standing.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const accountStandingQuery = () =>
-  contractQuery(['account', 'standing'], accountStandingApi, undefined, { staleTime: 15_000 });
+export const accountStandingQuery =
+  () =>
+    contractQuery(
+      [
+        'account',
+        'standing',
+      ],
+      accountStandingApi,
+      undefined,
+      {
+        staleTime: 15_000,
+      },
+    );

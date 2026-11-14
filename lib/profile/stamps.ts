@@ -14,11 +14,20 @@ export const STAMP_MAX_EDGE = 176;
 /** Smallest edge accepted — below this it is not a picture. */
 export const STAMP_MIN_EDGE = 16;
 /** Accepted upload size. */
-export const STAMP_MAX_UPLOAD_BYTES = 96 * 1024;
+export const STAMP_MAX_UPLOAD_BYTES =
+  96 *
+  1024;
 /** Ceiling on the re-encoded object we actually store. */
-export const STAMP_MAX_STORED_BYTES = 64 * 1024;
+export const STAMP_MAX_STORED_BYTES =
+  64 *
+  1024;
 /** Accepted formats (sniffed from bytes, never from the file's claimed type). */
-export const STAMP_MIME = ['image/png', 'image/gif', 'image/webp'] as const;
+export const STAMP_MIME =
+  [
+    'image/png',
+    'image/gif',
+    'image/webp',
+  ] as const;
 
 /** Stamps one member may create in total / per rolling day. */
 export const STAMP_MAX_CREATED = 12;
@@ -28,12 +37,39 @@ export const STAMP_WALL_CAP = 50;
 
 export const STAMP_NAME_MAX = 40;
 /** `GET /api/stamps` query. */
-export const browseStampsQuery = z.object({
-  sort: z.enum(['new', 'popular']).default('new'),
-  cursor: z.string().max(64).optional(),
-});
+export const browseStampsQuery =
+  z.object(
+    {
+      sort: z
+        .enum(
+          [
+            'new',
+            'popular',
+          ],
+        )
+        .default(
+          'new',
+        ),
+      cursor:
+        z
+          .string()
+          .max(
+            64,
+          )
+          .optional(),
+    },
+  );
 
-export const stampNameSchema = z.string().trim().min(1).max(STAMP_NAME_MAX);
+export const stampNameSchema =
+  z
+    .string()
+    .trim()
+    .min(
+      1,
+    )
+    .max(
+      STAMP_NAME_MAX,
+    );
 
 export interface StampView {
   id: string;
@@ -42,13 +78,26 @@ export interface StampView {
   width: number;
   height: number;
   addCount: number;
-  creator: { id: string; name: string | null; handle: string | null };
+  creator: {
+    id: string;
+    name:
+      | string
+      | null;
+    handle:
+      | string
+      | null;
+  };
   /** True when the signed-in viewer already has it on their wall. */
   onMyWall?: boolean;
 }
 
 /** Why an uploaded image was refused — each maps to one user-facing message. */
-export type StampRejection = 'empty' | 'too-large' | 'format' | 'too-big-dimensions' | 'too-small';
+export type StampRejection =
+  | 'empty'
+  | 'too-large'
+  | 'format'
+  | 'too-big-dimensions'
+  | 'too-small';
 
 /**
  * Judge an upload from facts the server read off the bytes. Pure so the limits
@@ -56,20 +105,66 @@ export type StampRejection = 'empty' | 'too-large' | 'format' | 'too-big-dimensi
  */
 export function judgeStampImage(args: {
   bytes: number;
-  mime: string | null;
-  width: number | null;
-  height: number | null;
+  mime:
+    | string
+    | null;
+  width:
+    | number
+    | null;
+  height:
+    | number
+    | null;
 }): StampRejection | null {
-  if (args.bytes <= 0) return 'empty';
-  if (args.bytes > STAMP_MAX_UPLOAD_BYTES) return 'too-large';
-  if (!args.mime || !(STAMP_MIME as readonly string[]).includes(args.mime)) return 'format';
-  if (!args.width || !args.height) return 'format';
-  if (args.width > STAMP_MAX_EDGE || args.height > STAMP_MAX_EDGE) return 'too-big-dimensions';
-  if (args.width < STAMP_MIN_EDGE || args.height < STAMP_MIN_EDGE) {
+  if (
+    args.bytes <=
+    0
+  )
+    return 'empty';
+  if (
+    args.bytes >
+    STAMP_MAX_UPLOAD_BYTES
+  )
+    return 'too-large';
+  if (
+    !args.mime ||
+    !(
+      STAMP_MIME as readonly string[]
+    ).includes(
+      args.mime,
+    )
+  )
+    return 'format';
+  if (
+    !args.width ||
+    !args.height
+  )
+    return 'format';
+  if (
+    args.width >
+      STAMP_MAX_EDGE ||
+    args.height >
+      STAMP_MAX_EDGE
+  )
+    return 'too-big-dimensions';
+  if (
+    args.width <
+      STAMP_MIN_EDGE ||
+    args.height <
+      STAMP_MIN_EDGE
+  ) {
     // Allow the classic 88x31 button: one thin edge is fine when the other is wide.
     if (
-      Math.max(args.width, args.height) < STAMP_MIN_EDGE * 2 ||
-      Math.min(args.width, args.height) < 8
+      Math.max(
+        args.width,
+        args.height,
+      ) <
+        STAMP_MIN_EDGE *
+          2 ||
+      Math.min(
+        args.width,
+        args.height,
+      ) <
+        8
     ) {
       return 'too-small';
     }
@@ -78,13 +173,20 @@ export function judgeStampImage(args: {
 }
 
 /** Object-storage prefix for stamp images. */
-export const STAMP_PREFIX = 'profile-stamps/';
+export const STAMP_PREFIX =
+  'profile-stamps/';
 
-export function stampKey(filename: string): string {
+export function stampKey(
+  filename: string,
+): string {
   return `${STAMP_PREFIX}${filename}`;
 }
 
 /** CDN URL when one is configured, else the Node proxy route (dev / no CDN). */
-export function stampUrl(filename: string): string {
-  return CDN_BASE ? `${CDN_BASE}/${stampKey(filename)}` : `/api/stamps/image/${filename}`;
+export function stampUrl(
+  filename: string,
+): string {
+  return CDN_BASE
+    ? `${CDN_BASE}/${stampKey(filename)}`
+    : `/api/stamps/image/${filename}`;
 }

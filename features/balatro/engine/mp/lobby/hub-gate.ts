@@ -17,15 +17,26 @@
  * Browser-free (MP chunk).
  */
 
-import type { BalatroC2SEvent, BalatroS2CEvent, BalatroS2CPayload } from '../../net/events';
-import type { HubLike, HubOut, HubStatus, Scheduler } from '../transport/types';
+import type {
+  BalatroC2SEvent,
+  BalatroS2CEvent,
+  BalatroS2CPayload,
+} from '../../net/events';
+import type {
+  HubLike,
+  HubOut,
+  HubStatus,
+  Scheduler,
+} from '../transport/types';
 
-type Queued = () => void;
+type Queued =
+  () => void;
 
 export class HubGate implements HubLike {
   /** Deferred sends not yet run (each holds the queue). */
   private holds = 0;
-  private readonly queue: Queued[] = [];
+  private readonly queue: Queued[] =
+    [];
 
   constructor(
     private readonly inner: HubLike,
@@ -33,47 +44,119 @@ export class HubGate implements HubLike {
   ) {}
 
   get status(): HubStatus {
-    return this.inner.status;
+    return this
+      .inner
+      .status;
   }
 
   /** True while a deferred send is pending (later emits wait for it). */
   get holding(): boolean {
-    return this.holds > 0;
+    return (
+      this
+        .holds >
+      0
+    );
   }
 
-  emit<K extends BalatroC2SEvent>(event: K, data: HubOut<K>): void {
-    if (this.holds > 0) {
-      this.queue.push(() => this.inner.emit(event, data));
+  emit<
+    K extends
+      BalatroC2SEvent,
+  >(
+    event: K,
+    data: HubOut<K>,
+  ): void {
+    if (
+      this
+        .holds >
+      0
+    ) {
+      this.queue.push(
+        () =>
+          this.inner.emit(
+            event,
+            data,
+          ),
+      );
       return;
     }
-    this.inner.emit(event, data);
+    this.inner.emit(
+      event,
+      data,
+    );
   }
 
   /**
    * Run `send` after `ms`, holding every later emit until it has run. `send`
    * emits on `direct` (the inner hub), so it is never queued behind itself.
    */
-  after(ms: number, send: (direct: HubLike) => void): void {
+  after(
+    ms: number,
+    send: (
+      direct: HubLike,
+    ) => void,
+  ): void {
     this.holds += 1;
-    this.sched.after(ms, () => {
-      try {
-        send(this.inner);
-      } finally {
-        this.holds -= 1;
-        while (this.holds === 0 && this.queue.length > 0) this.queue.shift()?.();
-      }
-    });
+    this.sched.after(
+      ms,
+      () => {
+        try {
+          send(
+            this
+              .inner,
+          );
+        } finally {
+          this.holds -= 1;
+          while (
+            this
+              .holds ===
+              0 &&
+            this
+              .queue
+              .length >
+              0
+          )
+            this.queue.shift()?.();
+        }
+      },
+    );
   }
 
-  on<K extends BalatroS2CEvent>(event: K, fn: (d: BalatroS2CPayload<K>) => void): () => void {
-    return this.inner.on(event, fn);
+  on<
+    K extends
+      BalatroS2CEvent,
+  >(
+    event: K,
+    fn: (
+      d: BalatroS2CPayload<K>,
+    ) => void,
+  ): () => void {
+    return this.inner.on(
+      event,
+      fn,
+    );
   }
 
-  onStatus(fn: (s: HubStatus, info: { reconnect: boolean; reason?: string }) => void): () => void {
-    return this.inner.onStatus(fn);
+  onStatus(
+    fn: (
+      s: HubStatus,
+      info: {
+        reconnect: boolean;
+        reason?: string;
+      },
+    ) => void,
+  ): () => void {
+    return this.inner.onStatus(
+      fn,
+    );
   }
 
-  account(): Promise<{ id: string; name: string; avatarUrl: string | null } | null> {
+  account(): Promise<{
+    id: string;
+    name: string;
+    avatarUrl:
+      | string
+      | null;
+  } | null> {
     return this.inner.account();
   }
 

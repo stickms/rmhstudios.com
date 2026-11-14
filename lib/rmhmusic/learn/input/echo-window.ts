@@ -25,7 +25,15 @@ export const ECHO_TAIL_MS = 400;
 export const REPLAY_CONFIRM_MS = 250;
 
 /** The part of a note event the guard reads. */
-export type GuardNote = Pick<NoteEvent, 'type' | 'midi' | 'time' | 'source' | 'cents'>;
+export type GuardNote =
+  Pick<
+    NoteEvent,
+    | 'type'
+    | 'midi'
+    | 'time'
+    | 'source'
+    | 'cents'
+  >;
 
 export interface EchoGuard {
   /**
@@ -33,20 +41,33 @@ export interface EchoGuard {
    * is kept for {@link takeReplay}. Notes from the other sources are always true, and the on-screen
    * and computer keys' own notes (which the lesson sounds) open the window.
    */
-  admit(e: GuardNote): boolean;
+  admit(
+    e: GuardNote,
+  ): boolean;
   /** A hint of `ms` starts sounding at `now`. */
-  hint(now: number, ms: number): void;
+  hint(
+    now: number,
+    ms: number,
+  ): void;
   /** Every hint was released at `now`: only the tail is left of its window. */
-  hintStopped(now: number): void;
+  hintStopped(
+    now: number,
+  ): void;
   /** Forget the dropped note (a new target: it belonged to the last one). */
   forgetPending(): void;
   /**
    * Ms from `now` until a dropped note can be replayed, to arm a timer with; null when nothing is
    * waiting or a key is still held (its `off` re-opens the question).
    */
-  waitMs(now: number): number | null;
+  waitMs(
+    now: number,
+  ):
+    | number
+    | null;
   /** The dropped note to treat as played now, once the window is closed and it is still held. */
-  takeReplay(now: number): GuardNote | null;
+  takeReplay(
+    now: number,
+  ): GuardNote | null;
 }
 
 export function createEchoGuard(opts: {
@@ -54,57 +75,161 @@ export function createEchoGuard(opts: {
   confirmMs?: number;
   releaseMs: number;
 }): EchoGuard {
-  const tail = opts.tailMs ?? ECHO_TAIL_MS;
-  const confirm = opts.confirmMs ?? REPLAY_CONFIRM_MS;
+  const tail =
+    opts.tailMs ??
+    ECHO_TAIL_MS;
+  const confirm =
+    opts.confirmMs ??
+    REPLAY_CONFIRM_MS;
   let hintUntil = 0;
   let keysUntil = 0;
   // Keys the lesson is sounding right now, by source and pitch.
-  const held = new Set<string>();
-  let pending: GuardNote | null = null;
+  const held =
+    new Set<string>();
+  let pending: GuardNote | null =
+    null;
 
-  const until = () => Math.max(hintUntil, keysUntil);
-  const deaf = (time: number) => held.size > 0 || time < until();
+  const until =
+    () =>
+      Math.max(
+        hintUntil,
+        keysUntil,
+      );
+  const deaf =
+    (
+      time: number,
+    ) =>
+      held.size >
+        0 ||
+      time <
+        until();
 
   return {
-    admit(e) {
-      if (e.source === 'screen' || e.source === 'keys') {
+    admit(
+      e,
+    ) {
+      if (
+        e.source ===
+          'screen' ||
+        e.source ===
+          'keys'
+      ) {
         const key = `${e.source}:${e.midi}`;
-        if (e.type === 'on') held.add(key);
+        if (
+          e.type ===
+          'on'
+        )
+          held.add(
+            key,
+          );
         else {
-          held.delete(key);
-          keysUntil = Math.max(keysUntil, e.time + opts.releaseMs + tail);
+          held.delete(
+            key,
+          );
+          keysUntil =
+            Math.max(
+              keysUntil,
+              e.time +
+                opts.releaseMs +
+                tail,
+            );
         }
         return true;
       }
-      if (e.source !== 'mic') return true;
-      if (e.type === 'off') {
-        if (pending && pending.midi === e.midi) pending = null;
+      if (
+        e.source !==
+        'mic'
+      )
+        return true;
+      if (
+        e.type ===
+        'off'
+      ) {
+        if (
+          pending &&
+          pending.midi ===
+            e.midi
+        )
+          pending =
+            null;
         return true;
       }
-      if (deaf(e.time)) {
-        pending = { ...e };
+      if (
+        deaf(
+          e.time,
+        )
+      ) {
+        pending =
+          {
+            ...e,
+          };
         return false;
       }
-      pending = null;
+      pending =
+        null;
       return true;
     },
-    hint(now, ms) {
-      hintUntil = Math.max(hintUntil, now + ms + tail);
+    hint(
+      now,
+      ms,
+    ) {
+      hintUntil =
+        Math.max(
+          hintUntil,
+          now +
+            ms +
+            tail,
+        );
     },
-    hintStopped(now) {
-      hintUntil = Math.min(hintUntil, now + tail);
+    hintStopped(
+      now,
+    ) {
+      hintUntil =
+        Math.min(
+          hintUntil,
+          now +
+            tail,
+        );
     },
     forgetPending() {
-      pending = null;
+      pending =
+        null;
     },
-    waitMs(now) {
-      if (!pending || held.size > 0) return null;
-      return Math.max(0, until() + confirm - now);
+    waitMs(
+      now,
+    ) {
+      if (
+        !pending ||
+        held.size >
+          0
+      )
+        return null;
+      return Math.max(
+        0,
+        until() +
+          confirm -
+          now,
+      );
     },
-    takeReplay(now) {
-      if (!pending || held.size > 0 || now < until() + confirm) return null;
-      const note = { ...pending, time: now };
-      pending = null;
+    takeReplay(
+      now,
+    ) {
+      if (
+        !pending ||
+        held.size >
+          0 ||
+        now <
+          until() +
+            confirm
+      )
+        return null;
+      const note =
+        {
+          ...pending,
+          time: now,
+        };
+      pending =
+        null;
       return note;
     },
   };
@@ -120,5 +245,11 @@ export function hearStillWanted(s: {
   currentIndex: number;
   mounted: boolean;
 }): boolean {
-  return s.mounted && s.askedIndex >= 0 && s.askedIndex === s.currentIndex;
+  return (
+    s.mounted &&
+    s.askedIndex >=
+      0 &&
+    s.askedIndex ===
+      s.currentIndex
+  );
 }

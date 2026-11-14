@@ -49,46 +49,108 @@ interface Entry {
   settledAt?: number;
 }
 
-const entries = new Map<string, Entry>();
+const entries =
+  new Map<
+    string,
+    Entry
+  >();
 
 /** The GET itself — also what a page calls when nothing was started for it. */
-export function fetchIntent(url: string): Promise<IntentResult> {
-  return fetch(url).then(async (res) => ({
-    status: res.status,
-    data: res.status === 404 || res.status === 204 ? null : await res.json(),
-  }));
+export function fetchIntent(
+  url: string,
+): Promise<IntentResult> {
+  return fetch(
+    url,
+  ).then(
+    async (
+      res,
+    ) => ({
+      status:
+        res.status,
+      data:
+        res.status ===
+          404 ||
+        res.status ===
+          204
+          ? null
+          : await res.json(),
+    }),
+  );
 }
 
-function fresh(url: string): Entry | null {
-  const entry = entries.get(url);
-  if (!entry) return null;
-  const now = Date.now();
+function fresh(
+  url: string,
+): Entry | null {
+  const entry =
+    entries.get(
+      url,
+    );
+  if (
+    !entry
+  )
+    return null;
+  const now =
+    Date.now();
   const usable =
-    entry.settledAt !== undefined
-      ? now - entry.settledAt < FRESH_MS
-      : now - entry.at < IN_FLIGHT_MAX_MS;
-  if (!usable) {
-    entries.delete(url);
+    entry.settledAt !==
+    undefined
+      ? now -
+          entry.settledAt <
+        FRESH_MS
+      : now -
+          entry.at <
+        IN_FLIGHT_MAX_MS;
+  if (
+    !usable
+  ) {
+    entries.delete(
+      url,
+    );
     return null;
   }
   return entry;
 }
 
 /** Start (or keep) a GET for `url`. Idempotent while usable; a no-op on the server. */
-export function startIntentFetch(url: string): void {
-  if (typeof window === 'undefined') return;
-  if (fresh(url)) return;
-  const entry: Entry = { at: Date.now(), promise: fetchIntent(url) };
+export function startIntentFetch(
+  url: string,
+): void {
+  if (
+    typeof window ===
+    'undefined'
+  )
+    return;
+  if (
+    fresh(
+      url,
+    )
+  )
+    return;
+  const entry: Entry =
+    {
+      at: Date.now(),
+      promise:
+        fetchIntent(
+          url,
+        ),
+    };
   entry.promise.then(
-    (result) => {
-      entry.settled = result;
-      entry.settledAt = Date.now();
+    (
+      result,
+    ) => {
+      entry.settled =
+        result;
+      entry.settledAt =
+        Date.now();
     },
     // A failed head start must not surface as an unhandled rejection; the page
     // that takes it handles the failure exactly as it handles its own fetch.
     () => {},
   );
-  entries.set(url, entry);
+  entries.set(
+    url,
+    entry,
+  );
 }
 
 /**
@@ -96,19 +158,45 @@ export function startIntentFetch(url: string): void {
  * content that landed before the page mounted is in the page's first commit.
  * Does not consume the entry (a render can run more than once).
  */
-export function peekIntentFetch(url: string): IntentResult | undefined {
-  return fresh(url)?.settled;
+export function peekIntentFetch(
+  url: string,
+):
+  | IntentResult
+  | undefined {
+  return fresh(
+    url,
+  )
+    ?.settled;
 }
 
 /** Hand out the started request once, or `null` if none is usable. */
-export function takeIntentFetch(url: string): Promise<IntentResult> | null {
-  const entry = fresh(url);
-  if (!entry) return null;
-  entries.delete(url);
+export function takeIntentFetch(
+  url: string,
+): Promise<IntentResult> | null {
+  const entry =
+    fresh(
+      url,
+    );
+  if (
+    !entry
+  )
+    return null;
+  entries.delete(
+    url,
+  );
   return entry.promise;
 }
 
 /** {@link takeIntentFetch}, falling back to a fresh request. */
-export function takeOrFetch(url: string): Promise<IntentResult> {
-  return takeIntentFetch(url) ?? fetchIntent(url);
+export function takeOrFetch(
+  url: string,
+): Promise<IntentResult> {
+  return (
+    takeIntentFetch(
+      url,
+    ) ??
+    fetchIntent(
+      url,
+    )
+  );
 }

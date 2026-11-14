@@ -40,10 +40,25 @@
  * path.
  */
 
-import type { BeatMap, Difficulty, Slice } from '../types';
-import { prepareAudio, type AudioLike, type PreparedAudio } from './audio';
-import { computeSpectrogram, type Spectrogram } from './spectrum';
-import { BEAT_HIGH_WEIGHT, detectOnsets, onsetStrengthSignal } from './onsets';
+import type {
+  BeatMap,
+  Difficulty,
+  Slice,
+} from '../types';
+import {
+  prepareAudio,
+  type AudioLike,
+  type PreparedAudio,
+} from './audio';
+import {
+  computeSpectrogram,
+  type Spectrogram,
+} from './spectrum';
+import {
+  BEAT_HIGH_WEIGHT,
+  detectOnsets,
+  onsetStrengthSignal,
+} from './onsets';
 import {
   alignBeatsToOnsets,
   bpmFromBeats,
@@ -54,9 +69,18 @@ import {
 } from './tempo';
 import { refineOnsetTimes } from './attack';
 import { lowBandEnvelope } from './lowband';
-import { buildCharts, quantizeOnsets } from './charter';
-import { computeEnvelope, type PeakEnvelope } from './envelope';
-import { detectSections, type Section } from './sections';
+import {
+  buildCharts,
+  quantizeOnsets,
+} from './charter';
+import {
+  computeEnvelope,
+  type PeakEnvelope,
+} from './envelope';
+import {
+  detectSections,
+  type Section,
+} from './sections';
 
 export type { AudioLike } from './audio';
 export { decodedToAudioLike } from './audio';
@@ -123,10 +147,16 @@ export interface GeneratedBeatmap extends BeatMap {
   analysisVersion: number;
   /** Beat times in seconds — kept so the client can render a beat ruler. */
   beats?: number[];
-  noteCounts: Record<Difficulty, number>;
+  noteCounts: Record<
+    Difficulty,
+    number
+  >;
   /** 0–1 from the tempo estimator; low means the grid is a guess. */
   tempoConfidence: number;
-  slices: Record<Difficulty, Slice[]>;
+  slices: Record<
+    Difficulty,
+    Slice[]
+  >;
   /** Editor artefacts — §6. Optional so an older stored blob is still valid. */
   artefacts?: AnalysisArtefacts;
 }
@@ -184,13 +214,48 @@ const HINT_TOLERANCE = 0.04;
  * Exported for testing — the octave-matching rule is the part most likely to
  * surprise someone reading a chart that came out at half the BPM they typed.
  */
-export function reconcileBpm(detected: number, hint: number | undefined): number {
-  if (!hint || !Number.isFinite(hint) || hint <= 0) return detected;
-  if (!Number.isFinite(detected) || detected <= 0) return hint;
+export function reconcileBpm(
+  detected: number,
+  hint:
+    | number
+    | undefined,
+): number {
+  if (
+    !hint ||
+    !Number.isFinite(
+      hint,
+    ) ||
+    hint <=
+      0
+  )
+    return detected;
+  if (
+    !Number.isFinite(
+      detected,
+    ) ||
+    detected <=
+      0
+  )
+    return hint;
 
-  for (const factor of [1, 2, 0.5, 4, 0.25]) {
-    const candidate = hint * factor;
-    if (Math.abs(candidate - detected) / detected <= HINT_TOLERANCE) {
+  for (const factor of [
+    1,
+    2,
+    0.5,
+    4,
+    0.25,
+  ]) {
+    const candidate =
+      hint *
+      factor;
+    if (
+      Math.abs(
+        candidate -
+          detected,
+      ) /
+        detected <=
+      HINT_TOLERANCE
+    ) {
       // The hint agrees with the audio at this octave — take it, for its
       // precision (people type 174; detection says 173.61).
       return candidate;
@@ -206,51 +271,154 @@ export function reconcileBpm(detected: number, hint: number | undefined): number
  * no discernible pulse all fall back to a metronome grid rather than failing
  * the upload. It only rejects input it cannot read at all.
  */
-export function generateBeatmap(audio: AudioLike, options: GenerateOptions): GeneratedBeatmap {
-  const prepared = options.precomputed?.prepared ?? prepareAudio(audio);
-  const { samples, sampleRate, duration } = prepared;
+export function generateBeatmap(
+  audio: AudioLike,
+  options: GenerateOptions,
+): GeneratedBeatmap {
+  const prepared =
+    options
+      .precomputed
+      ?.prepared ??
+    prepareAudio(
+      audio,
+    );
+  const {
+    samples,
+    sampleRate,
+    duration,
+  } =
+    prepared;
 
-  const spec = options.precomputed?.spectrogram ?? computeSpectrogram(samples, sampleRate);
-  const odf = onsetStrengthSignal(spec);
+  const spec =
+    options
+      .precomputed
+      ?.spectrogram ??
+    computeSpectrogram(
+      samples,
+      sampleRate,
+    );
+  const odf =
+    onsetStrengthSignal(
+      spec,
+    );
   // Tempo and beat phase come from a flux with the hat region turned down, so the
   // grid lands on the kick and snare instead of the off-beat (see BEAT_HIGH_WEIGHT).
-  const beatOdf = onsetStrengthSignal(spec, { highWeight: BEAT_HIGH_WEIGHT });
-  const tempo = estimateTempo(beatOdf, spec.frameDuration);
+  const beatOdf =
+    onsetStrengthSignal(
+      spec,
+      {
+        highWeight:
+          BEAT_HIGH_WEIGHT,
+      },
+    );
+  const tempo =
+    estimateTempo(
+      beatOdf,
+      spec.frameDuration,
+    );
 
-  let beats = trackBeats(beatOdf, spec.frameDuration, tempo.periodFrames);
-  let bpm = bpmFromBeats(beats, tempo.bpm);
-  bpm = reconcileBpm(bpm, options.bpmHint);
+  let beats =
+    trackBeats(
+      beatOdf,
+      spec.frameDuration,
+      tempo.periodFrames,
+    );
+  let bpm =
+    bpmFromBeats(
+      beats,
+      tempo.bpm,
+    );
+  bpm =
+    reconcileBpm(
+      bpm,
+      options.bpmHint,
+    );
 
   // A track with no usable pulse still gets a chart: an even grid at the
   // best-guess tempo is a worse chart than a tracked one and an infinitely
   // better one than none.
-  if (beats.length < 4) {
-    beats = syntheticBeats(duration, bpm);
+  if (
+    beats.length <
+    4
+  ) {
+    beats =
+      syntheticBeats(
+        duration,
+        bpm,
+      );
   }
 
-  const onsets = detectOnsets(spec, odf, {
-    maxSustainSeconds: (60 / bpm) * 4,
-    lowEnvelope: lowBandEnvelope(samples, sampleRate, spec.frames),
-  });
+  const onsets =
+    detectOnsets(
+      spec,
+      odf,
+      {
+        maxSustainSeconds:
+          (60 /
+            bpm) *
+          4,
+        lowEnvelope:
+          lowBandEnvelope(
+            samples,
+            sampleRate,
+            spec.frames,
+          ),
+      },
+    );
 
   // The detector notices a sound before it is audible. Move every onset to where
   // the waveform actually rises (see attack.ts).
-  refineOnsetTimes(onsets, samples, prepared.sampleRate);
+  refineOnsetTimes(
+    onsets,
+    samples,
+    prepared.sampleRate,
+  );
 
   // A track made to a click is on an exact grid; use it. A live one keeps the
   // tracked beats.
-  const fit = beats.length >= 4 ? fitConstantTempo(beats, duration) : null;
-  if (fit) {
-    beats = fit.beats;
-    bpm = reconcileBpm(fit.bpm, options.bpmHint);
+  const fit =
+    beats.length >=
+    4
+      ? fitConstantTempo(
+          beats,
+          duration,
+        )
+      : null;
+  if (
+    fit
+  ) {
+    beats =
+      fit.beats;
+    bpm =
+      reconcileBpm(
+        fit.bpm,
+        options.bpmHint,
+      );
   }
 
   // The tracker's beats are peaks of a flux function, which peaks before the sound
   // is audible, and notes snap to this grid. The refined onsets are accurate, so
   // let the ones near a beat say where it should be.
-  if (beats.length >= 4) beats = alignBeatsToOnsets(beats, onsets.map((o) => o.time));
+  if (
+    beats.length >=
+    4
+  )
+    beats =
+      alignBeatsToOnsets(
+        beats,
+        onsets.map(
+          (
+            o,
+          ) =>
+            o.time,
+        ),
+      );
 
-  let quantized = quantizeOnsets(onsets, beats);
+  let quantized =
+    quantizeOnsets(
+      onsets,
+      beats,
+    );
 
   /* Which candidates survived quantisation, by spectrogram frame.
    *
@@ -262,64 +430,166 @@ export function generateBeatmap(audio: AudioLike, options: GenerateOptions): Gen
    * from the FIRST quantisation: the metronome fallback below replaces the
    * pool with synthetic notes whose frame is 0, and every real onset would
    * then read as rejected. */
-  const keptFrames = new Set(quantized.map((note) => note.frame));
+  const keptFrames =
+    new Set(
+      quantized.map(
+        (
+          note,
+        ) =>
+          note.frame,
+      ),
+    );
 
   // Nothing survived quantisation — a spoken-word track, or pure ambience.
   // Chart the grid itself so the song is playable at all.
-  if (quantized.length < 8) {
-    quantized = quantizeOnsets(
-      beats.slice(0, Math.max(0, beats.length - 1)).map((time, index) => ({
-        time,
-        strength: index % 4 === 0 ? 1 : 0.6,
-        frame: 0,
-        lowRatio: index % 2 === 0 ? 1 : 0,
-        highRatio: index % 2 === 0 ? 0 : 1,
-        sustain: 0,
-      })),
-      beats,
-    );
+  if (
+    quantized.length <
+    8
+  ) {
+    quantized =
+      quantizeOnsets(
+        beats
+          .slice(
+            0,
+            Math.max(
+              0,
+              beats.length -
+                1,
+            ),
+          )
+          .map(
+            (
+              time,
+              index,
+            ) => ({
+              time,
+              strength:
+                index %
+                  4 ===
+                0
+                  ? 1
+                  : 0.6,
+              frame: 0,
+              lowRatio:
+                index %
+                  2 ===
+                0
+                  ? 1
+                  : 0,
+              highRatio:
+                index %
+                  2 ===
+                0
+                  ? 0
+                  : 1,
+              sustain: 0,
+            }),
+          ),
+        beats,
+      );
   }
 
   // Computed once and used twice: G14 weights the density budget by section
   // energy, and the same array is persisted in `artefacts` for the editor's
   // timeline. Detecting it twice would double the cost of the most expensive
   // step after the spectrogram itself.
-  const sections = detectSections(spec, beats, duration);
+  const sections =
+    detectSections(
+      spec,
+      beats,
+      duration,
+    );
 
-  const { slices, noteCounts } = buildCharts(
-    quantized,
-    duration,
-    options.id,
-    sections,
-    options.densityBias,
-  );
+  const {
+    slices,
+    noteCounts,
+  } =
+    buildCharts(
+      quantized,
+      duration,
+      options.id,
+      sections,
+      options.densityBias,
+    );
 
   return {
     id: options.id,
     name: options.name,
-    artist: options.artist,
-    audioUrl: options.audioUrl ?? '',
-    bpm: Math.round(bpm * 100) / 100,
+    artist:
+      options.artist,
+    audioUrl:
+      options.audioUrl ??
+      '',
+    bpm:
+      Math.round(
+        bpm *
+          100,
+      ) /
+      100,
     slices,
-    beats: beats.map((t) => Number(t.toFixed(3))),
+    beats:
+      beats.map(
+        (
+          t,
+        ) =>
+          Number(
+            t.toFixed(
+              3,
+            ),
+          ),
+      ),
     noteCounts,
-    tempoConfidence: Number(tempo.confidence.toFixed(3)),
-    analysisVersion: BEATMAP_VERSION,
-    artefacts: {
-      envelope: computeEnvelope(samples, sampleRate),
-      // Rounded on the way out: three decimals is a millisecond, which is finer
-      // than the 11.6 ms hop these times came from, and two decimals of strength
-      // is finer than the strip can draw. Full float precision here would be a
-      // third again as much JSON expressing noise.
-      onsets: onsets.map((onset) => ({
-        t: Number(onset.time.toFixed(3)),
-        s: Number(onset.strength.toFixed(2)),
-        l: Number(onset.lowRatio.toFixed(2)),
-        h: Number(onset.highRatio.toFixed(2)),
-        k: keptFrames.has(onset.frame),
-      })),
-      sections,
-    },
+    tempoConfidence:
+      Number(
+        tempo.confidence.toFixed(
+          3,
+        ),
+      ),
+    analysisVersion:
+      BEATMAP_VERSION,
+    artefacts:
+      {
+        envelope:
+          computeEnvelope(
+            samples,
+            sampleRate,
+          ),
+        // Rounded on the way out: three decimals is a millisecond, which is finer
+        // than the 11.6 ms hop these times came from, and two decimals of strength
+        // is finer than the strip can draw. Full float precision here would be a
+        // third again as much JSON expressing noise.
+        onsets:
+          onsets.map(
+            (
+              onset,
+            ) => ({
+              t: Number(
+                onset.time.toFixed(
+                  3,
+                ),
+              ),
+              s: Number(
+                onset.strength.toFixed(
+                  2,
+                ),
+              ),
+              l: Number(
+                onset.lowRatio.toFixed(
+                  2,
+                ),
+              ),
+              h: Number(
+                onset.highRatio.toFixed(
+                  2,
+                ),
+              ),
+              k: keptFrames.has(
+                onset.frame,
+              ),
+            }),
+          ),
+        sections,
+      },
   };
 }
 
@@ -327,21 +597,75 @@ export function generateBeatmap(audio: AudioLike, options: GenerateOptions): Gen
  * Detect only the tempo — for the library card and for the upload form, where
  * a full chart is not needed and would cost several seconds.
  */
-export function detectBpm(audio: AudioLike): { bpm: number; confidence: number } {
-  const { samples, sampleRate } = prepareAudio(audio);
-  const spec = computeSpectrogram(samples, sampleRate);
-  const odf = onsetStrengthSignal(spec);
-  const tempo = estimateTempo(odf, spec.frameDuration);
-  const beats = trackBeats(odf, spec.frameDuration, tempo.periodFrames);
+export function detectBpm(
+  audio: AudioLike,
+): {
+  bpm: number;
+  confidence: number;
+} {
+  const {
+    samples,
+    sampleRate,
+  } =
+    prepareAudio(
+      audio,
+    );
+  const spec =
+    computeSpectrogram(
+      samples,
+      sampleRate,
+    );
+  const odf =
+    onsetStrengthSignal(
+      spec,
+    );
+  const tempo =
+    estimateTempo(
+      odf,
+      spec.frameDuration,
+    );
+  const beats =
+    trackBeats(
+      odf,
+      spec.frameDuration,
+      tempo.periodFrames,
+    );
   return {
-    bpm: Math.round(bpmFromBeats(beats, tempo.bpm) * 100) / 100,
-    confidence: tempo.confidence,
+    bpm:
+      Math.round(
+        bpmFromBeats(
+          beats,
+          tempo.bpm,
+        ) *
+          100,
+      ) /
+      100,
+    confidence:
+      tempo.confidence,
   };
 }
 
 /** True when a stored analysis blob predates the current generator. */
-export function isStaleAnalysis(analysis: unknown): boolean {
-  if (!analysis || typeof analysis !== 'object') return true;
-  const version = (analysis as { analysisVersion?: unknown }).analysisVersion;
-  return typeof version !== 'number' || version < BEATMAP_VERSION;
+export function isStaleAnalysis(
+  analysis: unknown,
+): boolean {
+  if (
+    !analysis ||
+    typeof analysis !==
+      'object'
+  )
+    return true;
+  const version =
+    (
+      analysis as {
+        analysisVersion?: unknown;
+      }
+    )
+      .analysisVersion;
+  return (
+    typeof version !==
+      'number' ||
+    version <
+      BEATMAP_VERSION
+  );
 }

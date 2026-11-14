@@ -8,13 +8,19 @@ import type { IndexedQuestion } from '@/lib/rmhbox/fact-or-friction/question-loa
 
 // ─── Phase Type ──────────────────────────────────────────────────
 
-export type FFPhase = 'QUESTION_REVEAL' | 'ANSWER' | 'ANSWER_REVEAL' | 'PAUSE';
+export type FFPhase =
+  | 'QUESTION_REVEAL'
+  | 'ANSWER'
+  | 'ANSWER_REVEAL'
+  | 'PAUSE';
 
 // ─── Type Definitions ────────────────────────────────────────────
 
 export interface PlayerAnswer {
   userId: string;
-  selectedIndex: number | null;
+  selectedIndex:
+    | number
+    | null;
   potValueAtSubmission: number;
   submittedAt: number;
   isCorrect: boolean;
@@ -29,7 +35,9 @@ export interface QuestionResult {
   questionIndex: number;
   question: IndexedQuestion;
   playerAnswers: PlayerAnswer[];
-  fastestCorrectUserId: string | null;
+  fastestCorrectUserId:
+    | string
+    | null;
   correctCount: number;
   incorrectCount: number;
   passCount: number;
@@ -42,8 +50,14 @@ export interface FactOrFrictionState {
   phase: FFPhase;
   potValue: number;
   potStartedAt: number;
-  playerAnswers: Map<string, PlayerAnswer>;
-  playerScores: Map<string, number>;
+  playerAnswers: Map<
+    string,
+    PlayerAnswer
+  >;
+  playerScores: Map<
+    string,
+    number
+  >;
   questionHistory: QuestionResult[];
   phaseStartedAt: number;
   phaseEndsAt: number;
@@ -52,8 +66,12 @@ export interface FactOrFrictionState {
 export interface FFPlayerQuestionResult {
   userId: string;
   userName: string;
-  selectedIndex: number | null;
-  selectedAnswer: string | null;
+  selectedIndex:
+    | number
+    | null;
+  selectedAnswer:
+    | string
+    | null;
   isCorrect: boolean;
   potValueAtSubmission: number;
   scoreChange: number;
@@ -71,6 +89,9 @@ export interface FFPlayerQuestionResult {
 
 export interface GameLogAction {
   type: string;
-  payload: Record<string, unknown>;
+  payload: Record<
+    string,
+    unknown
+  >;
   timestamp: number;
 }

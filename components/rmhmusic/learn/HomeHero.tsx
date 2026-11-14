@@ -15,16 +15,27 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import entry from '@/lib/catalog/apps/rmhmusic';
 
 export function HomeHero() {
-  const { t } = useTranslation('c-rmhmusic');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhmusic',
+    );
   return (
     <div className="rmm-hero">
       <div className="rmm-hero__frame">
         {entry.bannerPath && (
           <OptimizedImage
-            src={entry.bannerPath}
+            src={
+              entry.bannerPath
+            }
             alt=""
-            width={896}
-            height={299}
+            width={
+              896
+            }
+            height={
+              299
+            }
             priority
             // Stamped `data-loaded` by the site's media-reveal script as it loads.
             suppressHydrationWarning
@@ -34,10 +45,22 @@ export function HomeHero() {
       {entry.logoPath && (
         <div className="rmm-hero__logo">
           <OptimizedImage
-            src={entry.logoPath}
-            alt={t('hero-logo-alt', { defaultValue: 'RMH Music' })}
-            width={320}
-            height={84}
+            src={
+              entry.logoPath
+            }
+            alt={t(
+              'hero-logo-alt',
+              {
+                defaultValue:
+                  'RMH Music',
+              },
+            )}
+            width={
+              320
+            }
+            height={
+              84
+            }
             loading="eager"
             suppressHydrationWarning
           />

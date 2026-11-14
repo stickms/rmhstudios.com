@@ -32,5 +32,9 @@
     "server/shared/session-auth.ts",
     "server/shared/redis-adapter.ts"
   ],
-  "exclude": ["node_modules", "**/__tests__/**", "**/*.test.ts"]
+  "exclude": [
+    "node_modules",
+    "**/__tests__/**",
+    "**/*.test.ts"
+  ]
 }

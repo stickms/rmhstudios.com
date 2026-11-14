@@ -5,47 +5,152 @@
  */
 import { z } from 'zod';
 
-import { ITEM_KINDS, PACK_KINDS, PACK_VISIBILITIES, SHORTCODE_RE } from './packs';
+import {
+  ITEM_KINDS,
+  PACK_KINDS,
+  PACK_VISIBILITIES,
+  SHORTCODE_RE,
+} from './packs';
 
-export const shortcodeSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .regex(SHORTCODE_RE, 'Shortcodes are 2–32 characters: letters, numbers, _ + and -');
+export const shortcodeSchema =
+  z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(
+      SHORTCODE_RE,
+      'Shortcodes are 2–32 characters: letters, numbers, _ + and -',
+    );
 
-export const packSlugSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .regex(/^[a-z0-9][a-z0-9-]{1,47}$/, 'Slugs are 2–48 characters: letters, numbers and -');
+export const packSlugSchema =
+  z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(
+      /^[a-z0-9][a-z0-9-]{1,47}$/,
+      'Slugs are 2–48 characters: letters, numbers and -',
+    );
 
-export const createPackSchema = z.object({
-  name: z.string().trim().min(1).max(60),
-  description: z.string().trim().max(300).optional(),
-  kind: z.enum(PACK_KINDS).default('emoji'),
-  visibility: z.enum(PACK_VISIBILITIES).default('public'),
-});
+export const createPackSchema =
+  z.object(
+    {
+      name: z
+        .string()
+        .trim()
+        .min(
+          1,
+        )
+        .max(
+          60,
+        ),
+      description:
+        z
+          .string()
+          .trim()
+          .max(
+            300,
+          )
+          .optional(),
+      kind: z
+        .enum(
+          PACK_KINDS,
+        )
+        .default(
+          'emoji',
+        ),
+      visibility:
+        z
+          .enum(
+            PACK_VISIBILITIES,
+          )
+          .default(
+            'public',
+          ),
+    },
+  );
 
 /** `GET /api/emoji-packs` query. */
-export const browsePacksQuery = z.object({
-  q: z.string().trim().max(60).optional(),
-  cursor: z.string().max(64).optional(),
-});
+export const browsePacksQuery =
+  z.object(
+    {
+      q: z
+        .string()
+        .trim()
+        .max(
+          60,
+        )
+        .optional(),
+      cursor:
+        z
+          .string()
+          .max(
+            64,
+          )
+          .optional(),
+    },
+  );
 
-export const updatePackSchema = createPackSchema.partial();
+export const updatePackSchema =
+  createPackSchema.partial();
 
-export const addItemSchema = z.object({
-  name: shortcodeSchema,
-  kind: z.enum(ITEM_KINDS).default('emoji'),
-  /** Media id from the ordinary upload pipeline — never a raw URL from a client. */
-  mediaId: z.string().min(1).max(64),
-  alt: z.string().trim().min(1, 'Alt text is required').max(140),
-});
+export const addItemSchema =
+  z.object(
+    {
+      name: shortcodeSchema,
+      kind: z
+        .enum(
+          ITEM_KINDS,
+        )
+        .default(
+          'emoji',
+        ),
+      /** Media id from the ordinary upload pipeline — never a raw URL from a client. */
+      mediaId:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            64,
+          ),
+      alt: z
+        .string()
+        .trim()
+        .min(
+          1,
+          'Alt text is required',
+        )
+        .max(
+          140,
+        ),
+    },
+  );
 
 /** Admin decision on a pack in the review queue. */
-export const moderatePackSchema = z.object({
-  action: z.enum(['approve', 'remove']),
-  reason: z.string().trim().max(500).optional(),
-  /** The pack's `updatedAt` as the reviewer saw it; a later edit makes the decision 409. */
-  version: z.iso.datetime().optional(),
-});
+export const moderatePackSchema =
+  z.object(
+    {
+      action:
+        z.enum(
+          [
+            'approve',
+            'remove',
+          ],
+        ),
+      reason:
+        z
+          .string()
+          .trim()
+          .max(
+            500,
+          )
+          .optional(),
+      /** The pack's `updatedAt` as the reviewer saw it; a later edit makes the decision 409. */
+      version:
+        z.iso
+          .datetime()
+          .optional(),
+    },
+  );

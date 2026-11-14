@@ -7,9 +7,39 @@ export function insertAtCaret(
   insertion: string,
   start: number,
   end: number,
-): { next: string; caret: number } {
-  const s = Math.max(0, Math.min(start, value.length));
-  const e = Math.max(s, Math.min(end, value.length));
-  const next = value.slice(0, s) + insertion + value.slice(e);
-  return { next, caret: s + insertion.length };
+): {
+  next: string;
+  caret: number;
+} {
+  const s =
+    Math.max(
+      0,
+      Math.min(
+        start,
+        value.length,
+      ),
+    );
+  const e =
+    Math.max(
+      s,
+      Math.min(
+        end,
+        value.length,
+      ),
+    );
+  const next =
+    value.slice(
+      0,
+      s,
+    ) +
+    insertion +
+    value.slice(
+      e,
+    );
+  return {
+    next,
+    caret:
+      s +
+      insertion.length,
+  };
 }

@@ -6,16 +6,30 @@ export interface FeedAnnouncementItem {
   id: string;
   title: string;
   body: string;
-  linkUrl: string | null;
-  linkLabel: string | null;
+  linkUrl:
+    | string
+    | null;
+  linkLabel:
+    | string
+    | null;
   variant: string;
   createdAt: string;
   imageUrls?: string[];
-  gifUrl?: string | null;
+  gifUrl?:
+    | string
+    | null;
   poll?: FeedPoll | null;
 }
 
-export const listAnnouncementsApi = endpoint<{ res: { announcements: FeedAnnouncementItem[] } }>()({
-  method: 'GET',
-  path: '/api/announcements',
-});
+export const listAnnouncementsApi =
+  endpoint<{
+    res: {
+      announcements: FeedAnnouncementItem[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/announcements',
+    },
+  );

@@ -38,7 +38,12 @@ export type GameState =
   | 'crashed'
   | 'runComplete';
 
-export type LevelId = 1 | 2 | 3 | 4 | 5;
+export type LevelId =
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5;
 
 // ── Track geometry ──────────────────────────────────────────────────────────
 
@@ -129,7 +134,14 @@ export interface TrackFeature {
  * *choosing* a trick you have not used yet before the ground arrives.
  */
 export type TrickDirection =
-  'up' | 'down' | 'left' | 'right' | 'upLeft' | 'upRight' | 'downLeft' | 'downRight';
+  | 'up'
+  | 'down'
+  | 'left'
+  | 'right'
+  | 'upLeft'
+  | 'upRight'
+  | 'downLeft'
+  | 'downRight';
 
 /** Static definition of one trick, from the in-game Tricktionary. */
 export interface TrickDef {
@@ -140,7 +152,11 @@ export interface TrickDef {
   /** Seconds of air the trick needs to complete. Bail if you land early. */
   duration: number;
   /** Visual: body rotation the renderer applies, radians per axis. */
-  spin: { pitch: number; yaw: number; roll: number };
+  spin: {
+    pitch: number;
+    yaw: number;
+    roll: number;
+  };
 }
 
 /** A trick currently being performed. */
@@ -151,13 +167,22 @@ export interface ActiveTrick {
   /** 0 → 1 completion. Landing below 1 bails the whole combo. */
   progress: number;
   duration: number;
-  spin: { pitch: number; yaw: number; roll: number };
+  spin: {
+    pitch: number;
+    yaw: number;
+    roll: number;
+  };
 }
 
 // ── Runtime entities ────────────────────────────────────────────────────────
 
 /** What the train is doing right now. Drives both physics and animation. */
-export type TrainMode = 'rolling' | 'drifting' | 'airborne' | 'grinding' | 'wrecked';
+export type TrainMode =
+  | 'rolling'
+  | 'drifting'
+  | 'airborne'
+  | 'grinding'
+  | 'wrecked';
 
 export interface Train {
   /** Arc length travelled, metres. */
@@ -294,7 +319,12 @@ export interface LevelVisuals {
   scenery: SceneryStyle;
 }
 
-export type SceneryStyle = 'harbor' | 'city' | 'viaduct' | 'tunnel' | 'skybridge';
+export type SceneryStyle =
+  | 'harbor'
+  | 'city'
+  | 'viaduct'
+  | 'tunnel'
+  | 'skybridge';
 
 export interface LevelConfig {
   id: LevelId;
@@ -311,7 +341,12 @@ export interface LevelConfig {
   /** Seconds under which the run earns the top delivery rank. */
   parTime: number;
   /** Score thresholds for ranks C, B, A, S. */
-  rankThresholds: [number, number, number, number];
+  rankThresholds: [
+    number,
+    number,
+    number,
+    number,
+  ];
   segments: TrackSegment[];
   features: TrackFeature[];
   visuals: LevelVisuals;
@@ -338,7 +373,11 @@ export interface RunStats {
   cargoStart: number;
   /** True when the train reached the end of the track with cargo aboard. */
   finished: boolean;
-  rank: 'C' | 'B' | 'A' | 'S';
+  rank:
+    | 'C'
+    | 'B'
+    | 'A'
+    | 'S';
 }
 
 export interface InputState {

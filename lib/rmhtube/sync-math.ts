@@ -26,10 +26,16 @@
 import type { VideoState } from './types';
 
 /** The parts of a `VideoState` the projection actually reads. */
-type Projectable = Pick<
-  VideoState,
-  'mode' | 'playing' | 'currentTime' | 'playbackRate' | 'updatedAt' | 'stalled'
->;
+type Projectable =
+  Pick<
+    VideoState,
+    | 'mode'
+    | 'playing'
+    | 'currentTime'
+    | 'playbackRate'
+    | 'updatedAt'
+    | 'stalled'
+  >;
 
 /**
  * Effective playhead position (seconds) at `serverNow` (server-clock ms).
@@ -38,10 +44,30 @@ type Projectable = Pick<
  * source is live. In all three cases wall-clock time is not evidence that the
  * media moved.
  */
-export function extrapolate(vs: Projectable, serverNow: number): number {
-  if (!vs.playing || vs.stalled || vs.mode === 'live') return vs.currentTime;
-  const elapsedMs = Math.max(0, serverNow - vs.updatedAt);
-  return vs.currentTime + (elapsedMs / 1000) * (vs.playbackRate || 1);
+export function extrapolate(
+  vs: Projectable,
+  serverNow: number,
+): number {
+  if (
+    !vs.playing ||
+    vs.stalled ||
+    vs.mode ===
+      'live'
+  )
+    return vs.currentTime;
+  const elapsedMs =
+    Math.max(
+      0,
+      serverNow -
+        vs.updatedAt,
+    );
+  return (
+    vs.currentTime +
+    (elapsedMs /
+      1000) *
+      (vs.playbackRate ||
+        1)
+  );
 }
 
 /**
@@ -50,22 +76,34 @@ export function extrapolate(vs: Projectable, serverNow: number): number {
  * receives a fresh self-consistent anchor however stale the leader's last
  * report was.
  */
-export function reanchor(vs: VideoState, serverNow: number): VideoState {
+export function reanchor(
+  vs: VideoState,
+  serverNow: number,
+): VideoState {
   return {
     ...vs,
-    currentTime: extrapolate(vs, serverNow),
-    updatedAt: serverNow,
+    currentTime:
+      extrapolate(
+        vs,
+        serverNow,
+      ),
+    updatedAt:
+      serverNow,
   };
 }
 
 /** A paused state at the origin — the state a fresh media item starts in. */
-export function initialVideoState(serverNow: number, mode: VideoState['mode'] = 'vod'): VideoState {
+export function initialVideoState(
+  serverNow: number,
+  mode: VideoState['mode'] = 'vod',
+): VideoState {
   return {
     mode,
     playing: false,
     currentTime: 0,
     playbackRate: 1,
-    updatedAt: serverNow,
+    updatedAt:
+      serverNow,
     stalled: false,
     rev: 0,
   };
@@ -79,10 +117,29 @@ export function initialVideoState(serverNow: number, mode: VideoState['mode'] = 
  * optimistic local edges of its own. `rev` is the tiebreak; `updatedAt` settles
  * the case where both carry the same revision.
  */
-export function isNewerAnchor(current: VideoState | null | undefined, next: VideoState): boolean {
-  if (!current) return true;
-  if (next.rev !== current.rev) return next.rev > current.rev;
-  return next.updatedAt >= current.updatedAt;
+export function isNewerAnchor(
+  current:
+    | VideoState
+    | null
+    | undefined,
+  next: VideoState,
+): boolean {
+  if (
+    !current
+  )
+    return true;
+  if (
+    next.rev !==
+    current.rev
+  )
+    return (
+      next.rev >
+      current.rev
+    );
+  return (
+    next.updatedAt >=
+    current.updatedAt
+  );
 }
 
 /**
@@ -113,12 +170,30 @@ export const OPTIMISTIC_ANCHOR_TTL_MS = 3_000;
  * same base (or later) is accepted, because the server is the room.
  */
 export function acceptServerAnchor(
-  current: VideoState | null | undefined,
+  current:
+    | VideoState
+    | null
+    | undefined,
   next: VideoState,
   pending: PendingLocalAnchor | null,
   now: number,
 ): boolean {
-  if (isNewerAnchor(current, next)) return true;
-  if (!pending) return false;
-  return now - pending.at > OPTIMISTIC_ANCHOR_TTL_MS && next.rev >= pending.baseRev;
+  if (
+    isNewerAnchor(
+      current,
+      next,
+    )
+  )
+    return true;
+  if (
+    !pending
+  )
+    return false;
+  return (
+    now -
+      pending.at >
+      OPTIMISTIC_ANCHOR_TTL_MS &&
+    next.rev >=
+      pending.baseRev
+  );
 }

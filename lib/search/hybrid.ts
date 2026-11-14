@@ -45,7 +45,10 @@ export interface FusedHit {
   id: string;
   score: number;
   /** Which retrievers found it, and at what rank (0-based). */
-  ranks: Record<string, number>;
+  ranks: Record<
+    string,
+    number
+  >;
 }
 
 /**
@@ -60,37 +63,129 @@ export interface FusedHit {
  * stable. An unstable order is invisible in a test and maddening in a UI: the
  * same query re-rendered puts the same results in a different sequence.
  */
-export function fuse(lists: Record<string, RankedList>, k: number = RRF_K): FusedHit[] {
-  const acc = new Map<string, FusedHit>();
+export function fuse(
+  lists: Record<
+    string,
+    RankedList
+  >,
+  k: number = RRF_K,
+): FusedHit[] {
+  const acc =
+    new Map<
+      string,
+      FusedHit
+    >();
 
-  for (const [name, list] of Object.entries(lists)) {
-    const weight = list.weight ?? 1;
-    list.ids.forEach((id, rank) => {
-      let hit = acc.get(id);
-      if (!hit) {
-        hit = { id, score: 0, ranks: {} };
-        acc.set(id, hit);
-      }
-      // A retriever listing the same id twice contributes ONCE, at its better
-      // rank. Scoring both occurrences would let a retriever inflate a result
-      // by repeating it — which a buggy or hostile one would do for free.
-      // The check has to come before the score is added, not after.
-      if (name in hit.ranks) {
-        hit.ranks[name] = Math.min(hit.ranks[name], rank);
-        return;
-      }
-      hit.ranks[name] = rank;
-      hit.score += weight / (k + rank + 1);
-    });
+  for (const [
+    name,
+    list,
+  ] of Object.entries(
+    lists,
+  )) {
+    const weight =
+      list.weight ??
+      1;
+    list.ids.forEach(
+      (
+        id,
+        rank,
+      ) => {
+        let hit =
+          acc.get(
+            id,
+          );
+        if (
+          !hit
+        ) {
+          hit =
+            {
+              id,
+              score: 0,
+              ranks:
+                {},
+            };
+          acc.set(
+            id,
+            hit,
+          );
+        }
+        // A retriever listing the same id twice contributes ONCE, at its better
+        // rank. Scoring both occurrences would let a retriever inflate a result
+        // by repeating it — which a buggy or hostile one would do for free.
+        // The check has to come before the score is added, not after.
+        if (
+          name in
+          hit.ranks
+        ) {
+          hit.ranks[
+            name
+          ] =
+            Math.min(
+              hit
+                .ranks[
+                name
+              ],
+              rank,
+            );
+          return;
+        }
+        hit.ranks[
+          name
+        ] =
+          rank;
+        hit.score +=
+          weight /
+          (k +
+            rank +
+            1);
+      },
+    );
   }
 
-  return [...acc.values()].sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    const bestA = Math.min(...Object.values(a.ranks));
-    const bestB = Math.min(...Object.values(b.ranks));
-    if (bestA !== bestB) return bestA - bestB;
-    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-  });
+  return [
+    ...acc.values(),
+  ].sort(
+    (
+      a,
+      b,
+    ) => {
+      if (
+        b.score !==
+        a.score
+      )
+        return (
+          b.score -
+          a.score
+        );
+      const bestA =
+        Math.min(
+          ...Object.values(
+            a.ranks,
+          ),
+        );
+      const bestB =
+        Math.min(
+          ...Object.values(
+            b.ranks,
+          ),
+        );
+      if (
+        bestA !==
+        bestB
+      )
+        return (
+          bestA -
+          bestB
+        );
+      return a.id <
+        b.id
+        ? -1
+        : a.id >
+            b.id
+          ? 1
+          : 0;
+    },
+  );
 }
 
 /**
@@ -100,12 +195,41 @@ export function fuse(lists: Record<string, RankedList>, k: number = RRF_K): Fuse
  * not expressing an interest in that topic, they are asking for that thing, and
  * no amount of semantic neighbourhood should put something else above it.
  */
-export function pinExact(hits: FusedHit[], exactIds: readonly string[]): FusedHit[] {
-  if (exactIds.length === 0) return hits;
-  const exact = new Set(exactIds);
-  const pinned = hits.filter((h) => exact.has(h.id));
-  const rest = hits.filter((h) => !exact.has(h.id));
-  return [...pinned, ...rest];
+export function pinExact(
+  hits: FusedHit[],
+  exactIds: readonly string[],
+): FusedHit[] {
+  if (
+    exactIds.length ===
+    0
+  )
+    return hits;
+  const exact =
+    new Set(
+      exactIds,
+    );
+  const pinned =
+    hits.filter(
+      (
+        h,
+      ) =>
+        exact.has(
+          h.id,
+        ),
+    );
+  const rest =
+    hits.filter(
+      (
+        h,
+      ) =>
+        !exact.has(
+          h.id,
+        ),
+    );
+  return [
+    ...pinned,
+    ...rest,
+  ];
 }
 
 /**
@@ -115,6 +239,18 @@ export function pinExact(hits: FusedHit[], exactIds: readonly string[]): FusedHi
  * a trailing newline would otherwise hash differently and be re-embedded, which
  * turns an idle backfill into a recurring bill.
  */
-export function prepareText(raw: string, maxChars = 8_000): string {
-  return raw.replace(/\s+/g, ' ').trim().slice(0, maxChars);
+export function prepareText(
+  raw: string,
+  maxChars = 8_000,
+): string {
+  return raw
+    .replace(
+      /\s+/g,
+      ' ',
+    )
+    .trim()
+    .slice(
+      0,
+      maxChars,
+    );
 }

@@ -1,5 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { Check, X } from 'lucide-react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Check,
+  X,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
@@ -24,62 +31,154 @@ export function MessageEditor({
 }: {
   initialValue: string;
   saving: boolean;
-  onSave: (value: string) => void;
+  onSave: (
+    value: string,
+  ) => void;
   onCancel: () => void;
 }) {
-  const { t } = useTranslation('feed');
-  const [value, setValue] = useState(initialValue);
-  const ref = useRef<HTMLTextAreaElement | null>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const [
+    value,
+    setValue,
+  ] =
+    useState(
+      initialValue,
+    );
+  const ref =
+    useRef<HTMLTextAreaElement | null>(
+      null,
+    );
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const el =
+      ref.current;
+    if (
+      !el
+    )
+      return;
     el.focus();
-    el.setSelectionRange(el.value.length, el.value.length);
+    el.setSelectionRange(
+      el
+        .value
+        .length,
+      el
+        .value
+        .length,
+    );
   }, []);
 
-  const unchanged = value.trim() === initialValue.trim();
+  const unchanged =
+    value.trim() ===
+    initialValue.trim();
 
   return (
     <div className="flex w-full flex-col gap-2">
       <textarea
-        ref={ref}
-        value={value}
-        rows={2}
-        maxLength={MESSAGE_MAX_LENGTH}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
+        ref={
+          ref
+        }
+        value={
+          value
+        }
+        rows={
+          2
+        }
+        maxLength={
+          MESSAGE_MAX_LENGTH
+        }
+        onChange={(
+          e,
+        ) =>
+          setValue(
+            e
+              .target
+              .value,
+          )
+        }
+        onKeyDown={(
+          e,
+        ) => {
+          if (
+            e.key ===
+            'Escape'
+          ) {
             e.preventDefault();
             onCancel();
             return;
           }
-          if (e.key === 'Enter' && !e.shiftKey) {
+          if (
+            e.key ===
+              'Enter' &&
+            !e.shiftKey
+          ) {
             e.preventDefault();
-            if (!unchanged && !saving) onSave(value);
+            if (
+              !unchanged &&
+              !saving
+            )
+              onSave(
+                value,
+              );
           }
         }}
-        aria-label={t('message-edit-field', { defaultValue: 'Edit message' })}
+        aria-label={t(
+          'message-edit-field',
+          {
+            defaultValue:
+              'Edit message',
+          },
+        )}
         className="surface-field w-full resize-none rounded-site px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus-visible:border-site-accent focus-visible:outline-none"
       />
       <div className="flex items-center justify-end gap-2">
         <span className="mr-auto text-caption text-site-text-muted">
-          {t('message-edit-hint', { defaultValue: 'Enter to save · Esc to cancel' })}
+          {t(
+            'message-edit-hint',
+            {
+              defaultValue:
+                'Enter to save · Esc to cancel',
+            },
+          )}
         </span>
-        {value.length >= MESSAGE_MAX_LENGTH * 0.9 ? (
+        {value.length >=
+        MESSAGE_MAX_LENGTH *
+          0.9 ? (
           <span
             aria-live="polite"
             className={`font-mono text-caption ${value.length >= MESSAGE_MAX_LENGTH ? 'text-site-danger' : 'text-site-text-muted'}`}
           >
-            {t('message-edit-length', { defaultValue: '{{used}}/{{max}}', used: value.length, max: MESSAGE_MAX_LENGTH })}
+            {t(
+              'message-edit-length',
+              {
+                defaultValue:
+                  '{{used}}/{{max}}',
+                used: value.length,
+                max: MESSAGE_MAX_LENGTH,
+              },
+            )}
           </span>
         ) : null}
         <Button
           variant="ghost"
           size="sm"
-          onClick={onCancel}
-          disabled={saving}
-          aria-label={t('message-edit-cancel', { defaultValue: 'Cancel edit' })}
+          onClick={
+            onCancel
+          }
+          disabled={
+            saving
+          }
+          aria-label={t(
+            'message-edit-cancel',
+            {
+              defaultValue:
+                'Cancel edit',
+            },
+          )}
           className="size-11 rounded-site p-0"
         >
           <X className="size-4" />
@@ -87,10 +186,25 @@ export function MessageEditor({
         <Button
           variant="default"
           size="sm"
-          onClick={() => onSave(value)}
-          disabled={saving || unchanged}
-          loading={saving}
-          aria-label={t('message-edit-save', { defaultValue: 'Save edit' })}
+          onClick={() =>
+            onSave(
+              value,
+            )
+          }
+          disabled={
+            saving ||
+            unchanged
+          }
+          loading={
+            saving
+          }
+          aria-label={t(
+            'message-edit-save',
+            {
+              defaultValue:
+                'Save edit',
+            },
+          )}
           className="size-11 rounded-site p-0"
         >
           <Check className="size-4" />

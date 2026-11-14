@@ -74,7 +74,8 @@
  * cache" while signed in; it must report the page was restored, and a `curl -I`
  * on an authenticated document must show this string and no `no-store`.
  */
-const AUTHENTICATED_CACHE_CONTROL = 'private, no-cache, max-age=0, must-revalidate';
+const AUTHENTICATED_CACHE_CONTROL =
+  'private, no-cache, max-age=0, must-revalidate';
 
 // Shared with security-headers.ts: both plugins hook `response`, and both need
 // the headers of the response that is actually being sent.
@@ -133,18 +134,21 @@ import { responseHeaders } from './security-headers';
  * Exported so `lib/__tests__/anon-html-cache.test.ts` can hold every entry to a
  * real, non-redirect route file — the `/blog` trap above, caught automatically.
  */
-export const CACHEABLE_ANON_PATHS = new Set<string>([
-  '/',
-  '/games',
-  '/news',
-  '/library',
-  '/optimization',
-  '/security',
-  '/privacy',
-  '/terms',
-  '/cookies',
-  '/copyright',
-]);
+export const CACHEABLE_ANON_PATHS =
+  new Set<string>(
+    [
+      '/',
+      '/games',
+      '/news',
+      '/library',
+      '/optimization',
+      '/security',
+      '/privacy',
+      '/terms',
+      '/cookies',
+      '/copyright',
+    ],
+  );
 
 /**
  * Prefixes whose CONTENT pages are equally invariant. Kept separate from the
@@ -174,7 +178,11 @@ export const CACHEABLE_ANON_PATHS = new Set<string>([
  * is a session-gated editor sitting inside the same prefix. Cache those only
  * with a deliberate, separately-tuned rule.
  */
-export const CACHEABLE_ANON_PREFIXES: readonly string[] = ['/blog/', '/news/'];
+export const CACHEABLE_ANON_PREFIXES: readonly string[] =
+  [
+    '/blog/',
+    '/news/',
+  ];
 
 /** Shared-cache freshness (s) — matches the anon feed assembly TTL. */
 const S_MAXAGE = 30;
@@ -200,9 +208,24 @@ const ARTICLE_SWR = 86_400;
  * `session_data` substring is a reliable "this request may be authenticated"
  * signal. When in doubt we treat the request as authenticated (never cache).
  */
-function isAuthenticated(cookieHeader: string | null | undefined): boolean {
-  if (!cookieHeader) return false;
-  return cookieHeader.includes('session_token') || cookieHeader.includes('session_data');
+function isAuthenticated(
+  cookieHeader:
+    | string
+    | null
+    | undefined,
+): boolean {
+  if (
+    !cookieHeader
+  )
+    return false;
+  return (
+    cookieHeader.includes(
+      'session_token',
+    ) ||
+    cookieHeader.includes(
+      'session_data',
+    )
+  );
 }
 
 /**
@@ -210,9 +233,19 @@ function isAuthenticated(cookieHeader: string | null | undefined): boolean {
  * These pages SSR in that locale, so a locale-preference request must NOT share
  * the default-locale edge entry.
  */
-function hasLocalePreference(cookieHeader: string | null | undefined): boolean {
-  if (!cookieHeader) return false;
-  return cookieHeader.includes('rmh-lang=');
+function hasLocalePreference(
+  cookieHeader:
+    | string
+    | null
+    | undefined,
+): boolean {
+  if (
+    !cookieHeader
+  )
+    return false;
+  return cookieHeader.includes(
+    'rmh-lang=',
+  );
 }
 
 /**
@@ -220,11 +253,28 @@ function hasLocalePreference(cookieHeader: string | null | undefined): boolean {
  * path is not allowlisted at all. Exact matches win; prefixes are the fallback,
  * so a future exact entry can always override a prefix's TTL.
  */
-export function anonCachePolicy(pathname: string): string | null {
-  if (CACHEABLE_ANON_PATHS.has(pathname)) {
+export function anonCachePolicy(
+  pathname: string,
+):
+  | string
+  | null {
+  if (
+    CACHEABLE_ANON_PATHS.has(
+      pathname,
+    )
+  ) {
     return `public, max-age=0, s-maxage=${S_MAXAGE}, stale-while-revalidate=${SWR}`;
   }
-  if (CACHEABLE_ANON_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  if (
+    CACHEABLE_ANON_PREFIXES.some(
+      (
+        prefix,
+      ) =>
+        pathname.startsWith(
+          prefix,
+        ),
+    )
+  ) {
     return `public, max-age=0, s-maxage=${ARTICLE_S_MAXAGE}, stale-while-revalidate=${ARTICLE_SWR}`;
   }
   return null;
@@ -248,17 +298,43 @@ export interface CacheDecision {
  */
 export function decideCacheControl(
   pathname: string,
-  cookieHeader: string | null | undefined,
+  cookieHeader:
+    | string
+    | null
+    | undefined,
 ): CacheDecision | null {
   // Authenticated → guarantee no shared cache ever stores this personalized
   // HTML. Defense-in-depth beneath the edge rule's cookie bypass. Checked first
   // so no allowlist entry can ever be reached with a session present.
-  if (isAuthenticated(cookieHeader)) return { value: AUTHENTICATED_CACHE_CONTROL, shared: false };
+  if (
+    isAuthenticated(
+      cookieHeader,
+    )
+  )
+    return {
+      value:
+        AUTHENTICATED_CACHE_CONTROL,
+      shared: false,
+    };
   // A locale-preference anon visitor is left origin-rendered so they get their
   // language rather than the default-locale edge entry.
-  if (hasLocalePreference(cookieHeader)) return null;
-  const policy = anonCachePolicy(pathname);
-  return policy ? { value: policy, shared: true } : null;
+  if (
+    hasLocalePreference(
+      cookieHeader,
+    )
+  )
+    return null;
+  const policy =
+    anonCachePolicy(
+      pathname,
+    );
+  return policy
+    ? {
+        value:
+          policy,
+        shared: true,
+      }
+    : null;
 }
 
 /**
@@ -291,87 +367,221 @@ export function decideCacheControl(
  * the edge cache stops, visibly (synthetic-perf and the cache hit rate), until cacheable
  * documents move to a hash-only policy (third-pass audit, RT3).
  */
-export function carriesEnforcedNonce(headers: Pick<Headers, 'get'>): boolean {
-  return /'nonce-/.test(headers.get('Content-Security-Policy') ?? '');
+export function carriesEnforcedNonce(
+  headers: Pick<
+    Headers,
+    'get'
+  >,
+): boolean {
+  return /'nonce-/.test(
+    headers.get(
+      'Content-Security-Policy',
+    ) ??
+      '',
+  );
 }
 
-export function isUncacheableAssetError(pathname: string, status: number | undefined): boolean {
-  return pathname.startsWith('/assets/') && typeof status === 'number' && status >= 400;
+export function isUncacheableAssetError(
+  pathname: string,
+  status:
+    | number
+    | undefined,
+): boolean {
+  return (
+    pathname.startsWith(
+      '/assets/',
+    ) &&
+    typeof status ===
+      'number' &&
+    status >=
+      400
+  );
 }
 
 export default function anonHtmlCachePlugin(nitroApp: {
-  hooks: { hook: (name: string, fn: (res: unknown, event: unknown) => void) => void };
+  hooks: {
+    hook: (
+      name: string,
+      fn: (
+        res: unknown,
+        event: unknown,
+      ) => void,
+    ) => void;
+  };
 }): void {
-  nitroApp.hooks.hook('response', (res: unknown, event: unknown) => {
-    try {
-      const req = (event as { req?: { url?: string; method?: string; headers?: Headers } })?.req;
-      // Must read the headers off `res`, not `event.res` — see the note on
-      // `responseHeaders`. Reading `event.res` inside a `response` hook builds a
-      // brand-new detached response object, so every header set on it was
-      // silently dropped and this plugin never marked anything cacheable.
-      const headers = responseHeaders(res, event);
-      if (
-        !req ||
-        !headers ||
-        typeof headers.set !== 'function' ||
-        typeof headers.get !== 'function'
-      ) {
-        return;
-      }
-
-      // Failed asset lookups first: they are `text/html` 404s, so they would
-      // otherwise fall to the content-type gate below and keep the immutable
-      // header the `/assets/**` route rule gave them.
+  nitroApp.hooks.hook(
+    'response',
+    (
+      res: unknown,
+      event: unknown,
+    ) => {
       try {
-        const assetPath = new URL(req.url ?? '/', 'http://localhost').pathname;
-        if (isUncacheableAssetError(assetPath, (res as { status?: number })?.status)) {
-          headers.set('Cache-Control', 'no-store');
+        const req =
+          (
+            event as {
+              req?: {
+                url?: string;
+                method?: string;
+                headers?: Headers;
+              };
+            }
+          )
+            ?.req;
+        // Must read the headers off `res`, not `event.res` — see the note on
+        // `responseHeaders`. Reading `event.res` inside a `response` hook builds a
+        // brand-new detached response object, so every header set on it was
+        // silently dropped and this plugin never marked anything cacheable.
+        const headers =
+          responseHeaders(
+            res,
+            event,
+          );
+        if (
+          !req ||
+          !headers ||
+          typeof headers.set !==
+            'function' ||
+          typeof headers.get !==
+            'function'
+        ) {
           return;
         }
+
+        // Failed asset lookups first: they are `text/html` 404s, so they would
+        // otherwise fall to the content-type gate below and keep the immutable
+        // header the `/assets/**` route rule gave them.
+        try {
+          const assetPath =
+            new URL(
+              req.url ??
+                '/',
+              'http://localhost',
+            )
+              .pathname;
+          if (
+            isUncacheableAssetError(
+              assetPath,
+              (
+                res as {
+                  status?: number;
+                }
+              )
+                ?.status,
+            )
+          ) {
+            headers.set(
+              'Cache-Control',
+              'no-store',
+            );
+            return;
+          }
+        } catch {
+          /* fall through to the document gate */
+        }
+
+        // Only ever touch document (HTML) responses — never assets/API/JSON. This
+        // is also what keeps the RSS feeds under the `/blog/` and `/news/`
+        // prefixes out of the allowlist.
+        const contentType =
+          headers.get(
+            'content-type',
+          ) ||
+          '';
+        if (
+          !contentType.includes(
+            'text/html',
+          )
+        )
+          return;
+
+        // Document renders are GETs; treat a missing method as GET, never cache
+        // non-GET/HEAD.
+        const method =
+          (
+            req.method ||
+            'GET'
+          ).toUpperCase();
+        if (
+          method !==
+            'GET' &&
+          method !==
+            'HEAD'
+        )
+          return;
+
+        let pathname =
+          '';
+        try {
+          pathname =
+            new URL(
+              req.url ??
+                '/',
+              'http://localhost',
+            )
+              .pathname;
+        } catch {
+          return;
+        }
+
+        const cookie =
+          req.headers?.get?.(
+            'cookie',
+          ) ??
+          null;
+        const decision =
+          decideCacheControl(
+            pathname,
+            cookie,
+          );
+        if (
+          !decision
+        )
+          return;
+
+        if (
+          !decision.shared
+        ) {
+          headers.set(
+            'Cache-Control',
+            decision.value,
+          );
+          return;
+        }
+
+        // Anonymous, default-locale, allowlisted path — and only if the route
+        // didn't already set its own policy, which always wins.
+        // A response whose ENFORCED policy names a nonce is never handed to a shared
+        // cache: see carriesEnforcedNonce.
+        if (
+          carriesEnforcedNonce(
+            headers,
+          )
+        )
+          return;
+        if (
+          !headers.get(
+            'Cache-Control',
+          )
+        ) {
+          headers.set(
+            'Cache-Control',
+            decision.value,
+          );
+          // Backstop for compliant shared caches that key on it; the edge rule's
+          // cookie bypass is the primary language/identity separator.
+          if (
+            !headers.get(
+              'Vary',
+            )
+          )
+            headers.set(
+              'Vary',
+              'Accept-Language',
+            );
+        }
       } catch {
-        /* fall through to the document gate */
+        // Never let cache logic break a response.
       }
-
-      // Only ever touch document (HTML) responses — never assets/API/JSON. This
-      // is also what keeps the RSS feeds under the `/blog/` and `/news/`
-      // prefixes out of the allowlist.
-      const contentType = headers.get('content-type') || '';
-      if (!contentType.includes('text/html')) return;
-
-      // Document renders are GETs; treat a missing method as GET, never cache
-      // non-GET/HEAD.
-      const method = (req.method || 'GET').toUpperCase();
-      if (method !== 'GET' && method !== 'HEAD') return;
-
-      let pathname = '';
-      try {
-        pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
-      } catch {
-        return;
-      }
-
-      const cookie = req.headers?.get?.('cookie') ?? null;
-      const decision = decideCacheControl(pathname, cookie);
-      if (!decision) return;
-
-      if (!decision.shared) {
-        headers.set('Cache-Control', decision.value);
-        return;
-      }
-
-      // Anonymous, default-locale, allowlisted path — and only if the route
-      // didn't already set its own policy, which always wins.
-      // A response whose ENFORCED policy names a nonce is never handed to a shared
-      // cache: see carriesEnforcedNonce.
-      if (carriesEnforcedNonce(headers)) return;
-      if (!headers.get('Cache-Control')) {
-        headers.set('Cache-Control', decision.value);
-        // Backstop for compliant shared caches that key on it; the edge rule's
-        // cookie bypass is the primary language/identity separator.
-        if (!headers.get('Vary')) headers.set('Vary', 'Accept-Language');
-      }
-    } catch {
-      // Never let cache logic break a response.
-    }
-  });
+    },
+  );
 }

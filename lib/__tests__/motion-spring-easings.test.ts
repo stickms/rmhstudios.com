@@ -23,105 +23,427 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { spring, type Spring } from '@/lib/fluid';
-import { APPLE_SPRING, EASE, SMOOTH_EASE_CSS } from '@/lib/app-motion';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
+import {
+  spring,
+  type Spring,
+} from '@/lib/fluid';
+import {
+  APPLE_SPRING,
+  EASE,
+  SMOOTH_EASE_CSS,
+} from '@/lib/app-motion';
 import { readCss } from './css-source';
 
-const ROOT = join(__dirname, '..', '..');
-const GLOBALS = readCss(join(ROOT, 'app', 'globals.css'));
-const DIALOG = readFileSync(join(ROOT, 'components', 'ui', 'dialog.css'), 'utf8');
-const SHEET = readFileSync(join(ROOT, 'components', 'ui', 'sheet.css'), 'utf8');
+const ROOT =
+  join(
+    __dirname,
+    '..',
+    '..',
+  );
+const GLOBALS =
+  readCss(
+    join(
+      ROOT,
+      'app',
+      'globals.css',
+    ),
+  );
+const DIALOG =
+  readFileSync(
+    join(
+      ROOT,
+      'components',
+      'ui',
+      'dialog.css',
+    ),
+    'utf8',
+  );
+const SHEET =
+  readFileSync(
+    join(
+      ROOT,
+      'components',
+      'ui',
+      'sheet.css',
+    ),
+    'utf8',
+  );
 
 /** Closed-form step response from rest, 0 → 1 (same as motion-pop-spring.test). */
-function response(s: Spring, t: number): number {
-  const omega = Math.sqrt(s.stiffness / s.mass);
-  const zeta = s.damping / (2 * Math.sqrt(s.stiffness * s.mass));
-  const x0 = -1;
-  if (zeta < 1) {
-    const wd = omega * Math.sqrt(1 - zeta * zeta);
-    const e = Math.exp(-zeta * omega * t);
-    return 1 + e * (x0 * Math.cos(wd * t) + ((zeta * omega * x0) / wd) * Math.sin(wd * t));
+function response(
+  s: Spring,
+  t: number,
+): number {
+  const omega =
+    Math.sqrt(
+      s.stiffness /
+        s.mass,
+    );
+  const zeta =
+    s.damping /
+    (2 *
+      Math.sqrt(
+        s.stiffness *
+          s.mass,
+      ));
+  const x0 =
+    -1;
+  if (
+    zeta <
+    1
+  ) {
+    const wd =
+      omega *
+      Math.sqrt(
+        1 -
+          zeta *
+            zeta,
+      );
+    const e =
+      Math.exp(
+        -zeta *
+          omega *
+          t,
+      );
+    return (
+      1 +
+      e *
+        (x0 *
+          Math.cos(
+            wd *
+              t,
+          ) +
+          ((zeta *
+            omega *
+            x0) /
+            wd) *
+            Math.sin(
+              wd *
+                t,
+            ))
+    );
   }
-  if (zeta === 1) return 1 + Math.exp(-omega * t) * (x0 + omega * x0 * t);
-  const r = omega * Math.sqrt(zeta * zeta - 1);
-  const r1 = -zeta * omega + r;
-  const r2 = -zeta * omega - r;
-  const c2 = (-r1 * x0) / (r2 - r1);
-  return 1 + (x0 - c2) * Math.exp(r1 * t) + c2 * Math.exp(r2 * t);
+  if (
+    zeta ===
+    1
+  )
+    return (
+      1 +
+      Math.exp(
+        -omega *
+          t,
+      ) *
+        (x0 +
+          omega *
+            x0 *
+            t)
+    );
+  const r =
+    omega *
+    Math.sqrt(
+      zeta *
+        zeta -
+        1,
+    );
+  const r1 =
+    -zeta *
+      omega +
+    r;
+  const r2 =
+    -zeta *
+      omega -
+    r;
+  const c2 =
+    (-r1 *
+      x0) /
+    (r2 -
+      r1);
+  return (
+    1 +
+    (x0 -
+      c2) *
+      Math.exp(
+        r1 *
+          t,
+      ) +
+    c2 *
+      Math.exp(
+        r2 *
+          t,
+      )
+  );
 }
 
-function cssVar(name: string): string {
-  const m = new RegExp(`${name}:\\s*([^;]+);`).exec(GLOBALS);
-  expect(m, `${name} is missing from globals.css`).not.toBeNull();
+function cssVar(
+  name: string,
+): string {
+  const m =
+    new RegExp(
+      `${name}:\\s*([^;]+);`,
+    ).exec(
+      GLOBALS,
+    );
+  expect(
+    m,
+    `${name} is missing from globals.css`,
+  ).not.toBeNull();
   return m![1].trim();
 }
 
-const SPRINGS: Record<'smooth' | 'snappy' | 'sheet', { duration: number; bounce: number }> = {
-  smooth: APPLE_SPRING.smooth,
-  snappy: APPLE_SPRING.snappy,
-  sheet: APPLE_SPRING.sheet,
-};
+const SPRINGS: Record<
+  | 'smooth'
+  | 'snappy'
+  | 'sheet',
+  {
+    duration: number;
+    bounce: number;
+  }
+> =
+  {
+    smooth:
+      APPLE_SPRING.smooth,
+    snappy:
+      APPLE_SPRING.snappy,
+    sheet:
+      APPLE_SPRING.sheet,
+  };
 
 describe('§7.1 — the CSS springs are APPLE_SPRING, sampled', () => {
-  for (const [name, { duration, bounce }] of Object.entries(SPRINGS)) {
+  for (const [
+    name,
+    {
+      duration,
+      bounce,
+    },
+  ] of Object.entries(
+    SPRINGS,
+  )) {
     it(`--spring-${name} is spring(${duration}, ${bounce}) to within 0.05%`, () => {
-      const s = spring(duration, bounce);
+      const s =
+        spring(
+          duration,
+          bounce,
+        );
       let settle = 0;
-      for (let t = 0; t < 3; t += 0.001) if (Math.abs(response(s, t) - 1) >= 0.0005) settle = t;
-      const T = Math.ceil(settle * 100) / 100;
-      expect(cssVar(`--spring-${name}-duration`)).toBe(`${T}s`);
+      for (
+        let t = 0;
+        t <
+        3;
+        t += 0.001
+      )
+        if (
+          Math.abs(
+            response(
+              s,
+              t,
+            ) -
+              1,
+          ) >=
+          0.0005
+        )
+          settle =
+            t;
+      const T =
+        Math.ceil(
+          settle *
+            100,
+        ) /
+        100;
+      expect(
+        cssVar(
+          `--spring-${name}-duration`,
+        ),
+      ).toBe(
+        `${T}s`,
+      );
 
-      const stops = /linear\(([^)]*)\)/
-        .exec(cssVar(`--spring-${name}`))![1]
-        .split(',')
-        .map((v) => Number(v.trim()));
-      expect(stops).toHaveLength(41);
-      expect(stops[0]).toBe(0);
-      expect(stops[40]).toBe(1);
-      for (let i = 1; i < 40; i++) {
-        expect(stops[i], `--spring-${name} stop ${i}`).toBeCloseTo(response(s, (i / 40) * T), 4);
+      const stops =
+        /linear\(([^)]*)\)/
+          .exec(
+            cssVar(
+              `--spring-${name}`,
+            ),
+          )![1]
+          .split(
+            ',',
+          )
+          .map(
+            (
+              v,
+            ) =>
+              Number(
+                v.trim(),
+              ),
+          );
+      expect(
+        stops,
+      ).toHaveLength(
+        41,
+      );
+      expect(
+        stops[0],
+      ).toBe(
+        0,
+      );
+      expect(
+        stops[40],
+      ).toBe(
+        1,
+      );
+      for (
+        let i = 1;
+        i <
+        40;
+        i++
+      ) {
+        expect(
+          stops[
+            i
+          ],
+          `--spring-${name} stop ${i}`,
+        ).toBeCloseTo(
+          response(
+            s,
+            (i /
+              40) *
+              T,
+          ),
+          4,
+        );
       }
       // The final snap to exactly 1 is below a pixel on any full-height sheet.
-      expect(Math.abs(1 - stops[39]) * 1000).toBeLessThan(1);
+      expect(
+        Math.abs(
+          1 -
+            stops[39],
+        ) *
+          1000,
+      ).toBeLessThan(
+        1,
+      );
     });
   }
 });
 
 describe('dialog and sheet: one path both ways, readable on the quick clock', () => {
   it('dialogs fade by opacity alone in both directions, interruptibly (M5: no scale)', () => {
-    expect(DIALOG).toContain('opacity var(--motion-out) ease');
-    expect(DIALOG).toContain('@starting-style');
-    expect(DIALOG.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/scale|transform/);
+    expect(
+      DIALOG,
+    ).toContain(
+      'opacity var(--motion-out) ease',
+    );
+    expect(
+      DIALOG,
+    ).toContain(
+      '@starting-style',
+    );
+    expect(
+      DIALOG.replace(
+        /\/\*[\s\S]*?\*\//g,
+        '',
+      ),
+    ).not.toMatch(
+      /scale|transform/,
+    );
   });
 
   it('sheets are interruptible opacity transitions: the exit ends on the frame the open starts from (M5)', () => {
     // Transitions, not keyframes: a sheet closed mid-fade turns around from the frame it is on. No slide, no scale.
-    expect(SHEET).toContain('@starting-style');
-    expect(SHEET).not.toMatch(/@keyframes ui-sheet-content-(in|out)/);
-    expect(SHEET.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/translate|scale|transform:/);
-    expect(SHEET).toMatch(/\[data-state='closed'\]\s*\{[^}]*opacity: 0/);
-    expect(SHEET).toMatch(/@starting-style\s*\{[^@]*?\[data-state='open'\]\s*\{[^}]*opacity: 0/);
+    expect(
+      SHEET,
+    ).toContain(
+      '@starting-style',
+    );
+    expect(
+      SHEET,
+    ).not.toMatch(
+      /@keyframes ui-sheet-content-(in|out)/,
+    );
+    expect(
+      SHEET.replace(
+        /\/\*[\s\S]*?\*\//g,
+        '',
+      ),
+    ).not.toMatch(
+      /translate|scale|transform:/,
+    );
+    expect(
+      SHEET,
+    ).toMatch(
+      /\[data-state='closed'\]\s*\{[^}]*opacity: 0/,
+    );
+    expect(
+      SHEET,
+    ).toMatch(
+      /@starting-style\s*\{[^@]*?\[data-state='open'\]\s*\{[^}]*opacity: 0/,
+    );
   });
 });
 
 describe('Tailwind transition defaults ride the site curve and clock', () => {
   it('pins the default duration and timing function', () => {
-    expect(cssVar('--default-transition-duration')).toBe(
+    expect(
+      cssVar(
+        '--default-transition-duration',
+      ),
+    ).toBe(
       'calc(var(--site-transition-speed, 200ms) * 0.75)',
     );
     // EASE.smooth in lib/motion.ts: every bare `transition*` utility rides the site curve.
-    expect(cssVar('--default-transition-timing-function')).toBe('var(--ease-smooth)');
+    expect(
+      cssVar(
+        '--default-transition-timing-function',
+      ),
+    ).toBe(
+      'var(--ease-smooth)',
+    );
   });
 
   it('the site curve is smooth at both ends and matches EASE.smooth', () => {
-    expect(cssVar('--ease-smooth')).toBe(SMOOTH_EASE_CSS);
-    expect(SMOOTH_EASE_CSS).toBe(`cubic-bezier(${EASE.smooth.join(', ')})`);
-    const [x1, y1, x2, y2] = EASE.smooth;
+    expect(
+      cssVar(
+        '--ease-smooth',
+      ),
+    ).toBe(
+      SMOOTH_EASE_CSS,
+    );
+    expect(
+      SMOOTH_EASE_CSS,
+    ).toBe(
+      `cubic-bezier(${EASE.smooth.join(', ')})`,
+    );
+    const [
+      x1,
+      y1,
+      x2,
+      y2,
+    ] =
+      EASE.smooth;
     // Leaves at zero speed (P1 on the time axis) and lands at zero speed (P2 at the target).
-    expect(y1).toBe(0);
-    expect(x1).toBeGreaterThan(0);
-    expect(y2).toBe(1);
-    expect(x2).toBeLessThan(1);
+    expect(
+      y1,
+    ).toBe(
+      0,
+    );
+    expect(
+      x1,
+    ).toBeGreaterThan(
+      0,
+    );
+    expect(
+      y2,
+    ).toBe(
+      1,
+    );
+    expect(
+      x2,
+    ).toBeLessThan(
+      1,
+    );
   });
 });

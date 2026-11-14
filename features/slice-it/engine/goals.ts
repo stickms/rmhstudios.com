@@ -21,18 +21,40 @@
  */
 
 import { createSeededRandom } from './chart';
-import type { Modifiers, RunStats, Slice } from './types';
+import type {
+  Modifiers,
+  RunStats,
+  Slice,
+} from './types';
 
 /* ─── The goal vocabulary ────────────────────────────────────────────────── */
 
 export type Goal =
-  | { kind: 'clear' }
-  | { kind: 'accuracy'; min: number }
-  | { kind: 'score'; min: number }
-  | { kind: 'combo'; min: number }
-  | { kind: 'fc'; modifiers?: string[] }
-  | { kind: 'perfect' }
-  | { kind: 'no-hold-drops' };
+  | {
+      kind: 'clear';
+    }
+  | {
+      kind: 'accuracy';
+      min: number;
+    }
+  | {
+      kind: 'score';
+      min: number;
+    }
+  | {
+      kind: 'combo';
+      min: number;
+    }
+  | {
+      kind: 'fc';
+      modifiers?: string[];
+    }
+  | {
+      kind: 'perfect';
+    }
+  | {
+      kind: 'no-hold-drops';
+    };
 
 /**
  * Whether a finished run satisfies a goal.
@@ -41,20 +63,44 @@ export type Goal =
  * run that the gauge killed at 0:20 resolved plenty of notes, and calling that
  * a clear would make the whole campaign trivially completable by dying.
  */
-export function meetsGoal(goal: Goal, stats: RunStats, mods: Modifiers): boolean {
-  switch (goal.kind) {
+export function meetsGoal(
+  goal: Goal,
+  stats: RunStats,
+  mods: Modifiers,
+): boolean {
+  switch (
+    goal.kind
+  ) {
     case 'clear':
-      return stats.notesResolved > 0 && !stats.failed;
+      return (
+        stats.notesResolved >
+          0 &&
+        !stats.failed
+      );
     case 'accuracy':
-      return !stats.failed && stats.accuracy >= goal.min;
+      return (
+        !stats.failed &&
+        stats.accuracy >=
+          goal.min
+      );
     case 'score':
-      return !stats.failed && stats.score >= goal.min;
+      return (
+        !stats.failed &&
+        stats.score >=
+          goal.min
+      );
     case 'combo':
-      return stats.maxCombo >= goal.min;
+      return (
+        stats.maxCombo >=
+        goal.min
+      );
     case 'fc':
       return (
         !stats.failed &&
-        stats.judgements.MISS === 0 &&
+        stats
+          .judgements
+          .MISS ===
+          0 &&
         // Every named modifier must have been ON. `some` would let "FC with
         // bombs" be satisfied by an FC with mirror, which is a different feat.
         //
@@ -62,8 +108,23 @@ export function meetsGoal(goal: Goal, stats: RunStats, mods: Modifiers): boolean
         // `modifiers` are strings from stored campaign data, so an unknown key
         // is a legitimate runtime possibility and reads as `undefined` (falsy),
         // which fails the goal rather than silently satisfying it.
-        (goal.modifiers ?? []).every((key) =>
-          Boolean((mods as unknown as Record<string, unknown>)[key]),
+        (
+          goal.modifiers ??
+          []
+        ).every(
+          (
+            key,
+          ) =>
+            Boolean(
+              (
+                mods as unknown as Record<
+                  string,
+                  unknown
+                >
+              )[
+                key
+              ],
+            ),
         )
       );
     case 'perfect':
@@ -71,19 +132,32 @@ export function meetsGoal(goal: Goal, stats: RunStats, mods: Modifiers): boolean
       // `RunStats.isPerfect` already carries and the H7 badge already shows.
       // Inventing a looser one here would mean a mission and a badge disagreeing
       // about the same run on the same screen.
-      return !stats.failed && stats.isPerfect;
+      return (
+        !stats.failed &&
+        stats.isPerfect
+      );
     case 'no-hold-drops':
       // A dropped hold judges as a MISS on the release (`G5`), so an FC and a
       // clean hold run are the same assertion on the data available. Kept as a
       // distinct goal because it READS differently on a chart full of holds,
       // which is the only place it is offered.
-      return !stats.failed && stats.judgements.MISS === 0;
+      return (
+        !stats.failed &&
+        stats
+          .judgements
+          .MISS ===
+          0
+      );
   }
 }
 
 /** A human description, for the mission list and the campaign map. */
-export function describeGoal(goal: Goal): string {
-  switch (goal.kind) {
+export function describeGoal(
+  goal: Goal,
+): string {
+  switch (
+    goal.kind
+  ) {
     case 'clear':
       return 'Clear it';
     case 'accuracy':
@@ -93,7 +167,11 @@ export function describeGoal(goal: Goal): string {
     case 'combo':
       return `${goal.min} combo`;
     case 'fc':
-      return goal.modifiers?.length ? `Full combo with ${goal.modifiers.join(', ')}` : 'Full combo';
+      return goal
+        .modifiers
+        ?.length
+        ? `Full combo with ${goal.modifiers.join(', ')}`
+        : 'Full combo';
     case 'perfect':
       return 'Perfect — nothing below MARVELOUS';
     case 'no-hold-drops':
@@ -122,43 +200,161 @@ export interface Mission {
  *     survive a page reload. A per-session shuffle would mean two players
  *     comparing missions on the same chart see different lists.
  */
-export function missionsFor(chart: readonly Slice[], chartHash: string): Mission[] {
-  if (chart.length === 0) return [];
+export function missionsFor(
+  chart: readonly Slice[],
+  chartHash: string,
+): Mission[] {
+  if (
+    chart.length ===
+    0
+  )
+    return [];
 
-  const hasHolds = chart.some((note) => note.type === 'LONG');
-  const pool: Mission[] = [
-    { id: 'acc-95', goal: { kind: 'accuracy', min: 0.95 }, reward: 15 },
-    { id: 'acc-98', goal: { kind: 'accuracy', min: 0.98 }, reward: 30 },
-    {
-      id: 'combo-half',
-      goal: { kind: 'combo', min: Math.max(10, Math.floor(chart.length * 0.5)) },
-      reward: 10,
-    },
-    {
-      id: 'combo-most',
-      goal: { kind: 'combo', min: Math.max(20, Math.floor(chart.length * 0.8)) },
-      reward: 20,
-    },
-    { id: 'fc', goal: { kind: 'fc' }, reward: 40 },
-    ...(hasHolds ? [{ id: 'holds', goal: { kind: 'no-hold-drops' } as Goal, reward: 20 }] : []),
-  ];
+  const hasHolds =
+    chart.some(
+      (
+        note,
+      ) =>
+        note.type ===
+        'LONG',
+    );
+  const pool: Mission[] =
+    [
+      {
+        id: 'acc-95',
+        goal: {
+          kind: 'accuracy',
+          min: 0.95,
+        },
+        reward: 15,
+      },
+      {
+        id: 'acc-98',
+        goal: {
+          kind: 'accuracy',
+          min: 0.98,
+        },
+        reward: 30,
+      },
+      {
+        id: 'combo-half',
+        goal: {
+          kind: 'combo',
+          min: Math.max(
+            10,
+            Math.floor(
+              chart.length *
+                0.5,
+            ),
+          ),
+        },
+        reward: 10,
+      },
+      {
+        id: 'combo-most',
+        goal: {
+          kind: 'combo',
+          min: Math.max(
+            20,
+            Math.floor(
+              chart.length *
+                0.8,
+            ),
+          ),
+        },
+        reward: 20,
+      },
+      {
+        id: 'fc',
+        goal: {
+          kind: 'fc',
+        },
+        reward: 40,
+      },
+      ...(hasHolds
+        ? [
+            {
+              id: 'holds',
+              goal: {
+                kind: 'no-hold-drops',
+              } as Goal,
+              reward: 20,
+            },
+          ]
+        : []),
+    ];
 
-  const rng = createSeededRandom(`slice-missions:${chartHash}`);
-  const shuffled = [...pool];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  const rng =
+    createSeededRandom(
+      `slice-missions:${chartHash}`,
+    );
+  const shuffled =
+    [
+      ...pool,
+    ];
+  for (
+    let i =
+      shuffled.length -
+      1;
+    i >
+    0;
+    i--
+  ) {
+    const j =
+      Math.floor(
+        rng() *
+          (i +
+            1),
+      );
+    [
+      shuffled[
+        i
+      ],
+      shuffled[
+        j
+      ],
+    ] =
+      [
+        shuffled[
+          j
+        ],
+        shuffled[
+          i
+        ],
+      ];
   }
   // Sorted by reward so the list reads easy-to-hard, which is not the order the
   // shuffle produced — the shuffle decides WHICH three, not how they are shown.
-  return shuffled.slice(0, 3).sort((a, b) => a.reward - b.reward);
+  return shuffled
+    .slice(
+      0,
+      3,
+    )
+    .sort(
+      (
+        a,
+        b,
+      ) =>
+        a.reward -
+        b.reward,
+    );
 }
 
 /* ─── S10 — score attack tiers ───────────────────────────────────────────── */
 
-export type ScoreTier = 'bronze' | 'silver' | 'gold' | 'platinum';
+export type ScoreTier =
+  | 'bronze'
+  | 'silver'
+  | 'gold'
+  | 'platinum';
 
-export const SCORE_TIERS: readonly ScoreTier[] = ['bronze', 'silver', 'gold', 'platinum'];
+export const SCORE_TIERS: readonly ScoreTier[] =
+  [
+    'bronze',
+    'silver',
+    'gold',
+    'platinum',
+  ];
 
 /**
  * Fractions of a chart's theoretical maximum that earn each tier.
@@ -167,25 +363,63 @@ export const SCORE_TIERS: readonly ScoreTier[] = ['bronze', 'silver', 'gold', 'p
  * is: a target that is trivial on a short chart and impossible on a long one is
  * not a difficulty setting, it is a chart-length setting.
  */
-const TIER_FRACTION: Record<ScoreTier, number> = {
-  bronze: 0.6,
-  silver: 0.78,
-  gold: 0.9,
-  platinum: 0.97,
-};
+const TIER_FRACTION: Record<
+  ScoreTier,
+  number
+> =
+  {
+    bronze: 0.6,
+    silver: 0.78,
+    gold: 0.9,
+    platinum: 0.97,
+  };
 
-export function scoreTargets(maxScore: number): Record<ScoreTier, number> {
+export function scoreTargets(
+  maxScore: number,
+): Record<
+  ScoreTier,
+  number
+> {
   return Object.fromEntries(
-    SCORE_TIERS.map((tier) => [tier, Math.floor(maxScore * TIER_FRACTION[tier])]),
-  ) as Record<ScoreTier, number>;
+    SCORE_TIERS.map(
+      (
+        tier,
+      ) => [
+        tier,
+        Math.floor(
+          maxScore *
+            TIER_FRACTION[
+              tier
+            ],
+        ),
+      ],
+    ),
+  ) as Record<
+    ScoreTier,
+    number
+  >;
 }
 
 /** The highest tier a score reaches, or null below bronze. */
-export function tierFor(score: number, maxScore: number): ScoreTier | null {
-  const targets = scoreTargets(maxScore);
-  let best: ScoreTier | null = null;
+export function tierFor(
+  score: number,
+  maxScore: number,
+): ScoreTier | null {
+  const targets =
+    scoreTargets(
+      maxScore,
+    );
+  let best: ScoreTier | null =
+    null;
   for (const tier of SCORE_TIERS) {
-    if (score >= targets[tier]) best = tier;
+    if (
+      score >=
+      targets[
+        tier
+      ]
+    )
+      best =
+        tier;
   }
   return best;
 }
@@ -204,9 +438,28 @@ export function tierFor(score: number, maxScore: number): ScoreTier | null {
  * second — the same shape `P9`'s ghost uses, which is what lets the boss render
  * through the pace bar that already exists.
  */
-export function bossCurve(perfectCurve: readonly number[], tier: number): number[] {
-  const fraction = [0.72, 0.85, 0.94][tier] ?? 0.94;
-  return perfectCurve.map((value) => Math.floor(value * fraction));
+export function bossCurve(
+  perfectCurve: readonly number[],
+  tier: number,
+): number[] {
+  const fraction =
+    [
+      0.72,
+      0.85,
+      0.94,
+    ][
+      tier
+    ] ??
+    0.94;
+  return perfectCurve.map(
+    (
+      value,
+    ) =>
+      Math.floor(
+        value *
+          fraction,
+      ),
+  );
 }
 
 /**
@@ -222,9 +475,20 @@ export const BOSS_SECTION_PENALTY = 15;
 export function bossVerdict(
   yourScore: number,
   bossScore: number,
-): { ahead: boolean; penalty: number } {
-  const ahead = yourScore >= bossScore;
-  return { ahead, penalty: ahead ? 0 : BOSS_SECTION_PENALTY };
+): {
+  ahead: boolean;
+  penalty: number;
+} {
+  const ahead =
+    yourScore >=
+    bossScore;
+  return {
+    ahead,
+    penalty:
+      ahead
+        ? 0
+        : BOSS_SECTION_PENALTY,
+  };
 }
 
 /* ─── S3 — the certification ladder ──────────────────────────────────────── */
@@ -254,19 +518,46 @@ export interface DanCourse {
  * the library on the day, which is precisely the arbitrariness the fixed list
  * exists to avoid.
  */
-export const DAN_COURSES: DanCourse[] = [];
+export const DAN_COURSES: DanCourse[] =
+  [];
 
 /** Whether a course run passes. Dan is pass/fail on the gauge — no partials. */
-export function passesDan(runs: readonly RunStats[], course: DanCourse): boolean {
-  if (runs.length !== course.charts.length) return false;
-  return runs.every((stats) => !stats.failed);
+export function passesDan(
+  runs: readonly RunStats[],
+  course: DanCourse,
+): boolean {
+  if (
+    runs.length !==
+    course
+      .charts
+      .length
+  )
+    return false;
+  return runs.every(
+    (
+      stats,
+    ) =>
+      !stats.failed,
+  );
 }
 
 /** The highest dan among a set of held ids. */
-export function highestDan(held: readonly string[]): DanCourse | null {
-  let best: DanCourse | null = null;
+export function highestDan(
+  held: readonly string[],
+): DanCourse | null {
+  let best: DanCourse | null =
+    null;
   for (const course of DAN_COURSES) {
-    if (held.includes(course.id) && (!best || course.rank > best.rank)) best = course;
+    if (
+      held.includes(
+        course.id,
+      ) &&
+      (!best ||
+        course.rank >
+          best.rank)
+    )
+      best =
+        course;
   }
   return best;
 }
@@ -299,19 +590,30 @@ export function unlockedStages(
   chapters: readonly CampaignChapter[],
   completed: ReadonlySet<string>,
 ): string[] {
-  const open: string[] = [];
+  const open: string[] =
+    [];
   for (const chapter of chapters) {
     let chapterDone = true;
     for (const stage of chapter.stages) {
-      if (completed.has(stage.id)) continue;
+      if (
+        completed.has(
+          stage.id,
+        )
+      )
+        continue;
       // The first incomplete stage of this chapter is playable; nothing after
       // it is.
-      open.push(stage.id);
+      open.push(
+        stage.id,
+      );
       chapterDone = false;
       break;
     }
     // A chapter with an incomplete stage blocks every later chapter.
-    if (!chapterDone) break;
+    if (
+      !chapterDone
+    )
+      break;
   }
   return open;
 }
@@ -321,11 +623,43 @@ export function campaignProgress(
   chapters: readonly CampaignChapter[],
   completed: ReadonlySet<string>,
 ): number {
-  const total = chapters.reduce((sum, chapter) => sum + chapter.stages.length, 0);
-  if (total === 0) return 0;
-  const done = chapters.reduce(
-    (sum, chapter) => sum + chapter.stages.filter((stage) => completed.has(stage.id)).length,
-    0,
+  const total =
+    chapters.reduce(
+      (
+        sum,
+        chapter,
+      ) =>
+        sum +
+        chapter
+          .stages
+          .length,
+      0,
+    );
+  if (
+    total ===
+    0
+  )
+    return 0;
+  const done =
+    chapters.reduce(
+      (
+        sum,
+        chapter,
+      ) =>
+        sum +
+        chapter.stages.filter(
+          (
+            stage,
+          ) =>
+            completed.has(
+              stage.id,
+            ),
+        )
+          .length,
+      0,
+    );
+  return (
+    done /
+    total
   );
-  return done / total;
 }

@@ -1,21 +1,35 @@
-import { useMemo, useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import {
+  useMemo,
+  useRef,
+} from 'react';
+import {
+  useFrame,
+  useThree,
+} from '@react-three/fiber';
 import { isFrameCapped } from '@/lib/render/frame-cap';
-import { budgetMsFor, DEFAULT_WINDOW, FrametimeMonitor, shouldDownscale, targetFpsForRefresh } from '@/lib/render/governor';
+import {
+  budgetMsFor,
+  DEFAULT_WINDOW,
+  FrametimeMonitor,
+  shouldDownscale,
+  targetFpsForRefresh,
+} from '@/lib/render/governor';
 import { SlowFrameClock } from '@/lib/render/slow-frame-clock';
 import { displayRefreshHz } from '@/lib/render/refresh-rate';
 
 interface Props {
-    /** `downscale` from `useRenderQuality` — called at most once per window. */
-    onDownscale: () => void;
-    /**
-     * Frames below this trigger a step down. Defaults to a share of the
-     * display's measured refresh rate (`targetFpsForRefresh`), so a 144Hz panel
-     * is held to a 144Hz-class budget rather than 60Hz's.
-     */
-    targetFps?: number;
-    /** Optional readout for a settings/debug panel. */
-    onFps?: (fps: number) => void;
+  /** `downscale` from `useRenderQuality` — called at most once per window. */
+  onDownscale: () => void;
+  /**
+   * Frames below this trigger a step down. Defaults to a share of the
+   * display's measured refresh rate (`targetFpsForRefresh`), so a 144Hz panel
+   * is held to a 144Hz-class budget rather than 60Hz's.
+   */
+  targetFps?: number;
+  /** Optional readout for a settings/debug panel. */
+  onFps?: (
+    fps: number,
+  ) => void;
 }
 
 const FPS_PUBLISH_EVERY = 20;
@@ -27,42 +41,113 @@ const FPS_PUBLISH_EVERY = 20;
  * rolling average misses budget, so a weak GPU degrades gracefully instead of
  * grinding. Downscale-only — see `lib/render/governor.ts`.
  */
-export default function AdaptiveQuality({ onDownscale, targetFps, onFps }: Props) {
-    const monitor = useMemo(() => new FrametimeMonitor(DEFAULT_WINDOW), []);
-    const frames = useRef(0);
-    const slow = useMemo(() => new SlowFrameClock(), []);
-    const gl = useThree((s) => s.gl);
+export default function AdaptiveQuality({
+  onDownscale,
+  targetFps,
+  onFps,
+}: Props) {
+  const monitor =
+    useMemo(
+      () =>
+        new FrametimeMonitor(
+          DEFAULT_WINDOW,
+        ),
+      [],
+    );
+  const frames =
+    useRef(
+      0,
+    );
+  const slow =
+    useMemo(
+      () =>
+        new SlowFrameClock(),
+      [],
+    );
+  const gl =
+    useThree(
+      (
+        s,
+      ) =>
+        s.gl,
+    );
 
-    useFrame((_, deltaRaw) => {
-        // A deliberate cap (a menu over the scene, `FrameCap`) is not a slow
-        // GPU. Measuring through it would step quality down every time a menu
-        // opened, so drop the window and re-sample once the cap lifts.
-        if (isFrameCapped(gl)) {
-            monitor.reset();
-            slow.reset();
-            return;
-        }
-        // Clamp tab-stalls and asset-decode hitches so one 3s freeze doesn't
-        // drag the average down and trigger a spurious downscale.
-        monitor.push(Math.min(100, deltaRaw * 1000));
+  useFrame(
+    (
+      _,
+      deltaRaw,
+    ) => {
+      // A deliberate cap (a menu over the scene, `FrameCap`) is not a slow
+      // GPU. Measuring through it would step quality down every time a menu
+      // opened, so drop the window and re-sample once the cap lifts.
+      if (
+        isFrameCapped(
+          gl,
+        )
+      ) {
+        monitor.reset();
+        slow.reset();
+        return;
+      }
+      // Clamp tab-stalls and asset-decode hitches so one 3s freeze doesn't
+      // drag the average down and trigger a spurious downscale.
+      monitor.push(
+        Math.min(
+          100,
+          deltaRaw *
+            1000,
+        ),
+      );
 
-        frames.current++;
-        if (onFps && frames.current % FPS_PUBLISH_EVERY === 0) {
-            const avg = monitor.averageMs();
-            if (avg > 0) onFps(Math.round(1000 / avg));
-        }
+      frames.current++;
+      if (
+        onFps &&
+        frames.current %
+          FPS_PUBLISH_EVERY ===
+          0
+      ) {
+        const avg =
+          monitor.averageMs();
+        if (
+          avg >
+          0
+        )
+          onFps(
+            Math.round(
+              1000 /
+                avg,
+            ),
+          );
+      }
 
-        // Re-read each frame: the refresh estimate lands a few hundred ms after
-        // mount and is a cached number from then on.
-        const budget = budgetMsFor(targetFps ?? targetFpsForRefresh(displayRefreshHz()));
-        // Frame-count window OR wall-clock time over budget, whichever comes
-        // first: at 4 fps a 90-frame window is 22 s of slideshow before it acts.
-        if (shouldDownscale(monitor, budget) || slow.over(deltaRaw * 1000, budget)) {
-            onDownscale();
-            monitor.reset(); // cooldown: re-sample a full window before stepping again
-            slow.reset();
-        }
-    });
+      // Re-read each frame: the refresh estimate lands a few hundred ms after
+      // mount and is a cached number from then on.
+      const budget =
+        budgetMsFor(
+          targetFps ??
+            targetFpsForRefresh(
+              displayRefreshHz(),
+            ),
+        );
+      // Frame-count window OR wall-clock time over budget, whichever comes
+      // first: at 4 fps a 90-frame window is 22 s of slideshow before it acts.
+      if (
+        shouldDownscale(
+          monitor,
+          budget,
+        ) ||
+        slow.over(
+          deltaRaw *
+            1000,
+          budget,
+        )
+      ) {
+        onDownscale();
+        monitor.reset(); // cooldown: re-sample a full window before stepping again
+        slow.reset();
+      }
+    },
+  );
 
-    return null;
+  return null;
 }

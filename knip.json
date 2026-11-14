@@ -28,5 +28,8 @@
     "app/routeTree.gen.ts",
     "lib/i18n/resources.*.ts"
   ],
-  "ignoreWorkspaces": ["cli", "docs/**"]
+  "ignoreWorkspaces": [
+    "cli",
+    "docs/**"
+  ]
 }

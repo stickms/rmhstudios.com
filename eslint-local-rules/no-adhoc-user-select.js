@@ -36,24 +36,67 @@
  */
 
 /** The exported fragments in `lib/user-display.ts` that satisfy this rule. */
-const FRAGMENTS = new Set(['userDisplaySelect', 'userProfileSelect', 'userChipSelect']);
+const FRAGMENTS =
+  new Set(
+    [
+      'userDisplaySelect',
+      'userProfileSelect',
+      'userChipSelect',
+    ],
+  );
 
 /**
  * Property names that hold a `User` relation. `author` is included because it
  * is how the feed, comments and every social surface name the relation, and it
  * is where the cosmetics bug actually shows up.
  */
-const USER_RELATION_KEYS = new Set(['user', 'author', 'owner', 'recipient', 'sender']);
+const USER_RELATION_KEYS =
+  new Set(
+    [
+      'user',
+      'author',
+      'owner',
+      'recipient',
+      'sender',
+    ],
+  );
 
 /** `lib/user-display.ts` declares the fragments, so it necessarily "violates" this. */
-const EXEMPT_FILE = /lib[/\\]user-display\.ts$/;
+const EXEMPT_FILE =
+  /lib[/\\]user-display\.ts$/;
 
 /** The static name of a property key, or null for a computed one. */
-function keyName(property) {
-  if (property.type !== 'Property' || property.computed) return null;
-  if (property.key.type === 'Identifier') return property.key.name;
-  if (property.key.type === 'Literal' && typeof property.key.value === 'string') {
-    return property.key.value;
+function keyName(
+  property,
+) {
+  if (
+    property.type !==
+      'Property' ||
+    property.computed
+  )
+    return null;
+  if (
+    property
+      .key
+      .type ===
+    'Identifier'
+  )
+    return property
+      .key
+      .name;
+  if (
+    property
+      .key
+      .type ===
+      'Literal' &&
+    typeof property
+      .key
+      .value ===
+      'string'
+  ) {
+    return property
+      .key
+      .value;
   }
   return null;
 }
@@ -69,96 +112,245 @@ function keyName(property) {
  * and cannot exhibit the bug — flagging those trains people to add
  * `eslint-disable` above correct code, which is how a good rule dies.
  */
-const DISPLAY_FIELDS = new Set(['name', 'image']);
+const DISPLAY_FIELDS =
+  new Set(
+    [
+      'name',
+      'image',
+    ],
+  );
 
 /** True when this select could render a user, and so must use a fragment. */
-function selectsDisplayFields(objectExpression) {
-  return objectExpression.properties.some((p) => {
-    // A spread of something that is NOT a known fragment could contain anything,
-    // including `name`/`image`. The rule can only see syntax, so it stays
-    // conservative: unprovable means flagged.
-    if (p.type === 'SpreadElement') {
-      return !(p.argument.type === 'Identifier' && FRAGMENTS.has(p.argument.name));
-    }
-    return DISPLAY_FIELDS.has(keyName(p) ?? '');
-  });
+function selectsDisplayFields(
+  objectExpression,
+) {
+  return objectExpression.properties.some(
+    (
+      p,
+    ) => {
+      // A spread of something that is NOT a known fragment could contain anything,
+      // including `name`/`image`. The rule can only see syntax, so it stays
+      // conservative: unprovable means flagged.
+      if (
+        p.type ===
+        'SpreadElement'
+      ) {
+        return !(
+          p
+            .argument
+            .type ===
+            'Identifier' &&
+          FRAGMENTS.has(
+            p
+              .argument
+              .name,
+          )
+        );
+      }
+      return DISPLAY_FIELDS.has(
+        keyName(
+          p,
+        ) ??
+          '',
+      );
+    },
+  );
 }
 
 /** True when the object literal composes on top of one of the fragments. */
-function spreadsAFragment(objectExpression) {
+function spreadsAFragment(
+  objectExpression,
+) {
   return objectExpression.properties.some(
-    (p) =>
-      p.type === 'SpreadElement' &&
-      p.argument.type === 'Identifier' &&
-      FRAGMENTS.has(p.argument.name),
+    (
+      p,
+    ) =>
+      p.type ===
+        'SpreadElement' &&
+      p
+        .argument
+        .type ===
+        'Identifier' &&
+      FRAGMENTS.has(
+        p
+          .argument
+          .name,
+      ),
   );
 }
 
 /** The `select:` property of an object literal, if its value is also a literal. */
-function inlineSelectOf(objectExpression) {
+function inlineSelectOf(
+  objectExpression,
+) {
   for (const property of objectExpression.properties) {
-    if (keyName(property) !== 'select') continue;
-    if (property.value.type !== 'ObjectExpression') return null;
+    if (
+      keyName(
+        property,
+      ) !==
+      'select'
+    )
+      continue;
+    if (
+      property
+        .value
+        .type !==
+      'ObjectExpression'
+    )
+      return null;
     return property.value;
   }
   return null;
 }
 
 /** True for `prisma.user.<anything>` / `tx.user.<anything>` member calls. */
-function isUserModelCall(node) {
-  const callee = node.callee;
-  if (callee.type !== 'MemberExpression') return false;
-  const model = callee.object;
-  if (model.type !== 'MemberExpression' || model.computed) return false;
-  return model.property.type === 'Identifier' && model.property.name === 'user';
+function isUserModelCall(
+  node,
+) {
+  const callee =
+    node.callee;
+  if (
+    callee.type !==
+    'MemberExpression'
+  )
+    return false;
+  const model =
+    callee.object;
+  if (
+    model.type !==
+      'MemberExpression' ||
+    model.computed
+  )
+    return false;
+  return (
+    model
+      .property
+      .type ===
+      'Identifier' &&
+    model
+      .property
+      .name ===
+      'user'
+  );
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
-const rule = {
-  meta: {
-    type: 'suggestion',
-    docs: {
-      description:
-        'Require the shared user-display fragments instead of an ad-hoc Prisma select on User.',
-    },
-    schema: [],
-    messages: {
-      adhoc:
-        'Ad-hoc Prisma select on User. Use userDisplaySelect / userProfileSelect / userChipSelect ' +
-        'from @/lib/user-display (or spread one) — a hand-written select drops the profile and ' +
-        'cosmetics joins, so this surface renders a different user than the rest of the site.',
-    },
-  },
-
-  create(context) {
-    if (EXEMPT_FILE.test(context.filename)) return {};
-
-    /** @param {import('estree').ObjectExpression | null} select */
-    const report = (select) => {
-      if (!select || spreadsAFragment(select)) return;
-      // Only a select that could render a user can exhibit the bug.
-      if (!selectsDisplayFields(select)) return;
-      context.report({ node: select, messageId: 'adhoc' });
-    };
-
-    return {
-      // 1. prisma.user.findMany({ select: { … } })
-      CallExpression(node) {
-        if (!isUserModelCall(node)) return;
-        const [arg] = node.arguments;
-        if (!arg || arg.type !== 'ObjectExpression') return;
-        report(inlineSelectOf(arg));
+const rule =
+  {
+    meta: {
+      type: 'suggestion',
+      docs: {
+        description:
+          'Require the shared user-display fragments instead of an ad-hoc Prisma select on User.',
       },
+      schema:
+        [],
+      messages:
+        {
+          adhoc:
+            'Ad-hoc Prisma select on User. Use userDisplaySelect / userProfileSelect / userChipSelect ' +
+            'from @/lib/user-display (or spread one) — a hand-written select drops the profile and ' +
+            'cosmetics joins, so this surface renders a different user than the rest of the site.',
+        },
+    },
 
-      // 2. { user: { select: { … } } } — a nested relation select.
-      Property(node) {
-        const name = keyName(node);
-        if (name === null || !USER_RELATION_KEYS.has(name)) return;
-        if (node.value.type !== 'ObjectExpression') return;
-        report(inlineSelectOf(node.value));
-      },
-    };
-  },
-};
+    create(
+      context,
+    ) {
+      if (
+        EXEMPT_FILE.test(
+          context.filename,
+        )
+      )
+        return {};
+
+      /** @param {import('estree').ObjectExpression | null} select */
+      const report =
+        (
+          select,
+        ) => {
+          if (
+            !select ||
+            spreadsAFragment(
+              select,
+            )
+          )
+            return;
+          // Only a select that could render a user can exhibit the bug.
+          if (
+            !selectsDisplayFields(
+              select,
+            )
+          )
+            return;
+          context.report(
+            {
+              node: select,
+              messageId:
+                'adhoc',
+            },
+          );
+        };
+
+      return {
+        // 1. prisma.user.findMany({ select: { … } })
+        CallExpression(
+          node,
+        ) {
+          if (
+            !isUserModelCall(
+              node,
+            )
+          )
+            return;
+          const [
+            arg,
+          ] =
+            node.arguments;
+          if (
+            !arg ||
+            arg.type !==
+              'ObjectExpression'
+          )
+            return;
+          report(
+            inlineSelectOf(
+              arg,
+            ),
+          );
+        },
+
+        // 2. { user: { select: { … } } } — a nested relation select.
+        Property(
+          node,
+        ) {
+          const name =
+            keyName(
+              node,
+            );
+          if (
+            name ===
+              null ||
+            !USER_RELATION_KEYS.has(
+              name,
+            )
+          )
+            return;
+          if (
+            node
+              .value
+              .type !==
+            'ObjectExpression'
+          )
+            return;
+          report(
+            inlineSelectOf(
+              node.value,
+            ),
+          );
+        },
+      };
+    },
+  };
 
 export default rule;

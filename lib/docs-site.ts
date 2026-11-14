@@ -18,13 +18,30 @@
  * project is multi-version, and a custom domain preserves that path structure.
  */
 
-export const DOCS_SITE_URL = 'https://docs.rmhstudios.com/en/latest';
+export const DOCS_SITE_URL =
+  'https://docs.rmhstudios.com/en/latest';
 
 /** Absolute URL for a page in the docs site. `path` is extensionless. */
-export function docsUrl(path = ''): string {
-  const clean = path.replace(/^\/+/, '').replace(/\.md$/, '');
-  return clean ? `${DOCS_SITE_URL}/${clean}.html` : `${DOCS_SITE_URL}/`;
+export function docsUrl(
+  path = '',
+): string {
+  const clean =
+    path
+      .replace(
+        /^\/+/,
+        '',
+      )
+      .replace(
+        /\.md$/,
+        '',
+      );
+  return clean
+    ? `${DOCS_SITE_URL}/${clean}.html`
+    : `${DOCS_SITE_URL}/`;
 }
 
 /** The developer API documentation landing page. */
-export const DEVELOPER_DOCS_URL = docsUrl('developer-api/index');
+export const DEVELOPER_DOCS_URL =
+  docsUrl(
+    'developer-api/index',
+  );

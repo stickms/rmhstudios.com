@@ -1,38 +1,108 @@
-import { lazy, useState } from 'react';
+import {
+  lazy,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // Discussion and the devil's-advocate button load only when a card is opened.
-const MarketPanel = lazy(() => import('./MarketPanel').then((m) => ({ default: m.MarketPanel })));
+const MarketPanel =
+  lazy(
+    () =>
+      import('./MarketPanel').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.MarketPanel,
+        }),
+      ),
+  );
 
 interface Props {
   marketId: string;
   signedIn: boolean;
   /** The side the viewer holds, if any. */
-  held: 'YES' | 'NO' | null;
+  held:
+    | 'YES'
+    | 'NO'
+    | null;
 }
 
-export function MarketExtras({ marketId, signedIn, held }: Props) {
-  const { t } = useTranslation('f-forecasting');
-  const [open, setOpen] = useState(false);
+export function MarketExtras({
+  marketId,
+  signedIn,
+  held,
+}: Props) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-forecasting',
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
   return (
     <div className="flex flex-col gap-2">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
+        onClick={() =>
+          setOpen(
+            (
+              o,
+            ) =>
+              !o,
+          )
+        }
+        aria-expanded={
+          open
+        }
         className="inline-flex items-center gap-2 self-start text-xs text-site-text-muted hover:text-site-text transition-colors"
       >
-        <MessageSquare className="size-3.5" aria-hidden />
+        <MessageSquare
+          className="size-3.5"
+          aria-hidden
+        />
         {open
-          ? t('hide', { defaultValue: 'Hide discussion' })
-          : t('discuss', { defaultValue: 'Discuss' })}
+          ? t(
+              'hide',
+              {
+                defaultValue:
+                  'Hide discussion',
+              },
+            )
+          : t(
+              'discuss',
+              {
+                defaultValue:
+                  'Discuss',
+              },
+            )}
       </button>
       {open && (
-        <ArrivalSuspense fallback={<Spinner />}>
-          <MarketPanel marketId={marketId} signedIn={signedIn} held={held} />
+        <ArrivalSuspense
+          fallback={
+            <Spinner />
+          }
+        >
+          <MarketPanel
+            marketId={
+              marketId
+            }
+            signedIn={
+              signedIn
+            }
+            held={
+              held
+            }
+          />
         </ArrivalSuspense>
       )}
     </div>

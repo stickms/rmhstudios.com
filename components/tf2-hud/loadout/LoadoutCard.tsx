@@ -4,7 +4,10 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { GitFork, Heart } from 'lucide-react';
+import {
+  GitFork,
+  Heart,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Pill } from '@/components/tf2-hud/ui';
 import type { LoadoutSummary } from '@/lib/tf2-loadout/api-types';
@@ -26,16 +29,43 @@ export default function LoadoutCard({
   actions?: React.ReactNode;
   className?: string;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
-  const entries = Object.values(loadout.slots);
-  const shown = idx
-    ? entries.flatMap((e) => {
-        const item = idx.item(e.item);
-        return item
-          ? [{ item, paint: e.paint !== undefined ? idx.paint(e.paint) : undefined }]
-          : [];
-      })
-    : [];
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
+  const entries =
+    Object.values(
+      loadout.slots,
+    );
+  const shown =
+    idx
+      ? entries.flatMap(
+          (
+            e,
+          ) => {
+            const item =
+              idx.item(
+                e.item,
+              );
+            return item
+              ? [
+                  {
+                    item,
+                    paint:
+                      e.paint !==
+                      undefined
+                        ? idx.paint(
+                            e.paint,
+                          )
+                        : undefined,
+                  },
+                ]
+              : [];
+          },
+        )
+      : [];
   return (
     <article
       className={cn(
@@ -47,63 +77,167 @@ export default function LoadoutCard({
         <h2 className="tf2hud-title min-w-0 truncate text-xl">
           <Link
             to="/tf2/loadout/l/$slug"
-            params={{ slug: loadout.slug }}
+            params={{
+              slug: loadout.slug,
+            }}
             className="block truncate hover:underline after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-app"
           >
-            {loadout.title}
+            {
+              loadout.title
+            }
           </Link>
         </h2>
         <div className="flex shrink-0 items-center gap-1">
           <Pill tone="accent">
-            {t(`class-${loadout.tfClass}`, { defaultValue: CLASS_DEFAULT[loadout.tfClass] })}
+            {t(
+              `class-${loadout.tfClass}`,
+              {
+                defaultValue:
+                  CLASS_DEFAULT[
+                    loadout
+                      .tfClass
+                  ],
+              },
+            )}
           </Pill>
-          {loadout.visibility !== 'PUBLIC' ? (
-            <Pill tone={loadout.visibility === 'PRIVATE' ? 'warning' : 'info'}>
-              {loadout.visibility === 'PRIVATE'
-                ? t('private', { defaultValue: 'Private' })
-                : t('unlisted', { defaultValue: 'Unlisted' })}
+          {loadout.visibility !==
+          'PUBLIC' ? (
+            <Pill
+              tone={
+                loadout.visibility ===
+                'PRIVATE'
+                  ? 'warning'
+                  : 'info'
+              }
+            >
+              {loadout.visibility ===
+              'PRIVATE'
+                ? t(
+                    'private',
+                    {
+                      defaultValue:
+                        'Private',
+                    },
+                  )
+                : t(
+                    'unlisted',
+                    {
+                      defaultValue:
+                        'Unlisted',
+                    },
+                  )}
             </Pill>
           ) : null}
         </div>
       </div>
       <p className="text-xs text-app-text-dim">
         {loadout.author
-          ? t('by', { defaultValue: 'by {{name}}', name: loadout.author.name })
+          ? t(
+              'by',
+              {
+                defaultValue:
+                  'by {{name}}',
+                name: loadout
+                  .author
+                  .name,
+              },
+            )
           : null}
         {loadout.forkOf
           ? ` · ${t('fork-of', { defaultValue: 'fork of {{title}}', title: loadout.forkOf.title })}`
           : null}
       </p>
       {shown.length ? (
-        <ul className="grid grid-cols-4 gap-1.5" aria-label={t('items', { defaultValue: 'Items' })}>
-          {shown.slice(0, PREVIEW).map(({ item, paint }, i) => (
-            <li key={`${item.id}-${i}`}>
-              <ItemTile item={item} paint={paint} />
-            </li>
-          ))}
+        <ul
+          className="grid grid-cols-4 gap-1.5"
+          aria-label={t(
+            'items',
+            {
+              defaultValue:
+                'Items',
+            },
+          )}
+        >
+          {shown
+            .slice(
+              0,
+              PREVIEW,
+            )
+            .map(
+              (
+                {
+                  item,
+                  paint,
+                },
+                i,
+              ) => (
+                <li
+                  key={`${item.id}-${i}`}
+                >
+                  <ItemTile
+                    item={
+                      item
+                    }
+                    paint={
+                      paint
+                    }
+                  />
+                </li>
+              ),
+            )}
         </ul>
       ) : null}
       {loadout.description ? (
-        <p className="line-clamp-2 text-sm text-app-text-muted">{loadout.description}</p>
+        <p className="line-clamp-2 text-sm text-app-text-muted">
+          {
+            loadout.description
+          }
+        </p>
       ) : null}
       <div className="mt-auto flex items-center justify-between gap-2 pt-1">
         <span className="flex items-center gap-3 text-xs text-app-text-muted">
           <span
             className="inline-flex items-center gap-1"
-            title={t('likes', { defaultValue: 'Likes' })}
+            title={t(
+              'likes',
+              {
+                defaultValue:
+                  'Likes',
+              },
+            )}
           >
-            <Heart className="size-3.5" aria-hidden />
-            {loadout.likeCount}
+            <Heart
+              className="size-3.5"
+              aria-hidden
+            />
+            {
+              loadout.likeCount
+            }
           </span>
           <span
             className="inline-flex items-center gap-1"
-            title={t('forks', { defaultValue: 'Forks' })}
+            title={t(
+              'forks',
+              {
+                defaultValue:
+                  'Forks',
+              },
+            )}
           >
-            <GitFork className="size-3.5" aria-hidden />
-            {loadout.forkCount}
+            <GitFork
+              className="size-3.5"
+              aria-hidden
+            />
+            {
+              loadout.forkCount
+            }
           </span>
         </span>
-        <div className="relative z-10 flex items-center gap-1">{actions}</div>
+        <div className="relative z-10 flex items-center gap-1">
+          {
+            actions
+          }
+        </div>
       </div>
     </article>
   );
