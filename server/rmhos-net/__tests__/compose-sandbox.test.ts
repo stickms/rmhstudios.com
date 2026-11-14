@@ -77,6 +77,11 @@ const BLOCKED_V4 =
     '0.0.0.0/8',
     '224.0.0.0/4',
     '240.0.0.0/4',
+    '192.0.0.0/24',
+    '192.0.2.0/24',
+    '198.18.0.0/15',
+    '198.51.100.0/24',
+    '203.0.113.0/24',
   ];
 
 function envKeys(
@@ -201,6 +206,52 @@ describe('rmhos-net compose service', () => {
     expect(
       hub.privileged,
     ).toBeUndefined();
+  });
+
+  it('pins its resource limits and never restarts on its own', () => {
+    expect(
+      hub.user,
+    ).toBe(
+      '65534:65534',
+    );
+    expect(
+      hub.pids_limit,
+    ).toBe(
+      256,
+    );
+    expect(
+      hub.mem_limit,
+    ).toBe(
+      '256m',
+    );
+    expect(
+      hub.cpus,
+    ).toBe(
+      0.5,
+    );
+    expect(
+      hub.tmpfs,
+    ).toEqual(
+      [
+        '/tmp',
+      ],
+    );
+    // After a reboot the hub must not return before the firewall is re-proven.
+    expect(
+      hub.restart,
+    ).toBe(
+      'no',
+    );
+  });
+
+  it('sits behind the rmhos-net profile so the fleet up never starts it or creates its network', () => {
+    expect(
+      hub.profiles,
+    ).toEqual(
+      [
+        'rmhos-net',
+      ],
+    );
   });
 
   it('gets no env file and no site secrets', () => {

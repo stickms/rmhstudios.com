@@ -20,9 +20,11 @@
 # Idempotent: each of our chains is declared inside one iptables-restore
 # transaction (which empties and refills it atomically, so there is no window
 # with an empty chain), and each jump is inserted only if it is absent. Safe to
-# run on every deploy. Must run as root (re-executes itself through `sudo -n`).
+# run on every boot or by hand. Must run as root (re-executes itself through `sudo -n`).
 # Exits non-zero, loudly, if any part could not be installed or verified;
-# deploy.sh treats that as a failed deploy rather than start the hub unfirewalled.
+# The deploy never runs it (the webhook is sandboxed and cannot sudo): the root unit
+# deploy/systemd/rmhos-net-firewall.service does, and deploy.sh only probes the result
+# (probe-firewall.sh) before starting the hub.
 #
 # Keep SUBNET equal to the `rmhos-egress` network in docker-compose.yml
 # (server/rmhos-net/__tests__/compose-sandbox.test.ts holds them together).
@@ -42,6 +44,11 @@ V4_BLOCKED=(
   0.0.0.0/8
   224.0.0.0/4
   240.0.0.0/4
+  192.0.0.0/24
+  192.0.2.0/24
+  198.18.0.0/15
+  198.51.100.0/24
+  203.0.113.0/24
 )
 V6_BLOCKED=(
   fc00::/7
@@ -64,8 +71,11 @@ apply() {
   local tool=$1 subnet=$2
   shift 2
   command -v "$tool" >/dev/null 2>&1 || die "$tool not found"
+  # Docker keeps a DOCKER-USER chain that already exists, so this also works when it runs
+  # at boot before the daemon (rmhos-net-firewall.service is ordered Before=docker.service).
   "$tool" -w -n -L DOCKER-USER >/dev/null 2>&1 \
-    || die "$tool chain DOCKER-USER does not exist (is the Docker daemon running?)"
+    || "$tool" -w -N DOCKER-USER \
+    || die "$tool: could not create the DOCKER-USER chain"
 
   {
     echo '*filter'

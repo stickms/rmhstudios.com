@@ -1223,16 +1223,7 @@ retire_supervisor() {
         return 1
     fi
 }
-# The rmhOS relay hub (rmhos-net) dials the internet for strangers, so it must never start before
-# its network is walled off: the script installs the DOCKER-USER/INPUT drops for the pinned
-# `rmhos-egress` subnet (idempotent, verifies its own result, needs root or `sudo -n`). If it
-# cannot, the deploy fails here, before `up` can start the hub unfirewalled.
 step_start "Starting containers (all services except web)..."
-if ! bash "$REPO_DIR/deploy/rmhos-net/egress-firewall.sh"; then
-    log "ERROR: could not apply the rmhos-net egress firewall; refusing to start the relay hub unfirewalled."
-    update_deploy_status fail "rmhos-net egress firewall could not be applied"
-    exit 1
-fi
 if ! retire_supervisor; then
     log "ERROR: could not remove the old supervisor container; starting jobs now would run two Discord bots."
     update_deploy_status fail "old supervisor container could not be removed"
@@ -1305,13 +1296,8 @@ run_health_checks() {
     check_http "$PORT_RMHBOX"  & local p_rmhbox=$!
     check_http "$PORT_RMHTUBE" & local p_rmhtube=$!
     check_http "$PORT_STATUS"  & local p_status=$!
-    # The relay hub exits without its ticket secret by design, so it is only gated on once one is set.
-    local rmhos_net_job=""
-    if grep -Eq '^RMHOS_NET_TICKET_SECRET=.+' "$ENV_FILE" 2>/dev/null; then
-        check_http "$PORT_RMHOS_NET" & rmhos_net_job="rmhos-net:$!"
-    fi
     wf=$(mktemp); check_workers "${1:-${WORKER_SETTLE_SECONDS:-30}}" > "$wf" & local p_workers=$!
-    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status" ${rmhos_net_job:+"$rmhos_net_job"}; do
+    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status"; do
         wait "${job#*:}" || failed="$failed ${job%%:*}"
     done
     wait "$p_workers" || failed="$failed $(cat "$wf")"
@@ -1508,6 +1494,38 @@ if [ "$ENVIRONMENT" = "production" ]; then
         step_done
     } 2>/dev/null || log "WARNING: the wiki step failed; the site deploy is unaffected."
 fi
+
+# ── rmhOS relay hub ──────────────────────────────────────────────────────────
+# The hub dials the internet for strangers, so it only starts once its egress firewall is PROVEN
+# (deploy/rmhos-net/probe-firewall.sh: a throwaway container on its network must time out
+# connecting to the host). The firewall itself is a root systemd unit this sandboxed deploy cannot
+# install (deploy/systemd/rmhos-net-firewall.service). The service sits behind a compose profile,
+# so the fleet `up` above never starts it. Nothing here needs privilege, and nothing here can fail
+# the site deploy: an unproven firewall, a missing secret or a failed start leaves the hub stopped.
+rmhos_net_stop() { dc --profile rmhos-net stop rmhos-net >/dev/null 2>&1 || true; }
+{
+    if ! grep -Eq '^RMHOS_NET_TICKET_SECRET=.+' "$ENV_FILE" 2>/dev/null; then
+        log "rmhOS relay hub: RMHOS_NET_TICKET_SECRET is not set; the hub is not started."
+        rmhos_net_stop
+    elif DOCKER_BIN="$DOCKER_BIN" PROJECT_NAME="$PROJECT_NAME" ENV_FILE="$ENV_FILE" \
+            bash "$REPO_DIR/deploy/rmhos-net/probe-firewall.sh"; then
+        if dc --profile rmhos-net up -d --no-build rmhos-net >/dev/null 2>&1 && check_http "$PORT_RMHOS_NET"; then
+            log "rmhOS relay hub is up (loopback port ${PORT_RMHOS_NET}), egress firewall proven."
+        else
+            log "WARNING: the rmhOS relay hub did not start healthy; stopping it. The site deploy is unaffected."
+            rmhos_net_stop
+        fi
+    else
+        rmhos_net_stop
+        log "  ┌── rmhOS network relay NOT started: egress firewall not proven ───────"
+        log "  │ The hub reaches the internet for strangers and must not run without its"
+        log "  │ iptables drops. This deploy cannot install them (no root). Once, as root:"
+        log "  │   sudo cp deploy/systemd/rmhos-net-firewall.service /etc/systemd/system/"
+        log "  │   sudo systemctl daemon-reload && sudo systemctl enable --now rmhos-net-firewall.service"
+        log "  │ (fix ExecStart's repo path first). The next deploy starts the hub. The site is unaffected."
+        log "  └───────────────────────────────────────────────────────────────────────"
+    fi
+} || log "WARNING: the rmhOS relay hub step failed; the site deploy is unaffected."
 
 # ── Step 6: Prune stale images ───────────────────────────────────────────────
 log "Pruning dangling images..."

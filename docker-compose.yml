@@ -417,9 +417,15 @@ services:
   # range (RFC1918, loopback, link-local, CGNAT) before this service starts.
   # server/rmhos-net/__tests__/compose-sandbox.test.ts pins all of this.
   rmhos-net:
+    # Behind a profile so the fleet `up` never starts it and never creates its network (a
+    # subnet clash can then only fail the hub's own start). deploy.sh starts it with
+    # `--profile rmhos-net` once deploy/rmhos-net/probe-firewall.sh proves the egress firewall.
+    profiles: ['rmhos-net']
     image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app:latest
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-rmhos-net
-    restart: unless-stopped
+    # Never auto-restart: after a reboot or daemon restart the hub must not come back before
+    # the firewall is re-proven. The next deploy starts it again.
+    restart: 'no'
     init: true
     user: '65534:65534'
     read_only: true
