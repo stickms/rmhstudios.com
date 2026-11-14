@@ -1,0 +1,5 @@
+Theme="rmhOS/default.theme"
+TaskBarShowClock=1
+TaskBarShowWindowListApps=1
+ShowProgramsMenu=1
+FocusMode=1

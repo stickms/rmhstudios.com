@@ -1,0 +1,4 @@
+#!/bin/sh
+# Guest-initiated shutdown: tell the host the machine is going away.
+printf 'RMHOS POWEROFF\n' > /dev/ttyS1 2>/dev/null
+exit 0

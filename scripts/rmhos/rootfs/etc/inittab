@@ -1,0 +1,7 @@
+# rmhOS: no login gettys. The desktop owns tty1 (started by rmhos-agent).
+::sysinit:/sbin/openrc sysinit
+::sysinit:/sbin/openrc boot
+::wait:/sbin/openrc default
+
+::ctrlaltdel:/sbin/reboot
+::shutdown:/sbin/openrc shutdown

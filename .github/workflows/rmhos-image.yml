@@ -1,0 +1,126 @@
+# Builds the rmhOS image (kernel, root filesystem, BIOS files) from pinned
+# upstream sources, proves it boots, and publishes it to R2 under
+# rmhos/<version>/ (immutable, content-addressed by the manifest version).
+#
+# Manual only: the image changes when scripts/rmhos/versions.env, kernel.config,
+# the patches or the rootfs overlay change. After a run, paste the printed
+# manifest into features/rmhos/image-manifest.ts.
+#
+# Needs the same repository secrets as the other R2 jobs: S3_ENDPOINT,
+# S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET (S3_REGION optional).
+name: rmhos-image
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description:
+          Upload
+          the
+          image
+          to
+          R2
+          after
+          it
+          passes
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rmhos-image
+  cancel-in-progress: false
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      S3_ENDPOINT:
+        ${{
+        secrets.S3_ENDPOINT
+        }}
+      S3_ACCESS_KEY_ID:
+        ${{
+        secrets.S3_ACCESS_KEY_ID
+        }}
+      S3_SECRET_ACCESS_KEY:
+        ${{
+        secrets.S3_SECRET_ACCESS_KEY
+        }}
+      S3_BUCKET:
+        ${{
+        secrets.S3_BUCKET
+        }}
+      S3_REGION:
+        ${{
+        secrets.S3_REGION
+        }}
+      S3_FORCE_PATH_STYLE: 'false' # R2 uses virtual-hosted-style addressing (see .env.example)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-deps
+
+      - name:
+          Build
+          the
+          image
+        run:
+          pnpm
+          rmhos:image
+
+      - name:
+          Boot
+          it
+          headless
+          (smoke)
+        run:
+          pnpm
+          rmhos:smoke
+
+      # Task 6's snapshot of the booted machine; skipped until that script exists.
+      - name:
+          Snapshot
+          the
+          booted
+          machine
+        if:
+          hashFiles('scripts/rmhos/snapshot.mjs')
+          !=
+          ''
+        run:
+          pnpm
+          rmhos:snapshot
+
+      - name:
+          Size
+          budgets
+        run:
+          |
+          set -euo pipefail
+          dir=public/rmhos-dev
+          kernel=$(stat -c %s "$dir/bzImage")
+          rootfs=$(stat -c %s "$dir/rootfs.ext4")
+          echo "bzImage    $kernel bytes (budget 12 MiB)"
+          echo "rootfs.ext4 $rootfs bytes (budget 400 MiB)"
+          [ "$kernel" -le $((12 * 1024 * 1024)) ]
+          [ "$rootfs" -le $((400 * 1024 * 1024)) ]
+
+      - name:
+          Publish
+          to
+          R2
+        if: inputs.publish
+        run:
+          |
+          for v in S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET; do
+            [ -n "${!v}" ] || { echo "::error::missing repository secret $v"; exit 1; }
+          done
+          node scripts/rmhos/publish-r2.mjs public/rmhos-dev
+
+      - name: Manifest
+        run:
+          cat
+          public/rmhos-dev/manifest.json

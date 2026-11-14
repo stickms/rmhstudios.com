@@ -1,0 +1,179 @@
+#!/bin/sh
+# rmhOS guest agent. Speaks the host line protocol on /dev/ttyS1
+# (features/rmhos/engine/agent-protocol.ts):
+#
+#   host -> guest   SESSION <user> | RESTORE | SAVE <nonce> | SHUTDOWN
+#   guest -> host   RMHOS READY | SESSION_OK | RESTORED | SAVED <nonce> <bytes>
+#                   | POWEROFF | ERR <code>
+#
+# POSIX sh (busybox ash). Log lines go to /dev/ttyS0 (serial0); /dev/console
+# is tty0 only, because it is the last console= argument. Anything that is not
+# prefixed "RMHOS " is for that log only.
+
+PORT=/dev/ttyS1
+SHARE=/mnt/host
+ARCHIVE=$SHARE/sync/home.tar
+XLOG=/tmp/rmhos-x.log
+SESSION_USER=
+CR=$(printf '\r')
+
+log() {
+	printf 'rmhos-agent: %s\n' "$*" >/dev/ttyS0 2>/dev/null
+	return 0
+}
+
+reply() {
+	printf 'RMHOS %s\n' "$*" >&3
+}
+
+# The kernel release, for the console log (the smoke test reads it).
+printf 'rmhos-kernel %s\n' "$(uname -r)" >/dev/ttyS0 2>/dev/null
+
+mkdir -p "$SHARE"
+if mount -t 9p -o trans=virtio,version=9p2000.L host9p "$SHARE" 2>/dev/null; then
+	mkdir -p "$SHARE/sync"
+	log "9p share mounted at $SHARE"
+else
+	log "9p share host9p not available"
+fi
+
+exec 3<>"$PORT" || {
+	log "cannot open $PORT"
+	exit 1
+}
+stty raw -echo <&3 || log "stty on $PORT failed"
+set -f
+
+# --- SESSION -----------------------------------------------------------
+
+do_session() {
+	user=$1
+	if [ -n "$SESSION_USER" ]; then
+		reply "ERR busy"
+		return
+	fi
+	if ! printf '%s\n' "$user" | grep -Eq '^[a-z][a-z0-9_-]{0,30}$'; then
+		reply "ERR bad_user"
+		return
+	fi
+	if adduser -D -u 1000 -G wheel -s /bin/ash "$user" >/dev/null 2>&1; then
+		uid=$(id -u "$user")
+		gid=$(id -g "$user")
+		for g in video input audio; do
+			addgroup "$user" "$g" >/dev/null 2>&1
+		done
+		mkdir -p "/home/$user"
+		if mount -t tmpfs -o "size=128m,uid=$uid,gid=$gid,mode=700" tmpfs "/home/$user" &&
+			cp -a /etc/skel/. "/home/$user/" &&
+			chown -R "$uid:$gid" "/home/$user"; then
+			SESSION_USER=$user
+			log "session for $user"
+			reply "SESSION_OK"
+			return
+		fi
+		umount "/home/$user" 2>/dev/null
+		deluser "$user" >/dev/null 2>&1
+	fi
+	log "session setup failed for $user"
+	reply "ERR session"
+}
+
+# --- RESTORE -----------------------------------------------------------
+
+# Extract the archive into the home as the user. Entries that are absolute or
+# climb out with ".." are refused up front, by listing first.
+restore_archive() {
+	home=/home/$SESSION_USER
+	if ! tar -tf - <"$ARCHIVE" 2>/dev/null >/tmp/rmhos-home.list; then
+		log "home archive is not a readable tar"
+		return 1
+	fi
+	if grep -Eq '(^/|(^|/)\.\.(/|$))' /tmp/rmhos-home.list; then
+		log "home archive has absolute or .. entries; refused"
+		return 1
+	fi
+	su -s /bin/sh "$SESSION_USER" -c "tar -xpf - -C '$home' --no-same-owner" <"$ARCHIVE" >/dev/null 2>&1
+}
+
+launch_desktop() {
+	: >"$XLOG"
+	chmod 666 "$XLOG"
+	if openvt -c 1 -s -f -- su -l "$SESSION_USER" -c "exec startx -- vt1 >>$XLOG 2>&1"; then
+		log "desktop launched"
+		# Say what became of the X server, for the serial0 log.
+		(
+			sleep 45
+			if pidof Xorg >/dev/null 2>&1; then log "X server is running"; else log "X server is not running"; fi
+			{
+				grep -E '\((EE|WW)\)|Fatal' /var/log/Xorg.0.log 2>/dev/null | tail -n 20
+				tail -n 10 "$XLOG" 2>/dev/null
+			} | while IFS= read -r l; do log "x: $l"; done
+		) &
+		return 0
+	fi
+	log "startx failed"
+	return 1
+}
+
+do_restore() {
+	if [ -z "$SESSION_USER" ]; then
+		reply "ERR no_session"
+		return
+	fi
+	ok=1
+	if [ -f "$ARCHIVE" ]; then
+		restore_archive || ok=0
+		rm -f "$ARCHIVE" /tmp/rmhos-home.list
+	fi
+	launch_desktop || ok=0
+	if [ "$ok" = 1 ]; then
+		reply "RESTORED"
+	else
+		reply "ERR restore"
+	fi
+}
+
+# --- SAVE --------------------------------------------------------------
+
+do_save() {
+	nonce=$1
+	if [ -z "$SESSION_USER" ] || ! printf '%s\n' "$nonce" | grep -Eq '^[A-Za-z0-9_-]{1,31}$'; then
+		reply "ERR save"
+		return
+	fi
+	mkdir -p "$SHARE/sync"
+	if tar -cpf "$ARCHIVE" -C "/home/$SESSION_USER" . 2>/dev/null; then
+		bytes=$(wc -c <"$ARCHIVE")
+		set -- $bytes
+		reply "SAVED $nonce $1"
+	else
+		rm -f "$ARCHIVE"
+		reply "ERR save"
+	fi
+}
+
+# --- main loop ---------------------------------------------------------
+
+log "ready on $PORT"
+reply "READY"
+
+while IFS= read -r line <&3; do
+	line=${line%"$CR"}
+	cmd=${line%% *}
+	arg=
+	[ "$cmd" != "$line" ] && arg=${line#* }
+	case $cmd in
+	SESSION) do_session "$arg" ;;
+	RESTORE) do_restore ;;
+	SAVE) do_save "$arg" ;;
+	SHUTDOWN)
+		log "shutdown requested"
+		poweroff
+		;;
+	"") ;;
+	*) reply "ERR unknown" ;;
+	esac
+done
+
+log "serial port closed; agent exiting"
+exit 1
