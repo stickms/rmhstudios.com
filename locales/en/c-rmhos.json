@@ -1,0 +1,11 @@
+{
+  "boot-downloading": "Downloading the machine",
+  "boot-failed": "The machine could not start.",
+  "boot-preparing": "Preparing",
+  "boot-starting": "Starting the machine",
+  "keyboard-needed": "rmhOS needs a keyboard.",
+  "retry": "Try again",
+  "screen-label": "rmhOS desktop",
+  "start-anyway": "Start anyway",
+  "title": "rmhOS"
+}

@@ -49,6 +49,7 @@ const ptResources = {
   "c-rmhcode": () => import("@/locales/pt/c-rmhcode.json"),
   "c-rmhcoins": () => import("@/locales/pt/c-rmhcoins.json"),
   "c-rmhmusic": () => import("@/locales/pt/c-rmhmusic.json"),
+  "c-rmhos": () => import("@/locales/pt/c-rmhos.json"),
   "c-rmhstudy": () => import("@/locales/pt/c-rmhstudy.json"),
   "c-rmhtech": () => import("@/locales/pt/c-rmhtech.json"),
   "c-rmhtube": () => import("@/locales/pt/c-rmhtube.json"),
