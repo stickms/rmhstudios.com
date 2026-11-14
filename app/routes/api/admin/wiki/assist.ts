@@ -9,7 +9,7 @@ import { wikiAssistBody } from '@/lib/wiki/wiki-schema';
  * POST /api/admin/wiki/assist — the wiki editor's DeepSeek writing assistant. Admin only.
  *
  * Takes an instruction plus the page as it stands and streams back the whole
- * page in Markdown: a new page when the body is empty, the edited page when it
+ * page in wikitext: a new page when the body is empty, the edited page when it
  * is not. Nothing is saved here; the admin reads the result in the editor and
  * saves it through `PUT /api/admin/wiki/pages/$id`.
  *

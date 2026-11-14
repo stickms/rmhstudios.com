@@ -149,7 +149,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/wiki/pages` | `GET` `POST` | `lib/wiki/api/admin.wiki.pages.server.ts` |
 | `/api/admin/wiki/pages/:id` | `DELETE` `GET` `PUT` | `lib/wiki/api/admin.wiki.pages.$id.server.ts` |
 | `/api/admin/wiki/seed` | `POST` | `lib/wiki/api/admin.wiki.seed.server.ts` |
-| `/api/admin/wiki/theme` | `POST` | `lib/wiki/api/admin.wiki.theme.server.ts` |
+| `/api/admin/wiki/sidebar` | `POST` | `lib/wiki/api/admin.wiki.sidebar.server.ts` |
 
 ## `/api/advent`
 

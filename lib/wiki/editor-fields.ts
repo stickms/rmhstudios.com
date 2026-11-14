@@ -3,32 +3,33 @@
  * Client-safe; kept out of the component so they can be tested without a DOM.
  */
 
-/** Mirrors `wikiPath` in `./wiki-schema.ts`, for the inline hint before a save. */
-const PATH = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
+/** Characters MediaWiki never allows in a title (it would read them as link or template syntax). */
+const FORBIDDEN = /[#<>[\]|{}]/;
 
-export function isWikiPath(path: string): boolean {
-  return path.length <= 200 && PATH.test(path);
+/** True when the title has none of MediaWiki's forbidden characters, control characters included. */
+export function hasOnlyTitleCharacters(title: string): boolean {
+  if (FORBIDDEN.test(title)) return false;
+  for (const char of title) {
+    const code = char.charCodeAt(0);
+    if (code < 0x20 || code === 0x7f) return false;
+  }
+  return true;
 }
 
-/** A page path suggested from its title: "Battle Pass Guide" becomes "battle-pass-guide". */
-export function slugifyWikiTitle(title: string): string {
-  return title
-    .toLowerCase()
-    .normalize('NFKD')
-    // Drop the accents NFKD split off, or "é" would become "e-".
-    .replace(/\p{M}+/gu, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+/** Mirrors `wikiTitle` in `./wiki-schema.ts`, for the inline hint before a save. */
+export function isWikiTitle(title: string): boolean {
+  const trimmed = title.trim();
+  return trimmed.length > 0 && trimmed.length <= 255 && hasOnlyTitleCharacters(trimmed);
 }
 
-/** "a, b ,, c" becomes ["a", "b", "c"]; duplicates are dropped. */
-export function parseWikiTags(input: string): string[] {
-  return [
-    ...new Set(
-      input
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-    ),
-  ];
+/**
+ * A page's address on the wiki: `/wiki/` and the title with spaces as
+ * underscores, the way MediaWiki writes its own links. Slashes (sub-pages) and
+ * colons stay readable; everything else is percent-encoded.
+ */
+export function wikiPageUrl(publicUrl: string, title: string): string {
+  const path = encodeURIComponent(title.trim().replaceAll(' ', '_'))
+    .replaceAll('%2F', '/')
+    .replaceAll('%3A', ':');
+  return `${publicUrl}/wiki/${path}`;
 }

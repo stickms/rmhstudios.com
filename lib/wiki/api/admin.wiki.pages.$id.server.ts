@@ -8,9 +8,9 @@ import {
   getWikiPage,
   updateWikiPage,
   wikiErrorResponse,
-} from '@/lib/wiki/wikijs.server';
+} from '@/lib/wiki/mediawiki.server';
 
-/** Wiki.js page ids are integers; anything else is a 404, not a GraphQL error. */
+/** MediaWiki page ids are integers; anything else is a 404, not an API error. */
 function pageId(raw: string): number | null {
   return /^\d{1,9}$/.test(raw) ? Number(raw) : null;
 }
@@ -18,8 +18,8 @@ function pageId(raw: string): number | null {
 const notFound = () => Response.json({ error: 'not_found' }, { status: 404 });
 
 /**
- * GET    /api/admin/wiki/pages/$id — one page with its Markdown source. Admin only.
- * PUT    /api/admin/wiki/pages/$id — replace its title, description, body and tags.
+ * GET    /api/admin/wiki/pages/$id — one page with its wikitext. Admin only.
+ * PUT    /api/admin/wiki/pages/$id — save a new revision of its text (409 on an edit conflict).
  * DELETE /api/admin/wiki/pages/$id — delete it.
  */
 export const route = apiRoute('/api/admin/wiki/pages/$id', {
@@ -47,7 +47,7 @@ export const route = apiRoute('/api/admin/wiki/pages/$id', {
         await logAdminAction(userId, 'wiki.page.update', {
           targetType: 'WikiPage',
           targetId: String(id),
-          detail: page.path,
+          detail: page.title,
         });
         return page;
       } catch (err) {

@@ -11,65 +11,81 @@ const wiki = vi.hoisted(() => {
   }
   return {
     WikiError,
+    INSTALLER_USER: 'MediaWiki default',
     listWikiPages: vi.fn(),
     createWikiPage: vi.fn(),
-    renderWikiPage: vi.fn(),
+    wikiPageLastEditor: vi.fn(),
+    writeWikiText: vi.fn(),
+    purgeWikiPages: vi.fn(),
   };
 });
-vi.mock('@/lib/wiki/wikijs.server', () => wiki);
+vi.mock('@/lib/wiki/mediawiki.server', () => wiki);
 
-import { seedStarterPages } from '@/lib/wiki/seed.server';
-import { STARTER_PAGES } from '@/lib/wiki/starter-pages';
+import { SEED_SUMMARY, seedStarterPages } from '@/lib/wiki/seed.server';
+import { MAIN_PAGE, STARTER_PAGES } from '@/lib/wiki/starter-pages';
 
-const paths = STARTER_PAGES.map((p) => p.path);
+const titles = STARTER_PAGES.map((p) => p.title);
+const others = titles.filter((t) => t !== MAIN_PAGE);
+const listed = (names: string[]) => names.map((title, i) => ({ id: i + 1, title, updatedAt: '' }));
 
 beforeEach(() => {
   vi.clearAllMocks();
-  let id = 100;
   wiki.listWikiPages.mockResolvedValue([]);
-  wiki.createWikiPage.mockImplementation(async () => ({ id: id++ }));
-  wiki.renderWikiPage.mockResolvedValue(undefined);
+  wiki.createWikiPage.mockResolvedValue({ id: 100 });
+  wiki.wikiPageLastEditor.mockResolvedValue('Admin');
+  wiki.writeWikiText.mockResolvedValue(undefined);
+  wiki.purgeWikiPages.mockResolvedValue(undefined);
 });
 
 describe('seedStarterPages', () => {
-  it('creates every starter page, published, on an empty wiki', async () => {
-    await expect(seedStarterPages()).resolves.toEqual({ created: paths, skipped: [] });
-    expect(wiki.createWikiPage).toHaveBeenCalledTimes(paths.length);
-    for (const [input] of wiki.createWikiPage.mock.calls) expect(input.isPublished).toBe(true);
+  it('creates every starter page on an empty wiki, with a summary saying where it came from', async () => {
+    await expect(seedStarterPages()).resolves.toEqual({ created: titles, skipped: [] });
+    expect(wiki.createWikiPage).toHaveBeenCalledTimes(titles.length);
+    for (const [input] of wiki.createWikiPage.mock.calls) expect(input.summary).toBe(SEED_SUMMARY);
+    expect(wiki.writeWikiText).not.toHaveBeenCalled();
   });
 
-  it('never touches a page that already exists', async () => {
-    wiki.listWikiPages.mockResolvedValue([{ path: 'home' }, { path: 'games' }]);
+  it("replaces the installer's placeholder main page, which nobody has edited", async () => {
+    wiki.listWikiPages.mockResolvedValue(listed([MAIN_PAGE]));
+    wiki.wikiPageLastEditor.mockResolvedValue('MediaWiki default');
+    const { created } = await seedStarterPages();
+    expect(created).toEqual(titles);
+    const home = STARTER_PAGES.find((p) => p.title === MAIN_PAGE)!;
+    expect(wiki.writeWikiText).toHaveBeenCalledWith(MAIN_PAGE, home.content, SEED_SUMMARY);
+    expect(wiki.createWikiPage.mock.calls.map(([input]) => input.title)).toEqual(others);
+  });
+
+  it('never touches a page that already exists, the main page included once someone edited it', async () => {
+    wiki.listWikiPages.mockResolvedValue(listed([MAIN_PAGE, 'Games']));
     const { created, skipped } = await seedStarterPages();
-    expect(skipped).toEqual(['home', 'games']);
-    expect(created).not.toContain('home');
-    const written = wiki.createWikiPage.mock.calls.map(([input]) => input.path);
-    expect(written).not.toContain('home');
-    expect(written).not.toContain('games');
+    expect(skipped).toEqual([MAIN_PAGE, 'Games']);
+    expect(created).not.toContain('Games');
+    expect(wiki.writeWikiText).not.toHaveBeenCalled();
+    const written = wiki.createWikiPage.mock.calls.map(([input]) => input.title);
+    expect(written).not.toContain(MAIN_PAGE);
+    expect(written).not.toContain('Games');
   });
 
   it('does nothing on a second run', async () => {
-    wiki.listWikiPages.mockResolvedValue(paths.map((path) => ({ path })));
-    await expect(seedStarterPages()).resolves.toEqual({ created: [], skipped: paths });
+    wiki.listWikiPages.mockResolvedValue(listed(titles));
+    await expect(seedStarterPages()).resolves.toEqual({ created: [], skipped: titles });
     expect(wiki.createWikiPage).not.toHaveBeenCalled();
-    expect(wiki.renderWikiPage).not.toHaveBeenCalled();
+    expect(wiki.writeWikiText).not.toHaveBeenCalled();
+    expect(wiki.purgeWikiPages).not.toHaveBeenCalled();
   });
 
-  it('renders each new page again once all of them exist, so links between them resolve', async () => {
+  it('renders the new pages again once all of them exist, so links between them are blue', async () => {
     await seedStarterPages();
-    expect(wiki.renderWikiPage.mock.calls.map(([id]) => id)).toEqual(paths.map((_, i) => 100 + i));
+    expect(wiki.purgeWikiPages).toHaveBeenCalledWith(titles);
     const lastCreate = Math.max(...wiki.createWikiPage.mock.invocationCallOrder);
-    const firstRender = Math.min(...wiki.renderWikiPage.mock.invocationCallOrder);
-    expect(firstRender).toBeGreaterThan(lastCreate);
+    expect(wiki.purgeWikiPages.mock.invocationCallOrder[0]).toBeGreaterThan(lastCreate);
   });
 
   it('counts a page that appeared mid-run as skipped', async () => {
-    wiki.createWikiPage.mockImplementationOnce(async () => {
-      throw new wiki.WikiError('conflict', 'exists');
-    });
+    wiki.createWikiPage.mockRejectedValueOnce(new wiki.WikiError('conflict', 'exists'));
     const { created, skipped } = await seedStarterPages();
-    expect(skipped).toEqual([paths[0]]);
-    expect(created).toEqual(paths.slice(1));
+    expect(skipped).toEqual([titles[0]]);
+    expect(created).toEqual(titles.slice(1));
   });
 
   it('stops on any other failure', async () => {

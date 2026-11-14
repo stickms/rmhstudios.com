@@ -1,7 +1,8 @@
 /**
- * The wiki's deploy wiring (docs/wiki.md): the compose service, the Apache
- * vhost and the DNS record have to agree with each other and with the site,
- * and none of them is exercised by a deploy until someone opts in on the host.
+ * The wiki's deploy wiring (docs/wiki.md): the compose service, the MediaWiki
+ * image (Dockerfile, LocalSettings.php, bootstrap), the Apache vhost and the
+ * DNS record have to agree with each other and with the site, and none of them
+ * is exercised by a deploy until someone opts in on the host.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -30,31 +31,52 @@ const directives = (conf: string) =>
     .filter((line) => !line.trim().startsWith('#'))
     .join('\n');
 
-describe('wikijs compose service', () => {
+const settings = read('deploy/mediawiki/LocalSettings.php');
+const dockerfile = read('deploy/mediawiki/Dockerfile');
+const bootstrap = read('deploy/mediawiki/bootstrap.sh');
+
+describe('mediawiki compose service', () => {
   // Without comments: the block runs into the next service's header comment.
-  const wiki = directives(service('wikijs'));
+  const wiki = directives(service('mediawiki'));
 
   it('is opt-in, so a deploy cannot crash-loop on a stack without the wiki database', () => {
     expect(wiki).toMatch(/profiles:\s*\['wiki'\]/);
   });
 
-  it('runs Wiki.js 2 pinned to a minor line, never a floating or 3.x tag', () => {
-    expect(wiki).toMatch(/image: ghcr\.io\/requarks\/wiki:2\.\d+\s*$/m);
+  it('is built from deploy/mediawiki on the host, never pulled from a registry', () => {
+    expect(wiki).toContain('context: ./deploy/mediawiki');
+    expect(wiki).toContain('pull_policy: build');
+    expect(wiki).toMatch(/image: rmhstudios-mediawiki:1\.\d+\s*$/m);
+  });
+
+  it('builds on a pinned MediaWiki LTS line, never a floating tag, with the Postgres driver', () => {
+    const from = /^FROM (\S+)/m.exec(dockerfile)?.[1];
+    expect(from).toMatch(/^mediawiki:1\.\d+$/);
+    // The compose tag names the same line the Dockerfile pins.
+    expect(wiki).toContain(`image: rmhstudios-${from!}`);
+    expect(dockerfile).toContain('docker-php-ext-install -j "$(nproc)" pgsql');
   });
 
   it('publishes its port on loopback only: Apache is the one way in', () => {
-    const ports = wiki.match(/^\s+- '[^']*:3000'$/gm) ?? [];
+    const ports = wiki.match(/^\s+- '[^']*:80'$/gm) ?? [];
     expect(ports).toHaveLength(1);
-    expect(ports[0]).toContain("'127.0.0.1:${PORT_WIKI:-7010}:3000'");
+    expect(ports[0]).toContain("'127.0.0.1:${PORT_WIKI:-7010}:80'");
   });
 
-  it('uses its own database and takes the password from the environment', () => {
-    expect(wiki).toContain('DB_TYPE: postgres');
-    expect(wiki).toContain('DB_NAME: ${WIKIJS_DB_NAME:-wikijs}');
-    expect(wiki).toContain('DB_PASS: ${WIKIJS_DB_PASS:-}');
+  it('uses its own database and takes its secrets from the environment', () => {
+    expect(wiki).toContain('MEDIAWIKI_DB_NAME: ${MEDIAWIKI_DB_NAME:-mediawiki}');
+    expect(wiki).toContain('MEDIAWIKI_DB_PASS: ${MEDIAWIKI_DB_PASS:-}');
+    expect(wiki).toContain('MEDIAWIKI_SECRET_KEY: ${MEDIAWIKI_SECRET_KEY:-}');
     // Not the site's database or credentials.
     expect(wiki).not.toContain('DATABASE_URL');
     expect(wiki).not.toContain('env_file');
+  });
+
+  it('drops every capability but the three Apache needs to bind :80 and become www-data', () => {
+    expect(wiki).toMatch(/cap_drop:\s*- ALL/);
+    const added = /cap_add:\s*((?:\s*- \w+)+)/.exec(wiki)?.[1]?.match(/\w+/g);
+    expect(added?.sort()).toEqual(['NET_BIND_SERVICE', 'SETGID', 'SETUID']);
+    expect(wiki).toContain('no-new-privileges:true');
   });
 
   it('is bounded and restarts on its own', () => {
@@ -64,7 +86,76 @@ describe('wikijs compose service', () => {
   });
 
   it('is reachable from web by compose DNS on its container port', () => {
-    expect(service('web')).toContain('WIKIJS_URL=${WIKIJS_URL:-http://wikijs:3000}');
+    expect(service('web')).toContain('MEDIAWIKI_URL=${MEDIAWIKI_URL:-http://mediawiki}');
+  });
+
+  it('leaves no Wiki.js service behind', () => {
+    expect(compose).not.toMatch(/^ {2}wikijs:/m);
+    expect(compose).not.toContain('requarks');
+  });
+});
+
+describe('LocalSettings.php', () => {
+  const php = settings.replace(/^\s*(#|\/\/|\*).*$/gm, '');
+
+  it('holds no secret: the database password and the secret key are read from the environment', () => {
+    expect(php).toContain("$wgDBpassword = rmhWikiEnv( 'MEDIAWIKI_DB_PASS' );");
+    expect(php).toContain("$wgSecretKey = rmhWikiEnv( 'MEDIAWIKI_SECRET_KEY' );");
+    expect(php).not.toMatch(/\$wg(DBpassword|SecretKey|UpgradeKey)\s*=\s*'/);
+  });
+
+  it('runs on Postgres and the classic Vector skin', () => {
+    expect(php).toContain("$wgDBtype = 'postgres';");
+    expect(php).toContain("$wgDefaultSkin = 'vector';");
+    expect(php).toContain("$wgArticlePath = '/wiki/$1';");
+  });
+
+  it('lets everyone read and nobody but sysops write', () => {
+    expect(php).toContain("$wgGroupPermissions['*']['createaccount'] = false;");
+    expect(php).toMatch(/foreach \( \[ '\*', 'user', 'autoconfirmed' \] as \$group \)/);
+    for (const right of ['edit', 'createpage', 'move', 'upload']) expect(php).toContain(`'${right}'`);
+    expect(php).toContain("$wgGroupPermissions['sysop'][$right] = true;");
+    expect(php).not.toMatch(/\['\*'\]\['read'\]\s*=\s*false/);
+  });
+
+  it('keeps no state in the container: no uploads, no mail', () => {
+    expect(php).toContain('$wgEnableUploads = false;');
+    expect(php).toContain('$wgEnableEmail = false;');
+  });
+
+  it('is what the image ships, and the web installer is closed', () => {
+    expect(dockerfile).toContain('COPY LocalSettings.php /var/www/html/LocalSettings.php');
+    expect(dockerfile).toContain('RedirectMatch 404 ^/mw-config');
+  });
+});
+
+describe('wiki-bootstrap', () => {
+  const script = bootstrap
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('#'))
+    .join('\n');
+
+  it('is baked into the image', () => {
+    expect(dockerfile).toContain('COPY bootstrap.sh /usr/local/bin/wiki-bootstrap');
+  });
+
+  it('never puts a password on a command line, where the host process list shows it', () => {
+    expect(script).toContain('--dbpassfile "$tmp/dbpass"');
+    expect(script).toContain('--passfile "$tmp/adminpass"');
+    expect(script).not.toMatch(/--(dbpass|pass|installdbpass|installdbuser)\s/);
+    expect(script).toContain('umask 077');
+    expect(script).toMatch(/trap 'rm -rf "\$tmp"'/);
+  });
+
+  it('installs only into an empty database, and always runs update.php', () => {
+    expect(script).toMatch(/if \[ "\$installed" = "yes" \]/);
+    expect(script).toContain('php maintenance/run.php update --quick');
+  });
+
+  it('issues a bot password with only the grants the admin page uses, revoking the old one', () => {
+    expect(script).toContain('grants="basic,highvolume,editpage,editprotected,createeditmovepage,delete,editinterface"');
+    expect(script).toMatch(/DELETE FROM bot_passwords WHERE bp_app_id/);
+    expect(script).toContain('echo "MEDIAWIKI_BOT_USER=$admin@$app_id"');
   });
 });
 
@@ -78,17 +169,14 @@ describe('wiki.rmhstudios.com vhost', () => {
 
   it('proxies to the port compose publishes', () => {
     const port = /Define WIKI_UPSTREAM_PORT (\d+)/.exec(conf)?.[1];
-    expect(port).toBe(/PORT_WIKI:-(\d+)/.exec(service('wikijs'))?.[1]);
+    expect(port).toBe(/PORT_WIKI:-(\d+)/.exec(service('mediawiki'))?.[1]);
     expect(conf).toContain('ProxyPass        / http://localhost:${WIKI_UPSTREAM_PORT}/');
     expect(conf).toContain('ProxyPassReverse / http://localhost:${WIKI_UPSTREAM_PORT}/');
     expect(conf).toContain('ProxyPreserveHost On');
   });
 
-  it('tells Wiki.js the visitor is on HTTPS, and upgrades its websocket', () => {
+  it('tells MediaWiki the visitor is on HTTPS', () => {
     expect(conf).toContain('RequestHeader set X-Forwarded-Proto "https"');
-    expect(conf).toMatch(/ProxyPass\s+\/graphql-subscriptions .* upgrade=websocket/);
-    // The specific path has to come before the catch-all, or it never matches.
-    expect(conf.indexOf('/graphql-subscriptions')).toBeLessThan(conf.indexOf('ProxyPass        / '));
   });
 
   it('is its own site: it proxies to the wiki only, never to the main app', () => {
@@ -127,19 +215,23 @@ describe('DNS and environment', () => {
 
   it('documents every variable the wiki reads', () => {
     const example = read('.env.example');
-    for (const name of [
-      'WIKIJS_API_KEY',
-      'WIKIJS_URL',
+    const names = [
+      'MEDIAWIKI_BOT_USER',
+      'MEDIAWIKI_BOT_PASSWORD',
+      'MEDIAWIKI_URL',
       'WIKI_PUBLIC_URL',
-      'WIKIJS_LOCALE',
-      'WIKIJS_DB_HOST',
-      'WIKIJS_DB_PORT',
-      'WIKIJS_DB_USER',
-      'WIKIJS_DB_PASS',
-      'WIKIJS_DB_NAME',
+      'MEDIAWIKI_SECRET_KEY',
+      'MEDIAWIKI_SERVER',
+      'MEDIAWIKI_DB_HOST',
+      'MEDIAWIKI_DB_PORT',
+      'MEDIAWIKI_DB_USER',
+      'MEDIAWIKI_DB_PASS',
+      'MEDIAWIKI_DB_NAME',
       'PORT_WIKI',
-    ]) {
-      expect(example, name).toContain(`# ${name}=`);
-    }
+    ];
+    for (const name of names) expect(example, name).toContain(`# ${name}=`);
+    // Every variable the container and LocalSettings.php read is one of them.
+    for (const [, name] of settings.matchAll(/rmhWikiEnv\( '(\w+)'/g)) expect(names).toContain(name);
+    expect(example).not.toContain('WIKIJS_');
   });
 });

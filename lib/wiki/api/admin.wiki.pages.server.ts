@@ -10,7 +10,7 @@ import {
   listWikiPages,
   wikiErrorResponse,
   wikiPublicUrl,
-} from '@/lib/wiki/wikijs.server';
+} from '@/lib/wiki/mediawiki.server';
 
 /**
  * GET  /api/admin/wiki/pages — every page on wiki.rmhstudios.com. Admin only.
@@ -42,7 +42,7 @@ export const route = apiRoute('/api/admin/wiki/pages', {
         await logAdminAction(userId, 'wiki.page.create', {
           targetType: 'WikiPage',
           targetId: String(page.id),
-          detail: page.path,
+          detail: page.title,
         });
         return page;
       } catch (err) {
