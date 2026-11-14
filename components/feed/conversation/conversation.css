@@ -2,16 +2,17 @@
 
    The thread is one spine: each message from the other person hangs on it with a dot, each day is a station, and your own
    messages are right aligned with an ink fill and no dot. The column is exactly as tall as the window leaves it, so the
-   list is the one scroller and the message field is the bottom of the column: on a phone that is above the globe, because
-   `.site-main` reserves its bottom padding for the docked globe (site-shell.css). The numbers below are that padding. */
+   list is the one scroller and the message field is the bottom of the column. A chat renders <NoGlobe /> inside this
+   column, so on a phone there is no docked globe and the field sits at the bottom of the window: `.site-main` keeps only
+   12px and the safe-area inset there (site-shell.css). The numbers below are that padding. */
 
 .conversation {
   display: flex;
   flex-direction: column;
   min-block-size: 0;
-  /* Phone: 16px top padding and 130px bottom padding of `.site-main`, each with its safe-area inset. */
+  /* Phone: 16px top padding and 12px bottom padding of `.site-main`, each with its safe-area inset. */
   block-size: calc(
-    100svh - 16px - env(safe-area-inset-top, 0px) - 130px - env(safe-area-inset-bottom, 0px)
+    100svh - 16px - env(safe-area-inset-top, 0px) - 12px - env(safe-area-inset-bottom, 0px)
   );
 }
 @media (min-width: 1024px) {

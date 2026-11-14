@@ -25,6 +25,7 @@ import { useMessageActions } from './conversation/useMessageActions';
 import { useDmComposer } from './conversation/useDmComposer';
 import './conversation/conversation.css';
 import { lastOwnMessageId, replyTargetId, type OtherUser } from './conversation/conversation-state';
+import { NoGlobe } from '@/components/shell/NoGlobe';
 
 export function ConversationView({
   conversationId,
@@ -161,6 +162,7 @@ export function ConversationView({
   // the message list. See that file for the numbers.
   return (
     <div className="conversation" style={chatTheme.rootStyle}>
+      <NoGlobe />
       <ConversationHeader
         conversationId={conversationId}
         chatRef={chatRef}

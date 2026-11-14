@@ -325,6 +325,22 @@
   margin: 26px 0 0;
 }
 
+/* A page that renders <NoGlobe /> (components/shell/NoGlobe.tsx), a chat, has no docked globe on a phone: its column
+   runs to the bottom of the window and ends in its message field. The globe, its fade, veil, pins and bar all live in
+   .globe-nav, so they all go; `.site-main` keeps only the safe-area inset and 12px, and nothing floats lifted over a
+   globe that is not there. conversation.css subtracts the same padding. */
+@media (max-width: 1023.98px) {
+  .site-shell:has([data-shell-globe='off']) .globe-nav {
+    display: none;
+  }
+  .site-shell:has([data-shell-globe='off']) .site-main {
+    padding-block-end: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .site-shell:has([data-shell-globe='off']) {
+    --float-lift-hub: 0px;
+  }
+}
+
 /* The cookie notice and mini-player ride above the docked globe (comfort-suite.css, data-floating='hub'). The globe is
    not displayed from 1024px, so the lift would only leave a gap there. Unlayered, so it outranks that rule. */
 @media (min-width: 1024px) {

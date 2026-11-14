@@ -21,6 +21,7 @@ import { PollComposer } from './group-chat/PollComposer';
 import { useGroupComposer } from './group-chat/useGroupComposer';
 import { useGroupMessageActions } from './group-chat/useGroupMessageActions';
 import { useGroupThread } from './group-chat/useGroupThread';
+import { NoGlobe } from '@/components/shell/NoGlobe';
 
 export function GroupChatView({ id, currentUserId }: { id: string; currentUserId: string }) {
   const { t } = useTranslation('feed');
@@ -83,6 +84,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
 
   return (
     <div className={cn('conversation', arrival)} style={chatTheme.rootStyle}>
+      <NoGlobe />
       <GroupHeader group={group} chatRef={chatRef} onLeave={leave} />
       <ChatPinnedBar
         chat={chatRef}
