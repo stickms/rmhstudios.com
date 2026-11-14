@@ -51,7 +51,8 @@ export const BANNER_CHANGE_DAYS = 90;
 export const BIO_CHANGE_DAYS = 45;
 export const NAME_CHANGE_DAYS = 180;
 export const REFRESH_MAX_IMAGES_PER_TICK = 3;
-export const LEGACY_UPGRADES_PER_TICK = 2;
+export const FIRST_UPDATES_PER_TICK = 4;
+export const FIRST_UPDATE_IMAGES_PER_TICK = 6;
 /** The refresh run's cron: hourly, off the top of the hour. */
 export const BOT_REFRESH_CRON = '23 * * * *';
 
@@ -93,10 +94,14 @@ export interface BotConfig {
   profileRefresh: boolean;
   /** Mean days between changes of each profile field (BOT_*_CHANGE_DAYS). */
   drift: { avatarDays: number; bannerDays: number; bioDays: number; nameDays: number };
-  /** BOT_REFRESH_MAX_IMAGES_PER_TICK: stock-image fetches per refresh run (Openverse: 200/day anonymous). */
+  /** BOT_REFRESH_MAX_IMAGES_PER_TICK: picture fetches per drift run (Openverse: 200/day anonymous). */
   refreshMaxImagesPerTick: number;
-  /** Legacy DiceBear avatars upgraded per refresh run (counted inside the image cap). */
-  legacyUpgradesPerTick: number;
+  /**
+   * The first pass: bots given their first update per run, and the picture fetches it may spend.
+   * Drift waits until the first pass has reached every bot.
+   */
+  firstUpdatesPerTick: number;
+  firstUpdateImagesPerTick: number;
 }
 
 export function clampInt(v: number, lo: number, hi: number): number {
@@ -219,7 +224,8 @@ export function loadBotConfig(env: Env = process.env): BotConfig {
       0,
       20,
     ),
-    legacyUpgradesPerTick: LEGACY_UPGRADES_PER_TICK,
+    firstUpdatesPerTick: FIRST_UPDATES_PER_TICK,
+    firstUpdateImagesPerTick: FIRST_UPDATE_IMAGES_PER_TICK,
   };
 }
 

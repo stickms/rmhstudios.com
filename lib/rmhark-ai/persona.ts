@@ -456,12 +456,6 @@ export function rollPersona(): BotPersonaSpec {
   };
 }
 
-/** Build a stable, online-sourced avatar URL for a bot from its handle. */
-export function buildAvatarUrl(seed: string, style: string = randomItem(AVATAR_STYLES)): string {
-  const safe = encodeURIComponent(seed);
-  return `https://api.dicebear.com/9.x/${style}/svg?seed=${safe}`;
-}
-
 /**
  * Render the private "persona" prompt seed stored on the bot. Bundles every
  * axis into a compact brief the model follows for all future posts/replies.

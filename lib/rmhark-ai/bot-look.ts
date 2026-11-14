@@ -8,9 +8,11 @@
  * hobby, a view), some keep a cartoon avatar, some are just initials. About two
  * in three have a banner. Every picture is sourced online; none is generated.
  *
- * Drift is memoryless: each hourly refresh run gives every field a small
- * chance of changing, `1 / (meanDays * 24)`, so changes are spread out and
- * nothing flips on a schedule. Bots in their first two weeks do not drift.
+ * Two phases. First, every existing bot still on its old placeholder avatar
+ * gets a first update (a new avatar, and maybe a banner). Only when none is
+ * left does drift start: each hourly run gives every field a small chance of
+ * changing, `1 / (meanDays * 24)`, so changes are spread out and nothing flips
+ * on a schedule. Bots in their first two weeks do not drift.
  */
 import { AVATAR_STYLES } from './persona';
 
@@ -62,7 +64,7 @@ function pick<T>(items: readonly T[], r: number): T {
 
 /**
  * A cartoon avatar. It always carries `backgroundColor`, which is what tells it
- * apart from the legacy avatars every bot was minted with (see `isLegacyBotAvatar`).
+ * apart from the placeholder every bot used to be minted with (see `needsFirstUpdate`).
  */
 export function cartoonAvatarUrl(seed: string, rStyle: number, rBg: number): string {
   const style = pick(AVATAR_STYLES, rStyle);
@@ -74,8 +76,12 @@ export function initialsAvatarUrl(name: string, rBg: number): string {
   return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${pick(DICEBEAR_BACKGROUNDS, rBg)}`;
 }
 
-/** The avatar every bot was minted with before looks existed: DiceBear with no background. */
-export function isLegacyBotAvatar(url: string | null | undefined): boolean {
+/**
+ * The avatar every bot was minted with before looks existed: DiceBear with no
+ * background. A bot wearing one has not had its first update yet. New bots are
+ * minted with `cartoonAvatarUrl`, so after the first pass none is left.
+ */
+export function needsFirstUpdate(url: string | null | undefined): boolean {
   if (!url) return true;
   return url.startsWith('https://api.dicebear.com/') && !url.includes('backgroundColor=');
 }
@@ -149,8 +155,6 @@ export interface RefreshPlan {
   banner: boolean;
   bio: boolean;
   name: boolean;
-  /** The avatar change is the upgrade of a legacy DiceBear avatar, not ordinary drift. */
-  legacy: boolean;
 }
 
 /** The chance that a field with a `meanDays` mean gap changes in one hourly run. */
@@ -160,9 +164,9 @@ export function hourlyChance(meanDays: number): number {
 }
 
 /**
- * What one hourly run changes on one bot. A legacy avatar is always due, at any
- * age (it is the upgrade of a placeholder, not drift; the tick caps how many it
- * upgrades per run). Everything else is a draw, and never in the first two weeks.
+ * What one hourly drift run changes on one bot: a draw per field, never in the
+ * bot's first two weeks. Drift only starts once every bot has had its first
+ * update (`needsFirstUpdate`); the bot worker holds it back until then.
  */
 export function refreshPlan(
   bot: RefreshInput,
@@ -170,15 +174,13 @@ export function refreshPlan(
   now: number,
   random: () => number,
 ): RefreshPlan {
-  const legacy = isLegacyBotAvatar(bot.image);
   if (now - bot.createdAt.getTime() < REFRESH_MIN_AGE_MS) {
-    return { avatar: legacy, banner: false, bio: false, name: false, legacy };
+    return { avatar: false, banner: false, bio: false, name: false };
   }
   return {
-    avatar: legacy || random() < hourlyChance(cfg.avatarDays),
+    avatar: random() < hourlyChance(cfg.avatarDays),
     banner: random() < hourlyChance(cfg.bannerDays),
     bio: random() < hourlyChance(cfg.bioDays),
     name: random() < hourlyChance(cfg.nameDays),
-    legacy,
   };
 }

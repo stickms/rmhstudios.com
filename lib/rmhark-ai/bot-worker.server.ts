@@ -13,7 +13,8 @@
  *                          bots, then proactive bot-to-bot comments, then comments under the
  *                          live announcement's discussion post.
  *   bot-worker.dm         BOT_DM_TICK_MS (default 1 min): answer humans' DMs, rarely open one.
- *   bot-worker.refresh    hourly: upgrade placeholder avatars and let a bot's avatar, banner, bio and
+ *   bot-worker.refresh    hourly, and once at boot: first give every bot still on its old placeholder
+ *                          avatar a first update; once none is left, let a bot's avatar, banner, bio and
  *                          display name drift now and then (`./bot-look`, BOT_PROFILE_REFRESH). The
  *                          pictures are public-domain photos found online (`./stock-image.server`).
  *
@@ -35,12 +36,13 @@
 import { prisma } from '@/lib/prisma.server';
 import { Prisma } from '@prisma/client';
 import { decideInitiation, canBotMessage, formatDmHistory, type DmPrivacy } from './dm-policy';
-import { buildAvatarUrl, composePersona, rollPersona, withPoliticalLean } from './persona';
+import { composePersona, rollPersona, withPoliticalLean } from './persona';
 import {
   cartoonAvatarUrl,
   genericAvatarQuery,
   genericBannerQuery,
   initialsAvatarUrl,
+  needsFirstUpdate,
   refreshPlan,
   rollAvatarKind,
   wantsBanner,
@@ -985,12 +987,13 @@ export async function createBot(d: BotDeps): Promise<void> {
   const profile = await d.ai.profile(spec);
   const handle = await uniqueHandle(d, profile.handle);
   const persona = composePersona(spec);
-  // Minted with the placeholder avatar; `dressNewBot` replaces it. A placeholder that survives
-  // (the photo search failed) is upgraded by the refresh run within hours.
+  // Minted with a cartoon, never the old placeholder: a new bot must not count as one still waiting
+  // for its first update, or a failed photo search would hold drift back for every bot.
+  // `dressNewBot` then rolls its real look.
   const id = await d.repo.createBotUser({
     name: profile.name,
     handle,
-    image: buildAvatarUrl(handle, spec.avatarStyle),
+    image: cartoonAvatarUrl(handle, d.random(), d.random()),
     persona,
     bio: [...profile.bio].slice(0, 160).join(''),
   });
@@ -1044,13 +1047,17 @@ async function newAvatar(
   bot: { id: string; handle: string; name: string },
   queries: () => Promise<{ avatar: string[]; banner: string[] }>,
   budget: ImageBudget,
+  /** Try a generic subject once more when the persona's search finds nothing (the first update). */
+  retryGeneric = false,
 ): Promise<string | null> {
   const kind = rollAvatarKind(d.random());
   if (kind === 'cartoon') return cartoonAvatarUrl(`${bot.handle}-${d.now()}`, d.random(), d.random());
   if (kind === 'initials') return initialsAvatarUrl(bot.name || bot.handle, d.random());
   if (!takeImage(budget)) return null;
   const q = await queries();
-  return look.avatar(bot.id, pickQuery(q.avatar, genericAvatarQuery, d));
+  const photo = await look.avatar(bot.id, pickQuery(q.avatar, genericAvatarQuery, d));
+  if (photo || !retryGeneric || !takeImage(budget)) return photo;
+  return look.avatar(bot.id, genericAvatarQuery(d.random()));
 }
 
 async function newBanner(
@@ -1090,30 +1097,75 @@ export async function dressNewBot(
   if (Object.keys(patch).length > 0) await d.repo.updateBotProfile(bot.id, patch);
 }
 
+/** Apply a patch, then delete the pictures it replaced. */
+async function applyPatch(
+  d: BotDeps,
+  look: BotLook,
+  b: BotProfileRow,
+  patch: BotProfilePatch,
+  event: string,
+): Promise<boolean> {
+  const fields = Object.keys(patch);
+  if (fields.length === 0) return false;
+  await d.repo.updateBotProfile(b.id, patch);
+  if (patch.image) await look.removeAvatar(b.image);
+  if (patch.banner) await look.removeBanner(b.bannerUrl);
+  d.log.info(event, { botId: b.id, fields });
+  return true;
+}
+
 /**
- * The refresh run: upgrade placeholder avatars (at most `legacyUpgradesPerTick`), and give every
- * bot a small chance of a new avatar, banner, bio or display name (`refreshPlan`). At most
- * `refreshMaxImagesPerTick` pictures are fetched per run. Handles never change. Returns how many
- * bots changed.
+ * The first pass: bots still on the old placeholder avatar get a new avatar and, two times in
+ * three when they have none, a banner. Up to `firstUpdatesPerTick` bots a run. A photo search that
+ * finds nothing tries a generic subject once; when that fails too the bot keeps its placeholder and
+ * the next run tries again. Returns how many bots were updated.
+ */
+async function firstUpdates(d: BotDeps, look: BotLook, pending: BotProfileRow[]): Promise<number> {
+  const budget: ImageBudget = { left: d.cfg.firstUpdateImagesPerTick };
+  let changed = 0;
+  for (const b of pending.slice(0, d.cfg.firstUpdatesPerTick)) {
+    await isolated(d, 'bot_worker.first_update_failed', async () => {
+      const persona = b.botPersona === '' ? '' : aiPersona(b.id, b.botPersona);
+      const queries =
+        persona === ''
+          ? async () => ({ avatar: [], banner: [] })
+          : lazyQueries(d, persona);
+      const patch: BotProfilePatch = {};
+      const image = await newAvatar(d, look, b, queries, budget, true);
+      if (!image) return; // still a placeholder: retried next run, and drift keeps waiting
+      patch.image = image;
+      if (b.bannerUrl == null && wantsBanner(d.random())) {
+        const banner = await newBanner(d, look, b.id, queries, budget);
+        if (banner) patch.banner = banner;
+      }
+      if (await applyPatch(d, look, b, patch, 'bot_worker.first_update')) changed++;
+    });
+  }
+  d.log.info('bot_worker.first_pass', { updated: changed, remaining: pending.length - changed });
+  return changed;
+}
+
+/**
+ * The refresh run. While any bot still wears the old placeholder avatar, it only does the first
+ * pass (`firstUpdates`): no bot drifts until every bot has had its first update. After that, every
+ * bot gets a small chance of a new avatar, banner, bio or display name (`refreshPlan`), with at most
+ * `refreshMaxImagesPerTick` pictures fetched a run. Handles never change. Returns how many bots
+ * changed.
  */
 export async function runRefreshTick(d: BotDeps): Promise<number> {
   const look = d.look;
   if (!look || !d.cfg.profileRefresh) return 0;
   const bots = shuffled(await d.repo.botProfiles(), d.random);
+  const pending = bots.filter((b) => needsFirstUpdate(b.image));
+  if (pending.length > 0) return firstUpdates(d, look, pending);
+
   const budget: ImageBudget = { left: d.cfg.refreshMaxImagesPerTick };
-  let legacyLeft = d.cfg.legacyUpgradesPerTick;
   let changed = 0;
   for (const b of bots) {
     if (b.botPersona === '') continue;
     const plan = refreshPlan(b, d.cfg.drift, d.now(), d.random);
-    if (plan.legacy) {
-      if (legacyLeft <= 0) plan.avatar = false;
-      else legacyLeft--;
-    }
-    // A bannerless bot getting its placeholder upgraded may get its first banner with it; one
-    // drifting into a banner change gets one only as often as new bots do.
-    const bannerDue =
-      (plan.banner || (plan.legacy && plan.avatar)) && (b.bannerUrl != null || wantsBanner(d.random()));
+    // A bannerless bot drifting into a banner change gets one only as often as new bots do.
+    const bannerDue = plan.banner && (b.bannerUrl != null || wantsBanner(d.random()));
     if (!plan.avatar && !bannerDue && !plan.bio && !plan.name) continue;
 
     await isolated(d, 'bot_worker.refresh_failed', async () => {
@@ -1136,13 +1188,7 @@ export async function runRefreshTick(d: BotDeps): Promise<number> {
         const name = await d.ai.nameVariant(persona, b.name).catch(() => '');
         if (name && name !== b.name) patch.name = name;
       }
-      const fields = Object.keys(patch);
-      if (fields.length === 0) return;
-      await d.repo.updateBotProfile(b.id, patch);
-      if (patch.image) await look.removeAvatar(b.image);
-      if (patch.banner) await look.removeBanner(b.bannerUrl);
-      changed++;
-      d.log.info('bot_worker.profile_refreshed', { botId: b.id, fields, legacy: plan.legacy });
+      if (await applyPatch(d, look, b, patch, 'bot_worker.profile_refreshed')) changed++;
     });
   }
   return changed;
@@ -1778,6 +1824,8 @@ export async function registerBotWorkerJobs(
   }
   // The Go pool loop topped up immediately at start, before its first interval.
   await boss.send?.(BOT_MAINTAIN_QUEUE, {}).catch(() => undefined);
+  // And the refresh run, so the first pass starts at deploy rather than at the next :23.
+  await boss.send?.(BOT_REFRESH_QUEUE, {}).catch(() => undefined);
   d.log.info('bot_worker.scheduled', {
     post: cronForInterval(d.cfg.postTickMs),
     reply: cronForInterval(d.cfg.replyTickMs),

@@ -12,13 +12,15 @@ people's do (new picture, new banner, rewritten bio, an occasional display-name 
 - New bots get a varied look: mostly real photographs chosen to fit the persona (their pet, their
   hobby, a view, an object), some cartoon avatars and some initials, as real users have.
 - About two in three bots have a banner.
-- Existing bots on the old DiceBear avatar are upgraded gradually.
-- Bots drift: avatar about every 60 days, banner about every 90, bio about every 45, display name
+- Every existing bot gets a first update (new avatar, maybe a banner) before any drift starts
+  (owner, 2026-11-14).
+- Then bots drift: avatar about every 60 days, banner about every 90, bio about every 45, display name
   about every 180, at random (memoryless), never in the first 14 days of a bot's life.
 
 ## Non-goals and anti-goals
 
-- **No AI-generated images** (owner, 2026-11-14). Every picture is sourced online.
+- **No AI-generated images, no paid or keyed image API** (owner, 2026-11-14). Every picture is
+  sourced online from keyless, free sources.
 - No celebrity photos, no images scraped from social platforms, no identifiable stranger's face used
   as a persona's own face. Search queries describe things, places, animals and faceless people
   (silhouettes, hands, back views).
@@ -32,10 +34,11 @@ people's do (new picture, new banner, rewritten bio, an occasional display-name 
    from this environment on 2026-11-14. Rejected as the primary source.
 2. **Unsplash / Pexels APIs.** Searchable and reliable but need a key and carry attribution and
    hotlinking terms. Not chosen; can be added later behind the same interface.
-3. **Openverse (chosen).** WordPress's open image search over Flickr, Wikimedia Commons and others.
+3. **Openverse, then Wikimedia Commons (chosen).** WordPress's open image search over Flickr, Wikimedia Commons and others.
    Keyless (anonymous: 20 requests/min, 200/day), searchable, and filterable to `cc0,pdm`, which need
    no attribution. Slow and flaky anonymously (about half of first-time queries 504 after ~15 s), so
-   every call has a timeout and a failure simply means "try again next hour".
+   every call has a timeout and Commons' own search API (keyless, fast, public-domain results kept,
+   explicit terms excluded) is the fallback. A failure simply means "try again next hour".
 
 ## Decisions
 
@@ -44,8 +47,12 @@ people's do (new picture, new banner, rewritten bio, an occasional display-name 
   banner prefixes. Nothing hotlinks Openverse.
 - The persona's image subjects come from DeepSeek text (a JSON list of stock-photo search queries for
   an avatar and a banner); a fixed list of generic queries is the fallback.
-- New cartoon avatars carry a `backgroundColor` parameter; a DiceBear URL without one is a legacy
-  avatar and is upgraded first (up to 2 per hourly run).
+- New cartoon avatars carry a `backgroundColor` parameter; a DiceBear URL without one is the old
+  placeholder and marks a bot that still needs its first update. New bots are minted with a cartoon,
+  never the placeholder, so after the first pass none is left.
+- The refresh run has two phases. While any bot needs its first update, it only does first updates
+  (4 bots and 6 pictures per run; a failed photo search retries a generic subject once, then the bot
+  waits for the next run). When none is left, drift starts. The run also fires once at boot.
 - A new `bot-worker.refresh` queue runs hourly; per-field hourly probability is `1 / (meanDays * 24)`.
   At most 3 image fetches per run, so Openverse use stays under ~80 requests/day.
 - Bio and display name are rewritten by DeepSeek in the persona's voice; the display name keeps the
