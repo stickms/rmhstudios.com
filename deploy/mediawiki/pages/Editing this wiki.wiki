@@ -1,0 +1,28 @@
+This wiki runs on [https://www.mediawiki.org MediaWiki], the software behind Wikipedia. Everyone can read it, and anyone with an [https://rmhstudios.com rmhstudios.com] account can edit it.
+
+== Signing in ==
+
+Press '''Log in''' at the top of any page. You are sent to rmhstudios.com, and if you are signed in there you come straight back, signed in to the wiki under your rmhstudios.com handle. There is no separate wiki password. The first time you sign in, your wiki account is created for you.
+
+== Editing a page ==
+
+Press '''Edit''' at the top of a page, change the text, write a short summary of what you changed, and press '''Save changes'''. To start a new page, search for its title and follow the red link, or link to it from an existing page and follow that link.
+
+Every save is a revision in the page's history, which shows who changed what and lets an edit be undone. Each page also has a '''Discussion''' tab for talking about it.
+
+== Administrators ==
+
+RMH Studios admins are the wiki's administrators. They can delete and restore pages, protect a page from editing, and block an account that vandalises the wiki. If you see a problem you cannot fix yourself, say so on the page's Discussion tab.
+
+== Writing style ==
+
+* Pages are written in wikitext, the markup Wikipedia uses. The toolbar above the edit box inserts the common pieces.
+* Start with one or two sentences that say what the page is about.
+* Use <code><nowiki>== Heading ==</nowiki></code> for sections. The wiki shows the page title, so do not repeat it as a heading.
+* Write plainly. Prefer a short list or a table to a long paragraph.
+* Link to related wiki pages with <code><nowiki>[[Page title]]</nowiki></code>, and to the page on rmhstudios.com that the article is about.
+* Write what is true of the site today, and do not guess. If you are not sure of a fact, leave it out or ask on the Discussion tab.
+
+== Titles ==
+
+A page's title is also its address: the page "Coins and memberships" is at <code>/wiki/Coins_and_memberships</code>. Titles start with a capital letter and use spaces between words. A slash makes a sub-page, such as <code>Games/Balatro</code>.

@@ -3,31 +3,21 @@
  * MediaWiki configuration for wiki.rmhstudios.com (docs/wiki.md).
  *
  * Baked into the image (deploy/mediawiki/Dockerfile) and checked in, so it
- * holds no secret: the database password and the secret key come from the
- * container's environment (the `mediawiki` service in docker-compose.yml).
- * Change the wiki's behaviour here, rebuild the image and recreate the
- * container; nothing is edited by hand on the server.
+ * holds no secret. The wiki has no settings of its own: it reads the site's
+ * DATABASE_URL and BETTER_AUTH_SECRET through env.php. Change the wiki's
+ * behaviour here, rebuild the image and recreate the container; nothing is
+ * edited by hand on the server.
  *
- * Who can do what: everyone reads, nobody signs up, and only sysops edit.
- * The sysops are the administrator created by `wiki-bootstrap` and, through
- * that administrator's bot password, rmhstudios.com's /admin/wiki.
+ * Who can do what, as on Wikipedia: everyone reads; anyone with an
+ * rmhstudios.com account signs in (extension RMHStudiosLogin) and edits; site
+ * admins are the wiki's administrators (delete, protect, block).
  */
 
 if ( !defined( 'MEDIAWIKI' ) ) {
 	exit;
 }
 
-/** An environment variable, or the default; a required one stops the wiki if missing. */
-function rmhWikiEnv( string $name, ?string $default = null ): string {
-	$value = getenv( $name );
-	if ( $value !== false && $value !== '' ) {
-		return $value;
-	}
-	if ( $default === null ) {
-		throw new RuntimeException( "$name is not set (docs/wiki.md)" );
-	}
-	return $default;
-}
+require_once '/usr/local/lib/rmhstudios/env.php';
 
 ## Site
 $wgSitename = 'RMH Studios Wiki';
@@ -38,7 +28,7 @@ $wgLocaltimezone = 'UTC';
 ## URLs: Wikipedia's /wiki/Page_title. Apache aliases /wiki to index.php
 ## (Dockerfile). TLS ends at Cloudflare, so the canonical server is https
 ## even though requests reach the container over plain http.
-$wgServer = rmhWikiEnv( 'MEDIAWIKI_SERVER', 'https://wiki.rmhstudios.com' );
+$wgServer = rtrim( rmhWikiEnv( 'WIKI_PUBLIC_URL', 'https://wiki.rmhstudios.com' ), '/' );
 $wgCanonicalServer = $wgServer;
 $wgScriptPath = '';
 $wgArticlePath = '/wiki/$1';
@@ -58,34 +48,43 @@ $wgLogos = [
 $wgFavicon = 'https://rmhstudios.com/favicon.svg';
 
 ## Extensions bundled with MediaWiki: templates with logic, footnotes, and the
-## editing toolbar for an administrator who edits on the wiki itself.
+## editing toolbar. RMHStudiosLogin is ours (extensions/RMHStudiosLogin).
 wfLoadExtension( 'ParserFunctions' );
 wfLoadExtension( 'Cite' );
 wfLoadExtension( 'WikiEditor' );
+wfLoadExtension( 'RMHStudiosLogin' );
 
-## Database: the wiki's own database on the host Postgres, next to the
-## site's. The role owns the database; the tables live in the `mediawiki`
-## schema.
+## Database: the site's own Postgres database. Every wiki table is in the
+## `mediawiki` schema, apart from the site's tables in `public`, so the site's
+## migrations never see them and the nightly database backup includes them.
+$rmhDatabase = rmhWikiDatabase();
 $wgDBtype = 'postgres';
-$wgDBserver = rmhWikiEnv( 'MEDIAWIKI_DB_HOST', 'host.docker.internal' );
-$wgDBport = (int)rmhWikiEnv( 'MEDIAWIKI_DB_PORT', '5432' );
-$wgDBname = rmhWikiEnv( 'MEDIAWIKI_DB_NAME', 'mediawiki' );
-$wgDBuser = rmhWikiEnv( 'MEDIAWIKI_DB_USER', 'mediawiki' );
-$wgDBpassword = rmhWikiEnv( 'MEDIAWIKI_DB_PASS' );
+$wgDBserver = $rmhDatabase['host'];
+$wgDBport = $rmhDatabase['port'];
+$wgDBname = $rmhDatabase['name'];
+$wgDBuser = $rmhDatabase['user'];
+$wgDBpassword = $rmhDatabase['password'];
+$wgDBssl = $rmhDatabase['ssl'];
 $wgDBmwschema = 'mediawiki';
 $wgDBprefix = '';
+unset( $rmhDatabase );
 
-## Caches: object cache in APCu (one container), sessions in the database so
-## a restart does not sign out the site's bot session mid-edit.
+## Caches: object cache in APCu (one container), sessions and parsed pages in
+## the database so a restart does not sign anyone out.
 $wgMainCacheType = CACHE_ACCEL;
 $wgSessionCacheType = CACHE_DB;
 $wgParserCacheType = CACHE_DB;
 $wgMemCachedServers = [];
 
-## Secrets. 64 hex characters (`openssl rand -hex 32`); changing it signs
-## everyone out and invalidates bot sessions, nothing else.
-$wgSecretKey = rmhWikiEnv( 'MEDIAWIKI_SECRET_KEY' );
+## Secrets, derived from the site's BETTER_AUTH_SECRET (env.php). Rotating that
+## secret signs everyone out of the wiki too, and nothing else.
+$wgSecretKey = rmhWikiKey( RMH_WIKI_SECRET_LABEL );
 $wgAuthenticationTokenVersion = '1';
+
+## Signing in: "Log in" goes to rmhstudios.com, which sends the reader back
+## with a pass signed with this key (lib/wiki/sso.server.ts).
+$wgRMHStudiosLoginSiteUrl = rtrim( rmhWikiEnv( 'BETTER_AUTH_URL', 'https://rmhstudios.com' ), '/' );
+$wgRMHStudiosLoginKey = rmhWikiKey( RMH_WIKI_LOGIN_LABEL );
 
 ## The container keeps no state: no uploads, no outgoing mail, no files
 ## fetched from Wikimedia Commons. Pictures are linked, not stored.
@@ -97,28 +96,35 @@ $wgEmailAuthentication = false;
 $wgUseImageMagick = false;
 $wgDiff3 = '/usr/bin/diff3';
 
-## Requests arrive from Apache on the host through the Docker bridge and from
-## the site's `web` container over the compose network. Trusting those ranges
-## lets MediaWiki read the visitor's address from X-Forwarded-For.
+## Requests arrive from Apache on the host through the Docker bridge. Trusting
+## that range lets MediaWiki read the visitor's address from X-Forwarded-For.
 $wgCdnServersNoPurge = [ '127.0.0.1', '172.16.0.0/12' ];
 
-## Permissions. Reading is open; accounts, editing and moving are for sysops.
+## Permissions. Everyone reads. Accounts exist only through rmhstudios.com:
+## nobody can sign up here, and the sign-in creates the account on first use.
+## Signed-in readers edit, as on Wikipedia; anonymous visitors do not, so every
+## edit belongs to a site account. Moving pages waits for autoconfirmed, which
+## takes Wikipedia's 4 days and 10 edits (MediaWiki's own default is 0 and 0).
+## Site admins hold `sysop` (delete, protect, block) and `interface-admin`.
+$wgAutoConfirmAge = 4 * 86400;
+$wgAutoConfirmCount = 10;
 $wgGroupPermissions['*']['createaccount'] = false;
-foreach ( [ '*', 'user', 'autoconfirmed' ] as $group ) {
-	foreach ( [
-		'edit', 'createpage', 'createtalk', 'move', 'move-subpages', 'move-rootuserpages',
-		'move-categorypages', 'upload', 'reupload', 'reupload-shared', 'minoredit',
-		'applychangetags', 'changetags', 'editcontentmodel', 'sendemail',
-	] as $right ) {
-		$wgGroupPermissions[$group][$right] = false;
-	}
+$wgGroupPermissions['*']['autocreateaccount'] = true;
+foreach ( [ 'edit', 'createpage', 'createtalk', 'upload', 'reupload', 'reupload-shared' ] as $right ) {
+	$wgGroupPermissions['*'][$right] = false;
 }
-foreach ( [
-	'edit', 'createpage', 'createtalk', 'move', 'move-subpages', 'move-rootuserpages',
-	'move-categorypages', 'minoredit', 'applychangetags', 'changetags',
-] as $right ) {
+foreach ( [ 'edit', 'createpage', 'createtalk', 'minoredit', 'applychangetags', 'changetags' ] as $right ) {
+	$wgGroupPermissions['user'][$right] = true;
+}
+$moveRights = [ 'move', 'move-subpages', 'move-rootuserpages', 'move-categorypages' ];
+foreach ( [ 'upload', 'reupload', 'reupload-shared', 'sendemail', ...$moveRights ] as $right ) {
+	$wgGroupPermissions['user'][$right] = false;
+}
+foreach ( $moveRights as $right ) {
+	$wgGroupPermissions['autoconfirmed'][$right] = true;
 	$wgGroupPermissions['sysop'][$right] = true;
 }
+unset( $moveRights );
 
 ## Errors stay in the container's log; visitors see a generic page.
 $wgShowExceptionDetails = false;

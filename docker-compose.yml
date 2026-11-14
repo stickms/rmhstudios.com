@@ -236,9 +236,6 @@ services:
       - PORT=${PORT_WEB:-7005}
       - HOSTNAME=0.0.0.0
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      # Where /admin/wiki reaches the MediaWiki Action API: the `mediawiki` service by
-      # compose DNS. Unused until MEDIAWIKI_BOT_USER/PASSWORD are set (docs/wiki.md).
-      - MEDIAWIKI_URL=${MEDIAWIKI_URL:-http://mediawiki}
       # Postgres connection budget (max_connections = 200, deploy/postgres/
       # postgresql.tuning.conf). Each Nitro worker owns a lib/prisma.server pool of
       # DATABASE_POOL_SIZE (default 20) plus a pg-boss producer pool (2), so one web
@@ -247,7 +244,8 @@ services:
       # hubs 3 x (SERVER_DB_POOL_SIZE 5 + AUTH_DB_POOL_SIZE 4) = 27, jobs 16 + pg-boss
       # 8 = 24 (the Discord bot runs in jobs and shares its Prisma pool), ladder-worker 3
       # (own client) + 3 (alerts pool) = 6, homes-worker 3, status probe 2 (+2 slack),
-      # admin/psql/migrate ~10: 88 + 27 + 24 + 6 + 3 + 4 + 10 = 162 < 197 usable at 200.
+      # admin/psql/migrate ~10, the wiki's 8 Apache workers (deploy/mediawiki):
+      # 88 + 27 + 24 + 6 + 3 + 4 + 10 + 8 = 170 < 197 usable at 200.
       # (The Go supervisor's GO_DB_POOL_SIZE 3 left with it.)
       #
       # A STOCK host (100) cannot hold that, and applying the tuning is a root
@@ -574,19 +572,19 @@ services:
   # ─── Wiki (wiki.rmhstudios.com) ─────────────────────────────────────────────
   # MediaWiki, the public wiki, in the classic Vector skin (Wikipedia's own).
   # Apache proxies wiki.rmhstudios.com to the loopback port published below
-  # (deploy/apache/wiki.rmhstudios.com.conf). Everything it stores (pages,
-  # history, users, settings) lives in its OWN Postgres database on the host, next
-  # to the site's; uploads are off, so the container keeps no state and needs no
-  # volume. Its configuration is deploy/mediawiki/LocalSettings.php, baked into
-  # the image built from deploy/mediawiki/. The site's /admin/wiki page manages
-  # pages through the Action API over compose DNS (MEDIAWIKI_URL on `web`) with a
-  # bot password, so admins need no account here.
+  # (deploy/apache/wiki.rmhstudios.com.conf). It has no settings of its own: its
+  # tables live in the `mediawiki` schema of the SITE's database (the same
+  # DATABASE_DIRECT_URL/DATABASE_URL), and its keys derive from BETTER_AUTH_SECRET.
+  # Uploads are off, so the container keeps no state and needs no volume.
+  # Readers sign in with their rmhstudios.com account (GET /api/wiki/sso, the
+  # RMHStudiosLogin extension); anyone signed in edits, site admins administer.
   #
-  # OPT-IN, like pgbouncer: without MEDIAWIKI_DB_PASS and MEDIAWIKI_SECRET_KEY the
-  # wiki cannot answer, and a profiled service is skipped by the deploy's plain
-  # `docker compose up` (and by its image pulls), so it cannot crash-loop a deploy
-  # for a stack that has not set the wiki up. Build and start it once, by hand
-  # (docs/wiki.md):
+  # On every start the image runs wiki-bootstrap: on an empty schema it installs
+  # the wiki with its starter pages; after an upgrade it runs update.php.
+  #
+  # OPT-IN, like pgbouncer: a profiled service is skipped by the deploy's plain
+  # `docker compose up` and by its image pulls, and this image is built on the
+  # host, not in CI. Build and start it once, by hand (docs/wiki.md):
   #   docker compose --profile wiki up -d --build mediawiki
   # `restart: unless-stopped` keeps it up across reboots and deploys after that.
   mediawiki:
@@ -621,14 +619,14 @@ services:
     cpu_shares: 512
     ports:
       - '127.0.0.1:${PORT_WIKI:-7010}:80'
+    # Only the site settings the wiki reads (deploy/mediawiki/env.php), not the
+    # whole env_file: the wiki has no business holding Stripe or S3 keys.
     environment:
-      MEDIAWIKI_SERVER: ${MEDIAWIKI_SERVER:-https://wiki.rmhstudios.com}
-      MEDIAWIKI_DB_HOST: ${MEDIAWIKI_DB_HOST:-host.docker.internal}
-      MEDIAWIKI_DB_PORT: ${MEDIAWIKI_DB_PORT:-5432}
-      MEDIAWIKI_DB_USER: ${MEDIAWIKI_DB_USER:-mediawiki}
-      MEDIAWIKI_DB_PASS: ${MEDIAWIKI_DB_PASS:-}
-      MEDIAWIKI_DB_NAME: ${MEDIAWIKI_DB_NAME:-mediawiki}
-      MEDIAWIKI_SECRET_KEY: ${MEDIAWIKI_SECRET_KEY:-}
+      DATABASE_URL: ${DATABASE_URL:-}
+      DATABASE_DIRECT_URL: ${DATABASE_DIRECT_URL:-}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://rmhstudios.com}
+      WIKI_PUBLIC_URL: ${WIKI_PUBLIC_URL:-https://wiki.rmhstudios.com}
     healthcheck:
       test:
         [
@@ -640,7 +638,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      # The first start installs the wiki before Apache comes up.
+      start_period: 120s
     logging:
       driver: json-file
       options:

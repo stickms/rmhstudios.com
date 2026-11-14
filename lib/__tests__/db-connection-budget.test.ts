@@ -14,7 +14,7 @@ import {
  * inside the server's real `max_connections`. The committed budget assumes the
  * tuned host (200), but applying that tuning is a manual root action the
  * sandboxed deploy cannot perform, so a stock host (100) runs a fleet whose
- * blue/green peak is 162 connections. Past the limit Postgres refuses new
+ * blue/green peak is 170 connections. Past the limit Postgres refuses new
  * connections outright ("sorry, too many clients already") and every service —
  * web, hubs, auth lookups — fails at once. This takes a deploy down in the most
  * literal sense, so the arithmetic is pinned here:
@@ -29,15 +29,23 @@ const tuned = { maxConnections: 200, reserved: 3, webWorkers: 2, current: { ...D
 const stock = { ...tuned, maxConnections: 100 };
 
 describe('documented compose sum', () => {
-  it('matches the arithmetic in docker-compose.yml (no Go supervisor pool since D3)', () => {
-    // docker-compose.yml: 88 + 27 + 24 + 6 + 3 + (2 + 2 slack) + 10
-    expect(peakConnections(DEFAULTS, 2)).toBe(162);
+  it('matches the arithmetic in docker-compose.yml (no Go supervisor pool since D3; the wiki since its MediaWiki move)', () => {
+    // docker-compose.yml: 88 + 27 + 24 + 6 + 3 + (2 + 2 slack) + 10 + 8 (wiki)
+    expect(peakConnections(DEFAULTS, 2)).toBe(170);
   });
 
   it('keeps the compose comment in step with the sum', () => {
     const compose = readFileSync(join(__dirname, '../../docker-compose.yml'), 'utf8');
-    expect(compose).toContain('88 + 27 + 24 + 6 + 3 + 4 + 10 = 162');
+    expect(compose).toContain('88 + 27 + 24 + 6 + 3 + 4 + 10 + 8 = 170');
     expect(compose).not.toContain('GO_DB_POOL_SIZE=');
+  });
+
+  it('counts as many wiki connections as the wiki image allows Apache workers', () => {
+    const dockerfile = readFileSync(join(__dirname, '../../deploy/mediawiki/Dockerfile'), 'utf8');
+    const script = readFileSync(join(__dirname, '../../scripts/db-connection-budget.mjs'), 'utf8');
+    const workers = /MaxRequestWorkers (\d+)/.exec(dockerfile)?.[1];
+    expect(workers).toBeDefined();
+    expect(script).toContain(`const WIKI = ${workers};`);
   });
 });
 

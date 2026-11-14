@@ -3,7 +3,7 @@
 /**
  * Fit the fleet's Postgres pools inside the server's REAL max_connections.
  *
- * WHY: docker-compose.yml's connection budget (162 at the blue/green peak)
+ * WHY: docker-compose.yml's connection budget (170 at the blue/green peak)
  * assumes the tuned host from deploy/postgres/postgresql.tuning.conf
  * (max_connections = 200). Applying that file is a root action plus a Postgres
  * restart, which the sandboxed deploy cannot do (deploy/apply-perf-tuning.sh is
@@ -44,11 +44,15 @@ const WEB_CONTAINERS_AT_PEAK = 2; // old + new during deploy/hotswap-web.sh
 const WEB_PGBOSS_PER_WORKER = 2; // lib/jobs/boss.server.ts producer pool
 const STATUS_PROBE = 2;
 const SLACK = 2;
+/** The wiki's Apache workers, one connection each at most (deploy/mediawiki/Dockerfile,
+ *  MaxRequestWorkers). Counted whether or not the opt-in wiki runs. */
+const WIKI = 8;
 /** Connections nothing here sizes: pg-boss worker 8, ladder-worker 3+3,
- *  homes-worker 3, status probe 2 (+2 slack), and 10 for migrate / psql /
- *  backups / admin sessions. (The Go supervisor's GO_DB_POOL_SIZE pool went with
- *  it: the Discord bot it ran now uses the jobs worker's Prisma pool, D3.) */
-const FIXED = 8 + 6 + 3 + STATUS_PROBE + SLACK + 10;
+ *  homes-worker 3, status probe 2 (+2 slack), 10 for migrate / psql /
+ *  backups / admin sessions, and the wiki. (The Go supervisor's GO_DB_POOL_SIZE
+ *  pool went with it: the Discord bot it ran now uses the jobs worker's Prisma
+ *  pool, D3.) */
+const FIXED = 8 + 6 + 3 + STATUS_PROBE + SLACK + 10 + WIKI;
 
 /**
  * @typedef {{ web: number, server: number, auth: number, jobs: number }} Pools
