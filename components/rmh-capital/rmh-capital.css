@@ -342,7 +342,7 @@
 .rmhc-root .cta--solid:is(:hover, :focus-visible) { opacity: 0.86; }
 .rmhc-root .cta svg { width: 15px; height: 15px; flex: none; transition: transform 0.36s var(--ease); }
 .rmhc-root .cta:is(:hover, :focus-visible) svg { transform: translateX(4px); }
-[dir='rtl'] .rmhc-root :is(.cta, .go) svg { scale: -1 1; }
+[dir='rtl'] .rmhc-root :is(.cta svg, .go svg, .go-arrow) { scale: -1 1; }
 
 /* The corner arrow that ends a list item. */
 .rmhc-root .go { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 15px; font-weight: 500; color: var(--ink); }
@@ -401,6 +401,10 @@
 .rmhc-root :is(a.trio-item, a.row):is(:hover, :focus-visible)::before { transform: scaleX(1); }
 .rmhc-root .trio-item p { font-size: 15.5px; flex: 1; max-width: 40ch; }
 .rmhc-root .trio-alias { font-family: var(--mono); font-size: 12.5px; color: var(--mute); margin-top: -8px; }
+/* Exactly four items sit four across, so none is left alone on a second row. */
+@media (min-width: 901px) {
+  .rmhc-root .trio:has(> :nth-child(4):last-child) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 @media (max-width: 900px) { .rmhc-root .trio { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .rmhc-root .trio { grid-template-columns: 1fr; } }
 
