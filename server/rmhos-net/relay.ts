@@ -75,11 +75,22 @@ const LOOKUP_TIMEOUT_MS = 5000;
 const MAX_LOOKUPS_PER_USER = 8;
 const WINDOW = 128;
 const CONTINUE_EVERY = 64;
+const CREDIT_HOLD_HIGH =
+  512 *
+  1024;
+const CREDIT_HOLD_LOW =
+  256 *
+  1024;
 const RETRY_MS = 100;
 const MAX_WS_BUFFER =
   1024 *
   1024;
 const MAX_STREAM_QUEUE =
+  1024 *
+  1024;
+// Before the upstream exists an honest client may still send its whole initial window (128 packets).
+const MAX_EARLY_QUEUE =
+  2 *
   1024 *
   1024;
 const MAX_CONN_QUEUE =
@@ -241,9 +252,15 @@ interface Stream {
   /** Guest bytes accepted but not yet written upstream (early + upQueue). */
   queuedBytes: number;
   downQueue: Buffer[];
-  processedPackets: number;
-  /** DATA packets received beyond what CONTINUE has credited back. */
-  windowUsed: number;
+  /** Packets written upstream since the last CONTINUE, and the window that CONTINUE granted. */
+  sinceGrant: number;
+  lastGrant: number;
+  /** Queue passed the high mark: no CONTINUE until it drains below the low mark. */
+  creditHeld: boolean;
+  creditOwed: boolean;
+  maxPacket: number;
+  /** DATA packets received since the last CONTINUE. */
+  receivedSinceGrant: number;
   timer: NodeJS.Timeout | null;
   remoteEnded: boolean;
 }
@@ -737,6 +754,66 @@ export function createRelayServer(
       );
     }
 
+    /**
+     * CONTINUE for a stream, withheld while its queue is above the high mark (a client that
+     * respects credit is paused, not killed) and sized to the room left, so a full window of
+     * the packets it has been sending cannot overrun the 1 MiB hard cap.
+     */
+    function grantCredit(
+      s: Stream,
+    ): void {
+      if (
+        s.creditHeld &&
+        s.queuedBytes <
+          CREDIT_HOLD_LOW
+      )
+        s.creditHeld = false;
+      if (
+        s.creditHeld ||
+        !s.creditOwed
+      )
+        return;
+      s.creditOwed = false;
+      // Packets the client may already have in flight (sent before it sees this CONTINUE) still
+      // arrive, so they come out of the room before the new window is granted.
+      const inFlight =
+        Math.max(
+          0,
+          s.lastGrant -
+            s.receivedSinceGrant,
+        );
+      const room =
+        Math.floor(
+          (MAX_STREAM_QUEUE /
+            2 -
+            s.queuedBytes) /
+            s.maxPacket,
+        ) -
+        inFlight;
+      if (
+        room <
+        1
+      ) {
+        s.creditOwed = true;
+        return;
+      }
+      const grant =
+        Math.min(
+          WINDOW,
+          room,
+        );
+      s.receivedSinceGrant = 0;
+      s.sinceGrant = 0;
+      s.lastGrant =
+        grant;
+      send(
+        encodeContinue(
+          s.id,
+          grant,
+        ),
+      );
+    }
+
     /** Guest to remote, paced by the user's allowance and the upstream socket's own backlog. */
     function pumpUp(
       s: Stream,
@@ -812,31 +889,27 @@ export function createRelayServer(
           chunk.length
         ) {
           s.upQueue.shift();
-          s.processedPackets += 1;
+          s.sinceGrant += 1;
           if (
-            s.processedPackets %
-              CONTINUE_EVERY ===
-            0
-          ) {
-            s.windowUsed =
-              Math.max(
-                0,
-                s.windowUsed -
-                  CONTINUE_EVERY,
-              );
-            send(
-              encodeContinue(
-                s.id,
-                WINDOW,
+            s.sinceGrant >=
+            Math.min(
+              CONTINUE_EVERY,
+              Math.ceil(
+                s.lastGrant /
+                  2,
               ),
-            );
-          }
+            )
+          )
+            s.creditOwed = true;
         } else {
           s.upQueue[0] =
             chunk.subarray(
               take,
             );
         }
+        grantCredit(
+          s,
+        );
       }
     }
 
@@ -958,8 +1031,13 @@ export function createRelayServer(
           queuedBytes: 0,
           downQueue:
             [],
-          processedPackets: 0,
-          windowUsed: 0,
+          sinceGrant: 0,
+          lastGrant:
+            WINDOW,
+          creditHeld: false,
+          creditOwed: false,
+          maxPacket: 1,
+          receivedSinceGrant: 0,
           timer:
             null,
           remoteEnded: false,
@@ -1260,23 +1338,12 @@ export function createRelayServer(
               Buffer.from(
                 pkt.payload,
               );
-            // The guest may send at most the window it was credited; more is a flood.
-            s.windowUsed += 1;
-            if (
-              s.windowUsed >
-              WINDOW +
-                CONTINUE_EVERY
-            ) {
-              return closeStream(
-                s,
-                CLOSE_REASON.throttled,
-                true,
-              );
-            }
             if (
               s.queuedBytes +
                 buf.length >
-              MAX_STREAM_QUEUE
+              (s.socket
+                ? MAX_STREAM_QUEUE
+                : MAX_EARLY_QUEUE)
             ) {
               return closeStream(
                 s,
@@ -1296,6 +1363,20 @@ export function createRelayServer(
               buf.length;
             connQueued +=
               buf.length;
+            s.maxPacket =
+              Math.max(
+                s.maxPacket,
+                buf.length,
+              );
+            s.receivedSinceGrant += 1;
+            if (
+              s.queuedBytes >
+              CREDIT_HOLD_HIGH
+            )
+              s.creditHeld = true;
+            grantCredit(
+              s,
+            );
             if (
               !s.socket
             ) {

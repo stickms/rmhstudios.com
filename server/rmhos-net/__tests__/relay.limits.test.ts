@@ -456,55 +456,338 @@ describe('guest to remote queue bounds', () => {
     );
   }, 20_000);
 
-  it('closes a stream that sends more DATA than its window credited', async () => {
-    const slow =
-      new UsageMeter(
-        {
-          ...policy,
-          bytesPerSecond: 1,
-        },
+  describe('an honest client that respects credit', () => {
+    /** An upstream that records what it is given, can be stalled, and drains with a delay. */
+    function sink(
+      delayMs: number,
+    ) {
+      const received: Buffer[] =
+        [];
+      const pending: (() => void)[] =
+        [];
+      let stalled = false;
+      const d =
+        new Duplex(
+          {
+            read() {},
+            write(
+              chunk: Buffer,
+              _e,
+              cb,
+            ) {
+              received.push(
+                Buffer.from(
+                  chunk,
+                ),
+              );
+              if (
+                stalled
+              )
+                pending.push(
+                  () =>
+                    cb(),
+                );
+              else
+                setTimeout(
+                  cb,
+                  delayMs,
+                );
+            },
+          },
+        );
+      (
+        d as unknown as {
+          setTimeout: () => Duplex;
+        }
+      ).setTimeout =
+        () =>
+          d;
+      return {
+        socket:
+          d as unknown as net.Socket,
+        received,
+        stall:
+          () =>
+            (stalled = true),
+        release:
+          () => {
+            stalled = false;
+            pending
+              .splice(
+                0,
+              )
+              .forEach(
+                (
+                  f,
+                ) =>
+                  f(),
+              );
+          },
+      };
+    }
+
+    /** Sends only while it has credit; resets credit to the value of every CONTINUE, as a Wisp client does. */
+    async function transfer(
+      c: Client,
+      id: number,
+      packets: number,
+      size: number,
+    ) {
+      let credit = 128;
+      let seen = 0;
+      let sent = 0;
+      const end =
+        Date.now() +
+        25_000;
+      while (
+        sent <
+        packets
+      ) {
+        for (
+          ;
+          seen <
+          c
+            .packets
+            .length;
+          seen++
+        ) {
+          const p =
+            c
+              .packets[
+              seen
+            ] as {
+              type: string;
+              streamId: number;
+              bufferRemaining?: number;
+            };
+          if (
+            p.type ===
+              'continue' &&
+            p.streamId ===
+              id
+          )
+            credit =
+              p.bufferRemaining ??
+              credit;
+          if (
+            p.type ===
+              'close' &&
+            p.streamId ===
+              id
+          )
+            throw new Error(
+              'hub closed the stream ' + JSON.stringify(p),
+            );
+        }
+        if (
+          Date.now() >
+          end
+        )
+          throw new Error(
+            'transfer stalled',
+          );
+        if (
+          credit <=
+          0
+        ) {
+          await new Promise(
+            (
+              r,
+            ) =>
+              setTimeout(
+                r,
+                2,
+              ),
+          );
+          continue;
+        }
+        const buf =
+          Buffer.alloc(
+            size,
+            sent %
+              251,
+          );
+        buf.writeUInt32LE(
+          sent,
+          0,
+        );
+        c.ws.send(
+          encodeData(
+            id,
+            buf,
+          ),
+        );
+        credit -= 1;
+        sent += 1;
+      }
+    }
+
+    function inOrder(
+      received: Buffer[],
+      packets: number,
+      size: number,
+    ) {
+      const all =
+        Buffer.concat(
+          received,
+        );
+      expect(
+        all.length,
+      ).toBe(
+        packets *
+          size,
       );
-    slow.consume(
-      'q-window',
-      1,
-    ); // nothing drains upstream, so nothing is credited back
-    const {
-      port,
-    } =
-      await start(
-        {
-          meter:
-            slow,
-        },
-      );
-    const c =
-      await login(
-        port,
-        'q-window',
-      );
-    c.connect(
-      1,
-    );
-    for (
-      let i = 0;
-      i <
-      300;
-      i++
-    )
-      c.data(
-        1,
-        1,
-      );
-    expect(
-      reason(
-        await c.closeFor(
+      for (
+        let i = 0;
+        i <
+        packets;
+        i++
+      )
+        expect(
+          all.readUInt32LE(
+            i *
+              size,
+          ),
+        ).toBe(
+          i,
+        );
+    }
+
+    it('moves 1000+ packets on one stream against a slow upstream without being closed', async () => {
+      const up =
+        sink(
           1,
+        );
+      const {
+        port,
+      } =
+        await start(
+          {
+            connect:
+              (() =>
+                up.socket) as unknown as typeof net.connect,
+          },
+        );
+      const c =
+        await login(
+          port,
+          'honest-slow',
+        );
+      c.connect(
+        1,
+      );
+      await transfer(
+        c,
+        1,
+        1200,
+        1500,
+      );
+      await c.until(
+        () =>
+          Buffer.concat(
+            up.received,
+          )
+            .length >=
+          1200 *
+            1500
+            ? true
+            : undefined,
+        15_000,
+      );
+      inOrder(
+        up.received,
+        1200,
+        1500,
+      );
+      expect(
+        c.packets.some(
+          (
+            p,
+          ) =>
+            p.type ===
+              'close' &&
+            p.streamId ===
+              1,
         ),
-      ),
-    ).toBe(
-      CLOSE_REASON.throttled,
-    );
-    c.ws.close();
+      ).toBe(
+        false,
+      );
+      expect(
+        c.closeCode,
+      ).toBeNull();
+      c.ws.close();
+    }, 40_000);
+
+    it('is paused, never closed, across a stall and resume with 16 KiB packets', async () => {
+      const up =
+        sink(
+          0,
+        );
+      up.stall();
+      const {
+        port,
+      } =
+        await start(
+          {
+            connect:
+              (() =>
+                up.socket) as unknown as typeof net.connect,
+          },
+        );
+      const c =
+        await login(
+          port,
+          'honest-stall',
+        );
+      c.connect(
+        1,
+      );
+      setTimeout(
+        () =>
+          up.release(),
+        400,
+      );
+      await transfer(
+        c,
+        1,
+        200,
+        16 *
+          1024,
+      );
+      await c.until(
+        () =>
+          Buffer.concat(
+            up.received,
+          )
+            .length >=
+          200 *
+            16 *
+            1024
+            ? true
+            : undefined,
+        15_000,
+      );
+      inOrder(
+        up.received,
+        200,
+        16 *
+          1024,
+      );
+      expect(
+        c.packets.some(
+          (
+            p,
+          ) =>
+            p.type ===
+              'close' &&
+            p.streamId ===
+              1,
+        ),
+      ).toBe(
+        false,
+      );
+      c.ws.close();
+    }, 40_000);
   });
 });
 
