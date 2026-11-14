@@ -10,9 +10,9 @@
   "pageRouteFiles": 395,
   "i18nNamespaces": 132,
   "shippedLocales": 16,
-  "testFiles": 1094,
+  "testFiles": 1095,
   "workflows": 20,
-  "componentTsxFiles": 1481,
+  "componentTsxFiles": 1485,
   "cssFiles": 120,
-  "cssLines": 67009
+  "cssLines": 67013
 }

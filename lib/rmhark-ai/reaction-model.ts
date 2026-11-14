@@ -18,6 +18,9 @@
  *    Poisson draw whose rate falls from about seven an hour to a trickle
  *    (`announcementCommentsPerHour`), and each new comment answers another
  *    bot's comment 45% of the time, which is what makes it a conversation.
+ *  - A headline reaction always carries the headline's link, on its own line after the
+ *    text and outside the 280-character text limit; an announcement reaction carries its
+ *    link `REACTION_LINK_PROB` of the time, within the limit (`withReactionLink`).
  */
 
 /** A headline fetched from an outside feed, as the worker and the prompts see it. */
@@ -72,8 +75,14 @@ export const THREAD_REPLY_PROB = 0.45;
 export const MAX_BOT_COMMENTS_PER_ANNOUNCEMENT = 40;
 /** One bot says at most this much in one announcement thread. */
 export const MAX_COMMENTS_PER_BOT_PER_THREAD = 2;
-/** Chance a reaction post carries the link to what it reacts to. */
+/**
+ * Chance an ANNOUNCEMENT reaction carries the link to the post it reacts to (the link then
+ * counts against the 280-character limit). Headline reactions ignore this: they always carry
+ * their link, outside the limit.
+ */
 export const REACTION_LINK_PROB = 0.5;
+/** Longest outside link a reaction will carry; a longer one is left off (matches `/api/oembed`'s cap). */
+export const MAX_REACTION_LINK_LENGTH = 2048;
 
 /** Hours between two epoch-millisecond instants, never negative. */
 export function ageHours(now: number, then: number): number {

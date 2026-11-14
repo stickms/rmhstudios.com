@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { Bookmark } from 'lucide-react';
 import { api } from '@/lib/contract/client';
 import { getSavedMessagesApi, openSavedMessagesApi } from '@/lib/messages/messages.contract';
 import { toast } from '@/lib/toast';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { SpineItem } from '@/components/ui/spine';
+import { InboxAvatar } from '@/components/feed/InboxAvatar';
 
 /**
  * M2 — Saved Messages, pinned above the conversation list. It is a note-to-self
@@ -59,12 +61,15 @@ export function SavedMessagesRow() {
       <button
         type="button"
         onClick={() => void open()}
-        className="block w-full text-start after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
+        className="flex w-full items-start gap-3 text-start after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
       >
-        <span className="t-body block font-medium text-site-text">
-          {t('saved-messages', { defaultValue: 'Saved Messages' })}
+        <InboxAvatar icon={Bookmark} />
+        <span className="min-w-0 flex-1">
+          <span className="t-body block font-medium text-site-text">
+            {t('saved-messages', { defaultValue: 'Saved Messages' })}
+          </span>
+          <span className="t-body block truncate text-site-text-muted">{preview}</span>
         </span>
-        <span className="t-body block truncate text-site-text-muted">{preview}</span>
       </button>
     </SpineItem>
   );

@@ -305,6 +305,60 @@ describe('getFreshHeadlines', () => {
     expect(safeFetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('logs a failed feed and an empty refresh through the logger it was given', async () => {
+    const warn = vi.fn();
+    safeFetchMock.mockImplementation(async () => {
+      throw new Error('down');
+    });
+    await expect(getFreshHeadlines(NOW, { warn })).resolves.toEqual([]);
+    expect(warn).toHaveBeenCalledWith(
+      'bot_worker.headlines_feed_failed',
+      expect.objectContaining({ feed: 'https://one.example/rss', error: 'down' }),
+    );
+    expect(warn).toHaveBeenCalledWith('bot_worker.headlines_refresh_empty', {
+      feeds: 1,
+      keptFromLastRefresh: 0,
+    });
+  });
+
+  it('logs an empty refresh once per refresh, and says how many cached headlines it kept', async () => {
+    const warn = vi.fn();
+    safeFetchMock.mockImplementationOnce(async () => okResponse(feedWith('Keep', NOW)));
+    await getFreshHeadlines(NOW, { warn });
+    expect(warn).not.toHaveBeenCalled();
+    safeFetchMock.mockImplementationOnce(async () => okResponse(rss([])));
+    await getFreshHeadlines(NOW + HOUR, { warn });
+    await getFreshHeadlines(NOW + HOUR + 1000, { warn }); // cached: no second refresh
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('bot_worker.headlines_refresh_empty', {
+      feeds: 1,
+      keptFromLastRefresh: 1,
+    });
+  });
+
+  it('does not log when the feeds are deliberately off, or when the refresh found headlines', async () => {
+    const warn = vi.fn();
+    process.env.BOT_NEWS_FEEDS = '';
+    await expect(getFreshHeadlines(NOW, { warn })).resolves.toEqual([]);
+    expect(safeFetchMock).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+
+    resetHeadlineCache();
+    process.env.BOT_NEWS_FEEDS = 'https://one.example/rss';
+    safeFetchMock.mockImplementation(async () => okResponse(feedWith('One', NOW)));
+    await getFreshHeadlines(NOW, { warn });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('survives a logger that throws', async () => {
+    const warn = vi.fn(() => {
+      throw new Error('logger down');
+    });
+    safeFetchMock.mockImplementation(async () => okResponse(rss([])));
+    await expect(getFreshHeadlines(NOW, { warn })).resolves.toEqual([]);
+    expect(warn).toHaveBeenCalled();
+  });
+
   it('returns [] and does not throw when nothing was ever fetched', async () => {
     safeFetchMock.mockImplementation(async () => {
       throw new Error('down');
