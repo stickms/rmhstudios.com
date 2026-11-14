@@ -582,11 +582,13 @@ services:
   # On every start the image runs wiki-bootstrap: on an empty schema it installs
   # the wiki with its starter pages; after an upgrade it runs update.php.
   #
-  # OPT-IN, like pgbouncer: a profiled service is skipped by the deploy's plain
-  # `docker compose up` and by its image pulls, and this image is built on the
-  # host, not in CI. Build and start it once, by hand (docs/wiki.md):
+  # Behind the `wiki` profile so the deploy's image pulls and its main
+  # `docker compose up` skip it (its image is built on the host, not in CI), and
+  # so `pnpm dev` stacks do not start it. deploy.sh brings it up separately, as a
+  # best-effort step after the site is healthy (Step 5b): a production deploy
+  # builds it from cache and starts it, and a wiki failure never fails the
+  # deploy. By hand, the same thing is:
   #   docker compose --profile wiki up -d --build mediawiki
-  # `restart: unless-stopped` keeps it up across reboots and deploys after that.
   mediawiki:
     build:
       context: ./deploy/mediawiki

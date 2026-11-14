@@ -56,43 +56,49 @@ and `PORT_WIKI` (default 7010).
 
 ## First-time setup (production)
 
-Nothing here runs on a deploy. The `mediawiki` service is behind the `wiki`
-compose profile and its image is built on the host, so a stack that has not
-done these steps is unaffected. From the repository checkout on the VPS, after
-a deploy that contains the wiki code:
+The deploy runs the wiki. After the site is up and healthy, every production
+deploy (`deploy.sh`, Step 5b) builds the wiki's image from `deploy/mediawiki/` on
+the host and starts it:
 
-1. **Start it.**
+- On the first deploy, the container creates the `mediawiki` schema in the site's
+  database, installs the wiki, imports the starter pages and the sidebar, and
+  then serves.
+- On later deploys the rebuild comes from cache. The container is not even
+  restarted unless something in `deploy/mediawiki/` changed or MediaWiki
+  published a new 1.43 point release.
+- The step is best-effort. A wiki that fails to build or start logs the reason
+  and its last log lines in the deploy output. It never fails or rolls back the
+  site's deploy.
 
-   ```bash
-   docker compose -p rmhstudios-prod --env-file .env.production --profile wiki up -d --build mediawiki
-   docker logs -f rmhstudios-prod-mediawiki   # until "wiki: up to date"
-   ```
+The one step a deploy cannot take is the Apache vhost: the deploy runs sandboxed
+and cannot write to `/etc` (the same reason the Postgres and Apache tuning is
+manual). Until the vhost is installed, every deploy log says so. Once, as root,
+with DNS for `wiki.rmhstudios.com` pointing at the same Cloudflare-proxied
+origin as the main site:
 
-   The first start creates the `mediawiki` schema in the site's database,
-   installs the wiki, imports the starter pages and the sidebar, and then
-   serves. Later starts run `update.php` only when the MediaWiki version or
-   `LocalSettings.php` changed. It empties MediaWiki's object cache, which holds
-   everyone's sessions, so running it on every start would sign the whole wiki
-   out. `restart: unless-stopped` keeps it up across reboots and deploys.
+```bash
+sudo cp deploy/apache/wiki.rmhstudios.com.conf /etc/apache2/sites-available/wiki.rmhstudios.com.conf
+sudo a2ensite wiki.rmhstudios.com
+sudo apachectl configtest && sudo systemctl reload apache2
+```
 
-2. **Apache.** Install the vhost (DNS for `wiki.rmhstudios.com` must point at
-   the same Cloudflare-proxied origin as the main site):
+Then `https://wiki.rmhstudios.com` shows the main page. **Log in** takes you
+through rmhstudios.com and back, signed in. As a site admin you also see
+**Delete** and **Protect** under the page's **More** menu.
 
-   ```bash
-   sudo cp deploy/apache/wiki.rmhstudios.com.conf /etc/apache2/sites-available/wiki.rmhstudios.com.conf
-   sudo a2ensite wiki.rmhstudios.com
-   sudo apachectl configtest && sudo systemctl reload apache2
-   ```
+To do by hand what the deploy does (for example after editing
+`deploy/mediawiki/` on the host):
 
-3. **Check.** `https://wiki.rmhstudios.com` shows the main page. **Log in**
-   takes you through rmhstudios.com and back, signed in; as a site admin you see
-   **Delete** and **Protect** under the page's **More** menu.
+```bash
+docker compose -p rmhstudios-prod --env-file .env.production --profile wiki up -d --build mediawiki
+docker logs -f rmhstudios-prod-mediawiki   # until "wiki: up to date"
+```
 
 ### Moving from an earlier wiki setup
 
 - **The first MediaWiki setup** (its own `mediawiki` database and role, the
   `MEDIAWIKI_*` variables and `/admin/wiki`): remove `MEDIAWIKI_*` from
-  `.env.production`, rebuild and restart the container as in step 1, and, once
+  `.env.production`, let the next deploy rebuild the container, and, once
   nothing in it is wanted, `DROP DATABASE mediawiki; DROP ROLE mediawiki;`. Pages
   written there do not move on their own; export them from that wiki's
   `Special:Export` before dropping it and import them on the new one with
@@ -181,10 +187,12 @@ that, like any other page.
 
 ## Operations
 
-- **Upgrades.** The image is pinned to the 1.43 long-term-support line, and
-  rebuilding with `up -d --build mediawiki` picks up its point releases. Moving
-  to the next LTS is a change to the `FROM` line (and the compose image tag)
-  and a rebuild; the next start runs `update.php`.
+- **Upgrades.** The image is pinned to the 1.43 long-term-support line. Every
+  deploy rebuilds it with `--pull`, so MediaWiki's point releases (mostly
+  security fixes) arrive with the next deploy after they are published. Moving
+  to the next LTS is a change to the `FROM` line (and the compose image tag); the
+  next deploy builds it and the first start runs `update.php`. An upgrade signs
+  everyone out once, because `update.php` clears the sessions.
 - **Backups.** The wiki is in the site's database, so the nightly
   `deploy/backup/pg-backup.sh` dump includes it. The container holds nothing
   else.

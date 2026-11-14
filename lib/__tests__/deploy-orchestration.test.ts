@@ -102,6 +102,9 @@ case "$*" in
     if [ -f "$MOCK_ROOT/late-failure" ] && [ ! -f "$MOCK_ROOT/restored" ]; then echo "true $(cat "$MOCK_ROOT/late-failure")"; else echo 'true 0'; fi ;;
   *' up -d '*) [ ! -f "$MOCK_ROOT/late-failure" ] || touch "$MOCK_ROOT/restored" ;;
   *' ps -q '*) echo fixture-worker ;;
+  *'{{.State.Health.Status}}'*) echo "\${MOCK_WIKI_HEALTH:-healthy}" ;;
+  *'--profile wiki build'*)
+    if [ "\${MOCK_WIKI_FAIL:-0}" = 1 ]; then echo 'failed to solve: mediawiki:1.43: not found' >&2; exit 1; fi ;;
 esac
 `,
     { mode: 0o755 },
@@ -217,6 +220,41 @@ describe('production deploy orchestration', () => {
     expect(result.status, result.stdout + result.stderr).toBe(0);
     expect(docker).toMatch(/builder prune -f --filter until=72h/);
     expect(docker).not.toContain('builder prune -af');
+  }, 25_000);
+  // The wiki (docs/wiki.md) is built on the host and started after the site is
+  // healthy. It is best-effort: nothing about it may fail or roll back a release.
+  const wikiLines = (docker: string) =>
+    docker.split('\n').filter((line) => line.includes('--profile wiki'));
+  it('brings the wiki up after the site is healthy, building it on a fresh base image', () => {
+    const { result, docker } = fixture();
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const wiki = wikiLines(docker);
+    expect(wiki.findIndex((l) => l.includes('build --pull mediawiki'))).toBe(0);
+    expect(wiki.some((l) => l.includes('up -d mediawiki'))).toBe(true);
+    expect(result.stdout).toContain('Wiki is up');
+    // Never part of the main bring-up or the image pulls.
+    for (const line of docker.split('\n')) {
+      if (line.includes(' up -d ') && !line.includes('--profile wiki'))
+        expect(line).not.toContain('mediawiki');
+    }
+  }, 25_000);
+  it('keeps a release whose wiki will not build, and says so', () => {
+    const { result, docker, stateDir } = fixture({ MOCK_WIKI_FAIL: '1' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.stdout).toContain(
+      'WARNING: the wiki did not build or start; the site deploy is unaffected.',
+    );
+    expect(wikiLines(docker).some((l) => l.includes('up -d mediawiki'))).toBe(false);
+    expect(readState(stateDir, 'last-successful')?.sha).toBe(shaB);
+  }, 25_000);
+  it('keeps a release whose wiki does not come up healthy, and says so', () => {
+    const { result, stateDir } = fixture({
+      MOCK_WIKI_HEALTH: 'unhealthy',
+      DEPLOY_WIKI_WAIT_SECONDS: '5',
+    });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.stdout).toContain("WARNING: the wiki container is 'unhealthy' after 5s");
+    expect(readState(stateDir, 'last-successful')?.sha).toBe(shaB);
   }, 25_000);
   // Every journal write goes through node. Without it the release used to die
   // part-way through with only "node: command not found" in the listener log.
