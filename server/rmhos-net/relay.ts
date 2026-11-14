@@ -110,9 +110,9 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-const reasonName = new Map<number, string>(
-  Object.entries(CLOSE_REASON).map(([name, code]) => [code, name]),
-);
+function reasonName(code: number): string | undefined {
+  return Object.entries(CLOSE_REASON).find(([, c]) => c === code)?.[0];
+}
 
 interface Stream {
   id: number;
@@ -294,7 +294,7 @@ export function createRelayServer(opts: RelayOptions): http.Server {
         up: s.up,
         down: s.down,
         ms: Date.now() - s.startedAt,
-        reason: reasonName.get(reason) ?? `0x${reason.toString(16)}`,
+        reason: reasonName(reason) ?? `0x${reason.toString(16)}`,
       });
     }
 

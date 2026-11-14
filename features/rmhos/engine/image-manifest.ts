@@ -7,9 +7,6 @@
  * never mixes files from two builds: a saved state only restores onto the
  * rootfs it was taken with).
  */
-// The one servable copy of the emulator core: Vite emits it as a hashed, same-origin asset.
-import wasmUrl from 'v86/build/v86.wasm?url';
-
 export interface ImageFile {
   url: string;
   size: number;
@@ -23,7 +20,6 @@ export interface ImageManifest {
   state: ImageFile | null;
   seabios: ImageFile;
   vgabios: ImageFile;
-  wasm: string;
 }
 
 type Pin = Omit<ImageFile, 'url'>;
@@ -81,6 +77,5 @@ export function resolveImageManifest(cdnBase: string | undefined): ImageManifest
     state: file('state'),
     seabios: file('seabios'),
     vgabios: file('vgabios'),
-    wasm: wasmUrl,
   };
 }

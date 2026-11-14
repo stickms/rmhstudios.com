@@ -28,7 +28,6 @@ describe('resolveImageManifest', () => {
       expect(f.size).toBeGreaterThan(0);
       expect(f.sha256).toMatch(/^[0-9a-f]{64}$/);
     }
-    expect(m.wasm).toMatch(/v86.*\.wasm/);
   });
 });
 

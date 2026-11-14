@@ -5,7 +5,7 @@
  * and the whole file, which the emulator would take as one block. Production serves the image
  * from the CDN, which answers 206.
  */
-import { createReadStream, statSync } from 'node:fs';
+import { createReadStream, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from 'vite';
 
@@ -13,6 +13,13 @@ const PREFIX = '/rmhos-dev/';
 
 export function rmhosDevImage(root: string): Plugin {
   const dir = path.resolve(root, 'public', 'rmhos-dev');
+  const realDir = (() => {
+    try {
+      return realpathSync(dir);
+    } catch {
+      return dir;
+    }
+  })();
   return {
     name: 'rmhos-dev-image',
     apply: 'serve',
@@ -21,12 +28,24 @@ export function rmhosDevImage(root: string): Plugin {
         const url = req.url ?? '';
         if (!url.startsWith(PREFIX) || (req.method !== 'GET' && req.method !== 'HEAD'))
           return next();
-        const name = decodeURIComponent(url.slice(PREFIX.length).split('?')[0] ?? '');
-        const file = path.resolve(dir, name);
+        let name: string;
+        try {
+          name = decodeURIComponent(url.slice(PREFIX.length).split('?')[0] ?? '');
+        } catch {
+          res.statusCode = 400;
+          return res.end('bad request');
+        }
+        let file = path.resolve(dir, name);
         if (!file.startsWith(dir + path.sep)) return next();
         let size: number;
         try {
-          size = statSync(file).size;
+          // Resolve symlinks and check the prefix again: a link in the directory must not
+          // reach a file outside it.
+          file = realpathSync(file);
+          if (!file.startsWith(realDir + path.sep)) return next();
+          const st = statSync(file);
+          if (!st.isFile()) return next();
+          size = st.size;
         } catch {
           return next();
         }
@@ -53,7 +72,11 @@ export function rmhosDevImage(root: string): Plugin {
         }
         res.setHeader('Content-Length', end - start + 1);
         if (req.method === 'HEAD') return res.end();
-        createReadStream(file, { start, end }).pipe(res);
+        const stream = createReadStream(file, { start, end });
+        // v86 aborts ranged requests it no longer needs; do not leak the descriptor.
+        res.on('close', () => stream.destroy());
+        stream.on('error', () => res.destroy());
+        stream.pipe(res);
       });
     },
   };

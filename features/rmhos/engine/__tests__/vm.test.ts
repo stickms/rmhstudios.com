@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { relayConfig } from '../vm';
+import { describe, expect, it, vi } from 'vitest';
+import { createV86Loader, createVm, relayConfig } from '../vm';
+import { resolveImageManifest } from '../image-manifest';
 
 describe('relayConfig', () => {
   it('turns the session URL into a Wisp URL with the ticket', () => {
@@ -28,5 +29,67 @@ describe('relayConfig', () => {
     const r = relayConfig(null, 'rmhstudios.com', true);
     expect(r.relayUrl).toBe('wisps://rmhstudios.com/rmhos-net/');
     expect(r.dohServer).not.toContain('ticket');
+  });
+});
+
+describe('createV86Loader', () => {
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  it('overlapping loads import once and leave process intact', async () => {
+    const original = globalThis.process;
+    let calls = 0;
+    let hiddenDuringImport = false;
+    const load = createV86Loader(async () => {
+      calls++;
+      hiddenDuringImport = (globalThis as { process?: unknown }).process === undefined;
+      await delay(10);
+      return { V86: class {} };
+    });
+    const [a, b] = await Promise.all([load(), load()]);
+    expect(a).toBe(b);
+    expect(calls).toBe(1);
+    expect(hiddenDuringImport).toBe(true);
+    expect(globalThis.process).toBe(original);
+    expect(await load()).toBe(a);
+    expect(calls).toBe(1);
+  });
+
+  it('puts process back after a failed import and lets a retry try again', async () => {
+    const original = globalThis.process;
+    let calls = 0;
+    const load = createV86Loader(async () => {
+      calls++;
+      await delay(1);
+      if (calls === 1) throw new Error('network');
+      return { V86: class {} };
+    });
+    await expect(load()).rejects.toThrow('network');
+    expect(globalThis.process).toBe(original);
+    await expect(load()).resolves.toBeDefined();
+    expect(calls).toBe(2);
+    expect(globalThis.process).toBe(original);
+  });
+});
+
+describe('createVm cancellation', () => {
+  it('aborting while the emulator loads builds no machine', async () => {
+    const ctor = vi.fn();
+    const ac = new AbortController();
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const p = createVm({
+      screen: {} as HTMLDivElement,
+      manifest: resolveImageManifest(undefined),
+      net: null,
+      signal: ac.signal,
+      loader: async () => {
+        await gate;
+        return { V86: ctor as never };
+      },
+    });
+    ac.abort();
+    release();
+    await expect(p).rejects.toMatchObject({ name: 'AbortError' });
+    expect(ctor).not.toHaveBeenCalled();
   });
 });

@@ -10,30 +10,25 @@
  *  - Nothing is sent to the guest before `emulator-ready`: serial input sent
  *    while the state is still loading is lost.
  */
-import type { V86 as V86Instance, V86Options } from 'v86';
+import type { V86 as V86Class, V86 as V86Instance, V86Options } from 'v86';
+// The one servable copy of the emulator core: Vite emits it as a hashed, same-origin asset.
+// Here and not in image-manifest.ts, which stays a pure module the strict island checks.
+import wasmUrl from 'v86/build/v86.wasm?url';
 import { RMHOS } from './constants';
 import type { ImageManifest } from './image-manifest';
 import { vmOptions } from './vm-options';
+import type { VmHandle, VmPhase, VmPhaseDetail } from './vm-types';
 
-export type VmPhase = 'idle' | 'downloading' | 'booting' | 'running' | 'stopped' | 'failed';
-
-export type VmPhaseDetail = { loaded: number; total: number } | { error: string };
-
-export interface VmHandle {
-  onPhase(cb: (p: VmPhase, detail?: VmPhaseDetail) => void): () => void;
-  onSerial1(cb: (chunk: string) => void): () => void;
-  sendSerial1(text: string): void;
-  writeShareFile(path: string, data: Uint8Array): Promise<void>;
-  readShareFile(path: string): Promise<Uint8Array>;
-  deleteShareFile(path: string): Promise<void>;
-  restart(): Promise<void>;
-  destroy(): void;
-}
+export type { VmHandle, VmPhase, VmPhaseDetail } from './vm-types';
 
 export interface CreateVmOptions {
   screen: HTMLDivElement;
   manifest: ImageManifest;
   net: { url: string; ticket: string } | null;
+  /** Aborting while the emulator is still loading rejects with an AbortError and starts nothing. */
+  signal?: AbortSignal;
+  /** Test seam: how the emulator module is loaded. Defaults to the memoised v86 import. */
+  loader?: () => Promise<{ V86: typeof V86Class }>;
 }
 
 /** The directory the BIOS, kernel and disk are served from (they share one). */
@@ -70,22 +65,42 @@ export function relayConfig(net: CreateVmOptions['net'], pageHost: string, pageI
 /**
  * v86 picks its scheduler when the module loads: `typeof process !== 'undefined'` selects the Node
  * path (`global.setImmediate`), which does not exist in a browser. Some bundles define a `process`
- * stub, so it is hidden for the duration of the import and put back after.
+ * stub, so it is hidden while the import runs and put back right after. The import is memoised:
+ * two overlapping calls (StrictMode's double mount, a fast retry) must not each hide and restore
+ * it, or the second would "restore" the first one's hidden value and leave `process` gone for
+ * good. A failed import clears the memo so a retry can try again.
  */
-async function loadV86() {
-  const g = globalThis as { process?: unknown };
-  const had = 'process' in g;
-  const saved = g.process;
-  if (had) g.process = undefined;
-  try {
-    return await import('v86');
-  } finally {
-    if (had) g.process = saved;
-  }
+export function createV86Loader<T>(importer: () => Promise<T>): () => Promise<T> {
+  let memo: Promise<T> | null = null;
+  return () => {
+    if (memo) return memo;
+    const g = globalThis as { process?: unknown };
+    const had = 'process' in g;
+    const saved = g.process;
+    if (had) g.process = undefined;
+    const restore = () => {
+      if (had) g.process = saved;
+    };
+    let p: Promise<T>;
+    try {
+      p = importer();
+    } catch (e) {
+      restore();
+      throw e;
+    }
+    const mine = p.finally(restore);
+    memo = mine;
+    mine.catch(() => {
+      if (memo === mine) memo = null;
+    });
+    return mine;
+  };
 }
 
+const loadV86 = createV86Loader(() => import('v86'));
+
 export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
-  const { screen, manifest, net } = opts;
+  const { screen, manifest, net, signal } = opts;
   const phaseListeners = new Set<(p: VmPhase, d?: VmPhaseDetail) => void>();
   const serialListeners = new Set<(c: string) => void>();
   let phase: VmPhase = 'idle';
@@ -94,6 +109,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   let ready = false;
   let usedState = false;
   let serial1Seen = '';
+  let dropRejectionListener: (() => void) | null = null;
 
   const setPhase = (p: VmPhase, d?: VmPhaseDetail) => {
     if (destroyed && p !== 'stopped') return;
@@ -101,21 +117,29 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     for (const cb of phaseListeners) cb(p, d);
   };
 
-  const { V86 } = await loadV86();
+  const { V86 } = await (opts.loader ?? loadV86)();
+  // The page may have left while the emulator module loaded: build nothing (640 MB a machine).
+  if (signal?.aborted) throw new DOMException('rmhOS machine creation aborted', 'AbortError');
   const base = baseUrlOf(manifest);
   const { relayUrl, dohServer } = relayConfig(net, location.host, location.protocol === 'https:');
 
   const build = (withState: boolean): V86Instance => {
+    dropRejectionListener?.();
     usedState = withState && !!manifest.state;
     ready = false;
     serial1Seen = '';
     const options = {
       ...vmOptions({ baseUrl: base, relayUrl }),
-      wasm_path: manifest.wasm,
+      wasm_path: wasmUrl,
       screen_container: screen,
       autostart: true,
       disable_speaker: true,
-      net_device: { type: 'virtio', relay_url: relayUrl, dns_method: 'doh', doh_server: dohServer },
+      net_device: {
+        ...vmOptions({ baseUrl: base, relayUrl }).net_device,
+        relay_url: relayUrl,
+        dns_method: 'doh',
+        doh_server: dohServer,
+      },
       ...(usedState && manifest.state ? { initial_state: { url: manifest.state.url } } : {}),
     } as unknown as V86Options;
     const e = new V86(options);
@@ -193,18 +217,28 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
         setPhase('running');
       for (const cb of serialListeners) cb(chunk);
     });
-    // A state that downloads but will not restore surfaces as an error out of the loader.
+    // A state that downloads but will not restore surfaces as an unhandled rejection out of v86's
+    // loader. Only that is acted on: while the state is loading, a rejection whose message or
+    // stack names the state, its decompression or the restore. Any other rejection on the page
+    // (an unrelated fetch, a third-party script) is left alone rather than costing a cold boot.
+    const STATE_FAILURE = /state|zstd|restore/i;
     const onError = (ev: PromiseRejectionEvent) => {
-      if (usedState && !ready && !finished) {
-        ev.preventDefault();
-        window.removeEventListener('unhandledrejection', onError);
-        fallBack('state could not be restored');
-      }
+      if (!usedState || ready || finished) return;
+      const r = ev.reason as { message?: unknown; stack?: unknown } | string | undefined;
+      const text =
+        typeof r === 'string' ? r : `${String(r?.message ?? '')} ${String(r?.stack ?? '')}`;
+      if (!STATE_FAILURE.test(text)) return;
+      ev.preventDefault();
+      drop();
+      fallBack('state could not be restored');
     };
+    const drop = () => {
+      window.removeEventListener('unhandledrejection', onError);
+      if (dropRejectionListener === drop) dropRejectionListener = null;
+    };
+    dropRejectionListener = drop;
     window.addEventListener('unhandledrejection', onError);
-    e.add_listener('emulator-ready', () =>
-      window.removeEventListener('unhandledrejection', onError),
-    );
+    e.add_listener('emulator-ready', drop);
   };
 
   setPhase('downloading');
@@ -225,6 +259,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       serialListeners.add(cb);
       return () => serialListeners.delete(cb);
     },
+    bootKind: () => (usedState ? 'snapshot' : 'cold'),
     sendSerial1(text) {
       if (!ready) return;
       need().serial_send_bytes(1, new TextEncoder().encode(text));
@@ -247,6 +282,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      dropRejectionListener?.();
       void emulator?.destroy().catch(() => {});
       emulator = null;
       phaseListeners.clear();

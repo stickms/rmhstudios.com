@@ -50,7 +50,7 @@ export const STATIC_CARDS: StaticCard[] = [
       'A social-first home for original games, creative tools, music, learning, and the people making them.',
     stats: [
       { value: '20', label: 'games', lead: true },
-      { value: '14', label: 'apps' },
+      { value: '15', label: 'apps' },
       { value: '16', label: 'languages' },
     ],
   },
@@ -70,7 +70,7 @@ export const STATIC_CARDS: StaticCard[] = [
     title: 'Tools that live here.',
     subtitle:
       'Watch parties, music, typing, study, code, ladders — full apps, not demos, all on one account.',
-    stats: [{ value: '14', label: 'apps', lead: true }],
+    stats: [{ value: '15', label: 'apps', lead: true }],
   },
   {
     path: '/blog',
