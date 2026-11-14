@@ -17,6 +17,8 @@ import { adminRedemptionsQuery } from '@/lib/admin/admin-ops.queries';
 
 import { serverError } from '@/lib/http';
 import { reviewRedemptionApi } from '@/lib/admin/admin-tools.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 export const Route = createFileRoute('/_site/admin/redemptions')({
   head: () => ({ meta: [{ title: 'Redemption Queue | RMH Studios' }] }),
   loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminRedemptionsQuery()),
@@ -43,6 +45,7 @@ function AdminRedemptionsPage() {
   // A failed read shows an empty queue.
   const { data, isPending: loading } = useQuery(query);
   const rows: RedemptionRow[] = data?.requests ?? [];
+  const arrival = useArrival(!loading);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const act = async (id: string, action: 'approve' | 'reject' | 'fulfill') => {
@@ -83,11 +86,12 @@ function AdminRedemptionsPage() {
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Coins}
             title={t('redemptions-empty', { defaultValue: 'No pending redemption requests.' })}
           />
         ) : (
-          <div className="divide-y divide-site-border">
+          <div className={cn('divide-y divide-site-border', arrival)}>
             {rows.map((r) => {
               const Icon = KIND_ICON[r.kind];
               return (

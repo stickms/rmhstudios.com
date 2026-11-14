@@ -26,6 +26,8 @@ import { getShopApi } from '@/lib/shop/shop.contract';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createListingApi } from '@/lib/market/market.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface OwnedItem {
   id: string;
@@ -51,6 +53,7 @@ export function SellSheet({
   const [items, setItems] = useState<OwnedItem[] | null>(null);
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const arrival = useArrival(items !== null);
 
   useEffect(() => {
     if (!open) return;
@@ -125,6 +128,7 @@ export function SellSheet({
           </div>
         ) : sorted.length === 0 ? (
           <EmptyState
+            className={arrival}
             title={t('market-sell-empty-title', { defaultValue: 'Nothing to sell' })}
             description={t('market-sell-empty-desc', {
               defaultValue:
@@ -132,7 +136,7 @@ export function SellSheet({
             })}
           />
         ) : (
-          <ul className="border-t border-site-border">
+          <ul className={cn('border-t border-site-border', arrival)}>
             {sorted.map((item) => (
               <li
                 key={item.id}

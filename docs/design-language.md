@@ -92,7 +92,8 @@ and the content column; `PageFrame` supplies the column for a page whose content
 ## 7. Motion
 
 Plan section 11: hover and press fills 90 ms, tab underline and toggle 140 ms, chrome activation 280 ms, globe 360 ms,
-overlay 160 ms opacity. Nothing else animates. `lib/motion.ts` carries the durations. The one ambient motion is the globe's
+overlay 160 ms opacity, and content that arrives after the view painted fades in 160 ms, opacity only (M9: `useArrival`,
+`ArrivalSuspense`, `useArrivingKeys` in `components/ui/arrive.tsx`). Nothing else animates. `lib/motion.ts` carries the durations. The one ambient motion is the globe's
 idle drift; "Globe motion: On / Still" stamps `html[data-jelly-motion='still']`, which `lib/globe/view.ts` and the games'
 ambient canvases read (`motionStill()` in `lib/appearance/prefs.ts`).
 

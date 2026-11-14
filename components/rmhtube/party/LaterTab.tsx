@@ -7,6 +7,8 @@ import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { api } from '@/lib/rmhtube/party-store';
 import { btn, btnPrimary, input, muted } from './ui';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Item {
   id: string;
@@ -20,6 +22,9 @@ const ADD_ALL_CAP = 15;
 export default function LaterTab() {
   const { t } = useTranslation('f-watch');
   const [items, setItems] = useState<Item[] | null>(null);
+  // M9: the list replaces "Loading…"; a video saved while it is open fades in.
+  const arrival = useArrival(items !== null);
+  const isNew = useArrivingKeys((items ?? []).map((i) => i.id));
   const [url, setUrl] = useState('');
   const current = useRmhTubeStore((s) => s.room?.currentItem ?? null);
   const isHost = useRmhTubeStore((s) => s.room?.hostUserId === s.room?.myUserId);
@@ -91,17 +96,19 @@ export default function LaterTab() {
       {items === null ? (
         <p className={muted}>{t('loading', { defaultValue: 'Loading…' })}</p>
       ) : items.length === 0 ? (
-        <p className={muted}>{t('later-empty', { defaultValue: 'Nothing saved yet.' })}</p>
+        <p className={cn(muted, arrival)}>
+          {t('later-empty', { defaultValue: 'Nothing saved yet.' })}
+        </p>
       ) : (
         <>
           {isHost && (
-            <button type="button" className={btnPrimary} onClick={addAll}>
+            <button type="button" className={cn(btnPrimary, arrival)} onClick={addAll}>
               {t('later-add-all', { defaultValue: 'Add all to this room’s queue' })}
             </button>
           )}
-          <ul className="space-y-1">
+          <ul className={cn('space-y-1', arrival)}>
             {items.map((i) => (
-              <li key={i.id} className="flex items-center gap-2">
+              <li key={i.id} className={cn('flex items-center gap-2', isNew(i.id) && ARRIVE)}>
                 <span className="min-w-0 flex-1 truncate" title={i.url}>
                   {i.title}
                 </span>

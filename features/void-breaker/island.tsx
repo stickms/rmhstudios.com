@@ -5,11 +5,11 @@
  * to render, without the site's router, shell or providers.
  */
 import './island.css';
-import { Suspense } from 'react';
 import { mountIsland } from '@/components/island/mount';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { VoidBreakerGame } from './ui/VoidBreakerGame';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 mountIsland(
   <main
@@ -18,9 +18,9 @@ mountIsland(
   >
     <div className="grow relative flex items-center justify-center overflow-hidden">
       <GameErrorBoundary gameName="Void Breaker">
-        <Suspense fallback={<GameLoadingFallback />}>
+        <ArrivalSuspense fallback={<GameLoadingFallback />}>
           <VoidBreakerGame />
-        </Suspense>
+        </ArrivalSuspense>
       </GameErrorBoundary>
     </div>
   </main>,

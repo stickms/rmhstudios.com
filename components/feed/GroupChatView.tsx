@@ -5,6 +5,8 @@ import { Spine } from '@/components/ui/spine';
 import './conversation/conversation.css';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { GifPicker } from './GifPicker';
 import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
@@ -52,6 +54,10 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
     patchMessage: thread.patchMessage,
   });
   const shownMessages = useExpiring(thread.messages);
+  // Steel M9: the group replaces the spinner; a message from someone else that arrives live, or an older page, fades
+  // in. Your own sends do not (they are optimistic rows).
+  const arrival = useArrival(!loading);
+  const isNew = useArrivingKeys(loading ? [] : shownMessages.map((m) => m.id));
 
   if (loading) {
     return (
@@ -62,7 +68,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   }
   if (notFound || !group) {
     return (
-      <div className="flex flex-col items-center gap-3 px-4 pt-4 pb-12 text-center">
+      <div className={cn('flex flex-col items-center gap-3 px-4 pt-4 pb-12 text-center', arrival)}>
         <p className="font-medium text-site-text">
           {t('group-not-found', { defaultValue: 'Group not found' })}
         </p>
@@ -76,7 +82,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   }
 
   return (
-    <div className="conversation" style={chatTheme.rootStyle}>
+    <div className={cn('conversation', arrival)} style={chatTheme.rootStyle}>
       <GroupHeader group={group} chatRef={chatRef} onLeave={leave} />
       <ChatPinnedBar
         chat={chatRef}
@@ -94,6 +100,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
           {shownMessages.map((m, i) => (
             <GroupMessageRow
               key={m.id}
+              className={isNew(m.id) && m.sender.id !== currentUserId ? ARRIVE : undefined}
               message={m}
               group={group}
               chatRef={chatRef}

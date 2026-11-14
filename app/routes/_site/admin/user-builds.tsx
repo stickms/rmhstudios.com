@@ -16,6 +16,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
 import { updateUserBuildApi } from '@/lib/user-builds.contract';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Build {
   id: string;
@@ -44,6 +46,8 @@ function AdminUserBuildsPage() {
   const [search, setSearch] = useState('');
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const arrival = useArrival(!(loading && builds.length === 0));
+  const isNewBuild = useArrivingKeys(builds.map((b) => b.id));
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastElementRef = useCallback((node: HTMLDivElement) => {
@@ -116,16 +120,16 @@ function AdminUserBuildsPage() {
               <span>{t("loading-builds", { defaultValue: "Loading builds..." })}</span>
             </div>
           ) : !loading && builds.length === 0 ? (
-            <EmptyState icon={Search} title={t("no-builds-found", { defaultValue: "No builds found matching your search." })} />
+            <EmptyState className={arrival} icon={Search} title={t("no-builds-found", { defaultValue: "No builds found matching your search." })} />
           ) : (
             <div
-              className={`divide-y divide-site-border transition-opacity duration-site-fast ${loading ? 'opacity-60' : ''}`}
+              className={cn('divide-y divide-site-border transition-opacity duration-site-fast', loading && 'opacity-60', arrival)}
               aria-busy={loading}
             >
               {builds.map((build, index) => {
                 const isLast = index === builds.length - 1;
                 return (
-                  <div key={build.id} ref={isLast ? lastElementRef : null} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:gap-4">
+                  <div key={build.id} ref={isLast ? lastElementRef : null} className={cn('flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:gap-4', isNewBuild(build.id) && ARRIVE)}>
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <Link to={`/user-builds/${build.slug}` as string} className="t-heading min-w-0 break-words text-site-text hover:underline">{build.title}</Link>

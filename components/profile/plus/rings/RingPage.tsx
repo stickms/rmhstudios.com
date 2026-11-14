@@ -6,6 +6,8 @@ import { Flag, LogIn, LogOut, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useSession } from '@/components/Providers';
@@ -29,6 +31,7 @@ export default function RingPage({ slug }: { slug: string }) {
   const { data: ring, reload } = useJson<RingDetail>(`/api/webrings/${encodeURIComponent(slug)}`);
   const [busy, setBusy] = useState(false);
   const [reporting, setReporting] = useState(false);
+  const arrival = useArrival(ring !== undefined);
 
   async function membership(join: boolean) {
     setBusy(true);
@@ -67,6 +70,7 @@ export default function RingPage({ slug }: { slug: string }) {
   if (ring === null) {
     return (
       <EmptyState
+        className={arrival}
         title={t('ring-missing', { defaultValue: 'That ring doesn’t exist' })}
         action={
           <Button asChild variant="default" size="sm">
@@ -78,7 +82,12 @@ export default function RingPage({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+    <div
+      className={cn(
+        'mx-auto max-w-2xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12',
+        arrival,
+      )}
+    >
       <header className="space-y-2">
         <h2 className="text-2xl font-semibold text-site-text">{ring.name}</h2>
         {ring.description ? (

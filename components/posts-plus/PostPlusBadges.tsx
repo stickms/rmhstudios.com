@@ -6,6 +6,8 @@ import { useNearViewport } from '@/hooks/useNearViewport';
 import { isExpired, type SeriesNav } from '@/lib/posts-plus/constants';
 import { api } from '@/lib/contract/client';
 import { seriesNavForPostApi } from '@/lib/posts-plus/series.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * posts-plus badges on a post: "Part k of N - Series name" with prev/next (X5)
@@ -43,6 +45,8 @@ function SeriesChip({ postId }: { postId: string }) {
   const { t } = useTranslation('f-posts-plus');
   const { ref, visible } = useNearViewport<HTMLDivElement>('300px 0px', navCache.has(postId));
   const [nav, setNav] = useState<SeriesNav | null>(() => navCache.get(postId) ?? null);
+  // Steel M9: the chip replaces its reserved slot once fetched; a cached one is there on first paint.
+  const navArrival = useArrival(!!nav);
 
   useEffect(() => {
     if (!visible || navCache.has(postId)) return;
@@ -90,7 +94,10 @@ function SeriesChip({ postId }: { postId: string }) {
   return (
     <div
       ref={ref}
-      className="inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-xs text-site-text-muted"
+      className={cn(
+        'inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-xs text-site-text-muted',
+        navArrival,
+      )}
     >
       {step(nav.prev, t('series-prev', { defaultValue: 'Previous part' }), ChevronLeft)}
       <Link
@@ -118,6 +125,8 @@ function SeriesChip({ postId }: { postId: string }) {
 function ExpiryChip({ expiresAt }: { expiresAt: string }) {
   const { t } = useTranslation('f-posts-plus');
   const [now, setNow] = useState<number | null>(null);
+  // Steel M9: the countdown is computed after mount and replaces its reserved slot.
+  const arrival = useArrival(now !== null);
 
   useEffect(() => {
     setNow(Date.now());
@@ -137,7 +146,12 @@ function ExpiryChip({ expiresAt }: { expiresAt: string }) {
         : t('expires-minutes', { defaultValue: 'Deletes in {{n}}m', n: mins });
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs text-site-text-muted">
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs text-site-text-muted',
+        arrival,
+      )}
+    >
       <Hourglass className="h-3.5 w-3.5 text-site-warning" aria-hidden />
       {label}
     </span>

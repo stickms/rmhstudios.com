@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import { SpineItem } from '@/components/ui/spine';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { postSummaryApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
@@ -17,6 +19,8 @@ export function ThreadSummary({ postId, commentCount }: { postId: string; commen
   const [error, setError] = useState<string | null>(null);
   const [requested, setRequested] = useState(false);
   const { t } = useTranslation('feed');
+  // Steel M9: the summary (or why there is none) replaces "Summarizing…".
+  const arrival = useArrival(!loading);
 
   // Only worth offering on threads with enough discussion.
   if (commentCount < 4) return null;
@@ -57,9 +61,9 @@ export function ThreadSummary({ postId, commentCount }: { postId: string; commen
           {t('summarizing', { defaultValue: 'Summarizing…' })}
         </p>
       ) : error ? (
-        <p className="t-body text-site-text-muted">{error}</p>
+        <p className={cn('t-body text-site-text-muted', arrival)}>{error}</p>
       ) : (
-        <div>
+        <div className={arrival}>
           <p className="t-label">{t('ai-summary', { defaultValue: 'AI summary' })}</p>
           <p className="t-body mt-1 whitespace-pre-line">{summary}</p>
         </div>

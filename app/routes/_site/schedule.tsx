@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { CalendarClock, Circle } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { scheduleQuery } from '@/lib/schedule/schedule.queries';
@@ -50,6 +52,7 @@ function SchedulePage() {
   const query = useQuery(scheduleQuery());
   const grid: ScheduleGrid | null = query.data ?? null;
   const failed = query.isError;
+  const arrival = useArrival(grid !== null || failed);
 
   const time = (iso: string) =>
     new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
@@ -72,7 +75,7 @@ function SchedulePage() {
         </p>
 
         {grid?.next && (
-          <section className="rounded-site px-4 py-3">
+          <section className={cn('rounded-site px-4 py-3', arrival)}>
             <p className="text-xs font-medium text-site-text-muted">
               {t('schedule-next', { defaultValue: 'Next up' })}
             </p>
@@ -92,7 +95,7 @@ function SchedulePage() {
         )}
 
         {failed && (
-          <p role="alert" className="text-sm text-site-text-muted">
+          <p role="alert" className={cn('text-sm text-site-text-muted', arrival)}>
             {t('schedule-error', { defaultValue: 'Could not load the schedule just now.' })}
           </p>
         )}
@@ -106,7 +109,7 @@ function SchedulePage() {
         )}
 
         {grid?.byDay.map((bucket) => (
-          <section key={bucket.day} className="rounded-site px-4 py-3">
+          <section key={bucket.day} className={cn('rounded-site px-4 py-3', arrival)}>
             <h2 className="site-section-label">{dayLabel(bucket.day)}</h2>
             {bucket.occurrences.length === 0 ? (
               <p className="mt-2 text-sm text-site-text-muted">

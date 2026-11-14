@@ -5,6 +5,7 @@ import { CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { api } from './api';
+import { useArrival } from '@/components/ui/arrive';
 
 /**
  * "Book office hours" on a profile. Renders nothing unless the member has
@@ -15,6 +16,7 @@ export function OfficeHoursProfileButton({ userId }: { userId: string }) {
   const { t } = useTranslation('f-calendar');
   const idle = useIdleReady();
   const [available, setAvailable] = useState(false);
+  const arrival = useArrival(available);
 
   useEffect(() => {
     if (!idle) return;
@@ -31,7 +33,7 @@ export function OfficeHoursProfileButton({ userId }: { userId: string }) {
 
   if (!available) return null;
   return (
-    <Link to="/office-hours/$userId" params={{ userId }}>
+    <Link to="/office-hours/$userId" params={{ userId }} className={arrival}>
       <Button variant="default">
         <CalendarClock aria-hidden />
         <span className="hidden xs:inline">

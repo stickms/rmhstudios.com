@@ -15,6 +15,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface PasskeyRow {
   id: string;
@@ -29,6 +31,8 @@ export function PasskeyManager() {
   const confirm = useConfirm();
   const [passkeys, setPasskeys] = useState<PasskeyRow[]>([]);
   const [loading, setLoading] = useState(true);
+  // Steel M9: the passkeys replace the spinner.
+  const arrival = useArrival(!loading);
   const [busy, setBusy] = useState(false);
   const [supported, setSupported] = useState(true);
 
@@ -149,11 +153,16 @@ export function PasskeyManager() {
           <Spinner />
         </div>
       ) : passkeys.length === 0 ? (
-        <p className="text-sm text-site-text-muted">
+        <p className={cn('text-sm text-site-text-muted', arrival)}>
           {t('passkeys-empty', { defaultValue: 'You have no passkeys yet.' })}
         </p>
       ) : (
-        <ul className="divide-y divide-site-border rounded-site-sm border border-site-border">
+        <ul
+          className={cn(
+            'divide-y divide-site-border rounded-site-sm border border-site-border',
+            arrival,
+          )}
+        >
           {passkeys.map((pk) => (
             <li key={pk.id} className="flex items-center gap-3 px-3 py-2">
               <KeyRound className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />

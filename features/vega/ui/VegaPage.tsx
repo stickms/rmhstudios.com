@@ -7,12 +7,12 @@
  * The way back is a plain link: `/secret` is a site page, and leaving an island
  * is a document load.
  */
-import { Suspense } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import GameCanvas from './GameCanvas';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 export function VegaPage() {
   const { t } = useTranslation('r-secret');
@@ -38,9 +38,9 @@ export function VegaPage() {
 
           <div className="flex-1 flex items-center justify-center relative">
             <GameErrorBoundary gameName="Project Vega">
-              <Suspense fallback={<GameLoadingFallback />}>
+              <ArrivalSuspense fallback={<GameLoadingFallback />}>
                 <GameCanvas />
-              </Suspense>
+              </ArrivalSuspense>
             </GameErrorBoundary>
           </div>
         </main>

@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
@@ -9,6 +8,7 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import { NeonDriftwayGame } from '@/components/neon-driftway/NeonDriftwayGame';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 function NeonDriftwayPage() {
   return (
@@ -20,9 +20,9 @@ function NeonDriftwayPage() {
           adapts its field of view rather than letterboxing a fixed frame. */}
       <div className="grow relative overflow-hidden">
         <GameErrorBoundary gameName="Neon Driftway">
-          <Suspense fallback={<GameLoadingFallback />}>
+          <ArrivalSuspense fallback={<GameLoadingFallback />}>
             <NeonDriftwayGame />
-          </Suspense>
+          </ArrivalSuspense>
         </GameErrorBoundary>
       </div>
     </main>

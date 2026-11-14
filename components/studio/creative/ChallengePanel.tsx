@@ -10,6 +10,8 @@ import { api } from '@/lib/contract/client';
 import { fetchJson, serverError } from '@/lib/http';
 import { uploadChallengeAudioApi } from '@/lib/creator/challenge-upload.contract';
 import type { ChallengeDetail, ChallengeView } from '@/lib/studio/challenge/shared';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const post = (body: unknown) => ({
   method: 'POST',
@@ -59,17 +61,18 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
       voting: t('phase-voting', { defaultValue: 'Voting' }),
       finished: t('phase-finished', { defaultValue: 'Finished' }),
     })[p];
+  const arrival = useArrival(!q.isLoading);
   if (q.isLoading) return <div className="surface-card h-24 rounded-app" aria-hidden />;
   const items = q.data?.challenges ?? [];
   if (items.length === 0) {
     return (
-      <p className="text-sm text-app-text-muted">
+      <p className={cn('text-sm text-app-text-muted', arrival)}>
         {t('challenge-none', { defaultValue: 'No sample flip is running yet. Check back soon.' })}
       </p>
     );
   }
   return (
-    <ul className="space-y-2">
+    <ul className={cn('space-y-2', arrival)}>
       {items.map((c) => (
         <li key={c.id}>
           <button
@@ -103,6 +106,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
     queryFn: () => fetchJson<ChallengeDetail>(`/api/studio/challenges/${id}`),
   });
   const c = q.data;
+  const arrival = useArrival(!!c);
   if (!c) return <div className="surface-card h-24 rounded-app" aria-hidden />;
 
   const run = async (fn: () => Promise<unknown>) => {
@@ -147,7 +151,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
     });
 
   return (
-    <div className="space-y-3">
+    <div className={cn('space-y-3', arrival)}>
       <Button size="xs" variant="ghost" onClick={onBack}>
         <ArrowLeft />
         {t('challenge-back', { defaultValue: 'All challenges' })}

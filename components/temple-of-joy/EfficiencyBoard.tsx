@@ -9,6 +9,8 @@ import {
   rankTempleEfficiencyApi,
 } from '@/lib/temple-of-joy/efficiency.contract';
 import { TempleButton, TempleSection } from './ui';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Row {
   rank: number;
@@ -24,6 +26,7 @@ export function EfficiencyBoard() {
   const [mine, setMine] = useState<number | null | undefined>(undefined);
   const [note, setNote] = useState<string | null>(null);
   const signedIn = Boolean(useSession().data?.user);
+  const arrival = useArrival(rows !== null);
 
   const load = useCallback(async () => {
     const [board, me] = await Promise.all([
@@ -65,7 +68,7 @@ export function EfficiencyBoard() {
         })}
       </p>
       {typeof mine === 'number' && (
-        <p className="toj-panel-note">
+        <p className={cn('toj-panel-note', arrival)}>
           {t('eff-mine', {
             defaultValue: 'You are making about 10^{{exp}} gladness an hour.',
             exp: exponentOf(mine),
@@ -79,7 +82,7 @@ export function EfficiencyBoard() {
       )}
       {note && <p className="toj-panel-note">{note}</p>}
       {rows?.map((r) => (
-        <p key={`${r.rank}-${r.userId ?? r.username}`} className="toj-panel-note">
+        <p key={`${r.rank}-${r.userId ?? r.username}`} className={cn('toj-panel-note', arrival)}>
           {r.rank}. {r.username} - 10^{exponentOf(r.score)}/h
         </p>
       ))}

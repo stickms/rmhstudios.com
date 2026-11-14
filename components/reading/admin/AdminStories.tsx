@@ -11,8 +11,10 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { apiJson } from '@/lib/reading/client';
 import type { AdminStory, StorySuggestion as Suggestion } from '@/lib/reading/schema';
+import { cn } from '@/lib/utils';
 
 const KEY = ['admin-stories'] as const;
 
@@ -26,6 +28,7 @@ export default function AdminStories() {
     queryKey: KEY,
     queryFn: () => apiJson<{ stories: AdminStory[] }>('/api/admin/reading/stories'),
   });
+  const arrival = useArrival(!isPending);
   const refresh = () => void qc.invalidateQueries({ queryKey: KEY });
 
   const create = useMutation({
@@ -107,13 +110,14 @@ export default function AdminStories() {
         <Skeleton className="h-32 w-full" />
       ) : stories.length === 0 ? (
         <EmptyState
+          className={arrival}
           title={t('stories-empty', { defaultValue: 'No stories yet' })}
           description={t('stories-empty-hint', {
             defaultValue: 'Create one, then link the related news articles to it.',
           })}
         />
       ) : (
-        <div className="space-y-3">
+        <div className={cn('space-y-3', arrival)}>
           {stories.map((s) => (
             <StoryCard
               key={s.id}
@@ -156,6 +160,7 @@ function StoryCard({
       apiJson<{ suggestions: Suggestion[] }>(`/api/admin/reading/stories/${story.id}/suggest`),
     enabled: showSuggest,
   });
+  const suggestArrival = useArrival(!suggest.isPending);
 
   const link = useMutation({
     mutationFn: (slug: string) =>
@@ -278,7 +283,7 @@ function StoryCard({
           suggest.isPending ? (
             <Skeleton className="mt-3 h-10 w-full" />
           ) : (suggest.data?.suggestions.length ?? 0) === 0 ? (
-            <p className="mt-3 t-body text-site-text-muted">
+            <p className={cn('mt-3 t-body text-site-text-muted', suggestArrival)}>
               {story.articles.length === 0
                 ? t('story-suggest-needs-article', {
                     defaultValue:
@@ -287,7 +292,7 @@ function StoryCard({
                 : t('story-suggest-none', { defaultValue: 'No related unlinked articles found.' })}
             </p>
           ) : (
-            <ul className="mt-3 space-y-2 t-body">
+            <ul className={cn('mt-3 space-y-2 t-body', suggestArrival)}>
               {suggest.data!.suggestions.map((s) => (
                 <li key={s.slug} className="flex items-center gap-2">
                   <span className="min-w-0 flex-1">

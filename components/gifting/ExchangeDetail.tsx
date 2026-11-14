@@ -1,5 +1,5 @@
 /** One gift / mixtape exchange: join, set exclusions, the draw result, gifting, the reveal. */
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { apiJson, errorCode } from '@/components/economy-plus/api';
 import {
   EXCHANGE_MIN_MEMBERS,
@@ -70,6 +72,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
   });
   const [excludes, setExcludes] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
+  const arrival = useArrival(!isLoading);
 
   const act = useMutation({
     mutationFn: (a: { path?: string; method: string; body?: unknown }) =>
@@ -81,7 +84,11 @@ export default function ExchangeDetail({ id }: { id: string }) {
   if (isLoading) return <Skeleton className="mx-4 mt-4 h-64" />;
   if (isError || !ex) {
     return (
-      <EmptyState icon={Gift} title={t('detail-missing', { defaultValue: 'Exchange not found' })} />
+      <EmptyState
+        className={arrival}
+        icon={Gift}
+        title={t('detail-missing', { defaultValue: 'Exchange not found' })}
+      />
     );
   }
 
@@ -96,7 +103,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
   }[ex.status];
 
   return (
-    <div className="space-y-4 px-4 pt-4 pb-12">
+    <div className={cn('space-y-4 px-4 pt-4 pb-12', arrival)}>
       <header className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-semibold">{ex.title}</h2>
@@ -191,9 +198,10 @@ export default function ExchangeDetail({ id }: { id: string }) {
       ) : null}
 
       {ex.me && open && isMixtape ? (
-        <Suspense fallback={<Skeleton className="h-40" />}>
+        // wrap={false}: the parent spaces its children; MixtapeEditor fades itself.
+        <ArrivalSuspense fallback={<Skeleton className="h-40" />} wrap={false}>
           <MixtapeEditor exchangeId={ex.id} initial={ex.me.tracks} />
-        </Suspense>
+        </ArrivalSuspense>
       ) : null}
 
       {ex.status === 'DRAWN' && ex.me?.recipient ? (

@@ -11,6 +11,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { hornLeaderboardApi } from '@features/gabriels-horn/engine/gabriels-horn.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Row {
   username: string;
@@ -33,6 +35,7 @@ export function HornLeaderboard() {
     queryFn: fetchBoard,
     staleTime: 60_000,
   });
+  const arrival = useArrival(!isLoading);
 
   if (isLoading) {
     return (
@@ -44,7 +47,7 @@ export function HornLeaderboard() {
 
   if (isError) {
     return (
-      <p className="text-sm text-app-text-dim">
+      <p className={cn('text-sm text-app-text-dim', arrival)}>
         {t('leaderboard-error', { defaultValue: 'The record is unavailable right now.' })}
       </p>
     );
@@ -52,14 +55,14 @@ export function HornLeaderboard() {
 
   if (!data || data.length === 0) {
     return (
-      <p className="text-sm text-app-text-dim">
+      <p className={cn('text-sm text-app-text-dim', arrival)}>
         {t('leaderboard-empty', { defaultValue: 'Nobody has finished a game yet. Go first.' })}
       </p>
     );
   }
 
   return (
-    <ol className="space-y-1">
+    <ol className={cn('space-y-1', arrival)}>
       {data.map((row, index) => (
         <li
           key={row.username}

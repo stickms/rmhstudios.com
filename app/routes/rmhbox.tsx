@@ -5,7 +5,6 @@
  * Unauthenticated users are redirected to /login with a callback URL.
  */
 
-import { Suspense } from 'react';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
@@ -19,6 +18,7 @@ import rmhboxCss from '@/components/rmhbox/rmhbox.css?url';
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import RMHboxShell from '@/components/rmhbox/RMHboxShell';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // Re-measured 2026-10-07: this used to be lazy because a direct import once put
 // RMHboxShell's store and socket client (~64 KB) in the shared entry. It no
@@ -37,11 +37,11 @@ function RMHboxLayout() {
   return (
     // `--app-bg` for `.rmhbox-theme` (components/shared/app-theme.css) so the
     // hold reads as RMHBox arriving rather than a flash of a different app.
-    <Suspense fallback={<GameLoadingFallback background="#1a1b1e" foreground="#ffffff" />}>
+    <ArrivalSuspense fallback={<GameLoadingFallback background="#1a1b1e" foreground="#ffffff" />}>
       <RMHboxShell>
         <Outlet />
       </RMHboxShell>
-    </Suspense>
+    </ArrivalSuspense>
   );
 }
 

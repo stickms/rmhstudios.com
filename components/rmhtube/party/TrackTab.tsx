@@ -6,6 +6,8 @@ import { api, roomPosition, usePartyStore, type LoadedTrack } from '@/lib/rmhtub
 import { mediaKey, type CommentaryLine } from '@/lib/rmhtube/party';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import { btn, btnPrimary, input, muted } from './ui';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface TrackRow {
   id: string;
@@ -19,6 +21,7 @@ export default function TrackTab() {
   const item = useRmhTubeStore((s) => s.room?.currentItem ?? null);
   const loaded = usePartyStore((s) => s.track);
   const [tracks, setTracks] = useState<TrackRow[] | null>(null);
+  const arrival = useArrival(tracks !== null);
   const [recording, setRecording] = useState(false);
   const [lines, setLines] = useState<CommentaryLine[]>([]);
   const [text, setText] = useState('');
@@ -81,11 +84,11 @@ export default function TrackTab() {
         {tracks === null ? (
           <p className={muted}>{t('loading', { defaultValue: 'Loading…' })}</p>
         ) : tracks.length === 0 ? (
-          <p className={muted}>
+          <p className={cn(muted, arrival)}>
             {t('track-empty', { defaultValue: 'No commentary for this video yet.' })}
           </p>
         ) : (
-          <ul className="space-y-1">
+          <ul className={cn('space-y-1', arrival)}>
             {tracks.map((tr) => (
               <li key={tr.id} className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate">

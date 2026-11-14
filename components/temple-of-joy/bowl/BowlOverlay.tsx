@@ -29,7 +29,6 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   Component,
-  Suspense,
   lazy,
   useCallback,
   useEffect,
@@ -60,6 +59,7 @@ import { useTempleValue } from '../hooks';
 import { TempleButton, Glyph } from '../ui';
 import type { LaneControls, LanePalette } from './BowlLane';
 import { clamp } from '@/lib/core/math';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const BowlLane = lazy(() => import('./BowlLane'));
 
@@ -550,7 +550,7 @@ function Alley() {
                       </div>
                     )}
                   >
-                    <Suspense
+                    <ArrivalSuspense
                       fallback={
                         <p className="toj-bowl-loading" role="status">
                           {t('bowl-loading', { defaultValue: 'Oiling the lane…' })}
@@ -567,7 +567,7 @@ function Alley() {
                         onSettled={onSettled}
                         onRolling={onRolling}
                       />
-                    </Suspense>
+                    </ArrivalSuspense>
                   </LaneBoundary>
                 ) : (
                   <p className="toj-bowl-loading" role="status">

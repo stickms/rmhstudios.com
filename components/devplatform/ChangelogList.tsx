@@ -7,11 +7,14 @@ import { NoteBody } from '@/components/devplatform/NoteBody';
 import type { ReleaseNoteView } from '@/lib/devplatform/release-notes';
 import { api } from '@/lib/contract/client';
 import { releaseNotesApi } from '@/lib/site-reads.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** Public changelog: the published release notes, newest first. */
 export function ChangelogList() {
   const { t } = useTranslation('f-devplatform');
   const [notes, setNotes] = useState<ReleaseNoteView[] | null>(null);
+  const arrival = useArrival(notes !== null);
 
   useEffect(() => {
     api(releaseNotesApi)
@@ -30,12 +33,13 @@ export function ChangelogList() {
     return (
       <EmptyState
         icon={ScrollText}
+        className={arrival}
         title={t('changelog-empty', { defaultValue: 'No release notes yet.' })}
       />
     );
   }
   return (
-    <ol className="mx-auto max-w-2xl space-y-3">
+    <ol className={cn('mx-auto max-w-2xl space-y-3', arrival)}>
       {notes.map((n) => (
         <li key={n.id} className="rounded-site px-4 py-3">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">

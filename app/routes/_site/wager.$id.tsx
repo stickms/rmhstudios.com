@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Swords } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { WagerCard } from '@/components/wager/WagerCard';
@@ -26,6 +28,7 @@ function WagerDetailPage() {
   // An unknown (or unreadable) match is the "no longer exists" state.
   const { data, isPending: loading } = useQuery(query);
   const wager = data?.wager ?? null;
+  const arrival = useArrival(!loading);
 
   return (
     <PageLayout
@@ -33,7 +36,7 @@ function WagerDetailPage() {
       backTo="/wager"
       backLabel={t('back', { defaultValue: 'Back to wagers' })}
     >
-      <div className="max-w-xl">
+      <div className={cn('max-w-xl', arrival)}>
         {loading ? (
           <Skeleton className="h-48 rounded-site" />
         ) : wager ? (

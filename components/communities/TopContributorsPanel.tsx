@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { Award } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 
@@ -19,6 +21,7 @@ interface Row {
 export default function TopContributorsPanel({ slug }: { slug: string }) {
   const { t } = useTranslation('f-communities-plus');
   const [rows, setRows] = useState<Row[] | null>(null);
+  const arrival = useArrival(rows !== null);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,6 +43,7 @@ export default function TopContributorsPanel({ slug }: { slug: string }) {
   if (rows.length === 0) {
     return (
       <EmptyState
+        className={arrival}
         icon={Award}
         title={t('top-empty', { defaultValue: 'No top contributors yet' })}
         description={t('top-empty-desc', {
@@ -49,7 +53,7 @@ export default function TopContributorsPanel({ slug }: { slug: string }) {
     );
   }
   return (
-    <div className="px-3 py-3">
+    <div className={cn('px-3 py-3', arrival)}>
       <p className="px-1 pb-2 text-xs text-site-text-muted">
         {t('top-hint', {
           defaultValue:

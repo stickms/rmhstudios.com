@@ -24,6 +24,7 @@ import { NewRequestDialog } from './NewRequestDialog';
 import { useRequestStatusLabels } from './RequestStatusBadge';
 import { api } from '@/lib/contract/client';
 import { listRequestsApi } from '@/lib/requests/requests.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 const ALL = 'ALL';
 
@@ -43,6 +44,8 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
   const [page, setPage] = useState<RequestBoardPage>(initial);
   const [loading, setLoading] = useState(false);
   const [composing, setComposing] = useState(false);
+  // Only an empty board shows a spinner while it refetches; what replaces it fades in.
+  const arrival = useArrival(!(loading && page.requests.length === 0));
 
   /**
    * The board refetches on filter/sort/search rather than filtering in memory:
@@ -162,6 +165,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
         ) : page.requests.length === 0 ? (
           <EmptyState
             icon={Inbox}
+            className={arrival}
             title={t('request-empty-title', { defaultValue: 'Nothing here yet' })}
             description={t('request-empty-description', {
               defaultValue: 'Be the first to ask for something in this category.',
@@ -171,6 +175,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
           page.requests.map((request) => (
             <RequestCard
               key={request.id}
+              className={arrival}
               request={request}
               signedIn={signedIn}
               isAdmin={isAdmin}

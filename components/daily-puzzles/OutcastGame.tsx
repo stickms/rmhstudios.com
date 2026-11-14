@@ -29,6 +29,7 @@ import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
+import { useArrival } from '@/components/ui/arrive';
 
 const DIFFICULTY_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
     easy: 'success',
@@ -42,6 +43,7 @@ const MAX_SCORE = 175;
 
 function OutcastGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
     const [puzzle, setPuzzle] = useState<OutcastPuzzle | null>(null);
+    const arrival = useArrival(puzzle !== null);
 
     useEffect(() => {
         let cancelled = false;
@@ -55,7 +57,9 @@ function OutcastGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boo
     }, [dateKey]);
 
     if (!puzzle) return <PuzzleLoading title="Outcast" emoji="🎭" />;
-    return <OutcastGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    const content = <OutcastGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    // The puzzle replaces the loading panel: it fades in through a box-less wrapper (M9).
+    return arrival ? <div className="arrive-group">{content}</div> : content;
 }
 
 function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzle; dateKey: string; isToday: boolean }) {

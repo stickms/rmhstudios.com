@@ -11,9 +11,11 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { Textarea } from '@/components/ui/textarea';
 import { REFERRAL_MAX_CAPACITY } from '@/lib/rmhladder/community';
 import { apiJson } from '@/lib/rmhladder/community-client';
+import { cn } from '@/lib/utils';
 
 interface Person {
   id: string;
@@ -74,6 +76,7 @@ export function ReferralBoard() {
         `/api/rmhladder/referrals${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`,
       ),
   });
+  const arrival = useArrival(!isLoading && !!data);
   const refresh = () => qc.invalidateQueries({ queryKey: KEY });
   const act = useMutation({
     mutationFn: (v: { id: string; action: 'accept' | 'pass' | 'withdraw' }) =>
@@ -130,7 +133,7 @@ export function ReferralBoard() {
       ) : (
         <>
           {data.mine.length > 0 && (
-            <section aria-labelledby="rb-mine" className="space-y-3">
+            <section aria-labelledby="rb-mine" className={cn('space-y-3', arrival)}>
               <h2 id="rb-mine" className="site-section-label">
                 {t('rb-mine', { defaultValue: 'Your offers' })}
               </h2>
@@ -212,7 +215,7 @@ export function ReferralBoard() {
           )}
 
           {data.sent.length > 0 && (
-            <section aria-labelledby="rb-sent" className="space-y-3">
+            <section aria-labelledby="rb-sent" className={cn('space-y-3', arrival)}>
               <h2 id="rb-sent" className="site-section-label">
                 {t('rb-sent', { defaultValue: 'Your requests' })}
               </h2>
@@ -251,7 +254,7 @@ export function ReferralBoard() {
             </section>
           )}
 
-          <section aria-labelledby="rb-board" className="space-y-3">
+          <section aria-labelledby="rb-board" className={cn('space-y-3', arrival)}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 id="rb-board" className="site-section-label">
                 {t('rb-board', { defaultValue: 'Open offers' })}

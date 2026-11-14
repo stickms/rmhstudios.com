@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getYearlyWrapped } from '@/lib/wrapped.server';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { useArrival } from '@/components/ui/arrive';
 
 // Aggregate the current year's Wrapped server-side so it's present at first
 // paint / prefetched on intent instead of fetched on mount. Signed-out visitors
@@ -26,11 +27,12 @@ export const Route = createFileRoute('/_site/wrapped')({
 function WrappedPage() {
   const { t } = useTranslation("site");
   const { data: session, isPending } = useSession();
+  const arrival = useArrival(!isPending);
   const { wrapped } = Route.useLoaderData();
 
   return (
     <>
-      <PageFrame>
+      <PageFrame className={arrival}>
         {isPending ? (
           <div className="flex justify-center py-20">
             <Spinner />

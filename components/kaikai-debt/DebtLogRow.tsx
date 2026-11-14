@@ -10,6 +10,7 @@ import {
   type DebtCategory,
   type DebtEntryDto,
 } from '@/lib/kaikai-debt/debt';
+import { ARRIVE } from '@/components/ui/arrive';
 
 /**
  * Category → emoji. Not `--site-*` colours: a coloured chip per category would
@@ -55,6 +56,8 @@ interface DebtLogRowProps {
   nowMs: number;
   /** Play the arrival flash. Only ever true for a line that landed while you watched. */
   fresh?: boolean;
+  /** A paged-in line appended below the rows already showing (M9 fade). */
+  arriving?: boolean;
 }
 
 /**
@@ -72,7 +75,7 @@ interface DebtLogRowProps {
  * legible. It is only rendered once it has actually diverged from face value —
  * a line added ten seconds ago showing "now $6.00" is noise.
  */
-export function DebtLogRow({ entry, nowMs, fresh }: DebtLogRowProps) {
+export function DebtLogRow({ entry, nowMs, fresh, arriving }: DebtLogRowProps) {
   const { t } = useTranslation('c-kaikai-debt');
 
   // A member row is attributed to whoever wrote it; a generated one to whoever
@@ -91,7 +94,12 @@ export function DebtLogRow({ entry, nowMs, fresh }: DebtLogRowProps) {
   const grown = nowCents > entry.amountCents * 1.01;
 
   return (
-    <li className={cn('surface-card flex items-start gap-3 rounded-site p-5', fresh && 'kd-flash')}>
+    <li
+      className={cn(
+        'surface-card flex items-start gap-3 rounded-site p-5',
+        fresh ? 'kd-flash' : arriving && ARRIVE,
+      )}
+    >
       <span className="text-xl leading-none" aria-hidden>
         {CATEGORY_GLYPH[entry.category]}
       </span>

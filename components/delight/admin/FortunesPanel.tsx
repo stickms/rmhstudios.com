@@ -5,6 +5,8 @@ import { Check, X } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { fetchJson } from '@/lib/http';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function FortunesPanel() {
   const { t } = useTranslation('f-delight');
@@ -13,6 +15,7 @@ export default function FortunesPanel() {
     queryFn: () =>
       fetchJson<{ pending: { id: string; text: string }[] }>('/api/admin/delight/fortunes'),
   });
+  const arrival = useArrival(!!q.data);
   const review = async (id: string, status: 'approved' | 'rejected') => {
     try {
       await fetchJson(`/api/admin/delight/fortunes/${id}`, {
@@ -29,11 +32,14 @@ export default function FortunesPanel() {
   };
   if (q.data && q.data.pending.length === 0) {
     return (
-      <EmptyState title={t('fortunes-empty', { defaultValue: 'Nothing waiting for review' })} />
+      <EmptyState
+        className={arrival}
+        title={t('fortunes-empty', { defaultValue: 'Nothing waiting for review' })}
+      />
     );
   }
   return (
-    <ul className="divide-y divide-site-border border-t border-site-border">
+    <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
       {q.data?.pending.map((f) => (
         <li key={f.id} className="flex items-center gap-3 py-3">
           <span className="min-w-0 flex-1 t-body text-site-text">{f.text}</span>

@@ -13,6 +13,8 @@ import { BarChart3, ImagePlay, ImagePlus, MoreHorizontal, Sparkles } from 'lucid
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { SpineItem } from '@/components/ui/spine';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { PostsPlusChips, usePostsPlusCompose } from '@/components/posts-plus/PostsPlusCompose';
 import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-limits';
@@ -113,6 +115,8 @@ function LightField({
 export function HomeComposer() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
+  // Steel M9: when the session resolves on the client, what replaces the empty row fades in.
+  const arrival = useArrival(!isPending);
   const { resolved } = useResolvedUser();
   const postsPlus = usePostsPlusCompose();
   const [content, setContent] = useState('');
@@ -211,7 +215,7 @@ export function HomeComposer() {
         {isPending ? (
           <div className="home-composer__row" aria-hidden />
         ) : (
-          <div className="home-composer__row">
+          <div className={cn('home-composer__row', arrival)}>
             <p className="t-body min-w-0 flex-1 text-site-text-muted">
               {t('sign-in-prompt', { defaultValue: 'Sign in to post RMHarks' })}
             </p>
@@ -232,7 +236,7 @@ export function HomeComposer() {
   return (
     <SpineItem
       dot={false}
-      className="home-composer"
+      className={cn('home-composer', arrival)}
       data-slot="home-composer"
       onPointerEnter={() => void loadComposeBox()}
       onFocus={() => void loadComposeBox()}

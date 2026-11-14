@@ -11,8 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { LOCALES, LOCALE_LABELS } from '@/lib/i18n/config';
 import { fetchJson } from '@/lib/http';
+import { cn } from '@/lib/utils';
 
 interface Item {
   key: string;
@@ -44,6 +46,7 @@ export function TranslatePage() {
       ),
     enabled: !!session,
   });
+  const arrival = useArrival(!q.isPending);
 
   const post = async (url: string, body: unknown, ok?: string) => {
     try {
@@ -125,17 +128,19 @@ export function TranslatePage() {
               <Skeleton className="h-40 w-full" />
             ) : !ns ? (
               <EmptyState
+                className={arrival}
                 icon={Languages}
                 title={t('tr-choose', { defaultValue: 'Choose a section to start' })}
               />
             ) : !q.data?.page?.items.length ? (
               <EmptyState
+                className={arrival}
                 icon={Languages}
                 title={t('tr-done', { defaultValue: 'Nothing left here. Thank you!' })}
               />
             ) : (
               <>
-                <ul className="space-y-3">
+                <ul className={cn('space-y-3', arrival)}>
                   {q.data.page.items.map((it) => (
                     <StringRow
                       key={`${locale}/${ns}/${it.key}/${offset}`}
@@ -151,7 +156,7 @@ export function TranslatePage() {
                     />
                   ))}
                 </ul>
-                <div className="flex items-center justify-between gap-2">
+                <div className={cn('flex items-center justify-between gap-2', arrival)}>
                   <Button
                     variant="ghost"
                     disabled={offset === 0}

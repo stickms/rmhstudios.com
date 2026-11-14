@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import {
   OUTCOMES,
@@ -64,6 +66,7 @@ export function InterviewReports({
     queryFn: () => apiJson<ReportsData>(`/api/rmhladder/interview-reports?companyId=${companyId}`),
     staleTime: 60_000,
   });
+  const arrival = useArrival(!isLoading);
 
   const outcomeLabel: Record<Outcome, string> = {
     offer: t('ir-outcome-offer', { defaultValue: 'Got an offer' }),
@@ -134,7 +137,7 @@ export function InterviewReports({
       {isLoading ? (
         <Skeleton className="mt-3 h-16 w-full" />
       ) : data && data.reports.length > 0 ? (
-        <ul className="mt-3 space-y-3">
+        <ul className={cn('mt-3 space-y-3', arrival)}>
           {data.reports.map((r) => (
             <li key={r.id} className="rounded-site-sm p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
@@ -174,7 +177,7 @@ export function InterviewReports({
           ))}
         </ul>
       ) : (
-        <p className="mt-3 text-sm text-site-text-muted">
+        <p className={cn('mt-3 text-sm text-site-text-muted', arrival)}>
           {t('ir-empty', {
             defaultValue: 'No one has shared an interview at {{company}} yet.',
             company: companyName,

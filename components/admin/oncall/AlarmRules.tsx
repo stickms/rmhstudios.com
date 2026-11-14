@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { formatValue, type EffectiveRule } from '@/lib/ops/alarm-rules';
 import { api } from '@/lib/contract/client';
@@ -142,6 +144,7 @@ export function AlarmRules() {
   const { t } = useTranslation('f-oncall');
   const [rules, setRules] = useState<RuleView[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const arrival = useArrival(failed || rules !== null);
 
   const load = useCallback(async () => {
     try {
@@ -165,7 +168,7 @@ export function AlarmRules() {
         })}
       </p>
       {failed ? (
-        <p className="mt-3 t-body text-site-text-muted">
+        <p className={cn('mt-3 t-body text-site-text-muted', arrival)}>
           {t('rules-failed', {
             defaultValue: 'Could not load the alarm rules. Refresh to try again.',
           })}
@@ -175,7 +178,7 @@ export function AlarmRules() {
           <Spinner />
         </div>
       ) : (
-        <ul className="mt-3 divide-y divide-site-border border-t border-site-border">
+        <ul className={cn('mt-3 divide-y divide-site-border border-t border-site-border', arrival)}>
           {rules.map((r) => (
             <RuleRow key={r.key} rule={r} onSaved={() => void load()} />
           ))}

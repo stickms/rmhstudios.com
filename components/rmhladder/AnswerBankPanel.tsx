@@ -39,6 +39,8 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const EMPTY_ESSAY: EssayAnswer = { question: '', answer: '' };
 const EMPTY_STORY: StarStory = { title: '', situation: '', task: '', action: '', result: '' };
@@ -60,6 +62,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
   const [bank, setBank] = useState<AnswerBank>(EMPTY_ANSWER_BANK);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const arrival = useArrival(!loading);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,7 +118,10 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
   }
 
   return (
-    <section className="surface-panel p-4 sm:p-5" aria-labelledby="ladder-answers-heading">
+    <section
+      className={cn('surface-panel p-4 sm:p-5', arrival)}
+      aria-labelledby="ladder-answers-heading"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <h2 id="ladder-answers-heading" className="site-section-label">
           {t('ladder.answersTitle', { defaultValue: 'Answer bank' })}

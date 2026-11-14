@@ -14,9 +14,11 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { FeedItem } from '@/lib/feed-types';
 import { MAX_SERIES_TITLE } from '@/lib/posts-plus/constants';
+import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import {
@@ -63,6 +65,8 @@ export function SeriesPage({ id }: { id: string }) {
   const [title, setTitle] = useState('');
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Steel M9: a series fetched here replaces the skeleton; one seeded by the loader is there on first paint.
+  const arrival = useArrival(!!view || missing);
 
   // Refetch after a mutation; a failed first load keeps the old toast.
   const load = useCallback(async () => {
@@ -98,6 +102,7 @@ export function SeriesPage({ id }: { id: string }) {
     return (
       <PageLayout title={t('series-page-title', { defaultValue: 'Series' })} backTo="/series">
         <EmptyState
+          className={arrival}
           title={t('series-missing', { defaultValue: 'This series does not exist' })}
           action={
             <Link to="/">
@@ -185,7 +190,7 @@ export function SeriesPage({ id }: { id: string }) {
       backTo={owner ? '/series' : undefined}
       description={series.description ?? undefined}
     >
-      <Spine className="pb-12">
+      <Spine className={cn('pb-12', arrival)}>
         <SpineItem dot={false} className="flex flex-wrap items-center gap-3">
           <p className="min-w-0 flex-1 text-sm text-site-text-muted">
             {t('series-by', { defaultValue: 'A series by' })}{' '}

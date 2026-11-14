@@ -21,6 +21,7 @@ import {
   adminResolvePredictionApi,
 } from '@/lib/predictions/predictions.contract';
 import type { SerializedMarket } from '@/lib/predictions/predictions.server';
+import { useArrival } from '@/components/ui/arrive';
 
 type AdminMarket = SerializedMarket;
 
@@ -36,6 +37,7 @@ function AdminPredictionsPage() {
   const [open, setOpen] = useState<AdminMarket[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -107,7 +109,7 @@ function AdminPredictionsPage() {
         ) : (
           <>
             {/* Pending approval */}
-            <section>
+            <section className={arrival}>
               <h2 className="t-heading pb-3 text-site-text">
                 {t('pending-approval', { defaultValue: 'Pending approval' })} ({pending.length})
               </h2>
@@ -138,7 +140,7 @@ function AdminPredictionsPage() {
             </section>
 
             {/* Open markets — resolve */}
-            <section>
+            <section className={arrival}>
               <h2 className="t-heading pb-3 text-site-text">
                 {t('open-markets', { defaultValue: 'Open markets' })} ({open.length})
               </h2>

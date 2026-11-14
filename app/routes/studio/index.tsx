@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { appRouteHead } from '@/lib/seo-catalog';
-import { Suspense } from 'react';
+
 import { useTranslation } from "react-i18next";
 import { Spinner } from '@/components/ui/spinner';
 
@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import StudioShell from '@/components/studio/StudioShell';
 import StudioAppShell from '@/components/studio/StudioAppShell';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/studio/')({
   head: () => appRouteHead('studio'),
@@ -20,7 +21,7 @@ function StudioPage() {
   const { t } = useTranslation("r-studio");
   return (
     <StudioAppShell>
-    <Suspense
+    <ArrivalSuspense
       fallback={
         <div className="app-viewport items-center justify-center bg-app-bg">
           <div className="flex flex-col items-center gap-4">
@@ -31,7 +32,7 @@ function StudioPage() {
       }
     >
       <StudioShell />
-    </Suspense>
+    </ArrivalSuspense>
     </StudioAppShell>
   );
 }

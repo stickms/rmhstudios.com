@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -37,6 +39,7 @@ export default function ScheduledGiftsPanel() {
     queryFn: () => apiJson<ScheduledGiftsPayload>('/api/gifts/scheduled'),
     staleTime: 30_000,
   });
+  const arrival = useArrival(!isLoading && !!data);
 
   if (isLoading || !data) {
     return (
@@ -51,7 +54,7 @@ export default function ScheduledGiftsPanel() {
   const opened = data.received.filter((g) => g.unwrapped);
 
   return (
-    <div className="space-y-4 px-3 pb-12">
+    <div className={cn('space-y-4 px-3 pb-12', arrival)}>
       <section aria-labelledby="gifts-for-you" className="space-y-3">
         <h2 id="gifts-for-you" className="site-section-label px-1">
           {t('gifts-for-you', { defaultValue: 'Gifts for you' })}

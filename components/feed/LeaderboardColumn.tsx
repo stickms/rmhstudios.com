@@ -8,6 +8,7 @@ import { ColumnHeader } from './ColumnHeader';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
+import { useArrival } from '@/components/ui/arrive';
 
 type Scope = 'global' | 'friends';
 
@@ -57,6 +58,8 @@ export function LeaderboardColumn({
   });
   const entries = board.data?.entries ?? [];
   const loading = board.isPending;
+  // Steel M9: each scope's board replaces the spinner.
+  const arrival = useArrival(!loading);
 
   // §17.5 sweep: this Global/Friends scope toggle was a hand-rolled underline strip
   // with no tab semantics (invisible to the §16.2 design-lint gate) — migrated to
@@ -96,6 +99,7 @@ export function LeaderboardColumn({
           </div>
         ) : entries.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Trophy}
             title={
               scope === 'friends'
@@ -106,7 +110,7 @@ export function LeaderboardColumn({
             }
           />
         ) : (
-          <div>
+          <div className={arrival}>
             {entries.map((e) => (
               <div
                 key={e.userId}

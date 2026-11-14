@@ -1,9 +1,11 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { TriangleAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDiscordSdk } from '@/lib/discord-sdk';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const LightsOutDiscordActivity = lazy(() =>
     import('@/components/lights-out/LightsOutDiscordActivity').then(m => ({
@@ -14,6 +16,7 @@ const LightsOutDiscordActivity = lazy(() =>
 function DiscordLightsOutPage() {
     const { t } = useTranslation("r-discord");
     const discord = useDiscordSdk();
+    const arrival = useArrival(discord.status !== 'loading');
 
     if (discord.status === 'loading') {
         return (
@@ -28,7 +31,7 @@ function DiscordLightsOutPage() {
 
     if (discord.status === 'error') {
         return (
-            <div className="min-h-dvh bg-[#313338] flex items-center justify-center p-4">
+            <div className={cn('min-h-dvh bg-[#313338] flex items-center justify-center p-4', arrival)}>
                 <div className="text-center max-w-sm">
                     <TriangleAlert className="mx-auto mb-3 h-10 w-10 text-[#f23f43]" aria-hidden="true" />
                     <h2 className="text-white text-lg font-semibold mb-2">{t("connection-failed", { defaultValue: "Connection Failed" })}</h2>
@@ -42,7 +45,7 @@ function DiscordLightsOutPage() {
     }
 
     return (
-        <Suspense
+        <ArrivalSuspense
             fallback={
                 <div className="min-h-dvh bg-[#313338] flex items-center justify-center">
                     <div className="animate-pulse text-[#b5bac1]">{t("loading-game", { defaultValue: "Loading game..." })}</div>
@@ -50,7 +53,7 @@ function DiscordLightsOutPage() {
             }
         >
             <LightsOutDiscordActivity discord={discord.context} />
-        </Suspense>
+        </ArrivalSuspense>
     );
 }
 

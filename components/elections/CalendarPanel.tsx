@@ -4,6 +4,8 @@ import type { ElectionDayEntry } from '@/lib/elections/calendar-days';
 import { stateName } from '@/lib/elections/states';
 import { api } from '@/lib/contract/client';
 import { getElectionCalendarApi } from '@/lib/elections/elections.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface CalendarResponse {
   year: number;
@@ -37,14 +39,15 @@ export function CalendarPanel({
     staleTime: 10 * 60_000,
     retry: 1,
   });
+  const arrival = useArrival(isError || !!data);
 
   if (isError) {
-    return <p className="el-eyebrow">{t('days.error', { defaultValue: 'The calendar is unavailable right now.' })}</p>;
+    return <p className={cn('el-eyebrow', arrival)}>{t('days.error', { defaultValue: 'The calendar is unavailable right now.' })}</p>;
   }
   if (!data) return <div className="el-box el-skel" aria-busy />;
 
   return (
-    <div>
+    <div className={arrival}>
       <div className="el-cards">
         {data.days.map((d) => (
           <article key={d.date} className="el-race el-box" aria-label={fmt(d.date)} style={d.date === current ? { outline: '4px solid var(--el-ink)' } : undefined}>

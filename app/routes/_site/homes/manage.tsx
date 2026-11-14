@@ -34,6 +34,8 @@ import { WatchManager } from '@/components/homes/WatchManager';
 import type { Listing } from '@/lib/homes/types';
 import { api } from '@/lib/contract/client';
 import { listMyHomeListingsApi } from '@/lib/homes/homes.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const HOMES_TABS = ['listings', 'saved', 'alerts'] as const;
 type HomesTab = (typeof HOMES_TABS)[number];
@@ -110,6 +112,7 @@ function HomesManagePage() {
   const { data: session, isPending } = useSession();
   const { tab = 'listings' } = Route.useSearch();
   const navigate = useNavigate();
+  const arrival = useArrival(!isPending);
 
   const setTab = useCallback(
     (next: string) => {
@@ -136,6 +139,7 @@ function HomesManagePage() {
     return (
       <PageLayout title={title} backTo="/homes" wide>
         <SignedOutPrompt
+          className={arrival}
           callbackURL="/homes/manage"
           title={t('homes-manage-signin', {
             defaultValue: 'Sign in to see your listings, saved homes and alerts.',
@@ -183,7 +187,7 @@ function HomesManagePage() {
         aria-label={title}
       />
 
-      <div className="w-full pt-2">
+      <div className={cn('w-full pt-2', arrival)}>
         {tab === 'listings' && (
           <div
             role="tabpanel"

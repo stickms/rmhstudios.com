@@ -7,6 +7,8 @@ import { fmtInt } from './hooks';
 import { useFollow } from './FollowContext';
 import { api } from '@/lib/contract/client';
 import { getElectionMeasuresApi } from '@/lib/elections/elections.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const PAGE = 18;
 
@@ -103,6 +105,7 @@ export function BallotMeasures({ cycle, live }: { cycle: string; live: boolean }
   const [q, setQ] = useState('');
   const [mine, setMine] = useState(false);
   const [shown, setShown] = useState(PAGE);
+  const arrival = useArrival(!isLoading);
 
   const all = useMemo(() => data?.measures ?? [], [data]);
   const stats = useMemo(() => measureStats(all), [all]);
@@ -115,7 +118,7 @@ export function BallotMeasures({ cycle, live }: { cycle: string; live: boolean }
   if (isLoading) return <div className="el-box el-skel" aria-busy />;
   if (isError || !all.length) {
     return (
-      <p className="el-eyebrow">
+      <p className={cn('el-eyebrow', arrival)}>
         {isError
           ? t('measures.error', { defaultValue: 'Ballot measures are unavailable right now.' })
           : t('measures.none', { defaultValue: 'No ballot measures are published for this election yet.' })}
@@ -131,7 +134,7 @@ export function BallotMeasures({ cycle, live }: { cycle: string; live: boolean }
   );
 
   return (
-    <div className="el-stack">
+    <div className={cn('el-stack', arrival)}>
       <div className="el-measure__stats">
         {stat(stats.total, t('measures.sTotal', { defaultValue: 'measures on ballots' }))}
         {stat(`${stats.statewide} / ${stats.local}`, t('measures.sSplit', { defaultValue: 'statewide / local' }))}

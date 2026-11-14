@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { Spinner } from '@/components/ui/spinner';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { apiJson } from '@/components/economy-plus/api';
@@ -34,6 +36,9 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
       ),
     [base],
   );
+
+  const arrival = useArrival(page !== null);
+  const isNew = useArrivingKeys((page?.kudos ?? []).map((k) => k.id));
 
   useEffect(() => {
     let cancelled = false;
@@ -84,7 +89,7 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
   }
 
   return (
-    <div className="space-y-3 p-4">
+    <div className={cn('space-y-3 p-4', arrival)}>
       {page.canGive ? (
         <div className="space-y-2 p-3">
           <Textarea
@@ -121,7 +126,10 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
       ) : (
         <ul className="space-y-2">
           {page.kudos.map((k) => (
-            <li key={k.id} className="flex items-start gap-3 rounded-site-sm p-3">
+            <li
+              key={k.id}
+              className={cn('flex items-start gap-3 rounded-site-sm p-3', isNew(k.id) && ARRIVE)}
+            >
               <UserAvatar
                 src={k.from.image}
                 alt={k.from.name ?? k.from.handle ?? ''}

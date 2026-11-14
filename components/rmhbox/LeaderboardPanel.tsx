@@ -15,11 +15,14 @@ import { C2S, S2C } from '@/lib/rmhbox/events';
 import type { LeaderboardEntry } from '@/lib/rmhbox/types';
 import { api } from '@/lib/contract/client';
 import { getRmhboxLeaderboardApi } from '@/lib/rmhbox/rmhbox-reads.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function LeaderboardPanel() {
   const { t } = useTranslation("c-rmhbox");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
 
   // Fetch initial data via HTTP API
   useEffect(() => {
@@ -66,9 +69,9 @@ export default function LeaderboardPanel() {
       {loading ? (
         <p className="text-sm text-app-text-muted">{t("loading", { defaultValue: "Loading…" })}</p>
       ) : entries.length === 0 ? (
-        <p className="text-sm text-app-text-muted">{t("no-entries", { defaultValue: "No entries yet." })}</p>
+        <p className={cn('text-sm text-app-text-muted', arrival)}>{t("no-entries", { defaultValue: "No entries yet." })}</p>
       ) : (
-        <table className="w-full text-sm">
+        <table className={cn('w-full text-sm', arrival)}>
           <thead>
             <tr className="text-left text-app-text-muted">
               <th className="pb-2 pr-2 font-medium">#</th>

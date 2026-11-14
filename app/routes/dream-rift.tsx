@@ -2,7 +2,7 @@
  * Dream Rift — a Touhou-style co-op danmaku bullet hell.
  */
 
-import { Suspense } from 'react';
+
 import { createFileRoute } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
@@ -16,6 +16,7 @@ import { DreamRiftGate } from '@features/dream-rift/ui/DreamRiftGate';
 // Cinzel + Playfair Display, the game's lettering — self-hosted with
 // `font-display: optional` (app/fonts/) and loaded with this route only.
 import dreamRiftFontsCss from '@/app/fonts/dream-rift.css?url';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/dream-rift')({
   head: () => gameRouteHead('dream-rift', { links: [{ rel: 'stylesheet', href: dreamRiftFontsCss }] }),
@@ -25,9 +26,9 @@ export const Route = createFileRoute('/dream-rift')({
 function DreamRiftPage() {
   return (
     <GameErrorBoundary gameName="Dream Rift">
-      <Suspense fallback={<GameLoadingFallback />}>
+      <ArrivalSuspense fallback={<GameLoadingFallback />}>
         <DreamRiftGate />
-      </Suspense>
+      </ArrivalSuspense>
     </GameErrorBoundary>
   );
 }

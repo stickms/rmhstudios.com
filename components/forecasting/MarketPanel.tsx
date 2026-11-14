@@ -12,6 +12,8 @@ import {
   devilsAdvocateApi,
   listPredictionCommentsApi,
 } from '@/lib/predictions/predictions.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function ago(ts: number, now: number): string {
   const m = Math.max(0, Math.round((now - ts) / 60_000));
@@ -41,6 +43,7 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
   const [posting, setPosting] = useState(false);
   const [arguing, setArguing] = useState(false);
   const [argument, setArgument] = useState<{ side: 'YES' | 'NO'; text: string } | null>(null);
+  const arrival = useArrival(comments !== null);
 
   const load = useCallback(() => {
     api(listPredictionCommentsApi, { params: { id: marketId } })
@@ -147,11 +150,11 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
       {comments === null ? (
         <Spinner size={16} />
       ) : comments.length === 0 ? (
-        <p className="text-xs text-site-text-muted">
+        <p className={cn('text-xs text-site-text-muted', arrival)}>
           {t('no-comments', { defaultValue: 'No comments yet.' })}
         </p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className={cn('flex flex-col gap-2', arrival)}>
           {comments.map((c) => (
             <li key={c.id} className="text-sm">
               <div className="flex flex-wrap items-center gap-2 text-xs text-site-text-muted">

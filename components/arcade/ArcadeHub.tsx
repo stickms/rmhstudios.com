@@ -28,6 +28,7 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { claimArcadeChallengeApi, getArcadeStateApi } from '@/lib/arcade/arcade.contract';
 import type { ArcadeState, ArcadeChallengeView } from '@/lib/quests/arcade';
+import { useArrival } from '@/components/ui/arrive';
 
 /** Milliseconds until the next UTC midnight (when challenges rotate). */
 function msToUtcReset(): number {
@@ -109,6 +110,8 @@ export function ArcadeHub({
     }
   }
 
+  const arrival = useArrival(state !== null);
+
   if (!state) {
     return (
       <div className="flex justify-center py-20">
@@ -120,7 +123,7 @@ export function ArcadeHub({
   const { streak, challenges } = state;
 
   return (
-    <div>
+    <div className={arrival}>
       {/* Desktop header row (on mobile the page's tab strip is the chrome). */}
       {!hideHeader && (
         <div className="flex items-center gap-2 border-b border-site-border px-5 py-4 max-md:sr-only max-md:border-b-0">

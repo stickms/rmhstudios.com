@@ -15,10 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { daysLeftInYear, paceFor } from '@/lib/reading/goal';
 import { useGoal, useGoalMutations } from '@/lib/reading/client';
 import type { GoalProgress } from '@/lib/reading/schema';
+import { cn } from '@/lib/utils';
 
 export default function ChallengePanel({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation('f-reading');
@@ -29,6 +31,7 @@ export default function ChallengePanel({ compact = false }: { compact?: boolean 
   const [editing, setEditing] = useState(false);
   const [unit, setUnit] = useState<'books' | 'pages'>('books');
   const [target, setTarget] = useState('');
+  const arrival = useArrival(!isPending);
 
   if (!session) {
     return compact ? null : (
@@ -62,7 +65,7 @@ export default function ChallengePanel({ compact = false }: { compact?: boolean 
   return (
     <section
       aria-label={t('challenge-heading', { year, defaultValue: '{{year}} reading challenge' })}
-      className={compact ?'rounded-site p-5':'rounded-site p-5'}
+      className={cn('rounded-site p-5', arrival)}
     >
       <h2 className="flex items-center gap-2 text-lg font-semibold text-site-text">
         <Target className="size-4 text-site-accent" aria-hidden />

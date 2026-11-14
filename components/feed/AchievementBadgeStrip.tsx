@@ -15,6 +15,8 @@ import {
  type AchievementStripData,
  type StripAchievement,
 } from'@/lib/achievements/strip';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export function AchievementBadgeStrip({
  userId,
@@ -32,6 +34,8 @@ export function AchievementBadgeStrip({
  // Read once: a later client refetch of the profile carries no strip, and that
  // must not trigger a fetch for data the page already painted.
  const [seeded] = useState(Boolean(initial));
+ // Steel M9: a strip fetched here appears in a gap; a server-rendered one does not fade.
+ const arrival = useArrival(top.length > 0);
 
  useEffect(() => {
  if (seeded) return;
@@ -57,7 +61,10 @@ export function AchievementBadgeStrip({
  return (
  <button
  onClick={onShowAll}
- className="mb-3 flex items-center gap-2 rounded-full py-1 pl-2 pr-3 text-sm transition-colors hover:bg-site-surface-hover"
+ className={cn(
+ 'mb-3 flex items-center gap-2 rounded-full py-1 pl-2 pr-3 text-sm transition-colors hover:bg-site-surface-hover',
+ arrival,
+ )}
  title={t('achievements-showcase', { defaultValue:'View all achievements'})}
  >
  <span className="flex items-center">

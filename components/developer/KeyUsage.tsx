@@ -19,6 +19,8 @@ import { Activity, AlertTriangle } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
 import { getDeveloperKeyUsageApi, type DeveloperKeyUsage } from '@/lib/devplatform/keys.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const nf = new Intl.NumberFormat('en-US');
 
@@ -27,6 +29,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
   const [data, setData] = useState<DeveloperKeyUsage | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,7 +56,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
 
   if (failed || !data) {
     return (
-      <p className="py-3 text-xs text-site-text-muted">
+      <p className={cn('py-3 text-xs text-site-text-muted', arrival)}>
         {t('usage-failed', { defaultValue: 'Could not load usage for this key.' })}
       </p>
     );
@@ -61,7 +64,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
 
   if (data.totals.requests === 0) {
     return (
-      <p className="py-3 text-xs text-site-text-muted">
+      <p className={cn('py-3 text-xs text-site-text-muted', arrival)}>
         {t('usage-none', {
           defaultValue: 'No requests in the last {{count}} days.',
           count: data.days,
@@ -78,7 +81,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
       : 0;
 
   return (
-    <div className="surface-field mt-3 rounded-site px-3 py-3">
+    <div className={cn('surface-field mt-3 rounded-site px-3 py-3', arrival)}>
       <div className="mb-2 flex items-center gap-2">
         <Activity className="size-3.5 text-site-accent" aria-hidden />
         <span className="text-xs font-semibold text-site-text">

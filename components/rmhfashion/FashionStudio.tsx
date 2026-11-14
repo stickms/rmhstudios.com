@@ -22,7 +22,7 @@
  * a loop over the catalogue and it is the only version that is translated.
  */
 
-import { Suspense, lazy, useCallback, useMemo, useState, type ReactNode } from 'react';
+import { lazy, useCallback, useMemo, useState, type ReactNode } from 'react';
 import { RotateCcw, Shirt, Sparkles, User, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,7 @@ import {
   type Outfit,
 } from '@/lib/fashion/wardrobe';
 import './fashion.css';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /**
  * The stage pulls in three.js — around a megabyte of vendor JS — so it is split
@@ -173,7 +174,7 @@ export function FashionStudio() {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         <section aria-label={t('stage-label', { defaultValue: 'Figure viewer' })}>
-          <Suspense
+          <ArrivalSuspense
             fallback={
               <div className="rmhfash-stage rounded-site flex items-center justify-center">
                 <p className="px-6 text-center text-xs text-site-text-muted">
@@ -183,7 +184,7 @@ export function FashionStudio() {
             }
           >
             <FashionStage outfit={outfit} description={describe(outfit)} />
-          </Suspense>
+          </ArrivalSuspense>
         </section>
 
         <div className="flex flex-col gap-4">

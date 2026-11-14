@@ -8,13 +8,13 @@
  * The way back is a plain link styled as the ghost button it always was:
  * `/secret` is a site page, and leaving an island is a document load.
  */
-import { Suspense } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { Button } from '@/components/ui/button';
 import { SignalForgeGame } from './SignalForgeGame';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 export function SignalForgePage() {
   const { t } = useTranslation('r-secret');
@@ -45,9 +45,9 @@ export function SignalForgePage() {
 
           <div className="grow relative min-h-0 overflow-hidden">
             <GameErrorBoundary gameName="Signal Forge">
-              <Suspense fallback={<GameLoadingFallback />}>
+              <ArrivalSuspense fallback={<GameLoadingFallback />}>
                 <SignalForgeGame />
-              </Suspense>
+              </ArrivalSuspense>
             </GameErrorBoundary>
           </div>
         </main>

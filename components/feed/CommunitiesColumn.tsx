@@ -6,6 +6,7 @@ import { Users, Plus, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CommunityListSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useArrival } from '@/components/ui/arrive';
 import {
   DIRECTORY_LIST_CLASS,
   DirectoryFact,
@@ -25,6 +26,7 @@ import { ColumnHeader } from './ColumnHeader';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
+import { cn } from '@/lib/utils';
 import { createCommunityApi, listCommunitiesApi } from '@/lib/communities/communities.contract';
 
 interface Community {
@@ -71,6 +73,8 @@ export function CommunitiesColumn({
   const [loading, setLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState('');
+  // Steel M9: a list fetched here replaces the skeleton; the loader's first page is there on first paint.
+  const arrival = useArrival(!(loading && items.length === 0));
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -186,6 +190,7 @@ export function CommunitiesColumn({
  "create the first one!" without offering any way to do it; the button
  that does lives in the header, off the top of a scrolled column. */
         <EmptyState
+          className={arrival}
           icon={Users}
           title={
             query.trim()
@@ -212,7 +217,7 @@ export function CommunitiesColumn({
           }
         />
       ) : (
-        <ul className={DIRECTORY_LIST_CLASS}>
+        <ul className={cn(DIRECTORY_LIST_CLASS, arrival)}>
           {items.map((c) => {
             if (c.locked) {
               // Listed + locked: metadata and the way in, nothing of the content.

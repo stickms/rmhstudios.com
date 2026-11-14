@@ -14,6 +14,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import type { SavingsGoalsPayload, SavingsGoalView } from '@/lib/economy/savings-goal-schema';
 import { SAVINGS_CUSTOM_MAX } from '@/lib/economy/savings-goal-schema';
@@ -38,6 +40,7 @@ export default function SavingsGoalsPanel() {
     queryFn: () => apiJson<SavingsGoalsPayload>('/api/economy/savings-goals'),
     staleTime: 30_000,
   });
+  const arrival = useArrival(!isLoading && !!data);
 
   const create = useMutation({
     mutationFn: () =>
@@ -120,7 +123,7 @@ export default function SavingsGoalsPanel() {
   }
 
   return (
-    <div className="space-y-3 px-3 pb-12">
+    <div className={cn('space-y-3 px-3 pb-12', arrival)}>
       <p className="px-1 text-sm text-site-text-muted">
         {t('goals-intro', {
           defaultValue:

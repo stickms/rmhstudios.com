@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { battlepassQuery, progressSummaryQuery } from '@/lib/progress.queries';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/_site/progress')({
   head: () => ({ meta: [{ title: 'Progress | RMH Studios' }] }),
@@ -27,10 +28,12 @@ function ProgressPage() {
   // The gate header reuses ProgressColumn's heading key, which lives in `feed`.
   const { t: tFeed } = useTranslation('feed');
   const { data: session, isPending } = useSession();
+  // The whole column fades in when the session resolves after the spinner (M9).
+  const arrival = useArrival(!isPending);
 
   return (
     <>
-      <PageFrame>
+      <PageFrame className={arrival}>
         {session && !isPending ? (
           <JourneyColumn userId={session.user.id} initialTab="progress" />
         ) : (

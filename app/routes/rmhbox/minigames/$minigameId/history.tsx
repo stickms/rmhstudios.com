@@ -10,7 +10,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
-import { useEffect, useState, useCallback, useMemo, Suspense } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/ui/select';
 import { ChevronDown, ChevronUp, Search, ArrowUpDown, Filter } from 'lucide-react';
@@ -21,6 +21,8 @@ import { MINIGAME_REGISTRY } from '@/lib/rmhbox/minigame-registry';
 import { getHistoryDisplay } from '@/lib/rmhbox/history-display';
 import { api } from '@/lib/contract/client';
 import { listRmhboxMatchesApi, type RmhboxMatchSummary } from '@/lib/rmhbox/rmhbox-reads.contract';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 
 type SortKey = 'date' | 'score' | 'rank' | 'duration';
@@ -67,6 +69,7 @@ function MinigameHistoryPage() {
   const [offset, setOffset] = useState(0);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const limit = 20;
+  const arrival = useArrival(!loading);
 
   const fetchMatches = useCallback(async () => {
     setLoading(true);
@@ -330,13 +333,13 @@ function MinigameHistoryPage() {
               {t('loading-history', { defaultValue: 'Loading history...' })}
             </p>
           ) : filteredMatches.length === 0 ? (
-            <p className="text-sm text-center py-12 text-app-text-muted">
+            <p className={cn('text-sm text-center py-12 text-app-text-muted', arrival)}>
               {searchQuery || Object.keys(activeFilters).length > 0
                 ? t('no-matches-found', { defaultValue: 'No matches found.' })
                 : t('no-game-history', { defaultValue: 'No game history yet.' })}
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className={cn('space-y-2', arrival)}>
               {filteredMatches.map((match) => {
                 const winner = match.players.find((p) => p.rank === 1);
                 const isExpanded = expandedId === match.id;
@@ -399,7 +402,7 @@ function MinigameHistoryPage() {
                           // lib/rmhbox/history-display-registrations.ts) so they
                           // stay off the site-wide entry chunk; this boundary
                           // covers the one fetch on first expand.
-                          <Suspense
+                          <ArrivalSuspense
                             fallback={
                               <p className="text-sm text-center py-4 text-app-text-muted">
                                 {t('loading-detail', { defaultValue: 'Loading details…' })}
@@ -411,7 +414,7 @@ function MinigameHistoryPage() {
                               currentUserId=""
                               players={match.players}
                             />
-                          </Suspense>
+                          </ArrivalSuspense>
                         ) : match.gameLog ? (
                           <pre className="text-xs overflow-auto text-app-text-muted max-h-64">
                             {JSON.stringify(match.gameLog, null, 2)}

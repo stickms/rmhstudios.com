@@ -7,6 +7,8 @@ import { StreakDisplay } from '@features/doctrine/ui/puzzles/streak-display';
 import { Puzzle } from 'lucide-react';
 import { api } from '@/lib/contract/client';
 import { getDoctrineTodayPuzzlesApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/puzzles/')({
   head: () => ({
@@ -33,6 +35,7 @@ function PuzzlesIndex() {
     queryFn: () => api(getDoctrineTodayPuzzlesApi, { retries: 0 }),
     staleTime: 60_000,
   });
+  const arrival = useArrival(!isLoading);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -56,7 +59,7 @@ function PuzzlesIndex() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-3', arrival)}>
         {puzzles?.map((puzzle: { id: string; mode: string; difficulty: number; isSahur: boolean }) => {
           const info = MODE_INFO[puzzle.mode] ?? { name: puzzle.mode, descriptionKey: '', descriptionDefault: '', color: '#6B7280' };
 

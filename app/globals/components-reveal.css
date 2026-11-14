@@ -74,22 +74,42 @@ html.nav-restoring .feed-card-cv {
  *     document offsets, and skipped cards change those offsets.
  */
 
-/* Posts flushed in from the "N new posts" pill ease down into place instead of
- * popping. `backwards` applies the start frame immediately so there's no flash
- * before the animation runs. */
-@keyframes content-item-enter {
+/* ─── Steel M9: content that arrives after the view has painted ──────────
+ * A post, an announcement, a row or a panel that replaces a loading state the
+ * reader could see (a skeleton, a spinner, a Suspense fallback, an empty gap,
+ * the end of a list more rows are appended to) fades in: 160 ms, opacity only,
+ * no slide, no scale (plan section 11, M9). Content on the first paint never
+ * gets the class, so this is not a page entrance (M6).
+ *
+ * An animation, not a transition: it runs once when the element is inserted or
+ * first takes the class and then nothing is pending (R5, B3), and it cannot
+ * fight an element's own `transition` (its hover fill). `backwards` holds the
+ * start frame from the first paint so the content never flashes in at full
+ * opacity first. Who sets the class: components/ui/arrive.tsx.
+ *
+ * `.arrive-group` is the `display: contents` wrapper `ArrivalSuspense` puts
+ * round content it cannot class itself (a lazy chunk): no box, so flex and grid
+ * layout are unchanged, and its children take the fade.
+ *
+ * `html[data-route-arrival]` is the router's pending page giving way to the
+ * real one (components/ui/RoutePending.tsx): for one window the content column
+ * (a `_site` page) or the whole document (a full-screen route) fades in. */
+:root {
+  --motion-arrive: 0.16s;
+}
+@keyframes arrive {
   from {
     opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
-.content-item-enter,
-.feed-item-enter {
-  animation: content-item-enter 0.2s var(--ease-smooth) backwards;
+.arrive,
+.arrive-group > *,
+html[data-route-arrival='site'] #main-content > *,
+html[data-route-arrival='app'] body > * {
+  animation: arrive var(--motion-arrive) ease backwards;
+}
+.arrive-group {
+  display: contents;
 }
 
 /* One line of placeholder text, sized by the element it stands in.

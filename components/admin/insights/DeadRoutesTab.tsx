@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { useInsight } from './api';
 
 interface RouteViews {
@@ -12,12 +14,13 @@ const DEAD_AT = 5;
 export function DeadRoutesTab() {
   const { t } = useTranslation('f-ops');
   const { data, loading } = useInsight<RouteViews>('/api/admin/insights/routes');
+  const arrival = useArrival(!loading);
   if (loading) return <Spinner />;
   if (!data) return null;
   const dead = data.routes.filter((r) => r.known && r.views <= DEAD_AT);
   const live = data.routes.filter((r) => !dead.includes(r));
   return (
-    <section className="space-y-3">
+    <section className={cn('space-y-3', arrival)}>
       <p className="t-body text-site-text-muted">
         {t('dead-intro', {
           defaultValue:

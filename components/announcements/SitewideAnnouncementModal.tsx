@@ -24,6 +24,8 @@ import {
 } from '@/lib/sitewide-announcement';
 import { useSitewideAnnouncementStore } from '@/stores/sitewideAnnouncementStore';
 import '@/components/ui/spine.css';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 // Mirrors the first-run gates in WhatsNewModal / LanguageFirstRunModal / WelcomeModal (same keys, same event) so the
 // popup never stacks on top of them. Mirrored rather than imported: those modules are lazy chunks of their own.
@@ -94,6 +96,10 @@ export function SitewideAnnouncementModal() {
 
   const { data: full, isLoading, isError } = useSitewideAnnouncementContent(open || eligible);
   const announcement = full?.announcement ?? summary;
+  // Steel M9: the full post replaces the spinner inside the open dialog.
+  const bodyArrival = useArrival(
+    isError || !(isLoading || full?.announcement?.content === undefined),
+  );
 
   const dismiss = useCallback(() => {
     if (summary) {
@@ -143,7 +149,7 @@ export function SitewideAnnouncementModal() {
             </div>
           ) : null}
           {isError ? (
-            <p className="t-body text-site-text-muted">
+            <p className={cn('t-body text-site-text-muted', bodyArrival)}>
               {t('sitewide-announcement-error', {
                 defaultValue: 'The full announcement could not be loaded.',
               })}
@@ -156,7 +162,7 @@ export function SitewideAnnouncementModal() {
               />
             </div>
           ) : (
-            <div className="spine break-words">
+            <div className={cn('spine break-words', bodyArrival)}>
               <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
             </div>
           )}

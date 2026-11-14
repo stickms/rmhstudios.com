@@ -33,6 +33,8 @@ import {
   renamePlaylistApi,
 } from '@/lib/playlists/playlists.contract';
 import '@/components/library/library.css';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Summary {
   id: string;
@@ -79,6 +81,8 @@ export function PlaylistsColumn({
   const [openId, setOpenId] = useState<string | null>(null);
   const [items, setItems] = useState<Record<string, Item[]>>({});
   const [loadingItems, setLoadingItems] = useState(false);
+  // Steel M9: an opened playlist's items replace "Loading…".
+  const itemsArrival = useArrival(!loadingItems);
   const [collaborators, setCollaborators] = useState<Record<string, Collaborator[]>>({});
   const [collabHandle, setCollabHandle] = useState('');
   const [addingCollab, setAddingCollab] = useState(false);
@@ -385,11 +389,16 @@ export function PlaylistsColumn({
                             {t('loading', { defaultValue: 'Loading…' })}
                           </p>
                         ) : (items[pl.id] ?? []).length === 0 ? (
-                          <p className="py-4 text-center text-sm text-site-text-muted">
+                          <p
+                            className={cn(
+                              'py-4 text-center text-sm text-site-text-muted',
+                              itemsArrival,
+                            )}
+                          >
                             {t('playlist-no-items', { defaultValue: 'Nothing here yet.' })}
                           </p>
                         ) : (
-                          <ul className="space-y-1">
+                          <ul className={cn('space-y-1', itemsArrival)}>
                             {(items[pl.id] ?? []).map((it) => (
                               <li
                                 key={it.id}

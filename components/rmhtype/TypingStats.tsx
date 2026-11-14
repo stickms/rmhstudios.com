@@ -47,6 +47,7 @@ import {
   getRmhTypeKeyStatsApi,
 } from '@/lib/rmhtype/keystats.contract';
 import { KeyHeatmap } from './KeyHeatmap';
+import { useArrival } from '@/components/ui/arrive';
 
 interface KeyStatsResponse {
   layout: TypingLayout;
@@ -66,6 +67,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
   const [layout, setLayout] = useState<TypingLayout>(DEFAULT_LAYOUT);
   const [stats, setStats] = useState<KeyStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   const [generating, setGenerating] = useState(false);
   const [pasted, setPasted] = useState('');
   const [punctuation, setPunctuation] = useState(false);
@@ -160,6 +162,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
             </div>
           ) : !hasData ? (
             <EmptyState
+              className={arrival}
               icon={Keyboard}
               title={t('keys-empty-title', { defaultValue: 'No key data yet' })}
               description={t('keys-empty-body', {
@@ -168,7 +171,8 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
               })}
             />
           ) : (
-            <>
+            // Box-less, so the stats stay items of the column's flex layout; they fade in (M9).
+            <div className={arrival ? 'arrive-group' : 'contents'}>
               <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatTile
                   label={t('stat-wpm', { defaultValue: 'Implied WPM' })}
@@ -221,7 +225,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
                   {t('clear-action', { defaultValue: 'Clear key stats' })}
                 </Button>
               </div>
-            </>
+            </div>
           )}
         </div>
       </Card>

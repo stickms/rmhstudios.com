@@ -8,6 +8,8 @@ import { ReactionBar } from '@features/doctrine/ui/reaction-bar';
 import { EMPTY_REACTIONS } from '@features/doctrine/engine/types';
 import { api } from '@/lib/contract/client';
 import { getSafehouseDisclosuresApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/safehouse/drops')({
   head: () => noindexHead('Safehouse Drops'),
@@ -23,6 +25,7 @@ function DropsPage() {
     },
     staleTime: 60_000,
   });
+  const arrival = useArrival(!isLoading);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -43,7 +46,7 @@ function DropsPage() {
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className={cn('space-y-3', arrival)}>
         {data?.map((d) => (
           <article
             key={d.id}

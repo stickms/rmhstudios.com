@@ -8,6 +8,8 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { fetchJson } from '@/lib/http';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Era {
   id: string;
@@ -24,6 +26,7 @@ export default function MuseumPanel() {
     queryKey: ['delight', 'museum'],
     queryFn: () => fetchJson<{ eras: Era[] }>('/api/museum'),
   });
+  const arrival = useArrival(!!q.data);
   const [form, setForm] = useState(blank);
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -131,7 +134,7 @@ export default function MuseumPanel() {
           )}
         </div>
       </form>
-      <ul className="divide-y divide-site-border border-t border-site-border">
+      <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
         {q.data?.eras.map((e) => (
           <li key={e.id} className="flex items-center gap-3 py-3">
             <span className="w-24 shrink-0 t-meta">{e.eraDate}</span>

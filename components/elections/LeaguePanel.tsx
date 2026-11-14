@@ -7,6 +7,8 @@ import { useSession } from '@/components/Providers';
 import { decodePicks } from '@/lib/elections/predict';
 import { isLeagueCode, type LeagueListItem, type LeagueView } from '@/lib/elections/leagues';
 import { SITE_URL } from '@/lib/seo';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const pickKey = (year: number) => `rmh-elections-picks:${year}`;
 
@@ -58,6 +60,8 @@ export function LeaguePanel({ year, initialCode }: { year: number; initialCode?:
     retry: false,
   });
   const league = view.data?.league;
+  const listArrival = useArrival(!!list.data);
+  const boardArrival = useArrival(!!league);
 
   // Open the first league automatically when there is only one and none was asked for.
   useEffect(() => {
@@ -144,7 +148,7 @@ export function LeaguePanel({ year, initialCode }: { year: number; initialCode?:
         ) : (
           <>
             {list.data?.leagues.length ? (
-              <div className="el-pick-row" role="group" aria-label={t('league.mine', { defaultValue: 'My leagues' })}>
+              <div className={cn('el-pick-row', listArrival)} role="group" aria-label={t('league.mine', { defaultValue: 'My leagues' })}>
                 {list.data.leagues.map((l) => (
                   <button key={l.code} type="button" className="el-btn el-btn--sm" aria-pressed={code === l.code} onClick={() => setCode(l.code)}>
                     {l.name} · {l.memberCount}
@@ -176,7 +180,7 @@ export function LeaguePanel({ year, initialCode }: { year: number; initialCode?:
         {code && view.isError ? <p className="el-eyebrow" role="alert">{t('league.notFound', { defaultValue: 'League not found.' })}</p> : null}
 
         {league ? (
-          <div className="el-league__board">
+          <div className={cn('el-league__board', boardArrival)}>
             <h4 className="el-league__name">{league.name}</h4>
             <p className="el-eyebrow" style={{ margin: '2px 0 10px' }}>
               {t('league.members', { defaultValue: '{{n}} in the league', n: league.memberCount })} ·{' '}

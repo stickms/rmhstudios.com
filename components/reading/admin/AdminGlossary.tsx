@@ -10,9 +10,11 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { Textarea } from '@/components/ui/textarea';
 import { apiJson } from '@/lib/reading/client';
 import type { GlossaryTermView } from '@/lib/reading/schema';
+import { cn } from '@/lib/utils';
 
 const KEY = ['admin-glossary'] as const;
 
@@ -34,6 +36,7 @@ export default function AdminGlossary() {
     queryKey: KEY,
     queryFn: () => apiJson<{ terms: GlossaryTermView[] }>('/api/admin/reading/glossary'),
   });
+  const arrival = useArrival(!isPending);
 
   const save = useMutation({
     mutationFn: (d: Draft) => {
@@ -158,6 +161,7 @@ export default function AdminGlossary() {
         <Skeleton className="h-32 w-full" />
       ) : terms.length === 0 ? (
         <EmptyState
+          className={arrival}
           title={t('glossary-empty', { defaultValue: 'No glossary terms yet' })}
           description={t('glossary-empty-hint', {
             defaultValue:
@@ -165,7 +169,7 @@ export default function AdminGlossary() {
           })}
         />
       ) : (
-        <ul className="divide-y divide-site-border rounded-site">
+        <ul className={cn('divide-y divide-site-border rounded-site', arrival)}>
           {terms.map((term) => (
             <li key={term.id} className="flex items-start gap-3 py-3">
               <div className="min-w-0 flex-1">

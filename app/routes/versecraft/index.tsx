@@ -4,7 +4,7 @@
  * Checks auth status server-side and passes it to the client component.
  */
 
-import { Suspense } from 'react'
+
 import { createFileRoute } from '@tanstack/react-router'
 import { gameRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start'
@@ -17,6 +17,7 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import { VersecraftClient } from '@/components/versecraft/VersecraftClient'
+import { ArrivalSuspense } from '@/components/ui/arrive'
 
 const checkLoginStatus = createServerFn({ method: 'GET' }).handler(async () => {
   try {
@@ -33,9 +34,9 @@ function VersecraftPage() {
   return (
     <div className="app-ground" style={{ backgroundColor: '#1a1520' }}>
       <GameErrorBoundary gameName="Versecraft">
-        <Suspense fallback={<GameLoadingFallback />}>
+        <ArrivalSuspense fallback={<GameLoadingFallback />}>
           <VersecraftClient isLoggedIn={isLoggedIn} />
-        </Suspense>
+        </ArrivalSuspense>
       </GameErrorBoundary>
     </div>
   )

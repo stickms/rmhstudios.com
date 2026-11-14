@@ -1,10 +1,11 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { BookMarked, Highlighter, Target } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { parseReadingTab, type ReadingTab } from '@/lib/reading/tabs';
 
 const MyHighlightsPanel = lazy(() => import('./MyHighlightsPanel'));
@@ -49,11 +50,14 @@ export function MyReadingPage({ tab }: { tab: ReadingTab }) {
             },
           ]}
         />
-        <Suspense fallback={<Skeleton className="h-40 w-full" />}>
-          {tab === 'highlights' ? <MyHighlightsPanel /> : null}
-          {tab === 'shelves' ? <ShelvesPanel /> : null}
-          {tab === 'challenge' ? <ChallengePanel /> : null}
-        </Suspense>
+        {/* A box of its own: the column spaces its children, and the fade's wrapper has no box. */}
+        <div>
+          <ArrivalSuspense fallback={<Skeleton className="h-40 w-full" />}>
+            {tab === 'highlights' ? <MyHighlightsPanel /> : null}
+            {tab === 'shelves' ? <ShelvesPanel /> : null}
+            {tab === 'challenge' ? <ChallengePanel /> : null}
+          </ArrivalSuspense>
+        </div>
       </div>
     </PageLayout>
   );

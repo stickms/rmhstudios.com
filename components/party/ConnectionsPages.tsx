@@ -31,6 +31,7 @@ import {
   type GridPlayView,
   type GridSummary,
 } from '@/lib/party/connections';
+import { useArrival } from '@/components/ui/arrive';
 
 const BAND = ['bg-site-warning/25', 'bg-site-success/25', 'bg-site-accent/25', 'bg-site-danger/25'];
 
@@ -71,6 +72,7 @@ export function ConnectionsHome() {
     top: GridSummary[];
     recent: GridSummary[];
   } | null>(null);
+  const listArrival = useArrival(data !== null);
   useEffect(() => {
     api(listConnectionGridsApi, { retries: 0 })
       .then(setData)
@@ -103,7 +105,7 @@ export function ConnectionsHome() {
         </Button>
       }
     >
-      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+      <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', listArrival)}>
         {!data ? (
           <div className="flex justify-center py-20">
             <Spinner />
@@ -249,6 +251,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
   const [picked, setPicked] = useState<string[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [date, setDate] = useState('');
+  const gridArrival = useArrival(missing || grid !== null);
 
   const load = useCallback(async () => {
     try {
@@ -266,6 +269,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
     return (
       <PageLayout title={t('conn-title', { defaultValue: 'Connections grids' })}>
         <EmptyState
+          className={gridArrival}
           description={t('grid-missing', { defaultValue: 'That grid does not exist.' })}
         />
       </PageLayout>
@@ -373,7 +377,12 @@ export function ConnectionsPlay({ id }: { id: string }) {
         author: grid.author?.name ?? grid.author?.handle ?? '?',
       })}
     >
-      <div className="mx-auto max-w-2xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+      <div
+        className={cn(
+          'mx-auto max-w-2xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12',
+          gridArrival,
+        )}
+      >
         {grid.dailyDate ? (
           <p className="text-sm font-semibold text-site-accent">
             {t('daily-on', { defaultValue: 'Daily grid for {{d}}', d: grid.dailyDate })}

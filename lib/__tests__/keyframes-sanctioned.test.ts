@@ -24,7 +24,7 @@ const ROOT = process.cwd();
 /** keyframe name -> why it exists (owner). */
 export const SANCTIONED: Record<string, string> = {
   // --- app/globals.css: site-wide ---------------------------------------------------------------
-  'content-item-enter': 'staggered enter of feed/list items (.content-item)',
+  arrive: 'Steel M9: content that arrives after the view has painted fades in, 160 ms opacity (components/ui/arrive.tsx)',
   'motion-presence': 'no-op presence animation so Radix keeps a [data-motion] node until its exit transition ends',
   'vinyl-spin': 'feed VinylRecord while playing (components/feed/VinylRecord.tsx)',
   'doctrine-shake': 'doctrine page: 0.15s error shake',

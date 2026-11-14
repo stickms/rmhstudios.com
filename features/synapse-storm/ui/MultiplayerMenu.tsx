@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useMultiplayer } from '../engine/MultiplayerProvider';
 import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { MenuBackdrop } from './MenuBackdrop';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import './SynapseStormMenu.css';
 
 interface MultiplayerMenuProps {
@@ -30,6 +32,8 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
     }, [invite, step, displayName, connect]);
 
     useLobbyInviteJoin(connectionStatus === 'connected', (code) => joinLobby(code.toUpperCase()));
+    // The lobby controls replace the connecting spinner: they fade in (M9).
+    const arrival = useArrival(connectionStatus === 'connected');
 
     const handleSetName = () => {
         if (!displayName.trim()) return;
@@ -121,15 +125,15 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
 
                         {connectionStatus === 'connected' && (
                             <>
-                                <button className="ssm-btn ssm-btn--primary ssm-btn--wide" onClick={handleCreate}>
+                                <button className={cn('ssm-btn ssm-btn--primary ssm-btn--wide', arrival)} onClick={handleCreate}>
                                     {t("create-lobby", { defaultValue: "CREATE LOBBY" })}
                                 </button>
 
-                                <div className="ss-mp-divider">
+                                <div className={cn('ss-mp-divider', arrival)}>
                                     <span>{t("or", { defaultValue: "OR" })}</span>
                                 </div>
 
-                                <div className="ss-mp-input-group">
+                                <div className={cn('ss-mp-input-group', arrival)}>
                                     <label className="ss-mp-label" htmlFor="ss-mp-join-code">{t("join-by-code", { defaultValue: "JOIN BY CODE" })}</label>
                                     <div className="ss-mp-join-row">
                                         <input

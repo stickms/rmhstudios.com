@@ -1,7 +1,8 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/spinner';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 import { Link } from '@tanstack/react-router';
 import { ProfileShowcase } from '@/components/profile/ProfileShowcase';
@@ -68,6 +69,8 @@ export function ProfileColumn({
   );
 
   const actions = useProfileActions(userId, profile, setProfile);
+  // Steel M9: a profile fetched on the client replaces the spinner; one handed over by the loader does not fade.
+  const arrival = useArrival(!loading);
 
   const handleTabChange = (newTab: ProfileTab) => {
     setTab(newTab);
@@ -84,7 +87,7 @@ export function ProfileColumn({
 
   if (notFound || !profile) {
     return (
-      <div className="flex flex-col items-start gap-2 py-8">
+      <div className={cn('flex flex-col items-start gap-2 py-8', arrival)}>
         <h1 className="t-title">{t('user-not-found', { defaultValue: 'User not found' })}</h1>
         <p className="t-body text-site-text-muted">
           {t('user-not-found-desc', { defaultValue: "This user doesn't exist." })}
@@ -98,7 +101,7 @@ export function ProfileColumn({
 
   return (
     <div
-      className={cn('flex flex-col', profile.cosmetics?.theme && 'profile-themed')}
+      className={cn('flex flex-col', profile.cosmetics?.theme && 'profile-themed', arrival)}
       style={profileThemeStyle(profile)}
     >
       <ProfileHero
@@ -125,9 +128,9 @@ export function ProfileColumn({
       />
 
       {profile.birthdayToday && (
-        <Suspense fallback={null}>
+        <ArrivalSuspense>
           <BirthdayBadge />
-        </Suspense>
+        </ArrivalSuspense>
       )}
 
       <div className="pt-4">
@@ -145,9 +148,9 @@ export function ProfileColumn({
       </div>
 
       <div className="pt-4">
-        <Suspense fallback={null}>
+        <ArrivalSuspense>
           <ProfileActivityHeatmap userId={profile.id} />
-        </Suspense>
+        </ArrivalSuspense>
       </div>
 
       <ProfileTabBar

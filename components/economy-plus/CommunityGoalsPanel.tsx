@@ -21,6 +21,8 @@ import {
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import {
@@ -48,6 +50,7 @@ export default function CommunityGoalsPanel() {
     queryFn: () => apiJson<GoalsPayload>('/api/community-goals'),
     staleTime: 15_000,
   });
+  const arrival = useArrival(!isLoading && !!data);
 
   if (isLoading || !data) {
     return (
@@ -63,7 +66,7 @@ export default function CommunityGoalsPanel() {
   };
 
   return (
-    <div className="space-y-3 px-3 pb-12">
+    <div className={cn('space-y-3 px-3 pb-12', arrival)}>
       <p className="px-1 text-sm text-site-text-muted">
         {t('cg-intro', {
           defaultValue:

@@ -5,6 +5,8 @@ import { toast } from '@/lib/toast';
 
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { Button } from '@/components/ui/button';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import {
   CALL_PRIVACY_VALUES,
   DEFAULT_CALL_PRIVACY,
@@ -34,6 +36,7 @@ export function CallPrivacyControls() {
     ? privacyData.callPrivacy
     : DEFAULT_CALL_PRIVACY;
   const mutes = mutesData?.mutes ?? [];
+  const mutesArrival = useArrival(!!mutesData);
 
   function unmute(targetUserId: string) {
     const previous = mutesData;
@@ -111,7 +114,7 @@ export function CallPrivacyControls() {
       </fieldset>
 
       {mutes.length > 0 && (
-        <div className="border-t border-site-border pt-3">
+        <div className={cn('border-t border-site-border pt-3', mutesArrival)}>
           <p className="mb-2 text-sm font-medium text-site-text">
             {t('call-mutes-heading', { defaultValue: 'Muted callers' })}
           </p>

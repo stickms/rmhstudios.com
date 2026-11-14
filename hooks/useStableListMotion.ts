@@ -8,14 +8,15 @@ const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : use
 interface StableListMotionOptions {
   /** Keep large/infinite lists cheap by animating only the first visible batch. */
   maxAnimated?: number;
-  /** Must match the shared `.content-item-enter` animation window. */
+  /** At least the M9 `.arrive` fade (160 ms): the class comes off after this, so the row gets `feed-card-cv` back. */
   durationMs?: number;
   /** Let a parent-level async reveal own the first empty → populated transition. */
   skipFirstAddition?: boolean;
 }
 
 /**
- * Marks only genuinely new keyed items for a short entrance animation.
+ * Marks only genuinely new keyed items for the Steel M9 arrival fade: put the `arrive` class
+ * (`ARRIVE` from `@/components/ui/arrive`) on each key in the returned set.
  *
  * Items present on the component's first render are treated as established, so
  * hydration, cached navigation, and a loading placeholder resolving do not
@@ -24,7 +25,7 @@ interface StableListMotionOptions {
  */
 export function useStableListMotion(
   itemKeys: readonly ItemKey[],
-  { maxAnimated = 8, durationMs = 280, skipFirstAddition = false }: StableListMotionOptions = {},
+  { maxAnimated = 8, durationMs = 200, skipFirstAddition = false }: StableListMotionOptions = {},
 ): ReadonlySet<ItemKey> {
   const reduced = useReducedMotion();
   const seenRef = useRef<Set<ItemKey> | null>(null);

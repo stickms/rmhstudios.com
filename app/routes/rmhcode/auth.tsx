@@ -2,7 +2,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { Link } from '@tanstack/react-router';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { m as motion } from 'framer-motion';
 import { Terminal, Check, X, Loader2, Shield } from 'lucide-react';
 import { useSession } from '@/components/Providers';
@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { initiateRmhCodeAuthApi } from '@/lib/rmhcode/tokens.contract';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /** True only for a valid URL whose host is localhost (the CLI callback allowlist). */
 function isLocalhostCallback(cb: string): boolean {
@@ -164,9 +165,9 @@ function AuthContent() {
 
 function RmhCodeAuthPage() {
   return (
-    <Suspense fallback={<div className="app-ground bg-site-bg flex items-center justify-center"><Spinner size={32} /></div>}>
+    <ArrivalSuspense fallback={<div className="app-ground bg-site-bg flex items-center justify-center"><Spinner size={32} /></div>}>
       <AuthContent />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }
 

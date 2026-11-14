@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { Trophy, Plus, Coins, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
@@ -40,6 +42,7 @@ function TournamentsPage() {
   const list = useQuery({ ...tournamentsQuery(status), retry: false });
   const loading = list.isPending;
   const items = list.data?.tournaments ?? [];
+  const arrival = useArrival(!loading);
 
   return (
     <PageLayout
@@ -79,6 +82,7 @@ function TournamentsPage() {
         </div>
       ) : items.length === 0 ? (
         <EmptyState
+          className={arrival}
           icon={Trophy}
           title={t('empty', { defaultValue: 'No tournaments here yet. Host one and set the prize!' })}
           action={
@@ -90,7 +94,7 @@ function TournamentsPage() {
           }
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={cn('grid gap-3 sm:grid-cols-2', arrival)}>
           {items.map((tourney) => (
             <Link key={tourney.id} to="/tournaments/$id" params={{ id: tourney.id }}>
               <Card className="h-full gap-3 px-4 py-4" interactive>

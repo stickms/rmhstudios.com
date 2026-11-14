@@ -9,6 +9,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { propertyTypeLabel } from '@/lib/homes/format';
 import type { Watch } from '@/lib/homes/types';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import {
   deleteHomeWatchApi,
@@ -33,6 +35,7 @@ export function WatchManager() {
   const { t } = useTranslation('site');
   const [watches, setWatches] = useState<Watch[]>([]);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,6 +86,7 @@ export function WatchManager() {
   if (watches.length === 0) {
     return (
       <EmptyState
+        className={arrival}
         icon={Bell}
         title="No alerts yet"
         description="Run a search on Browse and tap “Watch” to get notified when a new matching listing is posted."
@@ -98,7 +102,7 @@ export function WatchManager() {
   }
 
   return (
-    <div className="border-t border-site-border">
+    <div className={cn('border-t border-site-border', arrival)}>
       {watches.map((w) => (
         <div
           key={w.id}

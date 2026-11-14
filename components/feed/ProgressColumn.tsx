@@ -32,6 +32,7 @@ import {
  type QuestView,
 } from'@/lib/battlepass/battlepass.contract';
 import type { PassReward, PassTier } from '@/lib/battlepass/season';
+import { useArrival } from '@/components/ui/arrive';
 
 export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) {
  const { t } = useTranslation('feed');
@@ -42,6 +43,8 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  const pass = passQ.data ?? null;
  const loading = progressQ.isPending || passQ.isPending;
  const [busy, setBusy] = useState<string | null>(null);
+ // Steel M9: progress fetched here replaces the spinner.
+ const arrival = useArrival(!loading);
 
  // After a claim: refetch both from the API.
  const load = useCallback(
@@ -96,6 +99,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  if (!data) {
  return (
  <EmptyState
+ className={arrival}
  description={t('could-not-load-progress', { defaultValue:'Could not load progress.'})}
  />
  );
@@ -107,7 +111,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  const weekly = data.quests.filter((q) => q.period ==='weekly');
 
  return (
- <div>
+ <div className={arrival}>
  {/* hideHeader === embedded in JourneyColumn, which supplies the page
  header (and the drawer button) itself. */}
  {!hideHeader && (

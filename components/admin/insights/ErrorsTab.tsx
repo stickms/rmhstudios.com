@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { send, useInsight } from './api';
 
 interface Group {
@@ -24,6 +26,7 @@ interface Group {
 export function ErrorsTab() {
   const { t } = useTranslation('f-ops');
   const { data, loading, reload } = useInsight<{ groups: Group[] }>('/api/admin/insights/errors');
+  const arrival = useArrival(!loading);
 
   const toggle = async (g: Group) => {
     const r = await send('/api/admin/insights/errors', 'PATCH', {
@@ -39,10 +42,13 @@ export function ErrorsTab() {
   const groups = data?.groups ?? [];
   if (groups.length === 0)
     return (
-      <EmptyState description={t('errors-empty', { defaultValue: 'No client errors recorded yet.' })} />
+      <EmptyState
+        className={arrival}
+        description={t('errors-empty', { defaultValue: 'No client errors recorded yet.' })}
+      />
     );
   return (
-    <ul className="divide-y divide-site-border border-t border-site-border">
+    <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
       {groups.map((g) => (
         <li key={g.id} className="space-y-2 py-3">
           <div className="flex flex-wrap items-center gap-2">

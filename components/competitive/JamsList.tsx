@@ -16,6 +16,8 @@ import { Hammer } from 'lucide-react';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createJamApi } from '@/lib/competitive/jams.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface JamSummary {
   slug: string;
@@ -122,6 +124,8 @@ export function JamsList() {
   // Seeded by the /jams loader. A failed load shows the empty list, as before.
   const list = useQuery({ ...jamsQuery(), retry: false });
   const jams: JamSummary[] | null = list.isPending ? null : (list.data?.jams ?? []);
+  const arrival = useArrival(jams !== null);
+  const isNew = useArrivingKeys(jams?.map((j) => j.slug) ?? []);
   const load = async () => {
     await list.refetch();
   };
@@ -148,11 +152,17 @@ export function JamsList() {
       ) : jams.length === 0 ? (
         <EmptyState
           icon={Hammer}
+          className={arrival}
           title={t('jam-none', { defaultValue: 'No game jams yet. Check back soon.' })}
         />
       ) : (
         jams.map((j) => (
-          <Link key={j.slug} to="/jams/$slug" params={{ slug: j.slug }}>
+          <Link
+            key={j.slug}
+            to="/jams/$slug"
+            params={{ slug: j.slug }}
+            className={cn(arrival, isNew(j.slug) && ARRIVE)}
+          >
             <Card className="gap-2 px-4 py-4" interactive>
               <div className="flex items-center justify-between gap-2">
                 <h2 className="font-semibold truncate">{j.title}</h2>

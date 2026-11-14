@@ -20,6 +20,8 @@ import { SITE_URL } from '@/lib/seo';
 import type { OfficeHoursBookingView, OfficeHoursConfigView } from '@/lib/calendar/types';
 import { api, viewerTimeZone } from './api';
 import { BookingRow } from './BookingRow';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Draft extends OfficeHoursConfigView {
   /** Window times as HH:MM strings for the inputs. */
@@ -43,6 +45,7 @@ export default function OfficeHoursManage() {
   const [asGuest, setAsGuest] = useState<OfficeHoursBookingView[]>([]);
   const [saving, setSaving] = useState(false);
   const userId = session?.user?.id;
+  const arrival = useArrival(!isPending && !(userId && !draft));
 
   const load = async () => {
     const res = await api<{
@@ -84,6 +87,7 @@ export default function OfficeHoursManage() {
     return (
       <SignedOutPrompt
         icon={CalendarClock}
+        className={arrival}
         title={t('oh-manage-signed-out', { defaultValue: 'Sign in to offer office hours' })}
         callbackURL="/office-hours"
       />
@@ -134,7 +138,7 @@ export default function OfficeHoursManage() {
   const publicUrl = `${SITE_URL}/office-hours/${userId}`;
 
   return (
-    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+    <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', arrival)}>
       <form onSubmit={save} className="space-y-4 rounded-site p-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-medium text-site-text">

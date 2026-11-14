@@ -7,6 +7,7 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { Spine, SpineItem } from '@/components/ui/spine';
 import { InboxAvatar } from '@/components/feed/InboxAvatar';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
@@ -22,6 +23,7 @@ import {
   markNotificationsReadApi,
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
+import { cn } from '@/lib/utils';
 
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 
@@ -136,6 +138,8 @@ function PreferencesPanel() {
   const { t } = useTranslation('feed');
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const { run: runToggle } = useOptimisticAction();
+  // Steel M9: the toggles replace the spinner.
+  const arrival = useArrival(!!prefs);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,7 +184,7 @@ function PreferencesPanel() {
           <Spinner />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+        <div className={cn('grid grid-cols-1 gap-1.5 sm:grid-cols-2', arrival)}>
           {ROWS.map((row) => (
             <label
               key={row.field}
@@ -326,6 +330,9 @@ export function NotificationsColumn({
   };
 
   const groups = useMemo(() => groupNotifications(items), [items]);
+  // Steel M9: the list replaces the spinner when fetched here; "Load more" appends rows that fade one by one.
+  const arrival = useArrival(!loading);
+  const isNew = useArrivingKeys(groups.map((g) => g.key));
 
   return (
     <div>
@@ -391,6 +398,7 @@ export function NotificationsColumn({
         </div>
       ) : items.length === 0 ? (
         <EmptyState
+          className={arrival}
           title={t('no-notifications-yet', { defaultValue: 'No notifications yet' })}
           description={t('no-notifications-description', {
             defaultValue:
@@ -398,7 +406,7 @@ export function NotificationsColumn({
           })}
         />
       ) : (
-        <Spine>
+        <Spine className={arrival}>
           {groups.map((g) => {
             const n = g.newest;
             const grouped = g.count > 1;
@@ -431,7 +439,11 @@ export function NotificationsColumn({
               });
             // One dot per unread item (section 10): a read notification is a plain row.
             return (
-              <SpineItem key={g.key} dot={!g.read} className="hover:bg-site-bg-subtle">
+              <SpineItem
+                key={g.key}
+                dot={!g.read}
+                className={cn('hover:bg-site-bg-subtle', isNew(g.key) && ARRIVE)}
+              >
                 <SwipeRow
                   trailing={{
                     icon: AlarmClock,

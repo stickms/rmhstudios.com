@@ -1,5 +1,6 @@
-import { Suspense, lazy, useEffect, useState } from'react';
+import { lazy, useEffect, useState } from'react';
 import { Link } from'@tanstack/react-router';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Button } from'@/components/ui/button';
 import { useTranslation } from'react-i18next';
 import { useSession, useResolvedUser } from'@/components/Providers';
@@ -52,9 +53,11 @@ export function ComposeBoxLazy(props: ComposeBoxLazyProps) {
 
  if (activated || idle) {
  return (
- <Suspense fallback={<ComposePlaceholder />}>
+ // No fade (`wrap={false}`): the placeholder IS the composer at rest, so the swap is not a visible arrival (M9)
+ // and fading an identical box in from nothing would blink it.
+ <ArrivalSuspense fallback={<ComposePlaceholder />} wrap={false}>
  <ComposeBox {...props} />
- </Suspense>
+ </ArrivalSuspense>
  );
  }
  return <ComposePlaceholder onActivate={() => setActivated(true)} />;

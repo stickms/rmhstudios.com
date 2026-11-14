@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { SliceThemeWrapper } from '@features/slice-it/ui/SliceThemeWrapper';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
@@ -13,6 +12,7 @@ import { useSliceItStore } from '@features/slice-it/engine/store';
 // library for `SliceItLoading` — measured as the whole library vanishing for
 // ~1.1s and coming back (docs/archive/2026/fouc-audit-2026-10-06.md §8, §13).
 import { GameCanvas } from '@features/slice-it/ui/GameCanvas';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 function SliceItPage() {
   // The menu is a document on a phone (slice-menu.css, "A phone"): the page scrolls, so
@@ -26,9 +26,9 @@ function SliceItPage() {
           <GameErrorBoundary gameName="Slice It">
             {/* Slice It's own skeleton, not the shared black sheet — see
                 `SliceItLoading` for why this game does not use it. */}
-            <Suspense fallback={<SliceItLoading />}>
+            <ArrivalSuspense fallback={<SliceItLoading />}>
               <GameCanvas />
-            </Suspense>
+            </ArrivalSuspense>
           </GameErrorBoundary>
         </div>
       </main>

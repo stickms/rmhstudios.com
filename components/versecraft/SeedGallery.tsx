@@ -24,6 +24,8 @@ import { fetchWithTimeout } from '@/lib/versecraft/gen/client';
 import { forkVersecraftSeedApi } from '@/lib/versecraft/versecraft.contract';
 import { useGameStore } from '@/lib/versecraft/store';
 import type { SeedListingView } from '@/lib/versecraft/seed-gallery';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Sort = 'top' | 'new';
 
@@ -33,6 +35,7 @@ export function SeedGalleryButton() {
   const [sort, setSort] = useState<Sort>('top');
   const [rows, setRows] = useState<SeedListingView[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const arrival = useArrival(rows !== null || failed);
   const isLoggedIn = useGameStore((s) => s.isLoggedIn);
   const startGeneratedGame = useGameStore((s) => s.startGeneratedGame);
 
@@ -119,7 +122,7 @@ export function SeedGalleryButton() {
             ]}
           />
           {failed ? (
-            <p className="text-sm text-site-danger">
+            <p className={cn('text-sm text-site-danger', arrival)}>
               {t('gallery-error', { defaultValue: 'The gallery did not load.' })}
             </p>
           ) : rows === null ? (
@@ -127,13 +130,13 @@ export function SeedGalleryButton() {
               {t('gallery-loading', { defaultValue: 'Loading…' })}
             </p>
           ) : rows.length === 0 ? (
-            <p className="text-sm text-site-text-muted">
+            <p className={cn('text-sm text-site-text-muted', arrival)}>
               {t('gallery-empty', {
                 defaultValue: 'Nothing published yet. Finish a chapter and share yours.',
               })}
             </p>
           ) : (
-            <ul className="max-h-[55dvh] space-y-2 overflow-y-auto">
+            <ul className={cn('max-h-[55dvh] space-y-2 overflow-y-auto', arrival)}>
               {rows.map((row) => (
                 <li key={row.id} className="surface-card space-y-2 rounded-site p-4">
                   <div className="flex items-start justify-between gap-2">

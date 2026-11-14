@@ -36,12 +36,14 @@ import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLe
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
+import { useArrival } from '@/components/ui/arrive';
 
 type GamePhase = 'rules' | 'reading' | 'result';
 type AlibiPuzzleFull = ReturnType<typeof generateAlibiPuzzle>;
 
 function AlibiGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
     const [puzzle, setPuzzle] = useState<AlibiPuzzleFull | null>(null);
+    const arrival = useArrival(puzzle !== null);
 
     useEffect(() => {
         let cancelled = false;
@@ -55,7 +57,9 @@ function AlibiGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boole
     }, [dateKey]);
 
     if (!puzzle) return <PuzzleLoading title="Alibi" emoji="🔍" />;
-    return <AlibiGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    const content = <AlibiGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    // The puzzle replaces the loading panel: it fades in through a box-less wrapper (M9).
+    return arrival ? <div className="arrive-group">{content}</div> : content;
 }
 
 function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFull; dateKey: string; isToday: boolean }) {

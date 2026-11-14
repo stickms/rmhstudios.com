@@ -11,6 +11,8 @@ import type { Market } from './types';
 import { api } from '@/lib/contract/client';
 import { listPredictionsApi } from '@/lib/predictions/predictions.contract';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Props {
   coins: number;
@@ -28,6 +30,7 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+  const arrival = useArrival(!loading);
 
   const load = useCallback((f: Filter) => {
     setLoading(true);
@@ -93,7 +96,7 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
           <Spinner />
         </div>
       ) : markets.length === 0 ? (
-        <div>
+        <div className={arrival}>
           <EmptyState
             icon={TrendingUp}
             title={
@@ -106,7 +109,7 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
           />
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={cn('grid gap-3 sm:grid-cols-2', arrival)}>
           {markets.map((m) => (
             <PredictionCard
               key={m.id}

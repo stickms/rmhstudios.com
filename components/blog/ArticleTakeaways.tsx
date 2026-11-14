@@ -3,6 +3,8 @@ import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { getArticleTakeawaysApi } from '@/lib/ai/ai.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * "Key takeaways" for a devlog post — 3–5 bullets a reader can scan before
@@ -18,6 +20,7 @@ import { getArticleTakeawaysApi } from '@/lib/ai/ai.contract';
 export function ArticleTakeaways({ slug }: { slug: string }) {
   const { t } = useTranslation('c-blog');
   const [takeaways, setTakeaways] = useState<string[]>([]);
+  const arrival = useArrival(takeaways.length > 0);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,7 +44,7 @@ export function ArticleTakeaways({ slug }: { slug: string }) {
 
   return (
     <aside
-      className="max-w-2xl rounded-site p-5 sm:p-5"
+      className={cn('max-w-2xl rounded-site p-5 sm:p-5', arrival)}
       aria-label={t('takeaways-title', { defaultValue: 'Key takeaways' })}
     >
       <h2 className="site-section-label mb-3 flex items-center gap-2">

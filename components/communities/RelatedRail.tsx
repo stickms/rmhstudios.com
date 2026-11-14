@@ -2,15 +2,22 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
 import type { SisterDTO } from '@/lib/communities/plus';
+import { cn } from '@/lib/utils';
 
 /** N8 — the "Related communities" rail. */
-export function RelatedRail({ sisters }: { sisters: SisterDTO[] }) {
+export function RelatedRail({
+  sisters,
+  className,
+}: {
+  sisters: SisterDTO[];
+  className?: string | undefined;
+}) {
   const { t } = useTranslation('f-communities-plus');
   if (sisters.length === 0) return null;
   return (
     <nav
       aria-label={t('related-title', { defaultValue: 'Related communities' })}
-      className="border-b border-site-border px-4 py-3"
+      className={cn('border-b border-site-border px-4 py-3', className)}
     >
       <h3 className="site-section-label mb-2 flex items-center gap-1.5">
         <Link2 className="h-3.5 w-3.5" aria-hidden />

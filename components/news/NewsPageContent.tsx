@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SlidersHorizontal } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { NewsList } from '@/components/news/NewsList';
 import type { NewsArticle } from '@/lib/news';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 interface NewsPageContentProps {
   articles: Partial<NewsArticle>[];
@@ -52,7 +53,7 @@ export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageCo
         </Button>
       }
     >
-      <Suspense
+      <ArrivalSuspense
         fallback={
           <div className="flex justify-center px-4 py-12">
             <Spinner label={t('loading', { defaultValue: 'Loading…' })} />
@@ -64,7 +65,7 @@ export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageCo
           featuredArticles={featured}
           filtersOpen={filtersOpen}
         />
-      </Suspense>
+      </ArrivalSuspense>
     </PageLayout>
   );
 }

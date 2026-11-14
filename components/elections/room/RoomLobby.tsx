@@ -10,6 +10,8 @@ import type { RoomSource } from './useRoomState';
 import { api } from '@/lib/contract/client';
 import { listElectionRoomsApi, createElectionRoomApi } from '@/lib/elections/elections.contract';
 import { serverError } from '@/lib/http';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * Where a room starts. Three ways in:
@@ -36,6 +38,8 @@ export function RoomLobby({ cycle, onOpen }: { cycle: string; onOpen: (s: RoomSo
     staleTime: 5_000,
     retry: 1,
   });
+  const arrival = useArrival(!!data);
+  const isNew = useArrivingKeys(data?.rooms.map((r) => r.code) ?? []);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,13 +191,17 @@ export function RoomLobby({ cycle, onOpen }: { cycle: string; onOpen: (s: RoomSo
           {t('lobby.open', { defaultValue: 'Public rooms' })}
         </h3>
         {data && data.rooms.length === 0 ? (
-          <p className="el-eyebrow">
+          <p className={cn('el-eyebrow', arrival)}>
             {t('lobby.none', { defaultValue: 'No public rooms yet. Host the first.' })}
           </p>
         ) : (
-          <div className="el-cards">
+          <div className={cn('el-cards', arrival)}>
             {(data?.rooms ?? []).map((r) => (
-              <article key={r.code} className="el-race el-box" aria-label={r.name}>
+              <article
+                key={r.code}
+                className={cn('el-race el-box', isNew(r.code) && ARRIVE)}
+                aria-label={r.name}
+              >
                 <h4 className="el-race__label">{r.name}</h4>
                 <p className="el-eyebrow" style={{ margin: '8px 0 0' }}>
                   {r.owner?.name

@@ -39,6 +39,8 @@ import {
   type BulkOperationView,
   type BulkPreview,
 } from '@/lib/bulk/types';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface UpgradeBody {
   error?: string;
@@ -115,6 +117,7 @@ export function BulkCleanupPanel() {
       ? operations.error.body
       : null;
   const upsell = upgrade ?? listGate;
+  const arrival = useArrival(!operations.isPending);
 
   /** Only the fields this kind honours — the rest are never sent or shown. */
   const filter: BulkFilter = {
@@ -239,7 +242,7 @@ export function BulkCleanupPanel() {
     return (
       <section aria-labelledby="bulk-heading" className="flex flex-col gap-4">
         {heading}
-        <div className="rounded-site p-5">
+        <div className={cn('rounded-site p-5', arrival)}>
           <p className="text-sm text-site-text">
             {t('bulk-upgrade-body', {
               tier: listGate.requiredTierLabel ?? 'Pro',
@@ -434,7 +437,7 @@ export function BulkCleanupPanel() {
       ) : null}
 
       {active ? (
-        <div className="flex flex-col gap-3 rounded-site p-5">
+        <div className={cn('flex flex-col gap-3 rounded-site p-5', arrival)}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-site-text">{kinds[active.kind].label}</p>
             <Badge variant="default">
@@ -475,7 +478,7 @@ export function BulkCleanupPanel() {
       ) : null}
 
       {history.length > 0 ? (
-        <div className="flex flex-col gap-3">
+        <div className={cn('flex flex-col gap-3', arrival)}>
           <h3 className="site-section-label">
             {t('bulk-history-heading', { defaultValue: 'Recent cleanups' })}
           </h3>
@@ -514,6 +517,7 @@ export function BulkCleanupPanel() {
       {operations.isError && !upsell ? (
         <EmptyState
           icon={ListChecks}
+          className={arrival}
           title={t('bulk-list-error-title', { defaultValue: 'Could not load your cleanups' })}
           description={t('bulk-list-error-body', {
             defaultValue: 'Refresh the page to try again.',

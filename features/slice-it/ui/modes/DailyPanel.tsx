@@ -28,6 +28,8 @@ import type { DailyState } from '@features/slice-it/engine/daily.server';
 import { api } from '@/lib/contract/client';
 import { getDailyApi, submitDailyApi } from '@features/slice-it/engine/slice-it.contract';
 import { armRunFinish } from './runTracker';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface DailyPanelProps {
   engine: GameEngine | null;
@@ -50,6 +52,8 @@ export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [remaining, setRemaining] = React.useState(0);
+  // What replaces the first "Loading" fades in (M9); a later reload keeps it on screen, so it does not.
+  const arrival = useArrival(state !== null || error !== null);
   const setModifiers = useSliceItStore((s) => s.setModifiers);
 
   const load = React.useCallback(async () => {
@@ -136,10 +140,17 @@ export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
         </div>
       )}
 
-      {error && <p className="neumorphic-inset rounded-2xl p-4 text-sm font-bold">{error}</p>}
+      {error && (
+        <p className={cn('neumorphic-inset rounded-2xl p-4 text-sm font-bold', arrival)}>{error}</p>
+      )}
 
       {!loading && !error && !selection && (
-        <p className="neumorphic-inset rounded-2xl p-4 text-sm font-bold text-slice-text-muted">
+        <p
+          className={cn(
+            'neumorphic-inset rounded-2xl p-4 text-sm font-bold text-slice-text-muted',
+            arrival,
+          )}
+        >
           {t('daily-none', {
             defaultValue:
               'No daily challenge yet — the library needs more well-played charts before one can be chosen.',
@@ -148,7 +159,12 @@ export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
       )}
 
       {selection && (
-        <div className="neumorphic rounded-3xl p-5 flex flex-col sm:flex-row gap-5 items-start">
+        <div
+          className={cn(
+            'neumorphic rounded-3xl p-5 flex flex-col sm:flex-row gap-5 items-start',
+            arrival,
+          )}
+        >
           {selection.coverUrl ? (
             <img
               src={selection.coverUrl}
@@ -191,7 +207,7 @@ export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
       )}
 
       {state?.entry && (
-        <div className="neumorphic-inset rounded-2xl p-4">
+        <div className={cn('neumorphic-inset rounded-2xl p-4', arrival)}>
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slice-text-muted">
             {t('daily-your-run', { defaultValue: 'Your run' })}
           </div>
@@ -218,11 +234,16 @@ export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
           {t('daily-board', { defaultValue: "Today's Board" })}
         </h3>
         {state && state.board.length === 0 ? (
-          <p className="text-xs font-bold uppercase tracking-widest text-slice-text-muted">
+          <p
+            className={cn(
+              'text-xs font-bold uppercase tracking-widest text-slice-text-muted',
+              arrival,
+            )}
+          >
             {t('daily-board-empty', { defaultValue: 'Nobody has played yet. Go first.' })}
           </p>
         ) : (
-          <ol className="flex flex-col gap-1.5">
+          <ol className={cn('flex flex-col gap-1.5', arrival)}>
             {state?.board.map((row) => (
               <li
                 key={row.userId}

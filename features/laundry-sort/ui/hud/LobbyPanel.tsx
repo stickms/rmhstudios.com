@@ -22,6 +22,8 @@ import {
 import { useLaundryStore } from '@features/laundry-sort/engine/store';
 import { laundryNet } from '@features/laundry-sort/engine/net/client';
 import { WashLegend } from './WashLegend';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** Minimum seats before the host may start — a race of one is not a race. */
 const MIN_PLAYERS = 2;
@@ -269,6 +271,8 @@ export function BrowsePanel({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation('c-laundry-sort');
   const lobbies = useLaundryStore((s) => s.publicLobbies);
   const browsing = useLaundryStore((s) => s.browsing);
+  const arrival = useArrival(lobbies.length > 0 || !browsing);
+  const isNew = useArrivingKeys(lobbies.map((l) => l.code));
 
   return (
     <div className="ls-overlay z-40 bg-black/60 backdrop-blur-[2px]">
@@ -297,7 +301,7 @@ export function BrowsePanel({ onBack }: { onBack: () => void }) {
           </header>
 
           {lobbies.length === 0 ? (
-            <p className="ls-muted py-6 text-center text-sm">
+            <p className={cn('ls-muted py-6 text-center text-sm', arrival)}>
               {browsing
                 ? t('loading', { defaultValue: 'Loading…' })
                 : t('no-open-lobbies', {
@@ -305,9 +309,9 @@ export function BrowsePanel({ onBack }: { onBack: () => void }) {
                   })}
             </p>
           ) : (
-            <ul className="space-y-1.5">
+            <ul className={cn('space-y-1.5', arrival)}>
               {lobbies.map((entry) => (
-                <li key={entry.code}>
+                <li key={entry.code} className={isNew(entry.code) ? ARRIVE : undefined}>
                   <button
                     type="button"
                     onClick={() => laundryNet.join(entry.code)}

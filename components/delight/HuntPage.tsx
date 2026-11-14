@@ -10,9 +10,11 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { fetchJson } from '@/lib/http';
 import { formatDuration } from '@/lib/delight/shared';
+import { cn } from '@/lib/utils';
 
 interface HuntData {
   state: {
@@ -43,6 +45,7 @@ export function HuntPage() {
     queryFn: () => fetchJson<HuntData>('/api/hunt'),
     enabled: !!session,
   });
+  const arrival = useArrival(!q.isPending);
 
   const submit = async () => {
     setBusy(true);
@@ -91,13 +94,14 @@ export function HuntPage() {
           <Skeleton className="h-40 w-full" />
         ) : !s ? (
           <EmptyState
+            className={arrival}
             icon={Compass}
             title={t('hunt-none', { defaultValue: 'No hunt is running right now' })}
             description={t('hunt-none-desc', { defaultValue: 'Check back later.' })}
           />
         ) : (
           <>
-            <section className="space-y-3 rounded-site p-5">
+            <section className={cn('space-y-3 rounded-site p-5', arrival)}>
               <h2 className="text-lg font-semibold text-site-text">{s.title}</h2>
               <p className="text-sm text-site-text-muted">
                 {t('hunt-progress', {
@@ -143,7 +147,7 @@ export function HuntPage() {
               )}
             </section>
 
-            <section aria-labelledby="hunt-board">
+            <section aria-labelledby="hunt-board" className={arrival}>
               <h2
                 id="hunt-board"
                 className="site-section-label mb-3 flex items-center gap-2"

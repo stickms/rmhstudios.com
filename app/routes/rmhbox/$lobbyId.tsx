@@ -33,6 +33,8 @@ import GameShell from '@/components/rmhbox/GameShell';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import type { VoteCandidate, PlayerRanking, SessionStanding, Award, RoundResultsPayload, MatchSummary } from '@/lib/rmhbox/types';
 import { isInGameLobbyState } from '@/lib/rmhbox/lobby-state';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function LobbyPage() {
   const { t } = useTranslation("r-rmhbox");
@@ -184,6 +186,10 @@ function LobbyPage() {
     }
   }, [lobby?.state]);
 
+  const arrival = useArrival(
+    !!lobby && connectionStatus !== 'connecting' && connectionStatus !== 'disconnected' && connectionStatus !== 'error',
+  );
+
   // Loading state
   if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
     return (
@@ -255,7 +261,7 @@ function LobbyPage() {
       />
 
       {/* Content area below header */}
-      <div className="flex-1 min-h-0 overflow-y-auto relative" style={lobby.state === 'WAITING' ? { scrollbarGutter: 'stable both-edges' } : undefined}>
+      <div className={cn('flex-1 min-h-0 overflow-y-auto relative', arrival)} style={lobby.state === 'WAITING' ? { scrollbarGutter: 'stable both-edges' } : undefined}>
         {/* Spectator Banner */}
         {isSpectator && (
           <SpectatorBanner

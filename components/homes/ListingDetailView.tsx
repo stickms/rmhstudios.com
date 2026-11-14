@@ -52,6 +52,8 @@ import {
 } from '@/lib/homes/format';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { sendMessageApi } from '@/lib/messages/messages.contract';
@@ -73,6 +75,7 @@ export function ListingDetailView({ id }: { id: string }) {
   const [activeImage, setActiveImage] = useState(0);
   const [messaging, setMessaging] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
+  const arrival = useArrival(!loading);
 
   useEffect(() => {
     let cancelled = false;
@@ -172,6 +175,7 @@ export function ListingDetailView({ id }: { id: string }) {
     return (
       <PageLayout title="Listing" backTo="/homes" wide>
         <EmptyState
+          className={arrival}
           icon={Home}
           title="This listing is no longer available."
           action={
@@ -196,7 +200,7 @@ export function ListingDetailView({ id }: { id: string }) {
 
   return (
     <PageLayout title={listing.title} backTo="/homes" backLabel="Back to browse" wide>
-      <div data-slot="homes-detail" className="w-full max-w-4xl">
+      <div data-slot="homes-detail" className={cn('w-full max-w-4xl', arrival)}>
         {/* Owner controls */}
         {listing.isOwner && (
           <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-site-border pb-3">

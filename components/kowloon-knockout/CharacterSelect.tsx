@@ -1,10 +1,11 @@
-import { useEffect, useCallback, lazy, Suspense } from 'react';
+import { useEffect, useCallback, lazy } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useGameStore, restoreStoredModel } from '@/lib/kowloon-knockout/store';
 import ModelPicker from '@/components/kowloon-knockout/ModelPicker';
 import './kk-screens.css';
 import { CLASS_DISPLAY, CLASS_STATS, ALL_FIGHTERS } from '@/lib/kowloon-knockout/game/fighters/stats';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const FighterPreview3D = lazy(() => import('@/components/kowloon-knockout/arena/FighterPreview3D'));
 
@@ -72,9 +73,10 @@ export default function CharacterSelect() {
                 aria-label={t('fighter-detail', { defaultValue: 'Selected fighter' })}
             >
                 <div className="kk-stage__preview">
-                    <Suspense fallback={null}>
+                    {/* No wrapper: `.kk-stage__preview > div` sizes the preview itself, which fades on its own. */}
+                    <ArrivalSuspense fallback={null} wrap={false}>
                         <FighterPreview3D fighterClass={selectedClass} modelId={selectedModel} size={200} />
-                    </Suspense>
+                    </ArrivalSuspense>
                 </div>
 
                 <div className="kk-stage__info">

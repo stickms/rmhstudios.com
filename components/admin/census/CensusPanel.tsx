@@ -16,6 +16,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { DataTable, type Column } from '@/components/admin/perf/DataTable';
 import { adminCensusQuery } from '@/lib/admin/admin-ops.queries';
@@ -66,6 +68,7 @@ export function CensusPanel() {
   const [saving, setSaving] = useState(false);
 
   const { data, isPending, isError } = useQuery(adminCensusQuery(source === LIVE ? null : source));
+  const arrival = useArrival(!isPending);
   const census: Census | null = data?.census ?? null;
   const baseline = data?.baseline ?? null;
 
@@ -394,6 +397,7 @@ export function CensusPanel() {
         </div>
       ) : isError || !census || !summary || !data ? (
         <EmptyState
+          className={arrival}
           title={t('census-unavailable', { defaultValue: 'Could not load the census.' })}
           description={t('census-unavailable-hint', {
             defaultValue:
@@ -401,7 +405,8 @@ export function CensusPanel() {
           })}
         />
       ) : (
-        <>
+        // One box so it can fade; it keeps the admin column's section spacing.
+        <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
           <div className="space-y-1 border-b border-site-border pb-4">
             <p className="pb-1 t-body text-site-text">
               {t('census-no-last-write', {
@@ -571,7 +576,7 @@ export function CensusPanel() {
               </section>
             </>
           )}
-        </>
+        </div>
       )}
     </>
   );

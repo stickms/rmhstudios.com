@@ -5,6 +5,8 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import type { ProfileResponse } from '@/lib/perf/admin-types';
 import { DataTable, type Column } from './DataTable';
 import { fmtMs, fmtNum, fmtInt } from './format';
@@ -23,6 +25,7 @@ export function ProfilerTab() {
   const [seconds, setSeconds] = useState('10');
   const [busy, setBusy] = useState<'download' | 'summary' | null>(null);
   const [result, setResult] = useState<ProfileResponse | null>(null);
+  const arrival = useArrival(result !== null);
 
   const run = async (mode: 'download' | 'summary') => {
     setBusy(mode);
@@ -164,7 +167,7 @@ export function ProfilerTab() {
       </section>
 
       {result && (
-        <section className="space-y-3">
+        <section className={cn('space-y-3', arrival)}>
           <h2 className="t-heading text-site-text">
             {t('profile-result', {
               defaultValue: 'Top functions by self time (worker pid {{pid}}, {{count}} s)',

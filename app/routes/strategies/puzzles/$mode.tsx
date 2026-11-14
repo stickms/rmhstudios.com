@@ -19,6 +19,8 @@ import { useDoctrinePuzzleState } from '@features/doctrine/ui/hooks/useDoctrineP
 import { useDoctrineSound } from '@features/doctrine/ui/hooks/useDoctrineSound';
 import { api } from '@/lib/contract/client';
 import { getDoctrineReplayPuzzleApi, getDoctrineTodayPuzzlesApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/puzzles/$mode')({
   head: () => noindexHead('Strategies Puzzle'),
@@ -47,6 +49,7 @@ function PuzzleModePage() {
 
   const dailyPuzzle = puzzles?.find((p: { mode: string }) => p.mode.toLowerCase() === mode);
   const activePuzzle = replayPuzzle ?? dailyPuzzle;
+  const arrival = useArrival(!!activePuzzle);
 
   const handlePlayAgain = useCallback(async () => {
     try {
@@ -68,14 +71,17 @@ function PuzzleModePage() {
     );
   }
 
+  // No box (display: contents): the puzzle fades in after "Loading puzzle..." (M9).
   return (
-    <PuzzlePlayer
-      key={`${activePuzzle.id}-${replayKey}`}
-      puzzle={activePuzzle}
-      mode={mode}
-      isReplay={!!replayPuzzle}
-      onPlayAgain={handlePlayAgain}
-    />
+    <div className={cn('contents', arrival && 'arrive-group')}>
+      <PuzzlePlayer
+        key={`${activePuzzle.id}-${replayKey}`}
+        puzzle={activePuzzle}
+        mode={mode}
+        isReplay={!!replayPuzzle}
+        onPlayAgain={handlePlayAgain}
+      />
+    </div>
   );
 }
 

@@ -1,4 +1,5 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import type { ProfileModule, PlusModuleKind } from '@/lib/profile/modules';
 
 /**
@@ -29,7 +30,7 @@ export default function PlusModules({
   isOwner: boolean;
 }) {
   return (
-    <Suspense fallback={null}>
+    <ArrivalSuspense>
       {module.kind === 'top-four' ? (
         <TopFourModule title={title} items={module.config.items} isOwner={isOwner} />
       ) : module.kind === 'now' ? (
@@ -43,6 +44,6 @@ export default function PlusModules({
       ) : (
         <VisitorCounterModule title={title} userId={userId} />
       )}
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

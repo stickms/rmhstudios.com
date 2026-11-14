@@ -18,6 +18,8 @@ import { hornNet } from '@features/gabriels-horn/engine/net/client';
 import { HouseRulesPanel, HouseRulesSummary } from './HouseRulesPanel';
 import { HornButton, Panel, SeatAvatar } from './ui';
 import { MenuBackdrop } from './MenuScene';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import './gh-menu.css';
 
 /** Server error codes → a sentence. Unknown codes fall back to a generic line. */
@@ -291,6 +293,8 @@ export function BrowsePanel({ onBack, onRefresh }: { onBack: () => void; onRefre
   const { t } = useTranslation('c-gabriels-horn');
   const lobbies = useHornStore((s) => s.publicLobbies);
   const browsing = useHornStore((s) => s.browsing);
+  const arrival = useArrival(!browsing);
+  const isNew = useArrivingKeys(lobbies.map((l) => l.code));
 
   return (
     <div className="ghm-scene app-page app-safe-x">
@@ -314,15 +318,15 @@ export function BrowsePanel({ onBack, onRefresh }: { onBack: () => void; onRefre
             {t('browsing', { defaultValue: 'Looking…' })}
           </p>
         ) : lobbies.length === 0 ? (
-          <Panel className="text-sm text-app-text-muted">
+          <Panel className={cn('text-sm text-app-text-muted', arrival)}>
             {t('no-tables', {
               defaultValue: 'Nobody is hosting right now. Host one and send the code around.',
             })}
           </Panel>
         ) : (
-          <ul className="space-y-2">
+          <ul className={cn('space-y-2', arrival)}>
             {lobbies.map((entry) => (
-              <li key={entry.code}>
+              <li key={entry.code} className={isNew(entry.code) ? ARRIVE : undefined}>
                 <Panel tier="fill" className="flex items-center gap-3">
                   <span className="min-w-0 grow">
                     <span className="block font-mono text-sm tracking-[0.2em] text-app-accent">

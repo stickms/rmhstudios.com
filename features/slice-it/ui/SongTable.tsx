@@ -12,6 +12,7 @@ import {
   type SortDirection,
 } from '@features/slice-it/engine/library-filters';
 import type { SliceSong } from '@features/slice-it/engine/types';
+import { useArrival } from '@/components/ui/arrive';
 
 interface SongTableProps {
   songs: LibrarySong[];
@@ -88,6 +89,9 @@ export function SongTable({
   });
 
   const virtualRows = virtualizer.getVirtualItems();
+  // The first page fades in over the spinner (M9). Not per row: the virtualizer remounts rows on
+  // scroll, so a row's own fade would replay every time it came back into view.
+  const arrival = useArrival(songs.length > 0);
   const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
   const paddingBottom =
     virtualRows.length > 0
@@ -175,7 +179,7 @@ export function SongTable({
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className={arrival}>
           {paddingTop > 0 && (
             <tr aria-hidden style={{ height: paddingTop }}>
               <td colSpan={LIBRARY_TABLE_COLUMNS.length + 1} style={{ padding: 0, border: 0 }} />

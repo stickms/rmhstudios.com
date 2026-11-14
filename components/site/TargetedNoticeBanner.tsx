@@ -8,6 +8,8 @@ import {
   getActiveNoticeApi,
   type NoticeView as Notice,
 } from '@/lib/ops/notices.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * An admin-targeted notice, fetched on idle for signed-in members and shown as a
@@ -18,6 +20,8 @@ export function TargetedNoticeBanner() {
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user);
   const [notice, setNotice] = useState<Notice | null>(null);
+  // Steel M9: the notice is fetched a few seconds after load and fades in where it appears.
+  const arrival = useArrival(!!notice);
 
   useEffect(() => {
     if (!signedIn) return;
@@ -47,7 +51,10 @@ export function TargetedNoticeBanner() {
       // A member of the floating stack (comfort-suite.css): on a phone it is in the docked globe's lane, so it rides
       // above the globe instead of lying under it.
       data-floating="notice"
-      className="surface-overlay bottom-above-dock fixed inset-x-4 z-40 mx-auto flex max-w-md items-start gap-3 rounded-site p-5 md:left-auto md:right-4"
+      className={cn(
+        'surface-overlay bottom-above-dock fixed inset-x-4 z-40 mx-auto flex max-w-md items-start gap-3 rounded-site p-5 md:left-auto md:right-4',
+        arrival,
+      )}
     >
       <div className="min-w-0 flex-1 space-y-1">
         <p className="text-sm font-semibold text-site-text">{notice.title}</p>

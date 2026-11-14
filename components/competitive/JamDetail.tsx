@@ -16,6 +16,8 @@ import { enterJamApi, rateJamEntryApi } from '@/lib/competitive/jams.contract';
 import { jamQuery } from '@/lib/competitive/jams.queries';
 import { JAM_CATEGORIES, type JamCategory } from '@/lib/competitive/jam';
 import { PhaseBadge } from './JamsList';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Scores = Record<JamCategory, number>;
 interface Entry {
@@ -117,6 +119,7 @@ export function JamDetail({ slug }: { slug: string }) {
   const jam: Jam | null | undefined = data?.jam ?? (isError ? null : undefined);
   const [buildId, setBuildId] = useState('');
   const [busy, setBusy] = useState(false);
+  const arrival = useArrival(jam !== undefined);
 
   const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
@@ -125,6 +128,7 @@ export function JamDetail({ slug }: { slug: string }) {
     return (
       <EmptyState
         icon={Hammer}
+        className={arrival}
         title={t('jam-missing', { defaultValue: 'This jam does not exist.' })}
       />
     );
@@ -145,7 +149,7 @@ export function JamDetail({ slug }: { slug: string }) {
 
   const canRate = jam.phase === 'open' || jam.phase === 'rating';
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className={cn('space-y-4 max-w-3xl', arrival)}>
       <Card className="gap-3 px-4 py-4" pane>
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm">{jam.description}</p>

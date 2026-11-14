@@ -7,6 +7,8 @@ import { getGameLeaderboardApi } from '@/lib/game/leaderboard.contract';
 import { submitGameScoreApi } from '@/lib/game/score.contract';
 import { BOSS_RUSH_GAME_ID, isBossRushUnlocked } from '@features/void-breaker/engine/bossRush';
 import type { RunStats } from '@features/void-breaker/engine/types';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Row = { rank: number; username: string; score: number; progress: number | null };
 
@@ -24,9 +26,11 @@ async function fetchBoard(): Promise<Row[]> {
 
 function Board({ rows }: { rows: Row[] }) {
   const { t } = useTranslation('f-action');
+  // The board is fetched after the menu or the result shows: it fades in when it lands (M9).
+  const arrival = useArrival(rows.length > 0);
   if (rows.length === 0) return null;
   return (
-    <div className="space-y-1">
+    <div className={cn('space-y-1', arrival)}>
       <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#c9a227]/80">
         <Trophy className="w-3 h-3" /> {t('vb-rush-board', { defaultValue: 'Boss Rush board' })}
       </div>
@@ -81,6 +85,7 @@ export function BossRushResult({ runStats, signedIn }: { runStats: RunStats; sig
   const { t } = useTranslation('f-action');
   const [rows, setRows] = useState<Row[]>([]);
   const [status, setStatus] = useState<'idle' | 'sent' | 'failed'>('idle');
+  const statusArrival = useArrival(status !== 'idle');
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -115,7 +120,7 @@ export function BossRushResult({ runStats, signedIn }: { runStats: RunStats; sig
         })}
       </div>
       {signedIn && status !== 'idle' && (
-        <p className="text-center text-[10px] font-mono text-[#c9a227]/80">
+        <p className={cn('text-center text-[10px] font-mono text-[#c9a227]/80', statusArrival)}>
           {status === 'sent'
             ? t('vb-rush-sent', { defaultValue: 'Score submitted to the Boss Rush board' })
             : t('vb-rush-failed', { defaultValue: 'Could not submit this score' })}

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Tabs } from '@/components/ui/tabs';
 import { fetchJson } from '@/lib/http';
+import { useArrival, useSuspenseArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Filter = 'shown' | 'pending' | 'hidden';
 interface AdminNote {
@@ -25,6 +27,8 @@ export default function NotesPanel() {
     queryKey: ['context-notes', 'admin', filter],
     queryFn: () => fetchJson<{ notes: AdminNote[] }>(`/api/admin/context-notes?filter=${filter}`),
   });
+  const shown = useSuspenseArrival();
+  const arrival = useArrival(q.data !== undefined);
   const setHidden = async (n: AdminNote, hidden: boolean) => {
     try {
       await fetchJson(`/api/admin/context-notes/${n.id}`, {
@@ -40,7 +44,7 @@ export default function NotesPanel() {
     }
   };
   return (
-    <div className="space-y-4">
+    <div className={cn('space-y-4', shown)} suppressHydrationWarning>
       <Tabs
         aria-label={t('notes-filter', { defaultValue: 'Note filter' })}
         value={filter}
@@ -52,9 +56,12 @@ export default function NotesPanel() {
         ]}
       />
       {q.data && q.data.notes.length === 0 ? (
-        <EmptyState title={t('notes-empty', { defaultValue: 'No notes here' })} />
+        <EmptyState
+          className={arrival}
+          title={t('notes-empty', { defaultValue: 'No notes here' })}
+        />
       ) : (
-        <ul className="divide-y divide-site-border border-t border-site-border">
+        <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
           {q.data?.notes.map((n) => (
             <li key={n.id} className="space-y-2 py-3">
               <p className="t-body text-site-text">{n.body}</p>

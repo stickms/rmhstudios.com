@@ -1,10 +1,11 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Grid2x2, StickyNote } from 'lucide-react';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const panels = {
   canvas: lazy(() => import('./CanvasPanel')),
@@ -44,9 +45,10 @@ export function CanvasAdminPage() {
             },
           ]}
         />
-        <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+        {/* AdminBody spaces its children (space-y), so each panel fades itself. */}
+        <ArrivalSuspense fallback={<Skeleton className="h-48 w-full" />} wrap={false}>
           <Panel />
-        </Suspense>
+        </ArrivalSuspense>
       </AdminBody>
     </PageLayout>
   );

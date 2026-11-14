@@ -1,6 +1,7 @@
-import { Suspense, lazy, useId, type FormEvent } from 'react';
+import { lazy, useId, type FormEvent } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Input } from '@/components/ui/input';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useMarginSlotRef } from './margin-slot';
@@ -48,9 +49,9 @@ export function MarginColumn() {
         />
       </form>
       {displayed && (
-        <Suspense fallback={null}>
+        <ArrivalSuspense>
           <MarginLists />
-        </Suspense>
+        </ArrivalSuspense>
       )}
       <div ref={setSlot} className="site-margin__page" />
     </aside>

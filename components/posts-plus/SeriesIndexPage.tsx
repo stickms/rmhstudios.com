@@ -16,6 +16,8 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createSeriesApi } from '@/lib/posts-plus/series.contract';
 import { seriesQuery } from '@/lib/posts-plus/series.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Summary {
   id: string;
@@ -39,6 +41,8 @@ export function SeriesIndexPage() {
     ? { mine: [], following: [] }
     : (list.data ?? null);
   const loadFailed = list.isError;
+  // Steel M9: the lists (or the sign-in prompt) replace the spinner; the loader's seed is there on first paint.
+  const arrival = useArrival((!session && !isPending) || !!data);
   useEffect(() => {
     if (loadFailed) {
       toast.error(t('series-load-failed', { defaultValue: 'Could not load the series' }));
@@ -88,7 +92,7 @@ export function SeriesIndexPage() {
         defaultValue: 'Group your posts into a numbered series, and follow other people’s.',
       })}
     >
-      <div className="max-w-2xl px-4 pt-4 pb-12">
+      <div className={cn('max-w-2xl px-4 pt-4 pb-12', arrival)}>
       {!session && !isPending ? (
         <SignedOutPrompt
           callbackURL="/series"

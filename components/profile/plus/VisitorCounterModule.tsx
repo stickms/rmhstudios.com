@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Eye } from 'lucide-react';
 import { WidgetFrame } from '@/components/ui/widget-frame';
+import { useArrival } from '@/components/ui/arrive';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { api } from '@/lib/contract/client';
 import { recordProfileVisitApi } from '@/lib/profile/profile-extras.contract';
@@ -16,6 +17,7 @@ export default function VisitorCounterModule({ title, userId }: { title: string;
   const { t } = useTranslation('f-profile-plus');
   const idle = useIdleReady();
   const [count, setCount] = useState<number | null>(null);
+  const arrival = useArrival(count !== null);
 
   useEffect(() => {
     if (!idle) return;
@@ -35,7 +37,7 @@ export default function VisitorCounterModule({ title, userId }: { title: string;
 
   const digits = String(count).padStart(6, '0').split('');
   return (
-    <WidgetFrame title={title} icon={Eye}>
+    <WidgetFrame title={title} icon={Eye} className={arrival}>
       <div
         className="flex items-center gap-1"
         role="img"

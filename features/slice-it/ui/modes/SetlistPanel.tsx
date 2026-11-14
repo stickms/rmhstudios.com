@@ -66,6 +66,8 @@ import {
 } from '@features/slice-it/engine/setlists.contract';
 
 import { searchSongsApi } from '@features/slice-it/engine/play.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 const LIKED_ID = 'liked';
 
 interface SetlistPanelProps {
@@ -94,6 +96,9 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
   const [query, setQuery] = React.useState('');
   const [results, setResults] = React.useState<SliceSong[]>([]);
   const [progress, setProgress] = React.useState<RunProgress | null>(null);
+  // M9: the index fades in over "Loading", and an opened setlist over the busy spinner.
+  const indexArrival = useArrival(!loading);
+  const openArrival = useArrival(open !== null);
 
   const loadIndex = React.useCallback(async () => {
     setLoading(true);
@@ -356,7 +361,11 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
         </div>
       )}
 
-      {error && <p className="neumorphic-inset rounded-2xl p-4 text-sm font-bold">{error}</p>}
+      {error && (
+        <p className={cn('neumorphic-inset rounded-2xl p-4 text-sm font-bold', indexArrival)}>
+          {error}
+        </p>
+      )}
 
       {loading && (
         <div className="flex items-center gap-2 text-slice-text-muted font-bold uppercase text-xs tracking-widest">
@@ -368,7 +377,12 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
       {/* ── Index ── */}
       {!open && !loading && (
         <>
-          <div className="neumorphic rounded-3xl p-4 flex flex-wrap items-center gap-3">
+          <div
+            className={cn(
+              'neumorphic rounded-3xl p-4 flex flex-wrap items-center gap-3',
+              indexArrival,
+            )}
+          >
             <Heart className="w-5 h-5 text-slice-text-muted" />
             <div className="min-w-0">
               <div className="text-sm font-black uppercase tracking-wide text-slice-text">
@@ -393,7 +407,12 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
             </Button>
           </div>
 
-          <div className="neumorphic rounded-3xl p-4 flex flex-wrap items-center gap-3">
+          <div
+            className={cn(
+              'neumorphic rounded-3xl p-4 flex flex-wrap items-center gap-3',
+              indexArrival,
+            )}
+          >
             <Input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -418,12 +437,14 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
               defaultValue: 'None yet. Make one above.',
             })}
             onOpen={(id) => void openSetlist(id)}
+            className={indexArrival}
           />
           <SummaryList
             heading={t('setlist-public', { defaultValue: 'Shared by others' })}
             rows={index?.public ?? []}
             emptyLabel={t('setlist-public-empty', { defaultValue: 'Nothing shared yet.' })}
             onOpen={(id) => void openSetlist(id)}
+            className={indexArrival}
           />
         </>
       )}
@@ -431,7 +452,7 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
       {/* ── One setlist ── */}
       {open && (
         <>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className={cn('flex flex-wrap items-center gap-3', openArrival)}>
             <Button
               onClick={() =>
                 playThrough(
@@ -499,7 +520,12 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
           </div>
 
           {open.missingCount > 0 && (
-            <p className="neumorphic-inset rounded-2xl p-3 text-[11px] font-bold uppercase tracking-widest text-slice-text-muted">
+            <p
+              className={cn(
+                'neumorphic-inset rounded-2xl p-3 text-[11px] font-bold uppercase tracking-widest text-slice-text-muted',
+                openArrival,
+              )}
+            >
               {t('setlist-missing', {
                 defaultValue: '{{count}} track(s) in this setlist no longer exist.',
                 count: open.missingCount,
@@ -507,7 +533,7 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
             </p>
           )}
 
-          <ol className="flex flex-col gap-2">
+          <ol className={cn('flex flex-col gap-2', openArrival)}>
             {open.songs.map((song, i) => (
               <li
                 key={`${song.id}-${i}`}
@@ -565,7 +591,7 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
           </ol>
 
           {open.isOwner && (
-            <div className="neumorphic rounded-3xl p-4 flex flex-col gap-3">
+            <div className={cn('neumorphic rounded-3xl p-4 flex flex-col gap-3', openArrival)}>
               <div className="flex flex-wrap items-center gap-3">
                 <Input
                   value={query}
@@ -614,14 +640,16 @@ function SummaryList({
   rows,
   emptyLabel,
   onOpen,
+  className,
 }: {
   heading: string;
   rows: SetlistSummary[];
   emptyLabel: string;
   onOpen: (id: string) => void;
+  className?: string;
 }) {
   return (
-    <div className="neumorphic rounded-3xl p-4">
+    <div className={cn('neumorphic rounded-3xl p-4', className)}>
       <h3 className="text-sm font-black uppercase tracking-widest text-slice-text mb-3">
         {heading}
       </h3>

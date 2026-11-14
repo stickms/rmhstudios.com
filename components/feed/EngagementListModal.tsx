@@ -3,6 +3,8 @@ import { Link } from'@tanstack/react-router';
 import { Spinner } from'@/components/ui/spinner';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
 import { UserAvatar } from'./UserAvatar';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface EngagementUser {
  id: string;
@@ -23,6 +25,8 @@ interface EngagementListModalProps {
 export function EngagementListModal({ open, onClose, postId, commentId, type }: EngagementListModalProps) {
  const [users, setUsers] = useState<EngagementUser[]>([]);
  const [loading, setLoading] = useState(false);
+ // Steel M9: the list replaces the spinner.
+ const arrival = useArrival(!loading);
 
  const title = type ==='likes'?'Liked by':'reRMHark\u2019d by';
  const base = commentId
@@ -52,7 +56,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
 
  <div className="overflow-y-auto flex-1">
  {users.length === 0 && !loading && (
- <div className="flex flex-col items-center justify-center py-12 px-5 text-center">
+ <div className={cn('flex flex-col items-center justify-center py-12 px-5 text-center', arrival)}>
  <p className="text-site-text font-medium mb-1">
  No {type ==='likes'?'likes':'reRMHarks'} yet
  </p>
@@ -64,7 +68,10 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
  key={user.id}
  to={`/u/${user.handle || user.id}`as string}
  onClick={onClose}
- className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,scale] duration-site-fast border-b border-site-border/50"
+ className={cn(
+ 'flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,scale] duration-site-fast border-b border-site-border/50',
+ arrival,
+ )}
  >
  <UserAvatar user={user} linkToProfile={false} />
  <div className="min-w-0">

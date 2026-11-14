@@ -61,6 +61,8 @@ import {
 } from '@/lib/elections/split';
 import { api } from '@/lib/contract/client';
 import { reactElectionChatApi } from '@/lib/elections/elections.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const LAYOUT_ICON: Record<Layout, typeof Square> = {
   '1': Square,
@@ -124,6 +126,7 @@ export function RoomOverlay({
   const code = source.kind === 'hosted' ? source.code : null;
   const { config, setConfig, meta, status, canEdit, applyRemote } = useRoomState(cycle, source);
   const chat = useRoomStream(cycle, code, applyRemote);
+  const arrival = useArrival(status !== 'loading');
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -455,19 +458,19 @@ export function RoomOverlay({
               {t('room.joining', { defaultValue: 'Joining…' })}
             </p>
           ) : status === 'not-found' ? (
-            <div className="el-room__note">
+            <div className={cn('el-room__note', arrival)}>
               <p>{t('room.gone', { defaultValue: 'That room does not exist or has ended.' })}</p>
               <button type="button" className="el-btn" onClick={onUseSolo}>
                 {t('room.startSolo', { defaultValue: 'Start a solo room instead' })}
               </button>
             </div>
           ) : status === 'error' ? (
-            <p className="el-room__note" role="alert">
+            <p className={cn('el-room__note', arrival)} role="alert">
               {t('room.error', { defaultValue: 'Could not load the room. Try again.' })}
             </p>
           ) : (
             <>
-            <div className="el-room__switch" role="group" aria-label={t('room.panes', { defaultValue: 'Panes' })}>
+            <div className={cn('el-room__switch', arrival)} role="group" aria-label={t('room.panes', { defaultValue: 'Panes' })}>
               {panes.map((pane, i) => (
                 <button
                   key={pane.id}
@@ -482,7 +485,7 @@ export function RoomOverlay({
             </div>
             <div
               ref={grid}
-              className="el-room__grid"
+              className={cn('el-room__grid', arrival)}
               data-layout={config.layout}
               data-dragging={dragging ?? (dragId ? 'pane' : undefined)}
               style={{ ...splitVars(split), ...lookVars(look) } as React.CSSProperties}

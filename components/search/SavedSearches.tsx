@@ -15,6 +15,7 @@ import {
   listSavedSearchesApi,
   updateSavedSearchApi,
 } from '@/lib/search/saved.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 /** The search operators shown as copyable examples. */
 const OPERATOR_EXAMPLES = [
@@ -33,6 +34,7 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
   const { t } = useTranslation('search');
   const [saved, setSaved] = useState<SavedSearchView[] | null>(null);
   const [showTips, setShowTips] = useState(false);
+  const arrival = useArrival(saved !== null);
   const { copy } = useClipboard();
 
   async function copyOperator(op: string) {
@@ -78,7 +80,7 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
   if (saved.length === 0 && !q) return null;
 
   return (
-    <div className="pb-3">
+    <div className={cn('pb-3', arrival)}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <span className="site-section-label flex items-center gap-2">
           <Bookmark className="size-4" aria-hidden />

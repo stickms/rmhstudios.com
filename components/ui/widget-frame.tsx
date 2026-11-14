@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AsyncReveal } from '@/components/motion';
+import { useArrival } from '@/components/ui/arrive';
 
 /**
  * WidgetFrame (groundwork G3) — the shared modular-block surface used by both
@@ -64,6 +64,8 @@ export function WidgetFrame({
  const hasResolved = React.useRef(!loading);
  if (!loading) hasResolved.current = true;
  const initialLoading = loading && !hasResolved.current;
+ // Steel M9: the body replaces the first skeleton with a fade, opacity only.
+ const arrival = useArrival(!initialLoading);
 
  return (
  <Card data-slot="widget-frame" className={cn('gap-0 py-0 overflow-hidden', className)}>
@@ -76,18 +78,18 @@ export function WidgetFrame({
  </div>
 
  <div className="px-4 py-3" aria-busy={loading}>
- {initialLoading && (
+ {initialLoading ? (
  <div className="space-y-2" aria-hidden>
  <Skeleton className="h-4 w-3/4" />
  <Skeleton className="h-4 w-1/2" />
  <Skeleton className="h-4 w-2/3" />
  </div>
- )}
- <AsyncReveal
- show={!initialLoading}
+ ) : (
+ <div
  className={cn(
  'transition-opacity duration-site-fast',
  loading && hasResolved.current && 'opacity-70',
+ arrival,
  )}
  >
  {empty ? (
@@ -101,7 +103,8 @@ export function WidgetFrame({
  ) : (
  children
  )}
- </AsyncReveal>
+ </div>
+ )}
  </div>
  </Card>
  );

@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { adminAlbumCreate, adminAlbumsList } from '@/lib/admin/albums.contract';
@@ -40,6 +42,7 @@ function AdminAlbumsPage() {
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [creating, setCreating] = useState(false);
+  const arrival = useArrival(!loading);
 
   useEffect(() => {
     let active = true;
@@ -118,6 +121,7 @@ function AdminAlbumsPage() {
           </div>
         ) : albums.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Images}
             title={t('albums-empty', { defaultValue: 'No albums yet' })}
             description={t('albums-empty-hint', {
@@ -125,7 +129,7 @@ function AdminAlbumsPage() {
             })}
           />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className={cn('grid grid-cols-2 gap-3 sm:grid-cols-3', arrival)}>
             {albums.map((album) => {
               const cover = album.slides[0]?.thumb;
               const images = album.slides.filter((s) => s.type === 'image').length;

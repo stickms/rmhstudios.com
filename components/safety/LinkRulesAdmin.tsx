@@ -14,6 +14,8 @@ import {
   deleteAdminLinkRuleApi,
   listAdminLinkRulesApi,
 } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Rule {
   domain: string;
@@ -28,6 +30,7 @@ export function LinkRulesAdmin() {
   const [domain, setDomain] = useState('');
   const [kind, setKind] = useState<'DENY' | 'ALLOW'>('DENY');
   const [note, setNote] = useState('');
+  const arrival = useArrival(rules !== null);
 
   const load = useCallback(async () => {
     try {
@@ -99,11 +102,11 @@ export function LinkRulesAdmin() {
           <Spinner />
         </div>
       ) : rules.length === 0 ? (
-        <p className="t-body text-site-text-muted">
+        <p className={cn('t-body text-site-text-muted', arrival)}>
           {t('rules-empty', { defaultValue: 'No rules yet.' })}
         </p>
       ) : (
-        <ul className="divide-y divide-site-border border-t border-site-border">
+        <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
           {rules.map((r) => (
             <li
               key={r.domain}

@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchJson } from '@/lib/http';
 import { CANVAS_PALETTE, type CanvasEventView } from '@/lib/canvas/shared';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface LogPage {
   cells: number[];
@@ -23,6 +25,7 @@ export default function CanvasReplay({ event }: { event: CanvasEventView }) {
   const [pos, setPos] = useState(0);
   const [playing, setPlaying] = useState(false);
   const drawn = useRef(Infinity);
+  const arrival = useArrival(failed || cells !== null);
 
   useEffect(() => {
     let alive = true;
@@ -84,7 +87,7 @@ export default function CanvasReplay({ event }: { event: CanvasEventView }) {
 
   if (failed) {
     return (
-      <p className="text-sm text-site-text-muted">
+      <p className={cn('text-sm text-site-text-muted', arrival)}>
         {t('replay-failed', { defaultValue: 'The replay could not be loaded.' })}
       </p>
     );
@@ -92,13 +95,13 @@ export default function CanvasReplay({ event }: { event: CanvasEventView }) {
   if (!cells) return <Skeleton className="mx-auto aspect-square w-full max-w-lg" />;
   if (cells.length === 0) {
     return (
-      <p className="text-sm text-site-text-muted">
+      <p className={cn('text-sm text-site-text-muted', arrival)}>
         {t('replay-empty', { defaultValue: 'Nobody placed a pixel on this canvas.' })}
       </p>
     );
   }
   return (
-    <div className="mx-auto max-w-lg space-y-3">
+    <div className={cn('mx-auto max-w-lg space-y-3', arrival)}>
       <canvas
         ref={canvasRef}
         width={event.width}

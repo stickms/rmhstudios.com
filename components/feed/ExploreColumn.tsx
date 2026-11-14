@@ -5,6 +5,7 @@ import { useSession } from '@/components/Providers';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { SearchHitSection, useKindHeading } from '@/components/search/SearchHitRow';
 import { ExploreAsk } from './ExploreAsk';
 import {
@@ -258,6 +259,8 @@ export function ExploreColumn({
 
   const hasResults = tab === 'top' ? top.length > 0 : sections.length > 0;
   const exploreTab: ExploreTab = (EXPLORE_TABS.has(tab) ? tab : 'top') as ExploreTab;
+  // Steel M9: results that replace the skeleton fade in.
+  const arrival = useArrival(!hasQuery || !(loading && !hasResults));
 
   return (
     <div>
@@ -326,13 +329,14 @@ export function ExploreColumn({
         <PostListSkeleton count={6} />
       ) : !hasResults && !loading ? (
         <EmptyState
+          className={arrival}
           description={t('no-results', {
             query: trimmed,
             defaultValue: 'No results for "{{query}}".',
           })}
         />
       ) : (
-        <Spine>
+        <Spine className={arrival}>
           {tab === 'top' ? (
             <>
               <SearchHitSection hits={strong} />

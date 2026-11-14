@@ -24,6 +24,8 @@ import { toast } from '@/lib/shared/app-toast';
 import LeaderboardPanel from '@/components/rmhbox/LeaderboardPanel';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import type { PublicLobbyInfo } from '@/lib/rmhbox/types';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function RMHboxLanding() {
   const { t } = useTranslation("r-rmhbox");
@@ -32,6 +34,9 @@ function RMHboxLanding() {
   const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
   const [joinCode, setJoinCode] = useState('');
   const [publicLobbies, setPublicLobbies] = useState<PublicLobbyInfo[]>([]);
+  // Lobbies come over the socket after paint: the list fades in, then each new lobby does (M9).
+  const lobbiesArrival = useArrival(publicLobbies.length > 0);
+  const isNewLobby = useArrivingKeys(publicLobbies.map((l) => l.lobbyId));
 
   // Connect to WebSocket on mount
   useEffect(() => {
@@ -202,9 +207,9 @@ function RMHboxLanding() {
               {t("no-public-lobbies", { defaultValue: "No public lobbies available. Create one!" })}
             </p>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className={cn('flex flex-col gap-2', lobbiesArrival)}>
               {publicLobbies.map((lobby) => (
-                <li key={lobby.lobbyId}>
+                <li key={lobby.lobbyId} className={isNewLobby(lobby.lobbyId) ? ARRIVE : undefined}>
                   <button
                     type="button"
                     className="flex w-full items-center justify-between gap-3 rounded-app-sm border border-app-border bg-app-bg px-3 py-3 text-left transition-colors hover:bg-app-surface-hover"

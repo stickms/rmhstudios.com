@@ -25,6 +25,8 @@ import { HighlightsSection } from './HighlightsSection';
 import ReadingRuler from './ReadingRuler';
 import type { ReaderTextSource } from './ReaderReadingTools';
 import { NO_HIGHLIGHTS, NO_NOTES, NO_POPULAR, useHighlightKit } from './useHighlightKit';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** Fewer characters than this on a page means no usable text layer. */
 const MIN_TEXT = 12;
@@ -43,6 +45,8 @@ export default function ReaderTextView({
   const [unit, setUnit] = useState(() => Math.max(1, Math.min(source.count, source.current)));
   const [text, setText] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  // Each part's text replaces "Loading text…"; moving to another part waits again.
+  const arrival = useArrival(text !== null || failed);
   const [ruler, setRuler] = useReadingRuler();
   const bodyRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -193,14 +197,17 @@ export default function ReaderTextView({
                 </p>
               ) : null}
               {failed ? (
-                <p role="alert" className="text-site-text-muted">
+                <p role="alert" className={cn('text-site-text-muted', arrival)}>
                   {t('text-failed', {
                     defaultValue: 'Could not read the text of this part of the book.',
                   })}
                 </p>
               ) : null}
               {noText ? (
-                <div className="surface-card rounded-site p-5 text-site-text-muted" role="note">
+                <div
+                  className={cn('surface-card rounded-site p-5 text-site-text-muted', arrival)}
+                  role="note"
+                >
                   <p className="font-semibold text-site-text">
                     {t('no-text-layer', { defaultValue: 'No selectable text here' })}
                   </p>
@@ -212,7 +219,7 @@ export default function ReaderTextView({
                   </p>
                 </div>
               ) : null}
-              <div ref={bodyRef} className="rf-textview__body">
+              <div ref={bodyRef} className={cn('rf-textview__body', arrival)}>
                 {noText
                   ? null
                   : paragraphs.map((parts, i) => (
@@ -237,6 +244,7 @@ export default function ReaderTextView({
                   kit={kit}
                   publicNotes={data?.publicNotes ?? NO_NOTES}
                   signedIn={data?.signedIn ?? false}
+                  className={arrival}
                 />
               ) : null}
             </div>

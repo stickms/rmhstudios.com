@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { games } from '@/lib/catalog';
 import { LOCALES } from '@/lib/i18n/config';
@@ -28,6 +30,7 @@ export function NoticesTab() {
   const { data, loading, reload } = useInsight<{ notices: Notice[] }>(
     '/api/admin/insights/notices',
   );
+  const arrival = useArrival(!loading);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
@@ -179,7 +182,7 @@ export function NoticesTab() {
       {loading ? (
         <Spinner />
       ) : (
-        <ul className="divide-y divide-site-border border-t border-site-border">
+        <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
           {(data?.notices ?? []).map((n) => (
             <li key={n.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
               <div className="min-w-0 space-y-1">

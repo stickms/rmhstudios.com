@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchGlobalLeaderboard, type LeaderboardEntry } from '../engine/persistence';
 import { Trophy, ChevronDown, ChevronUp } from 'lucide-react';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface GlobalLeaderboardProps {
     currentUserId?: string;
@@ -19,6 +21,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [expanded, setExpanded] = useState(!compact);
+    const arrival = useArrival(!loading);
 
     useEffect(() => {
         let cancelled = false;
@@ -75,9 +78,9 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
             {loading ? (
                 <div className="ss-glb-loading">{t("loading", { defaultValue: "Loading..." })}</div>
             ) : entries.length === 0 ? (
-                <div className="ss-glb-empty">{t("no-scores-yet", { defaultValue: "No scores yet. Be the first!" })}</div>
+                <div className={cn('ss-glb-empty', arrival)}>{t("no-scores-yet", { defaultValue: "No scores yet. Be the first!" })}</div>
             ) : (
-                <div className="ss-glb-list">
+                <div className={cn('ss-glb-list', arrival)}>
                     {entries.map((entry) => {
                         const isSelf = currentUserId && entry.userId === currentUserId;
                         const medal = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : null;

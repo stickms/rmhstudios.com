@@ -21,6 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { safeHref } from '@/lib/url-safety';
 import { profileLinkRel, profileUrlFor } from '@/lib/profile-links/rel-me';
@@ -51,6 +53,7 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
   const query = profileLinksQuery();
   // Offline or signed out the list stays empty, which is the honest render.
   const { data, isPending: loading } = useQuery(query);
+  const arrival = useArrival(!loading);
   const links = data?.links ?? [];
   const setLinks = (update: (prev: ProfileLinkDTO[]) => ProfileLinkDTO[]) =>
     queryClient.setQueryData(query.queryKey, (old) => ({ links: update(old?.links ?? []) }));
@@ -153,11 +156,11 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
           <Spinner />
         </div>
       ) : links.length === 0 ? (
-        <p className="py-2 text-sm text-site-text-muted">
+        <p className={cn('py-2 text-sm text-site-text-muted', arrival)}>
           {t('links-empty', { defaultValue: 'No links yet.' })}
         </p>
       ) : (
-        <ul className="mb-4 space-y-2">
+        <ul className={cn('mb-4 space-y-2', arrival)}>
           {links.map((link) => {
             const verified = link.verifiedAt !== null;
             return (

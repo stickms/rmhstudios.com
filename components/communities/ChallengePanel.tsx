@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CommunityComposer } from '@/components/communities/CommunityComposer';
@@ -25,7 +27,15 @@ const localInput = (hours: number) => {
   return d.toISOString().slice(0, 16);
 };
 
-function CreateChallenge({ slug, onCreated }: { slug: string; onCreated: () => void }) {
+function CreateChallenge({
+  slug,
+  onCreated,
+  className,
+}: {
+  slug: string;
+  onCreated: () => void;
+  className?: string | undefined;
+}) {
   const { t } = useTranslation('f-communities-plus');
   const [title, setTitle] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -53,7 +63,7 @@ function CreateChallenge({ slug, onCreated }: { slug: string; onCreated: () => v
 
   return (
     <form
-      className="m-3 flex flex-col gap-3 p-4"
+      className={cn('m-3 flex flex-col gap-3 p-4', className)}
       onSubmit={(e) => {
         e.preventDefault();
         void save();
@@ -142,6 +152,8 @@ export default function ChallengePanel({
     void load();
   }, [load]);
 
+  const arrival = useArrival(challenge !== undefined);
+
   if (challenge === undefined) {
     return (
       <div className="flex justify-center py-12">
@@ -151,9 +163,10 @@ export default function ChallengePanel({
   }
   if (challenge === null) {
     return isMod ? (
-      <CreateChallenge slug={slug} onCreated={load} />
+      <CreateChallenge slug={slug} onCreated={load} className={arrival} />
     ) : (
       <EmptyState
+        className={arrival}
         icon={Trophy}
         title={t('challenge-none', { defaultValue: 'No challenge right now' })}
         description={t('challenge-none-desc', {
@@ -196,7 +209,7 @@ export default function ChallengePanel({
         : t('challenge-phase-closed', { defaultValue: 'Finished' });
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-3">
+    <div className={cn('flex flex-col gap-3 px-3 py-3', arrival)}>
       <section className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-base font-semibold text-site-text">{challenge.title}</h3>

@@ -25,6 +25,8 @@ import {
   securityCategoryLabel,
   type SecurityReportStatus,
 } from '@/lib/security-report-schema';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/security-reports')({
   head: () => ({ meta: [{ title: 'Security Reports | RMH Studios' }] }),
@@ -41,6 +43,7 @@ function AdminSecurityReportsPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async (s: SecurityReportStatus) => {
     setLoading(true);
@@ -151,11 +154,12 @@ function AdminSecurityReportsPage() {
           </div>
         ) : items.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={ShieldAlert}
             title={t('security-queue-empty', { defaultValue: 'Nothing here. This queue is clear.' })}
           />
         ) : (
-          <ul className="divide-y divide-site-border">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {items.map((r) => (
               <ReportCard
                 key={r.id}

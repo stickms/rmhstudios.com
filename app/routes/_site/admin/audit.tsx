@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 
 import { api } from '@/lib/contract/client';
 import { listAuditLogApi, type AuditLogEntry } from '@/lib/admin/admin-tools.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 export const Route = createFileRoute('/_site/admin/audit')({
   head: () => ({ meta: [{ title: 'Audit Log | RMH Studios' }] }),
   component: AuditLogPage,
@@ -32,6 +34,7 @@ function AuditLogPage() {
   const { t } = useTranslation('admin');
   const [items, setItems] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   const [action, setAction] = useState('');
   const [targetType, setTargetType] = useState('');
   const [from, setFrom] = useState('');
@@ -122,6 +125,7 @@ function AuditLogPage() {
           </div>
         ) : items.length === 0 ? (
           <EmptyState
+            className={arrival}
             description={
               filtered
                 ? t('audit-no-match', { defaultValue: 'No actions match these filters.' })
@@ -129,7 +133,7 @@ function AuditLogPage() {
             }
           />
         ) : (
-          <ul className="divide-y divide-site-border border-t border-site-border">
+          <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
             {items.map((e) => (
               <li key={e.id} className="flex items-start gap-3 py-3">
                 <UserAvatar

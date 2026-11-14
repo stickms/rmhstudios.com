@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { SpineItem } from '@/components/ui/spine';
 import { useSitewideAnnouncement } from '@/hooks/useSitewideAnnouncement';
 import { getBusiness } from '@/lib/businesses';
-import { isAnnouncementLive } from '@/lib/sitewide-announcement';
+import { isAnnouncementLive, type SitewideAnnouncementSummary } from '@/lib/sitewide-announcement';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * The live sitewide announcement, pinned at the head of the home feed: a dotless spine item (a notice, not a post) of
@@ -15,12 +17,24 @@ import { isAnnouncementLive } from '@/lib/sitewide-announcement';
  * The actions sit on one line (owner, 2026-11-14: "I want these buttons and links below an announcement to be inline,
  * can you combine the view post buttons into one"): "Read full post" replaces both it and "View announcement", which
  * reopened the popup whose own action is this same link.
+ *
+ * `initial` is the announcement the home feed's first page brought with it (app/routes/_site/index.tsx), so on the home
+ * page the row is in the same swap as the posts instead of landing above the composer later and pushing the column
+ * down. Where it still arrives on its own it fades in (Steel M9); `className` carries the streamed-page fade.
  */
-export function SitewideAnnouncementRow() {
+export function SitewideAnnouncementRow({
+  initial,
+  className,
+}: {
+  initial?: SitewideAnnouncementSummary | null | undefined;
+  className?: string | undefined;
+} = {}) {
   const { t } = useTranslation('feed');
   const { data } = useSitewideAnnouncement();
-  const announcement = data?.announcement ?? null;
-  if (!announcement || !isAnnouncementLive(announcement)) return null;
+  const announcement = data ? data.announcement : (initial ?? null);
+  const live = !!announcement && isAnnouncementLive(announcement);
+  const arrival = useArrival(live);
+  if (!announcement || !live) return null;
   const business = getBusiness(announcement.business);
   const discussionId = announcement.discussionPostId;
   const quietLink = 't-body text-site-text-muted underline hover:text-site-text';
@@ -29,6 +43,9 @@ export function SitewideAnnouncementRow() {
     <SpineItem
       as="section"
       dot={false}
+      className={cn(arrival, className)}
+      // The streamed page's class (`className`) is the server's; hydration renders without it and keeps it.
+      suppressHydrationWarning
       aria-label={t('sitewide-announcement-region', { defaultValue: 'Sitewide announcement' })}
     >
       <p className="t-meta">

@@ -6,6 +6,8 @@ import { STATE_CODES, stateName } from '@/lib/elections/states';
 import { TileGrid, type TileCell } from './TileGrid';
 import { MeasureCard, useMeasures } from './BallotMeasures';
 import { OfficeCard, useOffices } from './OtherOffices';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * "Pick your state": a tile map where every state with measures or local races is lit; selecting one lists that
@@ -51,11 +53,12 @@ export function StateBallot({
     }
     return out;
   }, [by, t]);
+  const arrival = useArrival(!((meas.isLoading || offs.isLoading) && !by.size));
 
   if ((meas.isLoading || offs.isLoading) && !by.size) return <div className="el-box el-skel" aria-busy />;
   if (!by.size) {
     return (
-      <p className="el-eyebrow">{t('ballot.none', { defaultValue: 'No ballot measures or local races are published for this election yet.' })}</p>
+      <p className={cn('el-eyebrow', arrival)}>{t('ballot.none', { defaultValue: 'No ballot measures or local races are published for this election yet.' })}</p>
     );
   }
 
@@ -74,7 +77,7 @@ export function StateBallot({
   const others = entry ? statewideFirst(entry.others) : [];
 
   return (
-    <div className="el-map">
+    <div className={cn('el-map', arrival)}>
       <div ref={mapRef}>
         <TileGrid
           cells={cells}

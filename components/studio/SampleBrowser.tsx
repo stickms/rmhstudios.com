@@ -5,6 +5,8 @@ import { FolderOpen, Upload, Play, Trash2, Search, Music } from 'lucide-react';
 import { SampleManager } from '@/lib/studio/samples/SampleManager';
 import { SAMPLE_PACKS } from '@/lib/studio/samples/sample-packs';
 import type { SampleMeta } from '@/lib/studio/types';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export function SampleBrowser() {
   const { t } = useTranslation("c-studio");
@@ -13,6 +15,9 @@ export function SampleBrowser() {
   const [activeTab, setActiveTab] = useState<'user' | 'packs'>('user');
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // M9: the stored samples are read after mount, and an upload adds rows to a list already showing.
+  const listArrival = useArrival(samples.length > 0);
+  const isNew = useArrivingKeys(samples.map((s) => s.id));
 
   // Load samples list
   useEffect(() => {
@@ -126,11 +131,14 @@ export function SampleBrowser() {
               </p>
             </div>
           ) : (
-            <div className="space-y-0.5 p-1">
+            <div className={cn('space-y-0.5 p-1', listArrival)}>
               {filteredSamples.map((sample) => (
                 <div
                   key={sample.id}
-                  className="group flex items-center gap-2 rounded-app-sm px-2 py-1.5 hover:bg-app-surface-hover"
+                  className={cn(
+                    'group flex items-center gap-2 rounded-app-sm px-2 py-1.5 hover:bg-app-surface-hover',
+                    isNew(sample.id) && ARRIVE,
+                  )}
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.setData('application/x-studio-sample', sample.id);

@@ -12,8 +12,16 @@ import { ComposeBox } from '@/components/feed/ComposeBox';
 import { FlairChip } from '@/components/communities/FlairChip';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';
 import type { FeedItem } from '@/lib/feed-types';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
-function PostingNotice({ posting }: { posting: CommunityExtrasDTO['posting'] }) {
+function PostingNotice({
+  posting,
+  className,
+}: {
+  posting: CommunityExtrasDTO['posting'];
+  className?: string | undefined;
+}) {
   const { t } = useTranslation('f-communities-plus');
   const wait =
     posting.remainingMs && posting.remainingMs > 0
@@ -41,7 +49,10 @@ function PostingNotice({ posting }: { posting: CommunityExtrasDTO['posting'] }) 
     });
   }
   return (
-    <div role="status"className="m-3 flex items-start gap-3 p-4 text-sm text-site-text">
+    <div
+      role="status"
+      className={cn('m-3 flex items-start gap-3 p-4 text-sm text-site-text', className)}
+    >
       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-site-warning" aria-hidden />
       <p>{text}</p>
     </div>
@@ -62,8 +73,12 @@ export function CommunityComposer({
 }) {
   const { t } = useTranslation('f-communities-plus');
   const [flairId, setFlairId] = useState<string | null>(null);
+  // `extras` (flairs, posting rules) is fetched after the community has painted.
+  const arrival = useArrival(!!extras);
 
-  if (extras && !extras.posting.ok) return <PostingNotice posting={extras.posting} />;
+  if (extras && !extras.posting.ok) {
+    return <PostingNotice posting={extras.posting} className={arrival} />;
+  }
 
   const handlePosted = (data: FeedItem & { held?: boolean; message?: string }) => {
     if (data.held) {
@@ -84,7 +99,7 @@ export function CommunityComposer({
     <div>
       {flairs.length > 0 && (
         <div
-          className="px-4 pt-3"
+          className={cn('px-4 pt-3', arrival)}
           role="group"
           aria-label={t('flair-picker', { defaultValue: 'Post flair' })}
         >

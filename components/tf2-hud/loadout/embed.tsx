@@ -7,7 +7,7 @@
  * a page built on them never has to handle those cases.
  */
 
-import { Suspense, useMemo } from 'react';
+import { useMemo } from 'react';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { modelItemId, type CatalogItem, type TfClass } from '@/lib/tf2-loadout/catalog-types';
 import { sampleInventory, type SampleInventory } from '@/lib/tf2-loadout/sample';
@@ -20,6 +20,7 @@ import ItemModelViewer from './ItemModelViewer';
 import { PlayerScene, usePlayerParts, type WornItem } from './PlayerViewer';
 import { ItemIcon } from './ItemTile';
 import { wornItems } from './worn';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 
 export { ItemIcon, type WornItem };
 export { rarityBackground } from '@/lib/tf2-loadout/rarity';
@@ -36,11 +37,13 @@ export function PlayerStage({
   className?: string;
 }) {
   const { ids, webgl, body, bodygroups, parts, clip } = usePlayerParts({ cls, worn });
+  // The model ids are fetched after mount: the stage that appears once they land fades in (M9).
+  const arrival = useArrival(ids !== null);
   if (!webgl || !ids || !body) return null;
   return (
-    <div className={cn('size-full', className)} aria-hidden>
+    <div className={cn('size-full', arrival, className)} aria-hidden>
       <SilentErrorBoundary key={cls} label="tf2-stage" fallback={null}>
-        <Suspense fallback={null}>
+        <ArrivalSuspense fallback={null}>
           <PlayerScene
             bare
             body={modelUrl(body)}
@@ -48,7 +51,7 @@ export function PlayerStage({
             parts={parts}
             tauntUrl={clip ? animUrl(cls, clip) : undefined}
           />
-        </Suspense>
+        </ArrivalSuspense>
       </SilentErrorBoundary>
     </div>
   );

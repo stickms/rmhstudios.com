@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { apiJson } from '@/lib/reading/client';
 import type { MyHighlightRow, MyHighlightsPage } from '@/lib/reading/schema';
@@ -31,6 +33,9 @@ export default function MyHighlightsPanel() {
       ),
     getNextPageParam: (last) => last.nextCursor,
   });
+  const items: Row[] = q.data?.pages.flatMap((p) => p.items) ?? [];
+  const arrival = useArrival(!q.isPending);
+  const isNew = useArrivingKeys(items.map((row) => row.id));
 
   if (!session) {
     return (
@@ -42,11 +47,11 @@ export default function MyHighlightsPanel() {
     );
   }
   if (q.isPending) return <Skeleton className="h-40 w-full" />;
-  const items: Row[] = q.data?.pages.flatMap((p) => p.items) ?? [];
 
   if (items.length === 0) {
     return (
       <EmptyState
+        className={arrival}
         icon={Highlighter}
         title={t('no-highlights', { defaultValue: 'No highlights yet' })}
         description={t('no-highlights-hint', {
@@ -75,10 +80,10 @@ export default function MyHighlightsPanel() {
         : t('kind-library', { defaultValue: 'Library' });
 
   return (
-    <div className="space-y-3">
+    <div className={cn('space-y-3', arrival)}>
       <ul className="space-y-3">
         {items.map((row) => (
-          <li key={row.id} className="rounded-site p-5">
+          <li key={row.id} className={cn('rounded-site p-5', isNew(row.id) && ARRIVE)}>
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-xs font-semiboldr text-site-text-muted">

@@ -40,6 +40,8 @@ import { TimingPanel } from './TimingPanel';
 import { ShortcutSheet } from './ShortcutSheet';
 import { Timeline } from './Timeline';
 import { Toolbar } from './Toolbar';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** Autosave cadence. See the note on the effect below. */
 const AUTOSAVE_MS = 20_000;
@@ -417,10 +419,12 @@ export function ChartEditor({ songId }: { songId: string }) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [loadState, save, t]);
 
+  const arrival = useArrival(loadState === 'error' || (loadState === 'ready' && !!song));
+
   /* ── Render ───────────────────────────────────────────────────────────── */
   if (loadState === 'error') {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center">
+      <div className={cn('flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center', arrival)}>
         <p className="text-sm opacity-80">
           {error ?? t('editor-load-failed', { defaultValue: 'Could not open this chart.' })}
         </p>
@@ -443,7 +447,7 @@ export function ChartEditor({ songId }: { songId: string }) {
   }
 
   return (
-    <div className="flex h-dvh flex-col gap-3 overflow-hidden p-3">
+    <div className={cn('flex h-dvh flex-col gap-3 overflow-hidden p-3', arrival)}>
       <header className="neumorphic flex flex-wrap items-center gap-3 px-4 py-3">
         <Link
           to="/slice-it"

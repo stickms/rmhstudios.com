@@ -17,6 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { clampRollout, isValidFlagKey } from '@/lib/flags/key';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/flags')({
   head: () => ({ meta: [{ title: 'Feature Flags | RMH Studios' }] }),
@@ -55,6 +57,7 @@ function FlagsPage() {
   const { data, isError } = useQuery(query);
   // A failed read shows an empty list rather than the spinner.
   const flags: Flag[] | null = data?.flags ?? (isError ? [] : null);
+  const arrival = useArrival(flags !== null);
   const setFlags = (update: (cur: Flag[] | null) => Flag[]) =>
     queryClient.setQueryData(query.queryKey, (old) => ({
       ...old,
@@ -162,9 +165,12 @@ function FlagsPage() {
             <Spinner />
           </div>
         ) : flags.length === 0 ? (
-          <EmptyState description={t('flags-empty', { defaultValue: 'No flags yet.' })} />
+          <EmptyState
+            className={arrival}
+            description={t('flags-empty', { defaultValue: 'No flags yet.' })}
+          />
         ) : (
-          <ul className="divide-y divide-site-border border-t border-site-border">
+          <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
             {flags.map((f) => (
               <FlagRow
                 key={f.key}

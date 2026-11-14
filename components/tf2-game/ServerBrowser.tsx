@@ -52,6 +52,7 @@ import {
 import './register-session';
 import { useClassNames, useTeamNames } from './strings';
 import { useLobbyGamepad } from './use-lobby-gamepad';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 
 type Net = typeof import('@/lib/tf2-game/net/client');
 type View = 'all' | 'favorites' | 'recent';
@@ -214,6 +215,9 @@ export default function ServerBrowser({
   }, [offset]);
 
   const listed = rooms;
+  // M9: the list replaces "Looking for servers…", and a server that opens later fades into it.
+  const roomsArrival = useArrival(rooms !== null);
+  const isNewRoom = useArrivingKeys((rooms ?? []).map((r) => r.code));
   const live = useMemo(() => new Map((listed ?? []).map((r) => [r.code, r])), [listed]);
   const shown = useMemo(() => {
     if (!listed) return [];
@@ -427,7 +431,7 @@ export default function ServerBrowser({
           {rooms === null ? (
             <EmptyNote>{t('play_rooms_loading', { defaultValue: 'Looking for servers…' })}</EmptyNote>
           ) : shown.length === 0 ? (
-            <EmptyNote>
+            <EmptyNote className={roomsArrival}>
               {rooms.length === 0
                 ? t('play_rooms_empty', { defaultValue: 'No public servers right now. Create one and invite your friends.' })
                 : t('browser_no_match', { defaultValue: 'No server matches these filters.' })}
@@ -435,9 +439,9 @@ export default function ServerBrowser({
           ) : (
             <>
               {/* Phones: one card per room, read top to bottom. */}
-              <ul className="grid gap-2 md:hidden">
+              <ul className={cn('grid gap-2 md:hidden', roomsArrival)}>
                 {shown.map((r) => (
-                  <li key={r.code}>
+                  <li key={r.code} className={isNewRoom(r.code) ? ARRIVE : undefined}>
                     <button
                       type="button"
                       data-menu-item
@@ -460,7 +464,7 @@ export default function ServerBrowser({
                 ))}
               </ul>
               {/* Wider screens: the game's own columns. */}
-              <table className="hidden w-full table-fixed text-sm md:table">
+              <table className={cn('hidden w-full table-fixed text-sm md:table', roomsArrival)}>
                 <thead className="border-b border-app-border text-[11px]">
                   <tr>
                     {sortHeader('name', t('browser_col_name', { defaultValue: 'Name' }), 'w-[28%]')}
@@ -472,7 +476,14 @@ export default function ServerBrowser({
                 </thead>
                 <tbody>
                   {shown.map((r) => (
-                    <tr key={r.code} className={cn('border-b border-app-border', selected === r.code && 'bg-app-accent-dim')}>
+                    <tr
+                      key={r.code}
+                      className={cn(
+                        'border-b border-app-border',
+                        selected === r.code && 'bg-app-accent-dim',
+                        isNewRoom(r.code) && ARRIVE,
+                      )}
+                    >
                       <td className="truncate px-2 py-1">
                         <button
                           type="button"
@@ -629,6 +640,7 @@ function RoomDetails({
   const full = isFull(room) || room.locked === true;
   const round = room.round;
   const [password, setPassword] = useState('');
+  const rosterArrival = useArrival(roster !== null);
   return (
     <section className="mt-4 rounded-app-sm border border-app-border-bright bg-app-bg p-4" aria-label={t('browser_details', { defaultValue: 'Server details' })} aria-live="polite">
       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -677,9 +689,11 @@ function RoomDetails({
       {roster === null ? (
         <EmptyNote>{t('browser_details_loading', { defaultValue: 'Loading players…' })}</EmptyNote>
       ) : roster.length === 0 ? (
-        <EmptyNote>{t('browser_details_empty', { defaultValue: 'Nobody has spawned yet.' })}</EmptyNote>
+        <EmptyNote className={rosterArrival}>
+          {t('browser_details_empty', { defaultValue: 'Nobody has spawned yet.' })}
+        </EmptyNote>
       ) : (
-        <ul className="mb-3 grid gap-1 text-xs sm:grid-cols-2">
+        <ul className={cn('mb-3 grid gap-1 text-xs sm:grid-cols-2', rosterArrival)}>
           {[...roster]
             .sort((a, b) => a.team - b.team || b.score - a.score)
             .map((p, i) => (

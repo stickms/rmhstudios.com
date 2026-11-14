@@ -24,6 +24,8 @@ import { StatGrid, StatTile } from '@/components/admin/StatTile';
 import { AdminScroll, AdminSection } from '@/components/admin/AdminRows';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { adminEconomyQuery } from '@/lib/admin/admin-ops.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/economy')({
   head: () => ({ meta: [{ title: 'Coin Economy | RMH Studios' }] }),
@@ -64,6 +66,7 @@ function AdminEconomyPage() {
   // The response is `{ snapshot, flows, shape }`; the page reads the snapshot.
   const { data: res, isPending: loading } = useQuery(adminEconomyQuery(days));
   const data: Snapshot | null = res?.snapshot ?? null;
+  const arrival = useArrival(!loading);
 
   const tabs: TabItem[] = WINDOWS.map((w) => ({
     id: w,
@@ -99,11 +102,12 @@ function AdminEconomyPage() {
           </div>
         ) : !data ? (
           <EmptyState
+            className={arrival}
             icon={Coins}
             title={t('economy-unavailable', { defaultValue: 'Could not load economy data.' })}
           />
         ) : (
-          <>
+          <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
             {data.negativeBalances > 0 && (
               <div
                 role="alert"
@@ -228,7 +232,7 @@ function AdminEconomyPage() {
                 </AdminScroll>
               )}
             </AdminSection>
-          </>
+          </div>
         )}
       </AdminBody>
     </PageLayout>

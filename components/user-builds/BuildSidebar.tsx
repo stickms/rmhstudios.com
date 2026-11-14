@@ -8,6 +8,8 @@ import type { Build } from '@/lib/user-builds-types';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { api } from '@/lib/contract/client';
 import { featuredUserBuildsApi, listUserBuildsApi } from '@/lib/user-builds.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface BuildSidebarProps {
   className?: string;
@@ -53,6 +55,7 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
   const [featured, setFeatured] = useState<Build[]>([]);
   const [popular, setPopular] = useState<Build[]>([]);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
 
   useEffect(() => {
     async function fetchSidebarData() {
@@ -83,7 +86,7 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
   }
 
   return (
-    <div className={`space-y-[var(--site-section-gap)] ${className}`}>
+    <div className={cn('space-y-[var(--site-section-gap)]', className, arrival)}>
       {/* Featured Builds */}
       {featured.length > 0 && (
         <div>

@@ -52,6 +52,8 @@ import { GlobeSetGlobe } from './GlobeSetGlobe';
 import type { CardView } from './GlobeSetGame';
 import { api } from '@/lib/contract/client';
 import { globeSetRecordApi, type GlobeSetVersusRecord } from '@/lib/site-reads.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface GlobeSetRaceProps {
   shapes: boolean;
@@ -64,6 +66,8 @@ export interface GlobeSetRaceProps {
 export function GlobeSetRace({ shapes, view, attitudeRef, gyroActive }: GlobeSetRaceProps) {
   const { t } = useTranslation('c-daily-puzzles');
   const status = useGlobeSetRaceStore((s) => s.status);
+  // The room picker replaces the "Connecting…" panel: it fades in (M9).
+  const connectedArrival = useArrival(status === 'connected');
   const lobby = useGlobeSetRaceStore((s) => s.lobby);
   const selfId = useGlobeSetRaceStore((s) => s.selfId);
   const start = useGlobeSetRaceStore((s) => s.start);
@@ -117,7 +121,13 @@ export function GlobeSetRace({ shapes, view, attitudeRef, gyroActive }: GlobeSet
     );
   }
   if (lobby) return <Lobby selfId={selfId} />;
-  return <RoomPicker />;
+  return connectedArrival ? (
+    <div className="arrive-group">
+      <RoomPicker />
+    </div>
+  ) : (
+    <RoomPicker />
+  );
 }
 
 /* ── Shell ─────────────────────────────────────────────────────────────────── */
@@ -560,6 +570,7 @@ function RaceResults() {
   const { t } = useTranslation('c-daily-puzzles');
   const results = useGlobeSetRaceStore((s) => s.results)!;
   const [record, setRecord] = useState<VersusRecord | null>(null);
+  const recordArrival = useArrival(record !== null);
 
   // The hub writes the record as the results go out, so this is read once the
   // standings are already on screen rather than raced against them. A failure
@@ -611,7 +622,7 @@ function RaceResults() {
         ))}
       </ol>
       {record && record.racesPlayed > 0 && (
-        <dl className="surface-card mt-4 grid grid-cols-3 gap-3 rounded-site p-4 text-center">
+        <dl className={cn('surface-card mt-4 grid grid-cols-3 gap-3 rounded-site p-4 text-center', recordArrival)}>
           <RecordFigure
             label={t('globeset-record-races', { defaultValue: 'Races' })}
             value={String(record.racesPlayed)}

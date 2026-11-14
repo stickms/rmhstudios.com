@@ -8,6 +8,8 @@ import { gameName, RANKED_GAMES } from '@/lib/ranked/elo';
 import { HANDICAP_HOOKS } from '@/lib/ranked/handicap';
 import { api } from '@/lib/contract/client';
 import { listFriendlyApi } from '@/lib/competitive/friendly.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Row {
   id: string;
@@ -27,6 +29,8 @@ export default function FriendlyChallenges() {
   const [opponent, setOpponent] = useState('');
   const [handicap, setHandicap] = useState(true);
   const [busy, setBusy] = useState(false);
+  const arrival = useArrival(rows.length > 0);
+  const isNew = useArrivingKeys(rows.map((r) => r.id));
 
   const load = useCallback(async () => {
     const res = await api(listFriendlyApi).catch(() => null);
@@ -127,9 +131,12 @@ export default function FriendlyChallenges() {
         </Button>
       </div>
       {rows.length > 0 && (
-        <ul className="space-y-2">
+        <ul className={cn('space-y-2', arrival)}>
           {rows.map((r) => (
-            <li key={r.id} className="rounded-site px-4 py-3 space-y-2 text-sm">
+            <li
+              key={r.id}
+              className={cn('rounded-site px-4 py-3 space-y-2 text-sm', isNew(r.id) && ARRIVE)}
+            >
               <div className="flex items-center justify-between gap-2">
                 <span>
                   <strong>{gameName(r.game)}</strong> · {r.other.name}

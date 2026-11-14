@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Spine, SpineItem } from '@/components/ui/spine';
 import { useResolvedUser, useSession } from '@/components/Providers';
@@ -37,6 +39,8 @@ export function PostDetail({ postId }: PostDetailProps) {
   const isAuthor = session?.user?.id === post?.user?.id;
   const freshPostUser = useFreshUser(post?.user);
   const freshOriginalUser = useFreshUser(post?.original?.user);
+  // Steel M9: a cold open fetches the post behind a spinner; a warm open (seeded from the feed card) does not fade.
+  const arrival = useArrival(!loading);
 
   if (loading) {
     return (
@@ -48,7 +52,12 @@ export function PostDetail({ postId }: PostDetailProps) {
 
   if (notFound || !post) {
     return (
-      <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
+      <div
+        className={cn(
+          'flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center',
+          arrival,
+        )}
+      >
         <p className="text-lg font-medium text-site-text mb-2">
           {t('post-not-found', { defaultValue: 'Post not found' })}
         </p>
@@ -73,7 +82,7 @@ export function PostDetail({ postId }: PostDetailProps) {
   // One column, one spine: the post, the reply field, every reply and the related posts hang on the same line. The page
   // title is the author's name, visually hidden: the post below already says who wrote it.
   return (
-    <div className="post-page" data-slot="site-main-column">
+    <div className={cn('post-page', arrival)} data-slot="site-main-column">
       <h1 className="sr-only">
         {t('post-by', { defaultValue: 'Post by {{name}}', name: authorName })}
       </h1>

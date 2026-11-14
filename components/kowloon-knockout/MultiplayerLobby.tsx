@@ -7,6 +7,8 @@ import { networkClient, type ServerMessage, type LobbyListing } from '@/lib/kowl
 import { CLASS_DISPLAY, ALL_FIGHTERS } from '@/lib/kowloon-knockout/game/fighters/stats';
 import { TEAM_COLORS } from '@/lib/kowloon-knockout/game/config';
 import ModelPicker from '@/components/kowloon-knockout/ModelPicker';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import './kk-screens.css';
 
 export default function MultiplayerLobby() {
@@ -36,6 +38,10 @@ export default function MultiplayerLobby() {
     const [lobbies, setLobbies] = useState<LobbyListing[]>([]);
     const [connecting, setConnecting] = useState(false);
     const [connected, setConnected] = useState(false);
+    // M9: what replaces "Connecting…" fades in, and so does each lobby that joins the list later.
+    const statusArrival = useArrival(!connecting);
+    const listArrival = useArrival(lobbies.length > 0);
+    const isNewLobby = useArrivingKeys(lobbies.map((l) => l.code));
 
     // An invite link lands here without passing character select: load the remembered model first
     // (effects run in order, so this precedes the invite-join effect below).
@@ -140,13 +146,13 @@ export default function MultiplayerLobby() {
                             <h2 className="kk-panel-label">{t('open-lobbies', { defaultValue: 'OPEN LOBBIES' })}</h2>
                             <div className="kk-lobby-list">
                                 {lobbies.length === 0 ? (
-                                    <div className="lobby-status">
+                                    <div className={cn('lobby-status', statusArrival)}>
                                         {connecting ? t('connecting', { defaultValue: 'CONNECTING...' }) : t('no-lobbies', { defaultValue: 'NO OPEN LOBBIES — CREATE ONE!' })}
                                     </div>
                                 ) : lobbies.map((l) => {
                                     const d = CLASS_DISPLAY[l.host];
                                     return (
-                                        <button key={l.code} type="button" className="lobby-list-row" style={{ '--seat': d.color } as React.CSSProperties} onClick={() => handleJoinListed(l.code)}>
+                                        <button key={l.code} type="button" className={cn('lobby-list-row', listArrival, isNewLobby(l.code) && ARRIVE)} style={{ '--seat': d.color } as React.CSSProperties} onClick={() => handleJoinListed(l.code)}>
                                             <span className="kk-row-name">{d.name}</span>
                                             <span className="kk-row-meta">{l.mode === 'teams' ? 'TEAMS' : 'FFA'}</span>
                                             <span className="kk-row-count">{l.players}/{l.arenaSize}</span>

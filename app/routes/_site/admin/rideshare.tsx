@@ -30,6 +30,8 @@ import {
   adminListDriverApplicationsApi,
   adminListRidesApi,
 } from '@/lib/rideshare/rideshare.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/rideshare')({
   head: () => ({ meta: [{ title: 'Rideshare Applications | RMH Studios' }] }),
@@ -131,6 +133,7 @@ function AdminRidesharePage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState('');
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -239,11 +242,12 @@ function AdminRidesharePage() {
           <div className="flex justify-center py-16"><Spinner /></div>
         ) : items.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Car}
             title={t('no-applications', { status: appStatusLabel(status, t).toLowerCase(), defaultValue: 'No {{status}} applications.' })}
           />
         ) : (
-          <ul className="divide-y divide-site-border">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {items.map((app) => (
               <li key={app.id} className="py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -364,6 +368,7 @@ function RideHistory({
   onQuery: (q: string) => void;
 }) {
   const { t } = useTranslation('admin');
+  const arrival = useArrival(!loading);
   return (
     <div className="space-y-3">
       <SearchField
@@ -386,9 +391,9 @@ function RideHistory({
       {loading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : rides.length === 0 ? (
-        <EmptyState icon={MapPin} title={t('no-rides-found', { defaultValue: 'No rides found.' })} />
+        <EmptyState className={arrival} icon={MapPin} title={t('no-rides-found', { defaultValue: 'No rides found.' })} />
       ) : (
-        <ul className="divide-y divide-site-border">
+        <ul className={cn('divide-y divide-site-border', arrival)}>
           {rides.map((ride) => {
                         return (
               <li key={ride.id} className="py-4 first:pt-0 last:pb-0">

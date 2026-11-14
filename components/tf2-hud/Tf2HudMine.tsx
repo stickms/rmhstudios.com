@@ -17,6 +17,8 @@ import { deleteDraft, listDrafts, type DraftSummary } from '@/lib/tf2-hud/local-
 import { ConfirmDialog } from './dialogs';
 import HudCard from './HudCard';
 import { EmptyNote, IconBtn } from './ui';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function Tf2HudMine() {
   const { t } = useTranslation('c-tf2-hud');
@@ -26,8 +28,12 @@ export default function Tf2HudMine() {
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
   const [drafts, setDrafts] = useState<DraftSummary[]>([]);
+  const draftsArrival = useArrival(drafts.length > 0);
   const [removing, setRemoving] = useState<HudSummary | null>(null);
   const seq = useRef(0);
+  // M9: the first page replaces "Loading…"; a later page fades in card by card.
+  const arrival = useArrival(huds !== null);
+  const isNew = useArrivingKeys((huds ?? []).map((h) => h.id));
 
   useEffect(() => {
     void listDrafts().then(setDrafts);
@@ -110,17 +116,18 @@ export default function Tf2HudMine() {
           {huds === null ? (
             <EmptyNote>{t('loading', { defaultValue: 'Loading…' })}</EmptyNote>
           ) : huds.length === 0 ? (
-            <EmptyNote>
+            <EmptyNote className={arrival}>
               {t('none-saved', {
                 defaultValue: 'Nothing saved yet. Use “Save & share” in the editor.',
               })}
             </EmptyNote>
           ) : (
-            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3', arrival)}>
               {huds.map((h) => (
                 <li key={h.id} className="contents">
                   <HudCard
                     hud={h}
+                    className={isNew(h.id) ? ARRIVE : undefined}
                     actions={
                       <>
                         <IconBtn
@@ -156,7 +163,12 @@ export default function Tf2HudMine() {
           {shownDrafts.length === 0 ? (
             <EmptyNote>{t('no-drafts', { defaultValue: 'No local drafts.' })}</EmptyNote>
           ) : (
-            <ul className="divide-y divide-app-border rounded-app border border-app-border">
+            <ul
+              className={cn(
+                'divide-y divide-app-border rounded-app border border-app-border',
+                draftsArrival,
+              )}
+            >
               {shownDrafts.map((d) => (
                 <li key={d.id} className="flex items-center gap-3 px-3 py-2">
                   <Link

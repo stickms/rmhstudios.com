@@ -3,7 +3,7 @@
  */
 
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { Boxes, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,8 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { api } from '@/lib/contract/client';
 import { deleteUserBuildApi, listUserBuildsApi } from '@/lib/user-builds.contract';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/user-builds/manage')({
   // `noindex`: one account's own builds (and `Disallow`ed in robots.txt).
@@ -34,6 +36,8 @@ function ManageContent() {
   const [builds, setBuilds] = useState<Build[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const sessionArrival = useArrival(!isPending);
+  const arrival = useArrival(!loading);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -85,6 +89,7 @@ function ManageContent() {
     return (
       <PageLayout title={t('my-builds', { defaultValue: 'My Builds' })} backTo="/user-builds" wide>
         <SignedOutPrompt
+          className={sessionArrival}
           icon={Boxes}
           callbackURL="/user-builds/manage"
           title={t('sign-in-required', { defaultValue: 'Sign In Required' })}
@@ -114,13 +119,14 @@ function ManageContent() {
         </Button>
       }
     >
-      <div className="px-4 pt-4 pb-12">
+      <div className={cn('px-4 pt-4 pb-12', sessionArrival)}>
         {loading ? (
           <div className="flex justify-center py-20">
             <Spinner size={32} />
           </div>
         ) : builds.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Boxes}
             title={t('no-builds-yet', { defaultValue: 'No builds yet' })}
             description={t('no-builds-description', {
@@ -135,7 +141,7 @@ function ManageContent() {
             }
           />
         ) : (
-          <div className="space-y-3">
+          <div className={cn('space-y-3', arrival)}>
             {builds.map((build) => (
               <div
                 key={build.id}
@@ -224,7 +230,7 @@ function ManageContent() {
 
 function ManageBuildsPage() {
   return (
-    <Suspense
+    <ArrivalSuspense
       fallback={
         <div className="flex min-h-[60dvh] items-center justify-center">
           <Spinner size={32} />
@@ -232,6 +238,6 @@ function ManageBuildsPage() {
       }
     >
       <ManageContent />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

@@ -22,6 +22,8 @@ import {
   updatePackApi,
   type PackDetail,
 } from '@features/slice-it/engine/packs.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * L16 — the pack builder.
@@ -62,6 +64,8 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
   const [openId, setOpenId] = React.useState<string | null>(null);
   const [detail, setDetail] = React.useState<PackDetail | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const listArrival = useArrival(!loading);
+  const detailArrival = useArrival(detail !== null);
 
   const [newTitle, setNewTitle] = React.useState('');
   const [newKind, setNewKind] = React.useState<(typeof AUTHORABLE_PACK_KINDS)[number]>('pack');
@@ -266,11 +270,11 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
           <Loader2 className="w-5 h-5 animate-spin" aria-hidden />
         </div>
       ) : packs.length === 0 ? (
-        <p className="text-center text-slice-text-light py-8 text-sm font-bold">
+        <p className={cn('text-center text-slice-text-light py-8 text-sm font-bold', listArrival)}>
           {t('packs-empty', { defaultValue: 'No packs yet — make the first one.' })}
         </p>
       ) : (
-        <ul className="space-y-1.5 max-h-80 overflow-y-auto">
+        <ul className={cn('space-y-1.5 max-h-80 overflow-y-auto', listArrival)}>
           {packs.map((pack) => (
             <li key={pack.id} className="neumorphic-sm rounded-xl p-2.5">
               <div className="flex items-center gap-2">
@@ -347,7 +351,7 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
                       <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
                     </div>
                   ) : (
-                    <ol className="space-y-1">
+                    <ol className={cn('space-y-1', detailArrival)}>
                       {detail.songs.map((song, index) => (
                         <li key={song.id} className="flex items-center gap-2 text-xs">
                           <span className="w-5 tabular-nums text-slice-text-light">

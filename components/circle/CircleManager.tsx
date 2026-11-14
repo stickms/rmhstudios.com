@@ -15,6 +15,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import type { ResolvedUser } from '@/lib/user-display';
+import { useArrival } from '@/components/ui/arrive';
 
 const MAX_CIRCLE = 150;
 
@@ -28,6 +29,7 @@ export function CircleManager() {
   const [saving, setSaving] = useState(false);
 
   const { data, isPending: loading } = useQuery(circleQuery());
+  const arrival = useArrival(!loading);
   const candidates = useMemo(() => data?.candidates ?? [], [data]);
   // The member set is the server's until the owner edits it.
   const [edited, setEdited] = useState<Set<string> | null>(null);
@@ -85,6 +87,7 @@ export function CircleManager() {
 
   return (
     <SettingsSection
+      className={arrival}
       description={t('intro', {
         defaultValue:
           'Pick close friends from the people you follow. No one is told they were added.',

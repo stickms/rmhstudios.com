@@ -5,6 +5,7 @@ import { toast } from '@/lib/toast';
 
 import { Switch } from '@/components/ui/switch';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
 import { Input } from '@/components/ui/input';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { readTabBadgePref, writeTabBadgePref } from '@/lib/tab-badge';
@@ -88,6 +89,8 @@ export function NotificationSettings() {
   const { t } = useTranslation('settings-notifications');
   const [prefs, setPrefs] = useState<Prefs | null>(null);
   const [open, setOpen] = useState<NotifyCategory | null>(null);
+  // Each section is its own child of the settings spine, so each takes the fade.
+  const arrival = useArrival(prefs !== null);
 
   useEffect(() => {
     api(getNotificationMatrixApi)
@@ -133,7 +136,7 @@ export function NotificationSettings() {
 
   return (
     <>
-      <SettingsSection title={t('categories', { defaultValue: 'Categories' })}>
+      <SettingsSection title={t('categories', { defaultValue: 'Categories' })} className={arrival}>
         <ul className="divide-y divide-site-border">
           {NOTIFY_CATEGORIES.map((cat) => {
             const ch = resolveChannels(prefs.matrix, cat);
@@ -180,6 +183,7 @@ export function NotificationSettings() {
       </SettingsSection>
 
       <SettingsSection
+        className={arrival}
         title={t('quiet-hours', { defaultValue: 'Quiet hours' })}
         description={t('quiet-desc', {
           defaultValue: 'Push notifications are held during these hours.',
@@ -210,18 +214,19 @@ export function NotificationSettings() {
         <p className="text-xs text-site-text-muted">{prefs.tz}</p>
       </SettingsSection>
 
-      <TabBadgeToggle />
+      <TabBadgeToggle className={arrival} />
     </>
   );
 }
 
 /** Device-local: whether this browser shows "(3)" and a dot on the tab. */
-function TabBadgeToggle() {
+function TabBadgeToggle({ className }: { className?: string | undefined }) {
   const { t } = useTranslation('settings-notifications');
   const [on, setOn] = useState(true);
   useEffect(() => setOn(readTabBadgePref()), []);
   return (
     <SettingsSection
+      className={className}
       title={t('tab-badge', { defaultValue: 'Unread count in browser tab' })}
       titleId="tab-badge-label"
       description={t('tab-badge-desc', {

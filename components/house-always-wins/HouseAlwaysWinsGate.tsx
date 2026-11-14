@@ -13,10 +13,12 @@
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { GameShell } from './GameShell';
+import { useArrival } from '@/components/ui/arrive';
 
 export function HouseAlwaysWinsGate() {
   const { t } = useTranslation('c-house-always-wins');
   const session = useSession();
+  const arrival = useArrival(!session.isPending);
 
   // The session is still worth waiting for: the name is chrome, and chrome that
   // pops in a moment after the table reads as a glitch. It resolves in one
@@ -31,5 +33,7 @@ export function HouseAlwaysWinsGate() {
     );
   }
 
-  return <GameShell userName={session.data?.user?.name ?? null} />;
+  const shell = <GameShell userName={session.data?.user?.name ?? null} />;
+  // The table replaces the session wait: it fades in through a box-less wrapper (M9).
+  return arrival ? <div className="arrive-group">{shell}</div> : shell;
 }

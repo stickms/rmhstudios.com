@@ -51,6 +51,8 @@ import {
   type SpeedrunEntryView,
   type SpeedrunMetric,
 } from '@/lib/speedrun/types';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/speedruns')({
   head: () => ({
@@ -85,6 +87,8 @@ function SpeedrunsPage() {
   const [board, setBoard] = useState<BoardResponse | null>(null);
   const [loadingBoard, setLoadingBoard] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const arrival = useArrival(!loadingCategories);
+  const boardArrival = useArrival(!(loadingBoard || !board));
 
   const loadCategories = useCallback(async () => {
     setLoadingCategories(true);
@@ -182,6 +186,7 @@ function SpeedrunsPage() {
         </div>
       ) : categories.length === 0 ? (
         <EmptyState
+          className={arrival}
           icon={Timer}
           title={t('speedrun-no-boards-title', { defaultValue: 'No boards are open yet' })}
           description={t('speedrun-no-boards-body', {
@@ -197,7 +202,7 @@ function SpeedrunsPage() {
           }
         />
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className={cn('flex flex-col gap-4', arrival)}>
           <div className="flex flex-wrap items-center gap-3">
             <Select
               value={game ?? ''}
@@ -253,7 +258,7 @@ function SpeedrunsPage() {
               <Spinner />
             </div>
           ) : (
-            <>
+            <div className={cn('flex flex-col gap-4', boardArrival)}>
               <SpeedrunBoard
                 entries={board.entries}
                 metric={board.metric}
@@ -262,7 +267,7 @@ function SpeedrunsPage() {
                 viewerId={viewer?.id ?? null}
               />
               <SpeedrunQueue entries={board.entries} tier={selected?.tier ?? 'manual'} />
-            </>
+            </div>
           )}
 
           {viewer && game && slug && (

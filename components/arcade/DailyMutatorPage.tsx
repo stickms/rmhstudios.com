@@ -9,6 +9,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { SEEDED_GAMES } from '@/lib/arcade/seeded';
 import { dailyMutatorQuery } from '@/lib/arcade/daily.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function untilReset(): string {
   const ms = 86_400_000 - (Date.now() % 86_400_000);
@@ -27,6 +29,8 @@ export function DailyMutatorPage() {
 
   const game = data ? SEEDED_GAMES[data.mutator.gameId] : null;
   const used = !!data?.mine;
+  // Usually seeded by the loader (no wait, no fade); fetched here, it fades in over the spinner (M9).
+  const arrival = useArrival(failed || (!!data && !!game));
 
   return (
     <PageLayout
@@ -39,6 +43,7 @@ export function DailyMutatorPage() {
       <div className="space-y-4 px-4 pt-4 pb-12">
         {failed ? (
           <EmptyState
+            className={arrival}
             description={t('load-failed', { defaultValue: 'Could not load today’s challenge.' })}
           />
         ) : !data || !game ? (
@@ -46,7 +51,8 @@ export function DailyMutatorPage() {
             <Spinner />
           </div>
         ) : (
-          <>
+          // One box with the column's own rhythm, so the challenge fades in as a whole.
+          <div className={cn('space-y-4', arrival)}>
             <Card pane className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
@@ -122,7 +128,7 @@ export function DailyMutatorPage() {
                 </ol>
               )}
             </section>
-          </>
+          </div>
         )}
       </div>
     </PageLayout>

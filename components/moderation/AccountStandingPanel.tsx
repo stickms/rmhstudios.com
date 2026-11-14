@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { useArrival } from '@/components/ui/arrive';
 
 type AppealStatus = 'NONE' | 'PENDING' | 'UPHELD' | 'OVERTURNED';
 
@@ -71,6 +72,7 @@ export function AccountStandingPanel() {
   const { t } = useTranslation('feed');
   const { data: standing, isPending: loading, refetch } = useQuery(accountStandingQuery());
   const [openId, setOpenId] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -107,6 +109,7 @@ export function AccountStandingPanel() {
     return (
       <EmptyState
         icon={ShieldAlert}
+        className={arrival}
         title={t('standing-unavailable', { defaultValue: 'Could not load your account status.' })}
       />
     );
@@ -153,6 +156,7 @@ export function AccountStandingPanel() {
     <>
       {/* Standing summary */}
       <SettingsSection
+        className={arrival}
         title={levelCopy[standing.level].label}
         description={levelCopy[standing.level].description}
       >
@@ -211,6 +215,7 @@ export function AccountStandingPanel() {
 
       {/* Strike history */}
       <SettingsSection
+        className={arrival}
         title={t('standing-history', { defaultValue: 'Moderation history' })}
         description={t('standing-history-desc', {
           defaultValue:

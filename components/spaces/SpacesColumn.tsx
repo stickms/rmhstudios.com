@@ -32,6 +32,8 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createSpaceApi, listLiveSpacesApi } from '@/lib/spaces/spaces.contract';
 import type { LiveSpaceSummary } from '@/lib/spaces/types';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export function SpacesColumn() {
   const { t, i18n } = useTranslation('site');
@@ -39,6 +41,8 @@ export function SpacesColumn() {
   const navigate = useNavigate();
   const [spaces, setSpaces] = useState<LiveSpaceSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  // Steel M9: the live list replaces the spinner.
+  const arrival = useArrival(!loading);
   const [title, setTitle] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -141,13 +145,14 @@ export function SpacesColumn() {
           </div>
         ) : spaces.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Radio}
             description={t('spaces-none-live', {
               defaultValue: 'No live Spaces right now. Start one above.',
             })}
           />
         ) : (
-          <ul className={DIRECTORY_LIST_CLASS}>
+          <ul className={cn(DIRECTORY_LIST_CLASS, arrival)}>
             {spaces.map((s: LiveSpaceSummary) => (
               <li key={s.id}>
                 <DirectoryItem

@@ -13,6 +13,8 @@ import {
  createPlaylistApi,
  listPlaylistsApi,
 } from '@/lib/playlists/playlists.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface PlaylistItemInput {
  externalId: string;
@@ -51,6 +53,8 @@ export function AddToPlaylistDialog({
  const [addedId, setAddedId] = useState<string | null>(null);
  const [newName, setNewName] = useState('');
  const [creating, setCreating] = useState(false);
+ // Steel M9: the playlists replace the spinner inside the open dialog.
+ const arrival = useArrival(!loading);
 
  useEffect(() => {
  if (!open) return;
@@ -137,11 +141,11 @@ export function AddToPlaylistDialog({
  <Spinner size={20} />
  </div>
  ) : playlists.length === 0 ? (
- <p className="py-6 text-center text-sm text-site-text-muted">
+ <p className={cn('py-6 text-center text-sm text-site-text-muted', arrival)}>
  {t('playlist-none-yet', { defaultValue:'No playlists yet — create one above.'})}
  </p>
  ) : (
- <ul className="space-y-1">
+ <ul className={cn('space-y-1', arrival)}>
  {playlists.map((pl) => (
  <li key={pl.id}>
  <button

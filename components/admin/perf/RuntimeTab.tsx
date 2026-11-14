@@ -2,6 +2,8 @@ import { RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import type { HeapReport, PerfOverview, RedisPlaneReport } from '@/lib/perf/admin-types';
 import { allSnapshots } from '@/lib/perf/derive';
 import { useLazyJson } from './api';
@@ -88,6 +90,7 @@ function RedisCard({ title, report }: { title: string; report: RedisPlaneReport 
 function HeapSection() {
   const { t } = useTranslation('f-perf');
   const { data, loading, failed, reload } = useLazyJson<HeapReport>('/api/admin/perf/heap');
+  const arrival = useArrival(!(loading && !data));
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -102,12 +105,12 @@ function HeapSection() {
       {loading && !data ? (
         <Spinner />
       ) : failed || !data ? (
-        <p className="t-body text-site-text-muted">
+        <p className={cn('t-body text-site-text-muted', arrival)}>
           {t('heap-failed', { defaultValue: 'Could not load heap statistics.' })}
         </p>
       ) : (
         <>
-          <p className="t-body text-site-text-muted">
+          <p className={cn('t-body text-site-text-muted', arrival)}>
             {t('heap-scope', {
               defaultValue:
                 'Worker pid {{pid}} (the one that answered). Detached contexts: {{detached}}.',
@@ -115,7 +118,12 @@ function HeapSection() {
               detached: fmtInt(data.heap.number_of_detached_contexts),
             })}
           </p>
-          <div className="-mx-[var(--site-page-gutter)] overflow-x-auto px-[var(--site-page-gutter)]">
+          <div
+            className={cn(
+              '-mx-[var(--site-page-gutter)] overflow-x-auto px-[var(--site-page-gutter)]',
+              arrival,
+            )}
+          >
             <table className="t-body w-full min-w-max">
               <thead>
                 <tr>

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /**
  * The Slice It chart editor.
@@ -63,8 +64,8 @@ function EditorSkeleton() {
 function EditorPage() {
   const { songId } = Route.useParams();
   return (
-    <Suspense fallback={<EditorSkeleton />}>
+    <ArrivalSuspense fallback={<EditorSkeleton />}>
       <ChartEditor songId={songId} />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

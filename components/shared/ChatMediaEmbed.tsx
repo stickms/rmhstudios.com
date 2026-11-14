@@ -10,6 +10,8 @@ import { ImageOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { gifOembedApi } from '@/lib/unfurl/oembed.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 // ─── URL extraction & classification ─────────────────────────────
 
@@ -163,6 +165,8 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
   const { t } = useTranslation('shared');
   const [error, setError] = useState(false);
   const tenor = useTenorResolve(embed.type === 'tenor-pending' ? embed.originalUrl : null);
+  // Steel M9: a resolved Tenor GIF replaces its placeholder block.
+  const arrival = useArrival(!(embed.type === 'tenor-pending' && tenor.loading));
 
   const src = embed.type === 'tenor-pending' ? tenor.src : embed.directUrl;
 
@@ -170,7 +174,7 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
     if (embed.type === 'tenor-pending' && tenor.loading) {
       return (
         <div
-          className="mt-1 w-48 h-32 rounded-site-sm animate-pulse"
+          className="mt-1 w-48 h-32 rounded-site-sm"
           style={{ backgroundColor: `var(--${themePrefix}-surface)` }}
         />
       );
@@ -197,7 +201,7 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
       href={embed.originalUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-1 block max-w-xs"
+      className={cn('mt-1 block max-w-xs', arrival)}
     >
       <img
         src={src}

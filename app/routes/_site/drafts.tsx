@@ -11,6 +11,7 @@ import { getRequestSession } from '@/lib/auth-session.server';
 import { listScheduled } from '@/lib/scheduled/list.server';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { TimeCapsuleList } from '@/components/posts-plus/TimeCapsuleList';
+import { useArrival } from '@/components/ui/arrive';
 
 // Prefetch drafts + scheduled server-side. `null` when signed out (the page
 // gates on the client session and shows a sign-in prompt).
@@ -32,10 +33,12 @@ function DraftsPage() {
   // namespace — reuse the same key here so the title doesn't change on sign-in.
   const { t: tFeed } = useTranslation('feed');
   const { data: session, isPending } = useSession();
+  // The whole column fades in when the session resolves after the spinner (M9).
+  const arrival = useArrival(!isPending);
   const { drafts } = Route.useLoaderData();
 
   return (
-    <PageFrame>
+    <PageFrame className={arrival}>
       {session && !isPending ? (
         <>
           <DraftsColumn initialData={drafts} />

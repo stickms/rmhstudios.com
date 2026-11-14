@@ -4,6 +4,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Spine, SpineItem } from '@/components/ui/spine';
@@ -44,6 +45,8 @@ export function GroupChatsColumn({
   const [folder, setFolder] = useState('all');
   const folderRef = useRef(folder);
   folderRef.current = folder;
+  // Steel M9: a list fetched here replaces the spinner; the loader's is there on first paint.
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     const query =
@@ -129,6 +132,7 @@ export function GroupChatsColumn({
       <>
         {gateHeader}
         <EmptyState
+          className={arrival}
           title={t('sign-in-to-use-group-chats', { defaultValue: 'Sign in to use group chats' })}
           action={
             <Link to="/login" search={{ callbackURL: '/groups' }}>
@@ -144,7 +148,7 @@ export function GroupChatsColumn({
   const visibleGroups = q ? groups.filter((g) => g.name.toLowerCase().includes(q)) : groups;
 
   return (
-    <div>
+    <div className={arrival}>
       {!embedded && (
         <h1 className="t-title pb-3">{t('group-chats', { defaultValue: 'Group chats' })}</h1>
       )}

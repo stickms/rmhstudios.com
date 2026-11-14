@@ -403,9 +403,10 @@ Each recipe says what the spine means on that page and what the one primary is.
 | M4 | Globe open and close | 360 ms, `cubic-bezier(.2,0,0,1)` |
 | M5 | Overlay in and out | 160 ms opacity, no scale, no slide |
 
-- M6. Nothing else animates. No page entrances, no list staggers, no hover lifts, no springs, no parallax, no skeleton shimmer (a skeleton is a still `--site-bg-subtle` block).
+- M6. Nothing else animates (other than M9). No page entrances, no list staggers, no hover lifts, no springs, no parallax, no skeleton shimmer (a skeleton is a still `--site-bg-subtle` block).
 - M7. `prefers-reduced-motion: reduce` turns M3 and M4 into instant changes. The globe still opens.
 - M8. Route changes swap content with no transition. Speed comes from preloading (audit Part P), not from animation.
+- M9. Content that arrives after the view has painted fades in: 160 ms, `ease`, opacity only, no slide, no scale, no stagger. "Arrives" means it replaces a loading state the reader could see: a skeleton, a spinner, a Suspense fallback, a blank gap, or the end of a list that more rows are appended to (the next page, a live post). Posts, announcements, panels and lazy sections all qualify; the router's pending page giving way to the real one does too (M8 still holds for a navigation that never showed it). Content on the first paint never fades (that is a page entrance, M6). The loading state holds the content's shape so nothing shifts when it lands; the fade is for the swap, not a substitute for reserving space. One class carries it (`.arrive`, set by `components/ui/arrive.tsx`); `lib/__tests__/arrival-coverage.test.ts` holds it. Added by the owner, 2026-11-14.
 
 ## 12. Accessibility
 

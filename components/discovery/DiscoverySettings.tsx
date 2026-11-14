@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useArrival } from '@/components/ui/arrive';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { IconButton } from '@/components/ui/icon-button';
@@ -18,6 +19,7 @@ import {
   type DiscoveryAlert as Alert,
 } from '@/lib/discovery/discovery.contract';
 import { discoveryAlertsQuery, discoveryMemoriesQuery } from '@/lib/settings/prefs.queries';
+import { cn } from '@/lib/utils';
 
 /** A6 keyword alerts and the A5 "On this day" opt-in, on the notification settings page. */
 export function DiscoverySettings() {
@@ -29,6 +31,8 @@ export function DiscoverySettings() {
   const { data: memoriesData } = useQuery(memoriesKey);
   const alerts: Alert[] | null = alertsData?.alerts ?? null;
   const memories: boolean | null = memoriesData?.enabled ?? null;
+  // Steel M9: the saved alerts fill the gap under the form once fetched.
+  const alertsArrival = useArrival(alerts !== null);
   const setAlerts = (update: (a: Alert[] | null) => Alert[] | null) =>
     queryClient.setQueryData(alertsKey.queryKey, (old: { alerts: Alert[] } | undefined) => ({
       alerts: update(old?.alerts ?? null) ?? [],
@@ -116,7 +120,7 @@ export function DiscoverySettings() {
           </Button>
         </form>
         {alerts && alerts.length > 0 && (
-          <ul className="space-y-2">
+          <ul className={cn('space-y-2', alertsArrival)}>
             {alerts.map((a) => (
               <li
                 key={a.id}

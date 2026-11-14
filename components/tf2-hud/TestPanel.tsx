@@ -30,6 +30,8 @@ import {
   SelectField,
   TextField,
 } from './ui';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const BACKDROPS: BackdropKind[] = ['auto', 'checker', 'game', 'menu', 'image'];
 
@@ -49,11 +51,12 @@ function AnimationRunner() {
   const options = useMemo(() => names.map((label, id) => ({ id, label })), [names]);
   const [picked, setPicked] = useState<number | undefined>();
   const name = picked === undefined ? undefined : names[picked];
+  const arrival = useArrival(script != null);
 
   return (
     <div className="space-y-1.5 pt-2">
       <h3 className="tf2hud-panel-head">{t('animations', { defaultValue: 'Animations' })}</h3>
-      <p className="text-[11px] text-app-text-dim">
+      <p className={cn('text-[11px] text-app-text-dim', arrival)}>
         {script
           ? t('animations-hint', {
               defaultValue: 'Run an event from hudanimations to see it play on the preview.',

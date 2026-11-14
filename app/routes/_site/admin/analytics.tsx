@@ -10,6 +10,7 @@ import { AdminSection } from '@/components/admin/AdminRows';
 import { useTranslation } from 'react-i18next';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { adminAnalyticsQuery } from '@/lib/admin/admin-ops.queries';
+import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/_site/admin/analytics')({
   head: () => ({ meta: [{ title: 'Analytics | RMH Studios' }] }),
@@ -20,12 +21,13 @@ export const Route = createFileRoute('/_site/admin/analytics')({
 function AnalyticsPage() {
   const { t } = useTranslation('admin');
   const { data = null, isPending: loading } = useQuery(adminAnalyticsQuery());
+  const arrival = useArrival(!loading);
 
   const maxCount = data ? Math.max(1, ...data.postsPerDay.map((d) => d.count)) : 1;
 
   return (
     <PageLayout title={t('analytics', { defaultValue: 'Analytics' })} wide backTo="/admin">
-      <AdminBody>
+      <AdminBody className={arrival}>
         {loading ? (
           <div className="flex justify-center py-20">
             <Spinner />

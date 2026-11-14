@@ -27,6 +27,8 @@ import type { RecapDTO } from '@/lib/pf2ecal/types';
 import { RECAP_MAX } from '@/lib/pf2ecal/types';
 import { api } from './state';
 import { EASE, TRANSITION } from './motion';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface RecapPanelProps {
   sessionId: string;
@@ -63,6 +65,7 @@ export function RecapPanel({
   const [draft, setDraft] = useState('');
   const [writing, setWriting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const arrival = useArrival(entries !== null || failed);
 
   const load = useCallback(
     (signal?: AbortSignal) => {
@@ -140,7 +143,7 @@ export function RecapPanel({
       )}
 
       {failed && (
-        <p className="pf2e-caption" role="status">
+        <p className={cn('pf2e-caption', arrival)} role="status">
           {t('recap-failed', { defaultValue: 'Could not load the write-up.' })}{' '}
           <button type="button" className="underline" onClick={() => load()}>
             {t('try-again', { defaultValue: 'Try again' })}
@@ -149,7 +152,7 @@ export function RecapPanel({
       )}
 
       {entries !== null && entries.length === 0 && !summary && !failed && (
-        <p className="pf2e-caption">
+        <p className={cn('pf2e-caption', arrival)}>
           {isPast
             ? t('recap-empty-past', {
                 defaultValue: 'Nobody has written this one up yet.',
@@ -161,7 +164,7 @@ export function RecapPanel({
       )}
 
       {entries !== null && entries.length > 0 && (
-        <ul className="mt-3 flex flex-col gap-3">
+        <ul className={cn('mt-3 flex flex-col gap-3', arrival)}>
           <AnimatePresence initial={false}>
             {entries.map((entry) => (
               <motion.li

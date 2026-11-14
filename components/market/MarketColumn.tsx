@@ -29,6 +29,8 @@ import { browseListingsApi,
   type MarketListingView,
   type PriceHistoryView,
 } from '@/lib/market/market.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 
 /** Tiny inline SVG sparkline of recent sale prices. */
@@ -79,6 +81,7 @@ export function MarketColumn({
   const [loading, setLoading] = useState(false);
   const [sellOpen, setSellOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const currentUserId = session?.user.id ?? viewerId;
 
@@ -205,6 +208,7 @@ export function MarketColumn({
         </div>
       ) : listings.length === 0 ? (
         <EmptyState
+          className={arrival}
           title={t('market-empty-title', { defaultValue: 'No listings yet' })}
           description={t('market-empty-text', {
             defaultValue: 'Nothing is for sale right now. If you own a tradable cosmetic, list it.',
@@ -218,7 +222,7 @@ export function MarketColumn({
           }
         />
       ) : (
-        <div className={PRODUCT_GRID}>
+        <div className={cn(PRODUCT_GRID, arrival)}>
           {listings.map((listing) => {
             const isOwn = !!currentUserId && listing.seller.id === currentUserId;
             return (

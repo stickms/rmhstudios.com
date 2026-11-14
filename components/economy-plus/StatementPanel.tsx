@@ -9,6 +9,8 @@ import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import {
   STATEMENT_CSV_MAX_ROWS,
@@ -28,6 +30,7 @@ export default function StatementPanel() {
     queryFn: () => apiJson<StatementSummary>(`/api/coins/statement?month=${month}`),
     staleTime: 60_000,
   });
+  const arrival = useArrival(!isLoading);
 
   const fmtMonth = new Intl.DateTimeFormat(i18n.language, {
     month: 'long',
@@ -87,12 +90,12 @@ export default function StatementPanel() {
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : isError || !data ? (
-        <p className="px-1 text-sm text-site-danger">
+        <p className={cn('px-1 text-sm text-site-danger', arrival)}>
           {t('stmt-error', { defaultValue: "Couldn't load that statement." })}
         </p>
       ) : (
         <>
-          <dl className="grid grid-cols-2 gap-3">
+          <dl className={cn('grid grid-cols-2 gap-3', arrival)}>
             <div className="p-4">
               <dt className="text-xs text-site-text-muted">
                 {t('stmt-opening', { defaultValue: 'Opening balance' })}
@@ -111,7 +114,7 @@ export default function StatementPanel() {
             </div>
           </dl>
 
-          <div className="overflow-x-auto">
+          <div className={cn('overflow-x-auto', arrival)}>
             <table className="w-full min-w-[22rem] text-sm">
               <caption className="sr-only">
                 {t('stmt-table-caption', { defaultValue: 'Coin movement by category' })}
@@ -176,7 +179,7 @@ export default function StatementPanel() {
           </div>
 
           {data.rowCount > STATEMENT_CSV_MAX_ROWS ? (
-            <p className="px-1 text-xs text-site-text-muted">
+            <p className={cn('px-1 text-xs text-site-text-muted', arrival)}>
               {t('stmt-truncated', {
                 defaultValue:
                   'This month has more than {{max}} entries; the CSV contains the first {{max}}.',
@@ -184,7 +187,7 @@ export default function StatementPanel() {
               })}
             </p>
           ) : null}
-          <p className="px-1 text-xs text-site-text-muted">
+          <p className={cn('px-1 text-xs text-site-text-muted', arrival)}>
             {t('stmt-note', {
               defaultValue:
                 'Months run from the 1st at 00:00 UTC. The opening balance is the closing balance less the month’s net change.',

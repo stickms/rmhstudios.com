@@ -42,6 +42,8 @@ import {
   rideActionApi,
   setDriverOnlineApi,
 } from '@/lib/rideshare/rideshare.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/rideshare/drive')({
   head: () => ({ meta: [{ title: 'Drive with RMH Rideshare' }] }),
@@ -88,6 +90,7 @@ function DrivePage() {
   const { data: session, isPending } = useSession();
   const [driver, setDriver] = useState<DriverRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!(isPending || loading));
 
   const loadDriver = useCallback(async () => {
     try {
@@ -119,6 +122,7 @@ function DrivePage() {
     return (
       <PageLayout title={t('drive-page-title', { defaultValue: 'Drive with RMH' })} wide>
         <SignedOutPrompt
+          className={arrival}
           icon={Car}
           callbackURL="/rideshare/drive"
           title={t('sign-in-to-drive', { defaultValue: 'Sign in to drive' })}
@@ -132,7 +136,7 @@ function DrivePage() {
 
   return (
     <PageLayout title={t('drive-page-title', { defaultValue: 'Drive with RMH' })} wide>
-      <div className="w-full max-w-4xl px-4 pt-4 pb-12">
+      <div className={cn('w-full max-w-4xl px-4 pt-4 pb-12', arrival)}>
         {driver?.status === 'APPROVED' ? (
           <DriverDashboard driver={driver} currentUserId={session.user.id} onDriverChange={loadDriver} />
         ) : driver?.status === 'PENDING' ? (
@@ -313,6 +317,8 @@ function DriverDashboard({
   const [togglingOnline, setTogglingOnline] = useState(false);
   const [focusRideId, setFocusRideId] = useState<string | null>(null);
   const { t } = useTranslation('rideshare');
+  // The ride rows animate themselves (RideCard); only the empty state needs the M9 fade.
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     try {
@@ -447,6 +453,7 @@ function DriverDashboard({
           <div className="flex justify-center py-8"><Spinner size={20} className="text-site-text-muted" /></div>
         ) : available.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Car}
             title={t('no-open-requests', { defaultValue: 'No open requests right now. Check back soon!' })}
           />

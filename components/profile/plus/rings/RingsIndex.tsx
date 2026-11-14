@@ -8,6 +8,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { useSession } from '@/components/Providers';
 import {
@@ -53,6 +55,7 @@ export default function RingsIndex() {
   const signedIn = Boolean(session?.user);
   const navigate = useNavigate();
   const { data } = useJson<{ popular: RingSummary[]; mine: RingSummary[] }>('/api/webrings');
+  const arrival = useArrival(data !== undefined);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
@@ -86,7 +89,7 @@ export default function RingsIndex() {
       ) : (
         <>
           {data && data.mine.length > 0 ? (
-            <section className="space-y-3" aria-labelledby="rings-mine">
+            <section className={cn('space-y-3', arrival)} aria-labelledby="rings-mine">
               <h2 id="rings-mine" className="site-section-label">
                 {t('rings-mine', { defaultValue: 'Your rings' })}
               </h2>
@@ -98,7 +101,7 @@ export default function RingsIndex() {
             </section>
           ) : null}
 
-          <section className="space-y-3" aria-labelledby="rings-popular">
+          <section className={cn('space-y-3', arrival)} aria-labelledby="rings-popular">
             <h2 id="rings-popular" className="site-section-label">
               {t('rings-popular', { defaultValue: 'Popular rings' })}
             </h2>

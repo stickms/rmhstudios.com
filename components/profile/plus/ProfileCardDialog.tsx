@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * The profile card (P10): a preview of the QR business-card image and a
@@ -28,6 +30,7 @@ export default function ProfileCardDialog({
 }) {
   const { t } = useTranslation('f-profile-plus');
   const [loaded, setLoaded] = useState(false);
+  const arrival = useArrival(loaded);
   const src = `/api/profile/${encodeURIComponent(handleOrId)}/card`;
 
   return (
@@ -49,7 +52,7 @@ export default function ProfileCardDialog({
             alt={t('card-alt', { defaultValue: 'Your profile card with a QR code' })}
             width={1200}
             height={630}
-            className="size-full object-cover"
+            className={cn('size-full object-cover', arrival)}
             onLoad={() => setLoaded(true)}
           />
         </div>

@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { fetchJson } from '@/lib/http';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Hunt {
   id: string;
@@ -23,6 +25,7 @@ export default function HuntPanel() {
     queryKey: ['delight', 'admin', 'hunts'],
     queryFn: () => fetchJson<{ hunts: Hunt[] }>('/api/admin/delight/hunts'),
   });
+  const arrival = useArrival(!!q.data);
   const [title, setTitle] = useState('');
   const [clues, setClues] = useState([{ ...blank }]);
   const [busy, setBusy] = useState(false);
@@ -153,7 +156,7 @@ export default function HuntPanel() {
         </div>
       </form>
 
-      <ul className="divide-y divide-site-border border-t border-site-border">
+      <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
         {q.data?.hunts.map((h) => (
           <li
             key={h.id}

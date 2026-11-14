@@ -32,7 +32,7 @@
  * component's own state for the lifetime of the tab.
  */
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Headphones, Loader2, UserRound, X } from 'lucide-react';
 import { discordAvatarUrl, setActivityStatus, type DiscordContext } from '@/lib/discord-sdk';
@@ -47,6 +47,7 @@ import { CalibrationScreen } from '@features/slice-it/ui/CalibrationScreen';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import sliceItCss from '@features/slice-it/ui/slice-it.css?url';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const GameCanvas = lazy(() =>
   import('@features/slice-it/ui/GameCanvas').then((m) => ({ default: m.GameCanvas })),
@@ -451,7 +452,7 @@ export function SliceItDiscordActivity({ discord, onExit }: Props) {
 
           <div className="flex-1 min-h-0 w-full relative">
             <GameErrorBoundary gameName="Slice It">
-              <Suspense
+              <ArrivalSuspense
                 fallback={
                   <GameLoadingFallback
                     background="var(--slice-bg, #000000)"
@@ -460,7 +461,7 @@ export function SliceItDiscordActivity({ discord, onExit }: Props) {
                 }
               >
                 <GameCanvas />
-              </Suspense>
+              </ArrivalSuspense>
             </GameErrorBoundary>
           </div>
 

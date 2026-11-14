@@ -6,7 +6,7 @@
 
 import { createFileRoute } from '@tanstack/react-router'
 import { gameRouteHead } from '@/lib/seo-catalog';
-import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { useCallback, useEffect, useRef, useState, lazy } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useAltairGameStore } from '@features/altair/engine/stores/game-store'
@@ -26,6 +26,7 @@ import GameOverScreen from '@features/altair/ui/screens/GameOverScreen'
 import MetaShopScreen from '@features/altair/ui/screens/MetaShopScreen'
 import SettingsScreen from '@features/altair/ui/screens/SettingsScreen'
 import BestiaryScreen from '@features/altair/ui/screens/BestiaryScreen'
+import { ArrivalSuspense } from '@/components/ui/arrive'
 
 // Lazy import for the game canvas
 const GameScreen = lazy(() => import('@features/altair/ui/screens/GameScreen'))
@@ -297,7 +298,7 @@ function AltairPage() {
     case 'paused':
     case 'upgrading':
       return (
-        <Suspense fallback={
+        <ArrivalSuspense fallback={
           <div className="fixed inset-0 bg-(--altair-bg) flex items-center justify-center">
             <div className="text-(--altair-accent) font-mono tracking-widest animate-pulse text-sm">
               {t("initializing", { defaultValue: "INITIALIZING..." })}
@@ -313,7 +314,7 @@ function AltairPage() {
               setShowSettings(true)
             }}
           />
-        </Suspense>
+        </ArrivalSuspense>
       )
 
     case 'dead':

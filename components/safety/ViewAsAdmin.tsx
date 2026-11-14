@@ -6,6 +6,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { adminViewAsApi } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Brief {
   id: string;
@@ -36,6 +38,7 @@ export function ViewAsAdmin() {
   const [data, setData] = useState<ViewAs | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const arrival = useArrival(!loading);
 
   const run = async () => {
     setLoading(true);
@@ -94,9 +97,9 @@ export function ViewAsAdmin() {
           <Spinner />
         </div>
       )}
-      {error && <p className="t-body text-site-danger">{error}</p>}
+      {error && <p className={cn('t-body text-site-danger', arrival)}>{error}</p>}
       {data && (
-        <div className="flex flex-col gap-3">
+        <div className={cn('flex flex-col gap-3', arrival)}>
           <section className="min-w-0">
             <h3 className="t-heading text-site-text">{label(data.member)}</h3>
             <p className="t-body text-site-text-muted">

@@ -13,6 +13,8 @@ import type { Difficulty } from '@features/dream-rift/engine/types';
 import { CHARACTERS } from '@features/dream-rift/engine/render/sprites';
 import type { PlayerId } from '@features/dream-rift/engine/types';
 import { formatClockSeconds } from '@/lib/core/format';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Account {
     id: string;
@@ -121,6 +123,7 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
     const [solo, setSolo] = useState<SoloEntry[]>([]);
     const [coop, setCoop] = useState<CoopEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const arrival = useArrival(!loading);
 
     useEffect(() => {
         let active = true;
@@ -215,9 +218,9 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                     <div className="p-8 text-center text-sm text-[color:var(--dr-cream-faint)]">Loading…</div>
                 ) : mode === 'solo' ? (
                     solo.length === 0 ? (
-                        <div className="p-8 text-center text-sm text-[color:var(--dr-cream-faint)]">No scores yet — be the first!</div>
+                        <div className={cn('p-8 text-center text-sm text-[color:var(--dr-cream-faint)]', arrival)}>No scores yet — be the first!</div>
                     ) : (
-                        <table className="w-full text-left text-sm">
+                        <table className={cn('w-full text-left text-sm', arrival)}>
                             <thead className="dr-serif text-[11px] uppercase tracking-[0.16em] text-[color:var(--dr-gold-soft)]">
                                 <tr>
                                     <th className="px-3 py-2">#</th>
@@ -245,9 +248,9 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                         </table>
                     )
                 ) : coop.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-[color:var(--dr-cream-faint)]">No co-op runs yet — squad up!</div>
+                    <div className={cn('p-8 text-center text-sm text-[color:var(--dr-cream-faint)]', arrival)}>No co-op runs yet — squad up!</div>
                 ) : (
-                    <table className="w-full text-left text-sm">
+                    <table className={cn('w-full text-left text-sm', arrival)}>
                         <thead className="dr-serif text-[11px] uppercase tracking-[0.16em] text-[color:var(--dr-gold-soft)]">
                             <tr>
                                 <th className="px-3 py-2">#</th>

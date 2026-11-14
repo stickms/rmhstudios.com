@@ -4,6 +4,8 @@ import { useNearViewport } from'@/hooks/useNearViewport';
 import { ArchivedCopyLabel } from'@/components/posts-plus/ArchivedCopyLabel';
 import { api } from '@/lib/contract/client';
 import { ogOembedApi } from '@/lib/unfurl/oembed.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface OgData {
  title: string | null;
@@ -31,6 +33,8 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  const [data, setData] = useState<OgData | null>(() => ogCache.get(url) ?? null);
  const [loading, setLoading] = useState(() => !ogCache.has(url));
  const [imgError, setImgError] = useState(false);
+ // Steel M9: the card replaces its placeholder block; a cached URL is there on first paint.
+ const arrival = useArrival(!loading);
 
  useEffect(() => {
  if (!visible) return;
@@ -81,7 +85,11 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  target="_blank"
  rel="noopener noreferrer"
  onClick={(e) => e.stopPropagation()}
- className={`block rounded-site overflow-hidden hover:bg-site-surface/40 transition-colors ${className}`}
+ className={cn(
+ 'block rounded-site overflow-hidden hover:bg-site-surface/40 transition-colors',
+ className,
+ arrival,
+ )}
  >
  {data.image && !imgError && (
  <div className="w-full h-36 bg-site-surface overflow-hidden">

@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { askFeedApi, aiSearchApi } from '@/lib/feed/compose-assist.contract';
@@ -46,6 +48,8 @@ function Answer({
   onRetry: () => void;
 }) {
   const { t } = useTranslation('feed');
+  // Steel M9: the answer (or the error) replaces "Reading the results…".
+  const arrival = useArrival(!loading);
 
   return (
     <div className="border-t border-site-border pt-3">
@@ -55,17 +59,17 @@ function Answer({
           <Spinner size={14} /> {t('ai-thinking', { defaultValue: 'Reading the results…' })}
         </div>
       ) : error ? (
-        <p className="text-sm text-site-text-muted">
+        <p className={cn('text-sm text-site-text-muted', arrival)}>
           {t('ai-error', { defaultValue: 'Could not generate an answer. Try again.' })}{' '}
           <button onClick={onRetry} className="text-site-accent hover:underline">
             {t('retry', { defaultValue: 'Try again' })}
           </button>
         </p>
       ) : (
-        <>
+        <div className={arrival}>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-site-text">{answer}</p>
           {footer}
-        </>
+        </div>
       )}
     </div>
   );

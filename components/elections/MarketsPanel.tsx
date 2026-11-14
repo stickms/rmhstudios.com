@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { fmtInt } from './hooks';
 import { api } from '@/lib/contract/client';
 import { getElectionMarketsApi } from '@/lib/elections/elections.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 /** The slice of GET /api/elections/markets this panel reads. */
 interface Market {
@@ -33,6 +34,7 @@ export function MarketsPanel({ cycle }: { cycle: string }) {
   });
 
   const markets = (data?.markets ?? []).filter((m) => m.subjectUrl?.includes(`cycle=${cycle}`));
+  const arrival = useArrival(markets.length > 0);
 
   if (!markets.length) {
     return (
@@ -43,7 +45,7 @@ export function MarketsPanel({ cycle }: { cycle: string }) {
   }
 
   return (
-    <div>
+    <div className={arrival}>
       <div className="el-cards">
         {markets.map((m) => {
           const resolved = m.status === 'RESOLVED_YES' || m.status === 'RESOLVED_NO';

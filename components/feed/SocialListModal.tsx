@@ -7,6 +7,8 @@ import { Link } from'@tanstack/react-router';
 import { useSession } from'@/components/Providers';
 import { api } from '@/lib/contract/client';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface SocialUser {
  id: string;
@@ -35,6 +37,8 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  const initialFetched = useRef(false);
  const fetchingRef = useRef(false);
  const { data: session } = useSession();
+ // Steel M9: rows replace the spinner and fade in; the class stays, so each later page's rows fade as they mount.
+ const arrival = useArrival(users.length > 0 || !loading);
 
  const { t } = useTranslation('feed');
  const title = type ==='followers'? t('followers', { defaultValue:'Followers'}) : t('following', { defaultValue:'Following'});
@@ -142,7 +146,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  {/* List */}
  <div className="overflow-y-auto flex-1">
  {users.length === 0 && !loading && (
- <div className="flex flex-col items-center justify-center py-12 px-5 text-center">
+ <div className={cn('flex flex-col items-center justify-center py-12 px-5 text-center', arrival)}>
  <p className="text-site-text font-medium mb-1">{t('no-list-yet', { defaultValue:'No {{title}} yet', title: title.toLowerCase() })}</p>
  <p className="text-sm text-site-text-muted">
  {type ==='followers'
@@ -155,7 +159,10 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  {users.map((user) => (
  <div
  key={user.id}
- className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover transition-colors border-b border-site-border/50"
+ className={cn(
+ 'flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover transition-colors border-b border-site-border/50',
+ arrival,
+ )}
  >
  <Link
  to={`/u/${user.handle || user.id}`as string}

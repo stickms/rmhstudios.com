@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Check, Gift, Lock } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { apiJson, errorCode } from '@/components/economy-plus/api';
 import { ADVENT_DOORS, type AdventState } from '@/lib/gifting/advent';
@@ -17,6 +19,7 @@ export default function AdventCalendar() {
     queryKey: KEY,
     queryFn: () => apiJson<AdventState>('/api/advent'),
   });
+  const arrival = useArrival(!isLoading && !!data);
 
   const open = useMutation({
     mutationFn: () => apiJson<{ door: number; coins: number }>('/api/advent', { method: 'POST' }),
@@ -45,7 +48,7 @@ export default function AdventCalendar() {
   const opened = new Set(data.opened);
 
   return (
-    <div className="space-y-4">
+    <div className={cn('space-y-4', arrival)}>
       <p className="text-sm text-site-text-muted">
         {data.today === null
           ? t('advent-closed', {

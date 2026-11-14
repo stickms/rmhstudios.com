@@ -18,10 +18,12 @@ import { SoloSourcePicker, SourcePracticeNote } from '@/components/rmhtype/SoloS
 import { autoIndent, backspaceIndent, type SoloSource } from '@/lib/rmhtype/sources';
 import { formatSoloResult } from '@/lib/rmhtype/result-text';
 import { isTypingTarget } from '@/lib/shortcuts/registry';
+import { useArrival } from '@/components/ui/arrive';
 
 export default function RmhTypeSolo() {
   const router = useRouter();
   const soloPassage = useRmhTypeStore((s) => s.soloPassage);
+  const passageArrival = useArrival(!!soloPassage);
   const soloPassageId = useRmhTypeStore((s) => s.soloPassageId);
   const soloResult = useRmhTypeStore((s) => s.soloResult);
   const soloCountdown = useRmhTypeStore((s) => s.soloCountdown);
@@ -413,7 +415,8 @@ export default function RmhTypeSolo() {
               </div>
             </div>
           ) : (
-            <>
+            // Box-less: the passage replaces the waiting line and fades in (M9).
+            <div className={passageArrival ? 'arrive-group' : 'contents'}>
               {/* Live WPM / prompt — hidden on short viewports via CSS */}
               {!finished && (
                 <div className="text-center shrink-0 rmhtype-wpm-display">
@@ -483,7 +486,7 @@ export default function RmhTypeSolo() {
                   style={{ width: `${(typedText.length / soloPassage.length) * 100}%` }}
                 />
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

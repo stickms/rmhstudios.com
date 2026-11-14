@@ -27,6 +27,8 @@ import { ProcessesTab } from '@/components/admin/perf/ProcessesTab';
 import { ProfilerTab } from '@/components/admin/perf/ProfilerTab';
 import { RoutesTab } from '@/components/admin/perf/RoutesTab';
 import { RuntimeTab } from '@/components/admin/perf/RuntimeTab';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/performance')({
   head: () => ({ meta: [{ title: 'Performance | RMH Studios' }] }),
@@ -40,6 +42,7 @@ function PerformancePage() {
   const [tab, setTab] = useState<TabId>('overview');
   const [auto, setAuto] = useState(true);
   const { data, loading, failed, updatedAt, reload } = usePerfOverview(auto);
+  const arrival = useArrival(!(loading && !data));
 
   return (
     <PageLayout title={t('page-title', { defaultValue: 'Performance' })} wide backTo="/admin">
@@ -94,20 +97,20 @@ function PerformancePage() {
         ) : loading && !data ? (
           <Spinner />
         ) : !data ? (
-          <div className="rounded-site">
+          <div className={cn('rounded-site', arrival)}>
             <EmptyState
               title={t('load-failed', { defaultValue: 'Could not load performance data.' })}
             />
           </div>
         ) : (
-          <>
+          <div className={arrival}>
             {tab === 'overview' && <OverviewTab overview={data} />}
             {tab === 'routes' && <RoutesTab routes={data.cluster.routes} />}
             {tab === 'database' && <DatabaseTab overview={data} />}
             {tab === 'processes' && <ProcessesTab overview={data} />}
             {tab === 'errors' && <ErrorsTab overview={data} />}
             {tab === 'runtime' && <RuntimeTab overview={data} />}
-          </>
+          </div>
         )}
       </AdminBody>
     </PageLayout>

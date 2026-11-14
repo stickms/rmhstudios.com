@@ -14,6 +14,8 @@ import { MAX_QOTD_LENGTH, utcDayKey } from '@/lib/posts-plus/constants';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { addAdminQotdApi, getAdminQotdApi, removeAdminQotdApi } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Row {
   id: string;
@@ -38,6 +40,8 @@ export function AdminQotdPanel() {
   const [text, setText] = useState('');
   const [dayKey, setDayKey] = useState('');
   const [busy, setBusy] = useState(false);
+  // Steel M9: the queue replaces the spinner.
+  const arrival = useArrival(!!data);
 
   const load = useCallback(async () => {
     try {
@@ -150,7 +154,7 @@ export function AdminQotdPanel() {
           </div>
         ) : (
           <>
-            <section aria-labelledby="qotd-queue" className="space-y-3">
+            <section aria-labelledby="qotd-queue" className={cn('space-y-3', arrival)}>
               <h2 id="qotd-queue" className="t-heading text-site-text">
                 {t('admin-queue', { defaultValue: 'Queue and scheduled' })}
               </h2>
@@ -186,7 +190,7 @@ export function AdminQotdPanel() {
             </section>
 
             {data.recent.length > 0 && (
-              <section aria-labelledby="qotd-recent" className="space-y-3">
+              <section aria-labelledby="qotd-recent" className={cn('space-y-3', arrival)}>
                 <h2 id="qotd-recent" className="t-heading text-site-text">
                   {t('admin-recent', { defaultValue: 'Recently run' })}
                 </h2>

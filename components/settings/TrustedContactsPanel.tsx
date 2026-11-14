@@ -17,6 +17,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SettingsSection } from '@/components/settings/SettingsSection';
@@ -47,6 +49,8 @@ export function TrustedContactsPanel() {
   const { data: contactData, isPending: contactsPending } = useQuery(contactsQuery);
   const { data: requestData, isPending: requestsPending } = useQuery(requestsQuery);
   const loading = contactsPending || requestsPending;
+  // The body spaces its children (settings.css `> * + *`), so each one takes the fade.
+  const arrival = useArrival(!loading);
   const contacts: ContactRow[] = contactData?.contacts ?? [];
   const trustedFor: ContactRow[] = contactData?.trustedFor ?? [];
   const approvable: ApprovableRequest[] = requestData?.approvable ?? [];
@@ -172,7 +176,7 @@ export function TrustedContactsPanel() {
       ) : (
         <>
           {approvable.length > 0 ? (
-            <ul className="mb-4 space-y-2">
+            <ul className={cn('mb-4 space-y-2', arrival)}>
               {approvable.map((request) => (
                 <li key={request.id} className="rounded-site-sm p-3">
                   <div className="flex items-center gap-2">
@@ -213,15 +217,15 @@ export function TrustedContactsPanel() {
             </ul>
           ) : null}
 
-          <h3 className="mb-2 text-sm font-semibold text-site-text">
+          <h3 className={cn('mb-2 text-sm font-semibold text-site-text', arrival)}>
             {t('contacts-mine-title', { defaultValue: 'People you nominated' })}
           </h3>
           {contacts.length === 0 ? (
-            <p className="mb-3 text-sm text-site-text-muted">
+            <p className={cn('mb-3 text-sm text-site-text-muted', arrival)}>
               {t('contacts-mine-empty', { defaultValue: 'Nobody yet.' })}
             </p>
           ) : (
-            <ul className="mb-3 space-y-2">
+            <ul className={cn('mb-3 space-y-2', arrival)}>
               {contacts.map((row) => (
                 <li key={row.id} className="flex items-center gap-2 rounded-site-sm p-3">
                   <UserAvatar
@@ -256,7 +260,10 @@ export function TrustedContactsPanel() {
             </ul>
           )}
 
-          <form onSubmit={nominate} className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end">
+          <form
+            onSubmit={nominate}
+            className={cn('mb-4 flex flex-col gap-2 sm:flex-row sm:items-end', arrival)}
+          >
             <div className="min-w-0 flex-1">
               <Label htmlFor="trusted-contact-handle">
                 {t('contacts-handle-label', { defaultValue: 'Their handle' })}
@@ -278,10 +285,10 @@ export function TrustedContactsPanel() {
 
           {trustedFor.length > 0 ? (
             <>
-              <h3 className="mb-2 text-sm font-semibold text-site-text">
+              <h3 className={cn('mb-2 text-sm font-semibold text-site-text', arrival)}>
                 {t('contacts-for-title', { defaultValue: 'People who nominated you' })}
               </h3>
-              <ul className="space-y-2">
+              <ul className={cn('space-y-2', arrival)}>
                 {trustedFor.map((row) => (
                   <li
                     key={row.id}

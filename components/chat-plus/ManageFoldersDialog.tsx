@@ -13,12 +13,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { FOLDER_NAME_MAX, MAX_FOLDERS } from '@/lib/chat-plus/types';
 import { CHAT_FOLDERS_KEY, useChatFolders, type ChatFolder } from './folders-hooks';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** Rename, delete and create folders. Adding chats happens from each chat's options. */
 export default function ManageFoldersDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation('f-messaging');
   const qc = useQueryClient();
   const { data: folders } = useChatFolders();
+  const arrival = useArrival(!!folders);
   const [name, setName] = useState('');
 
   const call = async (url: string, method: string, body?: unknown) => {
@@ -68,7 +71,7 @@ export default function ManageFoldersDialog({ onClose }: { onClose: () => void }
             })}
           </DialogDescription>
         </DialogHeader>
-        <ul className="flex flex-col gap-2">
+        <ul className={cn('flex flex-col gap-2', arrival)}>
           {(folders ?? []).map((f) => (
             <FolderRow
               key={f.id}

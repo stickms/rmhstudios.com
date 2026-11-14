@@ -15,6 +15,8 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { profilePostsApi } from '@/lib/feed/feed-reads.contract';
 import { addSeriesPostApi } from '@/lib/posts-plus/series.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * X5 - pick one of your own older public posts to append to a series. Lists the
@@ -35,6 +37,8 @@ export default function AddSeriesPostDialog({
   const { t } = useTranslation('f-posts-plus');
   const [posts, setPosts] = useState<FeedItem[] | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
+  // Steel M9: the posts replace the spinner inside the open dialog.
+  const arrival = useArrival(posts !== null);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,7 +84,7 @@ export default function AddSeriesPostDialog({
             })}
           </DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className={cn('min-h-0 flex-1 overflow-y-auto', arrival)}>
           {posts === null ? (
             <div className="flex justify-center py-6">
               <Spinner />

@@ -10,6 +10,7 @@ import { feedSignalsQuery } from '@/lib/feed/signals.queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
 import { normalizeTag, type FeedSignalKind, type FeedSignalsView } from '@/lib/feed/signals';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 
@@ -30,6 +31,8 @@ export function FeedControlsSettings() {
   // Optimistic edits go straight into the query cache, where the next read finds them.
   const setSignals = (update: (s: FeedSignalsView | undefined) => FeedSignalsView | undefined) =>
     qc.setQueryData<FeedSignalsView>(feedSignalsQuery().queryKey, update);
+  // Each section is its own child of the settings spine, so each takes the fade.
+  const arrival = useArrival(!!signals);
 
   if (!signals) {
     return (
@@ -86,6 +89,7 @@ export function FeedControlsSettings() {
         tags={signals.mutedTags}
         onAdd={(v) => addTag('mute_tag', v)}
         onRemove={(v) => removeSignal('mute_tag', v)}
+        className={arrival}
       />
       <TagSection
         title={t('followed-tags', { defaultValue: 'Followed hashtags' })}
@@ -93,10 +97,12 @@ export function FeedControlsSettings() {
         tags={signals.followedTags}
         onAdd={(v) => addTag('follow_tag', v)}
         onRemove={(v) => removeSignal('follow_tag', v)}
+        className={arrival}
       />
       <SettingsSection
         title={t('demoted', { defaultValue: 'Demoted accounts' })}
         description={t('demoted-desc', { defaultValue: 'Accounts you asked to see less of.' })}
+        className={arrival}
       >
         {signals.lessAuthors.length === 0 ? (
           <p className="text-sm text-site-text-muted">{t('none', { defaultValue: 'None' })}</p>
@@ -122,17 +128,19 @@ function TagSection({
   tags,
   onAdd,
   onRemove,
+  className,
 }: {
   title: string;
   description: string;
   tags: string[];
   onAdd: (v: string) => void;
   onRemove: (v: string) => void;
+  className?: string | undefined;
 }) {
   const { t } = useTranslation('settings-content');
   const [draft, setDraft] = useState('');
   return (
-    <SettingsSection title={title} description={description}>
+    <SettingsSection title={title} description={description} className={className}>
       <div className="flex gap-2">
         <Input
           value={draft}

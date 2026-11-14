@@ -11,6 +11,7 @@ import { StudyTabs } from '@/components/study/StudyTabs';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createDeckApi, listDecksApi } from '@/lib/study/decks.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface Deck {
   id: string;
@@ -38,6 +39,8 @@ export function FlashcardsColumn({
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Steel M9: decks fetched here replace the spinner; the loader's are there on first paint.
+  const arrival = useArrival(!loading);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -130,7 +133,7 @@ export function FlashcardsColumn({
   );
 
   return (
-    <div>
+    <div className={arrival}>
       <ColumnHeader
         icon={BookOpen}
         title={t('flashcards-title', { defaultValue: 'Flashcards' })}

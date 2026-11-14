@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { appRouteHead } from '@/lib/seo-catalog';
 import { Link } from '@tanstack/react-router';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
 import {
@@ -16,6 +16,8 @@ import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { transition } from '@/lib/motion';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const TokenGenerator = lazy(() => import('@/components/rmhcode/TokenGenerator'));
 
@@ -59,6 +61,7 @@ function RmhCodePage() {
   const goBack = useBackOrFallback();
   const { t } = useTranslation("r-rmhcode");
   const { data: session, isPending } = useSession();
+  const arrival = useArrival(!isPending);
   const [installTab, setInstallTab] = useState<'mac' | 'windows' | 'binary'>('mac');
   const [showManualMac, setShowManualMac] = useState(false);
   const [showManualWin, setShowManualWin] = useState(false);
@@ -222,8 +225,8 @@ function RmhCodePage() {
           <div className="surface-card rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-2 flex items-center gap-2"><Key className="w-5 h-5 text-site-accent" />{t("cli-auth-title", { defaultValue: "CLI Authentication" })}</h2>
             <p className="text-sm text-site-text-muted mb-6">{t("cli-auth-desc", { defaultValue: "Generate a token to link rmhcode with your RMH account, or use the browser login flow." })}</p>
-            {isPending ? (<div className="h-12 w-full bg-site-surface-hover rounded-site-sm animate-pulse" />) : session ? (<Suspense fallback={<GameLoadingFallback />}><TokenGenerator /></Suspense>) : (
-              <div className="text-center py-8 border border-dashed border-site-border rounded-site-sm">
+            {isPending ? (<div className="h-12 w-full bg-site-surface-hover rounded-site-sm animate-pulse" />) : session ? (<ArrivalSuspense fallback={<GameLoadingFallback />}><TokenGenerator /></ArrivalSuspense>) : (
+              <div className={cn('text-center py-8 border border-dashed border-site-border rounded-site-sm', arrival)}>
                 <p className="text-site-text-muted mb-4">{t("sign-in-to-generate", { defaultValue: "Sign in to generate a CLI token" })}</p>
                 <Link to="/login" search={{ callbackURL: undefined }}><Button variant="default">{t("sign-in", { defaultValue: "Sign In" })}</Button></Link>
               </div>

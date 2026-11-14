@@ -17,6 +17,8 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { KIND_ORDER, RARITY_ORDER, type Rarity, type ShopItemKind } from '@/lib/shop/catalog';
 import { ItemPicture } from '@/components/shop/ItemPicture';
 import { kindLabel } from '@/components/shop/kind-label';
@@ -50,6 +52,7 @@ export function ProfileCosmetics() {
     },
     staleTime: 30_000,
   });
+  const arrival = useArrival(!isPending);
 
   const equipMutation = useMutation({
     mutationFn: async ({ item, equipped }: { item: CosmeticItem; equipped: boolean }) => {
@@ -93,7 +96,7 @@ export function ProfileCosmetics() {
 
   if (isError) {
     return (
-      <p className="text-sm text-site-text-muted">
+      <p className={cn('text-sm text-site-text-muted', arrival)}>
         {t('profile-cosmetics-error', { defaultValue: "Couldn't load your cosmetics." })}
       </p>
     );
@@ -104,6 +107,7 @@ export function ProfileCosmetics() {
   if (owned.length === 0) {
     return (
       <EmptyState
+        className={arrival}
         icon={Sparkles}
         title={t('profile-cosmetics-empty-title', { defaultValue: 'No cosmetics yet' })}
         description={t('profile-cosmetics-empty-desc', {
@@ -136,7 +140,7 @@ export function ProfileCosmetics() {
   return (
     <>
       {sections.map(({ kind, items }) => (
-        <SettingsSection key={kind} title={kindLabel(t, kind)}>
+        <SettingsSection key={kind} title={kindLabel(t, kind)} className={arrival}>
           <ul className="border-t border-site-border">
             {items.map((item) => {
               const busy = equipMutation.isPending && equipMutation.variables?.item.id === item.id;

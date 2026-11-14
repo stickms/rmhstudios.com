@@ -19,6 +19,8 @@ import {
  getRankedOverviewApi,
  type RankedChallengeAction,
 } from'@/lib/ranked/ranked.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Rating {
  game: string;
@@ -100,6 +102,9 @@ export function RankedColumn({
  const [lbGame, setLbGame] = useState(initialData?.games?.[0]?.id ??'');
  const [lb, setLb] = useState<LbRow[]>([]);
  const [lbLoading, setLbLoading] = useState(false);
+ // Steel M9: the overview (when fetched here) and each game's ladder replace their spinners.
+ const arrival = useArrival(!loading);
+ const lbArrival = useArrival(!lbLoading);
 
  const load = useCallback(async () => {
  try {
@@ -204,7 +209,7 @@ export function RankedColumn({
  }
 
  return (
- <div>
+ <div className={arrival}>
  <ColumnHeader icon={Swords} title={t('ranked', { defaultValue:'Ranked'})} />
 
  <div className="space-y-6 py-4">
@@ -387,9 +392,9 @@ export function RankedColumn({
  <Spinner size={20} />
  </div>
  ) : lb.length === 0 ? (
- <EmptyState icon={Trophy} title={t('no-ranked-players', { defaultValue:'No ranked players yet.'})} />
+ <EmptyState className={lbArrival} icon={Trophy} title={t('no-ranked-players', { defaultValue:'No ranked players yet.'})} />
  ) : (
- <div className="space-y-2">
+ <div className={cn('space-y-2', lbArrival)}>
  {lb.map((row) => (
  <div
  key={row.user.id}

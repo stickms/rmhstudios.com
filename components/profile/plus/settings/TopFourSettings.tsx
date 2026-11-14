@@ -5,6 +5,9 @@ import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { Select } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { TOP_FOUR_SIZE, type TopFourItem } from '@/lib/profile/modules';
 import { resolveTopFour, topFourChoices } from '@/lib/profile/top-four';
 import { api } from '@/lib/contract/client';
@@ -18,6 +21,7 @@ export default function TopFourSettings() {
   const [items, setItems] = useState<TopFourItem[] | null>(null);
   const [saving, setSaving] = useState(false);
   const choices = useMemo(() => topFourChoices(), []);
+  const arrival = useArrival(items !== null);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +37,8 @@ export default function TopFourSettings() {
     };
   }, []);
 
-  if (items === null) return null;
+  // The same placeholder as the other sections of this panel, so the editor does not land in a gap.
+  if (items === null) return <Skeleton className="h-48 w-full" />;
 
   const picked = resolveTopFour(items);
   const taken = new Set(items.map(keyOf));
@@ -58,7 +63,7 @@ export default function TopFourSettings() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className={cn('space-y-4', arrival)}>
       <p className="text-sm text-site-text-muted">
         {t('top-four-intro', {
           defaultValue: 'Pin up to four games or apps that say the most about you.',

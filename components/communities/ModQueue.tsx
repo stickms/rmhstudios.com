@@ -7,6 +7,8 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import { MacroField } from '@/components/safety/MacroField';
 import type { ModItemDTO } from '@/lib/communities/plus';
@@ -16,6 +18,7 @@ export function ModQueue({ slug }: { slug: string }) {
   const [view, setView] = useState<'pending' | 'log'>('pending');
   const [items, setItems] = useState<ModItemDTO[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const arrival = useArrival(items !== null);
   // S4: per-item message to the author, filled from a macro.
   const [messages, setMessages] = useState<Record<string, string>>({});
 
@@ -75,9 +78,13 @@ export function ModQueue({ slug }: { slug: string }) {
           <Spinner />
         </div>
       ) : items.length === 0 ? (
-        <EmptyState icon={Inbox} title={t('queue-empty', { defaultValue: 'Nothing here' })} />
+        <EmptyState
+          className={arrival}
+          icon={Inbox}
+          title={t('queue-empty', { defaultValue: 'Nothing here' })}
+        />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className={cn('flex flex-col gap-2', arrival)}>
           {items.map((i) => (
             <li key={i.id} className="flex flex-col gap-2 p-3">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-site-text-muted">

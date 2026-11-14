@@ -70,6 +70,8 @@ import { SongTable } from './SongTable';
 import { PackPanel } from './packs/PackPanel';
 
 import { listLibrarySongsApi, randomSongApi } from '@features/slice-it/engine/play.contract';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 /**
  * One entry of the artist facet (L15), as `/api/slice-it/songs/artists`
  * returns it. A structural type rather than an import of `ArtistSummary`,
@@ -524,6 +526,11 @@ export function SongLibrary({
   // query's cursor, and pressing it here would append page two of a different
   // search onto these results.
   const visibleSongs = songs;
+  // M9: the first page replaces the skeleton rows and fades in; a later page fades in row by row.
+  // A load-more keeps the rows on screen, so only an empty list waiting for a page counts as loading.
+  const listArrival = useArrival(visibleSongs.length > 0 || !loading);
+  const isNewSong = useArrivingKeys(visibleSongs.map((s) => s.id));
+  const facetArrival = useArrival(!(artistFacetLoading && artistFacet.length === 0));
 
   const viewTabs: TabItem[] = [
     { id: 'grid', label: ts('view-grid', { defaultValue: 'Grid' }), icon: LayoutGrid },
@@ -949,7 +956,7 @@ export function SongLibrary({
                padding gives the halo somewhere to land inside the clip and the
                equal negative margin keeps the band's metrics exactly where they
                were, so nothing below it moves. */
-            <div className="flex gap-1.5 overflow-x-auto scroll-fade-x -m-1.5 p-1.5">
+            <div className={cn('flex gap-1.5 overflow-x-auto scroll-fade-x -m-1.5 p-1.5', facetArrival)}>
               {artistFacet.map((artist) => (
                 <button
                   key={artist.key}
@@ -973,7 +980,7 @@ export function SongLibrary({
       {filters.view === 'table' ? (
         <>
           {visibleSongs.length === 0 && !loading && (
-            <p className="text-center text-slice-text-light py-12 text-sm font-bold">
+            <p className={cn('text-center text-slice-text-light py-12 text-sm font-bold', listArrival)}>
               {filters.q
                 ? t('no-search-results', {
                     defaultValue: 'Nothing matches "{{query}}".',
@@ -1007,7 +1014,7 @@ export function SongLibrary({
       ) : (
         <div className="flex-1 overflow-y-auto px-2.5 pb-2">
           {visibleSongs.length === 0 && !loading && (
-            <p className="text-center text-slice-text-light py-12 text-sm font-bold">
+            <p className={cn('text-center text-slice-text-light py-12 text-sm font-bold', listArrival)}>
               {filters.q
                 ? t('no-search-results', {
                     defaultValue: 'Nothing matches "{{query}}".',
@@ -1042,7 +1049,7 @@ export function SongLibrary({
           {/* Column heads, as the sleeve prints them. Hidden on a phone, where
               the row is two lines and the heads would label nothing. */}
           {visibleSongs.length > 0 && (
-            <div className="slice-trow slice-trow--head" aria-hidden>
+            <div className={cn('slice-trow slice-trow--head', listArrival)} aria-hidden>
               <span>#</span>
               <span />
               <span>{t('col-title', { defaultValue: 'Title / artist' })}</span>
@@ -1055,12 +1062,12 @@ export function SongLibrary({
             </div>
           )}
 
-          <ul>
+          <ul className={listArrival}>
             {visibleSongs.map((song, index) => {
               const previewing = previewId === song.id && !previewRef.current?.paused;
               const chart = rowChartState(song);
               return (
-                <li key={song.id}>
+                <li key={song.id} className={isNewSong(song.id) ? ARRIVE : undefined}>
                   {/* The row is one grid: number, cover (which is also the
                       preview button), title and artist, the density strip,
                       tempo, length, and the actions. Hover inverts it to paper

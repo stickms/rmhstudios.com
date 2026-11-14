@@ -13,6 +13,3 @@ export {
   fadeIn,
   scaleIn,
 } from './motionTokens';
-
-export { AsyncReveal } from './AsyncReveal';
-export type { AsyncRevealProps } from './AsyncReveal';

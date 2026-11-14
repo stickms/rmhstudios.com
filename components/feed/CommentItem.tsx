@@ -31,7 +31,7 @@ import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { useFreshUser } from '@/stores/userDisplayStore';
-import { relativeTimeShort } from '@/lib/utils';
+import { cn, relativeTimeShort } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { useTranslation } from 'react-i18next';
 import { useLocaleStore } from '@/stores/localeStore';
@@ -58,6 +58,7 @@ import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { translateCommentApi } from '@/lib/ai/ai.contract';
 
 import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
+import { ARRIVE } from '@/components/ui/arrive';
 export interface Comment {
   id: string;
   content: string;
@@ -370,7 +371,12 @@ export function CommentItem({
         <ChatMediaEmbed content={comment.content} themePrefix="site" />
       )}
       {showTranslated && translatedText && (
-        <p className="t-body mt-2 border-s-2 border-site-border ps-3 whitespace-pre-wrap break-words">
+        <p
+          className={cn(
+            't-body mt-2 border-s-2 border-site-border ps-3 whitespace-pre-wrap break-words',
+            ARRIVE,
+          )}
+        >
           {translatedText}
         </p>
       )}

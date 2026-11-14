@@ -3,7 +3,7 @@
  * C7 gifts). The balance header is the only thing that renders eagerly; every
  * tab body is a lazy chunk fetched when that tab is opened.
  */
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,7 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Button } from '@/components/ui/button';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import type { TabItem } from '@/components/ui/tabs';
 import { walletBalanceQuery } from '@/lib/economy/wallet.queries';
 
@@ -45,6 +46,8 @@ export function WalletPage({
   const { t, i18n } = useTranslation('f-economy-plus');
   const { data: session, isPending } = useSession();
   const signedIn = !!session && !isPending;
+  // The session can still be resolving on the first paint (PanelFallback below).
+  const arrival = useArrival(!isPending);
 
   // Seeded by the /wallet loader, so the balance is in the first paint.
   const { data: balance } = useQuery({ ...walletBalanceQuery(), enabled: signedIn });
@@ -76,13 +79,14 @@ export function WalletPage({
           <PanelFallback />
         ) : (
           <SignedOutPrompt
+            className={arrival}
             icon={Wallet}
             title={t('wallet-signed-out', { defaultValue: 'Sign in to open your wallet' })}
             callbackURL="/wallet"
           />
         )
       ) : (
-        <>
+        <div className={arrival}>
           <div className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
               <p className="text-xs text-site-text-muted">
@@ -116,14 +120,14 @@ export function WalletPage({
           />
 
           <div role="tabpanel" id={`wallet-panel-${tab}`} aria-labelledby={`wallet-tab-${tab}`}>
-            <Suspense fallback={<PanelFallback />}>
+            <ArrivalSuspense fallback={<PanelFallback />}>
               {tab === 'goals' && <SavingsGoalsPanel />}
               {tab === 'statement' && <StatementPanel />}
               {tab === 'community' && <CommunityGoalsPanel />}
               {tab === 'gifts' && <ScheduledGiftsPanel />}
-            </Suspense>
+            </ArrivalSuspense>
           </div>
-        </>
+        </div>
       )}
     </PageLayout>
   );

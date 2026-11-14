@@ -322,7 +322,10 @@ the site tier (plain 8px and 4px arcs); the games and apps keep theirs inside `h
 **Focus (K10):** `outline: 2px solid var(--site-text); outline-offset: 2px` on every
 focusable element, text fields included. **Motion (section 11):** hover and press fills 90
 ms, tab underline and toggle slide 140 ms, chrome activation 280 ms, globe 360 ms, overlay
-160 ms opacity with no scale or slide; nothing else animates — no page entrances, list
+160 ms opacity with no scale or slide; content that arrives after the view painted (posts,
+announcements, anything replacing a skeleton, spinner or Suspense fallback, rows appended to a
+list) fades in 160 ms, opacity only (M9, `components/ui/arrive.tsx`, gated by
+`lib/__tests__/arrival-coverage.test.ts`); nothing else animates — no page entrances, list
 staggers, hover lifts, springs, parallax or shimmer. Route changes swap content with no
 transition.
 

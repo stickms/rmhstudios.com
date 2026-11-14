@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { SpineItem } from '@/components/ui/spine';
+import { useArrival } from '@/components/ui/arrive';
 import { api } from '@/lib/contract/client';
 import { getQotdTodayApi } from '@/lib/posts-plus/qotd.contract';
 import { useQotdAnswering } from '@/lib/posts-plus/qotd-store';
@@ -37,6 +38,8 @@ export default function QotdCard() {
   const [hidden, setHidden] = useState(false);
   const start = useQotdAnswering((s) => s.start);
   const navigate = useNavigate();
+  // Steel M9: the card is fetched after idle and lands among posts already showing, so it fades in.
+  const arrival = useArrival(!!today && !hidden);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,6 +83,7 @@ export default function QotdCard() {
     <SpineItem
       as="section"
       dot={false}
+      className={arrival}
       aria-label={t('qotd-card-label', { defaultValue: 'Question of the day' })}
     >
       <p className="t-label">{t('qotd-card-label', { defaultValue: 'Question of the day' })}</p>

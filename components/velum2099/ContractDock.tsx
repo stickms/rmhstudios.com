@@ -21,6 +21,8 @@ import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { listVelumContractsApi, submitVelumContractApi } from '@/lib/velum2099/velum.contract';
 import { legLength, type ContractRoute, type ContractView } from '@/lib/velum2099/contracts';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Delivered extends ContractRoute {
   seconds: number;
@@ -35,6 +37,7 @@ export function ContractDock() {
   const [open, setOpen] = useState(false);
   const [board, setBoard] = useState<ContractView[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const arrival = useArrival(board !== null || failed);
   const [active, setActive] = useState<string | null>(null);
 
   const submit = useCallback(
@@ -179,7 +182,7 @@ export function ContractDock() {
             </DialogDescription>
           </DialogHeader>
           {failed ? (
-            <p className="text-sm text-site-danger">
+            <p className={cn('text-sm text-site-danger', arrival)}>
               {t('contract-load-error', { defaultValue: 'The board did not load.' })}
             </p>
           ) : board === null ? (
@@ -187,13 +190,13 @@ export function ContractDock() {
               {t('contract-loading', { defaultValue: 'Loading…' })}
             </p>
           ) : board.length === 0 ? (
-            <p className="text-sm text-site-text-muted">
+            <p className={cn('text-sm text-site-text-muted', arrival)}>
               {t('contract-empty', {
                 defaultValue: 'No contracts yet. Deliver a package and post the first.',
               })}
             </p>
           ) : (
-            <ul className="max-h-[50dvh] space-y-2 overflow-y-auto">
+            <ul className={cn('max-h-[50dvh] space-y-2 overflow-y-auto', arrival)}>
               {board.map((c) => (
                 <li key={c.id} className="surface-card flex items-center gap-3 rounded-site p-4">
                   <div className="min-w-0 grow">

@@ -24,6 +24,7 @@ import {
   listSubmittableReplaysApi,
   submitSpeedrunRunApi,
 } from '@/lib/speedrun/speedrun.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface SubmittableReplay {
   id: string;
@@ -47,6 +48,7 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -113,14 +115,14 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
             <Spinner />
           </div>
         ) : replays.length === 0 ? (
-          <p className="text-sm text-site-text-muted">
+          <p className={cn('text-sm text-site-text-muted', arrival)}>
             {t('speedrun-submit-none', {
               defaultValue:
                 'No unsubmitted recordings for this game. Finish a run with replay capture on and it will appear here.',
             })}
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className={cn('flex flex-col gap-2', arrival)}>
             {replays.map((replay) => {
               const boardOpen = openVersions.includes(replay.version);
               const isSelected = selected === replay.id;

@@ -43,6 +43,8 @@ import type { PollView } from '@/lib/calendar/types';
 import type { Run, SlotScore } from '@/lib/schedule/availability';
 import { api, viewerTimeZone } from './api';
 import { PollGrid, type SlotHeat } from './PollGrid';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Tab = 'mine' | 'group';
 
@@ -69,6 +71,7 @@ export default function PollPage({ id }: { id: string }) {
   const tz = useMemo(() => viewerTimeZone(), []);
   const signedIn = !!session?.user;
   const confirm = useConfirm();
+  const arrival = useArrival(!isPending && !(signedIn && state === 'loading'));
 
   const load = useCallback(async () => {
     const res = await api<{ poll: PollView }>(`/api/when/${encodeURIComponent(id)}`);
@@ -214,6 +217,7 @@ export default function PollPage({ id }: { id: string }) {
     return (
       <SignedOutPrompt
         icon={CalendarCheck}
+        className={arrival}
         title={t('signed-out-title', { defaultValue: 'Sign in to answer this poll' })}
         description={t('signed-out-body', {
           defaultValue: 'Pick the times you can make and the organiser sees when everyone is free.',
@@ -226,6 +230,7 @@ export default function PollPage({ id }: { id: string }) {
     return (
       <EmptyState
         icon={CalendarCheck}
+        className={arrival}
         title={t('poll-missing-title', { defaultValue: 'Poll not found' })}
         description={t('poll-missing-body', {
           defaultValue: 'It may have been deleted by its organiser.',
@@ -244,6 +249,7 @@ export default function PollPage({ id }: { id: string }) {
     return (
       <EmptyState
         icon={CalendarCheck}
+        className={arrival}
         title={t('poll-error', { defaultValue: 'Could not load this poll just now.' })}
         action={
           <Button onClick={() => void load()}>{t('retry', { defaultValue: 'Try again' })}</Button>
@@ -281,7 +287,7 @@ export default function PollPage({ id }: { id: string }) {
   ];
 
   return (
-    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+    <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', arrival)}>
       <header className="space-y-1">
         <h2 className="text-xl font-medium text-site-text">{poll.title}</h2>
         {poll.description && (

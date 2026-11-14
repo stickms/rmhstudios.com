@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { HEATMAP_WEEKS, heatLevel, postingStreaks, windowDays } from '@/lib/profile/activity';
 import { api } from '@/lib/contract/client';
 import { getProfileActivityApi } from '@/lib/profile/profile-extras.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** Opacity of the accent per shade; 0 is the empty-cell wash. */
 const LEVEL_MIX = [14, 30, 50, 72, 100] as const;
@@ -14,6 +16,7 @@ const LEVEL_MIX = [14, 30, 50, 72, 100] as const;
 export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
   const { t } = useTranslation('feed');
   const [data, setData] = useState<{ days: Record<string, number>; total: number } | null>(null);
+  const arrival = useArrival(data !== null);
 
   useEffect(() => {
     let active = true;
@@ -42,7 +45,7 @@ export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
 
   return (
     <section
-      className="border-t border-site-border pt-4"
+      className={cn('border-t border-site-border pt-4', arrival)}
       aria-label={t('activity-title', { defaultValue: 'Posting activity' })}
     >
       <p className="mb-1 font-mono text-xs text-site-text-muted">

@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CANVAS_PALETTE, type CanvasBatch, type CanvasEventView } from '@/lib/canvas/shared';
+import { useSuspenseArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface Cell {
   x: number;
@@ -37,6 +39,7 @@ export default function CanvasBoard({
   const { t } = useTranslation('f-canvas');
   const { width, height } = event;
   const live = event.phase === 'live';
+  const arrival = useSuspenseArrival();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState({ x: 0, y: 0, z: 4 });
@@ -180,7 +183,7 @@ export default function CanvasBoard({
   };
 
   return (
-    <div className="relative">
+    <div className={cn('relative', arrival)} suppressHydrationWarning>
       <div
         ref={viewportRef}
         tabIndex={0}

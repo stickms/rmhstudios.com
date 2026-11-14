@@ -10,12 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { FOLDER_NAME_MAX, MAX_FOLDERS, scopeKeyOf, type ChatRef } from '@/lib/chat-plus/types';
 import { CHAT_FOLDERS_KEY, useChatFolders } from './folders-hooks';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /** M1 — put this chat in (or out of) the viewer's folders; create a folder inline. */
 export function ChatFoldersSection({ chat }: { chat: ChatRef }) {
   const { t } = useTranslation('f-messaging');
   const qc = useQueryClient();
   const { data: folders } = useChatFolders();
+  const arrival = useArrival(!!folders);
   const [name, setName] = useState('');
   const scopeKey = scopeKeyOf(chat.kind, chat.id);
 
@@ -56,7 +59,7 @@ export function ChatFoldersSection({ chat }: { chat: ChatRef }) {
         })}
       </p>
       {(folders ?? []).length > 0 && (
-        <div className="flex flex-col divide-y divide-site-border">
+        <div className={cn('flex flex-col divide-y divide-site-border', arrival)}>
           {(folders ?? []).map((f) => (
             <label
               key={f.id}

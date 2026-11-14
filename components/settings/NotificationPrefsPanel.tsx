@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { setNotificationTogglesApi } from '@/lib/preferences/preferences.contract';
 import { notificationTogglesQuery } from '@/lib/settings/prefs.queries';
 import { api } from '@/lib/contract/client';
@@ -31,6 +33,7 @@ export function NotificationPrefsPanel() {
   const queryClient = useQueryClient();
   const query = notificationTogglesQuery();
   const { data: prefs, isError: failed } = useQuery(query);
+  const arrival = useArrival(!!prefs || failed);
 
   const toggle = async (key: PrefKey, value: boolean) => {
     if (!prefs) return;
@@ -50,7 +53,7 @@ export function NotificationPrefsPanel() {
 
   if (failed) {
     return (
-      <p className="text-sm text-site-text-muted">
+      <p className={cn('text-sm text-site-text-muted', arrival)}>
         {t('settings-notif-load-failed', {
           defaultValue: 'Could not load your notification settings. Refresh to try again.',
         })}
@@ -69,7 +72,7 @@ export function NotificationPrefsPanel() {
   }
 
   return (
-    <ul>
+    <ul className={arrival}>
       {PREF_KEYS.map((key) => {
         const labelId = `notif-pref-${key}-label`;
         const hintId = `notif-pref-${key}-hint`;

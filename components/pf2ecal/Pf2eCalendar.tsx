@@ -65,6 +65,8 @@ import {
 } from './state';
 import './pf2ecal.css';
 import { EASE } from './motion';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * Everything below is behind a `lazy()` boundary because none of it is needed to
@@ -108,6 +110,7 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
   const board = data ?? initialState;
   const awaitingFirstData = isPending && !data && initialState.sessions.length === 0;
   const boardStatus = useBoardStatus(awaitingFirstData);
+  const arrival = useArrival(!awaitingFirstData);
   const timeZone = useLocalTimeZone();
   const now = useNow();
   const online = useOnline();
@@ -561,7 +564,7 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
               </>
             ) : (
               <>
-                <div className="order-3 lg:order-1" data-rail="month">
+                <div className={cn('order-3 lg:order-1', arrival)} data-rail="month">
                   <MonthGrid
                     year={monthCursor.year}
                     month={monthCursor.month}
@@ -580,7 +583,7 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
                   />
                 </div>
 
-                <div className="order-1 lg:order-2" data-rail="announcements">
+                <div className={cn('order-1 lg:order-2', arrival)} data-rail="announcements">
                   <Announcements
                     announcements={board.announcements}
                     timeZone={timeZone}
@@ -599,7 +602,7 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
                   />
                 </div>
 
-                <div className="order-2 lg:hidden" data-rail="next">
+                <div className={cn('order-2 lg:hidden', arrival)} data-rail="next">
                   <NextUp
                     session={nextSession}
                     timeZone={timeZone}
@@ -608,7 +611,7 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
                   />
                 </div>
 
-                <div className="order-4 lg:order-3" data-rail="subscribe">
+                <div className={cn('order-4 lg:order-3', arrival)} data-rail="subscribe">
                   <SubscribePanel feedUrl={board.feedUrl} scheduleNote={board.scheduleNote} />
                 </div>
               </>
@@ -650,7 +653,7 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
                   <SessionCardSkeleton />
                 </div>
               ) : agenda.length === 0 ? (
-                <p className="pf2e-card pf2e-body pf2e-muted p-5">
+                <p className={cn('pf2e-card pf2e-body pf2e-muted p-5', arrival)}>
                   {scope === 'past'
                     ? t('nothing-past', { defaultValue: 'No sessions have happened yet.' })
                     : t('nothing-booked', { defaultValue: 'Nothing on the books.' })}{' '}
@@ -663,7 +666,7 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
                 </p>
               ) : (
                 <>
-                  <motion.div layout className="flex flex-col gap-3">
+                  <motion.div layout className={cn('flex flex-col gap-3', arrival)}>
                     <AnimatePresence initial={false}>
                       {visibleAgenda.map(renderCard)}
                     </AnimatePresence>

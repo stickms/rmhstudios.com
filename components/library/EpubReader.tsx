@@ -22,6 +22,8 @@ import { BookCanvas } from './BookCanvas';
 import { Dropdown, MarksMenu, ChapterMenu, ScrubBar, type Chapter } from './BookReader';
 import { ReaderDetails } from './ReaderDetails';
 import { ReaderReadingTools, type ReaderTextSource } from '@/components/reading/ReaderReadingTools';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import '@/components/library/library.css';
 import '@/components/rmhvibe/vibe.css';
 
@@ -42,6 +44,8 @@ export function EpubReader({ book }: { book: LibraryBook }) {
   const { t } = useTranslation('c-library');
   const readerRef = useRef<HTMLElement>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  // The book (or the error) replaces "Opening book…".
+  const arrival = useArrival(status !== 'loading');
   const [numPages, setNumPages] = useState(0);
   const [aspect, setAspect] = useState(0.64);
   const [single, setSingle] = useState(true);
@@ -255,7 +259,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
           </div>
         )}
         {status === 'error' && (
-          <div className="lib-reader__status" role="alert">
+          <div className={cn('lib-reader__status', arrival)} role="alert">
             <span>{t('couldnt-open-epub', { defaultValue: "Couldn't open this EPUB." })}</span>
             <a href={book.url} className="lib-reader__fallback" download>
               {t('download-book', { defaultValue: 'Download book' })}
@@ -264,7 +268,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
         )}
         {status === 'ready' && (
           <>
-            <div className="lib-reader__viewport">
+            <div className={cn('lib-reader__viewport', arrival)}>
               <BookCanvas
                 aspect={aspect}
                 single={single}

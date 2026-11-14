@@ -20,6 +20,8 @@ import { useIdleReady } from '@/hooks/useIdleReady';
 import ProfilePlusSettings from '@/components/profile/plus/ProfilePlusSettings';
 // P11 — opt-in birthday (G1).
 import BirthdaySettings from '@/components/gifting/BirthdaySettings';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/settings/profile')({
   head: () => ({
@@ -33,6 +35,7 @@ function ProfileCustomizationPage() {
   const { data: session, isPending } = useSession();
   const signedIn = !!session?.user;
   const idle = useIdleReady();
+  const idleArrival = useArrival(idle);
   const handle = (session?.user as { handle?: string | null } | undefined)?.handle;
 
   const settingsLabel = t('settings', { defaultValue: 'Settings' });
@@ -64,8 +67,11 @@ function ProfileCustomizationPage() {
     >
       <SettingsPageBody>
         {!isPending && !signedIn ? signInPrompt : <ProfileCosmetics />}
-        {signedIn && idle ? <ProfilePlusSettings /> : null}
-        {signedIn && idle ? <BirthdaySettings /> : null}
+        {/* No box (display: contents): the idle-deferred sections fade in (M9). */}
+        <div className={cn('contents', idleArrival && 'arrive-group')}>
+          {signedIn && idle ? <ProfilePlusSettings /> : null}
+          {signedIn && idle ? <BirthdaySettings /> : null}
+        </div>
       </SettingsPageBody>
     </PageLayout>
   );

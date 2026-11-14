@@ -6,6 +6,8 @@ import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { postInsightsApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Insights {
  createdAt: string;
@@ -33,7 +35,10 @@ const fmt = (n: number) => n.toLocaleString();
 export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  const { t } = useTranslation('feed');
  const [data, setData] = useState<Insights | null>(null);
- const [loading, setLoading] = useState(false);
+ // Mounted open: loading from the first render, so "Could not load" never flashes before the fetch starts.
+ const [loading, setLoading] = useState(open);
+ // Steel M9: the numbers (or the error) replace the spinner.
+ const arrival = useArrival(!loading);
 
  useEffect(() => {
  if (!open) return;
@@ -76,11 +81,11 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  )}
 
  {!loading && !data && (
- <p className="py-12 text-center text-sm text-site-text-muted">{t('could-not-load-insights', { defaultValue:'Could not load insights.'})}</p>
+ <p className={cn('py-12 text-center text-sm text-site-text-muted', arrival)}>{t('could-not-load-insights', { defaultValue:'Could not load insights.'})}</p>
  )}
 
  {data && (
- <>
+ <div className={arrival}>
  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
  {stats.map((s) => (
  <div key={s.label} className="rounded-site p-4">
@@ -144,7 +149,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <p className="mt-4 text-center text-xs text-site-text-muted">
  {t('posted-date', { date: new Date(data.createdAt).toLocaleString(), defaultValue:'Posted {{date}}'})}
  </p>
- </>
+ </div>
  )}
  </div>
  </DialogContent>

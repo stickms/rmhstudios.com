@@ -1,7 +1,8 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { useSession } from '@/components/Providers';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 
@@ -47,12 +48,12 @@ export default function ProfilePlusSettings() {
       />
 
       <div>
-        <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+        <ArrivalSuspense fallback={<Skeleton className="h-48 w-full" />}>
           {section === 'about' ? <IdentitySettings userId={user.id} /> : null}
           {section === 'top-four' ? <TopFourSettings /> : null}
           {section === 'stamps' ? <StampSettings userId={user.id} /> : null}
           {section === 'share' ? <ShareSettings handleOrId={user.handle || user.id} /> : null}
-        </Suspense>
+        </ArrivalSuspense>
       </div>
     </SettingsSection>
   );

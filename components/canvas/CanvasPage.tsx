@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { fetchJson } from '@/lib/http';
 import { CANVAS_PALETTE, type CanvasEventView } from '@/lib/canvas/shared';
 import type { Cell } from './CanvasBoard';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const CanvasBoard = lazy(() => import('./CanvasBoard'));
 const CanvasReplay = lazy(() => import('./CanvasReplay'));
@@ -59,6 +61,7 @@ export function CanvasPage() {
   // A past event picked from the archive replaces the current one for viewing only.
   const event = (picked ? q.data?.past.find((p) => p.id === picked) : null) ?? base;
   const wait = useCountdown(nextAt ?? base?.nextAt);
+  const arrival = useArrival(!q.isPending);
 
   useEffect(() => {
     setNextAt(null);
@@ -96,7 +99,7 @@ export function CanvasPage() {
           'One shared canvas. Everyone places one pixel at a time, and the picture only exists because of all of us.',
       })}
     >
-      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+      <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', arrival)}>
         {q.isPending ? (
           <Skeleton className="h-[60vh] w-full" />
         ) : !event ? (
@@ -126,14 +129,15 @@ export function CanvasPage() {
               </p>
             </div>
             {event.phase !== 'upcoming' && (
-              <Suspense fallback={<Skeleton className="h-[60vh] w-full" />}>
+              // A sibling under space-y: CanvasBoard fades itself, so no wrapper.
+              <ArrivalSuspense fallback={<Skeleton className="h-[60vh] w-full" />} wrap={false}>
                 <CanvasBoard
                   event={event}
                   selected={selected}
                   onSelect={setSelected}
                   paintRef={paintRef}
                 />
-              </Suspense>
+              </ArrivalSuspense>
             )}
             {live && (
               <section className="space-y-3 rounded-site px-4 py-3">
@@ -195,11 +199,11 @@ export function CanvasPage() {
             {event.phase === 'ended' && (
               <section className="space-y-3">
                 {replay ? (
-                  <Suspense
+                  <ArrivalSuspense
                     fallback={<Skeleton className="mx-auto aspect-square w-full max-w-lg" />}
                   >
                     <CanvasReplay event={event} />
-                  </Suspense>
+                  </ArrivalSuspense>
                 ) : (
                   <Button variant="default" onClick={() => setReplay(true)}>
                     <Film />

@@ -28,6 +28,8 @@ import { HttpError, serverError } from '@/lib/http';
 import { buildPrepSheetApi } from '@/lib/rmhladder/prep.contract';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface PrepSheetProps {
   applicationId: string;
@@ -48,6 +50,8 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
   const [sheet, setSheet] = useState<PrepSheetData | null>(initialSheet);
   const [loading, setLoading] = useState(false);
   const [upgrade, setUpgrade] = useState<UpgradeRequiredBody | null>(null);
+  // A built sheet replaces "Reading the posting…"; one handed in by the page does not fade.
+  const arrival = useArrival(sheet !== null);
 
   const generate = useCallback(async () => {
     setLoading(true);
@@ -128,7 +132,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
       )}
 
       {sheet && (
-        <div className="mt-4 grid gap-5">
+        <div className={cn('mt-4 grid gap-5', arrival)}>
           {sheet.daysUntilInterview != null && sheet.nextInterviewAt && (
             <p className="flex flex-wrap items-center gap-2 text-sm text-site-text">
               <CalendarClock className="size-4 text-site-accent" aria-hidden />

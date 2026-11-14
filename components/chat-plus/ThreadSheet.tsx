@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/feed/UserAvatar';
 import { useChatPlusUi, type ThreadTarget } from '@/lib/chat-plus/ui-store';
 import type { ThreadReply } from '@/lib/chat-plus/types';
@@ -38,6 +40,9 @@ export default function ThreadSheet({
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const arrival = useArrival(!loading);
+  // Replies from other members (and your own, once sent) are appended while the thread is open.
+  const isNewReply = useArrivingKeys(replies.map((r) => r.id));
   const base = `/api/chats/group/${encodeURIComponent(target.groupId)}/thread/${encodeURIComponent(target.parentId)}`;
 
   // The thread a send belongs to; a reply that resolves after the sheet moved
@@ -115,7 +120,7 @@ export default function ThreadSheet({
   }, [base, draft, sending, t]);
 
   const row = (m: ThreadMessage, emphasised = false) => (
-    <li key={m.id} className="flex gap-2.5 py-2">
+    <li key={m.id} className={cn('flex gap-2.5 py-2', !emphasised && isNewReply(m.id) && ARRIVE)}>
       <UserAvatar user={m.sender} size="sm" linkToProfile={false} />
       <div className="min-w-0 flex-1">
         <p className="text-xs text-site-text-muted">
@@ -149,19 +154,21 @@ export default function ThreadSheet({
               <Spinner size={20} />
             </div>
           ) : missing || !parent ? (
-            <p className="py-8 text-center text-sm text-site-text-muted">
+            <p className={cn('py-8 text-center text-sm text-site-text-muted', arrival)}>
               {t('thread-missing', { defaultValue: 'This thread is no longer available.' })}
             </p>
           ) : (
             <>
-              <ul className="divide-y divide-site-border">{row(parent, true)}</ul>
-              <p className="mt-2 text-xs text-site-text-muted">
+              <ul className={cn('divide-y divide-site-border', arrival)}>{row(parent, true)}</ul>
+              <p className={cn('mt-2 text-xs text-site-text-muted', arrival)}>
                 {t('thread-reply-count', {
                   count: replies.length,
                   defaultValue: '{{count}} replies',
                 })}
               </p>
-              <ul className="divide-y divide-site-border">{replies.map((r) => row(r))}</ul>
+              <ul className={cn('divide-y divide-site-border', arrival)}>
+                {replies.map((r) => row(r))}
+              </ul>
               <div ref={endRef} />
             </>
           )}

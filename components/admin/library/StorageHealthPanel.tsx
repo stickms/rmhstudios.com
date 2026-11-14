@@ -22,6 +22,8 @@ import { adminStorageHealthApi } from '@/lib/library/admin-library.contract';
 import { StatGrid, StatTile } from '@/components/admin/StatTile';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Health = {
   durable: boolean;
@@ -42,6 +44,7 @@ export function StorageHealthPanel({
   const { t } = useTranslation('admin');
   const [health, setHealth] = useState<Health | null>(null);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading || !!health);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,12 +81,13 @@ export function StorageHealthPanel({
       <EmptyState
         icon={AlertTriangle}
         title={t('load-failed', { defaultValue: 'Could not load storage health.' })}
+        className={arrival}
       />
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className={cn('flex flex-col gap-6', arrival)}>
       {/* Stat grid — reads at a glance on desktop, wraps to 2-up on phones. */}
       <StatGrid>
         <StatTile

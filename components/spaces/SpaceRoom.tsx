@@ -18,6 +18,8 @@ import type { SpacePinned, SpaceStatus, SpaceView } from '@/lib/spaces/types';
 import { SlowModeBar, useSlowModeBlock } from '@/components/safety/SlowModeBar';
 import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
 import { slowModeEvents } from '@/lib/safety/slow-mode-events';
+import { ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface LiveMessage {
   id: string;
@@ -409,7 +411,10 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
             </p>
           )
         ) : messages.length > 0 ? (
-          messages.map((m) => <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} />)
+          // Steel M9: live messages only ever arrive over the socket, after paint, so each fades in as it mounts.
+          messages.map((m) => (
+            <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} className={ARRIVE} />
+          ))
         ) : (
           <p className="py-12 text-center text-sm text-site-text-muted">
             {status === 'SCHEDULED'
@@ -517,14 +522,16 @@ function MessageRow({
   name,
   image,
   body,
+  className,
 }: {
   name: string | null;
   image: string | null;
   body: string;
+  className?: string | undefined;
 }) {
   const { t } = useTranslation('site');
   return (
-    <div className="flex items-start gap-2">
+    <div className={cn('flex items-start gap-2', className)}>
       <Avatar name={name} image={image} />
       <div className="min-w-0">
         <span className="mr-2 text-sm font-semibold text-site-text">

@@ -11,6 +11,8 @@ import { api } from '@/lib/tf2-hud/api';
 import type { HudSummary } from '@/lib/tf2-hud/api-types';
 import HudCard from './HudCard';
 import { useSentinel } from '@/hooks/useSentinel';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Sort = 'new' | 'top' | 'forks';
 
@@ -23,6 +25,9 @@ export default function HudWorkshopList() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const seq = useRef(0);
+  // M9: the first page replaces the placeholder cards; a later page fades in card by card.
+  const arrival = useArrival(state !== 'loading' || items.length > 0);
+  const isNew = useArrivingKeys(items.map((h) => h.id));
 
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query.trim()), 300);
@@ -102,14 +107,14 @@ export default function HudWorkshopList() {
       </div>
 
       {state === 'error' ? (
-        <p role="alert" className="py-12 text-center text-sm text-app-danger">
+        <p role="alert" className={cn('py-12 text-center text-sm text-app-danger', arrival)}>
           {t('workshop-error', { defaultValue: 'Could not load the workshop.' })}{' '}
           <button type="button" className="underline" onClick={() => void load(null)}>
             {t('retry', { defaultValue: 'Retry' })}
           </button>
         </p>
       ) : items.length === 0 && state === 'ready' ? (
-        <p className="py-12 text-center text-sm text-app-text-muted">
+        <p className={cn('py-12 text-center text-sm text-app-text-muted', arrival)}>
           {debounced
             ? t('workshop-no-match', { defaultValue: 'No HUDs match “{{q}}”.', q: debounced })
             : t('workshop-empty', {
@@ -125,6 +130,7 @@ export default function HudWorkshopList() {
             <li key={h.id} className="contents">
               <HudCard
                 hud={h}
+                className={cn(arrival, isNew(h.id) && ARRIVE)}
                 actions={
                   <Link
                     to="/tf2/hud-editor/editor"

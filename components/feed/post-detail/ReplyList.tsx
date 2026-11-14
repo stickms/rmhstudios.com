@@ -1,6 +1,8 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
 import { SpineItem } from '@/components/ui/spine';
+import { useArrival } from '@/components/ui/arrive';
 import { CommentItem } from '../CommentItem';
 import type { Comment } from '../CommentItem';
 import { HiddenRepliesGroup } from '../HiddenReplies';
@@ -33,6 +35,11 @@ export function ReplyList({
 }: ReplyListProps) {
   const { t } = useTranslation('feed');
   const { handleHiddenChange, handleReplyAdded, handleCommentRemoved } = thread;
+  // Steel M9: the replies replace the spinner. They are items on the caller's spine, so they fade through a
+  // `display: contents` group (the spine's only child selector is on a nested spine, not this one).
+  const arrival = useArrival(!loadingComments);
+  const arrive = (children: ReactNode) =>
+    arrival ? <div className="arrive-group">{children}</div> : <>{children}</>;
   const renderComment = (comment: Comment) => (
     <CommentItem
       key={comment.id}
@@ -46,30 +53,29 @@ export function ReplyList({
     />
   );
   const hidden = comments.filter((c) => c.hidden);
-  return (
-    <>
-      {!loadingComments && comments.length > 0 && (
+  if (loadingComments) {
+    return (
+      <SpineItem dot={false} className="flex justify-center">
+        <Spinner />
+      </SpineItem>
+    );
+  }
+  return arrive(
+    comments.length === 0 ? (
+      <SpineItem dot={false}>
+        <p className="t-body font-semibold">
+          {t('no-replies-title', { defaultValue: 'No replies yet' })}
+        </p>
+        <p className="t-body mt-1 text-site-text-muted">
+          {t('no-replies-hint', { defaultValue: 'Be the first to reply.' })}
+        </p>
+      </SpineItem>
+    ) : (
+      <>
         <ThreadSummary postId={postId} commentCount={comments.length} />
-      )}
-      {loadingComments ? (
-        <SpineItem dot={false} className="flex justify-center">
-          <Spinner />
-        </SpineItem>
-      ) : comments.length === 0 ? (
-        <SpineItem dot={false}>
-          <p className="t-body font-semibold">
-            {t('no-replies-title', { defaultValue: 'No replies yet' })}
-          </p>
-          <p className="t-body mt-1 text-site-text-muted">
-            {t('no-replies-hint', { defaultValue: 'Be the first to reply.' })}
-          </p>
-        </SpineItem>
-      ) : (
-        <>
-          {comments.filter((c) => !c.hidden).map(renderComment)}
-          <HiddenRepliesGroup count={hidden.length}>{hidden.map(renderComment)}</HiddenRepliesGroup>
-        </>
-      )}
-    </>
+        {comments.filter((c) => !c.hidden).map(renderComment)}
+        <HiddenRepliesGroup count={hidden.length}>{hidden.map(renderComment)}</HiddenRepliesGroup>
+      </>
+    ),
   );
 }

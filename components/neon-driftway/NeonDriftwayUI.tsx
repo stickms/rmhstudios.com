@@ -17,6 +17,8 @@ import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { submitNeonDriftwayScoreApi } from '@/lib/game/score.contract';
 import { saveGhostApi } from '@/lib/game/replay.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type LeaderboardEntry = {
   username: string;
@@ -69,6 +71,7 @@ export function NeonDriftwayUI({
 } & VrProps) {
   const { t } = useTranslation("c-neon-driftway");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const lbArrival = useArrival(leaderboard.length > 0);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   const session = useSession();
@@ -271,7 +274,7 @@ export function NeonDriftwayUI({
 
           {/* Mini leaderboard */}
           {leaderboard.length > 0 && (
-            <div className="bg-black/60 border border-zinc-700 rounded-lg p-4 mt-4">
+            <div className={cn('bg-black/60 border border-zinc-700 rounded-lg p-4 mt-4', lbArrival)}>
               <div className="flex items-center gap-2 mb-3">
                 <Trophy className="w-4 h-4 text-yellow-400" />
                 <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{t("top-scores", { defaultValue: "Top Scores" })}</span>
@@ -443,7 +446,7 @@ export function NeonDriftwayUI({
 
           {/* Leaderboard */}
           {leaderboard.length > 0 && (
-            <div className="bg-black/60 border border-zinc-700 rounded-lg p-3">
+            <div className={cn('bg-black/60 border border-zinc-700 rounded-lg p-3', lbArrival)}>
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="w-3 h-3 text-yellow-400" />
                 <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{t("leaderboard", { defaultValue: "Leaderboard" })}</span>

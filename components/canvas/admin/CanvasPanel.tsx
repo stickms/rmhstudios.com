@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Tabs } from '@/components/ui/tabs';
 import { fetchJson } from '@/lib/http';
 import { CANVAS_SIZES, type CanvasEventView } from '@/lib/canvas/shared';
+import { useArrival, useSuspenseArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Row = CanvasEventView & { placements: number };
 
@@ -26,6 +28,8 @@ export default function CanvasPanel() {
   const [startsAt, setStartsAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
   const [busy, setBusy] = useState(false);
+  const shown = useSuspenseArrival();
+  const arrival = useArrival(!q.isPending);
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -60,7 +64,7 @@ export default function CanvasPanel() {
 
   const ready = title.trim() && startsAt && endsAt && Number(minutes) >= 1;
   return (
-    <div className="space-y-[var(--site-section-gap)]">
+    <div className={cn('space-y-[var(--site-section-gap)]', shown)} suppressHydrationWarning>
       <form
         className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
         onSubmit={(e) => {
@@ -116,7 +120,7 @@ export default function CanvasPanel() {
           {t('admin-create', { defaultValue: 'Schedule event' })}
         </Button>
       </form>
-      <ul className="divide-y divide-site-border border-t border-site-border">
+      <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
         {q.data?.events.map((e) => (
           <li
             key={e.id}

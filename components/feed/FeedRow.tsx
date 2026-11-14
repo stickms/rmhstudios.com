@@ -11,9 +11,10 @@ import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 import { FeedMedia } from '@/components/feed/FeedMedia';
 import { TakeMeterLazy } from '@/components/feed/TakeMeterLazy';
 import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadges';
-import { relativeTimeShort } from '@/lib/utils';
+import { cn, relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
 import { useLocaleStore } from '@/stores/localeStore';
+import { ARRIVE } from '@/components/ui/arrive';
 
 /** The post menu's rows and dialogs: fetched the first time a row's three dots are used, never with the feed. */
 const loadFeedRowMenu = () => import('@/components/feed/FeedRowMenu');
@@ -119,7 +120,12 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
         </span>
       ) : null}
       {translation ? (
-        <p className="t-body mt-2 border-s border-site-border ps-3 break-words whitespace-pre-wrap">
+        <p
+          className={cn(
+            't-body mt-2 border-s border-site-border ps-3 break-words whitespace-pre-wrap',
+            ARRIVE,
+          )}
+        >
           {translation}
         </p>
       ) : null}

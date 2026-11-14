@@ -18,6 +18,8 @@ import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
 import GameSettingsForm from './GameSettingsForm';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function GameSettingsPhase() {
   const { t } = useTranslation('c-rmhbox');
@@ -27,6 +29,7 @@ export default function GameSettingsPhase() {
 
   const isHost = lobby?.hostUserId === lobby?.myUserId;
   const lobbyId = lobby?.lobbyId ?? '';
+  const arrival = useArrival(!!settingsState && !!lobby);
 
   const handleSettingChange = useCallback(
     (key: string, value: boolean | number | string) => {
@@ -64,7 +67,7 @@ export default function GameSettingsPhase() {
   const remaining = timerInfo?.remaining ?? null;
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-6 p-6 h-full justify-center">
+    <div className={cn('mx-auto flex w-full max-w-lg flex-col items-center gap-6 p-6 h-full justify-center', arrival)}>
       {/* Title */}
       <div className="text-center">
         <h1

@@ -11,9 +11,11 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import type { TrendingWhy } from '@/lib/discovery/schema';
 import { api } from '@/lib/contract/client';
 import { whyTrendingApi } from '@/lib/discovery/discovery.contract';
+import { cn } from '@/lib/utils';
 
 /** A2 · "Why is this trending?" on a tag chip; the data loads only when opened. */
 export function WhyTrending({ tag }: { tag: string }) {
@@ -21,6 +23,8 @@ export function WhyTrending({ tag }: { tag: string }) {
   const [open, setOpen] = useState(false);
   const [why, setWhy] = useState<TrendingWhy | null>(null);
   const [failed, setFailed] = useState(false);
+  // Steel M9: the explanation replaces the skeleton inside the open sheet.
+  const arrival = useArrival(!!why || failed);
 
   useEffect(() => {
     if (!open || why) return;
@@ -54,13 +58,13 @@ export function WhyTrending({ tag }: { tag: string }) {
             </SheetDescription>
           </SheetHeader>
           {failed && (
-            <p className="pt-3 text-sm text-site-text-muted">
+            <p className={cn('pt-3 text-sm text-site-text-muted', arrival)}>
               {t('why-failed', { defaultValue: 'Could not load this right now.' })}
             </p>
           )}
           {!why && !failed && <Skeleton className="mt-3 h-32 w-full" />}
           {why && (
-            <div className="space-y-4 pt-3">
+            <div className={cn('space-y-4 pt-3', arrival)}>
               <dl className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-site p-2">
                   <dt className="text-xs text-site-text-muted">

@@ -8,6 +8,8 @@ import { serverError } from '@/lib/http';
 import { creatorRedemptionsQuery } from '@/lib/creator/earnings.queries';
 import { requestRedemptionApi, type RedemptionRow } from '@/lib/creator/earnings.contract';
 import { Card } from '@/components/ui/card';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Tabs } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +27,8 @@ export function EarningsTab() {
   const { data, isPending: loading, refetch } = useQuery(creatorRedemptionsQuery());
   const earnings = data?.earnings ?? null;
   const requests: RedemptionRow[] = data?.requests ?? [];
+  // The figures replace their dash placeholders, and the history lands below the form.
+  const arrival = useArrival(!loading);
   const [kind, setKind] = useState<'SUB_CREDIT' | 'MERCH' | 'PAYOUT'>('SUB_CREDIT');
   const [tier, setTier] = useState<'starter' | 'pro'>('starter');
   const [months, setMonths] = useState(1);
@@ -88,7 +92,9 @@ export function EarningsTab() {
           <div className="text-xs font-medium text-site-text-muted">
             {t('redeemable', { defaultValue: 'Redeemable' })}
           </div>
-          <div className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
+          <div
+            className={cn('flex items-center gap-2 text-2xl font-semibold tabular-nums', arrival)}
+          >
             <Coins className="size-5 text-site-warning" />
             {loading ? '—' : (earnings?.redeemable ?? 0)}
           </div>
@@ -97,7 +103,7 @@ export function EarningsTab() {
           <div className="text-xs font-medium text-site-text-muted">
             {t('lifetime', { defaultValue: 'Lifetime earned' })}
           </div>
-          <div className="text-2xl font-semibold tabular-nums">
+          <div className={cn('text-2xl font-semibold tabular-nums', arrival)}>
             {loading ? '—' : (earnings?.lifetimeEarned ?? 0)}
           </div>
         </Card>
@@ -105,7 +111,7 @@ export function EarningsTab() {
           <div className="text-xs font-medium text-site-text-muted">
             {t('balance', { defaultValue: 'Coin balance' })}
           </div>
-          <div className="text-2xl font-semibold tabular-nums">
+          <div className={cn('text-2xl font-semibold tabular-nums', arrival)}>
             {loading ? '—' : (earnings?.spendable ?? 0)}
           </div>
         </Card>
@@ -232,7 +238,7 @@ export function EarningsTab() {
 
       {/* History */}
       {requests.length > 0 && (
-        <div>
+        <div className={arrival}>
           <h3 className="site-section-label mb-3">{t('history', { defaultValue: 'Requests' })}</h3>
           <div className="space-y-3">
             {requests.map((r) => (

@@ -18,7 +18,7 @@
  */
 
 import { AnimatePresence, m as motion } from 'framer-motion';
-import { Suspense, useCallback, useId, useRef, type PointerEvent as RPointerEvent } from 'react';
+import { useCallback, useId, useRef, type PointerEvent as RPointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { sfx } from '../sound';
@@ -26,6 +26,7 @@ import { APPS } from './apps';
 import { Icon } from './icons';
 import { useOs, type Win } from './store';
 import { BusySpinner } from './BusySpinner';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const SNAP_EDGE = 6;
 type Dir = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
@@ -281,9 +282,11 @@ export function Window({ win, active, compact }: { win: Win; active: boolean; co
         </div>
       </div>
       <div className={cn('ds-os-body', def.flush && 'ds-os-body--flush')}>
-        <Suspense fallback={<BusySpinner label={t('loading-app', { defaultValue: 'Loading…' })} />}>
+        <ArrivalSuspense
+          fallback={<BusySpinner label={t('loading-app', { defaultValue: 'Loading…' })} />}
+        >
           <App win={win} />
-        </Suspense>
+        </ArrivalSuspense>
       </div>
       {resizable &&
         DIRS.map((dir) => (

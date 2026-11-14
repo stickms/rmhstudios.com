@@ -14,6 +14,7 @@ import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { useArrival } from '@/components/ui/arrive';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import {
   CHAT_ACCENTS,
@@ -87,6 +88,7 @@ function SettingsPanel({ chat }: { chat: ChatRef }) {
   const { t } = useTranslation('f-messaging');
   const qc = useQueryClient();
   const { data: meta } = useChatMeta(chat);
+  const arrival = useArrival(!!meta);
   const base = `/api/chats/${chat.kind}/${encodeURIComponent(chat.id)}/settings`;
   const key = chatMetaKey(chat);
 
@@ -156,7 +158,7 @@ function SettingsPanel({ chat }: { chat: ChatRef }) {
   const showPrivacy = chat.kind === 'dm' && !meta.isSelf;
 
   return (
-    <div className="flex flex-col gap-6 pt-4">
+    <div className={cn('flex flex-col gap-6 pt-4', arrival)}>
       <section aria-labelledby="opt-disappear">
         <h3 id="opt-disappear" className="text-sm font-semibold text-site-text">
           {t('disappear-title', { defaultValue: 'Disappearing messages' })}

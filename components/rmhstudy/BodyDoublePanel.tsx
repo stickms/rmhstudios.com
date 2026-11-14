@@ -20,6 +20,8 @@ import {
   type StudyPreset,
 } from '@/lib/calendar/study-buddy';
 import type { StudyBuddyStatus } from '@/lib/calendar/types';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const chip =
   'rounded-full border px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent';
@@ -34,6 +36,13 @@ export default function BodyDoublePanel() {
   const [status, setStatus] = useState<StudyBuddyStatus>({ waiting: [], matches: [] });
   const [tick, setTick] = useState(() => Date.now());
   const knownMatches = useRef<Set<string> | null>(null);
+  // M9: requests and matches arrive from the server after the panel shows, and new ones join while it is open.
+  const hasStatus = status.waiting.length > 0 || status.matches.length > 0;
+  const statusArrival = useArrival(hasStatus);
+  const isNewRow = useArrivingKeys([
+    ...status.matches.map((m) => m.id),
+    ...status.waiting.map((w) => w.requestId),
+  ]);
 
   const presetLabels: Record<StudyPreset, string> = {
     math: t('subject-math', { defaultValue: 'Math' }),
@@ -135,7 +144,8 @@ export default function BodyDoublePanel() {
   return (
     <section
       aria-labelledby="body-double-title"
-      className="rounded-app app-glass p-6"
+      // Mounted only after idle (the landing), into a gap that was empty: it always arrives (M9).
+      className={cn('rounded-app app-glass p-6', ARRIVE)}
     >
       <h2 id="body-double-title" className="mb-1 flex items-center gap-2 text-xl font-semibold">
         <Users className="h-5 w-5 text-app-accent" aria-hidden />
@@ -253,8 +263,8 @@ export default function BodyDoublePanel() {
         </button>
       </div>
 
-      {(status.waiting.length > 0 || status.matches.length > 0) && (
-        <div className="mt-6 space-y-3" aria-live="polite">
+      {hasStatus && (
+        <div className={cn('mt-6 space-y-3', statusArrival)} aria-live="polite">
           {status.matches.map((m) => {
             const open = roomOpenFor(
               { startsAt: new Date(m.startsAt), endsAt: new Date(m.endsAt) },
@@ -263,7 +273,10 @@ export default function BodyDoublePanel() {
             return (
               <div
                 key={m.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-app-sm border border-app-accent p-3"
+                className={cn(
+                  'flex flex-wrap items-center justify-between gap-3 rounded-app-sm border border-app-accent p-3',
+                  isNewRow(m.id) && ARRIVE,
+                )}
               >
                 <div className="min-w-0">
                   <p className="font-semibold">
@@ -297,7 +310,10 @@ export default function BodyDoublePanel() {
           {status.waiting.map((w) => (
             <div
               key={w.requestId}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-app-sm border border-app-border p-3"
+              className={cn(
+                'flex flex-wrap items-center justify-between gap-3 rounded-app-sm border border-app-border p-3',
+                isNewRow(w.requestId) && ARRIVE,
+              )}
             >
               <p className="text-sm">
                 {w.mode === 'now'
