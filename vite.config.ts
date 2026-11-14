@@ -64,33 +64,60 @@ const ssrOnlyExternals = [
   'esbuild',
 ];
 
-function manualChunks(id: string) {
-  // React core first — it MUST be one shared chunk. Everything the app renders
-  // imports React, so isolating it keeps the heavy route-only vendors
-  // (three/tone/…) from bridging into the entry via shared React runtime.
-  // (When React had no chunk of its own, rolldown co-located it inside vendor-three;
-  // the entry then imported that 1.3 MB chunk on every page just to get React.)
-  if (
-    id.includes('node_modules/react/') ||
-    id.includes('node_modules/react-dom/') ||
-    id.includes('node_modules/scheduler/') ||
-    id.includes('node_modules/react-is/') ||
-    id.includes('node_modules/use-sync-external-store/')
-  ) {
-    return 'vendor-react';
-  }
-  // Everything else (three, tone, pixi, framer-motion,
-  // …) is intentionally left to rolldown's automatic chunking. Every heavy library
-  // is reached only through a React.lazy(() => import(...)) route boundary, so
-  // rolldown emits it as an async chunk that loads on its own route — NOT in the
-  // entry graph. Force-chunking them into named vendor chunks (the previous
-  // approach) made rolldown scatter shared runtime into those chunks and drag the
-  // whole 1.3 MB three payload onto every page, including the
-  // homepage. Only React is pinned above, because it is genuinely shared by the
-  // entry and must not be duplicated.
-}
+// Client chunk shaping (2026-11-14). Rolldown's automatic chunking gives every distinct
+// "set of chunks that share this module" its own file. On this app that meant a page
+// needed 60 to 180 JS files before it could hydrate, most under 2 KB: 52 on the entry's
+// static graph, the rest one lucide icon or one small hook each. Nothing can run until the
+// last of them lands, so on a phone the count was the cost, not the bytes. Three groups:
+//
+//   vendor-react  React core, one shared chunk. It MUST stay its own group: when React had
+//                 no chunk of its own, rolldown co-located it inside a route-only vendor
+//                 chunk and the entry imported 1.3 MB of three.js on every page to get it.
+//   shell         `$initial` is every module the client entry imports statically, which is
+//                 exactly the every-page critical path. Rolldown folds the group into the
+//                 entry file, so that path is 3 files instead of 52. Nothing route-only can
+//                 match the tag, which is the difference from the size floor rejected below.
+//   icons         lucide-react. `entriesAware` keeps an icon with the pages that use it;
+//                 the merge threshold folds groups under 8 KB into their nearest neighbour,
+//                 so a page fetches a few icon files instead of one request per icon. The
+//                 cost of a merge is a handful of unused ~300 B icons.
+//
+// Measured on a plain `vite build`, files and brotli bytes a route needs to hydrate
+// (the entry closure plus the route's own preloads):
+//
+//   /          140 files 318.7 KB  ->  68 files 309.6 KB
+//   /explore   180 files 360.6 KB  ->  90 files 347.5 KB
+//   /games      60 files 258.2 KB  ->   8 files 239.1 KB
+//   /login      76 files 302.6 KB  ->  26 files 290.7 KB
+//
+// Everything else (three, tone, pixi, framer-motion, …) is still left to automatic
+// chunking: each is reached only through a lazy route boundary and loads on its own route.
+//
+// MEASURED AND REJECTED the same day, do not re-run expecting a different answer:
+//   - icons at a 24 KB merge threshold: 62 files on `/`, but 319.4 KB (the unused icons
+//     ate the saving). 4 KB: 73 files, 306.5 KB. 8 KB is the knee.
+//   - a group for every small first-party module (`maxModuleSize: 2 KB`, entriesAware):
+//     a captured module brings its dependencies with it, so `/` went to 485 KB brotli.
+//     The remaining small files (contracts, stores, hooks) need route-level imports
+//     changed, not a group.
+//   - naming the deferred shell overlays (modals, command palette) as one group: no
+//     effect, because each is a dynamic-import entry and keeps its own file.
+const REACT_CORE =
+  /node_modules[\\/](?:react|react-dom|scheduler|react-is|use-sync-external-store)[\\/]/;
 
-// MEASURED AND REJECTED: `output.codeSplitting.minSize` (2026-08-11).
+const clientChunkGroups = [
+  { name: 'vendor-react', test: REACT_CORE, priority: 30 },
+  { name: 'shell', tags: ['$initial' as const], priority: 20 },
+  {
+    name: 'icons',
+    test: /node_modules[\\/]lucide-react[\\/]/,
+    priority: 10,
+    entriesAware: true,
+    entriesAwareMergeThreshold: 8 * 1024,
+  },
+];
+
+// MEASURED AND REJECTED EARLIER: `output.codeSplitting.minSize` (2026-08-11).
 //
 // Three audits in a row flagged it as "worth measuring, not worth guessing at" —
 // the theory being that 90 of the 111 critical-path chunks are under 6 KB, and a
@@ -364,7 +391,7 @@ export default defineConfig({
           onwarn,
           checks: rolldownChecks,
           output: {
-            manualChunks,
+            codeSplitting: { groups: clientChunkGroups },
           },
         },
       },
