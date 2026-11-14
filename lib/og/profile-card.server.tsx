@@ -15,6 +15,7 @@ import satori from 'satori';
 import { dedupeOgRender, svgToPng } from './render.server';
 import {
   DIM,
+  HAIRLINE_W,
   INK,
   MUTED,
   SCALE,
@@ -41,10 +42,21 @@ const cache = new Map<string, { png: Buffer; ts: number }>();
 const TTL = 10 * 60 * 1000;
 const MAX = 60;
 
-const PANE_PAD = 26 * SCALE;
-const AVATAR = 64 * SCALE;
-const QR_PLATE = 190 * SCALE;
-const QR_MODULES_PX = 150 * SCALE;
+// Everything below is sized against `frameMetrics(LANDSCAPE)`: the frame leaves
+// the pane ~382px of height (at SCALE 2), minus its hairlines and padding. satori
+// does not clip, so a column taller than that paints straight out of the pane —
+// the QR plate and the identity column each have to fit inside `INNER_H`.
+const PANE_PAD = 20 * SCALE;
+const AVATAR = 40 * SCALE;
+const QR_PLATE = 112 * SCALE;
+const QR_MODULES_PX = 100 * SCALE;
+const QR_CAPTION = 12 * SCALE;
+const QR_CAPTION_GAP = 8 * SCALE;
+const COLUMN_GAP = 28 * SCALE;
+const AVATAR_GAP = 12 * SCALE;
+const HANDLE_SIZE = 18 * SCALE;
+const HANDLE_GAP = 4 * SCALE;
+const BIO_GAP = 12 * SCALE;
 
 export interface ProfileCardData {
   id: string;
@@ -68,14 +80,27 @@ async function renderProfileCardUncached(data: ProfileCardData): Promise<Buffer>
   const bio = truncate(data.bio || '', 120);
 
   const frame = frameMetrics(LANDSCAPE.width, LANDSCAPE.height);
-  const textWidth = frame.width - PANE_PAD * 2 - QR_PLATE - 28 * SCALE;
+  const hairlines = HAIRLINE_W * 2;
+  const innerH = frame.height - hairlines - PANE_PAD * 2;
+  const textWidth = frame.width - hairlines - PANE_PAD * 2 - QR_PLATE - COLUMN_GAP;
   const nameSize = fitText(name, {
     width: textWidth,
-    height: 90 * SCALE,
-    steps: [56, 46, 38, 32],
+    height: 58,
+    steps: [52, 44, 38, 32],
     lineHeight: 1.1,
   });
-  const bioSize = fitText(bio, { width: textWidth, height: 80 * SCALE, steps: [28, 24, 21] });
+  // The bio gets what the avatar, name and handle leave of the column.
+  const handleBlock = data.handle ? HANDLE_SIZE * 1.2 + HANDLE_GAP : 0;
+  const bioBox = Math.max(
+    0,
+    innerH - AVATAR - AVATAR_GAP - nameSize * 1.1 - handleBlock - BIO_GAP,
+  );
+  const bioSize = fitText(bio, {
+    width: textWidth,
+    height: bioBox,
+    steps: [28, 24, 21, 18],
+    lineHeight: 1.3,
+  });
 
   const element = cardFrame({
     ...LANDSCAPE,
@@ -85,14 +110,23 @@ async function renderProfileCardUncached(data: ProfileCardData): Promise<Buffer>
       children: [
         <div
           key="who"
-          style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingRight: 28 * SCALE }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            minWidth: 0,
+            maxHeight: innerH,
+            overflow: 'hidden',
+            paddingRight: COLUMN_GAP,
+          }}
         >
-          <div style={{ display: 'flex', marginBottom: 16 * SCALE }}>
+          <div style={{ display: 'flex', marginBottom: AVATAR_GAP }}>
             {avatarDisc(avatar, initial, AVATAR)}
           </div>
           <span
             style={{
               fontSize: nameSize,
+              lineHeight: 1.1,
               fontWeight: 700,
               letterSpacing: displayTracking(nameSize),
               color: INK,
@@ -101,7 +135,14 @@ async function renderProfileCardUncached(data: ProfileCardData): Promise<Buffer>
             {name}
           </span>
           {data.handle ? (
-            <span style={{ fontSize: 20 * SCALE, color: MUTED, marginTop: 4 * SCALE }}>
+            <span
+              style={{
+                fontSize: HANDLE_SIZE,
+                lineHeight: 1.2,
+                color: MUTED,
+                marginTop: HANDLE_GAP,
+              }}
+            >
               @{truncate(data.handle, 30)}
             </span>
           ) : null}
@@ -112,7 +153,7 @@ async function renderProfileCardUncached(data: ProfileCardData): Promise<Buffer>
                 lineHeight: 1.3,
                 color: INK,
                 fontWeight: 500,
-                marginTop: 14 * SCALE,
+                marginTop: BIO_GAP,
               }}
             >
               {bio}
@@ -149,7 +190,7 @@ async function renderProfileCardUncached(data: ProfileCardData): Promise<Buffer>
               height={QR_MODULES_PX}
             />
           </div>
-          <span style={{ fontSize: 12 * SCALE, color: DIM, marginTop: 10 * SCALE }}>
+          <span style={{ fontSize: QR_CAPTION, lineHeight: 1.2, color: DIM, marginTop: QR_CAPTION_GAP }}>
             Scan to open
           </span>
         </div>,
